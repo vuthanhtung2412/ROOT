@@ -308,6 +308,20 @@ Place **1 wood per sawmill** in each clearing that has sawmills.
 3. Pay wood cost (top of column) from: that clearing, adjacent clearings you rule, or any clearing connected through a chain of clearings you rule.
 4. Place building; score VP uncovered on track.
 
+**Buildings tracks** (faction board; not in Law prose — from player board)
+
+Six columns left→right. Setup leaves leftmost empty (5 of each building on track). Build takes leftmost building of that type; pay **cost** at top of its column; score **VP** on the uncovered space. Destroyed buildings return to the rightmost empty space.
+
+| Column (L→R) | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| Wood cost | 0 | 1 | 2 | 3 | 3 | 4 |
+| Sawmill VP | 0 | 1 | 2 | 3 | 4 | 5 |
+| Workshop VP | 0 | 2 | 2 | 3 | 4 | 5 |
+| Recruiter VP | 0 | 1 | 2 | 3 | 3 | 4 |
+| Recruiter draw bonus | — | — | +1 | — | +1 | — |
+
+Evening draw = **1 + uncovered recruiter draw bonuses** (max **3** cards).
+
 #### Evening
 
 Draw 1 + uncovered draw bonuses. Hand > 5 → discard to 5.
