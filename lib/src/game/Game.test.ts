@@ -1,0 +1,218 @@
+import { describe, expect, it } from 'vitest'
+import { defOf } from '../cards/Deck.js'
+import type { ActionSpec } from '../actions/types.js'
+import { FALL } from '../map/fall.js'
+import { warriors } from '../queries/pieces.js'
+import { keepCornerFor } from '../factions/Marquise.js'
+import { RuleError } from '../rules/RuleError.js'
+import { SeededRng } from '../rules/Rng.js'
+import { DEFAULT_FACTIONS, STARTING_HAND } from '../state/constants.js'
+import type { GameSignal } from '../triggers/signals.js'
+import { EFFECTS } from '../triggers/effects.js'
+import { Game } from './Game.js'
+
+function lobbyTwo(seed = 42): Game {
+  const game = Game.create({ seed })
+  game.join('a')
+  game.join('b')
+  return game
+}
+
+describe('Game lobby', () => {
+  it('Game.create → waiting status', () => {
+    const game = Game.create({ seed: 1 })
+    expect(game.state.status).toBe('waiting')
+    expect(game.state.factions).toEqual(DEFAULT_FACTIONS)
+    expect(game.state.players).toHaveLength(0)
+  })
+
+  it('Game.join assigns factions[seat] — GP1 both marquise', () => {
+    const game = Game.create({ seed: 1 })
+    game.join('p0')
+    game.join('p1')
+    expect(game.state.players[0]!.faction).toBe('marquise')
+    expect(game.state.players[1]!.faction).toBe('marquise')
+  })
+
+  it('Game.join rejects when full', () => {
+    const game = Game.create({ seed: 1, factions: ['marquise', 'marquise'] })
+    game.join('a')
+    game.join('b')
+    expect(() => game.join('c')).toThrow(RuleError)
+    expect(() => game.join('c')).toThrow(expect.objectContaining({ code: 'LOBBY_FULL' }))
+  })
+
+  it('Game.join does not auto-start — 2 joined still waiting', () => {
+    const game = lobbyTwo()
+    expect(game.state.status).toBe('waiting')
+  })
+})
+
+describe('Game.start', () => {
+  it('Game.start requires players greater than 1', () => {
+    const game = Game.create({ seed: 1 })
+    expect(() => game.start()).toThrow(expect.objectContaining({ code: 'NOT_ENOUGH_PLAYERS' }))
+    game.join('solo')
+    expect(() => game.start()).toThrow(expect.objectContaining({ code: 'NOT_ENOUGH_PLAYERS' }))
+  })
+
+  it('Rule: Setup 3 — 2p strips dominance from deck', () => {
+    const game = lobbyTwo(99)
+    game.start()
+    const allCards = [...game.state.deck.draw, ...game.state.deck.discard]
+    for (const player of game.state.players) {
+      allCards.push(...player.hand)
+    }
+    expect(allCards.some((c) => defOf(c).type === 'dominance')).toBe(false)
+    expect(game.state.dominanceAvailable).toHaveLength(0)
+  })
+
+  it('Rule: Setup 2–5 — deals hands, ruins, item supply', () => {
+    const game = lobbyTwo(7)
+    game.start()
+    for (const player of game.state.players) {
+      expect(player.hand).toHaveLength(STARTING_HAND)
+    }
+    expect(game.state.itemSupply.boot).toBe(2)
+    const ruins = game.state.clearings.filter((c) => c.ruin !== undefined)
+    expect(ruins).toHaveLength(4)
+  })
+
+  it('Game.start runs faction setups by seat', () => {
+    const game = lobbyTwo(5)
+    game.start()
+    expect(game.state.status).toBe('playing')
+    expect(keepCornerFor(game.state, 0)).toBe(FALL.corners[0])
+    expect(keepCornerFor(game.state, 1)).toBe(FALL.opposite(FALL.corners[0]))
+    expect(warriors(game.state, FALL.corners[0]!, 0)).toBe(1)
+    expect(warriors(game.state, FALL.opposite(FALL.corners[0])!, 1)).toBe(1)
+  })
+})
+
+describe('Game.legalActions', () => {
+  it('waiting → join (+ start if ≥2 players)', () => {
+    const game = Game.create({ seed: 1 })
+    expect(game.legalActions().map((a) => a.type)).toEqual(['join'])
+    game.join('a')
+    expect(game.legalActions().map((a) => a.type)).toEqual(['join'])
+    game.join('b')
+    expect(game.legalActions().map((a) => a.type)).toEqual(['start'])
+  })
+})
+
+describe('Game.apply', () => {
+  it('endPhase advances steps and phases', () => {
+    const game = lobbyTwo(3)
+    game.start()
+    expect(game.state.phase).toBe('birdsong')
+    expect(game.state.step).toBe('wood')
+
+    game.apply({ type: 'endPhase' })
+    expect(game.state.phase).toBe('daylight')
+    expect(game.state.step).toBe('craft')
+
+    game.apply({ type: 'endPhase' })
+    expect(game.state.step).toBe('actions')
+  })
+
+  it('Game.apply runs autoActions — empty for Phase 5 skeleton', () => {
+    const game = lobbyTwo(3)
+    game.start()
+    const len = game.history.length
+    game.apply({ type: 'endPhase' })
+    expect(game.history.length).toBe(len + 1)
+  })
+
+  it('Game.apply gates on pending queue head — FIFO', () => {
+    const game = lobbyTwo(3)
+    game.start()
+    game.state.pending.push({
+      type: 'fieldHospital',
+      victim: 0,
+      clearing: 0,
+      count: 1,
+    })
+    expect(game.legalActions()).toEqual([])
+    expect(() => game.apply({ type: 'endPhase' })).toThrow(
+      expect.objectContaining({ code: 'PENDING_EVENT' }),
+    )
+  })
+
+  it('Game emits phase.start/end signals', () => {
+    const game = lobbyTwo(3)
+    game.start()
+    const signals: GameSignal[] = []
+    const unsub = game.subscribeSignals((_, signal) => {
+      signals.push(signal)
+    })
+    game.apply({ type: 'endPhase' })
+    unsub()
+    expect(signals.some((s) => s.s === 'phase.end' && s.phase === 'birdsong')).toBe(true)
+    expect(signals.some((s) => s.s === 'phase.start' && s.phase === 'daylight')).toBe(true)
+  })
+
+  it('Game merges granted actions into legalActions', () => {
+    const game = lobbyTwo(3)
+    game.start()
+    const granted: ActionSpec = { type: 'swapMeet', actor: 0 }
+    EFFECTS['test-grant'] = {
+      defId: 'test-grant',
+      grants: () => [granted],
+    }
+    game.state.players[0]!.playArea.push({ id: 'test-grant#1', defId: 'test-grant' })
+    expect(game.legalActions()).toEqual(
+      expect.arrayContaining([{ type: 'endPhase', actor: 0 }, granted]),
+    )
+    delete EFFECTS['test-grant']
+  })
+
+  it('Rule: Victory — 30 VP seat winner; tie-break currentSeat', () => {
+    const game = lobbyTwo(3)
+    game.start()
+    game.state.players[0]!.vp = 30
+    game.state.players[1]!.vp = 30
+    game.apply({ type: 'endPhase' })
+    expect(game.state.winner).toBe(0)
+    expect(game.state.status).toBe('finished')
+  })
+})
+
+describe('Game replay and undo', () => {
+  it('replay reproduces state', () => {
+    const game = lobbyTwo(11)
+    game.start()
+    game.apply({ type: 'endPhase' })
+    game.apply({ type: 'endPhase' })
+    const replayed = Game.replay(11, [...game.history])
+    expect(replayed.state).toEqual(game.state)
+    expect(replayed.log).toEqual(game.log)
+  })
+
+  it('undo rewinds one action', () => {
+    const game = lobbyTwo(11)
+    game.start()
+    const before = structuredClone(game.state)
+    game.apply({ type: 'endPhase' })
+    game.undo()
+    expect(game.state).toEqual(before)
+    expect(game.history).toHaveLength(3) // join join start
+  })
+})
+
+describe('Game snapshot', () => {
+  it('toJSON/fromJSON round-trip — state + rng cursor', () => {
+    const game = lobbyTwo(123)
+    game.start()
+    game.apply({ type: 'endPhase' })
+    const rngBefore = game.toJSON().rng
+    const nextRoll = SeededRng.fromJSON(rngBefore).roll()
+
+    const snap = game.toJSON()
+    const restored = Game.fromJSON(snap)
+    expect(restored.state).toEqual(snap.state)
+    expect(restored.history).toEqual(snap.history)
+    expect(restored.log).toEqual(snap.log)
+    expect(restored.toJSON().rng).toEqual(snap.rng)
+    expect(SeededRng.fromJSON(restored.toJSON().rng).roll()).toBe(nextRoll)
+  })
+})

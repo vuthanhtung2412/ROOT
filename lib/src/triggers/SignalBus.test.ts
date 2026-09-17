@@ -20,6 +20,7 @@ describe('SignalBus', () => {
       rng: new SeededRng({ seed: 1, cursor: 0 }),
       emit: () => {},
       hooks: defaultRuleHooks(FALL),
+      grantedActions: () => [],
     }
 
     bus.emit(state, { s: 'draw', actor: 0, count: 1 }, ctx)
