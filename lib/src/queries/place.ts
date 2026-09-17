@@ -18,3 +18,14 @@ export function keepOwner(state: GameState, clearing: ClearingId): Seat | null {
   const keep = cs.pieces.find((p) => p.kind === 'token' && p.type === 'keep')
   return keep?.owner ?? null
 }
+
+export function keepClearingFor(state: GameState, seat: Seat): ClearingId | null {
+  for (let id = 0; id < state.clearings.length; id++) {
+    if (keepOwner(state, id as ClearingId) === seat) return id as ClearingId
+  }
+  return null
+}
+
+export function hasKeep(state: GameState, seat: Seat): boolean {
+  return keepClearingFor(state, seat) !== null
+}
