@@ -153,6 +153,7 @@ function payWood(
   ctx: Ctx,
 ): void {
   if (amount <= 0) return
+  const board = boardOf(state, seat)
   const region = connectedRuled(state, seat, buildClearing, ctx.hooks)
   let remaining = amount
   for (const id of [...region].sort((a, b) => a - b)) {
@@ -161,6 +162,8 @@ function payWood(
       if (remaining <= 0) return true
       if (p.kind === 'token' && p.type === 'wood' && p.owner === seat) {
         remaining -= 1
+        // Rule: Glossary > Return — wood goes back to Marquise supply.
+        board.supply.wood += 1
         return false
       }
       return true

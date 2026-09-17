@@ -2,7 +2,7 @@ import type { Ctx } from '../game/ctx.js'
 import type { LogEntry } from '../log/types.js'
 import type { ClearingId } from '../map/types.js'
 import type { Piece, Seat } from '../pieces/types.js'
-import { hasKeep, keepClearingFor } from '../queries/place.js'
+import { hasKeep } from '../queries/place.js'
 import { playerOf } from '../queries/seat.js'
 import type { GameState } from '../state/types.js'
 import type { MarquiseBoard } from '../state/boards.js'
@@ -16,6 +16,29 @@ export function returnWarriorsToSupply(state: GameState, seat: Seat, count: numb
     board.supply.warriors += count
   } else if (board.kind === 'alliance') {
     board.supply.warriors += count
+  }
+}
+
+function returnPieceToOwner(state: GameState, piece: Piece): void {
+  const board = playerOf(state, piece.owner).board
+  // Rule: Glossary > Return — supply, or rightmost empty track space.
+  if (piece.kind === 'warrior') {
+    returnWarriorsToSupply(state, piece.owner, 1)
+    return
+  }
+  if (piece.kind === 'token' && piece.type === 'wood' && board.kind === 'marquise') {
+    board.supply.wood += 1
+    return
+  }
+  if (piece.kind === 'token' && piece.type === 'keep') {
+    // Rule: Marquise > The Keep — token never returns to supply.
+    return
+  }
+  if (piece.kind === 'building' && board.kind === 'marquise') {
+    const type = piece.type
+    if (type === 'sawmill' || type === 'workshop' || type === 'recruiter') {
+      board.tracks[type].placed = Math.min(5, board.tracks[type].placed + 1)
+    }
   }
 }
 
@@ -43,13 +66,13 @@ export function removePieces(
   })
 
   let vpDelta = 0
-  let warriorCount = 0
   const victims = new Map<Seat, number>()
 
   for (const piece of removed) {
     if (piece.kind === 'warrior') {
-      warriorCount += 1
       victims.set(piece.owner, (victims.get(piece.owner) ?? 0) + 1)
+    } else {
+      returnPieceToOwner(state, piece)
     }
     if (piece.owner === actor) continue
     if (piece.kind === 'building' || piece.kind === 'token') {
