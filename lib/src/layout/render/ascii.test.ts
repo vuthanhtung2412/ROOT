@@ -10,4 +10,11 @@ describe('toAscii', () => {
       expect(ascii).toContain(i.toString(16).toUpperCase())
     }
   })
+
+  it('showSuit appends F/R/M to clearing ids', () => {
+    const ascii = toAscii(FALL, FALL_LAYOUT, { width: 56, height: 22, showSuit: true })
+    expect(ascii).toContain('0F')
+    expect(ascii).toContain('1M')
+    expect(ascii).toContain('2R')
+  })
 })
