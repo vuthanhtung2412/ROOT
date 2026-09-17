@@ -6,7 +6,8 @@
     "cost": "Array of crafting suits required. 'wild' = any suit. Empty = not craftable (ambush/dominance).",
     "type": "ambush | dominance | item | partisan | persistent",
     "copies": "How many physical copies of this face are in the 54-card deck.",
-    "suit": "Card suit (bird is wild when spent for suit)."
+    "suit": "Card suit (bird is wild when spent for suit).",
+    "vp": "Printed craft victory points for item cards (parsed from description)."
   },
   "sources": [
     {
@@ -134,7 +135,8 @@
       "cost": [
         "fox"
       ],
-      "description": "Craft hammer item, score +2 VP, then discard."
+      "description": "Craft hammer item, score +2 VP, then discard.",
+      "vp": 2
     },
     {
       "id": "ROOT-205",
@@ -148,7 +150,8 @@
         "fox",
         "fox"
       ],
-      "description": "Craft sword item, score +2 VP, then discard."
+      "description": "Craft sword item, score +2 VP, then discard.",
+      "vp": 2
     },
     {
       "id": "ROOT-206",
@@ -161,7 +164,8 @@
       "cost": [
         "rabbit"
       ],
-      "description": "Craft boot item, score +1 VP, then discard."
+      "description": "Craft boot item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-207",
@@ -175,7 +179,8 @@
         "rabbit",
         "rabbit"
       ],
-      "description": "Craft coins item, score +3 VP, then discard."
+      "description": "Craft coins item, score +3 VP, then discard.",
+      "vp": 3
     },
     {
       "id": "ROOT-208",
@@ -188,7 +193,8 @@
       "cost": [
         "mouse"
       ],
-      "description": "Craft bag item, score +1 VP, then discard."
+      "description": "Craft bag item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-209",
@@ -201,7 +207,8 @@
       "cost": [
         "fox"
       ],
-      "description": "Craft crossbow item, score +1 VP, then discard."
+      "description": "Craft crossbow item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-210",
@@ -214,7 +221,8 @@
       "cost": [
         "fox"
       ],
-      "description": "Craft crossbow item, score +1 VP, then discard."
+      "description": "Craft crossbow item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-215",
@@ -228,7 +236,8 @@
         "fox",
         "fox"
       ],
-      "description": "Craft sword item, score +2 VP, then discard."
+      "description": "Craft sword item, score +2 VP, then discard.",
+      "vp": 2
     },
     {
       "id": "ROOT-216",
@@ -241,7 +250,8 @@
       "cost": [
         "mouse"
       ],
-      "description": "Craft bag item, score +1 VP, then discard."
+      "description": "Craft bag item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-217",
@@ -255,7 +265,8 @@
         "rabbit",
         "rabbit"
       ],
-      "description": "Craft coins item, score +3 VP, then discard."
+      "description": "Craft coins item, score +3 VP, then discard.",
+      "vp": 3
     },
     {
       "id": "ROOT-218",
@@ -268,7 +279,8 @@
       "cost": [
         "mouse"
       ],
-      "description": "Craft bag item, score +1 VP, then discard."
+      "description": "Craft bag item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-219",
@@ -282,7 +294,8 @@
         "rabbit",
         "rabbit"
       ],
-      "description": "Craft coins item, score +3 VP, then discard."
+      "description": "Craft coins item, score +3 VP, then discard.",
+      "vp": 3
     },
     {
       "id": "ROOT-220",
@@ -295,7 +308,8 @@
       "cost": [
         "mouse"
       ],
-      "description": "Craft tea item, score +2 VP, then discard."
+      "description": "Craft tea item, score +2 VP, then discard.",
+      "vp": 2
     },
     {
       "id": "ROOT-221",
@@ -308,7 +322,8 @@
       "cost": [
         "mouse"
       ],
-      "description": "Craft tea item, score +2 VP, then discard."
+      "description": "Craft tea item, score +2 VP, then discard.",
+      "vp": 2
     },
     {
       "id": "ROOT-222",
@@ -321,7 +336,8 @@
       "cost": [
         "mouse"
       ],
-      "description": "Craft tea item, score +2 VP, then discard."
+      "description": "Craft tea item, score +2 VP, then discard.",
+      "vp": 2
     },
     {
       "id": "ROOT-223",
@@ -334,7 +350,8 @@
       "cost": [
         "mouse"
       ],
-      "description": "Craft bag item, score +1 VP, then discard."
+      "description": "Craft bag item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-224",
@@ -348,7 +365,8 @@
         "fox",
         "fox"
       ],
-      "description": "Craft sword item, score +2 VP, then discard."
+      "description": "Craft sword item, score +2 VP, then discard.",
+      "vp": 2
     },
     {
       "id": "ROOT-225",
@@ -361,7 +379,8 @@
       "cost": [
         "rabbit"
       ],
-      "description": "Craft boot item, score +1 VP, then discard."
+      "description": "Craft boot item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-226",
@@ -374,7 +393,8 @@
       "cost": [
         "rabbit"
       ],
-      "description": "Craft boot item, score +1 VP, then discard."
+      "description": "Craft boot item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-227",
@@ -387,7 +407,8 @@
       "cost": [
         "rabbit"
       ],
-      "description": "Craft boot item, score +1 VP, then discard."
+      "description": "Craft boot item, score +1 VP, then discard.",
+      "vp": 1
     },
     {
       "id": "ROOT-77",
