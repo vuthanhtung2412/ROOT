@@ -25,7 +25,10 @@ export function gameExists(): never {
 
 export function onError(err: Error, c: Context): Response {
   if (err instanceof HttpError) {
-    return c.json({ code: err.code, detail: err.detail ?? null }, err.status as 404 | 409)
+    return c.json(
+      { code: err.code, detail: err.detail ?? null },
+      err.status as 400 | 404 | 409,
+    )
   }
   if (err instanceof RuleError) {
     return c.json({ code: err.code, detail: err.detail ?? null }, 400)

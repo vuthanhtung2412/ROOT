@@ -41,6 +41,7 @@ Single game slot at `/game/...` (no game id):
 | POST | `/game/start` | Start when ≥2 players |
 | GET | `/game` | Current state |
 | GET | `/game/snapshot` | Full `GameSnapshot` (lossless JSON) |
+| PUT | `/game/snapshot?replace=1` | Load `GameSnapshot` into slot |
 | GET | `/game/actions` | Legal action specs |
 | POST | `/game/actions` | Apply an `Action` |
 | GET | `/game/log` | Event log |
@@ -70,6 +71,9 @@ pnpm --filter @root/cli start -- actions
 pnpm --filter @root/cli start -- act '{"type":"endPhase"}'
 pnpm --filter @root/cli start -- log
 pnpm --filter @root/cli start -- undo
+# dump → edit → reload GameSnapshot
+curl -s "$ROOT_API/game/snapshot" -o snap.json
+pnpm --filter @root/cli start -- load snap.json
 
 # GP1 smoke: random agent
 pnpm --filter @root/cli start -- auto --turns 50 --players 2

@@ -4,6 +4,7 @@ import { cmdAct } from './commands/act.js'
 import { cmdActions } from './commands/actions.js'
 import { cmdAuto } from './commands/auto.js'
 import { cmdJoin } from './commands/join.js'
+import { cmdLoad } from './commands/load.js'
 import { cmdLog } from './commands/log.js'
 import { cmdMap } from './commands/map.js'
 import { cmdNew } from './commands/new.js'
@@ -24,6 +25,7 @@ commands:
   new [--factions marquise,marquise]
   join <playerId>
   start
+  load <snapshot.json>
   show
   map
   actions
@@ -59,6 +61,10 @@ async function main() {
         break
       case 'start':
         await cmdStart()
+        break
+      case 'load':
+        if (!rest[0]) throw new Error('snapshot.json path required')
+        await cmdLoad(rest[0])
         break
       case 'show':
         await cmdShow()
