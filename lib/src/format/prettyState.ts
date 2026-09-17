@@ -8,22 +8,45 @@ import type { GameState } from '../state/types.js'
 
 type Piece = GameState['clearings'][number]['pieces'][number]
 
-export function cardLabel(card: Card): string {
+const EFFECT_MAX = 72
+
+export type CardLabelOpts = {
+  /** Append short card effect (for crafted / in-play cards). */
+  effect?: boolean
+}
+
+export function cardLabel(card: Card, opts: CardLabelOpts = {}): string {
   try {
     const d = defOf(card)
     const bits = [d.name, `[${d.suit}]`]
     if (d.type === 'item' && d.item) bits.push(`item:${d.item}`)
     if (d.vp != null && d.vp > 0) bits.push(`+${d.vp}vp`)
     if (d.type !== 'item') bits.push(`(${d.type})`)
-    return bits.join(' ')
+    let label = bits.join(' ')
+    if (opts.effect && d.description) {
+      const desc =
+        d.description.length > EFFECT_MAX
+          ? `${d.description.slice(0, EFFECT_MAX - 1)}…`
+          : d.description
+      label += ` — ${desc}`
+    }
+    return label
   } catch {
     return card.id
   }
 }
 
-function cardsBlock(indent: string, label: string, cards: Card[]): string[] {
+function cardsBlock(
+  indent: string,
+  label: string,
+  cards: Card[],
+  opts: CardLabelOpts = {},
+): string[] {
   if (cards.length === 0) return [`${indent}${label}: (none)`]
-  return [`${indent}${label}:`, ...cards.map((c) => `${indent}  - ${cardLabel(c)}`)]
+  return [
+    `${indent}${label}:`,
+    ...cards.map((c) => `${indent}  - ${cardLabel(c, opts)}`),
+  ]
 }
 
 function pieceShort(p: Piece): string {
@@ -31,6 +54,20 @@ function pieceShort(p: Piece): string {
   if (p.kind === 'pawn') return 'pawn'
   if (p.kind === 'building') return p.type
   return p.type
+}
+
+/** Collapse duplicate non-warrior pieces: wood+wood → wood x2. Warriors stay as Nw. */
+export function formatPieceChunk(parts: string[]): string {
+  const warriors = parts.filter((x) => x === 'w').length
+  const rest = parts.filter((x) => x !== 'w')
+  const counts = new Map<string, number>()
+  for (const p of rest) counts.set(p, (counts.get(p) ?? 0) + 1)
+  const chunk: string[] = []
+  if (warriors > 0) chunk.push(`${warriors}w`)
+  for (const [name, n] of counts) {
+    chunk.push(n > 1 ? `${name} x${n}` : name)
+  }
+  return chunk.join('+')
 }
 
 function clearingBlock(state: GameState, id: number): string[] {
@@ -50,12 +87,7 @@ function clearingBlock(state: GameState, id: number): string[] {
       lines.push(`    s${player.seat}: (none)`)
       continue
     }
-    const w = parts.filter((x) => x === 'w').length
-    const rest = parts.filter((x) => x !== 'w')
-    const chunk: string[] = []
-    if (w > 0) chunk.push(`${w}w`)
-    chunk.push(...rest)
-    lines.push(`    s${player.seat}: ${chunk.join('+')}`)
+    lines.push(`    s${player.seat}: ${formatPieceChunk(parts)}`)
   }
   if (state.players.length === 0 && c.pieces.length === 0) {
     lines.push('    (empty)')
@@ -78,7 +110,7 @@ function playerBlock(p: GameState['players'][number]): string[] {
   return [
     `  seat${p.seat} ${p.playerId} (${p.faction}) VP=${p.vp}`,
     ...cardsBlock('    ', 'hand', p.hand),
-    ...cardsBlock('    ', 'play', p.playArea),
+    ...cardsBlock('    ', 'crafted', p.playArea, { effect: true }),
     `    items: ${p.craftedItems.length ? p.craftedItems.join(', ') : '(none)'}`,
     ...boardLines(p.board),
   ]
@@ -154,9 +186,9 @@ export function formatGameView(state: GameState, opts: PrettyGameOpts = {}): str
   const head =
     (opts.label ? `[${opts.label}] ` : '') +
     `turn=${state.turn} seat=${state.currentSeat} ${state.phase}/${state.step} (${state.status})` +
+    ` seed=${state.seed}` +
     (opts.historyLength !== undefined ? ` history=${opts.historyLength}` : '')
   lines.push(head)
-  lines.push(`id=${state.id} seed=${state.seed}`)
   if (state.winner !== undefined) lines.push(`winner: seat${state.winner}`)
   if (opts.action) lines.push(`action: ${describeAction(opts.action, state)}`)
 
