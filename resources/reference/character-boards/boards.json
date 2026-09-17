@@ -2,7 +2,9 @@
   "notes": {
     "boards": "Faction board front (rules/tracks) + back (setup/components). Filenames: {faction-id}-{front|back}.webp",
     "vagabonds": "Official Vagabond character cards only (not fan). Filenames: vagabond-{id}-front.webp",
-    "expansions": "base | riverfolk | underworld | marauder | homeland | vagabond-pack"
+    "expansions": "base | riverfolk | underworld | marauder | homeland | vagabond-pack",
+    "factionCards": "Faction-specific cards: Eyrie leaders+loyal viziers, Duchy ministers, Hundreds moods, Knaves captains (+ vagabond character deck). Filenames: {prefix}-{name}.webp",
+    "excluded": "Lilypad frog shared-deck cards omitted. Keepers/Twilight/Corvid/Marquise/Alliance/Riverfolk/Lizard have no card decks on Root Database."
   },
   "sources": [
     {
@@ -14,6 +16,11 @@
       "name": "Leder Games",
       "url": "https://ledergames.com",
       "provides": "Publisher / \u00a9 of Root art and boards"
+    },
+    {
+      "name": "Root Database faction decks",
+      "url": "https://www.therootdatabase.com/post/{faction}/en/decks/",
+      "provides": "Leaders, ministers, moods, captains, viziers"
     }
   ],
   "factions": [
@@ -408,6 +415,408 @@
           "sourceUrl": "https://www.therootdatabase.com/media/cards/38eb056ae4f04444bb30ee47b1d3d017.webp"
         }
       ]
+    }
+  ],
+  "factionCards": [
+    {
+      "faction": "eyrie-dynasties",
+      "deck": "leaders",
+      "type": "back",
+      "name": "Card Back",
+      "image": "eyrie-leader-back.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/back.webp"
+    },
+    {
+      "faction": "eyrie-dynasties",
+      "deck": "leaders",
+      "type": "card",
+      "name": "Charismatic",
+      "image": "eyrie-leader-charismatic.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/cards/ca477f211f2943e1b654de54a42b3de5.webp"
+    },
+    {
+      "faction": "eyrie-dynasties",
+      "deck": "leaders",
+      "type": "card",
+      "name": "Builder",
+      "image": "eyrie-leader-builder.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/cards/2e5c243dd55842a7888963018bde7ef2.webp"
+    },
+    {
+      "faction": "eyrie-dynasties",
+      "deck": "leaders",
+      "type": "card",
+      "name": "Despot",
+      "image": "eyrie-leader-despot.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/cards/5e405067cee14604aeddcf69135effef.webp"
+    },
+    {
+      "faction": "eyrie-dynasties",
+      "deck": "leaders",
+      "type": "card",
+      "name": "Commander",
+      "image": "eyrie-leader-commander.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/cards/b3cc57416705448abd5791da3f46b25f.webp"
+    },
+    {
+      "faction": "eyrie-dynasties",
+      "deck": "loyal-viziers",
+      "type": "back",
+      "name": "Card Back",
+      "image": "eyrie-loyal-vizier-back.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/loyal-viziers/back.webp"
+    },
+    {
+      "faction": "eyrie-dynasties",
+      "deck": "loyal-viziers",
+      "type": "card",
+      "name": "Loyal Vizier",
+      "image": "eyrie-loyal-vizier-1.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/loyal-viziers/cards/6246bfcd0a9143ba913bd51377f9b0b5.webp"
+    },
+    {
+      "faction": "eyrie-dynasties",
+      "deck": "loyal-viziers",
+      "type": "card",
+      "name": "Loyal Vizier",
+      "image": "eyrie-loyal-vizier-2.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/loyal-viziers/cards/9abb4bfe870748b980ba59b2873d7bb9.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "back",
+      "name": "Card Back",
+      "image": "duchy-minister-back.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/back.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Captain",
+      "image": "duchy-minister-captain.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/2cb86fce4c9040b781b56543a8e0bde4.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Foremole",
+      "image": "duchy-minister-foremole.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/ddf1a6e32e1d4d92b421fa60a9cd156a.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Marshal",
+      "image": "duchy-minister-marshal.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/53f29d692fac4387acc7a26ee178bfdb.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Banker",
+      "image": "duchy-minister-banker.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/0ee3e9060b0246a59bc0e2fa49f65eaf.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Brigadier",
+      "image": "duchy-minister-brigadier.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/96f83da170234b45b56afa928d950878.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Mayor",
+      "image": "duchy-minister-mayor.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/364ef61a0d1943aa8c6cbb2f3def89bf.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Baron of Dirt",
+      "image": "duchy-minister-baron-of-dirt.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/6c755b50f3484a90a788c8689fcec93a.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Duchess of Mud",
+      "image": "duchy-minister-duchess-of-mud.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/da7a1a6e45fe49e79a952f4dd9ceabb0.webp"
+    },
+    {
+      "faction": "underground-duchy",
+      "deck": "minister-cards",
+      "type": "card",
+      "name": "Earl of Stone",
+      "image": "duchy-minister-earl-of-stone.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/d342709cd14442c784ea963cb42dae30.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "back",
+      "name": "Card Back",
+      "image": "hundreds-mood-back.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/back.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "card",
+      "name": "Bitter",
+      "image": "hundreds-mood-bitter.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/8f25c0d1e9ea49cca5059686e83a69d1.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "card",
+      "name": "Stubborn",
+      "image": "hundreds-mood-stubborn.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/e7bcac61b8f84c21aa857e407b8ca269.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "card",
+      "name": "Rowdy",
+      "image": "hundreds-mood-rowdy.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/7d52d50aa8e74ce1a73b7401efb2ddde.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "card",
+      "name": "Lavish",
+      "image": "hundreds-mood-lavish.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/b089e57bb0874a4b92f5cf6df453aede.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "card",
+      "name": "Relentless",
+      "image": "hundreds-mood-relentless.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/a57415fb9d4c4811afe1073510e81004.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "card",
+      "name": "Grandiose",
+      "image": "hundreds-mood-grandiose.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/eba5058c6c6f4b6ba3611815ea9218a6.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "card",
+      "name": "Jubilant",
+      "image": "hundreds-mood-jubilant.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/133449f2cd794abcb86b27f2746d3661.webp"
+    },
+    {
+      "faction": "lord-of-the-hundreds",
+      "deck": "mood-cards",
+      "type": "card",
+      "name": "Wrathful",
+      "image": "hundreds-mood-wrathful.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/819fe1ef112d45a3ad6bab84f2d667dc.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "back",
+      "name": "Card Back",
+      "image": "knaves-captain-back.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/back.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Harrier",
+      "image": "knaves-captain-harrier.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/ba56d77674ba43edaeb24_yvQC2W3.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Tinker",
+      "image": "knaves-captain-tinker.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/1b8e1208cada4d7492f7d_ASofGAO.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Vagrant",
+      "image": "knaves-captain-vagrant.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/8c96432deff64566836ab_nXNCHRD.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Thief",
+      "image": "knaves-captain-thief.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/9b4460085d394388bde23_bNfgPX1.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Scoundrel",
+      "image": "knaves-captain-scoundrel.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/b8feb3a18ed147279cc3b_H5xeNJk.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Ronin",
+      "image": "knaves-captain-ronin.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/b36121ff51ec4eca9574a_FQcpD0c.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Jailor",
+      "image": "knaves-captain-jailor.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/5e652dd7d69348f298895_DuEOFiX.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Ranger",
+      "image": "knaves-captain-ranger.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/f4ad3fd34d1b4705b6f84_VtPHvCM.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Arbiter",
+      "image": "knaves-captain-arbiter.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/5ca84ee36d44416191713_nn9wCpv.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Cheat",
+      "image": "knaves-captain-cheat.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/45af81208897428bad3a6_7Rzcnkq.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Gladiator",
+      "image": "knaves-captain-gladiator.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/7f92a079a0ec490dae313_GHGs7nG.webp"
+    },
+    {
+      "faction": "knaves-of-the-deepwood",
+      "deck": "captain-cards",
+      "type": "card",
+      "name": "Adventurer",
+      "image": "knaves-captain-adventurer.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/37ba6a85de2c4fcc8d72f_1AONoGG.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "back",
+      "name": "Card Back",
+      "image": "vagabond-back.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/back.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Adventurer",
+      "image": "vagabond-adventurer-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/8ad85e65286a4e63934a2e11c29c7e22.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Arbiter",
+      "image": "vagabond-arbiter-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/31f5421f2df9434592db762962b8bd60.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Harrier",
+      "image": "vagabond-harrier-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/bc44fc22691742f88a0e5181fc35f95c.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Ranger",
+      "image": "vagabond-ranger-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/d11b01dd43d249bfb6d4d256ec6486a4.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Ronin",
+      "image": "vagabond-ronin-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/418d9ad78bcf49079d51491c956dc990.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Scoundrel",
+      "image": "vagabond-scoundrel-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/dbfc544771244a40aa23072b0575d4ef.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Thief",
+      "image": "vagabond-thief-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/b820f87e5f464e29aa1d8ec21347ac4e.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Tinker",
+      "image": "vagabond-tinker-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/63f1f55f76fa451fb1703d51e01c180c.webp"
+    },
+    {
+      "faction": "vagabond",
+      "deck": "character-card",
+      "type": "card",
+      "name": "Vagrant",
+      "image": "vagabond-vagrant-front.webp",
+      "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/73aacb8f9b934437b90d04ef4ee10835.webp"
     }
   ]
 }
