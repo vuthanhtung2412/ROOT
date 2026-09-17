@@ -1,10 +1,11 @@
 # Root — Base Rules (Implementable)
 
+Non-SoT summary for coding. Official SoT: `../rules/Law_of_Root.pdf`.  
 Source: Leder Games, *The Law of Root* (June 4, 2022).  
 Scope: **Fall map** + **Marquise / Eyrie / Alliance / Vagabond** (Thief, Tinker, Ranger).  
 Expansions, Winter/Lake/Mountain, hirelings, landmarks omitted.
 
-Official: https://ledergames.com/pages/resources · PDF: `Law_of_Root.pdf`
+Official: https://ledergames.com/pages/resources · SoT: `../rules/Law_of_Root.pdf` (+ `Law_of_Root.md`)
 
 ---
 

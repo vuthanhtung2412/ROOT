@@ -5,8 +5,8 @@
 - Gate: `cli auto --turns 50` → 30 VP winner or clean turn cap; zero 5xx; `replay` matches; no dominance in 2p deck.
 
 ### Approach
-- Follow `resources/rules/grand-plan-toward-base-game.md` Phases 0–9 + OOP layout there.
-- Rules SoT = `resources/rules/root-base-rules.md`. Cite `// Rule: Section > Subsection`. Tests name after rule lines.
+- Follow `resources/notes/grand-plan-toward-base-game.md` Phases 0–9 + OOP layout there.
+- Rules SoT = `resources/rules/Law_of_Root.pdf` (md: `Law_of_Root.md`). Implementable summary = `resources/notes/root-base-rules.md`. Cite `// Rule: Section > Subsection`. Tests name after rule lines.
 - Owner = **seat** (not faction) so 2 cats never collide.
 - Lobby: `Game.create` → `waiting`; `join` → seat = join index, faction from sequence **marquise → eyrie → alliance → vagabond** (`DEFAULT_FACTIONS`; GP1 both marquise). **No auto-start.** Explicit `{ type:'start' }` / `POST /game/start` when `players.length > 1` and still waiting.
 - **Single game**: `GameStore = { game: Game | null }`. Routes = `/game/...` (no `:id`). `POST /game` → 409 if slot full unless `?replace=1` (esp. while `playing`). Rooms later.
@@ -22,7 +22,7 @@
 - `lib/scripts/gen-cards.ts`, `lib/vitest.config.ts`, `lib/package.json`
 - `backend/web/src/store/**`, `routes/game.ts`, `routes/map.ts`, `middleware/**`, `index.ts`
 - `frontend/cli/**` — API client + commands
-- `resources/rules/root-base-rules.md` — board tracks + house rules (Phase 0)
+- `resources/notes/root-base-rules.md` — board tracks + house rules (Phase 0)
 - `resources/reference/ep-decks/cards.json` — add `vp` on item cards
 - `resources/reference/map/base/autumn-map.jpg` — **exists**; layout reads it (no copy needed)
 - `README.md` — usage for lib/web/cli
@@ -42,7 +42,7 @@
 - `chore(cli): bootstrap TypeScript package`
   - `frontend/cli/package.json`, `tsconfig.json`, `src/index.ts` (use bootstrap script)
 - `docs(rules): add Marquise board tracks`
-  - `resources/rules/root-base-rules.md` (cost / VP / draw bonus per column)
+  - `resources/notes/root-base-rules.md` (cost / VP / draw bonus per column)
 - `docs(rules): add Eyrie roost track VP`
   - same file
 - `docs(rules): add Alliance sympathy track cost/VP`
