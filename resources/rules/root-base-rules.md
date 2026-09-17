@@ -517,6 +517,15 @@ When you advance:
 - Score VP on new space.
 - Final Allied space → **Allied**.
 
+**Relationship track** (faction board; not in Law prose — from player board)
+
+One marker per non-Vagabond faction starts on **Indifferent**. Three steps to **Allied**. Hostile is a separate box (not on this track).
+
+| Step (from Indifferent) | 1 | 2 | 3 (Allied) |
+|---|---|---|---|
+| Aid cost this turn | 1 | 2 | 3 |
+| VP on arrival | 1 | 2 | 2 |
+
 | Status | Effects |
 |---|---|
 | **Allied** | Aid them → +2 VP. Move: may force their warriors along from origin→destination. Attack: may treat their warriors as yours (max hits = their warriors + your undamaged swords); cannot treat them as yours vs same ally. Hits on treated allies: if more hits taken via removing allies than damaging items → they become Hostile end of battle |
