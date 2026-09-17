@@ -63,18 +63,10 @@ export function keepCornerFor(state: GameState, seat: Seat): ClearingId {
   return FALL.corners[index % 4]!
 }
 
-function isTwoCatGame(state: GameState): boolean {
-  return marquiseSeats(state).length >= 2
-}
-
-function garrisonClearings(state: GameState, keep: ClearingId): ClearingId[] {
-  if (isTwoCatGame(state)) {
-    return [keep, ...FALL.adjacent(keep)]
-  }
+function garrisonClearings(_state: GameState, keep: ClearingId): ClearingId[] {
+  // Rule: Marquise > Setup 3 — Garrison — all clearings except diagonally opposite corner.
   const opposite = FALL.opposite(keep)
-  return Array.from({ length: 12 }, (_, id) => id as ClearingId).filter(
-    (id) => id !== opposite,
-  )
+  return Array.from({ length: 12 }, (_, id) => id as ClearingId).filter((id) => id !== opposite)
 }
 
 function placeStartingBuildings(state: GameState, seat: Seat, keep: ClearingId): void {

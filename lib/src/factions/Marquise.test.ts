@@ -64,7 +64,7 @@ describe('Marquise setup', () => {
     }
   })
 
-  it('House rule: 2-cat garrison — keep + adjacent only', () => {
+  it('Rule: Marquise > Setup 3 — 2-cat each garrisons all except own opposite corner', () => {
     const state = minimalState({
       players: [player(0, 'marquise'), player(1, 'marquise')],
     })
@@ -74,13 +74,18 @@ describe('Marquise setup', () => {
 
     for (const seat of [0, 1] as const) {
       const keep = keepCornerFor(state, seat)
-      const allowed = new Set([keep, ...FALL.adjacent(keep)])
+      const opposite = FALL.opposite(keep)
       for (let c = 0; c < 12; c++) {
-        if (allowed.has(c)) {
-          expect(warriors(state, c, seat)).toBe(1)
-        } else {
+        if (c === opposite) {
           expect(warriors(state, c, seat)).toBe(0)
+        } else {
+          expect(warriors(state, c, seat)).toBe(1)
         }
+      }
+      const board = state.players[seat]!.board
+      expect(board.kind).toBe('marquise')
+      if (board.kind === 'marquise') {
+        expect(board.supply.warriors).toBe(25 - 11)
       }
     }
   })
@@ -237,7 +242,13 @@ describe('Marquise turn', () => {
     advanceToActions(game)
     const seat = game.state.currentSeat
     const keep = keepCornerFor(game.state, seat)
-    const buildAt = FALL.adjacent(keep).find((id) => game.state.clearings[id]!.pieces.filter((p) => p.kind === 'building').length === 0)!
+    const buildAt = FALL.adjacent(keep).find((id) =>
+      game.state.clearings[id]!.pieces.filter((p) => p.kind === 'building').length === 0,
+    )!
+    // Law garrison puts both cats on most clearings → strip enemies so seat rules.
+    game.state.clearings[buildAt]!.pieces = game.state.clearings[buildAt]!.pieces.filter(
+      (p) => p.owner === seat,
+    )
     game.state.clearings[buildAt]!.pieces.push({
       id: 'wood-k',
       kind: 'token',
