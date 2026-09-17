@@ -66,7 +66,6 @@ pnpm --filter @root/cli start -- join alice
 pnpm --filter @root/cli start -- join bob
 pnpm --filter @root/cli start -- start
 pnpm --filter @root/cli start -- show
-pnpm --filter @root/cli start -- map
 pnpm --filter @root/cli start -- actions
 pnpm --filter @root/cli start -- act '{"type":"endPhase"}'
 pnpm --filter @root/cli start -- log

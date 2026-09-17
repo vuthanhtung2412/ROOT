@@ -6,7 +6,6 @@ import { cmdAuto } from './commands/auto.js'
 import { cmdJoin } from './commands/join.js'
 import { cmdLoad } from './commands/load.js'
 import { cmdLog } from './commands/log.js'
-import { cmdMap } from './commands/map.js'
 import { cmdNew } from './commands/new.js'
 import { cmdShow } from './commands/show.js'
 import { cmdStart } from './commands/start.js'
@@ -27,7 +26,6 @@ commands:
   start
   load <snapshot.json>
   show
-  map
   actions
   act '<json>'
   log
@@ -68,9 +66,6 @@ async function main() {
         break
       case 'show':
         await cmdShow()
-        break
-      case 'map':
-        await cmdMap()
         break
       case 'actions':
         await cmdActions()
