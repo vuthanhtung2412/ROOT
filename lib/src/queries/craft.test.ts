@@ -85,4 +85,18 @@ describe('canCraft', () => {
     ])
     expect(canCraft(withWorkshop, 0, card('ROOT-57'))).toBe(false)
   })
+
+  it('Rule: Craft — ambush with empty cost is not craftable', () => {
+    const state = withPieces(minimalState(), 0, [
+      { id: 'ws', kind: 'building', owner: 0, type: 'workshop', used: false },
+    ])
+    expect(canCraft(state, 0, card('ROOT-201'))).toBe(false)
+  })
+
+  it('Rule: Craft — dominance is not craftable', () => {
+    const state = withPieces(minimalState(), 0, [
+      { id: 'ws', kind: 'building', owner: 0, type: 'workshop', used: false },
+    ])
+    expect(canCraft(state, 0, card('ROOT-211'))).toBe(false)
+  })
 })
