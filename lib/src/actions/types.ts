@@ -20,14 +20,18 @@ export type Action =
   | { type: 'overwork'; clearing: ClearingId; cardId: string }
   | { type: 'craft'; cardId: string }
   | { type: 'battle'; clearing: ClearingId; defender: Seat }
+  | { type: 'swapMeet'; target: Seat; giveCardId: string }
   | { type: 'discard'; cardIds: string[] }
-  | {
-      type: 'resolveEvent'
-      order?: Seat[]
-      pieceIds?: string[]
-      cardId?: string
-      decline?: boolean
-    }
+  | ResolveEventAction
+
+export type ResolveEventAction = {
+  type: 'resolveEvent'
+  order?: Seat[]
+  pieceIds?: string[]
+  cardId?: string
+  decline?: boolean
+  useEffect?: boolean
+}
 
 export type ActionSpec = {
   type: string
