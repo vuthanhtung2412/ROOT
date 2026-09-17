@@ -1,4 +1,6 @@
 - Prefer language for anything is typescript
-- If there is a script to do certain thing use it (boostrap  ts project, generate client) instead of modifying code
+- If there is a script to do certain thing use it (boostrap ts project, generate client) instead of modifying code
 - In the course of development always refer back to the plan at `./resources/rules/Law_of_Root.pdf`. 
   - In the same folder you can also file LLM friendly MDs version
+- Commit as soon as a step in the plan is done.
+- Stay close to the commit plan in PLAN.md and if something need tweak stop and ask user.
