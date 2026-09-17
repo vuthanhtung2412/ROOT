@@ -1,0 +1,25 @@
+import { describe, expect, it } from 'vitest'
+import { Deck } from './Deck.js'
+import { EP_DECK } from './epDeck.js'
+import { EP_CARD_DEFS } from './ep.generated.js'
+
+describe('Deck', () => {
+  it('reshuffles discard when draw empty', () => {
+    const a = EP_DECK[0]!
+    const b = EP_DECK[1]!
+    const deck = { draw: [] as typeof EP_DECK, discard: [a, b] }
+    const drawn = Deck.draw(deck, 2, { shuffle: (cards) => [...cards].reverse() })
+    expect(drawn).toHaveLength(2)
+    expect(deck.discard).toHaveLength(0)
+  })
+
+  it('routes dominance to dominanceAvailable', () => {
+    const domDef = EP_CARD_DEFS.find((d) => d.type === 'dominance')!
+    const card = { id: `${domDef.defId}#1`, defId: domDef.defId }
+    const deck = { draw: [], discard: [] as typeof EP_DECK }
+    const available: typeof EP_DECK = []
+    Deck.discard(deck, card, { onDominance: (c) => available.push(c) })
+    expect(deck.discard).toHaveLength(0)
+    expect(available).toEqual([card])
+  })
+})
