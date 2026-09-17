@@ -1,1 +1,2 @@
 - Prefer language for anything is typescript
+- If there is a script to do certain thing use it (boostrap  ts project, generate client) instead of modifying code
