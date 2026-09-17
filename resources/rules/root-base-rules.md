@@ -430,6 +430,15 @@ Cannot fully do an action → **Turmoil** immediately.
 3. 10 sympathy on Sympathy track.
 4. Draw 3 → Supporters (face down).
 
+**Sympathy track** (faction board; not in Law prose — from player board)
+
+Ten tokens. Spread/Organize pays supporters equal to the **cost** of the next token’s band; scores **VP** uncovered when the token leaves the track.
+
+| Token index (L→R, 0–9) | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Supporter cost | 1 | 1 | 1 | 2 | 2 | 2 | 3 | 3 | 3 | 3 |
+| VP | 0 | 1 | 1 | 1 | 2 | 2 | 3 | 4 | 4 | 4 |
+
 ### Turn
 
 #### Birdsong (any counts)
