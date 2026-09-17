@@ -348,6 +348,15 @@ Draw 1 + uncovered draw bonuses. Hand > 5 → discard to 5.
 4. Tuck **2 Loyal Viziers** into Decree columns per leader.
 5. Remaining **6 roosts** on Roosts track right→left.
 
+**Roosts track** (faction board; not in Law prose — from player board)
+
+Seven spaces for roosts on the map (1–7). Evening: score VP for current roost count. Setup places 1 roost on map + 6 on track. Destroyed roosts return to the rightmost empty track space. Uncovered draw-bonus icons add to Evening draw.
+
+| Roosts on map | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|
+| Evening VP | 0 | 1 | 2 | 3 | 4 | 4 | 5 |
+| Draw bonus uncovered | — | — | +1 | — | — | +1 | — |
+
 ### Leaders
 
 | Leader | Viziers start | Special |
