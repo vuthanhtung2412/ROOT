@@ -1,0 +1,22 @@
+{
+  "name": "root",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @root/web dev",
+    "build:web": "pnpm --filter @root/web build",
+    "build:lib": "pnpm --filter @root/lib build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
+    "allowBuilds": {
+      "esbuild": true
+    }
+  }
+}

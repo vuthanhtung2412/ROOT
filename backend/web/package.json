@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@root/web",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",
+    "@root/lib": "workspace:*",
     "hono": "^4.13.8"
   },
   "devDependencies": {

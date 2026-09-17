@@ -1,10 +1,14 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { LIB_NAME, LIB_VERSION } from '@root/lib'
 
 const app = new Hono()
 
 app.get('/', (c) => {
-  return c.text('Hello Hono!')
+  return c.json({
+    service: '@root/web',
+    lib: { name: LIB_NAME, version: LIB_VERSION },
+  })
 })
 
 serve({
