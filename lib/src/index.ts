@@ -27,7 +27,14 @@ export type { AsciiOpts } from './layout/render/ascii.js'
 export { defOf } from './cards/Deck.js'
 export { RuleError } from './rules/RuleError.js'
 export { SeededRng, type Rng, type RngState } from './rules/Rng.js'
-export { formatGameView, describeAction, cardLabel, playerRef } from './format/prettyState.js'
+export {
+  formatGameView,
+  formatTurnLog,
+  describeAction,
+  describeLogEntry,
+  cardLabel,
+  playerRef,
+} from './format/prettyState.js'
 export type { PrettyGameOpts } from './format/prettyState.js'
 
 export const LIB_NAME = '@root/lib' as const
