@@ -580,8 +580,11 @@ export class Game {
         return true
       }
       if (action.pieceIds && s.params?.pieceIds) {
-        return s.params.pieceIds.some(
-          (ids) => JSON.stringify(ids) === JSON.stringify(action.pieceIds),
+        const domain = s.params.pieceIds
+        if (JSON.stringify(action.pieceIds) === JSON.stringify(domain)) return true
+        return domain.some(
+          (ids) =>
+            Array.isArray(ids) && JSON.stringify(ids) === JSON.stringify(action.pieceIds),
         )
       }
       return false
