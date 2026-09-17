@@ -32,9 +32,17 @@ lines.push(`import type { CardDef } from './types.js'`)
 lines.push(``)
 lines.push(`export const EP_CARD_DEFS: CardDef[] = [`)
 
+const ITEM_MAP: Record<string, string> = {
+  coins: 'coin',
+  boots: 'boot',
+  bags: 'bag',
+  swords: 'sword',
+}
+
 for (const c of raw.cards) {
   const cost = JSON.stringify(c.cost)
-  const item = c.item ? ` item: '${c.item}',` : ''
+  const rawItem = c.item ? (ITEM_MAP[c.item] ?? c.item) : undefined
+  const item = rawItem ? ` item: '${rawItem}',` : ''
   const vp = c.vp !== undefined ? ` vp: ${c.vp},` : ''
   lines.push(`  {`)
   lines.push(`    defId: '${c.id}',`)
