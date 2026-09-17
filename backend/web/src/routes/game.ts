@@ -6,11 +6,24 @@ import {
   toSvg,
   type Action,
   type FactionId,
+  type GameSnapshot,
 } from '@root/lib'
 import { Hono } from 'hono'
 import { logGameEvent } from '../debug/logGame.js'
-import { gameExists, noGame } from '../middleware/errors.js'
+import { gameExists, HttpError, noGame } from '../middleware/errors.js'
 import { store } from '../store/GameStore.js'
+
+function isGameSnapshot(body: unknown): body is GameSnapshot {
+  if (!body || typeof body !== 'object') return false
+  const o = body as Record<string, unknown>
+  return (
+    o.state !== undefined &&
+    Array.isArray(o.history) &&
+    Array.isArray(o.log) &&
+    o.rng !== undefined &&
+    typeof o.rng === 'object'
+  )
+}
 
 export const gameRoutes = new Hono()
 
@@ -62,6 +75,27 @@ gameRoutes.get('/', (c) => {
 gameRoutes.get('/snapshot', (c) => {
   const game = requireGame()
   return c.json(game.toJSON())
+})
+
+gameRoutes.put('/snapshot', async (c) => {
+  if (store.game && c.req.query('replace') !== '1') {
+    gameExists()
+  }
+  const body: unknown = await c.req.json()
+  if (!isGameSnapshot(body)) {
+    throw new HttpError(400, 'BAD_SNAPSHOT', 'expected GameSnapshot { state, history, log, rng }')
+  }
+  try {
+    store.game = Game.fromJSON(body)
+  } catch (err) {
+    throw new HttpError(
+      400,
+      'BAD_SNAPSHOT',
+      err instanceof Error ? err.message : 'fromJSON failed',
+    )
+  }
+  logGameEvent('LOAD', store.game.state)
+  return c.json({ state: store.game.state }, 200)
 })
 
 gameRoutes.get('/actions', (c) => {

@@ -90,6 +90,10 @@ export const api = {
     return request<unknown>('GET', '/game/snapshot')
   },
 
+  loadSnapshot(snapshot: unknown) {
+    return request<{ state: GameState }>('PUT', '/game/snapshot?replace=1', snapshot)
+  },
+
   actions() {
     return request<{ actions: ActionSpec[] }>('GET', '/game/actions')
   },
