@@ -8,4 +8,5 @@ export type Ctx = {
   rng: Rng
   emit: (signal: GameSignal) => void
   hooks: RuleHooks
+  grantedActions: () => import('../actions/types.js').ActionSpec[]
 }
