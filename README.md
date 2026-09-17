@@ -1,12 +1,84 @@
-# Description
+# Root
 
-This repo is an implementation of the ROOT game.
+TypeScript implementation of the Root board game (GP1: 2-player Marquise vs Marquise).
 
-# Folders
+## Packages
 
-- `/lib` — common rules that can be ported to any backend (Bluetooth, Web API)
-- `/backend` — code to host the game on any backend
-- `/frontend` — Phaser code for the game
-- `/resources` — reference only (not imported by runtime)
-  - `/resources/rules` — game rules
-  - `/resources/assets` — UI / art references
+| Package | Path | Role |
+|---------|------|------|
+| `@root/lib` | `lib/` | Pure game engine — rules, state, actions, snapshot JSON |
+| `@root/web` | `backend/web/` | Hono HTTP API — **one game slot**, no rooms |
+| `@root/cli` | `frontend/cli/` | Terminal client — talks **only** to web API |
+
+## Quick start
+
+```bash
+pnpm install
+pnpm -r typecheck
+```
+
+### Library
+
+```bash
+pnpm --filter @root/lib test
+pnpm --filter @root/lib build
+```
+
+Use `Game.create` / `join` / `start` / `apply` / `legalActions` / `undo` / `toJSON` / `fromJSON` from `@root/lib`.
+
+### Web API
+
+```bash
+pnpm --filter @root/web dev    # http://localhost:3000
+```
+
+Single game slot at `/game/...` (no game id):
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/game?replace=1` | Create lobby `{ factions? }` |
+| POST | `/game/join` | `{ playerId }` |
+| POST | `/game/start` | Start when ≥2 players |
+| GET | `/game` | Current state |
+| GET | `/game/snapshot` | Full `GameSnapshot` (lossless JSON) |
+| GET | `/game/actions` | Legal action specs |
+| POST | `/game/actions` | Apply an `Action` |
+| GET | `/game/log` | Event log |
+| POST | `/game/undo` | Undo last action |
+| GET | `/game/map.svg` | Fall map SVG |
+| GET | `/game/map.ascii` | Fall map ASCII |
+| DELETE | `/game` | Clear slot |
+| GET | `/map/fall` | Fall graph JSON |
+| GET | `/map/fall/layout` | Layout coords |
+
+Errors: `400` RuleError `{ code, detail }`, `404` no game, `409` slot occupied.
+
+### CLI
+
+```bash
+# terminal 1
+pnpm --filter @root/web dev
+
+# terminal 2
+export ROOT_API=http://localhost:3000
+pnpm --filter @root/cli start -- new
+pnpm --filter @root/cli start -- join alice
+pnpm --filter @root/cli start -- join bob
+pnpm --filter @root/cli start -- start
+pnpm --filter @root/cli start -- show
+pnpm --filter @root/cli start -- map
+pnpm --filter @root/cli start -- actions
+pnpm --filter @root/cli start -- act '{"type":"endPhase"}'
+pnpm --filter @root/cli start -- log
+pnpm --filter @root/cli start -- undo
+
+# GP1 smoke: random agent
+pnpm --filter @root/cli start -- auto --turns 50 --players 2
+```
+
+`new` always uses `?replace=1`. Optional `--factions marquise,marquise`.
+
+## Resources
+
+- `resources/rules/` — rules reference (SoT for implementation)
+- `resources/reference/` — cards, map assets (not imported at runtime by CLI)
