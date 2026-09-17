@@ -10,6 +10,8 @@ export type MarchMove = {
 export type Action =
   | { type: 'join'; playerId: string }
   | { type: 'start' }
+  | { type: 'birdsongWood' }
+  | { type: 'eveningDraw' }
   | { type: 'endPhase' }
   | { type: 'spendBird'; cardId: string }
   | { type: 'recruit' }
