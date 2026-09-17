@@ -4,7 +4,6 @@ import type { Seat } from '../pieces/types.js'
 import type { GameState } from '../state/types.js'
 import { warriors } from './pieces.js'
 import { rules } from './ruler.js'
-import { factionOf } from './seat.js'
 
 /** Rule: Move 1–3 — >0 movers; adjacent; rule origin or destination unless hook waives. */
 export function canMove(
@@ -17,9 +16,8 @@ export function canMove(
   const movers = warriors(state, from, seat)
   if (movers < 1) return false
 
-  const faction = factionOf(state, seat)
-  if (!hooks.isAdjacent(state, from, to, faction)) return false
+  if (!hooks.isAdjacent(state, seat, from, to)) return false
 
-  if (!hooks.needsRuleToMove(state, faction)) return true
+  if (!hooks.needsRuleToMove(state, seat)) return true
   return rules(state, from, seat, hooks) || rules(state, to, seat, hooks)
 }

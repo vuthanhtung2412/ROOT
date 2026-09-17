@@ -2,7 +2,6 @@ import type { RuleHooks } from '../triggers/hooks.js'
 import type { ClearingId } from '../map/types.js'
 import type { Piece, Seat } from '../pieces/types.js'
 import type { GameState } from '../state/types.js'
-import { factionOf } from './seat.js'
 
 export function piecesIn(state: GameState, clearing: ClearingId): Piece[] {
   return state.clearings[clearing]?.pieces ?? []
@@ -26,8 +25,7 @@ export function ruleWeightForPiece(
   piece: Piece,
   hooks: RuleHooks,
 ): number {
-  const faction = factionOf(state, piece.owner)
-  const weight = hooks.ruleWeight(state, piece, faction)
+  const weight = hooks.ruleWeight(state, piece)
   if (piece.kind === 'pawn') return 0
   if (piece.kind === 'token') return weight > 1 ? weight : 0
   return weight
