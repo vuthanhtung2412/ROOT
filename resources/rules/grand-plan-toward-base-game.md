@@ -1,8 +1,9 @@
 ### Goal
 - Portable Root engine in `/lib` (pure TS, no HTTP, deterministic).
-- `backend/web` (Hono) hosts games: **inspect state**, **list legal actions**, **submit actions**, **read log**, **undo**.
+- `backend/web` (Hono) hosts **one game at a time** (no rooms / multi-game): **inspect state**, **list legal actions**, **submit actions**, **read log**, **undo**.
 - `frontend/cli` = agent test tool. Talks **only** to web API (no `lib` import).
 - Game starts in a **lobby** (`status: 'waiting'`). Players join one at a time; seat = join index; faction = `state.factions[seat]`. Last seat joins → setup runs → `status: 'playing'`. Player count = `factions.length`.
+- **Lossless JSON**: entire live game (`GameState` + `history` + `log` + RNG cursor) round-trips through **one JSON file** with no loss. No `Map`/`Set`/class/function/undefined holes in persisted fields.
 - Delivered in **4 grand phases**, each a fully playable game, each adding one faction:
 
 | Grand phase | `DEFAULT_FACTIONS` | Players | Proves |
@@ -67,21 +68,24 @@
 | athacker2 | Per-turn "recruit once" derived from action log, buildings `used` flag reset at end of turn | `TurnLog` drives once-per-turn rules; `usedCraftPieces` reset in `endTurn` |
 | mdfeinstein | **Pending Event** blocks normal actions until resolved (Battle → Ambush → FieldHospital → Outrage) | `state.pending: Event[]` FIFO; `legalActions()` returns only head-event resolutions while non-empty; `actor` may be **another seat** |
 | mdfeinstein | Phase has **steps** (Daylight: `craft` → `actions`) | `state.step` per phase, faction-defined |
-| mdfeinstein | Checkpoint JSON + action list → **replay / undo** | `Game.history: Action[]`; `Game.replay(seed, actions)`; API `POST /games/:id/undo` |
+| mdfeinstein | Checkpoint JSON + action list → **replay / undo** | `GameSnapshot` + `Game.history`; `Game.replay` / `toJSON`/`fromJSON`; API `POST /game/undo` |
 | mdfeinstein | Read-only **queries** shared by validators + API | `lib/src/queries/*` pure fns over `GameState` (ruler, wood reachable, etc.) |
-| mdfeinstein | Typed **GameLog** entries for UI/agents | `LogEntry` union; API `GET /games/:id/log` |
+| mdfeinstein | Typed **GameLog** entries for UI/agents | `LogEntry` union; API `GET /game/log` |
 
 ### Approach
-- `GameState` = plain JSON. All behaviour = pure functions or classes over state. `Game` wraps state + `Rng` + history.
+- `GameState` = plain JSON-serializable object. All behaviour = pure functions or classes over state. `Game` wraps state + `Rng` + history + log.
+- **GameSnapshot** = `{ state, history, log, rng }` — one object, `JSON.stringify` / `parse` lossless. `Game.toJSON()` / `Game.fromJSON(snapshot)`. Classes never live inside the snapshot; rebuild wrappers on load. Test: `fromJSON(toJSON(g)).state` deep-equals + same next `rng.roll()`.
 - **Strategy**: one `Faction` class per faction, registry by `FactionId`.
 - **Command**: `Action` union → `Game.apply(action)` → `{ state, log }` or throw `RuleError`.
 - **Event interrupt**: any rule needing a decision from any player pushes `state.pending`. Only its resolutions are legal until cleared. Enables Battle/Ambush/Field Hospital/Outrage without special-casing.
 - **Signals + hooks for card effects**: engine emits `GameSignal`s at rule boundaries (phase start/end, craft, warriors removed, battle stages, move, draw). Crafted persistent cards register `CardEffect` = listener (`Murine Broker`, `Master Engravers`, `Coffin Makers`, `Charm Offensive`) and/or pure `RuleHooks` (`Boat Builders`, `Tunnels`, `Soup Kitchens`, `Corvid Planners`) and/or granted `ActionSpec`s (`Swap Meet`, `Propaganda Bureau`, `Saboteurs`, `League of Adventurous Mice`). Effects never reach into faction code; factions never know card names. Deterministic: sync dispatch, seat order.
-- **Determinism**: `SeededRng`; `Game.replay(seed, actions)` must reproduce state → free undo + test fixtures.
+- **Determinism**: `SeededRng` (seed + cursor in snapshot); `Game.replay(seed, actions)` must reproduce state → free undo + test fixtures.
 - **Lobby**: `Game.create({ seed, factions? })` → `waiting`, no players. `factions` defaults to `DEFAULT_FACTIONS` (bumped each grand phase). `Game.join(playerId)` assigns `factions[seat]`; join beyond `factions.length` → `RuleError('LOBBY_FULL')`. Last join runs all setups, deals hands, sets `playing`. Only `join` legal while `waiting`.
+- **Single game (web)**: server holds **at most one** `Game`. No room ids, no game list. `POST /game` creates (409 if already exists unless `?replace=1`); all other routes are `/game/...` with no `:id`. Multi-game rooms = later.
 - **Owner = seat.** `Piece.owner: Seat` (0..3). `factionOf(state, seat)` for rule checks. Every "enemy" / "your" check compares seats. Lets 2 cats coexist in GP1 and costs nothing later.
 - **Deck = Exiles & Partisans**, not base. Source of truth = `resources/reference/ep-decks/cards.json` → script generates `lib/src/cards/ep.generated.ts` (types + 46 defs). Never hand-copy card data. Regenerate via `pnpm --filter @root/lib gen:cards`.
 - **Map = graph.** Rules only see clearing ids + paths + suits. "Top-left" is a UI notion → lives in `layout/` (fixed `x,y` per clearing on the board image), never in rules. Setup uses fixed ids (`FALL.corners[i]`, `FALL.opposite()`) that happen to match the printed board corners.
+- **Fall board image already on disk**: `resources/reference/map/base/autumn-map.jpg` (see `SOURCES.md`). Layout points at it — **no add-asset commit**.
 - Fixed constants: seat order = join order, seat 0 starts. `FALL.corners: [ClearingId ×4]`. Marquise → `corners[0]`; GP1 2nd cat → `opposite(corners[0])`; Eyrie (GP2+) → `opposite(corners[0])`, leader `builder`; Vagabond = **Thief only**, `FALL.vagabondForest`.
 - **Vagabond scope**: single character, hardcoded. No `Character` type, no character registry, no character card in state. Thief starting items (boot, torch, tea, sword) + special `steal` live as constants inside `Vagabond.ts`. Other characters = later PR.
 - Already done: workspace, `@root/lib`, web depends on `workspace:*`, tsx watch hot-reload. Remaining scaffolds via scripts (`pnpm create vitest`, `pnpm init`).
@@ -102,7 +106,7 @@ map/                                                                      // pur
 layout/                                                                   // UI-only, same ids as map; never read by rules
   Point                { x: number, y: number }                           // normalised 0..1 of board image
   MapLayout            { image: string, clearings: Record<ClearingId, Point & { r: number }> }
-  FALL_LAYOUT          hand-picked from resources/assets/fall-map.jpg
+  FALL_LAYOUT          hand-picked from resources/reference/map/base/autumn-map.jpg
   render/
     toSvg(map, layout, state?): string                                    // circles + path lines + pieces; CLI/web preview
     toAscii(map, layout, state?): string                                  // grid projection for terminal
@@ -136,7 +140,7 @@ state/
   ClearingState        { pieces: Piece[], ruin?: { items: ItemType[] } }
   PlayerState          { playerId, seat, faction, vp, hand: Card[], playArea: Card[], craftedItems: ItemType[], board: FactionBoard }
                        board discriminated by faction: MarquiseBoard | EyrieBoard | AllianceBoard | VagabondBoard
-  GameState            { id, seed, map:'fall', status: GameStatus,
+  GameState            { id, seed, map:'fall', status: GameStatus,          // plain JSON only — arrays/records/primitives; no Map/Set/class
                          turn, currentSeat, phase, step,
                          factions: FactionId[],                                 // 2..4, frozen at create
                          players: PlayerState[],                                // length 0..factions.length while waiting
@@ -145,6 +149,7 @@ state/
                          pending: Event[],                                     // FIFO; [] = none
                          winner?: Seat,                                        // seat, not faction — GP1 has 2 cats
                          turnScratch: { actionsLeft, extraActions } }
+  GameSnapshot         { state: GameState, history: Action[], log: LogEntry[], rng: { seed, cursor } }  // one JSON file = full restore
   DEFAULT_FACTIONS     : FactionId[]    // GP1 ['marquise','marquise'] → GP2 ['marquise','eyrie'] → GP3 +'alliance' → GP4 +'vagabond' (= setup letters A→D)
   ITEM_SUPPLY          = { boot:2, bag:2, crossbow:1, hammer:1, sword:2, tea:2, coin:2 }   // Rule: Setup 5
   RUIN_ITEMS           = ['bag','boot','hammer','sword']                       // Rule: Vagabond > Setup 4
@@ -253,8 +258,10 @@ game/
   class Game {
     static create({ seed }): Game                                        // status 'waiting', no players
     static replay(seed, actions): Game                                   // deterministic rebuild (joins included)
-    state; history: Action[]; log: LogEntry[]
-    join(playerId): ActionResult                                         // seat = players.length; faction = state.factions[seat]; 4th → start()
+    static fromJSON(snapshot: GameSnapshot): Game                        // lossless load from one JSON object/file
+    toJSON(): GameSnapshot                                               // lossless dump — write to one .json file
+    state; history: Action[]; log: LogEntry[]; rng
+    join(playerId): ActionResult                                         // seat = players.length; faction = state.factions[seat]; last → start()
     private start(): void                                                // Rule: Setup 1–7 in order: vp=0 → hands(3) → ruins → itemSupply → factions A→D → 'playing'
     legalActions(): ActionSpec[]                                         // waiting → [join]; pending → resolver; else faction
     apply(action): ActionResult                                          // validate → apply → checkWin (30 VP → winner: Seat; tie → currentSeat) → advance/auto
@@ -262,23 +269,26 @@ game/
   }
 ```
 
-**Web (`backend/web/src`)**
+**Web (`backend/web/src`) — one game, no rooms**
 ```
-store/GameStore        Map<id, Game>
-routes/games.ts        POST /games (lobby) · POST /games/:id/join { playerId } · GET /games · GET /games/:id
-                       GET /games/:id/actions · POST /games/:id/actions
-                       GET /games/:id/log · POST /games/:id/undo
-                       GET /games/:id/map.svg                                  // toSvg(state) for quick eyeballing
-routes/map.ts          GET /map/fall · GET /map/fall/layout                    // static graph + coords for frontend
-middleware/errors.ts   RuleError → 400 { code, detail }; 404 unknown id
+store/GameStore        { game: Game | null }                              // single slot; not Map
+routes/game.ts         POST /game (lobby; 409 if exists unless ?replace=1)
+                       POST /game/join { playerId }
+                       GET /game · GET /game/snapshot                     // snapshot = GameSnapshot JSON (file-ready)
+                       GET /game/actions · POST /game/actions
+                       GET /game/log · POST /game/undo
+                       GET /game/map.svg                                  // toSvg(state) for quick eyeballing
+                       DELETE /game                                       // clear slot
+routes/map.ts          GET /map/fall · GET /map/fall/layout               // static graph + coords for frontend
+middleware/errors.ts   RuleError → 400 { code, detail }; 404 no game; 409 game exists
 ```
 
 **CLI (`frontend/cli/src`)**
 ```
-api/client.ts          createGame, join, getGame, getActions, act, getLog, undo
+api/client.ts          createGame, join, getGame, getSnapshot, getActions, act, getLog, undo, deleteGame
 commands/new|join|show|actions|act|log|undo
 commands/map.ts        print toAscii(state) — pieces per clearing at fixed positions
-commands/auto.ts       create → join ×N (N = factions.length) → random legal action loop until winner/N turns; fails on 5xx or invalid state
+commands/auto.ts       create (replace) → join ×N (N = factions.length) → random legal action loop until winner/N turns; fails on 5xx or invalid state
 ```
 
 ### Files to change
@@ -291,8 +301,8 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 ### Test plan
 - Test names quote the rule line they cover (e.g. `it('Rule: Battle 4 — victim removes warriors before buildings')`).
 - Silent-scoring guards the `auto` gate cannot catch — mandatory rule-named units: craft item scores printed VP; Disdain → 1; Keep removed → `canPlace` true for others; pending FIFO resolves head first; `winner` = seat of the cat that hit 30 in a 2-cat game.
-- `lib` vitest: map graph (12 clearings, adjacency symmetric, rivers ⊄ paths, every id has layout coord), svg/ascii render snapshot, E&P deck (54 copies, 14 bird/14 fox/13 mouse/13 rabbit, 5 ambush, 4 dominance), Deck, ruler tie-break, queries, lobby (join order → faction, join beyond factions.length rejected, last join starts), each Marquise action happy+error, phase/step advance, pending-event gating, signal bus (dispatch order, listener mutates state, hooks fold), each Phase 7b card effect, `replay` reproduces state, undo, 30 VP win.
-- `web`: build; curl create → join ×N → actions → act → log → undo → 400 illegal.
+- `lib` vitest: map graph (12 clearings, adjacency symmetric, rivers ⊄ paths, every id has layout coord), svg/ascii render snapshot, E&P deck (54 copies, 14 bird/14 fox/13 mouse/13 rabbit, 5 ambush, 4 dominance), Deck, ruler tie-break, queries, lobby (join order → faction, join beyond factions.length rejected, last join starts), each Marquise action happy+error, phase/step advance, pending-event gating, signal bus (dispatch order, listener mutates state, hooks fold), each Phase 7b card effect, `replay` reproduces state, undo, 30 VP win, **`toJSON`/`fromJSON` round-trip** (state + next rng roll identical).
+- `web`: build; curl create → join ×N → actions → act → log → undo → 400 illegal; second `POST /game` without replace → 409; `GET /game/snapshot` parseable as file.
 - `cli`: `auto --turns 50` against live web. Gate per grand phase; every later GP re-runs earlier GP factions via `--factions` (regression).
 - lobby: join beyond `factions.length` rejected; 2p strips dominance, 3p+ keeps.
 - GP2–4: each faction action happy+error path per rules bullet; Eyrie turmoil; Alliance outrage both triggers + base removal; Vagabond item damage/capacity, Hostile/Infamy.
@@ -313,7 +323,7 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `chore(resources): add vp to item cards` — `resources/reference/ep-decks/cards.json` (from description text; generator reads field)
 
 **Phase 1 — map (graph)**
-- `chore(resources): add Fall board image` — `resources/assets/fall-map.jpg` (official Leder asset)
+- *(skip)* Fall board image — already at `resources/reference/map/base/autumn-map.jpg`
 - `feat(lib): add Suit, Clearing, Path types` — `lib/src/map/types.ts`
 - `feat(lib): add GameMap with adjacency` — `lib/src/map/GameMap.ts`
 - `feat(lib): add Fall clearings and suits` — `lib/src/map/fall.ts`
@@ -325,7 +335,7 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 
 **Phase 1b — map layout (UI only)**
 - `feat(lib): add MapLayout types` — `lib/src/layout/types.ts`
-- `feat(lib): add Fall layout coords` — `lib/src/layout/fall.ts` (x,y,r per clearing from image)
+- `feat(lib): add Fall layout coords` — `lib/src/layout/fall.ts` (`image` → `resources/reference/map/base/autumn-map.jpg`; x,y,r hand-picked from that board)
 - `feat(lib): add toSvg map renderer` — `lib/src/layout/render/svg.ts`, test snapshot
 - `feat(lib): add toAscii map renderer` — `lib/src/layout/render/ascii.ts`, test
 
@@ -337,7 +347,8 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): add EP_DECK expansion` — `lib/src/cards/epDeck.ts`, test
 - `feat(lib): add Deck draw/discard` — `lib/src/cards/Deck.ts`, test (Rule: Cards — reshuffle; dominance → available)
 - `feat(lib): add matchesSuit and bird wildcard` — `lib/src/cards/suit.ts`, test (Rule: Cards > Birds are wild, 3 bullets)
-- `feat(lib): add Phase, Step, GameState types` — `lib/src/state/types.ts` (`pending: Event[]`, `winner?: Seat`)
+- `feat(lib): add Phase, Step, GameState types` — `lib/src/state/types.ts` (`pending: Event[]`, `winner?: Seat`; plain JSON only — no Map/Set)
+- `feat(lib): add GameSnapshot type` — `lib/src/state/snapshot.ts` (`{ state, history, log, rng }`)
 - `feat(lib): add setup constants` — `lib/src/state/constants.ts` (ITEM_SUPPLY, RUIN_ITEMS, HAND_LIMIT, STARTING_HAND, `DEFAULT_FACTIONS = ['marquise','marquise']`; Rule: Setup)
 - `feat(lib): add MarquiseBoard type with supply` — `lib/src/state/boards.ts` (Rule: Pieces — limited; other boards in GP2–4)
 - `feat(lib): add Event types` — `lib/src/events/types.ts`
@@ -349,7 +360,7 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): add Action and ActionSpec types` — `lib/src/actions/types.ts` (`ActionSpec.actor: Seat`)
 - `feat(lib): add LogEntry types` — `lib/src/log/types.ts`
 - `feat(lib): add RuleError` — `lib/src/rules/RuleError.ts`
-- `feat(lib): add Rng and SeededRng` — `lib/src/rules/Rng.ts`, test
+- `feat(lib): add Rng and SeededRng` — `lib/src/rules/Rng.ts`, test (serializable `{ seed, cursor }` for snapshot)
 
 **Phase 3 — queries + shared rules**
 - `feat(lib): add ruler query with Eyrie tie-break` — `lib/src/queries/ruler.ts`, test (Rule: Board > Rule)
@@ -387,6 +398,7 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): Game merges granted actions into legalActions` — same, test
 - `feat(lib): Game win check 30 VP with tie-break` — same, test (Rule: Victory — immediate; tie → current turn; `winner: Seat`, two cats distinguishable)
 - `feat(lib): Game.replay and undo` — same, test
+- `feat(lib): Game.toJSON / fromJSON snapshot` — same, test (one JSON object = full restore; state + rng cursor)
 - `feat(lib): export public API` — `lib/src/index.ts`
 
 **Phase 6 — Marquise turn**
@@ -428,22 +440,24 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): Swap Meet granted action` — `lib/src/effects/swapMeet.ts`, test (once per Birdsong)
 - remaining E&P persistents = follow-up PRs, same pattern
 
-**Phase 8 — web API**
-- `feat(web): add GameStore` — `backend/web/src/store/GameStore.ts`
-- `feat(web): add RuleError middleware` — `middleware/errors.ts`, `index.ts`
-- `feat(web): POST /games creates lobby` — `routes/games.ts` (body `{ factions? }` → `Game.create`; 400 on unknown faction)
-- `feat(web): POST /games/:id/join` — same
-- `feat(web): GET /games, GET /games/:id` — same
-- `feat(web): GET /games/:id/actions` — same
-- `feat(web): POST /games/:id/actions` — same
-- `feat(web): GET /games/:id/log` — same
-- `feat(web): POST /games/:id/undo` — same
-- `feat(web): GET /games/:id/map.svg` — same
+**Phase 8 — web API (single game, no rooms)**
+- `feat(web): add single-slot GameStore` — `backend/web/src/store/GameStore.ts` (`game: Game | null`)
+- `feat(web): add RuleError middleware` — `middleware/errors.ts`, `index.ts` (404 no game; 409 exists)
+- `feat(web): POST /game creates lobby` — `routes/game.ts` (body `{ factions? }` → `Game.create`; 400 unknown faction; 409 if slot full unless `?replace=1`)
+- `feat(web): POST /game/join` — same
+- `feat(web): GET /game` — same
+- `feat(web): GET /game/snapshot` — same (`GameSnapshot` JSON, file-ready)
+- `feat(web): GET /game/actions` — same
+- `feat(web): POST /game/actions` — same
+- `feat(web): GET /game/log` — same
+- `feat(web): POST /game/undo` — same
+- `feat(web): GET /game/map.svg` — same
+- `feat(web): DELETE /game clears slot` — same
 - `feat(web): GET /map/fall and layout` — `routes/map.ts`
 
 **Phase 9 — CLI**
-- `feat(cli): add API client` — `frontend/cli/src/api/client.ts`
-- `feat(cli): new command with --factions` — `commands/new.ts`, `index.ts`
+- `feat(cli): add API client` — `frontend/cli/src/api/client.ts` (create/join/get/snapshot/actions/act/log/undo/delete; no game id)
+- `feat(cli): new command with --factions` — `commands/new.ts`, `index.ts` (uses `?replace=1`)
 - `feat(cli): join command` — `commands/join.ts`
 - `feat(cli): show command` — `commands/show.ts`
 - `feat(cli): map ascii command` — `commands/map.ts`
