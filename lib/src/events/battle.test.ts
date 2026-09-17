@@ -212,7 +212,7 @@ describe('battleResolver', () => {
   it('matchesAction accepts flat pieceIds combo from legalRemovalSpecs', () => {
     const state = withPieces(
       minimalState({
-        players: [player({ seat: 0 }), player({ seat: 1, playerId: 'p1' })],
+        players: [player(0, 'marquise'), player(1, 'marquise', { playerId: 'p1' })],
         status: 'playing',
       }),
       0,
