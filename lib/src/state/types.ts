@@ -46,5 +46,8 @@ export type GameState = {
   turnScratch: {
     actionsLeft: number
     extraActions: number
+    recruited: boolean
+    birdsongWoodDone: boolean
+    eveningDrawDone: boolean
   }
 }

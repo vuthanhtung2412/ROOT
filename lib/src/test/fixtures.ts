@@ -57,7 +57,13 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
     dominanceAvailable: [],
     itemSupply: { ...ITEM_SUPPLY },
     pending: [],
-    turnScratch: { actionsLeft: 3, extraActions: 0 },
+    turnScratch: {
+      actionsLeft: 3,
+      extraActions: 0,
+      recruited: false,
+      birdsongWoodDone: false,
+      eveningDrawDone: false,
+    },
     ...overrides,
   }
 }
