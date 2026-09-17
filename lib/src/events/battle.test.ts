@@ -208,4 +208,28 @@ describe('battleResolver', () => {
     expect(signals.some((s) => s.s === 'battle.hits')).toBe(true)
     expect(signals.some((s) => s.s === 'battle.end')).toBe(true)
   })
+
+  it('matchesAction accepts flat pieceIds combo from legalRemovalSpecs', () => {
+    const state = withPieces(
+      minimalState({
+        players: [player({ seat: 0 }), player({ seat: 1, playerId: 'p1' })],
+        status: 'playing',
+      }),
+      0,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    const ctx = battleCtx(1)
+    const ev = battleEv({
+      stage: 'removeDefender',
+      hits: { attacker: 1, defender: 0 },
+    })
+    state.pending = [ev]
+    const specs = battleResolver.legalActions(state, ev, ctx)
+    expect(specs.length).toBeGreaterThan(0)
+    const action = { type: 'resolveEvent' as const, pieceIds: ['d1'] }
+    expect(battleResolver.matchesAction(state, ev, action, ctx)).toBe(true)
+  })
 })

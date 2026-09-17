@@ -39,10 +39,41 @@ function warriorsAt(state: GameState, seat: number, clearing: number): number {
   return c.pieces.filter((p) => p.owner === seat && p.kind === 'warrior').length
 }
 
-function buildAction(state: GameState, spec: ActionSpec): unknown | null {
-  const seat = state.currentSeat
-  if (spec.actor !== seat) return null
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j]!, out[i]!]
+  }
+  return out
+}
 
+async function tryAct(state: GameState, specs: ActionSpec[]): Promise<GameState> {
+  // Pending events may require a non-current seat (ambush, field hospital, etc.).
+  const candidates = shuffle([...specs])
+  for (let attempt = 0; attempt < Math.min(40, Math.max(candidates.length * 3, 1)); attempt++) {
+    const spec = pick(candidates)
+    if (!spec) break
+    const action = buildActionFor(state, spec)
+    if (!action) continue
+    try {
+      const result = await api.act(action)
+      return result.state
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400) continue
+      throw err
+    }
+  }
+  const end = candidates.find((s) => s.type === 'endPhase')
+  if (end) {
+    const result = await api.act({ type: 'endPhase' })
+    return result.state
+  }
+  throw new Error('no legal action could be applied')
+}
+
+function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
+  const seat = spec.actor
   switch (spec.type) {
     case 'endPhase':
       return { type: 'endPhase' }
@@ -58,19 +89,35 @@ function buildAction(state: GameState, spec: ActionSpec): unknown | null {
       return { type: 'eveningDraw' }
     case 'spendBird': {
       const hand = state.players[seat]?.hand ?? []
-      const bird = hand.find((c) => c.defId.includes('bird'))
-      if (!bird) return null
-      return { type: 'spendBird', cardId: bird.id }
+      const bird = hand.find((c) => {
+        // bird suit cards — defId alone insufficient; try known bird ambush/dominance roots via params later
+        return c.defId.startsWith('ROOT-20') || c.defId === 'ROOT-200' || c.defId === 'ROOT-94' || c.defId === 'ROOT-95'
+      })
+      // Prefer params if server listed cardIds
+      const listed = (spec.params?.cardIds as string[] | undefined) ?? []
+      const cardId = pick(listed) ?? bird?.id
+      if (!cardId) {
+        // fallback: any hand card tagged bird by fetching is hard; try first hand card often fails — scan all
+        const any = pick(hand)
+        if (!any) return null
+        return { type: 'spendBird', cardId: any.id }
+      }
+      return { type: 'spendBird', cardId }
     }
     case 'craft': {
+      const listed = (spec.params?.cardIds as string[] | undefined) ?? []
       const hand = state.players[seat]?.hand ?? []
-      const card = pick(hand)
-      if (!card) return null
-      return { type: 'craft', cardId: card.id }
+      const cardId = pick(listed) ?? pick(hand)?.id
+      if (!cardId) return null
+      return { type: 'craft', cardId }
     }
     case 'build': {
-      for (const clearing of shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])) {
-        for (const building of shuffle([...BUILDINGS])) {
+      const clearings = (spec.params?.clearing as number[] | undefined) ?? [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+      ]
+      const buildings = (spec.params?.building as string[] | undefined) ?? [...BUILDINGS]
+      for (const clearing of shuffle(clearings)) {
+        for (const building of shuffle(buildings)) {
           return { type: 'build', clearing, building }
         }
       }
@@ -78,16 +125,25 @@ function buildAction(state: GameState, spec: ActionSpec): unknown | null {
     }
     case 'overwork': {
       const hand = state.players[seat]?.hand ?? []
-      for (const clearing of shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])) {
-        for (const card of hand) {
-          return { type: 'overwork', clearing, cardId: card.id }
+      const clearings = (spec.params?.clearing as number[] | undefined) ?? [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+      ]
+      const cardIds = (spec.params?.cardIds as string[] | undefined) ?? hand.map((c) => c.id)
+      for (const clearing of shuffle(clearings)) {
+        for (const cardId of shuffle(cardIds)) {
+          return { type: 'overwork', clearing, cardId }
         }
       }
       return null
     }
     case 'battle': {
-      for (const clearing of shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])) {
-        for (const defender of state.players.map((p) => p.seat).filter((s) => s !== seat)) {
+      const clearings = (spec.params?.clearing as number[] | undefined) ?? [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+      ]
+      const defenders = (spec.params?.defender as number[] | undefined) ??
+        state.players.map((p) => p.seat).filter((s) => s !== seat)
+      for (const clearing of shuffle(clearings)) {
+        for (const defender of shuffle(defenders)) {
           return { type: 'battle', clearing, defender }
         }
       }
@@ -106,9 +162,10 @@ function buildAction(state: GameState, spec: ActionSpec): unknown | null {
     }
     case 'discard': {
       const hand = state.players[seat]?.hand ?? []
-      const over = hand.length - 5
+      const listed = (spec.params?.cardIds as string[] | undefined) ?? hand.map((c) => c.id)
+      const over = Math.max(0, hand.length - 5)
       if (over <= 0) return null
-      return { type: 'discard', cardIds: hand.slice(0, over).map((c) => c.id) }
+      return { type: 'discard', cardIds: listed.slice(0, over) }
     }
     case 'swapMeet': {
       const targets = state.players.filter((p) => p.seat !== seat && p.hand.length > 0)
@@ -119,52 +176,27 @@ function buildAction(state: GameState, spec: ActionSpec): unknown | null {
     }
     case 'resolveEvent': {
       const p = spec.params
-      if (p?.decline?.includes(true)) return { type: 'resolveEvent', decline: true }
+      // Removal stage: params.pieceIds is domain of removable piece ids
+      if (Array.isArray(p?.pieceIds) && p.pieceIds.length > 0 && typeof p.pieceIds[0] === 'string') {
+        return { type: 'resolveEvent', pieceIds: [...(p.pieceIds as string[])] }
+      }
+      // Order stage: params.order is Seat[][]
+      if (Array.isArray(p?.order) && p.order.length > 0) {
+        const order = pick(p.order as number[][])
+        if (order) return { type: 'resolveEvent', order }
+      }
       const cardId = pick((p?.cardIds as string[] | undefined) ?? [])
       if (cardId) return { type: 'resolveEvent', cardId }
-      const useEffect = pick((p?.useEffect as boolean[] | undefined) ?? [])
-      if (useEffect !== undefined) return { type: 'resolveEvent', useEffect }
-      const order = pick((p?.order as number[][] | undefined) ?? [])
-      if (order) return { type: 'resolveEvent', order }
-      const pieceIds = pick((p?.pieceIds as string[][] | undefined) ?? [])
-      if (pieceIds) return { type: 'resolveEvent', pieceIds }
+      if (Array.isArray(p?.useEffect) && p.useEffect.length > 0) {
+        const useEffect = pick(p.useEffect as boolean[])
+        if (useEffect !== undefined) return { type: 'resolveEvent', useEffect }
+      }
+      if (p?.decline?.includes(true)) return { type: 'resolveEvent', decline: true }
       return { type: 'resolveEvent', decline: true }
     }
     default:
       return null
   }
-}
-
-function shuffle<T>(items: T[]): T[] {
-  const out = [...items]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[out[i], out[j]] = [out[j]!, out[i]!]
-  }
-  return out
-}
-
-async function tryAct(state: GameState, specs: ActionSpec[]): Promise<GameState> {
-  const candidates = shuffle(specs.filter((s) => s.actor === state.currentSeat))
-  for (let attempt = 0; attempt < Math.min(20, candidates.length * 2); attempt++) {
-    const spec = pick(candidates)
-    if (!spec) break
-    const action = buildAction(state, spec)
-    if (!action) continue
-    try {
-      const result = await api.act(action)
-      return result.state
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 400) continue
-      throw err
-    }
-  }
-  const end = candidates.find((s) => s.type === 'endPhase')
-  if (end) {
-    const result = await api.act({ type: 'endPhase' })
-    return result.state
-  }
-  throw new Error('no legal action could be applied')
 }
 
 export async function cmdAuto(turns: number, players: number) {

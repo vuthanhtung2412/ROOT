@@ -267,11 +267,13 @@ export const battleResolver: EventResolver = {
         }
         if (action.cardId && spec.params?.cardIds?.includes(action.cardId)) return true
         if (action.pieceIds && spec.params?.pieceIds) {
-          return (
-            JSON.stringify(action.pieceIds) === JSON.stringify(spec.params.pieceIds[0]) ||
-            spec.params.pieceIds.some(
-              (ids) => JSON.stringify(ids) === JSON.stringify(action.pieceIds),
-            )
+          const domain = spec.params.pieceIds
+          // legalRemovalSpecs stores one combo per spec as a flat string[]
+          if (JSON.stringify(action.pieceIds) === JSON.stringify(domain)) return true
+          // also allow domain as list-of-combos
+          return domain.some(
+            (ids) =>
+              Array.isArray(ids) && JSON.stringify(ids) === JSON.stringify(action.pieceIds),
           )
         }
         if (action.useEffect !== undefined && spec.params?.useEffect?.includes(action.useEffect)) {
