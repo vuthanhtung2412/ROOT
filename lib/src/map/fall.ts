@@ -56,4 +56,17 @@ const FORESTS: ClearingId[][] = [
   [3, 6, 7, 8, 11],
 ]
 
-export const FALL = new GameMap({ clearings, paths: PATHS, forests: FORESTS })
+/** Rivers link clearings but are not paths. Rule: Board > Rivers */
+const RIVERS: Path[] = [
+  [3, 6],
+  [4, 9],
+  [6, 10],
+  [9, 10],
+]
+
+export const FALL = new GameMap({
+  clearings,
+  paths: PATHS,
+  rivers: RIVERS,
+  forests: FORESTS,
+})
