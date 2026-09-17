@@ -1,0 +1,1 @@
+- Prefer language for anything is typescript
