@@ -79,5 +79,6 @@ pnpm --filter @root/cli start -- auto --turns 50 --players 2
 
 ## Resources
 
-- `resources/rules/` — rules reference (SoT for implementation)
+- `resources/rules/` — Law of Root (SoT: PDF + markdown)
+- `resources/notes/` — plans + simplified implementable base rules (non-SoT)
 - `resources/reference/` — cards, map assets (not imported at runtime by CLI)

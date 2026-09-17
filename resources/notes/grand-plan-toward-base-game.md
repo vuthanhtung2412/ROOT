@@ -18,7 +18,8 @@
 
 ### Rules source of truth
 
-`resources/rules/root-base-rules.md` (see `AGENTS.md`). Every rule-bearing commit below names its section. Code cites `// Rule: Section > Subsection`. Tests named after rule lines.
+SoT = `resources/rules/Law_of_Root.pdf` (+ `Law_of_Root.md`).  
+Implementable summary (non-SoT) = `resources/notes/root-base-rules.md` (see `AGENTS.md`). Every rule-bearing commit below names its section. Code cites `// Rule: Section > Subsection`. Tests named after rule lines.
 
 **Rules → engine mapping (specifics the plan must honour)**
 
@@ -300,7 +301,7 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → s
 - `lib/src/**`
 - `backend/web/src/store/**`, `routes/**`, `middleware/**`, `index.ts`
 - `frontend/cli/**`
-- `resources/rules/root-base-rules.md` — source of truth; only change = fill board-track gap (Phase 0)
+- `resources/notes/root-base-rules.md` — implementable summary; only change = fill board-track gap (Phase 0)
 - `AGENTS.md` — rule-citation convention (done)
 
 ### Test plan
@@ -320,7 +321,7 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → s
 **Phase 0 — scaffolding + rules gap**
 - `chore(lib): add vitest` — `lib/package.json`, `lib/vitest.config.ts`
 - `chore(cli): bootstrap TypeScript package` — `frontend/cli/package.json`, `tsconfig.json`, `src/index.ts`
-- `docs(rules): add Marquise board tracks` — `resources/rules/root-base-rules.md` (cost / VP / draw bonus per column, from reference sheets)
+- `docs(rules): add Marquise board tracks` — `resources/notes/root-base-rules.md` (cost / VP / draw bonus per column, from reference sheets)
 - `docs(rules): add Eyrie roost track VP` — same
 - `docs(rules): add Alliance sympathy track cost/VP` — same
 - `docs(rules): add Vagabond relationship track costs/VP` — same
