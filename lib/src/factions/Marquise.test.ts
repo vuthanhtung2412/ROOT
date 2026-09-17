@@ -1,11 +1,20 @@
 import { describe, expect, it, beforeEach } from 'vitest'
+import { defOf } from '../cards/Deck.js'
+import { Game } from '../game/Game.js'
 import { FALL } from '../map/fall.js'
 import { warriors } from '../queries/pieces.js'
 import { keepOwner } from '../queries/place.js'
 import { resetPlaceIds } from '../rules/place.js'
+import { HAND_LIMIT } from '../state/constants.js'
+import type { GameSignal } from '../triggers/signals.js'
 import { defaultRuleHooks } from '../triggers/hooks.js'
-import { player, minimalState } from '../test/fixtures.js'
-import { keepCornerFor, MARQUISE } from './Marquise.js'
+import { card, player, minimalState, withPieces } from '../test/fixtures.js'
+import {
+  buildColumn,
+  keepCornerFor,
+  MARQUISE,
+  recruiterDrawBonus,
+} from './Marquise.js'
 
 function setupCtx() {
   return {
@@ -121,5 +130,244 @@ describe('Marquise setup', () => {
       0,
     )
     expect(onAdjacent).toBe(2)
+  })
+})
+
+function lobbyTwo(seed = 42): Game {
+  const game = Game.create({ seed })
+  game.join('a')
+  game.join('b')
+  game.start()
+  return game
+}
+
+function advanceToActions(game: Game): void {
+  if (game.state.phase === 'birdsong') game.apply({ type: 'endPhase' })
+  if (game.state.step === 'craft') game.apply({ type: 'endPhase' })
+}
+
+describe('Marquise turn', () => {
+  beforeEach(() => resetPlaceIds())
+
+  it('Rule: Marquise > Birdsong — place 1 wood per sawmill capped by supply', () => {
+    const game = lobbyTwo(5)
+    const seat = game.state.currentSeat
+    const sawmills = game.state.clearings.flatMap((c, id) =>
+      c.pieces.some((p) => p.kind === 'building' && p.type === 'sawmill' && p.owner === seat)
+        ? [id]
+        : [],
+    )
+    expect(sawmills.length).toBeGreaterThan(0)
+    const board = game.state.players[seat]!.board
+    expect(board.kind).toBe('marquise')
+    if (board.kind !== 'marquise') return
+
+    expect(board.supply.wood).toBe(8 - sawmills.length)
+    for (const id of sawmills) {
+      expect(
+        game.state.clearings[id]!.pieces.some(
+          (p) => p.kind === 'token' && p.type === 'wood' && p.owner === seat,
+        ),
+      ).toBe(true)
+    }
+  })
+
+  it('Rule: Marquise > Daylight — craft step then actions step', () => {
+    const game = lobbyTwo(3)
+    expect(game.state.phase).toBe('birdsong')
+    game.apply({ type: 'endPhase' })
+    expect(game.state.phase).toBe('daylight')
+    expect(game.state.step).toBe('craft')
+    game.apply({ type: 'endPhase' })
+    expect(game.state.step).toBe('actions')
+  })
+
+  it('Rule: Marquise > Daylight — action budget is 3', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    expect(game.state.turnScratch.actionsLeft).toBe(3)
+    expect(game.state.turnScratch.extraActions).toBe(0)
+  })
+
+  it('Rule: Marquise > Daylight — spendBird grants extra action', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    const bird = card('ROOT-205')
+    game.state.players[seat]!.hand.push(bird)
+    game.apply({ type: 'spendBird', cardId: bird.id })
+    expect(game.state.turnScratch.extraActions).toBe(1)
+    expect(game.state.turnScratch.actionsLeft).toBe(3)
+  })
+
+  it('Rule: Marquise > Recruit — once per turn places 1 warrior per recruiter', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    const recruiters = game.state.clearings.flatMap((c, id) =>
+      c.pieces.some((p) => p.kind === 'building' && p.type === 'recruiter' && p.owner === seat)
+        ? [id]
+        : [],
+    )
+    const before = recruiters.reduce((n, id) => n + warriors(game.state, id, seat), 0)
+    game.apply({ type: 'recruit' })
+    const after = recruiters.reduce((n, id) => n + warriors(game.state, id, seat), 0)
+    expect(after - before).toBe(recruiters.length)
+    expect(() => game.apply({ type: 'recruit' })).toThrow()
+  })
+
+  it('Rule: Marquise > March — up to 2 moves', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    const keep = keepCornerFor(game.state, seat)
+    const adj = FALL.adjacent(keep)[0]!
+    game.apply({
+      type: 'march',
+      moves: [
+        { from: keep, to: adj, count: 1 },
+        { from: adj, to: keep, count: 1 },
+      ],
+    })
+    expect(game.state.turnScratch.actionsLeft + game.state.turnScratch.extraActions).toBe(2)
+  })
+
+  it('Rule: Marquise > Build 1–4 — pay wood, place building, score track VP', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    const keep = keepCornerFor(game.state, seat)
+    const buildAt = FALL.adjacent(keep).find((id) => game.state.clearings[id]!.pieces.filter((p) => p.kind === 'building').length === 0)!
+    game.state.clearings[buildAt]!.pieces.push({
+      id: 'wood-k',
+      kind: 'token',
+      owner: seat,
+      type: 'wood',
+    })
+    const vpBefore = game.state.players[seat]!.vp
+    const column = buildColumn(5)
+    game.apply({ type: 'build', clearing: buildAt, building: 'sawmill' })
+    expect(
+      game.state.clearings[buildAt]!.pieces.some(
+        (p) => p.kind === 'building' && p.type === 'sawmill' && p.owner === seat,
+      ),
+    ).toBe(true)
+    expect(game.state.players[seat]!.vp).toBeGreaterThan(vpBefore)
+    expect(game.state.players[seat]!.board.kind).toBe('marquise')
+    if (game.state.players[seat]!.board.kind === 'marquise') {
+      expect(game.state.players[seat]!.board.tracks.sawmill.placed).toBe(4)
+      expect(column).toBe(1)
+    }
+  })
+
+  it('Rule: Marquise > Overwork — card matching sawmill clearing adds wood', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    let sawmillClearing = 0
+    for (let id = 0; id < 12; id++) {
+      if (
+        game.state.clearings[id]!.pieces.some(
+          (p) => p.kind === 'building' && p.type === 'sawmill' && p.owner === seat,
+        )
+      ) {
+        sawmillClearing = id
+        break
+      }
+    }
+    const spend = card('ROOT-205')
+    expect(defOf(spend).suit).toBe('bird')
+    game.state.players[seat]!.hand.push(spend)
+    const woodBefore = game.state.clearings[sawmillClearing]!.pieces.filter(
+      (p) => p.kind === 'token' && p.type === 'wood',
+    ).length
+    game.apply({ type: 'overwork', clearing: sawmillClearing as typeof sawmillClearing, cardId: spend.id })
+    const woodAfter = game.state.clearings[sawmillClearing]!.pieces.filter(
+      (p) => p.kind === 'token' && p.type === 'wood',
+    ).length
+    expect(woodAfter).toBe(woodBefore + 1)
+  })
+
+  it('Rule: Marquise > Craft — workshops craft item during craft step', () => {
+    const game = lobbyTwo(3)
+    game.apply({ type: 'endPhase' })
+    const seat = game.state.currentSeat
+    let workshopClearing = 0
+    for (let id = 0; id < 12; id++) {
+      if (
+        game.state.clearings[id]!.pieces.some(
+          (p) => p.kind === 'building' && p.type === 'workshop' && p.owner === seat,
+        )
+      ) {
+        workshopClearing = id
+        break
+      }
+    }
+    const suit = FALL.clearings[workshopClearing]!.suit
+    const craftCardBySuit =
+      suit === 'fox' ? card('ROOT-204') : suit === 'rabbit' ? card('ROOT-206') : card('ROOT-208')
+    game.state.players[seat]!.hand.push(craftCardBySuit)
+    game.apply({ type: 'craft', cardId: craftCardBySuit.id })
+    expect(game.state.players[seat]!.craftedItems.length).toBe(1)
+  })
+
+  it('Rule: Marquise > Evening — draw 1 plus recruiter draw bonus', () => {
+    const state = minimalState({
+      phase: 'evening',
+      step: 'draw',
+      deck: { draw: [card('ROOT-206'), card('ROOT-207'), card('ROOT-208')], discard: [] },
+    })
+    const board = state.players[0]!.board
+    expect(board.kind).toBe('marquise')
+    if (board.kind === 'marquise') {
+      board.tracks.recruiter.placed = 1
+      expect(recruiterDrawBonus(board)).toBe(2)
+    }
+    MARQUISE.apply(state, { type: 'eveningDraw' }, setupCtx())
+    expect(state.players[0]!.hand.length).toBe(3)
+  })
+
+  it('Rule: Cards — evening discard to hand limit 5', () => {
+    const state = minimalState({ phase: 'evening', step: 'discard' })
+    state.players[0]!.hand = [
+      card('ROOT-206', 1),
+      card('ROOT-207', 2),
+      card('ROOT-208', 3),
+      card('ROOT-209', 4),
+      card('ROOT-210', 5),
+      card('ROOT-211', 6),
+      card('ROOT-212', 7),
+    ]
+    MARQUISE.apply(
+      state,
+      { type: 'discard', cardIds: ['ROOT-206#1', 'ROOT-207#2'] },
+      setupCtx(),
+    )
+    expect(state.players[0]!.hand.length).toBe(HAND_LIMIT)
+  })
+
+  it('Rule: Marquise > endTurn — resets building used flags and turn scratch', () => {
+    const state = withPieces(minimalState(), 0, [
+      { id: 'ws', kind: 'building', owner: 0, type: 'workshop', used: true },
+    ])
+    state.turnScratch = {
+      actionsLeft: 0,
+      extraActions: 1,
+      recruited: true,
+      birdsongWoodDone: true,
+      eveningDrawDone: true,
+    }
+    MARQUISE.endTurn(state)
+    expect(state.clearings[0]!.pieces[0]!.kind).toBe('building')
+    if (state.clearings[0]!.pieces[0]!.kind === 'building') {
+      expect(state.clearings[0]!.pieces[0]!.used).toBe(false)
+    }
+    expect(state.turnScratch).toEqual({
+      actionsLeft: 3,
+      extraActions: 0,
+      recruited: false,
+      birdsongWoodDone: false,
+      eveningDrawDone: false,
+    })
   })
 })

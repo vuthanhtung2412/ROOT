@@ -117,7 +117,13 @@ function initialState(args: {
     dominanceAvailable: [],
     itemSupply: { ...ITEM_SUPPLY },
     pending: [],
-    turnScratch: { actionsLeft: 0, extraActions: 0 },
+    turnScratch: {
+      actionsLeft: 0,
+      extraActions: 0,
+      recruited: false,
+      birdsongWoodDone: false,
+      eveningDrawDone: false,
+    },
   }
 }
 
@@ -372,12 +378,19 @@ export class Game {
     const first = FACTIONS[factionOf(state, 0)]
     state.phase = 'birdsong'
     state.step = first.steps.birdsong[0]!
-    state.turnScratch = { actionsLeft: 0, extraActions: 0 }
+    state.turnScratch = {
+      actionsLeft: 0,
+      extraActions: 0,
+      recruited: false,
+      birdsongWoodDone: false,
+      eveningDrawDone: false,
+    }
 
     const ctx = this.makeCtx()
     ctx.emit({ s: 'phase.start', actor: 0, phase: 'birdsong' })
 
-    return [{ t: 'start' }, { t: 'phase', actor: 0, phase: 'birdsong', step: state.step }]
+    const autoLogs = this.runAutoActions()
+    return [{ t: 'start' }, { t: 'phase', actor: 0, phase: 'birdsong', step: state.step }, ...autoLogs]
   }
 
   private runSetup(): void {
@@ -447,6 +460,15 @@ export class Game {
 
     if (idx < steps.length - 1) {
       state.step = steps[idx + 1]!
+      if (state.phase === 'daylight' && state.step === 'actions') {
+        state.turnScratch = {
+          actionsLeft: 3,
+          extraActions: 0,
+          recruited: false,
+          birdsongWoodDone: false,
+          eveningDrawDone: false,
+        }
+      }
       logs.push({
         t: 'phase',
         actor: state.currentSeat,
@@ -495,7 +517,6 @@ export class Game {
       for (const action of autos) {
         faction.validate(this.state, action, this.makeCtx())
         logs.push(...faction.apply(this.state, action, this.makeCtx()))
-        this.history.push(action)
       }
     }
     return logs
