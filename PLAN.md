@@ -38,7 +38,15 @@
 | Battle — ambush/foil; end if no attackers; higher/lower die; max hits = warriors; defenseless +1; victim orders removal, warriors first; +1 VP per building/token | `Event.battle.stage: 'ambush' \| 'foil' \| 'roll' \| 'effects' \| 'removeDefender' \| 'removeAttacker'`; removal = `resolveEvent { pieceIds }` by victim; `hooks.extraHits` |
 | Setup — order: hands (3 each; **2p → remove 4 dominance first**) → 4 ruins → item supply → factions A→D | `Game.start()` fixed order; `if players === 2` strip dominance from deck (GP1/GP2); `ITEM_SUPPLY = {boot:2,bag:2,crossbow:1,hammer:1,sword:2,tea:2,coin:2}`; A→D = seat order |
 | Marquise setup — keep in a corner; garrison all except opposite corner; 1+1+1 buildings keep/adjacent; tracks leftmost empty | keep = `FALL.corners[0]`; GP1 second cat = `FALL.opposite(corners[0])`. Garrison: **single cat** → all except opposite (rules-exact); **2 cats** → each garrisons keep + adjacent only (would otherwise stack 10 clearings). Buildings into keep then adjacent by id, `placeUpTo` on open slots. Rule: Marquise > Setup 1–5 |
-| Marquise — The Keep: only *this* Marquise may place there | `canPlace(state, seat, clearing)` checks keep **owner seat** (GP1 has 2 keeps) |
+| Marquise — The Keep: only *this* Marquise may place there; keep gone forever if removed | `canPlace(state, seat, clearing)` looks for a keep **token** in the clearing and compares owner seat (GP1 has 2 keeps). No token → no restriction. Keep never returns to supply |
+| Victory — craft item → **printed VP** (Eyrie Disdain → 1) | `CardDef.vp` (from `cards.json`, new field); `craft` scores `vp` via `hooks.craftVp(state, seat, card)` (default printed; Eyrie 1; Builder printed) — **before** `craft.item` signal so Master Engravers stacks on top |
+| Victory — dominance "take available" (Daylight, spend matching card) | **Deferred** with activation/coalition. GP1–2 strip dominance (2p). GP3+: `dominanceAvailable` is write-only pile; no `takeDominance` action yet. Revisit after GP4 |
+| Battle 3 — both sides have optional effects → attacker picks who goes first | `effects` stage: if ≥2 seats hold effects, first resolve = `{ type:'resolveEvent', order: Seat[] }` by attacker; else auto |
+| Battle 1 — ambush must match clearing suit (birds wild) | `matchesSuit(card, clearing.suit)`; test named after rule line |
+| Setup 1 — random start player | **House rule**: seat 0 starts. Documented, not Law-exact |
+| Marquise Setup 4 — buildings "any split" keep/adjacent | **House rule**: keep first, then adjacent by ascending id. Deterministic, stricter than Law |
+| Eyrie leaders — 4 with specials | **Builder only**, hardcoded like Thief. Charismatic/Commander/Despot deferred; `EyrieBoard.leader` stays a literal `'builder'` until then |
+| Vagabond Allied — 3 separate rules | (a) Aid → +2 VP; (b) Move may drag ally warriors; (c) battle may treat ally warriors as own, max hits = theirs + swords; if hits absorbed by allies > items damaged → Hostile at battle end |
 | Marquise — Field Hospitals: warriors removed → spend matching card → to keep | `Event.fieldHospital` pushed by `removePieces` when victim has keep; resolver: pay card or decline. In GP1 every battle can trigger it |
 | Marquise Daylight — craft step then 3 actions; +1 per bird **spent outside action**; recruit once | steps `['craft','actions']`; action `{type:'spendBird', cardId}`; `TurnLog` once-check |
 | Marquise Build — rule clearing; leftmost building; wood from clearing + chain of ruled clearings | `woodReachable()` over `connectedRuled()` |
@@ -47,7 +55,7 @@
 | *(GP3)* Alliance — setup; supporters cap 5; Revolt; Spread Sympathy + Martial Law; Mobilize/Train; Military Ops ≤ officers; Guerrilla War; Outrage (2 triggers); base removal | `AllianceBoard { supporters, officers, bases, sympathyTrack }`; `Event.outrage`; battle hook swaps dice for defender |
 | *(GP4)* Vagabond — pawn ≠ warrior, unremovable; Nimble; items exhaust/damage/repair/capacity; Refresh/Slip; 9 Daylight actions; Evening rest/draw/capacity; relationships Allied/Hostile/Infamy; full-clear → damage 3; **quests + coalition deferred** | `VagabondBoard { satchel, tracks, damaged, relationships }`; ruins seeded from `RUIN_ITEMS`; `Event.vagabondDamage`; battle takes hits as item damage |
 
-**Gap in rules doc** — faction board numbers are not in the Law: Marquise building costs/VP/draw-bonus per column, Eyrie roost track VP, Alliance sympathy cost/VP per token. Must be added to `root-base-rules.md` from reference sheets before Phase 4.
+**Gap in rules doc** — faction board numbers are not in the Law: Marquise building costs/VP/draw-bonus per column, Eyrie roost track VP, Alliance sympathy cost/VP per token, **Vagabond relationship track step costs + VP per space**. Must be added to `root-base-rules.md` from reference sheets before Phase 4 (relationships before Phase 12). Also `cards.json` lacks item `vp` — add field, don't parse description.
 
 ### Learned from reference repos (`resources/notes/useful-github-repos.md`)
 
@@ -57,7 +65,7 @@
 | athacker2 | Enumerating every legal action explodes (March = 2 moves × clearings) → they fell back to string templates | `legalActions()` returns **ActionSpecs** (type + param domains), `validate()` checks a concrete action |
 | athacker2 | Birdsong/Evening auto effects returned as **actions** and pushed through `apply` | `Faction.autoActions(phase)` → applied + logged, no hidden side-effect hooks |
 | athacker2 | Per-turn "recruit once" derived from action log, buildings `used` flag reset at end of turn | `TurnLog` drives once-per-turn rules; `usedCraftPieces` reset in `endTurn` |
-| mdfeinstein | **Pending Event** blocks normal actions until resolved (Battle → Ambush → FieldHospital → Outrage) | `state.pending?: Event`; `legalActions()` returns only event resolutions while pending; `actor` may be **another player** |
+| mdfeinstein | **Pending Event** blocks normal actions until resolved (Battle → Ambush → FieldHospital → Outrage) | `state.pending: Event[]` FIFO; `legalActions()` returns only head-event resolutions while non-empty; `actor` may be **another seat** |
 | mdfeinstein | Phase has **steps** (Daylight: `craft` → `actions`) | `state.step` per phase, faction-defined |
 | mdfeinstein | Checkpoint JSON + action list → **replay / undo** | `Game.history: Action[]`; `Game.replay(seed, actions)`; API `POST /games/:id/undo` |
 | mdfeinstein | Read-only **queries** shared by validators + API | `lib/src/queries/*` pure fns over `GameState` (ruler, wood reachable, etc.) |
@@ -103,7 +111,7 @@ cards/                                                                    // Exi
   CardSuit             = Suit | 'bird'
   CostSuit             = Suit | 'wild'
   CardType             = 'item' | 'persistent' | 'partisan' | 'ambush' | 'dominance'   // = cards.json `type`
-  CardDef              { defId, name, suit, type, cost: CostSuit[], item?: ItemType, description, image }
+  CardDef              { defId, name, suit, type, cost: CostSuit[], item?: ItemType, vp?: number, description, image }   // vp = printed craft VP (items)
   Card                 { id: string, defId }                              // one per physical copy; id = `${defId}#${n}`
   EP_CARD_DEFS         generated from resources/reference/ep-decks/cards.json (46 defs)
   EP_DECK              expand `copies` → 54 Card
@@ -134,7 +142,8 @@ state/
                          players: PlayerState[],                                // length 0..factions.length while waiting
                          clearings, deck, discard, dominanceAvailable: Card[],
                          itemSupply: Record<ItemType, number>,
-                         pending?: Event, winner?: FactionId,
+                         pending: Event[],                                     // FIFO; [] = none
+                         winner?: Seat,                                        // seat, not faction — GP1 has 2 cats
                          turnScratch: { actionsLeft, extraActions } }
   DEFAULT_FACTIONS     : FactionId[]    // GP1 ['marquise','marquise'] → GP2 ['marquise','eyrie'] → GP3 +'alliance' → GP4 +'vagabond' (= setup letters A→D)
   ITEM_SUPPLY          = { boot:2, bag:2, crossbow:1, hammer:1, sword:2, tea:2, coin:2 }   // Rule: Setup 5
@@ -151,7 +160,8 @@ boards/                                                                   // per
 
 events/                                                                   // pending decisions (blocking)
   Event                = { type:'battle', clearing, attacker, defender,
-                           stage: 'ambush'|'foil'|'roll'|'effects'|'removeDefender'|'removeAttacker',
+                           stage: 'ambush'|'foil'|'roll'|'effectsOrder'|'effects'|'removeDefender'|'removeAttacker',
+                           effectsOrder?: Seat[],                                              // Rule: Battle 3 — attacker picks when both have effects
                            rolls?: [number, number], hits: { attacker: number, defender: number } }   // Rule: Battle steps 1–4
                        | { type:'fieldHospital', victim: Seat, clearing, count }   // Phase 7 — GP1 needs it (cat vs cat)
                        | { type:'outrage', offender: Seat, clearing }              // GP3
@@ -175,6 +185,7 @@ triggers/                                                                 // fir
     ruleWeight(state, piece, faction)  → Soup Kitchens: tokens count ×2
     needsRuleToMove(state, faction)    → Corvid Planners
     extraHits(state, ev, side)         → Partisans / Commander
+    craftVp(state, seat, card)         → default card.vp; Eyrie Disdain → 1 (Builder keeps printed)
   CardEffect           { defId, onSignal?: Listener, hooks?: Partial<RuleHooks>, grants?: (state) => ActionSpec[] }
   EFFECTS: Record<defId, CardEffect>                                      // one file per card in effects/
   engine wiring:       Game.apply → faction.apply emits signals via ctx.emit → SignalBus dispatches to EFFECTS of crafted cards
@@ -194,8 +205,7 @@ actions/
                        //               | militaryOp { op:'move'|'battle'|'recruit'|'organize', ...params }
                        // GP4 Vagabond: slip { to } | vbMove { to } | vbBattle { defender } | explore | aid { seat, cardId, takeItem? }
                        //               | strike { defender } | repair { item } | vbCraft { cardId } | steal { seat } | moveTrackItem { item, to }
-  ActionSpec.actor     : Seat
-  ActionSpec           { type, actor: FactionId, params?: Record<string, unknown[]> }  // domains, not combos
+  ActionSpec           { type, actor: Seat, params?: Record<string, unknown[]> }  // domains, not combos; actor = seat (GP1 two cats)
   ActionResult         { state: GameState, log: LogEntry[] }
 
 log/
@@ -209,7 +219,7 @@ queries/                                                                  // pur
   ruler(state, clearing, hooks): FactionId | null                         // Rule: Board > Rule; Eyrie tie-break; hooks.ruleWeight
   warriors(state, clearing, faction): number
   openSlots(state, clearing): number                                      // Rule: Board > Slots; ruin occupies one
-  canPlace(state, faction, clearing): boolean                             // Rule: Marquise > The Keep (place ≠ move)
+  canPlace(state, seat, clearing): boolean                                // Rule: Marquise > The Keep (place ≠ move); keyed on keep **token present** in clearing, not corner id — keep removed → anyone may place
   adjacent(state, a, b, faction, hooks): boolean                          // hooks.isAdjacent (rivers/tunnels)
   connectedRuled(state, faction, from, hooks): Set<clearingId>
   woodReachable(state, faction, from, hooks): number                      // Rule: Marquise > Build 3
@@ -247,7 +257,7 @@ game/
     join(playerId): ActionResult                                         // seat = players.length; faction = state.factions[seat]; 4th → start()
     private start(): void                                                // Rule: Setup 1–7 in order: vp=0 → hands(3) → ruins → itemSupply → factions A→D → 'playing'
     legalActions(): ActionSpec[]                                         // waiting → [join]; pending → resolver; else faction
-    apply(action): ActionResult                                          // validate → apply → checkWin (30 VP, tie → currentSeat) → advance/auto
+    apply(action): ActionResult                                          // validate → apply → checkWin (30 VP → winner: Seat; tie → currentSeat) → advance/auto
     undo(): void                                                         // replay(history[:-1])
   }
 ```
@@ -280,6 +290,7 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 
 ### Test plan
 - Test names quote the rule line they cover (e.g. `it('Rule: Battle 4 — victim removes warriors before buildings')`).
+- Silent-scoring guards the `auto` gate cannot catch — mandatory rule-named units: craft item scores printed VP; Disdain → 1; Keep removed → `canPlace` true for others; pending FIFO resolves head first; `winner` = seat of the cat that hit 30 in a 2-cat game.
 - `lib` vitest: map graph (12 clearings, adjacency symmetric, rivers ⊄ paths, every id has layout coord), svg/ascii render snapshot, E&P deck (54 copies, 14 bird/14 fox/13 mouse/13 rabbit, 5 ambush, 4 dominance), Deck, ruler tie-break, queries, lobby (join order → faction, join beyond factions.length rejected, last join starts), each Marquise action happy+error, phase/step advance, pending-event gating, signal bus (dispatch order, listener mutates state, hooks fold), each Phase 7b card effect, `replay` reproduces state, undo, 30 VP win.
 - `web`: build; curl create → join ×N → actions → act → log → undo → 400 illegal.
 - `cli`: `auto --turns 50` against live web. Gate per grand phase; every later GP re-runs earlier GP factions via `--factions` (regression).
@@ -297,6 +308,9 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `docs(rules): add Marquise board tracks` — `resources/rules/root-base-rules.md` (cost / VP / draw bonus per column, from reference sheets)
 - `docs(rules): add Eyrie roost track VP` — same
 - `docs(rules): add Alliance sympathy track cost/VP` — same
+- `docs(rules): add Vagabond relationship track costs/VP` — same
+- `docs(rules): note house rules` — same, "Implementation deviations" section: seat 0 starts; 2-cat garrison keep+adjacent; buildings keep-then-adjacent-by-id; Builder/Thief only; dominance + quests + coalition deferred
+- `chore(resources): add vp to item cards` — `resources/reference/ep-decks/cards.json` (from description text; generator reads field)
 
 **Phase 1 — map (graph)**
 - `chore(resources): add Fall board image` — `resources/assets/fall-map.jpg` (official Leder asset)
@@ -319,20 +333,20 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): add FactionId, Seat, Piece types` — `lib/src/pieces/types.ts` (owner = seat)
 - `feat(lib): add Card and CardDef types` — `lib/src/cards/types.ts`
 - `chore(lib): add gen:cards script from ep cards.json` — `lib/scripts/gen-cards.ts`, `lib/package.json`
-- `feat(lib): add generated E&P card defs` — `lib/src/cards/ep.generated.ts` (46 defs; test: 54 copies, suit totals 14/14/13/13)
+- `feat(lib): add generated E&P card defs` — `lib/src/cards/ep.generated.ts` (46 defs incl. `vp`; test: 54 copies, suit totals 14/14/13/13, every item def has vp)
 - `feat(lib): add EP_DECK expansion` — `lib/src/cards/epDeck.ts`, test
 - `feat(lib): add Deck draw/discard` — `lib/src/cards/Deck.ts`, test (Rule: Cards — reshuffle; dominance → available)
 - `feat(lib): add matchesSuit and bird wildcard` — `lib/src/cards/suit.ts`, test (Rule: Cards > Birds are wild, 3 bullets)
-- `feat(lib): add Phase, Step, GameState types` — `lib/src/state/types.ts`
+- `feat(lib): add Phase, Step, GameState types` — `lib/src/state/types.ts` (`pending: Event[]`, `winner?: Seat`)
 - `feat(lib): add setup constants` — `lib/src/state/constants.ts` (ITEM_SUPPLY, RUIN_ITEMS, HAND_LIMIT, STARTING_HAND, `DEFAULT_FACTIONS = ['marquise','marquise']`; Rule: Setup)
 - `feat(lib): add MarquiseBoard type with supply` — `lib/src/state/boards.ts` (Rule: Pieces — limited; other boards in GP2–4)
 - `feat(lib): add Event types` — `lib/src/events/types.ts`
 - `feat(lib): add GameSignal types` — `lib/src/triggers/signals.ts`
-- `feat(lib): add RuleHooks defaults` — `lib/src/triggers/hooks.ts`
+- `feat(lib): add RuleHooks defaults` — `lib/src/triggers/hooks.ts` (isAdjacent, ruleWeight, needsRuleToMove, extraHits, craftVp)
 - `feat(lib): add CardEffect type and empty registry` — `lib/src/triggers/effects.ts`
 - `feat(lib): add SignalBus` — `lib/src/triggers/SignalBus.ts`, test (seat-order dispatch, no-op when no cards)
 - `feat(lib): add Ctx type` — `lib/src/game/ctx.ts`
-- `feat(lib): add Action and ActionSpec types` — `lib/src/actions/types.ts`
+- `feat(lib): add Action and ActionSpec types` — `lib/src/actions/types.ts` (`ActionSpec.actor: Seat`)
 - `feat(lib): add LogEntry types` — `lib/src/log/types.ts`
 - `feat(lib): add RuleError` — `lib/src/rules/RuleError.ts`
 - `feat(lib): add Rng and SeededRng` — `lib/src/rules/Rng.ts`, test
@@ -342,7 +356,7 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): add warriors and pieces queries` — `lib/src/queries/pieces.ts`
 - `feat(lib): add openSlots query` — `lib/src/queries/slots.ts`, test (Rule: Board > Slots; ruin counts)
 - `feat(lib): add factionOf and seat helpers` — `lib/src/queries/seat.ts`
-- `feat(lib): add canPlace query with Keep by owner` — `lib/src/queries/place.ts`, test (Rule: Marquise > The Keep; 4 keeps → 4 owners)
+- `feat(lib): add canPlace query with Keep by owner` — `lib/src/queries/place.ts`, test (Rule: Marquise > The Keep; 2 keeps → 2 owners; **no keep token → unrestricted**)
 - `feat(lib): add canMove query` — `lib/src/queries/move.ts`, test (Rule: Move 1–3)
 - `feat(lib): add connectedRuled query` — `lib/src/queries/connected.ts`, test
 - `feat(lib): add woodReachable query` — `lib/src/queries/wood.ts`, test (Rule: Marquise > Build 3)
@@ -368,10 +382,10 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): Game.legalActions delegates` — same
 - `feat(lib): Game.apply endPhase with steps` — same, test
 - `feat(lib): Game.apply runs autoActions` — same, test
-- `feat(lib): Game.apply gates on pending event` — same, test
+- `feat(lib): Game.apply gates on pending queue head` — same, test (FIFO: two enqueued → resolve in order)
 - `feat(lib): Game emits phase.start/end signals` — same, test (spy listener)
 - `feat(lib): Game merges granted actions into legalActions` — same, test
-- `feat(lib): Game win check 30 VP with tie-break` — same, test (Rule: Victory — immediate; tie → current turn)
+- `feat(lib): Game win check 30 VP with tie-break` — same, test (Rule: Victory — immediate; tie → current turn; `winner: Seat`, two cats distinguishable)
 - `feat(lib): Game.replay and undo` — same, test
 - `feat(lib): export public API` — `lib/src/index.ts`
 
@@ -385,22 +399,25 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): Marquise march` — `Marquise.ts`, test (up to 2 moves)
 - `feat(lib): Marquise build with wood payment` — same, test (Rule: Marquise > Build 1–4)
 - `feat(lib): Marquise overwork` — same, test (card matches sawmill clearing, bird ok)
-- `feat(lib): Marquise craft via workshops` — same, test (Rule: Craft; emits craft.item / craft.persistent)
+- `feat(lib): Marquise craft via workshops` — same, test (Rule: Craft 1–4; item → craftedItems, persistent → playArea)
+- `feat(lib): score printed craft VP` — `rules/craft.ts`, test (Rule: Victory — universal scoring; via `hooks.craftVp`; **before** signal)
+- `feat(lib): craft emits craft.item / craft.persistent` — same, test (persistent → EFFECTS active)
 - `feat(lib): Marquise evening draw` — same, test (Rule: Evening — 1 + draw bonus)
 - `feat(lib): Marquise evening discard to hand limit` — same, test (discard action while hand > 5)
 - `feat(lib): Marquise endTurn resets used flags` — same, test
 
 **Phase 7 — Battle event (cat vs cat)**
 - `feat(lib): add battle event resolver skeleton` — `lib/src/events/battle.ts`
-- `feat(lib): battle ambush and foil stages` — same, test (Rule: Battle 1; end if no attackers)
+- `feat(lib): battle ambush and foil stages` — same, test (Rule: Battle 1; **ambush suit = clearing suit, bird ok**; end if no attackers)
 - `feat(lib): battle roll stage` — same, test (Rule: Battle 2; max hits = warriors)
 - `feat(lib): battle effects stage with defenseless` — same, test (Rule: Battle 3; hooks.extraHits)
+- `feat(lib): battle effectsOrder stage` — same, test (Rule: Battle 3 — both have effects → attacker picks order; auto-skip when ≤1 side)
 - `feat(lib): battle removal stages by victim` — same, test (Rule: Battle 4; warriors first; VP)
 - `feat(lib): Marquise battle action opens event` — `Marquise.ts`, test
 - `feat(lib): battle emits battle.start/hits/end signals` — `events/battle.ts`, test
-- `feat(lib): pending as FIFO queue` — `Game.ts`, test (removal may enqueue several events)
 - `feat(lib): add fieldHospital event resolver` — `lib/src/events/fieldHospital.ts`, test (Rule: Marquise > Field Hospitals; pay matching card or decline; bird ok)
-- `feat(lib): removePieces enqueues fieldHospital` — `rules/remove.ts`, test (only if victim still has keep)
+- `feat(lib): removePieces enqueues fieldHospital` — `rules/remove.ts`, test (only if victim still has keep token)
+- `feat(lib): keep removal is permanent` — same, test (Rule: Marquise > The Keep — token never returns to supply; `canPlace` opens up)
 
 **Phase 7b — first card effects (one per flavour, proves the bus)**
 - `feat(lib): Master Engravers listener` — `lib/src/effects/masterEngravers.ts`, test (+1 VP on craft.item)
@@ -440,14 +457,15 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 
 ## GP2 — Marquise vs Eyrie (Phase 10)
 
-**Phase 10 — Eyrie**
-- `feat(lib): add EyrieBoard type` — `state/boards.ts` (leader, decree columns, roostTrack, supply 20)
+**Phase 10 — Eyrie** (Builder only; Charismatic/Commander/Despot deferred, same as Vagabond characters)
+- `feat(lib): add EyrieBoard type` — `state/boards.ts` (leader: 'builder' literal, decree columns, roostTrack, supply 20)
 - `feat(lib): Eyrie setup roost opposite Marquise` — `factions/Eyrie.ts`, test (Rule: Eyrie > Setup 1–2, 5: roost + 6 warriors at `opposite(corners[0])`, 6 on track)
 - `feat(lib): Eyrie setup Builder viziers` — same, test (Setup 3–4: Recruit + Move columns)
 - `feat(lib): Eyrie birdsong Emergency Orders` — same, test (Birdsong 1: empty hand → draw 1)
 - `feat(lib): Eyrie addToDecree action` — same, test (Birdsong 2: 1–2 cards, ≤1 bird, any column)
 - `feat(lib): Eyrie A New Roost` — same, test (Birdsong 3: no roosts → fewest-warriors clearing + 3)
-- `feat(lib): Eyrie craft via roosts before decree` — same, test (Daylight 1; Disdain for Trade → 1 VP; Builder ignores)
+- `feat(lib): Eyrie craft via roosts before decree` — same, test (Daylight 1)
+- `feat(lib): Disdain for Trade craftVp hook` — same, test (Abilities: item → 1 VP; Builder → printed; Master Engravers still +1)
 - `feat(lib): Eyrie decree cursor state` — same (Daylight 2: column left→right, card any order within column; `turnScratch.decree { column, remaining }`)
 - `feat(lib): Eyrie decree recruit` — same, test (roost clearing of suit; bird = any)
 - `feat(lib): Eyrie decree move` — same, test (from clearing of suit with ≥1 warrior)
@@ -480,7 +498,7 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): enqueue outrage on sympathy removal` — `rules/remove.ts`, test
 - `feat(lib): enqueue outrage on move into sympathetic` — `rules/move.ts`, test
 - `feat(lib): base removal cleanup` — `rules/remove.ts`, test (Abilities: discard matching supporters incl. birds; half officers up; cap 5)
-- `feat(lib): DEFAULT_FACTIONS adds alliance` — `state/constants.ts`, test (3p → dominance kept in deck; seat order clockwise ×3)
+- `feat(lib): DEFAULT_FACTIONS adds alliance` — `state/constants.ts`, test (3p → dominance kept in deck, routes to `dominanceAvailable` on discard, **no take/activate yet**; seat order clockwise ×3)
 - `feat(cli): auto plays alliance actions` — `commands/auto.ts`
 
 **GP3 gate**: `auto --turns 50` 3p default ends cleanly; GP1 + GP2 `--factions` regressions pass; dominance present in 3p deck.
@@ -505,10 +523,15 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): Vagabond craft with hammers` — same, test (all hammers = clearing suit; item → satchel/track)
 - `feat(lib): Thief steal special` — same, test (1 torch; random card from player in clearing; uses rng)
 - `feat(lib): Vagabond evening rest/draw/discard/capacity` — same, test (Evening 1–4; 6 + 2×bags; excess removed from game)
-- `feat(lib): relationships Allied track` — `factions/vagabond/relations.ts`, test (Improve: aids per turn; VP on advance; Allied bonuses)
+- `feat(lib): relationships Allied track` — `factions/vagabond/relations.ts`, test (Improve: aids per turn vs step cost from rules doc; VP on new space; each Aid counts once)
+- `feat(lib): Allied aid bonus VP` — same, test (Allied (a): Aid → +2 VP)
+- `feat(lib): Allied move drags ally warriors` — `Vagabond.ts`, test (Allied (b): optional, origin → destination)
+- `feat(lib): Allied battle treats ally warriors as own` — `events/battle.ts`, test (Allied (c): max hits = ally warriors + swords; not vs same ally; victim may remove allies instead of damaging items)
+- `feat(lib): Allied flips Hostile on ally over-loss` — same, test (Allied (c): ally hits > item damage → Hostile at battle.end)
 - `feat(lib): relationships Hostile and Infamy` — same, test (remove their warrior → Hostile; +1 VP per Hostile piece removed in battle on own turn, except the flipping warrior)
 - `feat(lib): vagabondDamage event on full clear` — `events/vagabondDamage.ts`, test (Rule: Vagabond — full removal → damage 3; e.g. Revolt)
 - `feat(lib): Vagabond ignores dominance win` — `Game.ts` (Dominance/coalitions: cannot activate; coalition deferred)
+- `docs(plan): post-GP4 backlog` — dominance take/activate + Birdsong win check, coalitions, quests, 3 Eyrie leaders, 2 Vagabond characters, remaining E&P effects, hand-size-public / faces-private API view
 - `feat(lib): DEFAULT_FACTIONS = marquise, eyrie, alliance, vagabond` — `state/constants.ts`, test (setup letters A→D; 4p)
 - `feat(cli): auto plays vagabond actions` — `commands/auto.ts` (item choices, aid targets)
 - `ci: fix test` · `chore: prettier`
