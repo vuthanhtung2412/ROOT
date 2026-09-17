@@ -7,6 +7,7 @@ export { TurnLog } from './log/TurnLog.js'
 export type { LogEntry } from './log/types.js'
 
 export type { Action, ActionSpec, ActionResult } from './actions/types.js'
+export type { FactionId, Seat } from './pieces/types.js'
 export type { GameState, GameStatus, Phase, Step, PlayerState } from './state/types.js'
 export type { GameSnapshot } from './state/snapshot.js'
 export {
@@ -18,6 +19,10 @@ export {
 } from './state/constants.js'
 
 export { FALL } from './map/fall.js'
+export { FALL_LAYOUT } from './layout/fall.js'
+export type { MapLayout } from './layout/types.js'
+export { toSvg } from './layout/render/svg.js'
+export { toAscii } from './layout/render/ascii.js'
 export { RuleError } from './rules/RuleError.js'
 export { SeededRng, type Rng, type RngState } from './rules/Rng.js'
 
