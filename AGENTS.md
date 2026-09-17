@@ -1,2 +1,4 @@
 - Prefer language for anything is typescript
 - If there is a script to do certain thing use it (boostrap  ts project, generate client) instead of modifying code
+- In the course of development always refer back to the plan at `./resources/rules/Law_of_Root.pdf`. 
+  - In the same folder you can also file LLM friendly MDs version
