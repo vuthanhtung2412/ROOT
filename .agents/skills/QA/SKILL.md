@@ -14,34 +14,38 @@ Cite fixes `// Rule: Section > Subsection`. Name tests after rule lines.
 
 ## Backend QA
 
-Prefer live stack (engine bugs surface via API too):
+There a 3 types of backend QA
 
-```bash
-pnpm --filter @root/web dev
-pnpm --filter @root/cli start -- new
-pnpm --filter @root/cli start -- join alice
-pnpm --filter @root/cli start -- join bob
-pnpm --filter @root/cli start -- start
-# smoke / random play:
-pnpm --filter @root/cli start -- auto --turns 50 --players 2
-```
+### Unit Testing
 
-Or drive `@root/lib` (`Game.create` / `join` / `start` / `apply` / `legalActions` / `toJSON`) + fixtures in `lib/src/test/fixtures.ts`.
+1. Create desired state in a commit: dump via `GET /game/snapshot` (or craft `GameSnapshot` JSON), then `pnpm --filter @root/cli start -- load path/to.json` (`PUT /game/snapshot?replace=1`).
+2. Use the CLI to trigger the action
+3. Observe new state and report + fix if there is problem
 
-```text
-game = start lobby → join seats → start
-while no winner and under turn cap:
-  play one turn for current seat (legalActions → act)
-  check recent GET /game/log + snapshot vs Law_of_Root
-  if problem: break
-if problem:
-  fix code + add vitest in lib (reproduce before-state → action → assert)
-  open PR (see template)
-else:
-  report pass
-```
+### Auto Testing
 
-Useful endpoints: `GET /game`, `/game/snapshot`, `/game/actions`, `/game/log`, `POST /game/actions`, `POST /game/undo`.
+1. Let the game run for 25 turns `pnpm --filter @root/cli start -- auto --turns 25 --players 2`
+2. Check the logs file and compare with the rules to see if there is any problem
+3. Create a commit for each problem to fix and report
+
+### Full QA
+
+1. Play the game with CLI tools solely like how human would
+2. Following the steps below
+  ```text
+  game = start lobby → join seats → start
+  while no winner and under turn cap:
+    play one turn for current seat (legalActions → act)
+    check recent game state developments vs Law_of_Root
+    if problem: break
+  if problem:
+    fix code + add vitest in lib (reproduce before-state → action → assert)
+    open PR (see template)
+  else:
+    report pass
+  ```
+3. Gameplay must be intentional to arrive at an edge case
+
 
 ### PR template (backend)
 
@@ -60,8 +64,6 @@ Useful endpoints: `GET /game`, `/game/snapshot`, `/game/actions`, `/game/log`, `
 ```
 
 ## Frontend QA
-
-Today UI surface = web API + CLI (+ `GET /game/map.svg` in browser). No separate SPA yet.
 
 1. Create desired state: dump via `GET /game/snapshot` (or craft `GameSnapshot` JSON), then `pnpm --filter @root/cli start -- load path/to.json` (`PUT /game/snapshot?replace=1`). Or build via CLI `new`/`join`/`start`/`act` / lib fixtures.
 2. `pnpm --filter @root/web dev` (http://localhost:3000).
