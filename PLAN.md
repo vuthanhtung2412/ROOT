@@ -8,11 +8,11 @@
 - Follow `resources/rules/grand-plan-toward-base-game.md` Phases 0–9 + OOP layout there.
 - Rules SoT = `resources/rules/root-base-rules.md`. Cite `// Rule: Section > Subsection`. Tests name after rule lines.
 - Owner = **seat** (not faction) so 2 cats never collide.
-- Lobby: `Game.create` → `waiting`; `join` assigns `factions[seat]`; last join → setup → `playing`.
-- **Single game**: `GameStore = { game: Game | null }`. Routes = `/game/...` (no `:id`). `POST /game` → 409 if slot full unless `?replace=1`. Rooms later.
+- Lobby: `Game.create` → `waiting`; `join` → seat = join index, faction from sequence **marquise → eyrie → alliance → vagabond** (`DEFAULT_FACTIONS`; GP1 both marquise). **No auto-start.** Explicit `{ type:'start' }` / `POST /game/start` when `players.length > 1` and still waiting.
+- **Single game**: `GameStore = { game: Game | null }`. Routes = `/game/...` (no `:id`). `POST /game` → 409 if slot full unless `?replace=1` (esp. while `playing`). Rooms later.
 - **Lossless JSON**: `GameState` plain JSON only (no Map/Set/class). `Game.toJSON()` / `fromJSON(snapshot)`. Persist `{ state, history, log, rng: { seed, cursor } }` as one `.json` file.
 - Pending `Event[]` FIFO for battle / field hospital. Signals + hooks for card effects (Phase 7b proves bus).
-- House rules (document Phase 0): seat 0 starts; 2-cat garrison = keep+adjacent only; buildings keep-then-adjacent-by-id; dominance deferred.
+- House rules (document Phase 0): seat 0 starts; explicit lobby start when players > 1; 2-cat garrison = keep+adjacent only; buildings keep-then-adjacent-by-id; dominance deferred.
 - Already done: pnpm workspace, `@root/lib` stub, `@root/web` hello Hono. `frontend/cli` empty. No vitest yet.
 - Fall map image **already on disk**: `resources/reference/map/base/autumn-map.jpg` (3479×3189; see `SOURCES.md`). Layout/`toSvg` point at this path — **no add-asset commit**.
 - Prefer scripts: vitest via create script; cards via `pnpm --filter @root/lib gen:cards`; CLI package via bootstrap (not hand-edit scaffold).
@@ -29,9 +29,9 @@
 
 ### Test plan
 - Every commit: `pnpm -r typecheck`.
-- Rule-named vitest in `lib` (map graph, deck counts, queries, lobby, Marquise actions, pending FIFO, signals, craft VP, Keep, replay/undo, 30 VP seat winner, **toJSON/fromJSON round-trip**).
+- Rule-named vitest in `lib` (map graph, deck counts, queries, lobby join sequence + **start needs >1 player**, Marquise actions, pending FIFO, signals, craft VP, Keep, replay/undo, 30 VP seat winner, **toJSON/fromJSON round-trip**).
 - Silent-score guards: craft item → printed VP; Keep removed → `canPlace` true; pending head-first; 2-cat winner = seat.
-- Web: create → join ×2 → actions → act → log → undo → 400 illegal; second create without replace → 409; `GET /game/snapshot` file-ready.
+- Web: create → join ×2 → **start** → actions → act → log → undo → 400 illegal; second create without replace → 409; start with <2 → 400; `GET /game/snapshot` file-ready.
 - CLI gate: `auto --turns 50` vs live web; 2 cats; no dominance dealt.
 
 ### Commit plan
@@ -50,7 +50,7 @@
 - `docs(rules): add Vagabond relationship track costs/VP`
   - same file
 - `docs(rules): note house rules`
-  - same file — Implementation deviations: seat 0 starts; 2-cat garrison; buildings keep-then-adjacent-by-id; Builder/Thief only; dominance/quests/coalition deferred
+  - same file — Implementation deviations: seat 0 starts; explicit lobby start when players > 1; role sequence marquise→eyrie→alliance→vagabond (GP1 both marquise); 2-cat garrison; buildings keep-then-adjacent-by-id; Builder/Thief only; dominance/quests/coalition deferred
 - `chore(resources): add vp to item cards`
   - `resources/reference/ep-decks/cards.json` (parse from description; generator reads field)
 
@@ -103,7 +103,7 @@
 - `feat(lib): add GameSnapshot type`
   - `lib/src/state/snapshot.ts` — `{ state, history, log, rng }`
 - `feat(lib): add setup constants`
-  - `lib/src/state/constants.ts` — `DEFAULT_FACTIONS = ['marquise','marquise']`, ITEM_SUPPLY, RUIN_ITEMS, HAND_LIMIT, STARTING_HAND
+  - `lib/src/state/constants.ts` — `DEFAULT_FACTIONS = ['marquise','marquise']` (sequence marquise→eyrie→alliance→vagabond), ITEM_SUPPLY, RUIN_ITEMS, HAND_LIMIT, STARTING_HAND
 - `feat(lib): add MarquiseBoard type with supply`
   - `lib/src/state/boards.ts` — tracks from Phase 0 docs
 - `feat(lib): add Event types`
@@ -169,9 +169,13 @@
 - `feat(lib): Game.create in waiting status`
   - `lib/src/game/Game.ts` + test
 - `feat(lib): Game.join assigns factions[seat]`
-  - same + test
+  - same + test — seat0=marquise, seat1=marquise (GP1)
 - `feat(lib): Game.join rejects when full`
   - same + test
+- `feat(lib): Game.join does not auto-start`
+  - same + test — 2 joined → still waiting
+- `feat(lib): Game.start requires players greater than 1`
+  - same + test — 0/1 → error; ≥2 → ok
 - `feat(lib): Game.start strips dominance for 2p`
   - same + test — Rule: Setup 3
 - `feat(lib): Game.start deals hands, ruins, item supply`
@@ -179,7 +183,7 @@
 - `feat(lib): Game.start runs faction setups by seat`
   - same + test
 - `feat(lib): Game.legalActions delegates`
-  - same
+  - same — waiting: join (+ start if ≥2)
 - `feat(lib): Game.apply endPhase with steps`
   - same + test
 - `feat(lib): Game.apply runs autoActions`
@@ -275,9 +279,11 @@
 - `feat(web): add RuleError middleware`
   - `middleware/errors.ts`, `index.ts` — 404 no game; 409 exists
 - `feat(web): POST /game creates lobby`
-  - `routes/game.ts` — body `{ factions? }`; 400 unknown faction; 409 if slot full unless `?replace=1`
+  - `routes/game.ts` — body `{ factions? }`; 400 unknown faction; 409 if slot full unless `?replace=1` (esp. while playing)
 - `feat(web): POST /game/join`
   - same
+- `feat(web): POST /game/start`
+  - same — 400 unless waiting && players > 1
 - `feat(web): GET /game`
   - same
 - `feat(web): GET /game/snapshot`
@@ -299,11 +305,13 @@
 
 #### Phase 9 — CLI
 - `feat(cli): add API client`
-  - `frontend/cli/src/api/client.ts` — create/join/get/snapshot/actions/act/log/undo/delete; no game id
+  - `frontend/cli/src/api/client.ts` — create/join/start/get/snapshot/actions/act/log/undo/delete; no game id
 - `feat(cli): new command with --factions`
   - `commands/new.ts`, `index.ts` — uses `?replace=1`
 - `feat(cli): join command`
   - `commands/join.ts`
+- `feat(cli): start command`
+  - `commands/start.ts`
 - `feat(cli): show command`
   - `commands/show.ts`
 - `feat(cli): map ascii command`
@@ -315,7 +323,7 @@
 - `feat(cli): log and undo commands`
   - `commands/log.ts`, `commands/undo.ts`
 - `feat(cli): auto random-agent command`
-  - `commands/auto.ts`
+  - `commands/auto.ts` — create → join ×N → start → loop
 - `docs: usage for lib/web/cli`
   - `README.md`
 

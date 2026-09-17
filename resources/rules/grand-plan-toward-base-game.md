@@ -2,7 +2,7 @@
 - Portable Root engine in `/lib` (pure TS, no HTTP, deterministic).
 - `backend/web` (Hono) hosts **one game at a time** (no rooms / multi-game): **inspect state**, **list legal actions**, **submit actions**, **read log**, **undo**.
 - `frontend/cli` = agent test tool. Talks **only** to web API (no `lib` import).
-- Game starts in a **lobby** (`status: 'waiting'`). Players join one at a time; seat = join index; faction = `state.factions[seat]`. Last seat joins → setup runs → `status: 'playing'`. Player count = `factions.length`.
+- Game starts in a **lobby** (`status: 'waiting'`). Players join one at a time; seat = join index; faction from seat sequence **marquise → eyrie → alliance → vagabond** (`DEFAULT_FACTIONS`; GP1 = `['marquise','marquise']`). **Explicit `start`** when `players.length > 1` and status still `waiting` (no auto-start on last join). Single-slot server: cannot create/start over an **ongoing** (`playing`) game without `?replace=1`.
 - **Lossless JSON**: entire live game (`GameState` + `history` + `log` + RNG cursor) round-trips through **one JSON file** with no loss. No `Map`/`Set`/class/function/undefined holes in persisted fields.
 - Delivered in **4 grand phases**, each a fully playable game, each adding one faction:
 
@@ -80,8 +80,8 @@
 - **Event interrupt**: any rule needing a decision from any player pushes `state.pending`. Only its resolutions are legal until cleared. Enables Battle/Ambush/Field Hospital/Outrage without special-casing.
 - **Signals + hooks for card effects**: engine emits `GameSignal`s at rule boundaries (phase start/end, craft, warriors removed, battle stages, move, draw). Crafted persistent cards register `CardEffect` = listener (`Murine Broker`, `Master Engravers`, `Coffin Makers`, `Charm Offensive`) and/or pure `RuleHooks` (`Boat Builders`, `Tunnels`, `Soup Kitchens`, `Corvid Planners`) and/or granted `ActionSpec`s (`Swap Meet`, `Propaganda Bureau`, `Saboteurs`, `League of Adventurous Mice`). Effects never reach into faction code; factions never know card names. Deterministic: sync dispatch, seat order.
 - **Determinism**: `SeededRng` (seed + cursor in snapshot); `Game.replay(seed, actions)` must reproduce state → free undo + test fixtures.
-- **Lobby**: `Game.create({ seed, factions? })` → `waiting`, no players. `factions` defaults to `DEFAULT_FACTIONS` (bumped each grand phase). `Game.join(playerId)` assigns `factions[seat]`; join beyond `factions.length` → `RuleError('LOBBY_FULL')`. Last join runs all setups, deals hands, sets `playing`. Only `join` legal while `waiting`.
-- **Single game (web)**: server holds **at most one** `Game`. No room ids, no game list. `POST /game` creates (409 if already exists unless `?replace=1`); all other routes are `/game/...` with no `:id`. Multi-game rooms = later.
+- **Lobby**: `Game.create({ seed, factions? })` → `waiting`, no players. `factions` defaults to `DEFAULT_FACTIONS` (GP1 `['marquise','marquise']` → GP2+ grows along **marquise → eyrie → alliance → vagabond**). `Game.join(playerId)` assigns seat = `players.length`, faction = `factions[seat]`; join beyond `factions.length` → `RuleError('LOBBY_FULL')`. **`Game.start()`** (explicit action) legal iff `status === 'waiting'` and `players.length > 1`; runs setups, deals hands, sets `playing`. While waiting, legal = `join` (if not full) + `start` (if ≥2 players). No auto-start on last join.
+- **Single game (web)**: server holds **at most one** `Game`. No room ids, no game list. `POST /game` creates lobby (409 if slot has a game unless `?replace=1` — especially while `playing`). Routes `/game/...` with no `:id`. `POST /game/start` when lobby has >1 player. Multi-game rooms = later.
 - **Owner = seat.** `Piece.owner: Seat` (0..3). `factionOf(state, seat)` for rule checks. Every "enemy" / "your" check compares seats. Lets 2 cats coexist in GP1 and costs nothing later.
 - **Deck = Exiles & Partisans**, not base. Source of truth = `resources/reference/ep-decks/cards.json` → script generates `lib/src/cards/ep.generated.ts` (types + 46 defs). Never hand-copy card data. Regenerate via `pnpm --filter @root/lib gen:cards`.
 - **Map = graph.** Rules only see clearing ids + paths + suits. "Top-left" is a UI notion → lives in `layout/` (fixed `x,y` per clearing on the board image), never in rules. Setup uses fixed ids (`FALL.corners[i]`, `FALL.opposite()`) that happen to match the printed board corners.
@@ -150,7 +150,9 @@ state/
                          winner?: Seat,                                        // seat, not faction — GP1 has 2 cats
                          turnScratch: { actionsLeft, extraActions } }
   GameSnapshot         { state: GameState, history: Action[], log: LogEntry[], rng: { seed, cursor } }  // one JSON file = full restore
-  DEFAULT_FACTIONS     : FactionId[]    // GP1 ['marquise','marquise'] → GP2 ['marquise','eyrie'] → GP3 +'alliance' → GP4 +'vagabond' (= setup letters A→D)
+  DEFAULT_FACTIONS     : FactionId[]    // seat order = join order = setup A→D sequence: marquise → eyrie → alliance → vagabond
+                                         // GP1 ['marquise','marquise'] → GP2 ['marquise','eyrie'] → GP3 +alliance → GP4 +vagabond
+  // on start: player count = players.length (≥2); freeze roster; 2p strips dominance
   ITEM_SUPPLY          = { boot:2, bag:2, crossbow:1, hammer:1, sword:2, tea:2, coin:2 }   // Rule: Setup 5
   RUIN_ITEMS           = ['bag','boot','hammer','sword']                       // Rule: Vagabond > Setup 4
   HAND_LIMIT = 5, STARTING_HAND = 3
@@ -197,7 +199,8 @@ triggers/                                                                 // fir
                        queries/* call RuleHooks.* (fold over active effects) instead of raw map/piece checks
 
 actions/
-  Action               = { type:'join', playerId }                              // lobby only
+  Action               = { type:'join', playerId }                              // lobby: seat → DEFAULT_FACTIONS[seat]
+                       | { type:'start' }                                       // lobby: players.length > 1 → run setup → playing
                        | { type:'endPhase' }
                        | { type:'spendBird', cardId }                            // Rule: Marquise Daylight — +1 action, outside actions
                        | { type:'recruit' } | { type:'march', moves } | { type:'build', clearing, building }
@@ -257,13 +260,14 @@ factions/
 game/
   class Game {
     static create({ seed }): Game                                        // status 'waiting', no players
-    static replay(seed, actions): Game                                   // deterministic rebuild (joins included)
+    static replay(seed, actions): Game                                   // deterministic rebuild (joins + start included)
     static fromJSON(snapshot: GameSnapshot): Game                        // lossless load from one JSON object/file
     toJSON(): GameSnapshot                                               // lossless dump — write to one .json file
     state; history: Action[]; log: LogEntry[]; rng
-    join(playerId): ActionResult                                         // seat = players.length; faction = state.factions[seat]; last → start()
-    private start(): void                                                // Rule: Setup 1–7 in order: vp=0 → hands(3) → ruins → itemSupply → factions A→D → 'playing'
-    legalActions(): ActionSpec[]                                         // waiting → [join]; pending → resolver; else faction
+    join(playerId): ActionResult                                         // seat = players.length; faction = state.factions[seat]; does NOT start
+    start(): ActionResult                                                // RuleError unless waiting && players.length > 1; then setup → playing
+    private runSetup(): void                                             // Rule: Setup 1–7 in order: vp=0 → hands(3) → ruins → itemSupply → factions A→D → 'playing'
+    legalActions(): ActionSpec[]                                         // waiting → join (+ start if ≥2); pending → resolver; else faction
     apply(action): ActionResult                                          // validate → apply → checkWin (30 VP → winner: Seat; tie → currentSeat) → advance/auto
     undo(): void                                                         // replay(history[:-1])
   }
@@ -272,8 +276,9 @@ game/
 **Web (`backend/web/src`) — one game, no rooms**
 ```
 store/GameStore        { game: Game | null }                              // single slot; not Map
-routes/game.ts         POST /game (lobby; 409 if exists unless ?replace=1)
+routes/game.ts         POST /game (lobby; 409 if exists unless ?replace=1 — block over playing)
                        POST /game/join { playerId }
+                       POST /game/start                                   // 400 unless waiting && players > 1
                        GET /game · GET /game/snapshot                     // snapshot = GameSnapshot JSON (file-ready)
                        GET /game/actions · POST /game/actions
                        GET /game/log · POST /game/undo
@@ -285,10 +290,10 @@ middleware/errors.ts   RuleError → 400 { code, detail }; 404 no game; 409 game
 
 **CLI (`frontend/cli/src`)**
 ```
-api/client.ts          createGame, join, getGame, getSnapshot, getActions, act, getLog, undo, deleteGame
-commands/new|join|show|actions|act|log|undo
+api/client.ts          createGame, join, start, getGame, getSnapshot, getActions, act, getLog, undo, deleteGame
+commands/new|join|start|show|actions|act|log|undo
 commands/map.ts        print toAscii(state) — pieces per clearing at fixed positions
-commands/auto.ts       create (replace) → join ×N (N = factions.length) → random legal action loop until winner/N turns; fails on 5xx or invalid state
+commands/auto.ts       create (replace) → join ×N (N = factions.length) → start → random legal action loop until winner/N turns; fails on 5xx or invalid state
 ```
 
 ### Files to change
@@ -301,10 +306,10 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → r
 ### Test plan
 - Test names quote the rule line they cover (e.g. `it('Rule: Battle 4 — victim removes warriors before buildings')`).
 - Silent-scoring guards the `auto` gate cannot catch — mandatory rule-named units: craft item scores printed VP; Disdain → 1; Keep removed → `canPlace` true for others; pending FIFO resolves head first; `winner` = seat of the cat that hit 30 in a 2-cat game.
-- `lib` vitest: map graph (12 clearings, adjacency symmetric, rivers ⊄ paths, every id has layout coord), svg/ascii render snapshot, E&P deck (54 copies, 14 bird/14 fox/13 mouse/13 rabbit, 5 ambush, 4 dominance), Deck, ruler tie-break, queries, lobby (join order → faction, join beyond factions.length rejected, last join starts), each Marquise action happy+error, phase/step advance, pending-event gating, signal bus (dispatch order, listener mutates state, hooks fold), each Phase 7b card effect, `replay` reproduces state, undo, 30 VP win, **`toJSON`/`fromJSON` round-trip** (state + next rng roll identical).
-- `web`: build; curl create → join ×N → actions → act → log → undo → 400 illegal; second `POST /game` without replace → 409; `GET /game/snapshot` parseable as file.
+- `lib` vitest: map graph (12 clearings, adjacency symmetric, rivers ⊄ paths, every id has layout coord), svg/ascii render snapshot, E&P deck (54 copies, 14 bird/14 fox/13 mouse/13 rabbit, 5 ambush, 4 dominance), Deck, ruler tie-break, queries, lobby (join order → faction sequence; join beyond factions.length rejected; **start requires players > 1**; start with 1 player rejected; no auto-start on last join), each Marquise action happy+error, phase/step advance, pending-event gating, signal bus (dispatch order, listener mutates state, hooks fold), each Phase 7b card effect, `replay` reproduces state, undo, 30 VP win, **`toJSON`/`fromJSON` round-trip** (state + next rng roll identical).
+- `web`: build; curl create → join ×N → **start** → actions → act → log → undo → 400 illegal; second `POST /game` without replace → 409 (esp. while playing); `GET /game/snapshot` parseable as file; `POST /game/start` with <2 players → 400.
 - `cli`: `auto --turns 50` against live web. Gate per grand phase; every later GP re-runs earlier GP factions via `--factions` (regression).
-- lobby: join beyond `factions.length` rejected; 2p strips dominance, 3p+ keeps.
+- lobby: join beyond `factions.length` rejected; start only if >1 player + waiting; 2p strips dominance, 3p+ keeps.
 - GP2–4: each faction action happy+error path per rules bullet; Eyrie turmoil; Alliance outrage both triggers + base removal; Vagabond item damage/capacity, Hostile/Infamy.
 - Every commit: `pnpm -r typecheck`.
 
@@ -319,7 +324,7 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → r
 - `docs(rules): add Eyrie roost track VP` — same
 - `docs(rules): add Alliance sympathy track cost/VP` — same
 - `docs(rules): add Vagabond relationship track costs/VP` — same
-- `docs(rules): note house rules` — same, "Implementation deviations" section: seat 0 starts; 2-cat garrison keep+adjacent; buildings keep-then-adjacent-by-id; Builder/Thief only; dominance + quests + coalition deferred
+- `docs(rules): note house rules` — same, "Implementation deviations" section: seat 0 starts; explicit lobby `start` when players > 1; 2-cat garrison keep+adjacent; buildings keep-then-adjacent-by-id; Builder/Thief only; dominance + quests + coalition deferred; role sequence marquise→eyrie→alliance→vagabond (GP1 both marquise)
 - `chore(resources): add vp to item cards` — `resources/reference/ep-decks/cards.json` (from description text; generator reads field)
 
 **Phase 1 — map (graph)**
@@ -349,7 +354,7 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → r
 - `feat(lib): add matchesSuit and bird wildcard` — `lib/src/cards/suit.ts`, test (Rule: Cards > Birds are wild, 3 bullets)
 - `feat(lib): add Phase, Step, GameState types` — `lib/src/state/types.ts` (`pending: Event[]`, `winner?: Seat`; plain JSON only — no Map/Set)
 - `feat(lib): add GameSnapshot type` — `lib/src/state/snapshot.ts` (`{ state, history, log, rng }`)
-- `feat(lib): add setup constants` — `lib/src/state/constants.ts` (ITEM_SUPPLY, RUIN_ITEMS, HAND_LIMIT, STARTING_HAND, `DEFAULT_FACTIONS = ['marquise','marquise']`; Rule: Setup)
+- `feat(lib): add setup constants` — `lib/src/state/constants.ts` (ITEM_SUPPLY, RUIN_ITEMS, HAND_LIMIT, STARTING_HAND, `DEFAULT_FACTIONS = ['marquise','marquise']` — seat sequence marquise→eyrie→alliance→vagabond; Rule: Setup)
 - `feat(lib): add MarquiseBoard type with supply` — `lib/src/state/boards.ts` (Rule: Pieces — limited; other boards in GP2–4)
 - `feat(lib): add Event types` — `lib/src/events/types.ts`
 - `feat(lib): add GameSignal types` — `lib/src/triggers/signals.ts`
@@ -385,12 +390,14 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → r
 **Phase 5 — Game core**
 - `feat(lib): add TurnLog` — `lib/src/log/TurnLog.ts`
 - `feat(lib): Game.create in waiting status` — `lib/src/game/Game.ts`, test (`factions` defaults DEFAULT_FACTIONS)
-- `feat(lib): Game.join assigns factions[seat]` — same, test
+- `feat(lib): Game.join assigns factions[seat]` — same, test (sequence seat0=marquise, seat1=marquise in GP1 / eyrie later)
 - `feat(lib): Game.join rejects when full` — same, test (full = `factions.length`)
+- `feat(lib): Game.join does not auto-start` — same, test (2 joined → still waiting)
+- `feat(lib): Game.start requires players greater than 1` — same, test (0/1 → RuleError; ≥2 → ok)
 - `feat(lib): Game.start strips dominance for 2p` — same, test (Rule: Setup 3 — 2p removes 4 dominance)
 - `feat(lib): Game.start deals hands, ruins, item supply` — same, test (Rule: Setup 2–5, in order)
 - `feat(lib): Game.start runs faction setups by seat` — same, test (Rule: Setup 7; GP1 = 2 cats)
-- `feat(lib): Game.legalActions delegates` — same
+- `feat(lib): Game.legalActions delegates` — same (waiting: join + start if ≥2)
 - `feat(lib): Game.apply endPhase with steps` — same, test
 - `feat(lib): Game.apply runs autoActions` — same, test
 - `feat(lib): Game.apply gates on pending queue head` — same, test (FIFO: two enqueued → resolve in order)
@@ -443,8 +450,9 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → r
 **Phase 8 — web API (single game, no rooms)**
 - `feat(web): add single-slot GameStore` — `backend/web/src/store/GameStore.ts` (`game: Game | null`)
 - `feat(web): add RuleError middleware` — `middleware/errors.ts`, `index.ts` (404 no game; 409 exists)
-- `feat(web): POST /game creates lobby` — `routes/game.ts` (body `{ factions? }` → `Game.create`; 400 unknown faction; 409 if slot full unless `?replace=1`)
+- `feat(web): POST /game creates lobby` — `routes/game.ts` (body `{ factions? }` → `Game.create`; 400 unknown faction; 409 if slot full unless `?replace=1`, esp. while playing)
 - `feat(web): POST /game/join` — same
+- `feat(web): POST /game/start` — same (400 unless waiting && players > 1)
 - `feat(web): GET /game` — same
 - `feat(web): GET /game/snapshot` — same (`GameSnapshot` JSON, file-ready)
 - `feat(web): GET /game/actions` — same
@@ -456,15 +464,16 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → r
 - `feat(web): GET /map/fall and layout` — `routes/map.ts`
 
 **Phase 9 — CLI**
-- `feat(cli): add API client` — `frontend/cli/src/api/client.ts` (create/join/get/snapshot/actions/act/log/undo/delete; no game id)
+- `feat(cli): add API client` — `frontend/cli/src/api/client.ts` (create/join/start/get/snapshot/actions/act/log/undo/delete; no game id)
 - `feat(cli): new command with --factions` — `commands/new.ts`, `index.ts` (uses `?replace=1`)
 - `feat(cli): join command` — `commands/join.ts`
+- `feat(cli): start command` — `commands/start.ts`
 - `feat(cli): show command` — `commands/show.ts`
 - `feat(cli): map ascii command` — `commands/map.ts`
 - `feat(cli): actions command` — `commands/actions.ts`
 - `feat(cli): act command` — `commands/act.ts`
 - `feat(cli): log and undo commands` — `commands/log.ts`, `commands/undo.ts`
-- `feat(cli): auto random-agent command` — `commands/auto.ts`
+- `feat(cli): auto random-agent command` — `commands/auto.ts` (create → join ×N → start → loop)
 - `docs: usage for lib/web/cli` — `README.md`
 
 **GP1 gate**: `auto --turns 50` with 2 cats reaches a 30 VP winner or clean turn cap, zero 5xx, `replay` matches, no dominance in deck.
