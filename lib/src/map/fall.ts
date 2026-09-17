@@ -70,6 +70,9 @@ export class FallMap extends GameMap {
     0, 1, 2, 3,
   ]
 
+  /** Default forest index for Vagabond setup (central-ish). */
+  readonly vagabondForest = 3
+
   /** Diagonally opposite corner. Involutive on corners. */
   opposite(corner: ClearingId): ClearingId {
     const i = this.corners.indexOf(corner as (typeof this.corners)[number])
