@@ -1,9 +1,11 @@
 import { defOf } from '../cards/Deck.js'
 import type { Card } from '../cards/types.js'
 import type { Action } from '../actions/types.js'
+import type { Event } from '../events/types.js'
 import { FALL } from '../map/fall.js'
 import { FALL_LAYOUT } from '../layout/fall.js'
 import { toAscii } from '../layout/render/ascii.js'
+import type { LogEntry } from '../log/types.js'
 import type { Seat } from '../pieces/types.js'
 import type { GameState, PlayerState } from '../state/types.js'
 
@@ -186,6 +188,77 @@ export function describeAction(action: Action, state: GameState): string {
     default:
       return JSON.stringify(action)
   }
+}
+
+function pieceSide(pieces: Piece[]): string {
+  const bySeat = new Map<number, string[]>()
+  for (const p of pieces) {
+    const list = bySeat.get(p.owner) ?? []
+    list.push(pieceShort(p))
+    bySeat.set(p.owner, list)
+  }
+  return [...bySeat.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([seat, parts]) => `s${seat}:${formatPieceChunk(parts)}`)
+    .join(' ')
+}
+
+function describeEvent(event: Event): string {
+  switch (event.type) {
+    case 'battle': {
+      const bits = [
+        `BATTLE C${event.clearing} s${event.attacker}→s${event.defender}`,
+        `stage=${event.stage}`,
+      ]
+      if (event.rolls) bits.push(`roll=${event.rolls[0]}/${event.rolls[1]}`)
+      if (event.hits.attacker || event.hits.defender) {
+        bits.push(`hits a${event.hits.attacker}/d${event.hits.defender}`)
+      }
+      return bits.join(' ')
+    }
+    case 'fieldHospital':
+      return `FIELD HOSPITAL s${event.victim} C${event.clearing} x${event.count}`
+    case 'outrage':
+      return `OUTRAGE s${event.offender} C${event.clearing}`
+    case 'vagabondDamage':
+      return `VAGABOND DAMAGE x${event.count}`
+    default:
+      return JSON.stringify(event)
+  }
+}
+
+/** One human-readable line per turn-log entry (same voice as server action lines). */
+export function describeLogEntry(entry: LogEntry, state: GameState): string {
+  switch (entry.t) {
+    case 'join':
+      return `JOIN ${entry.playerId} (${entry.faction})`
+    case 'start':
+      return 'START game'
+    case 'action':
+      return `s${entry.actor} ${describeAction(entry.action, state)}`
+    case 'vp':
+      return `s${entry.actor} ${entry.delta >= 0 ? '+' : ''}${entry.delta}vp (${entry.reason})`
+    case 'pieces': {
+      const bits: string[] = [`pieces C${entry.clearing}`]
+      if (entry.placed?.length) bits.push(`+${pieceSide(entry.placed)}`)
+      if (entry.removed?.length) bits.push(`-${pieceSide(entry.removed)}`)
+      return bits.join(' ')
+    }
+    case 'phase':
+      return `s${entry.actor} → ${entry.phase}/${entry.step}`
+    case 'event':
+      return describeEvent(entry.event)
+    case 'win':
+      return `WIN seat${entry.winner}`
+    default:
+      return JSON.stringify(entry)
+  }
+}
+
+/** Multi-line turn log for CLI. */
+export function formatTurnLog(log: LogEntry[], state: GameState): string {
+  if (log.length === 0) return '(empty log)'
+  return log.map((e) => describeLogEntry(e, state)).join('\n')
 }
 
 export type PrettyGameOpts = {
