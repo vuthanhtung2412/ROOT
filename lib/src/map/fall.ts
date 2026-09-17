@@ -64,7 +64,21 @@ const RIVERS: Path[] = [
   [9, 10],
 ]
 
-export const FALL = new GameMap({
+export class FallMap extends GameMap {
+  /** NW, NE, SE, SW corner clearing ids. */
+  readonly corners: readonly [ClearingId, ClearingId, ClearingId, ClearingId] = [
+    0, 1, 2, 3,
+  ]
+
+  /** Diagonally opposite corner. Involutive on corners. */
+  opposite(corner: ClearingId): ClearingId {
+    const i = this.corners.indexOf(corner as (typeof this.corners)[number])
+    if (i < 0) throw new Error(`not a corner clearing: ${corner}`)
+    return this.corners[(i + 2) % 4]!
+  }
+}
+
+export const FALL = new FallMap({
   clearings,
   paths: PATHS,
   rivers: RIVERS,
