@@ -113,15 +113,4 @@ export const api = {
   delete() {
     return request<void>('DELETE', '/game')
   },
-
-  async mapAscii() {
-    const url = `${BASE}/game/map.ascii`
-    const res = await fetch(url)
-    const text = await res.text()
-    if (!res.ok) {
-      const data = text ? (JSON.parse(text) as { code: string; detail?: unknown }) : { code: 'HTTP_ERROR' }
-      throw new ApiError(res.status, data)
-    }
-    return text
-  },
 }
