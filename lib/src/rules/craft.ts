@@ -103,7 +103,7 @@ export function craftCard(
     return logs
   }
 
-  if (def.type === 'persistent') {
+  if (def.type === 'persistent' || def.type === 'partisan') {
     player.playArea.push(card)
     ctx.emit({ s: 'craft.persistent', actor: seat, cardId })
     logs.push({ t: 'action', actor: seat, action: { type: 'craft', cardId } })

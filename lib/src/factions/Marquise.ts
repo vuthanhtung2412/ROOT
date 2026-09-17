@@ -30,6 +30,7 @@ import type { Ctx } from '../game/ctx.js'
 import type { LogEntry } from '../log/types.js'
 import type { BuildingType, Seat } from '../pieces/types.js'
 import { connectedRuled } from '../queries/connected.js'
+import { openBattle } from '../events/battle.js'
 import { Faction } from './Faction.js'
 
 const STEPS: Record<Phase, Step[]> = {
@@ -253,6 +254,37 @@ function hasLegalMarch(state: GameState, seat: Seat, ctx: Ctx): boolean {
   return false
 }
 
+function enemySeatsInClearing(state: GameState, clearing: ClearingId, seat: Seat): Seat[] {
+  const enemies = new Set<Seat>()
+  for (const p of state.clearings[clearing]!.pieces) {
+    if (p.owner !== seat && (p.kind === 'warrior' || p.kind === 'pawn')) {
+      enemies.add(p.owner)
+    }
+  }
+  return [...enemies]
+}
+
+function canBattle(
+  state: GameState,
+  seat: Seat,
+  clearing: ClearingId,
+  defender: Seat,
+): boolean {
+  if (defender === seat) return false
+  if (warriors(state, clearing, seat) < 1) return false
+  return enemySeatsInClearing(state, clearing, seat).includes(defender)
+}
+
+function hasLegalBattle(state: GameState, seat: Seat): boolean {
+  for (let clearing = 0; clearing < 12; clearing++) {
+    const enemies = enemySeatsInClearing(state, clearing as ClearingId, seat)
+    for (const defender of enemies) {
+      if (canBattle(state, seat, clearing as ClearingId, defender)) return true
+    }
+  }
+  return false
+}
+
 function placeBirdsongWood(state: GameState, seat: Seat): LogEntry[] {
   const board = boardOf(state, seat)
   const logs: LogEntry[] = []
@@ -366,6 +398,8 @@ export class Marquise extends Faction {
             }
           }
         }
+
+        if (hasLegalBattle(state, seat)) specs.push({ type: 'battle', actor: seat })
       }
 
       specs.push({ type: 'endPhase', actor: seat })
@@ -475,6 +509,19 @@ export class Marquise extends Faction {
         }
         return
       }
+      case 'battle': {
+        if (state.phase !== 'daylight' || state.step !== 'actions') {
+          throw new RuleError('WRONG_STEP', { phase: state.phase, step: state.step })
+        }
+        if (actionBudget(state) < 1) throw new RuleError('NO_ACTIONS_LEFT')
+        if (!canBattle(state, seat, action.clearing, action.defender)) {
+          throw new RuleError('CANNOT_BATTLE', {
+            clearing: action.clearing,
+            defender: action.defender,
+          })
+        }
+        return
+      }
       case 'discard': {
         if (state.phase !== 'evening' || state.step !== 'discard') {
           throw new RuleError('WRONG_STEP', { phase: state.phase, step: state.step })
@@ -580,6 +627,12 @@ export class Marquise extends Faction {
       }
       case 'craft':
         return craftCard(state, seat, action.cardId, ctx)
+      case 'battle': {
+        consumeAction(state)
+        const logs = openBattle(state, action.clearing, seat, action.defender, ctx)
+        logs.push({ t: 'action', actor: seat, action })
+        return logs
+      }
       case 'discard': {
         const player = playerOf(state, seat)
         for (const id of action.cardIds) {
@@ -611,6 +664,7 @@ export class Marquise extends Faction {
       recruited: false,
       birdsongWoodDone: false,
       eveningDrawDone: false,
+      swapMeetUsed: false,
     }
   }
 }

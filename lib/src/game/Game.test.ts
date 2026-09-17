@@ -132,7 +132,7 @@ describe('Game.apply', () => {
       clearing: 0,
       count: 1,
     })
-    expect(game.legalActions()).toEqual([])
+    expect(game.legalActions().every((a) => a.type === 'resolveEvent')).toBe(true)
     expect(() => game.apply({ type: 'endPhase' })).toThrow(
       expect.objectContaining({ code: 'PENDING_EVENT' }),
     )

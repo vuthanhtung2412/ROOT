@@ -21,9 +21,12 @@ import type { FactionBoard } from '../state/boards.js'
 import type { GameSnapshot } from '../state/snapshot.js'
 import type { Seat } from '../pieces/types.js'
 import type { GameState, Phase, PlayerState } from '../state/types.js'
-import { defaultRuleHooks } from '../triggers/hooks.js'
+import '../effects/register.js'
+import { tryApplySwapMeet } from '../effects/swapMeet.js'
+import { RESOLVERS } from '../events/resolvers.js'
 import { EFFECTS } from '../triggers/effects.js'
 import type { Listener } from '../triggers/effects.js'
+import { buildRuleHooks } from '../triggers/buildHooks.js'
 import type { Ctx } from './ctx.js'
 import { SignalBus } from '../triggers/SignalBus.js'
 
@@ -123,6 +126,7 @@ function initialState(args: {
       recruited: false,
       birdsongWoodDone: false,
       eveningDrawDone: false,
+      swapMeetUsed: false,
     },
   }
 }
@@ -230,7 +234,12 @@ export class Game {
       throw new RuleError('GAME_FINISHED')
     }
 
-    if (this.state.pending.length > 0 && action.type !== 'resolveEvent') {
+    if (
+      this.state.pending.length > 0 &&
+      action.type !== 'resolveEvent' &&
+      action.type !== 'join' &&
+      action.type !== 'start'
+    ) {
       throw new RuleError('PENDING_EVENT', { head: this.state.pending[0] })
     }
 
@@ -271,17 +280,28 @@ export class Game {
   }
 
   private makeCtx(): Ctx {
-    const hooks = defaultRuleHooks(FALL)
+    const hooks = buildRuleHooks(this.state, FALL)
     const ctx: Ctx = {
       map: FALL,
       rng: this.rng,
       hooks,
       emit: (signal) => {
-        this.signalBus.emit(this.state, signal, ctx)
+        this.dispatchSignal(signal, ctx)
       },
       grantedActions: () => this.grantedActions(),
     }
     return ctx
+  }
+
+  private dispatchSignal(signal: import('../triggers/signals.js').GameSignal, ctx: Ctx): void {
+    this.signalBus.emit(this.state, signal, ctx)
+    const seats = [...this.state.players].sort((a, b) => a.seat - b.seat)
+    for (const player of seats) {
+      for (const card of player.playArea) {
+        const effect = EFFECTS[card.defId]
+        effect?.onSignal?.(this.state, signal, ctx)
+      }
+    }
   }
 
   private grantedActions(): ActionSpec[] {
@@ -299,8 +319,8 @@ export class Game {
   private pendingLegalActions(): ActionSpec[] {
     const head = this.state.pending[0]
     if (!head) return []
-    // Event resolvers wired in Phase 7.
-    return []
+    const ctx = this.makeCtx()
+    return RESOLVERS[head.type].legalActions(this.state, head, ctx)
   }
 
   private validate(action: Action): void {
@@ -320,6 +340,22 @@ export class Game {
     }
 
     const legal = this.legalActions()
+    if (action.type === 'resolveEvent') {
+      const head = this.state.pending[0]
+      if (!head) throw new RuleError('NO_PENDING_EVENT')
+      const ctx = this.makeCtx()
+      if (!RESOLVERS[head.type].matchesAction(this.state, head, action, ctx)) {
+        throw new RuleError('ILLEGAL_ACTION', { action })
+      }
+      return
+    }
+    if (action.type === 'swapMeet') {
+      const ok = legal.some(
+        (spec) => spec.type === 'swapMeet' && spec.actor === this.state.currentSeat,
+      )
+      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
+      return
+    }
     const ok = legal.some(
       (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
     )
@@ -335,9 +371,12 @@ export class Game {
       case 'endPhase':
         return this.applyEndPhase()
       case 'resolveEvent':
-        throw new RuleError('NOT_IMPLEMENTED', { action: 'resolveEvent' })
+        return this.applyResolveEvent(action)
       default: {
         const ctx = this.makeCtx()
+        if (tryApplySwapMeet(this.state, action, ctx)) {
+          return [{ t: 'action', actor: this.state.currentSeat, action }]
+        }
         const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
         faction.validate(this.state, action, ctx)
         return faction.apply(this.state, action, ctx)
@@ -384,6 +423,7 @@ export class Game {
       recruited: false,
       birdsongWoodDone: false,
       eveningDrawDone: false,
+      swapMeetUsed: false,
     }
 
     const ctx = this.makeCtx()
@@ -467,6 +507,7 @@ export class Game {
           recruited: false,
           birdsongWoodDone: false,
           eveningDrawDone: false,
+          swapMeetUsed: false,
         }
       }
       logs.push({
@@ -520,6 +561,33 @@ export class Game {
       }
     }
     return logs
+  }
+
+  private applyResolveEvent(action: Action): LogEntry[] {
+    if (action.type !== 'resolveEvent') throw new RuleError('INVALID_ACTION')
+    const head = this.state.pending[0]
+    if (!head) throw new RuleError('NO_PENDING_EVENT')
+    const ctx = this.makeCtx()
+    const legal = RESOLVERS[head.type].legalActions(this.state, head, ctx)
+    const spec = legal.find((s) => {
+      if (s.type !== 'resolveEvent') return false
+      if (action.decline && s.params?.decline?.includes(true)) return true
+      if (action.order && s.params?.order) {
+        return s.params.order.some((o) => JSON.stringify(o) === JSON.stringify(action.order))
+      }
+      if (action.cardId && s.params?.cardIds?.includes(action.cardId)) return true
+      if (action.useEffect !== undefined && s.params?.useEffect?.includes(action.useEffect)) {
+        return true
+      }
+      if (action.pieceIds && s.params?.pieceIds) {
+        return s.params.pieceIds.some(
+          (ids) => JSON.stringify(ids) === JSON.stringify(action.pieceIds),
+        )
+      }
+      return false
+    })
+    if (!spec) throw new RuleError('ILLEGAL_ACTION', { action })
+    return RESOLVERS[head.type].apply(this.state, head, action, spec.actor, ctx)
   }
 
   private checkWin(): LogEntry[] {
