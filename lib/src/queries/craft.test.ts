@@ -1,0 +1,88 @@
+import { describe, expect, it } from 'vitest'
+import { minimalState, withPieces, card, player, marquiseBoard } from '../test/fixtures.js'
+import { canCraft } from './craft.js'
+
+describe('canCraft', () => {
+  it('Rule: Craft 1 — activate crafting pieces matching cost suits', () => {
+    const state = withPieces(minimalState(), 0, [
+      {
+        id: 'ws',
+        kind: 'building',
+        owner: 0,
+        type: 'workshop',
+        used: false,
+      },
+    ])
+    expect(canCraft(state, 0, card('ROOT-204'))).toBe(true)
+  })
+
+  it('Rule: Craft 2 — crafting piece suit = clearing suit', () => {
+    const state = withPieces(minimalState(), 1, [
+      {
+        id: 'ws',
+        kind: 'building',
+        owner: 0,
+        type: 'workshop',
+        used: false,
+      },
+    ])
+    expect(canCraft(state, 0, card('ROOT-204'))).toBe(false)
+  })
+
+  it('Rule: Craft 3 — each crafting piece activates once per turn', () => {
+    const state = withPieces(minimalState(), 0, [
+      {
+        id: 'ws',
+        kind: 'building',
+        owner: 0,
+        type: 'workshop',
+        used: true,
+      },
+    ])
+    expect(canCraft(state, 0, card('ROOT-204'))).toBe(false)
+  })
+
+  it('Rule: Craft 4 — missing supply item → cannot craft', () => {
+    const state = withPieces(
+      minimalState({ itemSupply: { ...minimalState().itemSupply, hammer: 0 } }),
+      0,
+      [
+        {
+          id: 'ws',
+          kind: 'building',
+          owner: 0,
+          type: 'workshop',
+          used: false,
+        },
+      ],
+    )
+    expect(canCraft(state, 0, card('ROOT-204'))).toBe(false)
+  })
+
+  it('Rule: Craft — no duplicate identical persistent', () => {
+    const persistent = card('ROOT-57')
+    const state = minimalState({
+      players: [
+        player(0, 'marquise', { board: marquiseBoard(), playArea: [persistent] }),
+        player(1, 'marquise'),
+      ],
+    })
+    const withWorkshop = withPieces(state, 0, [
+      {
+        id: 'ws',
+        kind: 'building',
+        owner: 0,
+        type: 'workshop',
+        used: false,
+      },
+      {
+        id: 'ws2',
+        kind: 'building',
+        owner: 0,
+        type: 'workshop',
+        used: false,
+      },
+    ])
+    expect(canCraft(withWorkshop, 0, card('ROOT-57'))).toBe(false)
+  })
+})
