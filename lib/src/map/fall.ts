@@ -1,5 +1,5 @@
 import { GameMap } from './GameMap.js'
-import type { Clearing } from './types.js'
+import type { Clearing, ClearingId, Path } from './types.js'
 
 /** Fall (Autumn) clearing ids are 0..11. Source: therootdatabase.com/map/autumn + rootgame autumn_map_setup. */
 const SLOTS = [1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 3, 2] as const
@@ -23,4 +23,37 @@ const clearings: Clearing[] = Array.from({ length: 12 }, (_, id) => ({
   ruinSlot: RUIN_CLEARINGS.has(id),
 }))
 
-export const FALL = new GameMap({ clearings, paths: [] })
+/** Undirected path edges (a < b). */
+const PATHS: Path[] = [
+  [0, 4],
+  [0, 8],
+  [0, 9],
+  [1, 4],
+  [1, 5],
+  [1, 9],
+  [2, 5],
+  [2, 6],
+  [2, 10],
+  [3, 7],
+  [3, 8],
+  [3, 11],
+  [5, 10],
+  [6, 7],
+  [6, 11],
+  [8, 11],
+  [9, 11],
+  [10, 11],
+]
+
+/** Forests as bordering clearing ids (7 on Autumn). */
+const FORESTS: ClearingId[][] = [
+  [0, 4, 9],
+  [0, 8, 9, 11],
+  [1, 4, 5],
+  [1, 5, 9, 10, 11],
+  [2, 5, 10, 11],
+  [2, 6, 10, 11],
+  [3, 6, 7, 8, 11],
+]
+
+export const FALL = new GameMap({ clearings, paths: PATHS, forests: FORESTS })
