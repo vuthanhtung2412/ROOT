@@ -8,6 +8,7 @@ import {
   type FactionId,
 } from '@root/lib'
 import { Hono } from 'hono'
+import { logGameEvent } from '../debug/logGame.js'
 import { gameExists, noGame } from '../middleware/errors.js'
 import { store } from '../store/GameStore.js'
 
@@ -31,6 +32,7 @@ gameRoutes.post('/', async (c) => {
   }
   const seed = Math.floor(Math.random() * 1_000_000_000)
   store.game = Game.create({ seed, factions: body.factions })
+  logGameEvent('CREATE', store.game.state)
   return c.json({ state: store.game.state }, 201)
 })
 
@@ -38,12 +40,14 @@ gameRoutes.post('/join', async (c) => {
   const game = requireGame()
   const body = await c.req.json<{ playerId: string }>()
   const result = game.join(body.playerId)
+  logGameEvent('JOIN', result.state, { type: 'join', playerId: body.playerId })
   return c.json(result)
 })
 
 gameRoutes.post('/start', (c) => {
   const game = requireGame()
   const result = game.start()
+  logGameEvent('START', result.state, { type: 'start' })
   return c.json(result)
 })
 
@@ -69,6 +73,7 @@ gameRoutes.post('/actions', async (c) => {
   const game = requireGame()
   const action = (await c.req.json()) as Action
   const result = game.apply(action)
+  logGameEvent('ACT', result.state, action)
   return c.json(result)
 })
 
@@ -80,6 +85,7 @@ gameRoutes.get('/log', (c) => {
 gameRoutes.post('/undo', (c) => {
   const game = requireGame()
   game.undo()
+  logGameEvent('UNDO', game.state)
   return c.json({ state: game.state })
 })
 

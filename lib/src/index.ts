@@ -23,6 +23,8 @@ export { FALL_LAYOUT } from './layout/fall.js'
 export type { MapLayout } from './layout/types.js'
 export { toSvg } from './layout/render/svg.js'
 export { toAscii } from './layout/render/ascii.js'
+export type { AsciiOpts } from './layout/render/ascii.js'
+export { defOf } from './cards/Deck.js'
 export { RuleError } from './rules/RuleError.js'
 export { SeededRng, type Rng, type RngState } from './rules/Rng.js'
 
