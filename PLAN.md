@@ -38,7 +38,7 @@
 | Battle — ambush/foil; end if no attackers; higher/lower die; max hits = warriors; defenseless +1; victim orders removal, warriors first; +1 VP per building/token | `Event.battle.stage: 'ambush' \| 'foil' \| 'roll' \| 'effects' \| 'removeDefender' \| 'removeAttacker'`; removal = `resolveEvent { pieceIds }` by victim; `hooks.extraHits` |
 | Setup — order: hands (3 each; **2p → remove 4 dominance first**) → 4 ruins → item supply → factions A→D | `Game.start()` fixed order; `if players === 2` strip dominance from deck (GP1/GP2); `ITEM_SUPPLY = {boot:2,bag:2,crossbow:1,hammer:1,sword:2,tea:2,coin:2}`; A→D = seat order |
 | Marquise setup — keep in a corner; garrison all except opposite corner; 1+1+1 buildings keep/adjacent; tracks leftmost empty | keep = `FALL.corners[0]`; GP1 second cat = `FALL.opposite(corners[0])`. Garrison: **single cat** → all except opposite (rules-exact); **2 cats** → each garrisons keep + adjacent only (would otherwise stack 10 clearings). Buildings into keep then adjacent by id, `placeUpTo` on open slots. Rule: Marquise > Setup 1–5 |
-| Marquise — The Keep: only *this* Marquise may place there; keep gone forever if removed | `canPlace(state, seat, clearing)` looks for a keep **token** in the clearing and compares owner seat (GP1 has 2 keeps). No token → no restriction. Keep never returns to supply |
+| Marquise — The Keep: only *this* Marquise may **place** there; **move-in, battle, and rule by enemies are all allowed**; keep gone forever if removed | `canPlace(state, seat, clearing)` looks for a keep **token** in the clearing and compares owner seat (GP1 has 2 keeps). No token → no restriction. `canMove`, battle, `ruler` **never** consult the keep. Blocks: enemy recruit/build/sympathy/roost placement there. Keep never returns to supply |
 | Victory — craft item → **printed VP** (Eyrie Disdain → 1) | `CardDef.vp` (from `cards.json`, new field); `craft` scores `vp` via `hooks.craftVp(state, seat, card)` (default printed; Eyrie 1; Builder printed) — **before** `craft.item` signal so Master Engravers stacks on top |
 | Victory — dominance "take available" (Daylight, spend matching card) | **Deferred** with activation/coalition. GP1–2 strip dominance (2p). GP3+: `dominanceAvailable` is write-only pile; no `takeDominance` action yet. Revisit after GP4 |
 | Battle 3 — both sides have optional effects → attacker picks who goes first | `effects` stage: if ≥2 seats hold effects, first resolve = `{ type:'resolveEvent', order: Seat[] }` by attacker; else auto |
@@ -356,7 +356,7 @@ commands/auto.ts       create → join ×N (N = factions.length) → random lega
 - `feat(lib): add warriors and pieces queries` — `lib/src/queries/pieces.ts`
 - `feat(lib): add openSlots query` — `lib/src/queries/slots.ts`, test (Rule: Board > Slots; ruin counts)
 - `feat(lib): add factionOf and seat helpers` — `lib/src/queries/seat.ts`
-- `feat(lib): add canPlace query with Keep by owner` — `lib/src/queries/place.ts`, test (Rule: Marquise > The Keep; 2 keeps → 2 owners; **no keep token → unrestricted**)
+- `feat(lib): add canPlace query with Keep by owner` — `lib/src/queries/place.ts`, test (Rule: Marquise > The Keep; 2 keeps → 2 owners; **no keep token → unrestricted**; test: enemy `canMove` into keep clearing is true, `canPlace` false)
 - `feat(lib): add canMove query` — `lib/src/queries/move.ts`, test (Rule: Move 1–3)
 - `feat(lib): add connectedRuled query` — `lib/src/queries/connected.ts`, test
 - `feat(lib): add woodReachable query` — `lib/src/queries/wood.ts`, test (Rule: Marquise > Build 3)
