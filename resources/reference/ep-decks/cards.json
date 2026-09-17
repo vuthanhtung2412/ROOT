@@ -1,0 +1,620 @@
+{
+  "deck": "Exiles & Partisans",
+  "totalCards": 54,
+  "uniqueFaces": 46,
+  "notes": {
+    "cost": "Array of crafting suits required. 'wild' = any suit. Empty = not craftable (ambush/dominance).",
+    "type": "ambush | dominance | item | partisan | persistent",
+    "copies": "How many physical copies of this face are in the 54-card deck.",
+    "suit": "Card suit (bird is wild when spent for suit)."
+  },
+  "sources": [
+    {
+      "name": "Leder Card Library",
+      "url": "https://cards.ledergames.com/search?q=product%3Aexiles-partisans",
+      "provides": "Official card names, rules text, art"
+    },
+    {
+      "name": "LederCards/cards (GitHub)",
+      "url": "https://github.com/LederCards/cards",
+      "path": "content/card-data/root/en-US/exiles-partisans.yml",
+      "images": "content/card-images/root/en-US/",
+      "provides": "YAML metadata + PNG card faces used in this folder"
+    },
+    {
+      "name": "Leder Games product page",
+      "url": "https://ledergames.com/products/root-the-exiles-and-partisans-deck",
+      "provides": "Official product description"
+    },
+    {
+      "name": "BoardGameGeek",
+      "url": "https://boardgamegeek.com/boardgame/272638/root-the-exiles-and-partisans-deck",
+      "provides": "Deck composition (54 cards / suit counts)"
+    },
+    {
+      "name": "Make Craft Game — Root Deck Composition",
+      "url": "https://makecraftgame.com/2023/02/24/root-deck-composition/",
+      "provides": "Copy counts, unique cards, errata notes"
+    },
+    {
+      "name": "NitroRev — Exiles and Partisans Full Deck Breakdown",
+      "url": "https://www.youtube.com/watch?v=gp8oqybFn9s",
+      "provides": "Per-card craft costs and rulings (League×2, Tunnels×2, Saboteurs×3, etc.)"
+    }
+  ],
+  "cards": [
+    {
+      "id": "ROOT-200",
+      "name": "Ambush!",
+      "image": "card-ambushbird.png",
+      "suit": "bird",
+      "type": "ambush",
+      "copies": 2,
+      "cost": [],
+      "description": "At start of battle, defender may play to deal two immediate hits, then discard. Cancel if attacker plays matching ambush."
+    },
+    {
+      "id": "ROOT-201",
+      "name": "Ambush!",
+      "image": "card-ambushbunny.png",
+      "suit": "rabbit",
+      "type": "ambush",
+      "copies": 1,
+      "cost": [],
+      "description": "At start of battle, defender may play to deal two immediate hits, then discard. Cancel if attacker plays matching ambush."
+    },
+    {
+      "id": "ROOT-202",
+      "name": "Ambush!",
+      "image": "card-ambushfox.png",
+      "suit": "fox",
+      "type": "ambush",
+      "copies": 1,
+      "cost": [],
+      "description": "At start of battle, defender may play to deal two immediate hits, then discard. Cancel if attacker plays matching ambush."
+    },
+    {
+      "id": "ROOT-203",
+      "name": "Ambush!",
+      "image": "card-ambushmouse.png",
+      "suit": "mouse",
+      "type": "ambush",
+      "copies": 1,
+      "cost": [],
+      "description": "At start of battle, defender may play to deal two immediate hits, then discard. Cancel if attacker plays matching ambush."
+    },
+    {
+      "id": "ROOT-211",
+      "name": "Dominance",
+      "image": "card-dominancebird.png",
+      "suit": "bird",
+      "type": "dominance",
+      "copies": 1,
+      "cost": [],
+      "description": "If you have at least 10 points, play during Daylight and remove your score marker. You win if you rule two opposite corners at the start of your Birdsong. In games of four or more, as Vagabond, you may form a coalition."
+    },
+    {
+      "id": "ROOT-212",
+      "name": "Dominance",
+      "image": "card-dominancebunny.png",
+      "suit": "rabbit",
+      "type": "dominance",
+      "copies": 1,
+      "cost": [],
+      "description": "If you have at least 10 points, play during Daylight and remove your score marker. You win if you rule three rabbit clearings at the start of your Birdsong. In games of four or more, as Vagabond, you may form a coalition."
+    },
+    {
+      "id": "ROOT-213",
+      "name": "Dominance",
+      "image": "card-dominancefox.png",
+      "suit": "fox",
+      "type": "dominance",
+      "copies": 1,
+      "cost": [],
+      "description": "If you have at least 10 points, play during Daylight and remove your score marker. You win if you rule three fox clearings at the start of your Birdsong. In games of four or more, as Vagabond, you may form a coalition."
+    },
+    {
+      "id": "ROOT-214",
+      "name": "Dominance",
+      "image": "card-dominancemouse.png",
+      "suit": "mouse",
+      "type": "dominance",
+      "copies": 1,
+      "cost": [],
+      "description": "If you have at least 10 points, play during Daylight and remove your score marker. You win if you rule three mouse clearings at the start of your Birdsong. In games of four or more, as Vagabond, you may form a coalition."
+    },
+    {
+      "id": "ROOT-204",
+      "name": "Anvil",
+      "image": "card-anvil.png",
+      "suit": "fox",
+      "type": "item",
+      "item": "hammer",
+      "copies": 1,
+      "cost": [
+        "fox"
+      ],
+      "description": "Craft hammer item, score +2 VP, then discard."
+    },
+    {
+      "id": "ROOT-205",
+      "name": "Arms Trader",
+      "image": "card-armstrader.png",
+      "suit": "bird",
+      "type": "item",
+      "item": "sword",
+      "copies": 1,
+      "cost": [
+        "fox",
+        "fox"
+      ],
+      "description": "Craft sword item, score +2 VP, then discard."
+    },
+    {
+      "id": "ROOT-206",
+      "name": "A Visit To Friends",
+      "image": "card-avisittofriends.png",
+      "suit": "rabbit",
+      "type": "item",
+      "item": "boot",
+      "copies": 1,
+      "cost": [
+        "rabbit"
+      ],
+      "description": "Craft boot item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-207",
+      "name": "Bake Sale",
+      "image": "card-bakesale.png",
+      "suit": "rabbit",
+      "type": "item",
+      "item": "coins",
+      "copies": 1,
+      "cost": [
+        "rabbit",
+        "rabbit"
+      ],
+      "description": "Craft coins item, score +3 VP, then discard."
+    },
+    {
+      "id": "ROOT-208",
+      "name": "Birdy Bindle",
+      "image": "card-birdybindle.png",
+      "suit": "bird",
+      "type": "item",
+      "item": "bag",
+      "copies": 1,
+      "cost": [
+        "mouse"
+      ],
+      "description": "Craft bag item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-209",
+      "name": "Crossbow",
+      "image": "card-crossbowbird.png",
+      "suit": "bird",
+      "type": "item",
+      "item": "crossbow",
+      "copies": 1,
+      "cost": [
+        "fox"
+      ],
+      "description": "Craft crossbow item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-210",
+      "name": "Crossbow",
+      "image": "card-crossbowmouse.png",
+      "suit": "mouse",
+      "type": "item",
+      "item": "crossbow",
+      "copies": 1,
+      "cost": [
+        "fox"
+      ],
+      "description": "Craft crossbow item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-215",
+      "name": "Foxfolk Steel",
+      "image": "card-foxfolksteel.png",
+      "suit": "fox",
+      "type": "item",
+      "item": "sword",
+      "copies": 1,
+      "cost": [
+        "fox",
+        "fox"
+      ],
+      "description": "Craft sword item, score +2 VP, then discard."
+    },
+    {
+      "id": "ROOT-216",
+      "name": "Gently Used Knapsack",
+      "image": "card-gentlyusedknapsack.png",
+      "suit": "fox",
+      "type": "item",
+      "item": "bag",
+      "copies": 1,
+      "cost": [
+        "mouse"
+      ],
+      "description": "Craft bag item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-217",
+      "name": "Investments",
+      "image": "card-investments.png",
+      "suit": "mouse",
+      "type": "item",
+      "item": "coins",
+      "copies": 1,
+      "cost": [
+        "rabbit",
+        "rabbit"
+      ],
+      "description": "Craft coins item, score +3 VP, then discard."
+    },
+    {
+      "id": "ROOT-218",
+      "name": "Mouse-in-a-sack",
+      "image": "card-mouseinasack.png",
+      "suit": "mouse",
+      "type": "item",
+      "item": "bag",
+      "copies": 1,
+      "cost": [
+        "mouse"
+      ],
+      "description": "Craft bag item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-219",
+      "name": "Protection Racket",
+      "image": "card-protectionracket.png",
+      "suit": "fox",
+      "type": "item",
+      "item": "coins",
+      "copies": 1,
+      "cost": [
+        "rabbit",
+        "rabbit"
+      ],
+      "description": "Craft coins item, score +3 VP, then discard."
+    },
+    {
+      "id": "ROOT-220",
+      "name": "Root Tea",
+      "image": "card-rootteabunny.png",
+      "suit": "rabbit",
+      "type": "item",
+      "item": "tea",
+      "copies": 1,
+      "cost": [
+        "mouse"
+      ],
+      "description": "Craft tea item, score +2 VP, then discard."
+    },
+    {
+      "id": "ROOT-221",
+      "name": "Root Tea",
+      "image": "card-rootteafox.png",
+      "suit": "fox",
+      "type": "item",
+      "item": "tea",
+      "copies": 1,
+      "cost": [
+        "mouse"
+      ],
+      "description": "Craft tea item, score +2 VP, then discard."
+    },
+    {
+      "id": "ROOT-222",
+      "name": "Root Tea",
+      "image": "card-rootteamouse.png",
+      "suit": "mouse",
+      "type": "item",
+      "item": "tea",
+      "copies": 1,
+      "cost": [
+        "mouse"
+      ],
+      "description": "Craft tea item, score +2 VP, then discard."
+    },
+    {
+      "id": "ROOT-223",
+      "name": "Smuggler's Trail",
+      "image": "card-smugglerstrail.png",
+      "suit": "rabbit",
+      "type": "item",
+      "item": "bag",
+      "copies": 1,
+      "cost": [
+        "mouse"
+      ],
+      "description": "Craft bag item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-224",
+      "name": "Sword",
+      "image": "card-sword.png",
+      "suit": "mouse",
+      "type": "item",
+      "item": "sword",
+      "copies": 1,
+      "cost": [
+        "fox",
+        "fox"
+      ],
+      "description": "Craft sword item, score +2 VP, then discard."
+    },
+    {
+      "id": "ROOT-225",
+      "name": "Travel Gear",
+      "image": "card-travelgearfox.png",
+      "suit": "fox",
+      "type": "item",
+      "item": "boot",
+      "copies": 1,
+      "cost": [
+        "rabbit"
+      ],
+      "description": "Craft boot item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-226",
+      "name": "Travel Gear",
+      "image": "card-travelgearmouse.png",
+      "suit": "mouse",
+      "type": "item",
+      "item": "boot",
+      "copies": 1,
+      "cost": [
+        "rabbit"
+      ],
+      "description": "Craft boot item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-227",
+      "name": "Woodland Runners",
+      "image": "card-woodlandrunners.png",
+      "suit": "bird",
+      "type": "item",
+      "item": "boot",
+      "copies": 1,
+      "cost": [
+        "rabbit"
+      ],
+      "description": "Craft boot item, score +1 VP, then discard."
+    },
+    {
+      "id": "ROOT-77",
+      "name": "Fox Partisans",
+      "image": "card-foxpartisans.png",
+      "suit": "fox",
+      "type": "partisan",
+      "copies": 1,
+      "cost": [
+        "fox"
+      ],
+      "description": "In battle in fox clearings, may deal one extra hit, then discard all your cards except foxes."
+    },
+    {
+      "id": "ROOT-84",
+      "name": "Mouse Partisans",
+      "image": "card-mousepartisans.png",
+      "suit": "mouse",
+      "type": "partisan",
+      "copies": 1,
+      "cost": [
+        "mouse"
+      ],
+      "description": "In battle in mouse clearings, may deal one extra hit, then discard all your cards except mice."
+    },
+    {
+      "id": "ROOT-88",
+      "name": "Rabbit Partisans",
+      "image": "card-rabbitpartisans.png",
+      "suit": "rabbit",
+      "type": "partisan",
+      "copies": 1,
+      "cost": [
+        "rabbit"
+      ],
+      "description": "In battle in rabbit clearings, may deal one extra hit, then discard all your cards except rabbits."
+    },
+    {
+      "id": "ROOT-57",
+      "name": "Boat Builders",
+      "image": "card-boatbuilders.png",
+      "suit": "bird",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "wild",
+        "wild"
+      ],
+      "description": "You treat rivers as paths."
+    },
+    {
+      "id": "ROOT-59",
+      "name": "Charm Offensive",
+      "image": "card-charmoffensive.png",
+      "suit": "rabbit",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "rabbit"
+      ],
+      "description": "At start of Evening, may draw a card and choose another player to score one point."
+    },
+    {
+      "id": "ROOT-62",
+      "name": "Coffin Makers",
+      "image": "card-coffinmakers.png",
+      "suit": "rabbit",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "rabbit",
+        "rabbit"
+      ],
+      "description": "Warriors removed, not replaced, from the map to their supply are placed here. At start of Birdsong, score one point per five warriors here, then remove all warriors here."
+    },
+    {
+      "id": "ROOT-64",
+      "name": "Corvid Planners",
+      "image": "card-corvidplanners.png",
+      "suit": "bird",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "wild",
+        "wild"
+      ],
+      "description": "While moving, you ignore rule."
+    },
+    {
+      "id": "ROOT-71",
+      "name": "Eyrie Émigré",
+      "image": "card-eyrieemigre.png",
+      "suit": "bird",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "fox",
+        "fox"
+      ],
+      "description": "At end of Birdsong, you must take a move, then you must battle in the destination clearing. Discard this if you did not take both actions."
+    },
+    {
+      "id": "ROOT-72",
+      "name": "False Orders",
+      "image": "card-falseorders.png",
+      "suit": "fox",
+      "type": "persistent",
+      "copies": 2,
+      "cost": [
+        "fox"
+      ],
+      "description": "In Birdsong, may discard this card to force an enemy to move half their faction warriors (round up) from a clearing you choose to a clearing you choose, ignoring rule."
+    },
+    {
+      "id": "ROOT-79",
+      "name": "Informants",
+      "image": "card-informants.png",
+      "suit": "fox",
+      "type": "persistent",
+      "copies": 2,
+      "cost": [
+        "fox",
+        "fox"
+      ],
+      "description": "In Evening, if you would draw cards, you may instead take one ambush card from the discard pile."
+    },
+    {
+      "id": "ROOT-81",
+      "name": "League of Adventurous Mice",
+      "image": "card-leagueofadventrousmice.png",
+      "suit": "mouse",
+      "type": "persistent",
+      "copies": 2,
+      "cost": [
+        "mouse"
+      ],
+      "description": "Once in Daylight, may exhaust an item in your Crafted Items box to take a move or initiate a battle."
+    },
+    {
+      "id": "ROOT-82",
+      "name": "Master Engravers",
+      "image": "card-masterengravers.png",
+      "suit": "mouse",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "mouse",
+        "mouse"
+      ],
+      "description": "Whenever you craft an item, score one extra point."
+    },
+    {
+      "id": "ROOT-85",
+      "name": "Murine Broker",
+      "image": "card-murinebroker.png",
+      "suit": "mouse",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "mouse",
+        "mouse"
+      ],
+      "description": "Whenever another player crafts an item, draw a card."
+    },
+    {
+      "id": "ROOT-86",
+      "name": "Propaganda Bureau",
+      "image": "card-propagandabureau.png",
+      "suit": "fox",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "wild",
+        "wild",
+        "wild"
+      ],
+      "description": "Once in Daylight, you may spend a card to replace an enemy warrior in a matching clearing with a warrior of your faction."
+    },
+    {
+      "id": "ROOT-93",
+      "name": "Saboteurs",
+      "image": "card-saboteurs.png",
+      "suit": "bird",
+      "type": "persistent",
+      "copies": 3,
+      "cost": [
+        "wild"
+      ],
+      "description": "At the start of Birdsong, may discard this card to discard an enemy's crafted card."
+    },
+    {
+      "id": "ROOT-97",
+      "name": "Soup Kitchens",
+      "image": "card-soupkitchens.png",
+      "suit": "bird",
+      "type": "persistent",
+      "copies": 1,
+      "cost": [
+        "fox",
+        "rabbit",
+        "mouse"
+      ],
+      "description": "Your tokens now count toward rule, and each of your tokens counts twice."
+    },
+    {
+      "id": "ROOT-103",
+      "name": "Swap Meet",
+      "image": "card-swapmeet.png",
+      "suit": "rabbit",
+      "type": "persistent",
+      "copies": 2,
+      "cost": [
+        "rabbit"
+      ],
+      "description": "Once in Birdsong, may take a random card from another player and then give them a card."
+    },
+    {
+      "id": "ROOT-108",
+      "name": "Tunnels",
+      "image": "card-tunnels.png",
+      "suit": "rabbit",
+      "type": "persistent",
+      "copies": 2,
+      "cost": [
+        "rabbit"
+      ],
+      "description": "You treat clearings with your crafting pieces as adjacent. You may ignore paths when moving between them."
+    }
+  ]
+}
