@@ -5,3 +5,4 @@
   - Build plan: `./resources/notes/grand-plan-toward-base-game.md` + commit plan in `PLAN.md`
 - Commit as soon as a step in the plan is done.
 - Stay close to the commit plan in PLAN.md and if something need tweak stop and ask user.
+- All unit tests should use fixture factory or mock of any kind. 
