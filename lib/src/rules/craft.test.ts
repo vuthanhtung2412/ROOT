@@ -69,4 +69,29 @@ describe('craftCard', () => {
     expect(state.players[0]!.playArea.some((c) => c.defId === 'ROOT-57')).toBe(true)
     expect(signals.some((s) => s.s === 'craft.persistent')).toBe(true)
   })
+
+  it('rejects ambush before mutating hand or workshops', () => {
+    const ambush = card('ROOT-201')
+    const workshop = {
+      id: 'ws',
+      kind: 'building' as const,
+      owner: 0 as const,
+      type: 'workshop' as const,
+      used: false,
+    }
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'marquise', { hand: [ambush], vp: 0 }),
+          player(1, 'marquise'),
+        ],
+      }),
+      0,
+      [workshop],
+    )
+    expect(() => craftCard(state, 0, ambush.id, ctx())).toThrow(/NOT_CRAFTABLE|CANNOT_CRAFT/)
+    expect(state.players[0]!.hand.map((c) => c.id)).toEqual([ambush.id])
+    expect(state.players[0]!.vp).toBe(0)
+    expect(workshop.used).toBe(false)
+  })
 })

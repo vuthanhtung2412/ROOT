@@ -68,9 +68,13 @@ export function craftCard(
   const player = playerOf(state, seat)
   const card = player.hand.find((c) => c.id === cardId)
   if (!card) throw new RuleError('CARD_NOT_IN_HAND', { cardId })
-  if (!canCraft(state, seat, card)) throw new RuleError('CANNOT_CRAFT', { cardId })
 
   const def = defOf(card)
+  if (def.type !== 'item' && def.type !== 'persistent' && def.type !== 'partisan') {
+    throw new RuleError('NOT_CRAFTABLE', { cardId, type: def.type })
+  }
+  if (!canCraft(state, seat, card)) throw new RuleError('CANNOT_CRAFT', { cardId })
+
   const sources = assignSources(def.cost, craftingSources(state, seat))
   if (!sources) throw new RuleError('CANNOT_CRAFT', { cardId, reason: 'no sources' })
 
@@ -103,12 +107,9 @@ export function craftCard(
     return logs
   }
 
-  if (def.type === 'persistent' || def.type === 'partisan') {
-    player.playArea.push(card)
-    ctx.emit({ s: 'craft.persistent', actor: seat, cardId })
-    logs.push({ t: 'action', actor: seat, action: { type: 'craft', cardId } })
-    return logs
-  }
-
-  throw new RuleError('NOT_CRAFTABLE', { cardId, type: def.type })
+  // persistent | partisan
+  player.playArea.push(card)
+  ctx.emit({ s: 'craft.persistent', actor: seat, cardId })
+  logs.push({ t: 'action', actor: seat, action: { type: 'craft', cardId } })
+  return logs
 }

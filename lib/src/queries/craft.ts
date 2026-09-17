@@ -9,9 +9,14 @@ import type { GameState } from '../state/types.js'
 
 type CraftSource = { piece: Piece; suit: Suit; clearingId: ClearingId }
 
+const CRAFTABLE_TYPES = new Set(['item', 'persistent', 'partisan'])
+
 /** Rule: Craft 1–4 — unused crafters, suit match, supply item, no dup persistent. */
 export function canCraft(state: GameState, seat: Seat, card: Card): boolean {
   const def = defOf(card)
+  // Ambush/dominance have empty cost; must not pass as craftable.
+  if (!CRAFTABLE_TYPES.has(def.type)) return false
+
   const sources = craftingSources(state, seat)
   if (!matchCost(def.cost, sources)) return false
 
