@@ -346,6 +346,25 @@ describe('Marquise turn', () => {
     expect(state.players[0]!.hand.length).toBe(HAND_LIMIT)
   })
 
+  it('Rule: Marquise > Battle — action opens pending battle event', () => {
+    const state = withPieces(
+      minimalState({ phase: 'daylight', step: 'actions' }),
+      4,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    MARQUISE.apply(
+      state,
+      { type: 'battle', clearing: 4, defender: 1 },
+      setupCtx(),
+    )
+    expect(state.pending).toHaveLength(1)
+    expect(state.pending[0]!.type).toBe('battle')
+    expect(state.turnScratch.actionsLeft).toBe(2)
+  })
+
   it('Rule: Marquise > endTurn — resets building used flags and turn scratch', () => {
     const state = withPieces(minimalState(), 0, [
       { id: 'ws', kind: 'building', owner: 0, type: 'workshop', used: true },
@@ -356,6 +375,7 @@ describe('Marquise turn', () => {
       recruited: true,
       birdsongWoodDone: true,
       eveningDrawDone: true,
+      swapMeetUsed: true,
     }
     MARQUISE.endTurn(state)
     expect(state.clearings[0]!.pieces[0]!.kind).toBe('building')
@@ -368,6 +388,7 @@ describe('Marquise turn', () => {
       recruited: false,
       birdsongWoodDone: false,
       eveningDrawDone: false,
+      swapMeetUsed: false,
     })
   })
 })
