@@ -29,6 +29,31 @@ export function placeUpTo(
   spec: PlaceSpec,
   n: number,
 ): number {
+  return placeInternal(state, seat, clearing, spec, n, true)
+}
+
+/**
+ * Place pieces already removed from the map (e.g. Field Hospitals).
+ * Does not draw from supply — leftover count stays unplaced (caller returns to supply).
+ */
+export function placeReturning(
+  state: GameState,
+  seat: Seat,
+  clearing: number,
+  spec: PlaceSpec,
+  n: number,
+): number {
+  return placeInternal(state, seat, clearing, spec, n, false)
+}
+
+function placeInternal(
+  state: GameState,
+  seat: Seat,
+  clearing: number,
+  spec: PlaceSpec,
+  n: number,
+  fromSupply: boolean,
+): number {
   if (n <= 0) return 0
   if (!canPlace(state, seat, clearing)) return 0
 
@@ -38,7 +63,7 @@ export function placeUpTo(
   let placed = 0
   while (placed < n) {
     if (spec.kind === 'building' && openSlots(state, clearing) < 1) break
-    if (!takeFromSupply(state, seat, spec)) break
+    if (fromSupply && !takeFromSupply(state, seat, spec)) break
 
     const piece = makePiece(seat, spec)
     cs.pieces.push(piece)

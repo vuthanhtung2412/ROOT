@@ -25,11 +25,58 @@ describe('removePieces', () => {
   })
 
   it('Rule: Victory — +1 VP per enemy token removed', () => {
-    const state = withPieces(minimalState(), 4, [
-      { id: 'wood1', kind: 'token', owner: 1, type: 'wood' },
-    ])
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'marquise'),
+          player(1, 'marquise', {
+            board: {
+              kind: 'marquise',
+              supply: { warriors: 25, wood: 5 },
+              tracks: {
+                sawmill: { placed: 5 },
+                workshop: { placed: 5 },
+                recruiter: { placed: 5 },
+              },
+            },
+          }),
+        ],
+      }),
+      4,
+      [{ id: 'wood1', kind: 'token', owner: 1, type: 'wood' }],
+    )
     removePieces(state, 4, ['wood1'], 0)
     expect(state.players[0]!.vp).toBe(1)
+    if (state.players[1]!.board.kind === 'marquise') {
+      expect(state.players[1]!.board.supply.wood).toBe(6)
+    }
+  })
+
+  it('Rule: Glossary > Return — destroyed Marquise building returns to track', () => {
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'marquise'),
+          player(1, 'marquise', {
+            board: {
+              kind: 'marquise',
+              supply: { warriors: 25, wood: 8 },
+              tracks: {
+                sawmill: { placed: 4 },
+                workshop: { placed: 5 },
+                recruiter: { placed: 5 },
+              },
+            },
+          }),
+        ],
+      }),
+      4,
+      [{ id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false }],
+    )
+    removePieces(state, 4, ['b1'], 0)
+    if (state.players[1]!.board.kind === 'marquise') {
+      expect(state.players[1]!.board.tracks.sawmill.placed).toBe(5)
+    }
   })
 
   it('Rule: Victory — no VP for removing own pieces', () => {

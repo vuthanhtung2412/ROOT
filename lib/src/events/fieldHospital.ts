@@ -7,7 +7,7 @@ import { FALL } from '../map/fall.js'
 import type { Seat } from '../pieces/types.js'
 import { keepClearingFor } from '../queries/place.js'
 import { playerOf } from '../queries/seat.js'
-import { placeUpTo } from '../rules/place.js'
+import { placeReturning } from '../rules/place.js'
 import { returnWarriorsToSupply } from '../rules/remove.js'
 import { RuleError } from '../rules/RuleError.js'
 import type { GameState } from '../state/types.js'
@@ -80,7 +80,11 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
     if (keep === null) {
       returnWarriorsToSupply(state, ev.victim, ev.count)
     } else {
-      placeUpTo(state, ev.victim, keep, { kind: 'warrior' }, ev.count)
+      // Rule: Marquise > Field Hospitals — warriors already off map; do not pull supply.
+      const placed = placeReturning(state, ev.victim, keep, { kind: 'warrior' }, ev.count)
+      if (placed < ev.count) {
+        returnWarriorsToSupply(state, ev.victim, ev.count - placed)
+      }
     }
 
     return [{ t: 'event', event: ev }]

@@ -59,6 +59,10 @@ describe('fieldHospitalResolver', () => {
     expect(state.pending).toHaveLength(0)
     expect(warriors(state, keep, 0)).toBe(2)
     expect(state.players[0]!.hand).toHaveLength(1)
+    if (state.players[0]!.board.kind === 'marquise') {
+      // Must not drain supply — warriors were already off the map.
+      expect(state.players[0]!.board.supply.warriors).toBe(20)
+    }
   })
 
   it('Rule: Marquise > Field Hospitals — decline sends warriors to supply', () => {
