@@ -63,6 +63,7 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
       recruited: false,
       birdsongWoodDone: false,
       eveningDrawDone: false,
+      swapMeetUsed: false,
     },
     ...overrides,
   }

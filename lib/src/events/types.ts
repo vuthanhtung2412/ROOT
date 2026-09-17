@@ -19,6 +19,10 @@ export type BattleEvent = {
   effectsOrder?: Seat[]
   rolls?: [number, number]
   hits: { attacker: number; defender: number }
+  /** Defender ambush card played (before foil). */
+  ambushCardId?: string
+  /** Attacker/Defender opted into optional battle effects. */
+  effectsUsed?: Partial<Record<'attacker' | 'defender', boolean>>
 }
 
 export type FieldHospitalEvent = {

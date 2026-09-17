@@ -49,5 +49,6 @@ export type GameState = {
     recruited: boolean
     birdsongWoodDone: boolean
     eveningDrawDone: boolean
+    swapMeetUsed: boolean
   }
 }
