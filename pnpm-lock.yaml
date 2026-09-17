@@ -31,6 +31,10 @@ importers:
         version: 7.0.2
 
   frontend/cli:
+    dependencies:
+      '@root/lib':
+        specifier: workspace:*
+        version: link:../../lib
     devDependencies:
       '@types/node':
         specifier: ^22.20.3
