@@ -1,0 +1,413 @@
+{
+  "notes": {
+    "boards": "Faction board front (rules/tracks) + back (setup/components). Filenames: {faction-id}-{front|back}.webp",
+    "vagabonds": "Official Vagabond character cards only (not fan). Filenames: vagabond-{id}-front.webp",
+    "expansions": "base | riverfolk | underworld | marauder | homeland | vagabond-pack"
+  },
+  "sources": [
+    {
+      "name": "Root Database",
+      "url": "https://www.therootdatabase.com",
+      "provides": "Official faction board scans + Vagabond character card images"
+    },
+    {
+      "name": "Leder Games",
+      "url": "https://ledergames.com",
+      "provides": "Publisher / \u00a9 of Root art and boards"
+    }
+  ],
+  "factions": [
+    {
+      "id": "marquise-de-cat",
+      "name": "Marquise de Cat",
+      "expansion": "base",
+      "page": "https://www.therootdatabase.com/faction/marquise-de-cat/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "marquise-de-cat-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/8620e5b39b6344e49af5392feef34f97.webp"
+        },
+        {
+          "side": "back",
+          "image": "marquise-de-cat-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/ec0c4a46ffd24e959e0e791eca771c47.webp"
+        }
+      ]
+    },
+    {
+      "id": "eyrie-dynasties",
+      "name": "Eyrie Dynasties",
+      "expansion": "base",
+      "page": "https://www.therootdatabase.com/faction/eyrie-dynasties/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "eyrie-dynasties-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/1cc41b0c683642dbae8224116a77b1e7.webp"
+        },
+        {
+          "side": "back",
+          "image": "eyrie-dynasties-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/7b0dbd88607d4df9b0c8acb62150726a.webp"
+        }
+      ]
+    },
+    {
+      "id": "woodland-alliance",
+      "name": "Woodland Alliance",
+      "expansion": "base",
+      "page": "https://www.therootdatabase.com/faction/woodland-alliance/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "woodland-alliance-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/47678b6c510746f59a5dd293e8498427.webp"
+        },
+        {
+          "side": "back",
+          "image": "woodland-alliance-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/b8d0dfbc6fae4041b9067eb780b5d269.webp"
+        }
+      ]
+    },
+    {
+      "id": "vagabond",
+      "name": "Vagabond",
+      "expansion": "base",
+      "page": "https://www.therootdatabase.com/faction/vagabond/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "vagabond-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/c91f9284765348b58a681fa96cd70f45.webp"
+        },
+        {
+          "side": "back",
+          "image": "vagabond-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/67453d71cac2419a94529084e6fe2c2a.webp"
+        }
+      ]
+    },
+    {
+      "id": "riverfolk-company",
+      "name": "Riverfolk Company",
+      "expansion": "riverfolk",
+      "page": "https://www.therootdatabase.com/faction/riverfolk-company/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "riverfolk-company-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/riverfolkboard.webp"
+        },
+        {
+          "side": "back",
+          "image": "riverfolk-company-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/3f4ff59c59e94961bebf52d3ef26e41f.webp"
+        }
+      ]
+    },
+    {
+      "id": "lizard-cult",
+      "name": "Lizard Cult",
+      "expansion": "riverfolk",
+      "page": "https://www.therootdatabase.com/faction/lizard-cult/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "lizard-cult-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/lizardcultboard.webp"
+        },
+        {
+          "side": "back",
+          "image": "lizard-cult-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/IMG_2965.webp"
+        }
+      ]
+    },
+    {
+      "id": "underground-duchy",
+      "name": "Underground Duchy",
+      "expansion": "underworld",
+      "page": "https://www.therootdatabase.com/faction/underground-duchy/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "underground-duchy-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/377019aecd884f029bde0c37f4b29e5e.webp"
+        },
+        {
+          "side": "back",
+          "image": "underground-duchy-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/a337fdd47e8e4ebc942b3557488369db.webp"
+        }
+      ]
+    },
+    {
+      "id": "corvid-conspiracy",
+      "name": "Corvid Conspiracy",
+      "expansion": "underworld",
+      "page": "https://www.therootdatabase.com/faction/corvid-conspiracy/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "corvid-conspiracy-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/corvidboard.webp"
+        },
+        {
+          "side": "back",
+          "image": "corvid-conspiracy-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/15ebd5eabd424389ba901637d260b70b.webp"
+        }
+      ]
+    },
+    {
+      "id": "lord-of-the-hundreds",
+      "name": "Lord of the Hundreds",
+      "expansion": "marauder",
+      "page": "https://www.therootdatabase.com/faction/lord-of-the-hundreds/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "lord-of-the-hundreds-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/lordofhundredsboard.webp"
+        },
+        {
+          "side": "back",
+          "image": "lord-of-the-hundreds-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/e139ebc9f6a74503879d4b0e3833759c.webp"
+        }
+      ]
+    },
+    {
+      "id": "keepers-in-iron",
+      "name": "Keepers in Iron",
+      "expansion": "marauder",
+      "page": "https://www.therootdatabase.com/faction/keepers-in-iron/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "keepers-in-iron-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/keepersboard.webp"
+        },
+        {
+          "side": "back",
+          "image": "keepers-in-iron-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/64927cd23c2e4985a76e301d493d6f2b.webp"
+        }
+      ]
+    },
+    {
+      "id": "lilypad-diaspora",
+      "name": "Lilypad Diaspora",
+      "expansion": "homeland",
+      "page": "https://www.therootdatabase.com/faction/lilypad-diaspora/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "lilypad-diaspora-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lilypad-diaspora/en/board/front.webp"
+        },
+        {
+          "side": "back",
+          "image": "lilypad-diaspora-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lilypad-diaspora/en/board/back.webp"
+        }
+      ]
+    },
+    {
+      "id": "twilight-council",
+      "name": "Twilight Council",
+      "expansion": "homeland",
+      "page": "https://www.therootdatabase.com/faction/twilight-council/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "twilight-council-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/twilight-council/en/board/front.webp"
+        },
+        {
+          "side": "back",
+          "image": "twilight-council-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/twilight-council/en/board/back.webp"
+        }
+      ]
+    },
+    {
+      "id": "knaves-of-the-deepwood",
+      "name": "Knaves of the Deepwood",
+      "expansion": "homeland",
+      "page": "https://www.therootdatabase.com/faction/knaves-of-the-deepwood/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "knaves-of-the-deepwood-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/board/front.webp"
+        },
+        {
+          "side": "back",
+          "image": "knaves-of-the-deepwood-back.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/board/back.webp"
+        }
+      ]
+    }
+  ],
+  "vagabonds": [
+    {
+      "id": "thief",
+      "name": "Thief",
+      "expansion": "base",
+      "page": "https://www.therootdatabase.com/vagabond/thief/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-thief-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/4f87c77d633d43e793ffc73647c03d43.webp"
+        }
+      ]
+    },
+    {
+      "id": "tinker",
+      "name": "Tinker",
+      "expansion": "base",
+      "page": "https://www.therootdatabase.com/vagabond/tinker/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-tinker-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/4bbb264580264e7fab8a10e42690e9f8.webp"
+        }
+      ]
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "expansion": "base",
+      "page": "https://www.therootdatabase.com/vagabond/ranger/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-ranger-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/b142a52608f144eb87e11d055fc8d510.webp"
+        }
+      ]
+    },
+    {
+      "id": "arbiter",
+      "name": "Arbiter",
+      "expansion": "riverfolk",
+      "page": "https://www.therootdatabase.com/vagabond/arbiter/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-arbiter-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/arbiter/en/card/front.webp"
+        }
+      ]
+    },
+    {
+      "id": "scoundrel",
+      "name": "Scoundrel",
+      "expansion": "riverfolk",
+      "page": "https://www.therootdatabase.com/vagabond/scoundrel/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-scoundrel-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/b20bea23095748a6b7a8c0df629a6eee.webp"
+        }
+      ]
+    },
+    {
+      "id": "vagrant",
+      "name": "Vagrant",
+      "expansion": "riverfolk",
+      "page": "https://www.therootdatabase.com/vagabond/vagrant/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-vagrant-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagrant/en/card/front.webp"
+        }
+      ]
+    },
+    {
+      "id": "adventurer",
+      "name": "Adventurer",
+      "expansion": "vagabond-pack",
+      "page": "https://www.therootdatabase.com/vagabond/adventurer/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-adventurer-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/2fb6b7a20e9a410c9262d04903f8ffee.webp"
+        }
+      ]
+    },
+    {
+      "id": "harrier",
+      "name": "Harrier",
+      "expansion": "vagabond-pack",
+      "page": "https://www.therootdatabase.com/vagabond/harrier/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-harrier-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/harrier/en/card/front.webp"
+        }
+      ]
+    },
+    {
+      "id": "ronin",
+      "name": "Ronin",
+      "expansion": "vagabond-pack",
+      "page": "https://www.therootdatabase.com/vagabond/ronin/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-ronin-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/d6fe72c2d3ce41ada732ecdc1ce2dead.webp"
+        }
+      ]
+    },
+    {
+      "id": "cheat",
+      "name": "Cheat",
+      "expansion": "homeland",
+      "page": "https://www.therootdatabase.com/vagabond/cheat/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-cheat-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/6a292dfe5eec4c4995a73957ac91502e.webp"
+        }
+      ]
+    },
+    {
+      "id": "gladiator",
+      "name": "Gladiator",
+      "expansion": "homeland",
+      "page": "https://www.therootdatabase.com/vagabond/gladiator/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-gladiator-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/2e4668416fe843a68dd3cd44b253b8e9.webp"
+        }
+      ]
+    },
+    {
+      "id": "jailor",
+      "name": "Jailor",
+      "expansion": "homeland",
+      "page": "https://www.therootdatabase.com/vagabond/jailor/?lang=en",
+      "cards": [
+        {
+          "side": "front",
+          "image": "vagabond-jailor-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/cards/38eb056ae4f04444bb30ee47b1d3d017.webp"
+        }
+      ]
+    }
+  ]
+}
