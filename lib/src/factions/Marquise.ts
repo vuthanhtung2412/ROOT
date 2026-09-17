@@ -412,8 +412,10 @@ export class Marquise extends Faction {
     }
 
     if (state.phase === 'evening' && state.step === 'discard') {
-      if (playerOf(state, seat).hand.length > HAND_LIMIT) {
+      const handSize = playerOf(state, seat).hand.length
+      if (handSize > HAND_LIMIT) {
         specs.push({ type: 'discard', actor: seat })
+        return specs
       }
       specs.push({ type: 'endPhase', actor: seat })
       return specs
@@ -427,8 +429,18 @@ export class Marquise extends Faction {
     const seat = state.currentSeat
 
     switch (action.type) {
-      case 'endPhase':
+      case 'endPhase': {
+        if (
+          state.phase === 'evening' &&
+          state.step === 'discard' &&
+          playerOf(state, seat).hand.length > HAND_LIMIT
+        ) {
+          throw new RuleError('HAND_OVER_LIMIT', {
+            hand: playerOf(state, seat).hand.length,
+          })
+        }
         return
+      }
       case 'birdsongWood':
         if (state.phase !== 'birdsong' || state.step !== 'wood') {
           throw new RuleError('WRONG_STEP', { phase: state.phase, step: state.step })

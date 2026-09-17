@@ -6,7 +6,8 @@ import { warriors } from '../queries/pieces.js'
 import { keepCornerFor } from '../factions/Marquise.js'
 import { RuleError } from '../rules/RuleError.js'
 import { SeededRng } from '../rules/Rng.js'
-import { DEFAULT_FACTIONS, STARTING_HAND } from '../state/constants.js'
+import { card } from '../test/fixtures.js'
+import { DEFAULT_FACTIONS, HAND_LIMIT, STARTING_HAND } from '../state/constants.js'
 import type { GameSignal } from '../triggers/signals.js'
 import { EFFECTS } from '../triggers/effects.js'
 import { Game } from './Game.js'
@@ -174,6 +175,63 @@ describe('Game.apply', () => {
     game.apply({ type: 'endPhase' })
     expect(game.state.winner).toBe(0)
     expect(game.state.status).toBe('finished')
+  })
+})
+
+describe('evening discard validation', () => {
+  it('rejects partial discard (DISCARD_TOO_FEW)', () => {
+    const game = lobbyTwo(1)
+    game.start()
+    const s = game.state
+    s.phase = 'evening'
+    s.step = 'discard'
+    s.currentSeat = 0
+    s.players[0]!.hand = Array.from({ length: 7 }, (_, i) => card('ROOT-72', i))
+    expect(() =>
+      game.apply({ type: 'discard', cardIds: ['ROOT-72#0'] }),
+    ).toThrow(expect.objectContaining({ code: 'DISCARD_TOO_FEW' }))
+  })
+
+  it('omits endPhase from legal actions until hand at limit', () => {
+    const game = lobbyTwo(1)
+    game.start()
+    const s = game.state
+    s.phase = 'evening'
+    s.step = 'discard'
+    s.currentSeat = 0
+    s.players[0]!.hand = Array.from({ length: 7 }, (_, i) => card('ROOT-72', i))
+    const types = game.legalActions().map((a) => a.type)
+    expect(types).toContain('discard')
+    expect(types).not.toContain('endPhase')
+  })
+
+  it('rejects endPhase at discard while hand over limit', () => {
+    const game = lobbyTwo(1)
+    game.start()
+    const s = game.state
+    s.phase = 'evening'
+    s.step = 'discard'
+    s.currentSeat = 0
+    s.players[0]!.hand = Array.from({ length: 7 }, (_, i) => card('ROOT-72', i))
+    expect(() => game.apply({ type: 'endPhase' })).toThrow(
+      expect.objectContaining({ code: 'ILLEGAL_ACTION' }),
+    )
+  })
+
+  it('accepts discard down to hand limit', () => {
+    const game = lobbyTwo(99)
+    game.start()
+    const s = game.state
+    s.phase = 'evening'
+    s.step = 'discard'
+    s.currentSeat = 0
+    s.players[0]!.hand = Array.from({ length: 7 }, (_, i) => card('ROOT-72', i))
+    expect(game.legalActions().some((a) => a.type === 'discard')).toBe(true)
+    game.apply({
+      type: 'discard',
+      cardIds: ['ROOT-72#0', 'ROOT-72#1'],
+    })
+    expect(s.players[0]!.hand).toHaveLength(HAND_LIMIT)
   })
 })
 

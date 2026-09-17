@@ -50,6 +50,17 @@ function shuffle<T>(items: T[]): T[] {
 
 async function tryAct(state: GameState, specs: ActionSpec[]): Promise<GameState> {
   // Pending events may require a non-current seat (ambush, field hospital, etc.).
+  if (specs.some((s) => s.type === 'discard')) {
+    state = (await api.get()).state
+    const discardSpec = specs.find((s) => s.type === 'discard')
+    if (discardSpec) {
+      const action = buildActionFor(state, discardSpec)
+      if (action) {
+        const result = await api.act(action)
+        return result.state
+      }
+    }
+  }
   const candidates = shuffle([...specs])
   for (let attempt = 0; attempt < Math.min(40, Math.max(candidates.length * 3, 1)); attempt++) {
     const spec = pick(candidates)
@@ -66,8 +77,15 @@ async function tryAct(state: GameState, specs: ActionSpec[]): Promise<GameState>
   }
   const end = candidates.find((s) => s.type === 'endPhase')
   if (end) {
-    const result = await api.act({ type: 'endPhase' })
-    return result.state
+    try {
+      const result = await api.act({ type: 'endPhase' })
+      return result.state
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        throw new Error('no legal action could be applied')
+      }
+      throw err
+    }
   }
   throw new Error('no legal action could be applied')
 }
@@ -161,11 +179,11 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return { type: 'march', moves: [{ from, to, count: 1 }] }
     }
     case 'discard': {
-      const hand = state.players[seat]?.hand ?? []
-      const listed = (spec.params?.cardIds as string[] | undefined) ?? hand.map((c) => c.id)
+      const actor = state.currentSeat
+      const hand = state.players[actor]?.hand ?? []
       const over = Math.max(0, hand.length - 5)
       if (over <= 0) return null
-      return { type: 'discard', cardIds: listed.slice(0, over) }
+      return { type: 'discard', cardIds: hand.map((c) => c.id).slice(0, over) }
     }
     case 'swapMeet': {
       const targets = state.players.filter((p) => p.seat !== seat && p.hand.length > 0)

@@ -360,6 +360,12 @@ export class Game {
       (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
     )
     if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
+
+    {
+      const ctx = this.makeCtx()
+      const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
+      faction.validate(this.state, action, ctx)
+    }
   }
 
   private execute(action: Action): LogEntry[] {
