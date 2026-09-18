@@ -82,7 +82,7 @@
    - `lib/src/actions/types.ts`
    - `lib/src/index.ts` — re-export choice types
    - `lib/src/factions/Eyrie.ts` — ActionChoiceParams annotation only
-3. `feat(lib): expose Marquise card choices`
+3. `feat(lib): expose Marquise card choices` *(done)*
    - `lib/src/factions/Marquise.ts`
    - `lib/src/factions/Marquise.test.ts`
    - Spend bird, craft, discard; overwork as **paired** cardId × sawmill clearing (6.5.5)

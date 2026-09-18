@@ -1,4 +1,4 @@
-import type { Action, ActionSpec } from '../actions/types.js'
+import type { Action, ActionSpec, OverworkChoice } from '../actions/types.js'
 import { defOf } from '../cards/Deck.js'
 import { Deck } from '../cards/Deck.js'
 import { matchesSuit } from '../cards/suit.js'
@@ -351,22 +351,22 @@ export class Marquise extends Faction {
     }
 
     if (state.phase === 'daylight' && state.step === 'craft') {
-      for (const card of playerOf(state, seat).hand) {
-        if (canCraft(state, seat, card)) {
-          specs.push({ type: 'craft', actor: seat })
-          break
-        }
+      const craftableIds = playerOf(state, seat).hand
+        .filter((handCard) => canCraft(state, seat, handCard))
+        .map((handCard) => handCard.id)
+      if (craftableIds.length > 0) {
+        specs.push({ type: 'craft', actor: seat, params: { cardIds: craftableIds } })
       }
       specs.push({ type: 'endPhase', actor: seat })
       return specs
     }
 
     if (state.phase === 'daylight' && state.step === 'actions') {
-      for (const card of playerOf(state, seat).hand) {
-        if (defOf(card).suit === 'bird') {
-          specs.push({ type: 'spendBird', actor: seat })
-          break
-        }
+      const birdCardIds = playerOf(state, seat).hand
+        .filter((handCard) => defOf(handCard).suit === 'bird')
+        .map((handCard) => handCard.id)
+      if (birdCardIds.length > 0) {
+        specs.push({ type: 'spendBird', actor: seat, params: { cardIds: birdCardIds } })
       }
 
       if (actionBudget(state) > 0) {
@@ -382,13 +382,16 @@ export class Marquise extends Faction {
           }
         }
 
+        const overworkOptions: OverworkChoice[] = []
         for (const clearing of sawmillClearings(state, seat)) {
-          for (const card of playerOf(state, seat).hand) {
-            if (canOverwork(state, seat, clearing, card.id)) {
-              specs.push({ type: 'overwork', actor: seat })
-              break
+          for (const handCard of playerOf(state, seat).hand) {
+            if (canOverwork(state, seat, clearing, handCard.id)) {
+              overworkOptions.push({ cardId: handCard.id, clearing })
             }
           }
+        }
+        if (overworkOptions.length > 0) {
+          specs.push({ type: 'overwork', actor: seat, params: { options: overworkOptions } })
         }
 
         if (hasLegalBattle(state, seat)) specs.push({ type: 'battle', actor: seat })
@@ -404,9 +407,13 @@ export class Marquise extends Faction {
     }
 
     if (state.phase === 'evening' && state.step === 'discard') {
-      const handSize = playerOf(state, seat).hand.length
-      if (handSize > HAND_LIMIT) {
-        specs.push({ type: 'discard', actor: seat })
+      const hand = playerOf(state, seat).hand
+      if (hand.length > HAND_LIMIT) {
+        specs.push({
+          type: 'discard',
+          actor: seat,
+          params: { cardIds: hand.map((handCard) => handCard.id) },
+        })
         return specs
       }
       specs.push({ type: 'endPhase', actor: seat })
