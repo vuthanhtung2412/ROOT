@@ -1,17 +1,40 @@
 # `@root/phaser`
 
-Vite + Phaser 3 client. Bare boot for now — no API wire yet.
+Vite + Phaser 3 **GP2 hot-seat client**: Marquise vs Eyrie (Builder).
 
-## Start
+Phaser **never mutates** engine state. It reads `/game` + `/game/actions`, stages choices in composers, and submits `Action` JSON. Refresh after every command.
 
-From repo root:
+## Play GP2 (local)
 
 ```bash
-pnpm install
-pnpm dev:phaser
+# terminal 1 — API
+pnpm --filter @root/web dev
+
+# terminal 2 — Phaser (proxies /game + /map to API)
+pnpm --filter @root/phaser dev
 ```
 
-Open the URL Vite prints (default `http://localhost:5173`).
+Open Vite URL (default `http://localhost:5173`).
+
+1. **New GP2 game** — creates lobby, joins `marquise` + `eyrie`, starts
+2. Board + HUD + hand + action tray
+3. Compose actions (March is one compound submit; Add to Decree forced when hand nonempty)
+4. Hot-seat **handoff curtain** when actor seat changes (privacy is UI-only; API still exposes all hands)
+5. Undo from game drawer; winner overlay at 30 VP / finished
+
+## Architecture
+
+| Layer | Role |
+|---|---|
+| `GameSession` | create/join/start/action/undo + refresh |
+| `ActionComposer` + faction/event hooks | stage choices → `Action` |
+| Scenes | Boot → Menu → Game |
+| UI | board, HUD, hand, trays, overlays |
+
+## Assets
+
+- Autumn map + Marquise/Eyrie icons under `public/assets/` (from `resources/reference/`)
+- Card faces: **suit-colored vectors** with defId text (EP PNGs are reference-only until distribution rights are resolved — do not ship Steam screenshots)
 
 ## API client
 
@@ -21,7 +44,9 @@ Shared typed client: `@root/web-client` (`backend/web_client`).
 import { createRootWebClient } from '@root/web-client'
 ```
 
-Regenerate after API changes:
+Phaser wraps it in `createPhaserApi()` (`src/api/client.ts`) with `baseUrl: ''` so Vite proxy works.
+
+Regenerate after API shape changes:
 
 ```bash
 pnpm --filter @root/web gen:openapi
@@ -32,8 +57,12 @@ pnpm gen:api-client
 
 | Command | What |
 |---|---|
-| `pnpm --filter @root/phaser dev` | Vite dev server |
-| `pnpm --filter @root/phaser build` | production build → `dist/` |
+| `pnpm --filter @root/phaser dev` | Vite + API proxy |
+| `pnpm --filter @root/phaser test` | Vitest (factories + mocked fetch) |
 | `pnpm --filter @root/phaser typecheck` | `tsc --noEmit` |
-| `pnpm --filter @root/phaser preview` | preview production build |
-| `pnpm gen:api-client` | regenerate `@root/web-client` OpenAPI types |
+| `pnpm --filter @root/phaser build` | production → `dist/` |
+| `pnpm gen:api-client` | regenerate `@root/web-client` |
+
+## Out of scope
+
+Alliance, Vagabond, remote multiplayer, secure hidden hands, AI, WebSocket push, production asset licensing.
