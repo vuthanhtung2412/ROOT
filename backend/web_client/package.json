@@ -1,0 +1,29 @@
+{
+  "name": "@root/web-client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./schema": {
+      "types": "./src/schema.d.ts",
+      "default": "./src/schema.d.ts"
+    }
+  },
+  "scripts": {
+    "gen": "tsx scripts/gen-api-client.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.1",
+    "openapi-typescript": "^6.7.6",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  }
+}

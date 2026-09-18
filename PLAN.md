@@ -8,7 +8,7 @@
 - Keep `@root/web` authoritative. Phaser reads state/actions and submits normal `Action` commands; it never mutates game state locally. Engine already resolves Law §§6–7 (plus shared §4 battle/move/craft); UI only surfaces `legalActions` / `pending` and submits choices.
 - Refresh state and legal actions after every command (no WebSocket). Show API errors without losing the current selection.
 - **Contract first (blocker):** replace `ActionSpec.params: Record<string, unknown[]>` with typed UI choice metadata. Marquise must expose real choice domains; Eyrie must expose **correlated** decree choices (not fragile parallel arrays). Do this before any Phaser composers. Same correlation rule for Marquise **overwork** (card × sawmill clearing) and **build** (clearing × building type).
-- **OpenAPI client:** annotate Hono game/map routes with `@hono/zod-openapi`, expose `GET /doc`, dump `backend/web/openapi.json`, then `pnpm gen:api-client` → `frontend/phaser/src/api/generated/schema.d.ts`. Phaser wraps generated `paths` (openapi-fetch or thin fetch helper). Do **not** hand-copy HTTP types. Regenerating the client is mandatory after API shape changes.
+- **OpenAPI client:** annotate Hono game/map routes with `@hono/zod-openapi`, expose `GET /doc`, dump `backend/web/openapi.json`, then `pnpm gen:api-client` → shared package `@root/web-client` (`backend/web_client`). Frontends (Phaser, CLI, …) import `createRootWebClient` from `@root/web-client`. Do **not** hand-copy HTTP types. Regenerating the client is mandatory after API shape changes.
 - Route OpenAPI schemas may touch `backend/web/src/routes/game.ts` for request/response docs only — **do not** change `legalActions()` passthrough behavior.
 - Prefer generated OpenAPI types for HTTP; use type-only `@root/lib` only where the OpenAPI schema intentionally re-exports shared domain unions (Action, etc.). Bundle no engine behavior into the client.
 - Scene flow: preload → local game menu → game board.
@@ -55,16 +55,16 @@
 - `lib/src/factions/Eyrie.ts` (+ tests): paired/correlated decree choices.
 - `lib/src/layout/fall.ts` (+ svg test): align clearing coords to Autumn image.
 - `backend/web/src/openapi.ts`, `routes/**` (schema only), `scripts/export-openapi.ts`: OpenAPIHono `/doc` + `gen:openapi` dump.
-- `frontend/phaser/scripts/gen-api-client.ts`: `pnpm gen:api-client` → generated `schema.d.ts`.
-- `frontend/phaser/package.json`, `vite.config.ts`, `pnpm-lock.yaml`: deps, Vite proxy, Vitest, openapi-typescript.
-- `frontend/phaser/src/api/**`, `src/test/factories.ts`: thin client over generated OpenAPI types + fixtures.
+- `backend/web_client/**`: shared generated OpenAPI client (`@root/web-client`); `pnpm gen:api-client`.
+- `frontend/phaser/package.json`, `vite.config.ts`, `pnpm-lock.yaml`: `@root/web-client` dep, Vite proxy, Vitest.
+- `frontend/phaser/src/api/**`, `src/test/factories.ts`: thin Phaser session wrapper over `@root/web-client` + fixtures.
 - `frontend/phaser/src/assets/**`, `src/scenes/**`, `src/game/**`, `src/ui/**`: preload, session, menu, board, HUD, composers, overlays.
 - `frontend/phaser/README.md`, root `README.md`: GP2 play flow + `gen:api-client` usage.
 - **Behavior freeze:** `GET /game/actions` still returns `game.legalActions()` unchanged.
 
 ### Test plan
 - Contract units: every GP2 `ActionSpec` carries enough typed metadata to build a valid `Action`; Marquise card/board domains complete; Eyrie clearing/defender and decree choices stay paired.
-- OpenAPI: `pnpm --filter @root/web gen:openapi` writes JSON; `pnpm gen:api-client` writes `schema.d.ts`; Phaser client typechecks against generated paths.
+- OpenAPI: `pnpm --filter @root/web gen:openapi` writes JSON; `pnpm gen:api-client` writes `@root/web-client` schema; Phaser/CLI import `@root/web-client`.
 - Phaser units use fixture factories and mocked fetch:
   - API success/error handling
   - session refresh after create, action, undo, and restart
@@ -102,114 +102,116 @@
    - `backend/web/package.json` — `@hono/zod-openapi`, zod
    - `backend/web/openapi.json` — dumped via `gen:openapi`
    - Behavior unchanged for `legalActions` passthrough
-8. `chore: add gen:api-client script` *(done)*
-   - `frontend/phaser/scripts/gen-api-client.ts`
+8. `chore: add gen:api-client script` *(done — moved to `@root/web-client`)*
+   - `backend/web_client/scripts/gen-api-client.ts`
    - `backend/web/scripts/export-openapi.ts`
-   - `frontend/phaser/package.json`, root `package.json`, `backend/web/package.json`
    - Commands: `pnpm --filter @root/web gen:openapi` then `pnpm gen:api-client`
-9. `chore(phaser): configure API development proxy`
-   - `frontend/phaser/package.json`
-   - `frontend/phaser/vite.config.ts`
-   - `pnpm-lock.yaml`
-   - Vite proxy to web; optional type-only `@root/lib` for domain unions
-10. `chore(phaser): add Vitest`
+9. `feat(web-client): shared generated API package` *(done)*
+   - `backend/web_client/**` — `@root/web-client` with `createRootWebClient` + `schema.d.ts`
+   - Wire `frontend/phaser` (and later CLI) via `workspace:*`
+10. `chore(phaser): configure API development proxy`
     - `frontend/phaser/package.json`
     - `frontend/phaser/vite.config.ts`
     - `pnpm-lock.yaml`
-11. `feat(phaser): add generated game API client`
-    - Run `pnpm gen:api-client` → `frontend/phaser/src/api/generated/schema.d.ts`
-    - `frontend/phaser/src/api/client.ts` — thin wrapper over generated `paths`
+    - Vite proxy to web
+11. `chore(phaser): add Vitest`
+    - `frontend/phaser/package.json`
+    - `frontend/phaser/vite.config.ts`
+    - `pnpm-lock.yaml`
+12. `feat(phaser): add generated game API client`
+    - Import from `@root/web-client` (not local generated files)
+    - `frontend/phaser/src/api/client.ts` — thin Phaser-facing helpers if needed
     - `frontend/phaser/src/api/client.test.ts`
     - `frontend/phaser/src/test/factories.ts`
-12. `feat(phaser): preload core game assets`
+13. `feat(phaser): preload core game assets`
     - `frontend/phaser/src/assets/gameAssets.ts`
     - `frontend/phaser/src/scenes/BootScene.ts`
     - `frontend/phaser/src/game/config.ts`
-13. `feat(phaser): add GP2 session store`
+14. `feat(phaser): add GP2 session store`
     - `frontend/phaser/src/game/GameSession.ts`
     - `frontend/phaser/src/game/GameSession.test.ts`
-14. `feat(phaser): add local game menu`
+15. `feat(phaser): add local game menu`
     - `frontend/phaser/src/scenes/MenuScene.ts`
     - `frontend/phaser/src/game/config.ts`
-15. `feat(phaser): render Autumn board`
+16. `feat(phaser): render Autumn board`
     - `frontend/phaser/src/scenes/GameScene.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
     - `frontend/phaser/src/game/boardLayout.ts`
     - `frontend/phaser/src/game/config.ts`
-16. `feat(phaser): render clearing pieces`
+17. `feat(phaser): render clearing pieces`
     - `frontend/phaser/src/ui/PieceView.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
     - `frontend/phaser/src/game/theme.ts`
-17. `feat(phaser): add turn HUD`
+18. `feat(phaser): add turn HUD`
     - `frontend/phaser/src/ui/TurnBanner.ts`
     - `frontend/phaser/src/ui/PlayerRail.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-18. `feat(phaser): show player hand`
+19. `feat(phaser): show player hand`
     - `frontend/phaser/src/ui/CardHand.ts`
     - `frontend/phaser/src/ui/CardView.ts`
     - `frontend/phaser/src/assets/gameAssets.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-19. `feat(phaser): add action composer core`
+20. `feat(phaser): add action composer core`
     - `frontend/phaser/src/game/ActionComposer.ts`
     - `frontend/phaser/src/game/ActionComposer.test.ts`
-20. `feat(phaser): add action selection shell`
+21. `feat(phaser): add action selection shell`
     - `frontend/phaser/src/ui/ActionTray.ts`
     - `frontend/phaser/src/ui/SelectionPrompt.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-21. `feat(phaser): compose Marquise card actions`
+22. `feat(phaser): compose Marquise card actions`
     - `frontend/phaser/src/game/marquiseActionComposer.ts`
     - `frontend/phaser/src/game/marquiseActionComposer.test.ts`
     - `frontend/phaser/src/ui/ActionTray.ts`
     - Craft, spendBird, overwork (paired), discard; also shared craft/discard paths usable by Eyrie seat
-22. `feat(phaser): compose Marquise March`
+23. `feat(phaser): compose Marquise March`
     - `frontend/phaser/src/game/marquiseActionComposer.ts`
     - `frontend/phaser/src/game/marquiseActionComposer.test.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
     - `frontend/phaser/src/ui/SelectionPrompt.ts`
     - Compound 6.5.2: one-move confirm + optional second move → single `march` submit
-23. `feat(phaser): compose Marquise board actions`
+24. `feat(phaser): compose Marquise board actions`
     - `frontend/phaser/src/game/marquiseActionComposer.ts`
     - `frontend/phaser/src/game/marquiseActionComposer.test.ts`
     - `frontend/phaser/src/ui/ActionTray.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
     - Recruit (once), build (paired), battle initiation
-24. `feat(phaser): compose Eyrie birdsong and decree`
+25. `feat(phaser): compose Eyrie birdsong and decree`
     - `frontend/phaser/src/game/eyrieActionComposer.ts`
     - `frontend/phaser/src/game/eyrieActionComposer.test.ts`
     - `frontend/phaser/src/ui/SelectionPrompt.ts`
     - Forced addToDecree (7.4.2), optional newRoost (7.4.3), decree resolve L→R, turmoil when stuck
-25. `feat(phaser): show Eyrie decree panel`
+26. `feat(phaser): show Eyrie decree panel`
     - `frontend/phaser/src/ui/EyrieDecreePanel.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
     - Columns + viziers + cursor/remaining; Builder badge (no leader picker)
-26. `feat(phaser): resolve Field Hospitals`
+27. `feat(phaser): resolve Field Hospitals`
     - `frontend/phaser/src/game/eventActionComposer.ts`
     - `frontend/phaser/src/game/eventActionComposer.test.ts`
     - `frontend/phaser/src/ui/EventOverlay.ts`
-27. `feat(phaser): resolve battle events`
+28. `feat(phaser): resolve battle events`
     - `frontend/phaser/src/game/eventActionComposer.ts`
     - `frontend/phaser/src/game/eventActionComposer.test.ts`
     - `frontend/phaser/src/ui/BattleOverlay.ts`
-28. `feat(phaser): show faction boards`
+29. `feat(phaser): show faction boards`
     - `frontend/phaser/src/ui/FactionDrawer.ts`
     - `frontend/phaser/src/ui/MarquiseBoard.ts`
     - `frontend/phaser/src/ui/EyrieBoard.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-29. `feat(phaser): show game log`
+30. `feat(phaser): show game log`
     - `frontend/phaser/src/ui/GameDrawer.ts`
     - `frontend/phaser/src/ui/GameLog.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-30. `feat(phaser): add game undo`
+31. `feat(phaser): add game undo`
     - `frontend/phaser/src/ui/GameDrawer.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
     - `frontend/phaser/src/game/GameSession.test.ts`
-31. `feat(phaser): add hot-seat handoff`
+32. `feat(phaser): add hot-seat handoff`
     - `frontend/phaser/src/ui/HandoffOverlay.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-32. `feat(phaser): show game winner`
+33. `feat(phaser): show game winner`
     - `frontend/phaser/src/ui/WinnerOverlay.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-33. `docs(phaser): document GP2 play flow`
+34. `docs(phaser): document GP2 play flow`
     - `frontend/phaser/README.md`
     - `README.md`
-    - Document `pnpm --filter @root/web gen:openapi` + `pnpm gen:api-client`
+    - Document `pnpm --filter @root/web gen:openapi` + `pnpm gen:api-client` → `@root/web-client`
