@@ -1,5 +1,6 @@
 import type Phaser from 'phaser'
 import type { GameState } from '../api/client.ts'
+import { lookupCardCatalog } from '../assets/gameAssets.ts'
 
 const DECREE_COLUMNS = ['recruit', 'move', 'battle', 'build'] as const
 
@@ -17,6 +18,20 @@ function isEyrieBoard(value: unknown): value is EyrieBoardView {
     return false
   }
   return Reflect.get(value, 'kind') === 'eyrie'
+}
+
+function suitForDecreeCard(defId: string): string {
+  if (defId === 'VIZIER') {
+    return 'bird'
+  }
+  return lookupCardCatalog(defId)?.suit ?? '?'
+}
+
+function formatDecreeSuits(cards: ReadonlyArray<{ defId: string }>): string {
+  if (cards.length === 0) {
+    return '—'
+  }
+  return cards.map((card) => suitForDecreeCard(card.defId)).join(', ')
 }
 
 function readDecreeCursor(turnScratch: unknown): {
@@ -88,7 +103,7 @@ export class EyrieDecreePanel {
       const label = this.scene.add.text(
         x + 6,
         y + 6,
-        `${column}\n${cards.map((card) => card.defId.replace('ROOT-', '')).join(', ') || '—'}`,
+        `${column}\n${formatDecreeSuits(cards)}`,
         {
           fontFamily: 'monospace',
           fontSize: '11px',
