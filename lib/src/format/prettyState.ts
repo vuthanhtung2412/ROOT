@@ -4,11 +4,22 @@ import type { Action } from '../actions/types.js'
 import { FALL } from '../map/fall.js'
 import { FALL_LAYOUT } from '../layout/fall.js'
 import { toAscii } from '../layout/render/ascii.js'
-import type { GameState } from '../state/types.js'
+import type { Seat } from '../pieces/types.js'
+import type { GameState, PlayerState } from '../state/types.js'
 
 type Piece = GameState['clearings'][number]['pieces'][number]
 
 const EFFECT_MAX = 72
+
+/** Faction + player name (not seat). */
+export function playerRef(player: PlayerState): string {
+  return `${player.faction}/${player.playerId}`
+}
+
+function playerRefBySeat(state: GameState, seat: Seat): string {
+  const player = state.players.find((p) => p.seat === seat)
+  return player ? playerRef(player) : `unknown/${seat}`
+}
 
 export type CardLabelOpts = {
   /** Append short card effect (for crafted / in-play cards). */
@@ -83,11 +94,12 @@ function clearingBlock(state: GameState, id: number): string[] {
   const lines: string[] = [`  C${id} ${meta.suit} slots=${meta.slots}${ruin}`]
   for (const player of state.players) {
     const parts = bySeat.get(player.seat) ?? []
+    const who = playerRef(player)
     if (parts.length === 0) {
-      lines.push(`    s${player.seat}: (none)`)
+      lines.push(`    ${who}: (none)`)
       continue
     }
-    lines.push(`    s${player.seat}: ${formatPieceChunk(parts)}`)
+    lines.push(`    ${who}: ${formatPieceChunk(parts)}`)
   }
   if (state.players.length === 0 && c.pieces.length === 0) {
     lines.push('    (empty)')
@@ -108,7 +120,7 @@ function boardLines(board: GameState['players'][number]['board']): string[] {
 
 function playerBlock(p: GameState['players'][number]): string[] {
   return [
-    `  seat${p.seat} ${p.playerId} (${p.faction}) VP=${p.vp}`,
+    `  ${playerRef(p)} VP=${p.vp}`,
     ...cardsBlock('    ', 'hand', p.hand),
     ...cardsBlock('    ', 'crafted', p.playArea, { effect: true }),
     `    items: ${p.craftedItems.length ? p.craftedItems.join(', ') : '(none)'}`,
@@ -145,7 +157,7 @@ export function describeAction(action: Action, state: GameState): string {
     case 'march':
       return `MOVE ${action.moves.map((m) => `${m.count}w C${m.from}→C${m.to}`).join(', ')}`
     case 'battle':
-      return `ATTACK C${action.clearing} vs seat${action.defender}`
+      return `ATTACK C${action.clearing} vs ${playerRefBySeat(state, action.defender)}`
     case 'build':
       return `BUILD ${action.building} at C${action.clearing}`
     case 'craft':
@@ -159,13 +171,15 @@ export function describeAction(action: Action, state: GameState): string {
     case 'discard':
       return `DISCARD ${action.cardIds.map(findCard).join('; ')}`
     case 'swapMeet':
-      return `SWAP MEET give ${findCard(action.giveCardId)} ↔ seat${action.target}`
+      return `SWAP MEET give ${findCard(action.giveCardId)} ↔ ${playerRefBySeat(state, action.target)}`
     case 'resolveEvent': {
       const bits: string[] = ['RESOLVE EVENT']
       if (action.decline) bits.push('decline')
       if (action.cardId) bits.push(`card=${findCard(action.cardId)}`)
       if (action.pieceIds?.length) bits.push(`pieces=[${action.pieceIds.join(',')}]`)
-      if (action.order) bits.push(`order=[${action.order.join(',')}]`)
+      if (action.order) {
+        bits.push(`order=[${action.order.map((seat) => playerRefBySeat(state, seat)).join(',')}]`)
+      }
       if (action.useEffect !== undefined) bits.push(`useEffect=${action.useEffect}`)
       return bits.join(' ')
     }
@@ -183,13 +197,15 @@ export type PrettyGameOpts = {
 /** Human-readable game dump for CLI / server logs. */
 export function formatGameView(state: GameState, opts: PrettyGameOpts = {}): string {
   const lines: string[] = ['', '──────── game ────────']
+  const current = playerRefBySeat(state, state.currentSeat)
   const head =
     (opts.label ? `[${opts.label}] ` : '') +
-    `turn=${state.turn} seat=${state.currentSeat} ${state.phase}/${state.step} (${state.status})` +
-    ` seed=${state.seed}` +
+    `turn=${state.turn} ${current} ${state.phase}/${state.step} (${state.status})` +
     (opts.historyLength !== undefined ? ` history=${opts.historyLength}` : '')
   lines.push(head)
-  if (state.winner !== undefined) lines.push(`winner: seat${state.winner}`)
+  if (state.winner !== undefined) {
+    lines.push(`winner: ${playerRefBySeat(state, state.winner)}`)
+  }
   if (opts.action) lines.push(`action: ${describeAction(opts.action, state)}`)
 
   lines.push('players:')
