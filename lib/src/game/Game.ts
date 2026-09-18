@@ -27,6 +27,7 @@ import { RESOLVERS } from '../events/resolvers.js'
 import { EFFECTS } from '../triggers/effects.js'
 import type { Listener } from '../triggers/effects.js'
 import { buildRuleHooks } from '../triggers/buildHooks.js'
+import { requireSeat } from '../typeGuards.js'
 import type { Ctx } from './ctx.js'
 import { SignalBus } from '../triggers/SignalBus.js'
 
@@ -219,7 +220,7 @@ export class Game {
     if (state.status === 'waiting') {
       const specs: ActionSpec[] = []
       if (state.players.length < state.factions.length) {
-        specs.push({ type: 'join', actor: state.players.length as Seat })
+        specs.push({ type: 'join', actor: requireSeat(state.players.length) })
       }
       if (state.players.length > 1) {
         specs.push({ type: 'start', actor: 0 })
@@ -418,7 +419,7 @@ export class Game {
     if (state.players.length >= state.factions.length) {
       throw new RuleError('LOBBY_FULL')
     }
-    const seat = state.players.length as Seat
+    const seat = requireSeat(state.players.length)
     const faction = state.factions[seat]!
     state.players.push({
       playerId,
@@ -574,7 +575,7 @@ export class Game {
     }
 
     faction.endTurn(state)
-    const nextSeat = ((state.currentSeat + 1) % state.players.length) as Seat
+    const nextSeat = requireSeat((state.currentSeat + 1) % state.players.length)
     state.currentSeat = nextSeat
     state.turn += 1
 

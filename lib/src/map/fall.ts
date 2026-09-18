@@ -75,7 +75,7 @@ export class FallMap extends GameMap {
 
   /** Diagonally opposite corner. Involutive on corners. */
   opposite(corner: ClearingId): ClearingId {
-    const i = this.corners.indexOf(corner as (typeof this.corners)[number])
+    const i = this.corners.indexOf(corner)
     if (i < 0) throw new Error(`not a corner clearing: ${corner}`)
     return this.corners[(i + 2) % 4]!
   }

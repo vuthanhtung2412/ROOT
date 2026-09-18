@@ -250,7 +250,7 @@ describe('Marquise turn', () => {
     const woodBefore = game.state.clearings[sawmillClearing]!.pieces.filter(
       (p) => p.kind === 'token' && p.type === 'wood',
     ).length
-    game.apply({ type: 'overwork', clearing: sawmillClearing as typeof sawmillClearing, cardId: spend.id })
+    game.apply({ type: 'overwork', clearing: sawmillClearing, cardId: spend.id })
     const woodAfter = game.state.clearings[sawmillClearing]!.pieces.filter(
       (p) => p.kind === 'token' && p.type === 'wood',
     ).length

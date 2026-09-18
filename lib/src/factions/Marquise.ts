@@ -43,7 +43,10 @@ const MARQUISE_BUILDINGS = ['sawmill', 'workshop', 'recruiter'] as const
 type MarquiseBuilding = (typeof MARQUISE_BUILDINGS)[number]
 
 function isMarquiseBuilding(type: BuildingType): type is MarquiseBuilding {
-  return (MARQUISE_BUILDINGS as readonly string[]).includes(type)
+  for (const building of MARQUISE_BUILDINGS) {
+    if (building === type) return true
+  }
+  return false
 }
 
 /** Rule: Marquise > Setup 1–2 — keep at FALL.corners[0]. */
@@ -57,7 +60,7 @@ export function keepCornerFor(state: GameState, seat: Seat): ClearingId {
 function garrisonClearings(_state: GameState, keep: ClearingId): ClearingId[] {
   // Rule: Marquise > Setup 3 — Garrison — all clearings except diagonally opposite corner.
   const opposite = FALL.opposite(keep)
-  return Array.from({ length: 12 }, (_, id) => id as ClearingId).filter((id) => id !== opposite)
+  return Array.from({ length: 12 }, (_, id) => id).filter((id) => id !== opposite)
 }
 
 function placeStartingBuildings(state: GameState, seat: Seat, keep: ClearingId): void {
@@ -237,7 +240,7 @@ function canMarchMove(state: GameState, path: MarchPath, ctx: Ctx): boolean {
 function hasLegalMarch(state: GameState, seat: Seat, ctx: Ctx): boolean {
   for (let from = 0; from < 12; from++) {
     for (let to = 0; to < 12; to++) {
-      if (canMarchMove(state, { seat, from: from as ClearingId, to: to as ClearingId }, ctx)) return true
+      if (canMarchMove(state, { seat, from: from, to: to }, ctx)) return true
     }
   }
   return false
@@ -266,9 +269,9 @@ function canBattle(
 
 function hasLegalBattle(state: GameState, seat: Seat): boolean {
   for (let clearing = 0; clearing < 12; clearing++) {
-    const enemies = enemySeatsInClearing(state, clearing as ClearingId, seat)
+    const enemies = enemySeatsInClearing(state, clearing, seat)
     for (const defender of enemies) {
-      if (canBattle(state, seat, clearing as ClearingId, defender)) return true
+      if (canBattle(state, seat, clearing, defender)) return true
     }
   }
   return false
@@ -372,7 +375,7 @@ export class Marquise extends Faction {
 
         for (let clearing = 0; clearing < 12; clearing++) {
           for (const building of MARQUISE_BUILDINGS) {
-            if (canBuildAt(state, { seat, clearing: clearing as ClearingId, building }, ctx)) {
+            if (canBuildAt(state, { seat, clearing: clearing, building }, ctx)) {
               specs.push({ type: 'build', actor: seat })
               break
             }
