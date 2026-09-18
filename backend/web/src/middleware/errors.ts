@@ -23,16 +23,16 @@ export function gameExists(): never {
   throw new HttpError(409, 'GAME_EXISTS')
 }
 
-export function onError(err: Error, c: Context): Response {
+export function onError(err: Error, context: Context): Response {
   if (err instanceof HttpError) {
-    return c.json(
+    return context.json(
       { code: err.code, detail: err.detail ?? null },
       err.status as 400 | 404 | 409,
     )
   }
   if (err instanceof RuleError) {
-    return c.json({ code: err.code, detail: err.detail ?? null }, 400)
+    return context.json({ code: err.code, detail: err.detail ?? null }, 400)
   }
   console.error(err)
-  return c.json({ code: 'INTERNAL_ERROR', detail: err.message }, 500)
+  return context.json({ code: 'INTERNAL_ERROR', detail: err.message }, 500)
 }
