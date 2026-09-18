@@ -38,22 +38,6 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale
-
-    this.add
-      .text(width / 2, height / 2 - 24, 'Root', {
-        fontFamily: 'Georgia, serif',
-        fontSize: '48px',
-        color: '#f0e6d3',
-      })
-      .setOrigin(0.5)
-
-    this.add
-      .text(width / 2, height / 2 + 24, 'Assets ready', {
-        fontFamily: 'monospace',
-        fontSize: '16px',
-        color: '#9a9a9a',
-      })
-      .setOrigin(0.5)
+    this.scene.start('MenuScene')
   }
 }

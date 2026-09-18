@@ -134,7 +134,7 @@
 14. `feat(phaser): add GP2 session store` *(done)*
     - `frontend/phaser/src/game/GameSession.ts`
     - `frontend/phaser/src/game/GameSession.test.ts`
-15. `feat(phaser): add local game menu`
+15. `feat(phaser): add local game menu` *(done)*
     - `frontend/phaser/src/scenes/MenuScene.ts`
     - `frontend/phaser/src/game/config.ts`
 16. `feat(phaser): render Autumn board`
