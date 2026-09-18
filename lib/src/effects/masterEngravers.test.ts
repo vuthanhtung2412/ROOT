@@ -2,21 +2,8 @@ import { describe, expect, it } from 'vitest'
 import './register.js'
 import { defOf } from '../cards/Deck.js'
 import { craftCard } from '../rules/craft.js'
-import { EFFECTS } from '../triggers/effects.js'
-import type { GameSignal } from '../triggers/signals.js'
-import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
-
-function buildCraftContext(state: ReturnType<typeof minimalState>) {
-  const context = testContext({ state })
-  context.emit = (signal: GameSignal) => {
-    for (const playerState of state.players) {
-      for (const playCard of playerState.playArea) {
-        EFFECTS[playCard.defId]?.onSignal?.(state, signal, context)
-      }
-    }
-  }
-  return context
-}
+import { card, minimalState, player, withPieces } from '../test/fixtures.js'
+import { buildCraftContext } from './utils.js'
 
 describe('Master Engravers', () => {
   it('Rule: Master Engravers — +1 VP on craft.item', () => {
