@@ -150,7 +150,7 @@
     - `frontend/phaser/src/ui/TurnBanner.ts`
     - `frontend/phaser/src/ui/PlayerRail.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-19. `feat(phaser): show player hand`
+19. `feat(phaser): show player hand` *(done)*
     - `frontend/phaser/src/ui/CardHand.ts`
     - `frontend/phaser/src/ui/CardView.ts`
     - `frontend/phaser/src/assets/gameAssets.ts`

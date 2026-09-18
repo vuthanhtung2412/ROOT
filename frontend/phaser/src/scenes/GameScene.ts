@@ -7,6 +7,7 @@ import {
 } from '../game/boardLayout.ts'
 import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
 import { BoardView } from '../ui/BoardView.ts'
+import { CardHand } from '../ui/CardHand.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
 import {
   buildTurnBannerViewModel,
@@ -22,6 +23,7 @@ export class GameScene extends Phaser.Scene {
   private boardView: BoardView | null = null
   private turnBanner: TurnBanner | null = null
   private playerRail: PlayerRail | null = null
+  private cardHand: CardHand | null = null
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -39,6 +41,7 @@ export class GameScene extends Phaser.Scene {
 
     this.turnBanner = new TurnBanner(this)
     this.playerRail = new PlayerRail(this)
+    this.cardHand = new CardHand(this)
 
     this.statusText = this.add
       .text(width * 0.38, height * 0.92, '', {
@@ -76,6 +79,10 @@ export class GameScene extends Phaser.Scene {
       this.playerRail.destroy()
       this.playerRail = null
     }
+    if (this.cardHand !== null) {
+      this.cardHand.destroy()
+      this.cardHand = null
+    }
   }
 
   private async bootstrapBoard(): Promise<void> {
@@ -100,6 +107,7 @@ export class GameScene extends Phaser.Scene {
     const banner = buildTurnBannerViewModel(snapshot.state)
     this.turnBanner?.sync(banner)
     this.playerRail?.sync(snapshot.state, banner.actorSeat)
+    this.cardHand?.sync(snapshot.state)
     this.paintStatus(snapshot.error)
   }
 
