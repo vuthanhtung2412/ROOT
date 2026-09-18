@@ -3,8 +3,10 @@
   "private": true,
   "scripts": {
     "dev:web": "pnpm --filter @root/web dev",
+    "dev:phaser": "pnpm --filter @root/phaser dev",
     "build:web": "pnpm --filter @root/web build",
     "build:lib": "pnpm --filter @root/lib build",
+    "build:phaser": "pnpm --filter @root/phaser build",
     "typecheck": "pnpm -r typecheck"
   },
   "engines": {
