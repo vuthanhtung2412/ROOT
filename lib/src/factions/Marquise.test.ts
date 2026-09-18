@@ -7,7 +7,7 @@ import { keepOwner } from '../queries/place.js'
 import { resetPlaceIds } from '../rules/place.js'
 import { HAND_LIMIT } from '../state/constants.js'
 import type { GameSignal } from '../triggers/signals.js'
-import { card, player, minimalState, testCtx, withPieces } from '../test/fixtures.js'
+import { card, player, minimalState, testContext, withPieces } from '../test/fixtures.js'
 import {
   buildColumn,
   keepCornerFor,
@@ -15,8 +15,8 @@ import {
   recruiterDrawBonus,
 } from './Marquise.js'
 
-function setupCtx() {
-  return testCtx()
+function setupContext() {
+  return testContext()
 }
 
 describe('Marquise setup', () => {
@@ -27,7 +27,7 @@ describe('Marquise setup', () => {
       status: 'playing',
       players: [player(0, 'marquise')],
     })
-    MARQUISE.setup(state, 0, setupCtx())
+    MARQUISE.setup(state, 0, setupContext())
     expect(keepOwner(state, FALL.corners[0])).toBe(0)
   })
 
@@ -35,7 +35,7 @@ describe('Marquise setup', () => {
     const state = minimalState({
       players: [player(0, 'marquise'), player(1, 'marquise')],
     })
-    MARQUISE.setup(state, 1, setupCtx())
+    MARQUISE.setup(state, 1, setupContext())
     expect(keepCornerFor(state, 1)).toBe(FALL.opposite(FALL.corners[0]))
     expect(keepOwner(state, FALL.opposite(FALL.corners[0]))).toBe(1)
   })
@@ -44,7 +44,7 @@ describe('Marquise setup', () => {
     const state = minimalState({
       players: [player(0, 'marquise')],
     })
-    MARQUISE.setup(state, 0, setupCtx())
+    MARQUISE.setup(state, 0, setupContext())
     const keep = FALL.corners[0]!
     const opposite = FALL.opposite(keep)
 
@@ -61,9 +61,9 @@ describe('Marquise setup', () => {
     const state = minimalState({
       players: [player(0, 'marquise'), player(1, 'marquise')],
     })
-    MARQUISE.setup(state, 0, setupCtx())
+    MARQUISE.setup(state, 0, setupContext())
     resetPlaceIds()
-    MARQUISE.setup(state, 1, setupCtx())
+    MARQUISE.setup(state, 1, setupContext())
 
     for (const seat of [0, 1] as const) {
       const keep = keepCornerFor(state, seat)
@@ -87,7 +87,7 @@ describe('Marquise setup', () => {
     const state = minimalState({
       players: [player(0, 'marquise')],
     })
-    MARQUISE.setup(state, 0, setupCtx())
+    MARQUISE.setup(state, 0, setupContext())
     const keep = FALL.corners[0]!
     const zone = [keep, ...FALL.adjacent(keep)]
 
@@ -117,7 +117,7 @@ describe('Marquise setup', () => {
       players: [player(0, 'marquise')],
     })
     // Corner 0 has 1 slot — only one building fits on keep.
-    MARQUISE.setup(state, 0, setupCtx())
+    MARQUISE.setup(state, 0, setupContext())
     const keep = FALL.corners[0]!
     const onKeep = state.clearings[keep]!.pieces.filter((p) => p.kind === 'building').length
     expect(onKeep).toBe(1)
@@ -327,7 +327,7 @@ describe('Marquise turn', () => {
       board.tracks.recruiter.placed = 1
       expect(recruiterDrawBonus(board)).toBe(2)
     }
-    MARQUISE.apply(state, { type: 'eveningDraw' }, setupCtx())
+    MARQUISE.apply(state, { type: 'eveningDraw' }, setupContext())
     expect(state.players[0]!.hand.length).toBe(3)
   })
 
@@ -345,7 +345,7 @@ describe('Marquise turn', () => {
     MARQUISE.apply(
       state,
       { type: 'discard', cardIds: ['ROOT-206#1', 'ROOT-207#2'] },
-      setupCtx(),
+      setupContext(),
     )
     expect(state.players[0]!.hand.length).toBe(HAND_LIMIT)
   })
@@ -362,7 +362,7 @@ describe('Marquise turn', () => {
     MARQUISE.apply(
       state,
       { type: 'battle', clearing: 4, defender: 1 },
-      setupCtx(),
+      setupContext(),
     )
     expect(state.pending).toHaveLength(1)
     expect(state.pending[0]!.type).toBe('battle')
