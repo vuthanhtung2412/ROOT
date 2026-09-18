@@ -380,6 +380,9 @@ describe('Marquise turn', () => {
       birdsongWoodDone: true,
       eveningDrawDone: true,
       swapMeetUsed: true,
+      emergencyOrdersDone: true,
+      eveningScoreDone: true,
+      decree: null,
     }
     MARQUISE.endTurn(state)
     expect(state.clearings[0]!.pieces[0]!.kind).toBe('building')
@@ -393,6 +396,9 @@ describe('Marquise turn', () => {
       birdsongWoodDone: false,
       eveningDrawDone: false,
       swapMeetUsed: false,
+      emergencyOrdersDone: false,
+      eveningScoreDone: false,
+      decree: null,
     })
   })
 })
