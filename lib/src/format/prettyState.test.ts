@@ -3,8 +3,10 @@ import {
   cardLabel,
   describeLogEntry,
   formatDecreeColumn,
+  formatGameLogEntry,
   formatGameView,
   formatPieceChunk,
+  formatPlayersClearingsDiff,
   formatTurnLog,
 } from './prettyState.js'
 import { eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
@@ -60,6 +62,51 @@ describe('formatDecreeColumn', () => {
         v0!,
       ]),
     ).toBe('fox x2, bird x1')
+  })
+})
+
+describe('formatStateDiff / formatGameLogEntry', () => {
+  it('diffs hierarchical players/clearings inside ```diff fences', () => {
+    const before = withPieces(
+      minimalState({
+        players: [player(0, 'marquise'), player(1, 'eyrie', { vp: 0 })],
+      }),
+      2,
+      [
+        { id: 'r', kind: 'building', type: 'roost', owner: 1, used: false },
+        { id: 'w0', kind: 'warrior', owner: 1 },
+        { id: 'w1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    let after = withPieces(
+      minimalState({
+        players: [player(0, 'marquise'), player(1, 'eyrie', { vp: 0 })],
+      }),
+      2,
+      [
+        { id: 'r', kind: 'building', type: 'roost', owner: 1, used: false },
+        { id: 'w0', kind: 'warrior', owner: 1 },
+      ],
+    )
+    after = withPieces(after, 5, [{ id: 'w1', kind: 'warrior', owner: 1 }])
+
+    const { clearings } = formatPlayersClearingsDiff(before, after)
+    expect(clearings.startsWith('```diff\n')).toBe(true)
+    expect(clearings).toMatch(/^- +eyrie\/p1: 2w\+roost/m)
+    expect(clearings).toMatch(/^\+ +eyrie\/p1: 1w\+roost/m)
+    expect(clearings).toMatch(/^\+ +eyrie\/p1: 1w$/m)
+  })
+
+  it('formatGameLogEntry keeps map + wraps players/clearings as diff', () => {
+    const a = minimalState()
+    const b = structuredClone(a)
+    b.players[0]!.vp = 3
+    const text = formatGameLogEntry(b, { label: 'ACT', prev: a, action: { type: 'endPhase' } })
+    expect(text).toContain('──────── game ────────')
+    expect(text).toContain('map (id+suit')
+    expect(text).toContain('```diff')
+    expect(text).toMatch(/^- +marquise\/p0 VP=0/m)
+    expect(text).toMatch(/^\+ +marquise\/p0 VP=3/m)
   })
 })
 

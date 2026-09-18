@@ -307,14 +307,101 @@ export function formatTurnLog(log: LogEntry[], state: GameState): string {
   return log.map((e) => describeLogEntry(e, state)).join('\n')
 }
 
+function playersSection(state: GameState): string[] {
+  return ['players:', ...state.players.flatMap((p) => playerBlock(p))]
+}
+
+function clearingsSection(state: GameState): string[] {
+  const lines: string[] = ['clearings:']
+  for (let id = 0; id < state.clearings.length; id++) {
+    lines.push(...clearingBlock(state, id))
+  }
+  return lines
+}
+
+/** Classic line LCS → markdown diff body lines (` `/`-`/`+`). */
+export function diffLines(before: string[], after: string[]): string[] {
+  const n = before.length
+  const m = after.length
+  const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0))
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i]![j] =
+        before[i] === after[j]
+          ? dp[i + 1]![j + 1]! + 1
+          : Math.max(dp[i + 1]![j]!, dp[i]![j + 1]!)
+    }
+  }
+  const out: string[] = []
+  let i = 0
+  let j = 0
+  while (i < n && j < m) {
+    if (before[i] === after[j]) {
+      out.push(`  ${before[i]}`)
+      i++
+      j++
+    } else if (dp[i + 1]![j]! >= dp[i]![j + 1]!) {
+      out.push(`- ${before[i]}`)
+      i++
+    } else {
+      out.push(`+ ${after[j]}`)
+      j++
+    }
+  }
+  while (i < n) {
+    out.push(`- ${before[i++]}`)
+  }
+  while (j < m) {
+    out.push(`+ ${after[j++]}`)
+  }
+  return out
+}
+
+function fenceDiff(before: string[] | null, after: string[]): string[] {
+  const body = before === null ? after.map((l) => `  ${l}`) : diffLines(before, after)
+  return ['```diff', ...body, '```']
+}
+
+/**
+ * Markdown ```diff``` of hierarchical players + clearings blocks
+ * (same layout as formatGameView, with -/+ on changed lines).
+ */
+export function formatPlayersClearingsDiff(
+  before: GameState | null,
+  after: GameState,
+): { players: string; clearings: string } {
+  return {
+    players: fenceDiff(
+      before ? playersSection(before) : null,
+      playersSection(after),
+    ).join('\n'),
+    clearings: fenceDiff(
+      before ? clearingsSection(before) : null,
+      clearingsSection(after),
+    ).join('\n'),
+  }
+}
+
+/** @deprecated keyed fact diff — prefer formatPlayersClearingsDiff */
+export function formatStateDiff(before: GameState | null, after: GameState): string {
+  const { players, clearings } = formatPlayersClearingsDiff(before, after)
+  return `${players}\n${clearings}`
+}
+
 export type PrettyGameOpts = {
   label?: string
   action?: Action
   historyLength?: number
 }
 
-/** Human-readable game dump for CLI / server logs. */
-export function formatGameView(state: GameState, opts: PrettyGameOpts = {}): string {
+export type FormatGameLogOpts = PrettyGameOpts & {
+  /** Prior state; when set, players/clearings render as markdown diff. */
+  prev?: GameState | null
+  /** Force plain players/clearings (no ```diff), e.g. CREATE / LOAD / START. */
+  full?: boolean
+}
+
+function gameHeader(state: GameState, opts: PrettyGameOpts): string[] {
   const lines: string[] = ['', '──────── game ────────']
   const current = playerRefBySeat(state, state.currentSeat)
   const head =
@@ -326,16 +413,28 @@ export function formatGameView(state: GameState, opts: PrettyGameOpts = {}): str
     lines.push(`winner: ${playerRefBySeat(state, state.winner)}`)
   }
   if (opts.action) lines.push(`action: ${describeAction(opts.action, state)}`)
+  return lines
+}
 
-  lines.push('players:')
-  for (const p of state.players) lines.push(...playerBlock(p))
+/**
+ * Full frame every time: header + action + players + map + clearings.
+ * When `prev` set (and not full), players/clearings are ```diff``` blocks.
+ */
+export function formatGameLogEntry(state: GameState, opts: FormatGameLogOpts = {}): string {
+  const lines = gameHeader(state, opts)
+  const useDiff = !opts.full && opts.prev !== undefined
 
-  lines.push('map (id+suit F=fox R=rabbit M=mouse):')
-  lines.push(toAscii(FALL, FALL_LAYOUT, { width: 56, height: 22, showSuit: true }))
-
-  lines.push('clearings:')
-  for (let id = 0; id < state.clearings.length; id++) {
-    lines.push(...clearingBlock(state, id))
+  if (useDiff) {
+    const { players, clearings } = formatPlayersClearingsDiff(opts.prev ?? null, state)
+    lines.push(players)
+    lines.push('map (id+suit F=fox R=rabbit M=mouse):')
+    lines.push(toAscii(FALL, FALL_LAYOUT, { width: 56, height: 22, showSuit: true }))
+    lines.push(clearings)
+  } else {
+    lines.push(...playersSection(state))
+    lines.push('map (id+suit F=fox R=rabbit M=mouse):')
+    lines.push(toAscii(FALL, FALL_LAYOUT, { width: 56, height: 22, showSuit: true }))
+    lines.push(...clearingsSection(state))
   }
 
   if (state.pending.length > 0) {
@@ -343,4 +442,9 @@ export function formatGameView(state: GameState, opts: PrettyGameOpts = {}): str
   }
   lines.push('──────────────────────', '')
   return lines.join('\n')
+}
+
+/** Human-readable game dump for CLI / server logs. */
+export function formatGameView(state: GameState, opts: PrettyGameOpts = {}): string {
+  return formatGameLogEntry(state, { ...opts, full: true })
 }
