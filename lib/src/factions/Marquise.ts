@@ -128,22 +128,23 @@ function buildVp(type: BuildingType, column: number): number {
   }
 }
 
-function payWood(
-  state: GameState,
-  seat: Seat,
-  buildClearing: ClearingId,
-  amount: number,
-  ctx: Ctx,
-): void {
+type WoodPayment = {
+  seat: Seat
+  buildClearing: ClearingId
+  amount: number
+}
+
+function payWood(state: GameState, payment: WoodPayment, ctx: Ctx): void {
+  const { seat, buildClearing, amount } = payment
   if (amount <= 0) return
   const board = boardOf(state, seat)
   const region = connectedRuled(state, seat, buildClearing, ctx.hooks)
   let remaining = amount
   for (const id of [...region].sort((a, b) => a - b)) {
-    const cs = state.clearings[id]!
-    cs.pieces = cs.pieces.filter((p) => {
+    const clearingState = state.clearings[id]!
+    clearingState.pieces = clearingState.pieces.filter((piece) => {
       if (remaining <= 0) return true
-      if (p.kind === 'token' && p.type === 'wood' && p.owner === seat) {
+      if (piece.kind === 'token' && piece.type === 'wood' && piece.owner === seat) {
         remaining -= 1
         // Rule: Glossary > Return — wood goes back to Marquise supply.
         board.supply.wood += 1
@@ -184,13 +185,14 @@ function canRecruit(state: GameState, seat: Seat): boolean {
   return recruiterClearings(state, seat).length > 0
 }
 
-function canBuildAt(
-  state: GameState,
-  seat: Seat,
-  clearing: ClearingId,
-  building: MarquiseBuilding,
-  ctx: Ctx,
-): boolean {
+type BuildSite = {
+  seat: Seat
+  clearing: ClearingId
+  building: MarquiseBuilding
+}
+
+function canBuildAt(state: GameState, site: BuildSite, ctx: Ctx): boolean {
+  const { seat, clearing, building } = site
   if (!rules(state, clearing, seat, ctx.hooks)) return false
   if (!canPlace(state, seat, clearing)) return false
   if (openSlots(state, clearing) < 1) return false
@@ -221,20 +223,21 @@ function canOverwork(
   return matchesSuit(card, FALL.clearings[clearing]!.suit)
 }
 
-function canMarchMove(
-  state: GameState,
-  seat: Seat,
-  from: ClearingId,
-  to: ClearingId,
-  ctx: Ctx,
-): boolean {
+type MarchPath = {
+  seat: Seat
+  from: ClearingId
+  to: ClearingId
+}
+
+function canMarchMove(state: GameState, path: MarchPath, ctx: Ctx): boolean {
+  const { seat, from, to } = path
   return warriors(state, from, seat) > 0 && canMove(state, { seat, from, to }, ctx.hooks)
 }
 
 function hasLegalMarch(state: GameState, seat: Seat, ctx: Ctx): boolean {
   for (let from = 0; from < 12; from++) {
     for (let to = 0; to < 12; to++) {
-      if (canMarchMove(state, seat, from as ClearingId, to as ClearingId, ctx)) return true
+      if (canMarchMove(state, { seat, from: from as ClearingId, to: to as ClearingId }, ctx)) return true
     }
   }
   return false
@@ -369,7 +372,7 @@ export class Marquise extends Faction {
 
         for (let clearing = 0; clearing < 12; clearing++) {
           for (const building of MARQUISE_BUILDINGS) {
-            if (canBuildAt(state, seat, clearing as ClearingId, building, ctx)) {
+            if (canBuildAt(state, { seat, clearing: clearing as ClearingId, building }, ctx)) {
               specs.push({ type: 'build', actor: seat })
               break
             }
@@ -465,7 +468,7 @@ export class Marquise extends Faction {
         }
         for (const move of action.moves) {
           if (move.count < 1) throw new RuleError('INVALID_MOVE_COUNT', { move })
-          if (!canMarchMove(state, seat, move.from, move.to, ctx)) {
+          if (!canMarchMove(state, { seat, from: move.from, to: move.to }, ctx)) {
             throw new RuleError('CANNOT_MOVE', { move })
           }
           if (move.count > warriors(state, move.from, seat)) {
@@ -482,7 +485,7 @@ export class Marquise extends Faction {
         if (!isMarquiseBuilding(action.building)) {
           throw new RuleError('INVALID_BUILDING', { building: action.building })
         }
-        if (!canBuildAt(state, seat, action.clearing, action.building, ctx)) {
+        if (!canBuildAt(state, { seat, clearing: action.clearing, building: action.building }, ctx)) {
           throw new RuleError('CANNOT_BUILD', { clearing: action.clearing, building: action.building })
         }
         return
@@ -599,7 +602,7 @@ export class Marquise extends Faction {
         const track = board.tracks[action.building]
         const column = buildColumn(track.placed)
         const cost = MARQUISE_BUILD_COST[column]!
-        payWood(state, seat, action.clearing, cost, ctx)
+        payWood(state, { seat, buildClearing: action.clearing, amount: cost }, ctx)
         track.placed -= 1
         placeUpTo(state, { seat, clearing: action.clearing, spec: { kind: 'building', type: action.building }, count: 1 })
         const vp = buildVp(action.building, column)
