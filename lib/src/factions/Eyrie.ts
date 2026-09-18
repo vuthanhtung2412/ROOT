@@ -364,8 +364,17 @@ export class Eyrie extends Faction {
     }
 
     if (state.phase === 'birdsong' && state.step === 'decreeAdd') {
-      if (playerOf(state, seat).hand.length > 0) {
-        specs.push({ type: 'addToDecree', actor: seat })
+      const hand = playerOf(state, seat).hand
+      if (hand.length > 0) {
+        specs.push({
+          type: 'addToDecree',
+          actor: seat,
+          params: {
+            cardIds: hand.map((c) => c.id),
+            birdCardIds: hand.filter((c) => defOf(c).suit === 'bird').map((c) => c.id),
+            columns: [...DECREE_COLUMNS],
+          },
+        })
       } else {
         specs.push({ type: 'endPhase', actor: seat })
       }
@@ -374,7 +383,11 @@ export class Eyrie extends Faction {
 
     if (state.phase === 'birdsong' && state.step === 'newRoost') {
       if (roostsOnMap(state, seat) === 0 && boardOf(state, seat).roostTrack.placed > 0) {
-        specs.push({ type: 'newRoost', actor: seat })
+        specs.push({
+          type: 'newRoost',
+          actor: seat,
+          params: { clearing: fewestWarriorClearings(state, seat) },
+        })
         return specs
       }
       specs.push({ type: 'endPhase', actor: seat })
@@ -382,11 +395,13 @@ export class Eyrie extends Faction {
     }
 
     if (state.phase === 'daylight' && state.step === 'craft') {
-      for (const card of playerOf(state, seat).hand) {
-        if (canCraft(state, seat, card)) {
-          specs.push({ type: 'craft', actor: seat })
-          break
-        }
+      const craftable = playerOf(state, seat).hand.filter((c) => canCraft(state, seat, c))
+      if (craftable.length > 0) {
+        specs.push({
+          type: 'craft',
+          actor: seat,
+          params: { cardIds: craftable.map((c) => c.id) },
+        })
       }
       specs.push({ type: 'endPhase', actor: seat })
       return specs
@@ -403,11 +418,50 @@ export class Eyrie extends Faction {
       for (const cardId of cursor.remaining) {
         const card = findDecreeCard(board, cursor.column, cardId)
         if (!card) continue
-        if (cardResolvable(state, seat, cursor.column, card, ctx)) {
-          specs.push({ type: 'decree', actor: seat })
-          any = true
-          break
+        if (!cardResolvable(state, seat, cursor.column, card, ctx)) continue
+        any = true
+        const params: Record<string, unknown[]> = {
+          column: [cursor.column],
+          cardIds: [cardId],
         }
+        if (cursor.column === 'recruit') {
+          params.clearing = Array.from({ length: 12 }, (_, i) => i).filter((c) =>
+            recruitLegal(state, seat, card, c as ClearingId),
+          )
+        } else if (cursor.column === 'build') {
+          params.clearing = Array.from({ length: 12 }, (_, i) => i).filter((c) =>
+            buildLegal(state, seat, card, c as ClearingId, ctx),
+          )
+        } else if (cursor.column === 'battle') {
+          const clearings: number[] = []
+          const defenders: number[] = []
+          for (let c = 0; c < 12; c++) {
+            for (const d of enemySeatsInClearing(state, c as ClearingId, seat)) {
+              if (battleLegal(state, seat, card, c as ClearingId, d)) {
+                clearings.push(c)
+                defenders.push(d)
+              }
+            }
+          }
+          params.clearing = clearings
+          params.defender = defenders
+        } else if (cursor.column === 'move') {
+          const froms: number[] = []
+          const tos: number[] = []
+          for (let from = 0; from < 12; from++) {
+            if (!cardMatchesClearing(card, from as ClearingId)) continue
+            if (warriors(state, from as ClearingId, seat) < 1) continue
+            for (let to = 0; to < 12; to++) {
+              if (canMove(state, seat, from as ClearingId, to as ClearingId, ctx.hooks)) {
+                froms.push(from)
+                tos.push(to)
+              }
+            }
+          }
+          params.from = froms
+          params.to = tos
+        }
+        specs.push({ type: 'decree', actor: seat, params })
       }
       if (!any) {
         specs.push({ type: 'turmoil', actor: seat })
