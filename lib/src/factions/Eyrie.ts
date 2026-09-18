@@ -780,8 +780,14 @@ export class Eyrie extends Faction {
           }
         }
         if (birds > 0) {
-          playerOf(state, seat).vp -= birds
-          logs.push({ t: 'vp', actor: seat, delta: -birds, reason: 'turmoil humiliate' })
+          // Rule: 7.7.1 Humiliate — score track starts at 0 (Setup); no space below 0.
+          const player = playerOf(state, seat)
+          const nextVictoryPoints = Math.max(0, player.vp - birds)
+          const delta = nextVictoryPoints - player.vp
+          player.vp = nextVictoryPoints
+          if (delta !== 0) {
+            logs.push({ t: 'vp', actor: seat, delta, reason: 'turmoil humiliate' })
+          }
         }
         // Rule: 7.7.2 Purge — discard non-viziers.
         for (const col of DECREE_COLUMNS) {

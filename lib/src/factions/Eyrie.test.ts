@@ -626,6 +626,29 @@ describe('Law 7.7 Turmoil', () => {
     expect(state.phase).toBe('evening')
     expect(state.step).toBe('score')
   })
+
+  it('Rule: 7.7.1 Humiliate — score track cannot go below 0', () => {
+    const [v0, v1] = makeViziers()
+    const bird = BIRD()
+    const state = eyrieState({
+      phase: 'daylight',
+      step: 'decree',
+      vp: 1,
+      board: eyrieBoard({
+        leader: 'builder',
+        decree: {
+          recruit: [v0],
+          move: [v1],
+          battle: [bird],
+          build: [],
+        },
+      }),
+      turnScratch: scratch({ column: 'battle', remaining: [bird.id] }),
+    })
+    EYRIE.apply(state, { type: 'turmoil' }, setupCtx())
+    // 3 birds would be −3, but track floors at 0
+    expect(state.players[1]!.vp).toBe(0)
+  })
 })
 
 describe('Law 7.8 Leaders Reference', () => {
