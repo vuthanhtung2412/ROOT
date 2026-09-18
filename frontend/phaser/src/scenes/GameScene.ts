@@ -23,6 +23,7 @@ import { ActionTray } from '../ui/ActionTray.ts'
 import { BattleOverlay } from '../ui/BattleOverlay.ts'
 import { BoardView } from '../ui/BoardView.ts'
 import { CardHand } from '../ui/CardHand.ts'
+import { CardDetailOverlay } from '../ui/CardDetailOverlay.ts'
 import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
 import { EventOverlay } from '../ui/EventOverlay.ts'
 import { FactionDrawer } from '../ui/FactionDrawer.ts'
@@ -46,6 +47,7 @@ export class GameScene extends Phaser.Scene {
   private turnBanner: TurnBanner | null = null
   private playerRail: PlayerRail | null = null
   private cardHand: CardHand | null = null
+  private cardDetailOverlay: CardDetailOverlay | null = null
   private actionTray: ActionTray | null = null
   private selectionPrompt: SelectionPrompt | null = null
   private eyrieDecreePanel: EyrieDecreePanel | null = null
@@ -92,9 +94,19 @@ export class GameScene extends Phaser.Scene {
 
     this.turnBanner = new TurnBanner(this)
     this.playerRail = new PlayerRail(this)
-    this.cardHand = new CardHand(this, (cardId) => {
-      this.applyComposerOutcome(this.composer.chooseCard(cardId))
-    })
+    this.cardHand = new CardHand(
+      this,
+      (cardId) => {
+        this.applyComposerOutcome(this.composer.chooseCard(cardId))
+      },
+      (held) => {
+        this.cardDetailOverlay?.show({
+          defId: held.defId,
+          catalog: held.catalog,
+        })
+      },
+    )
+    this.cardDetailOverlay = new CardDetailOverlay(this)
     this.actionTray = new ActionTray(this, {
       onSelectAction: (spec) => {
         this.handleSelectAction(spec)
@@ -159,6 +171,8 @@ export class GameScene extends Phaser.Scene {
     this.playerRail = null
     this.cardHand?.destroy()
     this.cardHand = null
+    this.cardDetailOverlay?.destroy()
+    this.cardDetailOverlay = null
     this.actionTray?.destroy()
     this.actionTray = null
     this.eyrieDecreePanel?.destroy()
