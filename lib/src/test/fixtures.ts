@@ -128,6 +128,7 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
+      decreeDone: false,
     },
     ...overrides,
   }

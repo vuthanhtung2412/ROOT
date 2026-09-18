@@ -237,6 +237,8 @@ function findDecreeCard(board: EyrieBoard, column: DecreeColumn, cardId: string)
 }
 
 function ensureDecreeCursor(state: GameState, seat: Seat): DecreeCursor | null {
+  // Rule: 7.5.2 — resolve each column once L→R; viziers remain on decree after resolve.
+  if (state.turnScratch.decreeDone) return null
   if (state.turnScratch.decree) return state.turnScratch.decree
   const board = boardOf(state, seat)
   for (const column of DECREE_COLUMNS) {
@@ -248,6 +250,7 @@ function ensureDecreeCursor(state: GameState, seat: Seat): DecreeCursor | null {
     state.turnScratch.decree = cursor
     return cursor
   }
+  state.turnScratch.decreeDone = true
   return null
 }
 
@@ -267,6 +270,7 @@ function advanceDecreeCursor(state: GameState, seat: Seat): void {
     return
   }
   state.turnScratch.decree = null
+  state.turnScratch.decreeDone = true
 }
 
 function removeDecreeCard(board: EyrieBoard, column: DecreeColumn, cardId: string): Card {
@@ -792,6 +796,7 @@ export class Eyrie extends Faction {
         // Rule: 7.7.3 Depose — Builder-only: retuck viziers Recruit+Move.
         retuckViziersAfterPurge(board)
         state.turnScratch.decree = null
+        state.turnScratch.decreeDone = true
         // Rule: 7.7.4 Rest — end Daylight → Evening score.
         state.phase = 'evening'
         state.step = 'score'
@@ -859,6 +864,7 @@ export class Eyrie extends Faction {
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
+      decreeDone: false,
     }
   }
 }

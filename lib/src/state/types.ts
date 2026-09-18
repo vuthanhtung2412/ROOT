@@ -57,6 +57,12 @@ export type GameState = {
     swapMeetUsed: boolean
     emergencyOrdersDone: boolean
     eveningScoreDone: boolean
+    /** Decree cursor for current column; null until ensure or after column done. */
     decree: DecreeCursor | null
+    /**
+     * True after all decree columns resolved once this turn (viziers stay on board,
+     so we must not re-open leftmost column). Rule: 7.5.2.
+     */
+    decreeDone: boolean
   }
 }

@@ -130,6 +130,7 @@ function initialState(args: {
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
+      decreeDone: false,
     },
   }
 }
@@ -454,6 +455,7 @@ export class Game {
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
+      decreeDone: false,
     }
 
     const ctx = this.makeCtx()
@@ -541,10 +543,12 @@ export class Game {
           emergencyOrdersDone: false,
           eveningScoreDone: false,
           decree: null,
+          decreeDone: false,
         }
       }
       if (state.phase === 'daylight' && state.step === 'decree') {
         state.turnScratch.decree = null
+        state.turnScratch.decreeDone = false
       }
       logs.push({
         t: 'phase',
