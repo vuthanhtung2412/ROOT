@@ -40,7 +40,7 @@ describe('ruler', () => {
     expect(ruler(state, 4, hooks)).toBeNull()
   })
 
-  it('Rule: Board > Rule — Eyrie wins ties if ≥1 Eyrie piece present', () => {
+  it('Rule: 7.2.2 Lords of the Forest — Eyrie wins ties if ≥1 Eyrie piece present', () => {
     const state = withPieces(
       minimalState({
         factions: ['marquise', 'eyrie'],

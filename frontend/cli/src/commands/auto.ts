@@ -61,6 +61,14 @@ async function tryAct(state: GameState, specs: ActionSpec[]): Promise<GameState>
       }
     }
   }
+  if (specs.some((s) => s.type === 'turmoil')) {
+    try {
+      const result = await api.act({ type: 'turmoil' })
+      return result.state
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 400)) throw err
+    }
+  }
   const candidates = shuffle([...specs])
   for (let attempt = 0; attempt < Math.min(40, Math.max(candidates.length * 3, 1)); attempt++) {
     const spec = pick(candidates)
@@ -199,49 +207,71 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
     case 'turmoil':
       return { type: 'turmoil' }
     case 'addToDecree': {
-      const hand = state.players[seat]?.hand ?? []
-      if (hand.length === 0) return null
-      const columns = ['recruit', 'move', 'battle', 'build'] as const
-      const n = Math.min(hand.length, Math.random() < 0.5 ? 1 : 2)
-      const cards = []
+      const cardIds = [...((spec.params?.cardIds as string[] | undefined) ?? [])]
+      const birdIds = new Set(
+        (spec.params?.birdCardIds as string[] | undefined) ?? [],
+      )
+      const columns = (spec.params?.columns as string[] | undefined) ?? [
+        'recruit',
+        'move',
+        'battle',
+        'build',
+      ]
+      if (cardIds.length === 0) return null
+      shuffle(cardIds)
+      const n = Math.min(cardIds.length, Math.random() < 0.5 ? 1 : 2)
+      const picked: { cardId: string; column: string }[] = []
       let birds = 0
-      for (let i = 0; i < n; i++) {
-        const c = hand[i]!
-        // suit unknown without defs — allow first bird only by alternating columns
-        const column = columns[(i + seat) % 4]!
-        cards.push({ cardId: c.id, column })
-        birds += 1 // CLI smoke: prefer 1 card if unsure
+      for (const cardId of cardIds) {
+        if (picked.length >= n) break
+        const isBird = birdIds.has(cardId)
+        if (isBird && birds >= 1) continue
+        const column = pick(columns)
+        if (!column) break
+        picked.push({ cardId, column })
+        if (isBird) birds += 1
       }
-      return { type: 'addToDecree', cards: cards.slice(0, birds > 1 ? 1 : cards.length) }
+      if (picked.length === 0) return null
+      return { type: 'addToDecree', cards: picked }
     }
     case 'newRoost': {
-      const clearings = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-      return { type: 'newRoost', clearing: pick(clearings) ?? 0 }
+      const clearings = (spec.params?.clearing as number[] | undefined) ?? []
+      const clearing = pick(clearings)
+      if (clearing === undefined) return null
+      return { type: 'newRoost', clearing }
     }
     case 'decree': {
-      const clearings = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-      const handish = state.players[seat]
-      const board = handish && 'board' in handish ? (handish as { board?: { kind?: string; decree?: Record<string, { id: string }[]> } }).board : undefined
-      const columns = ['recruit', 'move', 'battle', 'build'] as const
-      for (const column of columns) {
-        const pile = board?.kind === 'eyrie' ? board.decree?.[column] ?? [] : []
-        const cardId = pick(pile.map((c) => c.id))
-        if (!cardId) continue
-        if (column === 'recruit' || column === 'build') {
-          return { type: 'decree', column, cardId, clearing: pick(clearings) }
+      const column = pick((spec.params?.column as string[] | undefined) ?? [])
+      const cardId = pick((spec.params?.cardIds as string[] | undefined) ?? [])
+      if (!column || !cardId) return null
+      if (column === 'recruit' || column === 'build') {
+        const clearing = pick((spec.params?.clearing as number[] | undefined) ?? [])
+        if (clearing === undefined) return null
+        return { type: 'decree', column, cardId, clearing }
+      }
+      if (column === 'battle') {
+        const clearings = (spec.params?.clearing as number[] | undefined) ?? []
+        const defenders = (spec.params?.defender as number[] | undefined) ?? []
+        if (clearings.length === 0 || defenders.length === 0) return null
+        const i = Math.floor(Math.random() * Math.min(clearings.length, defenders.length))
+        return {
+          type: 'decree',
+          column,
+          cardId,
+          clearing: clearings[i],
+          defender: defenders[i],
         }
-        if (column === 'battle') {
-          const defender = pick(state.players.map((p) => p.seat).filter((s) => s !== seat))
-          if (defender === undefined) continue
-          return { type: 'decree', column, cardId, clearing: pick(clearings), defender }
-        }
-        if (column === 'move') {
-          const froms = clearings.filter((c) => warriorsAt(state, seat, c) > 0)
-          const from = pick(froms)
-          if (from === undefined) continue
-          const to = pick(ADJ.get(from) ?? [])
-          if (to === undefined) continue
-          return { type: 'decree', column, cardId, moves: [{ from, to, count: 1 }] }
+      }
+      if (column === 'move') {
+        const froms = (spec.params?.from as number[] | undefined) ?? []
+        const tos = (spec.params?.to as number[] | undefined) ?? []
+        if (froms.length === 0 || tos.length === 0) return null
+        const i = Math.floor(Math.random() * Math.min(froms.length, tos.length))
+        return {
+          type: 'decree',
+          column,
+          cardId,
+          moves: [{ from: froms[i], to: tos[i], count: 1 }],
         }
       }
       return null
