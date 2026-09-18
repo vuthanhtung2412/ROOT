@@ -5,7 +5,7 @@ import type { Piece, Seat } from '../pieces/types.js'
 import { hasKeep } from '../queries/place.js'
 import { playerOf } from '../queries/seat.js'
 import type { GameState } from '../state/types.js'
-import type { MarquiseBoard } from '../state/boards.js'
+import type { EyrieBoard, MarquiseBoard } from '../state/boards.js'
 
 export function returnWarriorsToSupply(state: GameState, seat: Seat, count: number): void {
   if (count <= 0) return
@@ -39,6 +39,10 @@ function returnPieceToOwner(state: GameState, piece: Piece): void {
     if (type === 'sawmill' || type === 'workshop' || type === 'recruiter') {
       board.tracks[type].placed = Math.min(5, board.tracks[type].placed + 1)
     }
+  }
+  if (piece.kind === 'building' && piece.type === 'roost' && board.kind === 'eyrie') {
+    // Rule: Eyrie — destroyed roosts return to rightmost empty track space.
+    ;(board as EyrieBoard).roostTrack.placed = Math.min(6, board.roostTrack.placed + 1)
   }
 }
 
