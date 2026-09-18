@@ -155,7 +155,7 @@
     - `frontend/phaser/src/ui/CardView.ts`
     - `frontend/phaser/src/assets/gameAssets.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-20. `feat(phaser): add action composer core`
+20. `feat(phaser): add action composer core` *(done)*
     - `frontend/phaser/src/game/ActionComposer.ts`
     - `frontend/phaser/src/game/ActionComposer.test.ts`
 21. `feat(phaser): add action selection shell`
