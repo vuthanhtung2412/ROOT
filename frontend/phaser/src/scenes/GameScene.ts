@@ -27,6 +27,7 @@ import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
 import { EventOverlay } from '../ui/EventOverlay.ts'
 import { FactionDrawer } from '../ui/FactionDrawer.ts'
 import { GameDrawer } from '../ui/GameDrawer.ts'
+import { HandoffOverlay } from '../ui/HandoffOverlay.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
 import { SelectionPrompt } from '../ui/SelectionPrompt.ts'
 import {
@@ -51,6 +52,8 @@ export class GameScene extends Phaser.Scene {
   private battleOverlay: BattleOverlay | null = null
   private factionDrawer: FactionDrawer | null = null
   private gameDrawer: GameDrawer | null = null
+  private handoffOverlay: HandoffOverlay | null = null
+  private lastHandoffSeat: number | null = null
   private readonly composer = new ActionComposer()
   private marquiseBoard = createMarquiseBoardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
@@ -102,6 +105,11 @@ export class GameScene extends Phaser.Scene {
     this.gameDrawer = new GameDrawer(this, {
       onUndo: () => {
         void this.session?.undo()
+      },
+    })
+    this.handoffOverlay = new HandoffOverlay(this, {
+      onContinue: () => {
+        this.handoffOverlay?.hide()
       },
     })
     this.selectionPrompt = new SelectionPrompt(this, {
@@ -160,6 +168,8 @@ export class GameScene extends Phaser.Scene {
     this.factionDrawer = null
     this.gameDrawer?.destroy()
     this.gameDrawer = null
+    this.handoffOverlay?.destroy()
+    this.handoffOverlay = null
     this.selectionPrompt?.destroy()
     this.selectionPrompt = null
   }
@@ -236,7 +246,20 @@ export class GameScene extends Phaser.Scene {
     this.eyrieDecreePanel?.sync(snapshot.state)
     this.factionDrawer?.sync(snapshot.state)
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
+    this.maybeShowHandoff(banner.actorSeat, banner.actorFaction)
     this.paintStatus(snapshot.error)
+  }
+
+  private maybeShowHandoff(actorSeat: number, actorFaction: string): void {
+    if (this.lastHandoffSeat === null) {
+      this.lastHandoffSeat = actorSeat
+      return
+    }
+    if (this.lastHandoffSeat === actorSeat) {
+      return
+    }
+    this.lastHandoffSeat = actorSeat
+    this.handoffOverlay?.show(actorFaction)
   }
 
   private syncBoardPieces(snapshot: GameSessionSnapshot): void {
