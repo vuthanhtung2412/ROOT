@@ -201,7 +201,7 @@
     - `frontend/phaser/src/ui/MarquiseBoard.ts`
     - `frontend/phaser/src/ui/EyrieBoard.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-30. `feat(phaser): show game log`
+30. `feat(phaser): show game log` *(done)*
     - `frontend/phaser/src/ui/GameDrawer.ts`
     - `frontend/phaser/src/ui/GameLog.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
