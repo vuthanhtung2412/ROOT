@@ -8,7 +8,8 @@
     "build:lib": "pnpm --filter @root/lib build",
     "build:phaser": "pnpm --filter @root/phaser build",
     "gen:api-client": "pnpm --filter @root/web-client gen",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint lib/src lib/scripts backend/web/src backend/web/scripts"
   },
   "engines": {
     "node": ">=24",
@@ -21,5 +22,11 @@
     "allowBuilds": {
       "esbuild": true
     }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.70.0"
   }
 }
