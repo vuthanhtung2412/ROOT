@@ -126,13 +126,14 @@ function recruitLegal(
   return canPlace(state, seat, clearing)
 }
 
-function moveLegal(
-  state: GameState,
-  seat: Seat,
-  card: Card,
-  moves: MarchMove[],
-  ctx: Ctx,
-): boolean {
+type DecreeMoveCheck = {
+  seat: Seat
+  card: Card
+  moves: MarchMove[]
+}
+
+function moveLegal(state: GameState, check: DecreeMoveCheck, ctx: Ctx): boolean {
+  const { seat, card, moves } = check
   if (moves.length < 1) return false
   const from = moves[0]!.from
   if (!cardMatchesClearing(card, from)) return false
@@ -161,13 +162,15 @@ function hasAnyDecreeMove(
   return false
 }
 
-function battleLegal(
-  state: GameState,
-  seat: Seat,
-  card: Card,
-  clearing: ClearingId,
-  defender: Seat,
-): boolean {
+type DecreeBattleCheck = {
+  seat: Seat
+  card: Card
+  clearing: ClearingId
+  defender: Seat
+}
+
+function battleLegal(state: GameState, check: DecreeBattleCheck): boolean {
+  const { seat, card, clearing, defender } = check
   if (!cardMatchesClearing(card, clearing)) return false
   return canBattleHere(state, seat, clearing, defender)
 }
@@ -182,13 +185,14 @@ function hasAnyDecreeBattle(state: GameState, seat: Seat, card: Card): boolean {
   return false
 }
 
-function buildLegal(
-  state: GameState,
-  seat: Seat,
-  card: Card,
-  clearing: ClearingId,
-  ctx: Ctx,
-): boolean {
+type DecreeBuildCheck = {
+  seat: Seat
+  card: Card
+  clearing: ClearingId
+}
+
+function buildLegal(state: GameState, check: DecreeBuildCheck, ctx: Ctx): boolean {
+  const { seat, card, clearing } = check
   if (!cardMatchesClearing(card, clearing)) return false
   if (!rules(state, clearing, seat, ctx.hooks)) return false
   if (roostClearings(state, seat).includes(clearing)) return false
@@ -205,18 +209,19 @@ function hasAnyDecreeBuild(
   ctx: Ctx,
 ): boolean {
   for (let clearing = 0; clearing < 12; clearing++) {
-    if (buildLegal(state, seat, card, clearing as ClearingId, ctx)) return true
+    if (buildLegal(state, { seat, card, clearing: clearing as ClearingId }, ctx)) return true
   }
   return false
 }
 
-function cardResolvable(
-  state: GameState,
-  seat: Seat,
-  column: DecreeColumn,
-  card: Card,
-  ctx: Ctx,
-): boolean {
+type DecreeCardCheck = {
+  seat: Seat
+  column: DecreeColumn
+  card: Card
+}
+
+function cardResolvable(state: GameState, check: DecreeCardCheck, ctx: Ctx): boolean {
+  const { seat, column, card } = check
   switch (column) {
     case 'recruit':
       for (let c = 0; c < 12; c++) {
@@ -422,7 +427,7 @@ export class Eyrie extends Faction {
       for (const cardId of cursor.remaining) {
         const card = findDecreeCard(board, cursor.column, cardId)
         if (!card) continue
-        if (!cardResolvable(state, seat, cursor.column, card, ctx)) continue
+        if (!cardResolvable(state, { seat, column: cursor.column, card }, ctx)) continue
         any = true
         const params: Record<string, unknown[]> = {
           column: [cursor.column],
@@ -434,14 +439,14 @@ export class Eyrie extends Faction {
           )
         } else if (cursor.column === 'build') {
           params.clearing = Array.from({ length: 12 }, (_, i) => i).filter((c) =>
-            buildLegal(state, seat, card, c as ClearingId, ctx),
+            buildLegal(state, { seat, card, clearing: c as ClearingId }, ctx),
           )
         } else if (cursor.column === 'battle') {
           const clearings: number[] = []
           const defenders: number[] = []
           for (let c = 0; c < 12; c++) {
             for (const d of enemySeatsInClearing(state, c as ClearingId, seat)) {
-              if (battleLegal(state, seat, card, c as ClearingId, d)) {
+              if (battleLegal(state, { seat, card, clearing: c as ClearingId, defender: d })) {
                 clearings.push(c)
                 defenders.push(d)
               }
@@ -616,7 +621,7 @@ export class Eyrie extends Faction {
             }
             return
           case 'move':
-            if (!action.moves || !moveLegal(state, seat, card, action.moves, ctx)) {
+            if (!action.moves || !moveLegal(state, { seat, card, moves: action.moves }, ctx)) {
               throw new RuleError('CANNOT_DECREE_MOVE', { moves: action.moves })
             }
             return
@@ -624,7 +629,7 @@ export class Eyrie extends Faction {
             if (action.clearing === undefined || action.defender === undefined) {
               throw new RuleError('BATTLE_PARAMS_REQUIRED')
             }
-            if (!battleLegal(state, seat, card, action.clearing, action.defender)) {
+            if (!battleLegal(state, { seat, card, clearing: action.clearing, defender: action.defender })) {
               throw new RuleError('CANNOT_DECREE_BATTLE', {
                 clearing: action.clearing,
                 defender: action.defender,
@@ -633,7 +638,7 @@ export class Eyrie extends Faction {
             return
           case 'build':
             if (action.clearing === undefined) throw new RuleError('CLEARING_REQUIRED')
-            if (!buildLegal(state, seat, card, action.clearing, ctx)) {
+            if (!buildLegal(state, { seat, card, clearing: action.clearing }, ctx)) {
               throw new RuleError('CANNOT_DECREE_BUILD', { clearing: action.clearing })
             }
             return
@@ -649,7 +654,7 @@ export class Eyrie extends Faction {
         const board = boardOf(state, seat)
         for (const cardId of cursor.remaining) {
           const card = findDecreeCard(board, cursor.column, cardId)
-          if (card && cardResolvable(state, seat, cursor.column, card, ctx)) {
+          if (card && cardResolvable(state, { seat, column: cursor.column, card }, ctx)) {
             throw new RuleError('DECREE_STILL_RESOLVABLE')
           }
         }
