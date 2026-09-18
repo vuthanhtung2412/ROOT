@@ -117,7 +117,7 @@
     - `frontend/phaser/vite.config.ts`
     - `pnpm-lock.yaml`
     - Vite proxy to web
-11. `chore(phaser): add Vitest`
+11. `chore(phaser): add Vitest` *(done)*
     - `frontend/phaser/package.json`
     - `frontend/phaser/vite.config.ts`
     - `pnpm-lock.yaml`
