@@ -673,7 +673,7 @@ describe('Law 7 extras / integration', () => {
       4,
       [{ id: 'r', kind: 'building', type: 'roost', owner: 1, used: false }],
     )
-    removePieces(state, 4, ['r'], 0)
+    removePieces(state, { clearing: 4, pieceIds: ['r'], scorer: 0 })
     const board = state.players[1]!.board
     expect(board.kind).toBe('eyrie')
     if (board.kind === 'eyrie') expect(board.roostTrack.placed).toBe(6)

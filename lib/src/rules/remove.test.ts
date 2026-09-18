@@ -18,7 +18,7 @@ describe('removePieces', () => {
         used: false,
       },
     ])
-    const logs = removePieces(state, 4, ['b1'], 0)
+    const logs = removePieces(state, { clearing: 4, pieceIds: ['b1'], scorer: 0 })
     expect(state.players[0]!.vp).toBe(1)
     expect(logs.some((l) => l.t === 'vp')).toBe(true)
     expect(state.clearings[4]!.pieces).toHaveLength(0)
@@ -45,7 +45,7 @@ describe('removePieces', () => {
       4,
       [{ id: 'wood1', kind: 'token', owner: 1, type: 'wood' }],
     )
-    removePieces(state, 4, ['wood1'], 0)
+    removePieces(state, { clearing: 4, pieceIds: ['wood1'], scorer: 0 })
     expect(state.players[0]!.vp).toBe(1)
     if (state.players[1]!.board.kind === 'marquise') {
       expect(state.players[1]!.board.supply.wood).toBe(6)
@@ -73,7 +73,7 @@ describe('removePieces', () => {
       4,
       [{ id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false }],
     )
-    removePieces(state, 4, ['b1'], 0)
+    removePieces(state, { clearing: 4, pieceIds: ['b1'], scorer: 0 })
     if (state.players[1]!.board.kind === 'marquise') {
       expect(state.players[1]!.board.tracks.sawmill.placed).toBe(5)
     }
@@ -83,7 +83,7 @@ describe('removePieces', () => {
     const state = withPieces(minimalState(), 4, [
       { id: 'b0', kind: 'building', owner: 0, type: 'sawmill', used: false },
     ])
-    removePieces(state, 4, ['b0'], 0)
+    removePieces(state, { clearing: 4, pieceIds: ['b0'], scorer: 0 })
     expect(state.players[0]!.vp).toBe(0)
   })
 
@@ -110,7 +110,7 @@ describe('removePieces', () => {
       4,
       [{ id: 'w1', kind: 'warrior', owner: 0 }],
     )
-    removePieces(state, 4, ['w1'], 1)
+    removePieces(state, { clearing: 4, pieceIds: ['w1'], scorer: 1 })
     expect(state.pending).toHaveLength(1)
     expect(state.pending[0]!.type).toBe('fieldHospital')
     if (state.players[0]!.board.kind === 'marquise') {
@@ -122,7 +122,7 @@ describe('removePieces', () => {
     const state = withPieces(minimalState(), 0, [
       { id: 'keep', kind: 'token', owner: 0, type: 'keep' },
     ])
-    removePieces(state, 0, ['keep'], 1)
+    removePieces(state, { clearing: 0, pieceIds: ['keep'], scorer: 1 })
     expect(canPlace(state, 1, 0)).toBe(true)
     expect(state.clearings[0]!.pieces).toHaveLength(0)
   })
