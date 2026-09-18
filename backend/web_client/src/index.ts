@@ -11,8 +11,16 @@ export type CreateRootWebClientOptions = {
   baseUrl?: string
 }
 
+function readRootApiFromEnvironment(): string | undefined {
+  const runtime = globalThis as {
+    process?: { env?: Record<string, string | undefined> }
+  }
+  return runtime.process?.env?.['ROOT_API']
+}
+
 /** Typed fetch client for the Hono OpenAPI surface. Shared by Phaser, CLI, etc. */
 export function createRootWebClient(options: CreateRootWebClientOptions = {}) {
-  const baseUrl = options.baseUrl ?? process.env.ROOT_API ?? 'http://localhost:3000'
+  const baseUrl =
+    options.baseUrl ?? readRootApiFromEnvironment() ?? 'http://localhost:3000'
   return createClient<paths>({ baseUrl })
 }

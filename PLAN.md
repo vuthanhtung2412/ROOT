@@ -121,11 +121,12 @@
     - `frontend/phaser/package.json`
     - `frontend/phaser/vite.config.ts`
     - `pnpm-lock.yaml`
-12. `feat(phaser): add generated game API client`
+12. `feat(phaser): add generated game API client` *(done)*
     - Import from `@root/web-client` (not local generated files)
     - `frontend/phaser/src/api/client.ts` — thin Phaser-facing helpers if needed
     - `frontend/phaser/src/api/client.test.ts`
     - `frontend/phaser/src/test/factories.ts`
+    - `backend/web_client/src/index.ts` — browser-safe env read
 13. `feat(phaser): preload core game assets`
     - `frontend/phaser/src/assets/gameAssets.ts`
     - `frontend/phaser/src/scenes/BootScene.ts`
