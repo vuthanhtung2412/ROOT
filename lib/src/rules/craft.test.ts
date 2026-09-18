@@ -1,20 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { defOf } from '../cards/Deck.js'
 import type { GameSignal } from '../triggers/signals.js'
-import { FALL } from '../map/fall.js'
-import { defaultRuleHooks } from '../triggers/hooks.js'
-import { card, minimalState, player, withPieces } from '../test/fixtures.js'
+import { card, minimalState, player, testCtx, withPieces } from '../test/fixtures.js'
 import { craftCard } from './craft.js'
 
 function ctx(onSignal?: (s: GameSignal) => void) {
-  const hooks = defaultRuleHooks(FALL)
-  return {
-    map: FALL,
-    rng: { roll: () => 1, toJSON: () => ({ seed: 1, cursor: 0 }) },
-    emit: (s: GameSignal) => onSignal?.(s),
-    hooks,
-    grantedActions: () => [],
-  }
+  return testCtx({ onSignal })
 }
 
 describe('craftCard', () => {

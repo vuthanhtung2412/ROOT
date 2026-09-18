@@ -2,30 +2,15 @@ import { describe, expect, it } from 'vitest'
 import './register.js'
 import { defOf } from '../cards/Deck.js'
 import { craftCard } from '../rules/craft.js'
-import { FALL } from '../map/fall.js'
-import { buildRuleHooks } from '../triggers/buildHooks.js'
 import { EFFECTS } from '../triggers/effects.js'
 import type { GameSignal } from '../triggers/signals.js'
-import { card, minimalState, player, withPieces } from '../test/fixtures.js'
+import { card, minimalState, player, testCtx, withPieces } from '../test/fixtures.js'
 
 function buildCraftCtx(state: ReturnType<typeof minimalState>) {
-  const hooks = buildRuleHooks(state, FALL)
-  const ctx: {
-    map: typeof FALL
-    rng: { roll: () => number; toJSON: () => { seed: number; cursor: number } }
-    emit: (s: GameSignal) => void
-    hooks: ReturnType<typeof buildRuleHooks>
-    grantedActions: () => []
-  } = {
-    map: FALL,
-    rng: { roll: () => 1, toJSON: () => ({ seed: 1, cursor: 0 }) },
-    emit: () => {},
-    hooks,
-    grantedActions: () => [],
-  }
+  const ctx = testCtx({ state })
   ctx.emit = (s: GameSignal) => {
-    for (const player of state.players) {
-      for (const c of player.playArea) {
+    for (const p of state.players) {
+      for (const c of p.playArea) {
         EFFECTS[c.defId]?.onSignal?.(state, s, ctx)
       }
     }

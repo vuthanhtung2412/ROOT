@@ -7,8 +7,7 @@ import { keepOwner } from '../queries/place.js'
 import { resetPlaceIds } from '../rules/place.js'
 import { HAND_LIMIT } from '../state/constants.js'
 import type { GameSignal } from '../triggers/signals.js'
-import { defaultRuleHooks } from '../triggers/hooks.js'
-import { card, player, minimalState, withPieces } from '../test/fixtures.js'
+import { card, player, minimalState, testCtx, withPieces } from '../test/fixtures.js'
 import {
   buildColumn,
   keepCornerFor,
@@ -17,13 +16,7 @@ import {
 } from './Marquise.js'
 
 function setupCtx() {
-  return {
-    map: FALL,
-    rng: { roll: () => 1, toJSON: () => ({ seed: 1, cursor: 0 }) },
-    emit: () => {},
-    hooks: defaultRuleHooks(FALL),
-    grantedActions: () => [],
-  }
+  return testCtx()
 }
 
 describe('Marquise setup', () => {
