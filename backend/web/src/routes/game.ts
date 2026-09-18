@@ -8,83 +8,182 @@ import {
   type FactionId,
   type GameSnapshot,
 } from '@root/lib'
-import { Hono } from 'hono'
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { logGameEvent } from '../debug/logGame.js'
 import { gameExists, HttpError, noGame } from '../middleware/errors.js'
+import { errorResponses, ReplaceQuerySchema } from '../schemas/common.js'
+import {
+  ActionResultSchema,
+  ActionSchema,
+  CreateGameBodySchema,
+  CreateGameResponseSchema,
+  GameSnapshotSchema,
+  GetGameResponseSchema,
+  JoinBodySchema,
+  LegalActionsResponseSchema,
+  LogResponseSchema,
+  UndoResponseSchema,
+} from '../schemas/game.js'
 import { store } from '../store/GameStore.js'
-
-function isGameSnapshot(body: unknown): body is GameSnapshot {
-  if (!body || typeof body !== 'object') return false
-  const o = body as Record<string, unknown>
-  return (
-    o.state !== undefined &&
-    Array.isArray(o.history) &&
-    Array.isArray(o.log) &&
-    o.rng !== undefined &&
-    typeof o.rng === 'object'
-  )
-}
-
-export const gameRoutes = new Hono()
 
 function requireGame() {
   if (!store.game) noGame()
   return store.game!
 }
 
-gameRoutes.post('/', async (c) => {
-  if (store.game && c.req.query('replace') !== '1') {
+export const gameRoutes = new OpenAPIHono()
+
+const createGameRoute = createRoute({
+  method: 'post',
+  path: '/',
+  tags: ['game'],
+  summary: 'Create lobby',
+  request: {
+    query: ReplaceQuerySchema,
+    body: {
+      content: { 'application/json': { schema: CreateGameBodySchema } },
+      required: false,
+    },
+  },
+  responses: {
+    201: {
+      description: 'Lobby created',
+      content: { 'application/json': { schema: CreateGameResponseSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(createGameRoute, async (context) => {
+  if (store.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
-
-  let body: { factions?: FactionId[] } = {}
-  try {
-    body = await c.req.json<{ factions?: FactionId[] }>()
-  } catch {
-    body = {}
-  }
+  const body = context.req.valid('json') ?? {}
   const seed = Math.floor(Math.random() * 1_000_000_000)
-  store.game = Game.create({ seed, factions: body.factions })
+  store.game = Game.create({ seed, factions: body.factions as FactionId[] | undefined })
   logGameEvent('CREATE', store.game.state)
-  return c.json({ state: store.game.state }, 201)
+  return context.json({ state: store.game.state }, 201)
 })
 
-gameRoutes.post('/join', async (c) => {
+const joinRoute = createRoute({
+  method: 'post',
+  path: '/join',
+  tags: ['game'],
+  summary: 'Join lobby',
+  request: {
+    body: {
+      content: { 'application/json': { schema: JoinBodySchema } },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Joined',
+      content: { 'application/json': { schema: ActionResultSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(joinRoute, async (context) => {
   const game = requireGame()
-  const body = await c.req.json<{ playerId: string }>()
+  const body = context.req.valid('json')
   const result = game.join(body.playerId)
   logGameEvent('JOIN', result.state, { type: 'join', playerId: body.playerId })
-  return c.json(result)
+  return context.json(result, 200)
 })
 
-gameRoutes.post('/start', (c) => {
+const startRoute = createRoute({
+  method: 'post',
+  path: '/start',
+  tags: ['game'],
+  summary: 'Start game',
+  responses: {
+    200: {
+      description: 'Started',
+      content: { 'application/json': { schema: ActionResultSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(startRoute, (context) => {
   const game = requireGame()
   const result = game.start()
   logGameEvent('START', result.state, { type: 'start' })
-  return c.json(result)
+  return context.json(result, 200)
 })
 
-gameRoutes.get('/', (c) => {
+const getGameRoute = createRoute({
+  method: 'get',
+  path: '/',
+  tags: ['game'],
+  summary: 'Get current game',
+  responses: {
+    200: {
+      description: 'Current game',
+      content: { 'application/json': { schema: GetGameResponseSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(getGameRoute, (context) => {
   const game = requireGame()
-  return c.json({
-    state: game.state,
-    historyLength: game.history.length,
-  })
+  return context.json(
+    {
+      state: game.state,
+      historyLength: game.history.length,
+    },
+    200,
+  )
 })
 
-gameRoutes.get('/snapshot', (c) => {
+const getSnapshotRoute = createRoute({
+  method: 'get',
+  path: '/snapshot',
+  tags: ['game'],
+  summary: 'Get lossless snapshot',
+  responses: {
+    200: {
+      description: 'GameSnapshot',
+      content: { 'application/json': { schema: GameSnapshotSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(getSnapshotRoute, (context) => {
   const game = requireGame()
-  return c.json(game.toJSON())
+  return context.json(game.toJSON(), 200)
 })
 
-gameRoutes.put('/snapshot', async (c) => {
-  if (store.game && c.req.query('replace') !== '1') {
+const putSnapshotRoute = createRoute({
+  method: 'put',
+  path: '/snapshot',
+  tags: ['game'],
+  summary: 'Load snapshot into slot',
+  request: {
+    query: ReplaceQuerySchema,
+    body: {
+      content: { 'application/json': { schema: GameSnapshotSchema } },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Loaded',
+      content: { 'application/json': { schema: CreateGameResponseSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(putSnapshotRoute, async (context) => {
+  if (store.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
-  const body: unknown = await c.req.json()
-  if (!isGameSnapshot(body)) {
-    throw new HttpError(400, 'BAD_SNAPSHOT', 'expected GameSnapshot { state, history, log, rng }')
-  }
+  const body = context.req.valid('json') as GameSnapshot
   try {
     store.game = Game.fromJSON(body)
   } catch (err) {
@@ -95,47 +194,147 @@ gameRoutes.put('/snapshot', async (c) => {
     )
   }
   logGameEvent('LOAD', store.game.state)
-  return c.json({ state: store.game.state }, 200)
+  return context.json({ state: store.game.state }, 200)
 })
 
-gameRoutes.get('/actions', (c) => {
-  const game = requireGame()
-  return c.json({ actions: game.legalActions() })
+const getActionsRoute = createRoute({
+  method: 'get',
+  path: '/actions',
+  tags: ['game'],
+  summary: 'List legal actions',
+  responses: {
+    200: {
+      description: 'Legal ActionSpecs',
+      content: { 'application/json': { schema: LegalActionsResponseSchema } },
+    },
+    ...errorResponses,
+  },
 })
 
-gameRoutes.post('/actions', async (c) => {
+gameRoutes.openapi(getActionsRoute, (context) => {
   const game = requireGame()
-  const action = (await c.req.json()) as Action
+  return context.json({ actions: game.legalActions() }, 200)
+})
+
+const postActionsRoute = createRoute({
+  method: 'post',
+  path: '/actions',
+  tags: ['game'],
+  summary: 'Apply action',
+  request: {
+    body: {
+      content: { 'application/json': { schema: ActionSchema } },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Applied',
+      content: { 'application/json': { schema: ActionResultSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(postActionsRoute, async (context) => {
+  const game = requireGame()
+  const action = context.req.valid('json') as Action
   const result = game.apply(action)
   logGameEvent('ACT', result.state, action)
-  return c.json(result)
+  return context.json(result, 200)
 })
 
-gameRoutes.get('/log', (c) => {
+const getLogRoute = createRoute({
+  method: 'get',
+  path: '/log',
+  tags: ['game'],
+  summary: 'Get game log',
+  responses: {
+    200: {
+      description: 'Log entries',
+      content: { 'application/json': { schema: LogResponseSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(getLogRoute, (context) => {
   const game = requireGame()
-  return c.json({ log: game.log })
+  return context.json({ log: game.log }, 200)
 })
 
-gameRoutes.post('/undo', (c) => {
+const undoRoute = createRoute({
+  method: 'post',
+  path: '/undo',
+  tags: ['game'],
+  summary: 'Undo last action',
+  responses: {
+    200: {
+      description: 'Restored state',
+      content: { 'application/json': { schema: UndoResponseSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(undoRoute, (context) => {
   const game = requireGame()
   game.undo()
   logGameEvent('UNDO', game.state)
-  return c.json({ state: game.state })
+  return context.json({ state: game.state }, 200)
 })
 
-gameRoutes.get('/map.svg', (c) => {
+const mapSvgRoute = createRoute({
+  method: 'get',
+  path: '/map.svg',
+  tags: ['game'],
+  summary: 'SVG map preview (graph only)',
+  responses: {
+    200: {
+      description: 'image/svg+xml',
+      content: { 'image/svg+xml': { schema: z.string() } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(mapSvgRoute, (context) => {
   requireGame()
   const svg = toSvg(FALL, FALL_LAYOUT)
-  return c.body(svg, 200, { 'Content-Type': 'image/svg+xml' })
+  return context.body(svg, 200, { 'Content-Type': 'image/svg+xml' })
 })
 
-gameRoutes.get('/map.ascii', (c) => {
+const mapAsciiRoute = createRoute({
+  method: 'get',
+  path: '/map.ascii',
+  tags: ['game'],
+  summary: 'ASCII map preview',
+  responses: {
+    200: {
+      description: 'text/plain',
+      content: { 'text/plain': { schema: z.string() } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(mapAsciiRoute, (context) => {
   requireGame()
   const ascii = toAscii(FALL, FALL_LAYOUT)
-  return c.text(ascii)
+  return context.text(ascii, 200)
 })
 
-gameRoutes.delete('/', (c) => {
+const deleteGameRoute = createRoute({
+  method: 'delete',
+  path: '/',
+  tags: ['game'],
+  summary: 'Clear game slot',
+  responses: {
+    204: { description: 'Cleared' },
+  },
+})
+
+gameRoutes.openapi(deleteGameRoute, (context) => {
   store.game = null
-  return c.body(null, 204)
+  return context.body(null, 204)
 })
