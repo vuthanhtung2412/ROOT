@@ -181,12 +181,18 @@ export class Game {
   }
 
   static fromJSON(snapshot: GameSnapshot): Game {
-    return new Game({
+    const game = new Game({
       state: structuredClone(snapshot.state),
       history: [...snapshot.history],
       log: [...snapshot.log],
       rng: SeededRng.fromJSON(snapshot.rng),
     })
+    // Snapshot may land mid-step (evening score, birdsong wood) — fire pending autos.
+    if (game.state.status === 'playing' && game.state.pending.length === 0) {
+      const autoLogs = game.runAutoActions()
+      if (autoLogs.length > 0) game.log.push(...autoLogs)
+    }
+    return game
   }
 
   toJSON(): GameSnapshot {

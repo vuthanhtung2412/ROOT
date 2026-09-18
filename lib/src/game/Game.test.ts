@@ -279,4 +279,35 @@ describe('Game snapshot', () => {
     expect(restored.toJSON().rng).toEqual(snap.rng)
     expect(SeededRng.fromJSON(restored.toJSON().rng).roll()).toBe(nextRoll)
   })
+
+  it('fromJSON runs pending autoActions — Rule: 7.6.1 evening score on load', () => {
+    const game = lobbyTwo(7)
+    game.start()
+    const snap = game.toJSON()
+    // Land on Eyrie evening score with 3 roosts, score not yet applied
+    snap.state.currentSeat = 1
+    snap.state.phase = 'evening'
+    snap.state.step = 'score'
+    snap.state.turnScratch.eveningScoreDone = false
+    snap.state.players[1]!.vp = 0
+    // clearings already have 1 roost at setup; add 2 more
+    let added = 0
+    for (let i = 0; i < 12 && added < 2; i++) {
+      const has = snap.state.clearings[i]!.pieces.some(
+        (p) => p.kind === 'building' && p.type === 'roost' && p.owner === 1,
+      )
+      if (has) continue
+      snap.state.clearings[i]!.pieces.push({
+        id: `r-extra-${i}`,
+        kind: 'building',
+        type: 'roost',
+        owner: 1,
+        used: false,
+      })
+      added++
+    }
+    const restored = Game.fromJSON(snap)
+    expect(restored.state.turnScratch.eveningScoreDone).toBe(true)
+    expect(restored.state.players[1]!.vp).toBe(2)
+  })
 })
