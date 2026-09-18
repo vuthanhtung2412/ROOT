@@ -22,7 +22,7 @@ function setupContext() {
 describe('Marquise setup', () => {
   beforeEach(() => resetPlaceIds())
 
-  it('Rule: Marquise > Setup 1–2 — 1st cat keep at corners[0]', () => {
+  it('Rule: Marquise > Setup 1–2 — keep at corners[0]', () => {
     const state = minimalState({
       status: 'playing',
       players: [player(0, 'marquise')],
@@ -31,16 +31,7 @@ describe('Marquise setup', () => {
     expect(keepOwner(state, FALL.corners[0])).toBe(0)
   })
 
-  it('Rule: Marquise > Setup 1–2 — 2nd cat keep at opposite corner', () => {
-    const state = minimalState({
-      players: [player(0, 'marquise'), player(1, 'marquise')],
-    })
-    MARQUISE.setup(state, 1, setupContext())
-    expect(keepCornerFor(state, 1)).toBe(FALL.opposite(FALL.corners[0]))
-    expect(keepOwner(state, FALL.opposite(FALL.corners[0]))).toBe(1)
-  })
-
-  it('Rule: Marquise > Setup 3 — single cat garrisons all except opposite corner', () => {
+  it('Rule: Marquise > Setup 3 — garrisons all except opposite corner', () => {
     const state = minimalState({
       players: [player(0, 'marquise')],
     })
@@ -53,32 +44,6 @@ describe('Marquise setup', () => {
         expect(warriors(state, c, 0)).toBe(0)
       } else {
         expect(warriors(state, c, 0)).toBe(1)
-      }
-    }
-  })
-
-  it('Rule: Marquise > Setup 3 — 2-cat each garrisons all except own opposite corner', () => {
-    const state = minimalState({
-      players: [player(0, 'marquise'), player(1, 'marquise')],
-    })
-    MARQUISE.setup(state, 0, setupContext())
-    resetPlaceIds()
-    MARQUISE.setup(state, 1, setupContext())
-
-    for (const seat of [0, 1] as const) {
-      const keep = keepCornerFor(state, seat)
-      const opposite = FALL.opposite(keep)
-      for (let c = 0; c < 12; c++) {
-        if (c === opposite) {
-          expect(warriors(state, c, seat)).toBe(0)
-        } else {
-          expect(warriors(state, c, seat)).toBe(1)
-        }
-      }
-      const board = state.players[seat]!.board
-      expect(board.kind).toBe('marquise')
-      if (board.kind === 'marquise') {
-        expect(board.supply.warriors).toBe(25 - 11)
       }
     }
   })

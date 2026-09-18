@@ -78,7 +78,7 @@ pnpm --filter @root/cli start -- load snap.json
 pnpm --filter @root/cli start -- auto --turns 50 --players 2
 ```
 
-`new` always uses `?replace=1`. Optional `--factions marquise,marquise`.
+`new` always uses `?replace=1`. Optional `--factions marquise,eyrie`.
 
 ## Resources
 

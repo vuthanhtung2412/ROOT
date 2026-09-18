@@ -46,21 +46,12 @@ function isMarquiseBuilding(type: BuildingType): type is MarquiseBuilding {
   return (MARQUISE_BUILDINGS as readonly string[]).includes(type)
 }
 
-function marquiseSeats(state: GameState): Seat[] {
-  return state.players
-    .filter((p) => p.faction === 'marquise')
-    .map((p) => p.seat)
-    .sort((a, b) => a - b)
-}
-
-/** Rule: Marquise > Setup 1–2 — 1st cat corners[0], 2nd opposite. */
+/** Rule: Marquise > Setup 1–2 — keep at FALL.corners[0]. */
 export function keepCornerFor(state: GameState, seat: Seat): ClearingId {
-  const seats = marquiseSeats(state)
-  const index = seats.indexOf(seat)
-  if (index < 0) throw new RuleError('NOT_MARQUISE', { seat })
-  if (index === 0) return FALL.corners[0]
-  if (index === 1) return FALL.opposite(FALL.corners[0])
-  return FALL.corners[index % 4]!
+  if (playerOf(state, seat).faction !== 'marquise') {
+    throw new RuleError('NOT_MARQUISE', { seat })
+  }
+  return FALL.corners[0]
 }
 
 function garrisonClearings(_state: GameState, keep: ClearingId): ClearingId[] {
