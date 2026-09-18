@@ -445,3 +445,63 @@ describe('Marquise legalActions card choices', () => {
     expect(discardSpec?.params?.cardIds).toEqual(state.players[0]!.hand.map((c) => c.id))
   })
 })
+
+describe('Marquise legalActions board choices', () => {
+  beforeEach(() => resetPlaceIds())
+
+  it('exposes march move routes with counts', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const marchSpec = game.legalActions().find((spec) => spec.type === 'march')
+    expect(marchSpec?.params?.moves?.length).toBeGreaterThan(0)
+    const sample = marchSpec!.params!.moves![0]!
+    expect(sample.count).toBeGreaterThanOrEqual(1)
+    expect(sample.from).not.toBe(sample.to)
+  })
+
+  it('exposes paired build options (clearing × building)', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    const keep = keepCornerFor(game.state, seat)
+    const buildAt = FALL.adjacent(keep).find((id) =>
+      game.state.clearings[id]!.pieces.filter((p) => p.kind === 'building').length === 0,
+    )!
+    game.state.clearings[buildAt]!.pieces = game.state.clearings[buildAt]!.pieces.filter(
+      (p) => p.owner === seat,
+    )
+    game.state.clearings[buildAt]!.pieces.push({
+      id: 'wood-k',
+      kind: 'token',
+      owner: seat,
+      type: 'wood',
+    })
+    const buildSpec = game.legalActions().find((spec) => spec.type === 'build')
+    expect(buildSpec?.params?.options).toEqual(
+      expect.arrayContaining([{ clearing: buildAt, building: 'sawmill' }]),
+    )
+  })
+
+  it('exposes paired battle targets (clearing × defender)', () => {
+    const state = withPieces(
+      minimalState({ phase: 'daylight', step: 'actions' }),
+      4,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    const battleSpec = MARQUISE.legalActions(state, setupContext()).find(
+      (spec) => spec.type === 'battle',
+    )
+    expect(battleSpec?.params?.targets).toEqual([{ clearing: 4, defender: 1 }])
+  })
+
+  it('exposes recruit as flag-only (no params)', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const recruitSpec = game.legalActions().find((spec) => spec.type === 'recruit')
+    expect(recruitSpec).toBeDefined()
+    expect(recruitSpec?.params).toBeUndefined()
+  })
+})

@@ -1,4 +1,11 @@
-import type { Action, ActionSpec, OverworkChoice } from '../actions/types.js'
+import type {
+  Action,
+  ActionSpec,
+  BattleTargetChoice,
+  BuildChoice,
+  MarchMove,
+  OverworkChoice,
+} from '../actions/types.js'
 import { defOf } from '../cards/Deck.js'
 import { Deck } from '../cards/Deck.js'
 import { matchesSuit } from '../cards/suit.js'
@@ -237,13 +244,43 @@ function canMarchMove(state: GameState, path: MarchPath, ctx: Ctx): boolean {
   return warriors(state, from, seat) > 0 && canMove(state, { seat, from, to }, ctx.hooks)
 }
 
-function hasLegalMarch(state: GameState, seat: Seat, ctx: Ctx): boolean {
+function legalMarchMoves(state: GameState, seat: Seat, ctx: Ctx): MarchMove[] {
+  const moves: MarchMove[] = []
   for (let from = 0; from < 12; from++) {
+    const available = warriors(state, from, seat)
+    if (available < 1) continue
     for (let to = 0; to < 12; to++) {
-      if (canMarchMove(state, { seat, from: from, to: to }, ctx)) return true
+      if (!canMarchMove(state, { seat, from: from, to: to }, ctx)) continue
+      for (let count = 1; count <= available; count++) {
+        moves.push({ from, to, count })
+      }
     }
   }
-  return false
+  return moves
+}
+
+function legalBuildChoices(state: GameState, seat: Seat, ctx: Ctx): BuildChoice[] {
+  const choices: BuildChoice[] = []
+  for (let clearing = 0; clearing < 12; clearing++) {
+    for (const building of MARQUISE_BUILDINGS) {
+      if (canBuildAt(state, { seat, clearing: clearing, building }, ctx)) {
+        choices.push({ clearing, building })
+      }
+    }
+  }
+  return choices
+}
+
+function legalBattleTargets(state: GameState, seat: Seat): BattleTargetChoice[] {
+  const targets: BattleTargetChoice[] = []
+  for (let clearing = 0; clearing < 12; clearing++) {
+    for (const defender of enemySeatsInClearing(state, clearing, seat)) {
+      if (canBattle(state, seat, clearing, defender)) {
+        targets.push({ clearing, defender })
+      }
+    }
+  }
+  return targets
 }
 
 function enemySeatsInClearing(state: GameState, clearing: ClearingId, seat: Seat): Seat[] {
@@ -265,16 +302,6 @@ function canBattle(
   if (defender === seat) return false
   if (warriors(state, clearing, seat) < 1) return false
   return enemySeatsInClearing(state, clearing, seat).includes(defender)
-}
-
-function hasLegalBattle(state: GameState, seat: Seat): boolean {
-  for (let clearing = 0; clearing < 12; clearing++) {
-    const enemies = enemySeatsInClearing(state, clearing, seat)
-    for (const defender of enemies) {
-      if (canBattle(state, seat, clearing, defender)) return true
-    }
-  }
-  return false
 }
 
 function placeBirdsongWood(state: GameState, seat: Seat): LogEntry[] {
@@ -371,15 +398,15 @@ export class Marquise extends Faction {
 
       if (actionBudget(state) > 0) {
         if (canRecruit(state, seat)) specs.push({ type: 'recruit', actor: seat })
-        if (hasLegalMarch(state, seat, ctx)) specs.push({ type: 'march', actor: seat })
 
-        for (let clearing = 0; clearing < 12; clearing++) {
-          for (const building of MARQUISE_BUILDINGS) {
-            if (canBuildAt(state, { seat, clearing: clearing, building }, ctx)) {
-              specs.push({ type: 'build', actor: seat })
-              break
-            }
-          }
+        const marchMoves = legalMarchMoves(state, seat, ctx)
+        if (marchMoves.length > 0) {
+          specs.push({ type: 'march', actor: seat, params: { moves: marchMoves } })
+        }
+
+        const buildOptions = legalBuildChoices(state, seat, ctx)
+        if (buildOptions.length > 0) {
+          specs.push({ type: 'build', actor: seat, params: { options: buildOptions } })
         }
 
         const overworkOptions: OverworkChoice[] = []
@@ -394,7 +421,10 @@ export class Marquise extends Faction {
           specs.push({ type: 'overwork', actor: seat, params: { options: overworkOptions } })
         }
 
-        if (hasLegalBattle(state, seat)) specs.push({ type: 'battle', actor: seat })
+        const battleTargets = legalBattleTargets(state, seat)
+        if (battleTargets.length > 0) {
+          specs.push({ type: 'battle', actor: seat, params: { targets: battleTargets } })
+        }
       }
 
       specs.push({ type: 'endPhase', actor: seat })

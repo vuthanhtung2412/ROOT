@@ -86,7 +86,7 @@
    - `lib/src/factions/Marquise.ts`
    - `lib/src/factions/Marquise.test.ts`
    - Spend bird, craft, discard; overwork as **paired** cardId × sawmill clearing (6.5.5)
-4. `feat(lib): expose Marquise board choices`
+4. `feat(lib): expose Marquise board choices` *(done)*
    - `lib/src/factions/Marquise.ts`
    - `lib/src/factions/Marquise.test.ts`
    - March routes + counts; build as **paired** clearing × building (6.5.4); battle clearing × defender; recruit flag-only
