@@ -139,7 +139,7 @@ function moveLegal(
   if (warriors(state, from, seat) < 1) return false
   for (const move of moves) {
     if (move.count < 1) return false
-    if (!canMove(state, seat, move.from, move.to, ctx.hooks)) return false
+    if (!canMove(state, { seat, from: move.from, to: move.to }, ctx.hooks)) return false
     if (move.count > warriors(state, move.from, seat)) return false
   }
   return true
@@ -155,7 +155,7 @@ function hasAnyDecreeMove(
     if (!cardMatchesClearing(card, from as ClearingId)) continue
     if (warriors(state, from as ClearingId, seat) < 1) continue
     for (let to = 0; to < 12; to++) {
-      if (canMove(state, seat, from as ClearingId, to as ClearingId, ctx.hooks)) return true
+      if (canMove(state, { seat, from: from as ClearingId, to: to as ClearingId }, ctx.hooks)) return true
     }
   }
   return false
@@ -456,7 +456,7 @@ export class Eyrie extends Faction {
             if (!cardMatchesClearing(card, from as ClearingId)) continue
             if (warriors(state, from as ClearingId, seat) < 1) continue
             for (let to = 0; to < 12; to++) {
-              if (canMove(state, seat, from as ClearingId, to as ClearingId, ctx.hooks)) {
+              if (canMove(state, { seat, from: from as ClearingId, to: to as ClearingId }, ctx.hooks)) {
                 froms.push(from)
                 tos.push(to)
               }
@@ -733,7 +733,7 @@ export class Eyrie extends Faction {
             break
           case 'move':
             for (const move of action.moves!) {
-              logs.push(...moveWarriors(state, seat, move.from, move.to, move.count, ctx))
+              logs.push(...moveWarriors(state, { seat, from: move.from, to: move.to, count: move.count }, ctx))
             }
             break
           case 'battle': {

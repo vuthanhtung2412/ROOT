@@ -19,6 +19,6 @@ describe('Boat Builders', () => {
     )
     const hooks = buildRuleHooks(state, FALL)
     expect(FALL.isAdjacent(3, 6)).toBe(false)
-    expect(canMove(state, 0, 3, 6, hooks)).toBe(true)
+    expect(canMove(state, { seat: 0, from: 3, to: 6 }, hooks)).toBe(true)
   })
 })

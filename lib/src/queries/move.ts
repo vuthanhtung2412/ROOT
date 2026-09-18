@@ -5,14 +5,15 @@ import type { GameState } from '../state/types.js'
 import { warriors } from './pieces.js'
 import { rules } from './ruler.js'
 
+export type MovePath = {
+  seat: Seat
+  from: ClearingId
+  to: ClearingId
+}
+
 /** Rule: Move 1–3 — >0 movers; adjacent; rule origin or destination unless hook waives. */
-export function canMove(
-  state: GameState,
-  seat: Seat,
-  from: ClearingId,
-  to: ClearingId,
-  hooks: RuleHooks,
-): boolean {
+export function canMove(state: GameState, path: MovePath, hooks: RuleHooks): boolean {
+  const { seat, from, to } = path
   const movers = warriors(state, from, seat)
   if (movers < 1) return false
 
