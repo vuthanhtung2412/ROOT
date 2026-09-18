@@ -1,4 +1,4 @@
-import type { Action, ActionSpec, MarchMove } from '../actions/types.js'
+import type { Action, ActionChoiceParams, ActionSpec, MarchMove } from '../actions/types.js'
 import { defOf } from '../cards/Deck.js'
 import { Deck } from '../cards/Deck.js'
 import type { Card } from '../cards/types.js'
@@ -429,7 +429,7 @@ export class Eyrie extends Faction {
         if (!card) continue
         if (!cardResolvable(state, { seat, column: cursor.column, card }, ctx)) continue
         any = true
-        const params: Record<string, unknown[]> = {
+        const params: ActionChoiceParams = {
           column: [cursor.column],
           cardIds: [cardId],
         }
@@ -442,8 +442,8 @@ export class Eyrie extends Faction {
             buildLegal(state, { seat, card, clearing: c }, ctx),
           )
         } else if (cursor.column === 'battle') {
-          const clearings: number[] = []
-          const defenders: number[] = []
+          const clearings: ClearingId[] = []
+          const defenders: Seat[] = []
           for (let c = 0; c < 12; c++) {
             for (const d of enemySeatsInClearing(state, c, seat)) {
               if (battleLegal(state, { seat, card, clearing: c, defender: d })) {
@@ -455,8 +455,8 @@ export class Eyrie extends Faction {
           params.clearing = clearings
           params.defender = defenders
         } else if (cursor.column === 'move') {
-          const froms: number[] = []
-          const tos: number[] = []
+          const froms: ClearingId[] = []
+          const tos: ClearingId[] = []
           for (let from = 0; from < 12; from++) {
             if (!cardMatchesClearing(card, from)) continue
             if (warriors(state, from, seat) < 1) continue
