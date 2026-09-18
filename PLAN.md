@@ -127,7 +127,7 @@
     - `frontend/phaser/src/api/client.test.ts`
     - `frontend/phaser/src/test/factories.ts`
     - `backend/web_client/src/index.ts` — browser-safe env read
-13. `feat(phaser): preload core game assets`
+13. `feat(phaser): preload core game assets` *(done)*
     - `frontend/phaser/src/assets/gameAssets.ts`
     - `frontend/phaser/src/scenes/BootScene.ts`
     - `frontend/phaser/src/game/config.ts`
