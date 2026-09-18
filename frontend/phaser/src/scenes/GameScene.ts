@@ -6,7 +6,10 @@ import {
   type ActionComposerHooks,
   type ComposerOutcome,
 } from '../game/ActionComposer.ts'
-import { createMarquiseCardComposerHooks } from '../game/marquiseActionComposer.ts'
+import {
+  createMarquiseCardComposerHooks,
+  createMarquiseMarchComposerHooks,
+} from '../game/marquiseActionComposer.ts'
 import {
   boardLayoutFromFallResponse,
   FALL_BOARD_LAYOUT,
@@ -52,7 +55,10 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.scale
 
     const marquiseCards = createMarquiseCardComposerHooks()
-    this.composer.setHooks(mergeHooks(marquiseCards.hooks))
+    const marquiseMarch = createMarquiseMarchComposerHooks()
+    this.composer.setHooks(
+      mergeHooks(marquiseCards.hooks, marquiseMarch.hooks),
+    )
 
     this.turnBanner = new TurnBanner(this)
     this.playerRail = new PlayerRail(this)
