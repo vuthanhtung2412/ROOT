@@ -156,7 +156,7 @@ function applyRemovalStage(
   if (!isValidRemoval(state, ev.clearing, victim, action.pieceIds, maxHits)) {
     throw new RuleError('INVALID_REMOVAL_ORDER', { pieceIds: action.pieceIds })
   }
-  const logs = removePieces(state, ev.clearing, action.pieceIds, scorer, ctx)
+  const logs = removePieces(state, { clearing: ev.clearing, pieceIds: action.pieceIds, scorer }, ctx)
   return logs
 }
 

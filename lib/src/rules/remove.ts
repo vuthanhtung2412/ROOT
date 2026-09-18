@@ -7,6 +7,13 @@ import { playerOf } from '../queries/seat.js'
 import type { GameState } from '../state/types.js'
 import type { EyrieBoard, MarquiseBoard } from '../state/boards.js'
 
+export type PieceRemoval = {
+  clearing: ClearingId
+  pieceIds: string[]
+  scorer?: Seat
+  options?: { skipFieldHospital?: boolean }
+}
+
 export function returnWarriorsToSupply(state: GameState, seat: Seat, count: number): void {
   if (count <= 0) return
   const board = playerOf(state, seat).board
@@ -49,27 +56,25 @@ function returnPieceToOwner(state: GameState, piece: Piece): void {
 /** Rule: Victory — +1 VP per enemy building/token removed. */
 export function removePieces(
   state: GameState,
-  clearing: ClearingId,
-  pieceIds: string[],
-  scorer?: Seat,
+  removal: PieceRemoval,
   ctx?: Ctx,
-  opts?: { skipFieldHospital?: boolean },
 ): LogEntry[] {
-  const cs = state.clearings[clearing]
-  if (!cs) return []
+  const { clearing, pieceIds, scorer, options } = removal
+  const clearingState = state.clearings[clearing]
+  if (!clearingState) return []
 
   const actor = scorer ?? state.currentSeat
   const idSet = new Set(pieceIds)
   const removed: Piece[] = []
   const logs: LogEntry[] = []
 
-  cs.pieces = cs.pieces.filter((p) => {
-    if (!idSet.has(p.id)) return true
-    removed.push(p)
+  clearingState.pieces = clearingState.pieces.filter((piece) => {
+    if (!idSet.has(piece.id)) return true
+    removed.push(piece)
     return false
   })
 
-  let vpDelta = 0
+  let victoryPointsDelta = 0
   const victims = new Map<Seat, number>()
 
   for (const piece of removed) {
@@ -82,17 +87,22 @@ export function removePieces(
     if (piece.kind === 'building' || piece.kind === 'token') {
       if (piece.kind === 'token' && piece.type === 'keep') {
         // Rule: Marquise > The Keep — token never returns to supply.
-        vpDelta += 1
+        victoryPointsDelta += 1
         continue
       }
-      vpDelta += 1
+      victoryPointsDelta += 1
     }
   }
 
-  if (vpDelta > 0) {
-    playerOf(state, actor).vp += vpDelta
-    logs.push({ t: 'vp', actor, delta: vpDelta, reason: 'removed building/token' })
-    ctx?.emit({ s: 'vp', actor, delta: vpDelta })
+  if (victoryPointsDelta > 0) {
+    playerOf(state, actor).vp += victoryPointsDelta
+    logs.push({
+      t: 'vp',
+      actor,
+      delta: victoryPointsDelta,
+      reason: 'removed building/token',
+    })
+    ctx?.emit({ s: 'vp', actor, delta: victoryPointsDelta })
   }
 
   for (const [victim, count] of victims) {
@@ -103,10 +113,10 @@ export function removePieces(
       faction,
       clearing,
       count,
-      toSupply: !hasKeep(state, victim) || opts?.skipFieldHospital === true,
+      toSupply: !hasKeep(state, victim) || options?.skipFieldHospital === true,
     })
 
-    if (opts?.skipFieldHospital || !hasKeep(state, victim)) {
+    if (options?.skipFieldHospital || !hasKeep(state, victim)) {
       returnWarriorsToSupply(state, victim, count)
     } else {
       state.pending.push({
