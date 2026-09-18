@@ -21,7 +21,7 @@ export function keepOwner(state: GameState, clearing: ClearingId): Seat | null {
 
 export function keepClearingFor(state: GameState, seat: Seat): ClearingId | null {
   for (let id = 0; id < state.clearings.length; id++) {
-    if (keepOwner(state, id as ClearingId) === seat) return id as ClearingId
+    if (keepOwner(state, id) === seat) return id
   }
   return null
 }

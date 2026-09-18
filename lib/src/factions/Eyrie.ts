@@ -153,10 +153,10 @@ function hasAnyDecreeMove(
   ctx: Ctx,
 ): boolean {
   for (let from = 0; from < 12; from++) {
-    if (!cardMatchesClearing(card, from as ClearingId)) continue
-    if (warriors(state, from as ClearingId, seat) < 1) continue
+    if (!cardMatchesClearing(card, from)) continue
+    if (warriors(state, from, seat) < 1) continue
     for (let to = 0; to < 12; to++) {
-      if (canMove(state, { seat, from: from as ClearingId, to: to as ClearingId }, ctx.hooks)) return true
+      if (canMove(state, { seat, from: from, to: to }, ctx.hooks)) return true
     }
   }
   return false
@@ -177,9 +177,9 @@ function battleLegal(state: GameState, check: DecreeBattleCheck): boolean {
 
 function hasAnyDecreeBattle(state: GameState, seat: Seat, card: Card): boolean {
   for (let clearing = 0; clearing < 12; clearing++) {
-    if (!cardMatchesClearing(card, clearing as ClearingId)) continue
-    for (const defender of enemySeatsInClearing(state, clearing as ClearingId, seat)) {
-      if (canBattleHere(state, seat, clearing as ClearingId, defender)) return true
+    if (!cardMatchesClearing(card, clearing)) continue
+    for (const defender of enemySeatsInClearing(state, clearing, seat)) {
+      if (canBattleHere(state, seat, clearing, defender)) return true
     }
   }
   return false
@@ -209,7 +209,7 @@ function hasAnyDecreeBuild(
   ctx: Ctx,
 ): boolean {
   for (let clearing = 0; clearing < 12; clearing++) {
-    if (buildLegal(state, { seat, card, clearing: clearing as ClearingId }, ctx)) return true
+    if (buildLegal(state, { seat, card, clearing: clearing }, ctx)) return true
   }
   return false
 }
@@ -225,7 +225,7 @@ function cardResolvable(state: GameState, check: DecreeCardCheck, ctx: Ctx): boo
   switch (column) {
     case 'recruit':
       for (let c = 0; c < 12; c++) {
-        if (recruitLegal(state, seat, card, c as ClearingId)) return true
+        if (recruitLegal(state, seat, card, c)) return true
       }
       return false
     case 'move':
@@ -298,10 +298,10 @@ function warriorCount(state: GameState, clearing: ClearingId): number {
 function fewestWarriorClearings(state: GameState, seat: Seat): ClearingId[] {
   const candidates: ClearingId[] = []
   for (let id = 0; id < 12; id++) {
-    if (!canPlace(state, seat, id as ClearingId)) continue
-    if (openSlots(state, id as ClearingId) < 1) continue
+    if (!canPlace(state, seat, id)) continue
+    if (openSlots(state, id) < 1) continue
     if (boardOf(state, seat).roostTrack.placed < 1) continue
-    candidates.push(id as ClearingId)
+    candidates.push(id)
   }
   if (candidates.length === 0) return []
   let min = Infinity
@@ -435,18 +435,18 @@ export class Eyrie extends Faction {
         }
         if (cursor.column === 'recruit') {
           params.clearing = Array.from({ length: 12 }, (_, i) => i).filter((c) =>
-            recruitLegal(state, seat, card, c as ClearingId),
+            recruitLegal(state, seat, card, c),
           )
         } else if (cursor.column === 'build') {
           params.clearing = Array.from({ length: 12 }, (_, i) => i).filter((c) =>
-            buildLegal(state, { seat, card, clearing: c as ClearingId }, ctx),
+            buildLegal(state, { seat, card, clearing: c }, ctx),
           )
         } else if (cursor.column === 'battle') {
           const clearings: number[] = []
           const defenders: number[] = []
           for (let c = 0; c < 12; c++) {
-            for (const d of enemySeatsInClearing(state, c as ClearingId, seat)) {
-              if (battleLegal(state, { seat, card, clearing: c as ClearingId, defender: d })) {
+            for (const d of enemySeatsInClearing(state, c, seat)) {
+              if (battleLegal(state, { seat, card, clearing: c, defender: d })) {
                 clearings.push(c)
                 defenders.push(d)
               }
@@ -458,10 +458,10 @@ export class Eyrie extends Faction {
           const froms: number[] = []
           const tos: number[] = []
           for (let from = 0; from < 12; from++) {
-            if (!cardMatchesClearing(card, from as ClearingId)) continue
-            if (warriors(state, from as ClearingId, seat) < 1) continue
+            if (!cardMatchesClearing(card, from)) continue
+            if (warriors(state, from, seat) < 1) continue
             for (let to = 0; to < 12; to++) {
-              if (canMove(state, { seat, from: from as ClearingId, to: to as ClearingId }, ctx.hooks)) {
+              if (canMove(state, { seat, from: from, to: to }, ctx.hooks)) {
                 froms.push(from)
                 tos.push(to)
               }

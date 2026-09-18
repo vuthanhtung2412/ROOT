@@ -12,6 +12,7 @@ import {
 import { eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
 import { makeViziers } from '../factions/eyrie/viziers.js'
 import type { LogEntry } from '../log/types.js'
+import type { Piece } from '../pieces/types.js'
 
 describe('formatPieceChunk', () => {
   it('keeps warriors as Nw and collapses wood', () => {
@@ -152,12 +153,15 @@ describe('formatGameView', () => {
       { id: 'w2', kind: 'warrior', owner: 0 },
       { id: 'k', kind: 'token', type: 'keep', owner: 0 },
       { id: 's', kind: 'building', type: 'sawmill', owner: 0, used: false },
-      ...Array.from({ length: 8 }, (_, i) => ({
-        id: `wood-${i}`,
-        kind: 'token' as const,
-        type: 'wood' as const,
-        owner: 0,
-      })),
+      ...Array.from({ length: 8 }, (_, i) => {
+        const woodToken: Piece = {
+          id: `wood-${i}`,
+          kind: 'token',
+          type: 'wood',
+          owner: 0,
+        }
+        return woodToken
+      }),
     ])
 
     const text = formatGameView(state, { label: 'ACT' })

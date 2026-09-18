@@ -10,10 +10,12 @@ import {
   type DieFace,
   withPieces,
 } from '../test/fixtures.js'
-import type { BattleEvent } from './types.js'
+import { isBattleEvent, isSeat } from '../typeGuards.js'
+import type { BattleEvent, Event } from './types.js'
 import { applyDefenseless, battleResolver, isValidRemoval, openBattle } from './battle.js'
 import type { Ctx } from '../game/ctx.js'
 import type { GameSignal } from '../triggers/signals.js'
+import type { Seat } from '../pieces/types.js'
 
 function battleContext(options?: {
   dice?: DieFace[]
@@ -34,13 +36,20 @@ function battleEvent(overrides?: Partial<BattleEvent>): BattleEvent {
   }
 }
 
+function requireBattleEvent(event: Event | undefined): BattleEvent {
+  if (!event || !isBattleEvent(event)) {
+    throw new Error('expected pending battle event')
+  }
+  return event
+}
+
 function apply(
   state: ReturnType<typeof minimalState>,
   event: BattleEvent,
   action: ResolveEventAction,
-  actor: 0 | 1,
+  actor: Seat,
   context: Ctx,
-) {
+): ReturnType<typeof battleResolver.apply> {
   state.pending = [event]
   return battleResolver.apply(state, { event, action, actor }, context)
 }
@@ -90,10 +99,10 @@ describe('battleResolver', () => {
     let event = battleEvent({ clearing: 0 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', cardId: 'ROOT-202#2' }, 1, context)
-    event = state.pending[0] as BattleEvent
+    event = requireBattleEvent(state.pending[0])
     expect(event.stage).toBe('foil')
     apply(state, event, { type: 'resolveEvent', decline: true }, 0, context)
-    event = state.pending[0] as BattleEvent
+    event = requireBattleEvent(state.pending[0])
     expect(event.stage).toBe('removeAttacker')
     apply(state, event, { type: 'resolveEvent', pieceIds: ['a1'] }, 0, context)
     expect(state.pending).toHaveLength(0)
@@ -117,7 +126,7 @@ describe('battleResolver', () => {
     let event = battleEvent({ clearing: 5 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
-    event = state.pending[0] as BattleEvent
+    event = requireBattleEvent(state.pending[0])
     expect(event.rolls).toEqual([3, 2])
     expect(event.hits.attacker).toBe(1)
     expect(event.hits.defender).toBe(2)
@@ -138,7 +147,7 @@ describe('battleResolver', () => {
     let event = battleEvent({ clearing: 0 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
-    event = state.pending[0] as BattleEvent
+    event = requireBattleEvent(state.pending[0])
     expect(event.rolls).toEqual([3, 3])
     expect(event.hits.attacker).toBe(2)
     expect(event.hits.defender).toBe(2)
@@ -162,7 +171,7 @@ describe('battleResolver', () => {
     let event = battleEvent({ clearing: 0 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
-    event = state.pending[0] as BattleEvent
+    event = requireBattleEvent(state.pending[0])
     expect(event.rolls).toEqual([3, 1])
     expect(event.hits.attacker).toBe(3)
     expect(event.hits.defender).toBe(1)
@@ -205,12 +214,12 @@ describe('battleResolver', () => {
       state,
       {
         event,
-        action: { type: 'resolveEvent', order: [1, 0] as (0 | 1)[] },
+        action: { type: 'resolveEvent', order: [1, 0] satisfies Seat[] },
         actor: 0,
       },
       context,
     )
-    expect((state.pending[0] as BattleEvent).effectsOrder).toEqual([1, 0])
+    expect((requireBattleEvent(state.pending[0])).effectsOrder).toEqual([1, 0])
   })
 
   it('Rule: Battle 4 — victim removes warriors before buildings', () => {
@@ -239,17 +248,17 @@ describe('battleResolver', () => {
     openBattle(state, { clearing: 4, attacker: 0, defender: 1 }, context)
     expect(signals.some((signal) => signal.s === 'battle.start')).toBe(true)
 
-    let event = state.pending[0] as BattleEvent
+    let event = requireBattleEvent(state.pending[0])
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
     while (state.pending[0]?.type === 'battle') {
-      event = state.pending[0] as BattleEvent
+      event = requireBattleEvent(state.pending[0])
       if (event.stage === 'effects') {
         const seat = event.effectsOrder?.find((effectSeat) => {
           const side = effectSeat === event.attacker ? 'attacker' : 'defender'
           return !(event.effectsUsed && side in event.effectsUsed)
         })
-        if (seat === undefined) break
-        apply(state, event, { type: 'resolveEvent', useEffect: false }, seat as 0 | 1, context)
+        if (seat === undefined || !isSeat(seat)) break
+        apply(state, event, { type: 'resolveEvent', useEffect: false }, seat, context)
       } else if (event.stage === 'removeDefender') {
         apply(state, event, { type: 'resolveEvent', pieceIds: ['d1'] }, 1, context)
       } else if (event.stage === 'removeAttacker') {

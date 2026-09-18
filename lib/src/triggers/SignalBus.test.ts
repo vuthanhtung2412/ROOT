@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { GameState } from '../state/types.js'
 import type { Ctx } from '../game/ctx.js'
 import { FALL } from '../map/fall.js'
-import { defaultRuleHooks } from './hooks.js'
 import { SeededRng } from '../rules/Rng.js'
+import { minimalState } from '../test/fixtures.js'
+import { defaultRuleHooks } from './hooks.js'
 import { SignalBus } from './SignalBus.js'
 
 describe('SignalBus', () => {
@@ -14,7 +14,7 @@ describe('SignalBus', () => {
       received.push(signal.s)
     })
 
-    const state = {} as GameState
+    const state = minimalState()
     const ctx: Ctx = {
       map: FALL,
       rng: new SeededRng({ seed: 1, cursor: 0 }),

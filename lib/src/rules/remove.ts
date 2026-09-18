@@ -5,7 +5,6 @@ import type { Piece, Seat } from '../pieces/types.js'
 import { hasKeep } from '../queries/place.js'
 import { playerOf } from '../queries/seat.js'
 import type { GameState } from '../state/types.js'
-import type { EyrieBoard, MarquiseBoard } from '../state/boards.js'
 
 export type PieceRemoval = {
   clearing: ClearingId
@@ -18,7 +17,7 @@ export function returnWarriorsToSupply(state: GameState, seat: Seat, count: numb
   if (count <= 0) return
   const board = playerOf(state, seat).board
   if (board.kind === 'marquise') {
-    ;(board as MarquiseBoard).supply.warriors += count
+    board.supply.warriors += count
   } else if (board.kind === 'eyrie') {
     board.supply.warriors += count
   } else if (board.kind === 'alliance') {
@@ -49,7 +48,7 @@ function returnPieceToOwner(state: GameState, piece: Piece): void {
   }
   if (piece.kind === 'building' && piece.type === 'roost' && board.kind === 'eyrie') {
     // Rule: Eyrie — destroyed roosts return to rightmost empty track space.
-    ;(board as EyrieBoard).roostTrack.placed = Math.min(6, board.roostTrack.placed + 1)
+    board.roostTrack.placed = Math.min(6, board.roostTrack.placed + 1)
   }
 }
 
