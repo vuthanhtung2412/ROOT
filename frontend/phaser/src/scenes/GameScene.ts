@@ -6,6 +6,7 @@ import {
   type ActionComposerHooks,
   type ComposerOutcome,
 } from '../game/ActionComposer.ts'
+import { createEyrieComposerHooks } from '../game/eyrieActionComposer.ts'
 import {
   createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
@@ -41,6 +42,7 @@ export class GameScene extends Phaser.Scene {
   private selectionPrompt: SelectionPrompt | null = null
   private readonly composer = new ActionComposer()
   private marquiseBoard = createMarquiseBoardComposerHooks()
+  private eyrieComposer = createEyrieComposerHooks()
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -59,11 +61,13 @@ export class GameScene extends Phaser.Scene {
     const marquiseCards = createMarquiseCardComposerHooks()
     const marquiseMarch = createMarquiseMarchComposerHooks()
     this.marquiseBoard = createMarquiseBoardComposerHooks()
+    this.eyrieComposer = createEyrieComposerHooks()
     this.composer.setHooks(
       mergeHooks(
         marquiseCards.hooks,
         marquiseMarch.hooks,
         this.marquiseBoard.hooks,
+        this.eyrieComposer.hooks,
       ),
     )
 
@@ -145,7 +149,10 @@ export class GameScene extends Phaser.Scene {
     if (outcome.kind === 'incomplete') {
       this.selectionPrompt?.sync(
         outcome.prompt,
-        this.marquiseBoard.getPromptOptions(),
+        [
+          ...this.marquiseBoard.getPromptOptions(),
+          ...this.eyrieComposer.getPromptOptions(),
+        ],
       )
       this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
       this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)

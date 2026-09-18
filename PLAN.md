@@ -179,7 +179,7 @@
     - `frontend/phaser/src/ui/ActionTray.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
     - Recruit (once), build (paired), battle initiation
-25. `feat(phaser): compose Eyrie birdsong and decree`
+25. `feat(phaser): compose Eyrie birdsong and decree` *(done)*
     - `frontend/phaser/src/game/eyrieActionComposer.ts`
     - `frontend/phaser/src/game/eyrieActionComposer.test.ts`
     - `frontend/phaser/src/ui/SelectionPrompt.ts`
