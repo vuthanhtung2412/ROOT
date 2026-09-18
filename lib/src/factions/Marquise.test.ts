@@ -348,6 +348,7 @@ describe('Marquise turn', () => {
       emergencyOrdersDone: true,
       eveningScoreDone: true,
       decree: null,
+      decreeDone: true,
     }
     MARQUISE.endTurn(state)
     expect(state.clearings[0]!.pieces[0]!.kind).toBe('building')
@@ -364,6 +365,7 @@ describe('Marquise turn', () => {
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
+      decreeDone: false,
     })
   })
 })

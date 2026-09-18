@@ -666,6 +666,7 @@ export class Marquise extends Faction {
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
+      decreeDone: false,
     }
   }
 }

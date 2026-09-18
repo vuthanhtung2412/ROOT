@@ -28,7 +28,7 @@ function setupCtx() {
   }
 }
 
-function scratch(decree: DecreeCursor | null = null) {
+function scratch(decree: DecreeCursor | null = null, decreeDone = false) {
   return {
     actionsLeft: 0,
     extraActions: 0,
@@ -39,6 +39,7 @@ function scratch(decree: DecreeCursor | null = null) {
     emergencyOrdersDone: false,
     eveningScoreDone: false,
     decree,
+    decreeDone,
   }
 }
 
@@ -335,6 +336,48 @@ describe('Law 7.5 Daylight', () => {
         setupCtx(),
       ),
     ).toThrow(/WRONG_DECREE_COLUMN/)
+  })
+
+  it('Rule: 7.5.2 — viziers stay on decree but columns resolve once (no L→R loop)', () => {
+    const [v0, v1] = makeViziers()
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'decree',
+        board: eyrieBoard({
+          decree: { recruit: [v0!], move: [v1!], battle: [], build: [] },
+          supply: { warriors: 10 },
+        }),
+        turnScratch: scratch(null),
+      }),
+      2, // rabbit roost (vizier = bird → any clearing)
+      [
+        { id: 'r', kind: 'building', type: 'roost', owner: 1, used: false },
+        { id: 'w0', kind: 'warrior', owner: 1 },
+        { id: 'w1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    // also put a warrior target path: need adj for move — C2 rabbit adj to C5/C6/C10
+    const ctx = setupCtx()
+    EYRIE.legalActions(state, ctx) // init cursor on recruit
+    expect(state.turnScratch.decree?.column).toBe('recruit')
+    EYRIE.apply(state, { type: 'decree', column: 'recruit', cardId: v0!.id, clearing: 2 }, ctx)
+    expect(state.turnScratch.decree?.column).toBe('move')
+    EYRIE.apply(
+      state,
+      { type: 'decree', column: 'move', cardId: v1!.id, moves: [{ from: 2, to: 5, count: 1 }] },
+      ctx,
+    )
+    expect(state.turnScratch.decreeDone).toBe(true)
+    const board = state.players[1]!.board
+    expect(board.kind).toBe('eyrie')
+    if (board.kind === 'eyrie') {
+      expect(isVizier(board.decree.recruit[0]!)).toBe(true)
+      expect(isVizier(board.decree.move[0]!)).toBe(true)
+    }
+    const specs = EYRIE.legalActions(state, ctx)
+    expect(specs.every((s) => s.type !== 'decree')).toBe(true)
+    expect(specs.some((s) => s.type === 'endPhase')).toBe(true)
   })
 
   it('Rule: 7.5.2.I Recruit — warrior in roost clearing matching suit', () => {
