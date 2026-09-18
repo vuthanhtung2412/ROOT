@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { defOf } from '../cards/Deck.js'
 import type { GameSignal } from '../triggers/signals.js'
-import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
+import {
+  card,
+  eyrieBoard,
+  minimalState,
+  player,
+  testContext,
+  withPieces,
+} from '../test/fixtures.js'
 import { craftCard } from './craft.js'
 
 describe('craftCard', () => {
@@ -94,5 +101,49 @@ describe('craftCard', () => {
     expect(state.players[0]!.hand.map((handCard) => handCard.id)).toEqual([ambush.id])
     expect(state.players[0]!.vp).toBe(0)
     expect(workshop.used).toBe(false)
+  })
+
+  it('Rule: 7.2.3 Disdain — non-Builder Eyrie item craft scores 1', () => {
+    const hammer = card('ROOT-204')
+    const state = withPieces(
+      minimalState({
+        factions: ['eyrie', 'marquise'],
+        players: [
+          player(0, 'eyrie', {
+            hand: [hammer],
+            vp: 0,
+            board: eyrieBoard({ leader: 'charismatic' }),
+          }),
+          player(1, 'marquise'),
+        ],
+        currentSeat: 0,
+      }),
+      0,
+      [{ id: 'r', kind: 'building', owner: 0, type: 'roost', used: false }],
+    )
+    craftCard(state, 0, hammer.id, ctx())
+    expect(state.players[0]!.vp).toBe(1)
+  })
+
+  it('Rule: 7.8.1 Builder ignores Disdain — printed item VP', () => {
+    const hammer = card('ROOT-204')
+    const state = withPieces(
+      minimalState({
+        factions: ['eyrie', 'marquise'],
+        players: [
+          player(0, 'eyrie', {
+            hand: [hammer],
+            vp: 0,
+            board: eyrieBoard({ leader: 'builder' }),
+          }),
+          player(1, 'marquise'),
+        ],
+        currentSeat: 0,
+      }),
+      0,
+      [{ id: 'r', kind: 'building', owner: 0, type: 'roost', used: false }],
+    )
+    craftCard(state, 0, hammer.id, ctx())
+    expect(state.players[0]!.vp).toBe(defOf(hammer).vp)
   })
 })
