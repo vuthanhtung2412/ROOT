@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { makeActionSpec } from '../test/factories.ts'
 import { ActionComposer } from './ActionComposer.ts'
 import {
+  createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
   createMarquiseMarchComposerHooks,
 } from './marquiseActionComposer.ts'
@@ -118,6 +119,55 @@ describe('marquiseActionComposer march', () => {
           { from: 4, to: 9, count: 1 },
         ],
       },
+    })
+  })
+})
+
+describe('marquiseActionComposer board', () => {
+  it('build emits paired clearing and building', () => {
+    const { hooks } = createMarquiseBoardComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'build',
+        params: {
+          options: [{ clearing: 3, building: 'sawmill' }],
+        },
+      }),
+    )
+    expect(composer.chooseClearing(3)).toEqual({
+      kind: 'ready',
+      action: { type: 'build', clearing: 3, building: 'sawmill' },
+    })
+  })
+
+  it('battle picks clearing then defender option', () => {
+    const board = createMarquiseBoardComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(board.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'battle',
+        params: {
+          targets: [
+            { clearing: 5, defender: 1 },
+            { clearing: 5, defender: 2 },
+          ],
+        },
+      }),
+    )
+    const mid = composer.chooseClearing(5)
+    expect(mid.kind).toBe('incomplete')
+    expect(board.getPromptOptions()).toEqual([
+      { label: 'seat 1', value: '1' },
+      { label: 'seat 2', value: '2' },
+    ])
+    expect(composer.chooseColumn('1')).toEqual({
+      kind: 'ready',
+      action: { type: 'battle', clearing: 5, defender: 1 },
     })
   })
 })

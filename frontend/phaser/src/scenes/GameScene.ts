@@ -7,6 +7,7 @@ import {
   type ComposerOutcome,
 } from '../game/ActionComposer.ts'
 import {
+  createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
   createMarquiseMarchComposerHooks,
 } from '../game/marquiseActionComposer.ts'
@@ -39,6 +40,7 @@ export class GameScene extends Phaser.Scene {
   private actionTray: ActionTray | null = null
   private selectionPrompt: SelectionPrompt | null = null
   private readonly composer = new ActionComposer()
+  private marquiseBoard = createMarquiseBoardComposerHooks()
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -56,8 +58,13 @@ export class GameScene extends Phaser.Scene {
 
     const marquiseCards = createMarquiseCardComposerHooks()
     const marquiseMarch = createMarquiseMarchComposerHooks()
+    this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.composer.setHooks(
-      mergeHooks(marquiseCards.hooks, marquiseMarch.hooks),
+      mergeHooks(
+        marquiseCards.hooks,
+        marquiseMarch.hooks,
+        this.marquiseBoard.hooks,
+      ),
     )
 
     this.turnBanner = new TurnBanner(this)
@@ -76,6 +83,9 @@ export class GameScene extends Phaser.Scene {
       },
       onCancel: () => {
         this.applyComposerOutcome(this.composer.cancel())
+      },
+      onPickOption: (value) => {
+        this.applyComposerOutcome(this.composer.chooseColumn(value))
       },
     })
 
@@ -133,7 +143,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (outcome.kind === 'incomplete') {
-      this.selectionPrompt?.sync(outcome.prompt)
+      this.selectionPrompt?.sync(
+        outcome.prompt,
+        this.marquiseBoard.getPromptOptions(),
+      )
       this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
       this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)
       return
