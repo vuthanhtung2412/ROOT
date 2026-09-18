@@ -212,7 +212,7 @@
 32. `feat(phaser): add hot-seat handoff` *(done)*
     - `frontend/phaser/src/ui/HandoffOverlay.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-33. `feat(phaser): show game winner`
+33. `feat(phaser): show game winner` *(done)*
     - `frontend/phaser/src/ui/WinnerOverlay.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
 34. `docs(phaser): document GP2 play flow`

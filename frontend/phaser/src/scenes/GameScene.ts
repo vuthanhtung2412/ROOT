@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import type { ActionSpec } from '../api/client.ts'
+import type { ActionSpec, GameState } from '../api/client.ts'
 import { createPhaserApi } from '../api/client.ts'
 import {
   ActionComposer,
@@ -34,6 +34,7 @@ import {
   buildTurnBannerViewModel,
   TurnBanner,
 } from '../ui/TurnBanner.ts'
+import { WinnerOverlay } from '../ui/WinnerOverlay.ts'
 
 export type GameSceneData = {
   session: GameSession
@@ -53,6 +54,7 @@ export class GameScene extends Phaser.Scene {
   private factionDrawer: FactionDrawer | null = null
   private gameDrawer: GameDrawer | null = null
   private handoffOverlay: HandoffOverlay | null = null
+  private winnerOverlay: WinnerOverlay | null = null
   private lastHandoffSeat: number | null = null
   private readonly composer = new ActionComposer()
   private marquiseBoard = createMarquiseBoardComposerHooks()
@@ -112,6 +114,7 @@ export class GameScene extends Phaser.Scene {
         this.handoffOverlay?.hide()
       },
     })
+    this.winnerOverlay = new WinnerOverlay(this)
     this.selectionPrompt = new SelectionPrompt(this, {
       onConfirm: () => {
         this.applyComposerOutcome(this.composer.confirm())
@@ -170,6 +173,8 @@ export class GameScene extends Phaser.Scene {
     this.gameDrawer = null
     this.handoffOverlay?.destroy()
     this.handoffOverlay = null
+    this.winnerOverlay?.destroy()
+    this.winnerOverlay = null
     this.selectionPrompt?.destroy()
     this.selectionPrompt = null
   }
@@ -247,7 +252,22 @@ export class GameScene extends Phaser.Scene {
     this.factionDrawer?.sync(snapshot.state)
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.maybeShowHandoff(banner.actorSeat, banner.actorFaction)
+    this.syncWinner(snapshot.state)
     this.paintStatus(snapshot.error)
+  }
+
+  private syncWinner(state: GameState): void {
+    if (state.status !== 'finished' || state.winner === undefined) {
+      this.winnerOverlay?.sync(null)
+      return
+    }
+    const winnerSeat = state.winner
+    const winnerPlayer = state.players.find(
+      (player) => player.seat === winnerSeat,
+    )
+    this.winnerOverlay?.sync(
+      winnerPlayer?.faction ?? `seat ${String(winnerSeat)}`,
+    )
   }
 
   private maybeShowHandoff(actorSeat: number, actorFaction: string): void {
