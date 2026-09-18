@@ -162,7 +162,7 @@
     - `frontend/phaser/src/ui/ActionTray.ts`
     - `frontend/phaser/src/ui/SelectionPrompt.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-22. `feat(phaser): compose Marquise card actions`
+22. `feat(phaser): compose Marquise card actions` *(done)*
     - `frontend/phaser/src/game/marquiseActionComposer.ts`
     - `frontend/phaser/src/game/marquiseActionComposer.test.ts`
     - `frontend/phaser/src/ui/ActionTray.ts`
