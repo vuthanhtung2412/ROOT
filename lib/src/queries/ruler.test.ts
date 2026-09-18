@@ -26,10 +26,17 @@ describe('ruler', () => {
   })
 
   it('Rule: Board > Rule — tie → no one rules', () => {
-    const state = withPieces(minimalState(), 4, [
-      { id: 'w0', kind: 'warrior', owner: 0 },
-      { id: 'w1', kind: 'warrior', owner: 1 },
-    ])
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'marquise'],
+        players: [player(0, 'marquise'), player(1, 'marquise')],
+      }),
+      4,
+      [
+        { id: 'w0', kind: 'warrior', owner: 0 },
+        { id: 'w1', kind: 'warrior', owner: 1 },
+      ],
+    )
     expect(ruler(state, 4, hooks)).toBeNull()
   })
 

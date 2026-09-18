@@ -121,7 +121,7 @@ describe('craftCard', () => {
       0,
       [{ id: 'r', kind: 'building', owner: 0, type: 'roost', used: false }],
     )
-    craftCard(state, 0, hammer.id, ctx())
+    craftCard(state, 0, hammer.id, testContext({ state }))
     expect(state.players[0]!.vp).toBe(1)
   })
 
@@ -143,7 +143,7 @@ describe('craftCard', () => {
       0,
       [{ id: 'r', kind: 'building', owner: 0, type: 'roost', used: false }],
     )
-    craftCard(state, 0, hammer.id, ctx())
+    craftCard(state, 0, hammer.id, testContext({ state }))
     expect(state.players[0]!.vp).toBe(defOf(hammer).vp)
   })
 })

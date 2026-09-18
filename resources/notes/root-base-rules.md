@@ -598,9 +598,9 @@ Documented choices where this engine differs from Law-exact play (GP1+):
 |---|---|---|
 | First player | Random | **Seat 0** starts |
 | Lobby start | Implied when roster ready | **Explicit** `{ type:'start' }` / `POST /game/start` when `players.length > 1` and status still `waiting` (no auto-start on last join) |
-| Role sequence | Reach / advanced setup | Join order assigns factions **marquise → eyrie → alliance → vagabond** (`DEFAULT_FACTIONS`; GP1 both marquise) |
-| 2-cat garrison | Each garrisons all clearings except opposite corner | **Same as Law** (GP1) |
+| Role sequence | Reach / advanced setup | Join order assigns factions **marquise → eyrie → alliance → vagabond** (`DEFAULT_FACTIONS`) |
 | Marquise starting buildings | Any split among keep + adjacent | **Keep first**, then adjacent by ascending clearing id (`placeUpTo`) |
 | Eyrie leaders | Four leaders with specials | **Builder only** until later GP |
+| Eyrie turmoil depose | Flip leader; pick new face-up | **Builder only**: retuck viziers to Recruit+Move; leader stays Builder |
 | Vagabond characters | Thief / Tinker / Ranger | **Thief only** until later GP |
 | Dominance / quests / coalitions | Full rules | **Deferred** (2p strips dominance from deck at start) |
