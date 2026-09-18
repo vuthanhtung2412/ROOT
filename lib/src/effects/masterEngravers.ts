@@ -1,5 +1,4 @@
 import type { CardEffect } from '../triggers/effects.js'
-import { playerOf } from '../queries/seat.js'
 
 export const masterEngraversEffect: CardEffect = {
   defId: 'ROOT-82',

@@ -37,7 +37,15 @@ export default tseslint.config(
         'error',
         { assertionStyle: 'never' },
       ],
-      'no-param-reassign': ['error', { props: true }],
+      'no-param-reassign': [
+        'error',
+        {
+          props: true,
+          // In-place game engine: these names are intentional mutable drafts.
+          // Still bans reassignment and mutating other parameter names.
+          ignorePropertyModificationsFor: ['state', 'event', 'board', 'deck'],
+        },
+      ],
       '@typescript-eslint/explicit-function-return-type': [
         'error',
         {
