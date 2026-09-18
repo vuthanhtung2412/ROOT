@@ -173,7 +173,7 @@
     - `frontend/phaser/src/ui/BoardView.ts`
     - `frontend/phaser/src/ui/SelectionPrompt.ts`
     - Compound 6.5.2: one-move confirm + optional second move → single `march` submit
-24. `feat(phaser): compose Marquise board actions`
+24. `feat(phaser): compose Marquise board actions` *(done)*
     - `frontend/phaser/src/game/marquiseActionComposer.ts`
     - `frontend/phaser/src/game/marquiseActionComposer.test.ts`
     - `frontend/phaser/src/ui/ActionTray.ts`
