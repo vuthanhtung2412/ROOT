@@ -1,4 +1,9 @@
-const BASE = process.env.ROOT_API ?? 'http://localhost:3000'
+import {
+  createRootWebClient,
+  type components,
+} from '@root/web-client'
+
+const client = createRootWebClient()
 
 export class ApiError extends Error {
   readonly status: number
@@ -14,28 +19,29 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(
-  method: string,
-  path: string,
-  body?: unknown,
-): Promise<T> {
-  const url = `${BASE}${path}`
-  const init: RequestInit = { method, headers: {} }
-  if (body !== undefined) {
-    init.headers = { 'Content-Type': 'application/json' }
-    init.body = JSON.stringify(body)
-  }
-  const res = await fetch(url, init)
-  if (res.status === 204) return undefined as T
-  const text = await res.text()
-  const data = text ? (JSON.parse(text) as unknown) : undefined
-  if (!res.ok) {
-    const err = (data ?? { code: 'HTTP_ERROR' }) as { code: string; detail?: unknown }
-    throw new ApiError(res.status, err)
-  }
-  return data as T
+type ErrorBody = components['schemas']['ErrorBody']
+
+type ClientResult<T> = {
+  data?: T
+  error?: unknown
+  response: Response
 }
 
+function throwIfError<T>(result: ClientResult<T>): T {
+  if (!result.response.ok) {
+    const body = (result.error ?? {}) as Partial<ErrorBody>
+    throw new ApiError(result.response.status, {
+      code: body.code ?? 'HTTP_ERROR',
+      detail: body.detail ?? null,
+    })
+  }
+  return result.data as T
+}
+
+/**
+ * Narrow game view used by CLI commands. OpenAPI marks GameState as opaque JSON;
+ * runtime shape still matches the engine.
+ */
 export type GameState = {
   id: string
   seed: number
@@ -58,59 +64,97 @@ export type GameState = {
   winner?: number
 }
 
-export type ActionSpec = {
-  type: string
-  actor: number
-  params?: Record<string, unknown[]>
-}
+export type ActionSpec = components['schemas']['ActionSpec']
 
 export type ActionResult = {
   state: GameState
   log: unknown[]
 }
 
+function asGameState(value: unknown): GameState {
+  return value as GameState
+}
+
+function asActionResult(value: components['schemas']['ActionResult']): ActionResult {
+  return {
+    state: asGameState(value.state),
+    log: value.log as unknown[],
+  }
+}
+
 export const api = {
-  create(factions?: string[]) {
-    return request<{ state: GameState }>('POST', '/game?replace=1', { factions })
+  async create(factions?: string[]) {
+    const result = await client.POST('/game', {
+      params: { query: { replace: '1' } },
+      body:
+        factions === undefined
+          ? {}
+          : { factions: factions as components['schemas']['FactionId'][] },
+    })
+    const data = throwIfError(result)
+    return { state: asGameState(data.state) }
   },
 
-  join(playerId: string) {
-    return request<ActionResult>('POST', '/game/join', { playerId })
+  async join(playerId: string) {
+    const result = await client.POST('/game/join', {
+      body: { playerId },
+    })
+    return asActionResult(throwIfError(result))
   },
 
-  start() {
-    return request<ActionResult>('POST', '/game/start')
+  async start() {
+    const result = await client.POST('/game/start')
+    return asActionResult(throwIfError(result))
   },
 
-  get() {
-    return request<{ state: GameState; historyLength: number }>('GET', '/game')
+  async get() {
+    const result = await client.GET('/game')
+    const data = throwIfError(result)
+    return {
+      state: asGameState(data.state),
+      historyLength: data.historyLength,
+    }
   },
 
-  snapshot() {
-    return request<unknown>('GET', '/game/snapshot')
+  async snapshot() {
+    const result = await client.GET('/game/snapshot')
+    return throwIfError(result)
   },
 
-  loadSnapshot(snapshot: unknown) {
-    return request<{ state: GameState }>('PUT', '/game/snapshot?replace=1', snapshot)
+  async loadSnapshot(snapshot: unknown) {
+    const result = await client.PUT('/game/snapshot', {
+      params: { query: { replace: '1' } },
+      body: snapshot as components['schemas']['GameSnapshot'],
+    })
+    const data = throwIfError(result)
+    return { state: asGameState(data.state) }
   },
 
-  actions() {
-    return request<{ actions: ActionSpec[] }>('GET', '/game/actions')
+  async actions() {
+    const result = await client.GET('/game/actions')
+    return throwIfError(result)
   },
 
-  act(action: unknown) {
-    return request<ActionResult>('POST', '/game/actions', action)
+  async act(action: unknown) {
+    const result = await client.POST('/game/actions', {
+      body: action as components['schemas']['Action'],
+    })
+    return asActionResult(throwIfError(result))
   },
 
-  log() {
-    return request<{ log: unknown[] }>('GET', '/game/log')
+  async log() {
+    const result = await client.GET('/game/log')
+    return throwIfError(result)
   },
 
-  undo() {
-    return request<{ state: GameState }>('POST', '/game/undo')
+  async undo() {
+    const result = await client.POST('/game/undo')
+    const data = throwIfError(result)
+    return { state: asGameState(data.state) }
   },
 
-  delete() {
-    return request<void>('DELETE', '/game')
+  async delete() {
+    const result = await client.DELETE('/game')
+    throwIfError(result)
   },
 }
