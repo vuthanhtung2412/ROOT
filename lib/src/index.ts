@@ -29,13 +29,17 @@ export { RuleError } from './rules/RuleError.js'
 export { SeededRng, type Rng, type RngState } from './rules/Rng.js'
 export {
   formatGameView,
+  formatGameLogEntry,
+  formatStateDiff,
+  formatPlayersClearingsDiff,
+  diffLines,
   formatTurnLog,
   describeAction,
   describeLogEntry,
   cardLabel,
   playerRef,
 } from './format/prettyState.js'
-export type { PrettyGameOpts } from './format/prettyState.js'
+export type { PrettyGameOpts, FormatGameLogOpts } from './format/prettyState.js'
 
 export const LIB_NAME = '@root/lib' as const
 export const LIB_VERSION = '0.0.1' as const
