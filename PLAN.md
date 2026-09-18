@@ -137,7 +137,7 @@
 15. `feat(phaser): add local game menu` *(done)*
     - `frontend/phaser/src/scenes/MenuScene.ts`
     - `frontend/phaser/src/game/config.ts`
-16. `feat(phaser): render Autumn board`
+16. `feat(phaser): render Autumn board` *(done)*
     - `frontend/phaser/src/scenes/GameScene.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
     - `frontend/phaser/src/game/boardLayout.ts`
