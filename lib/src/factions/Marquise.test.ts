@@ -368,3 +368,80 @@ describe('Marquise turn', () => {
     })
   })
 })
+
+describe('Marquise legalActions card choices', () => {
+  beforeEach(() => resetPlaceIds())
+
+  it('exposes craftable cardIds during craft step', () => {
+    const game = lobbyTwo(3)
+    game.apply({ type: 'endPhase' })
+    expect(game.state.step).toBe('craft')
+    const seat = game.state.currentSeat
+    let workshopClearing = 0
+    for (let id = 0; id < 12; id++) {
+      if (
+        game.state.clearings[id]!.pieces.some(
+          (p) => p.kind === 'building' && p.type === 'workshop' && p.owner === seat,
+        )
+      ) {
+        workshopClearing = id
+        break
+      }
+    }
+    const suit = FALL.clearings[workshopClearing]!.suit
+    const craftable =
+      suit === 'fox' ? card('ROOT-204') : suit === 'rabbit' ? card('ROOT-206') : card('ROOT-208')
+    game.state.players[seat]!.hand = [craftable]
+    const craftSpec = game.legalActions().find((spec) => spec.type === 'craft')
+    expect(craftSpec?.params?.cardIds).toEqual([craftable.id])
+  })
+
+  it('exposes bird cardIds for spendBird', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    const bird = card('ROOT-205')
+    expect(defOf(bird).suit).toBe('bird')
+    game.state.players[seat]!.hand = [bird]
+    const spendSpec = game.legalActions().find((spec) => spec.type === 'spendBird')
+    expect(spendSpec?.params?.cardIds).toEqual([bird.id])
+  })
+
+  it('exposes paired overwork options (cardId × sawmill clearing)', () => {
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    let sawmillClearing = 0
+    for (let id = 0; id < 12; id++) {
+      if (
+        game.state.clearings[id]!.pieces.some(
+          (p) => p.kind === 'building' && p.type === 'sawmill' && p.owner === seat,
+        )
+      ) {
+        sawmillClearing = id
+        break
+      }
+    }
+    const bird = card('ROOT-205')
+    expect(defOf(bird).suit).toBe('bird')
+    game.state.players[seat]!.hand = [bird]
+    const overworkSpec = game.legalActions().find((spec) => spec.type === 'overwork')
+    expect(overworkSpec?.params?.options).toEqual([{ cardId: bird.id, clearing: sawmillClearing }])
+  })
+
+  it('exposes hand cardIds when discard required', () => {
+    const state = minimalState({ phase: 'evening', step: 'discard' })
+    state.players[0]!.hand = [
+      card('ROOT-206', 1),
+      card('ROOT-207', 2),
+      card('ROOT-208', 3),
+      card('ROOT-209', 4),
+      card('ROOT-210', 5),
+      card('ROOT-211', 6),
+    ]
+    const discardSpec = MARQUISE.legalActions(state, setupContext()).find(
+      (spec) => spec.type === 'discard',
+    )
+    expect(discardSpec?.params?.cardIds).toEqual(state.players[0]!.hand.map((c) => c.id))
+  })
+})
