@@ -1,5 +1,6 @@
 import type { ClearingId } from '../map/types.js'
 import type { BuildingType, Seat } from '../pieces/types.js'
+import type { DecreeColumn } from '../state/boards.js'
 
 export type MarchMove = {
   from: ClearingId
@@ -7,11 +8,18 @@ export type MarchMove = {
   count: number
 }
 
+export type AddToDecreeCard = {
+  cardId: string
+  column: DecreeColumn
+}
+
 export type Action =
   | { type: 'join'; playerId: string }
   | { type: 'start' }
   | { type: 'birdsongWood' }
   | { type: 'eveningDraw' }
+  | { type: 'emergencyOrders' }
+  | { type: 'eveningScore' }
   | { type: 'endPhase' }
   | { type: 'spendBird'; cardId: string }
   | { type: 'recruit' }
@@ -22,6 +30,17 @@ export type Action =
   | { type: 'battle'; clearing: ClearingId; defender: Seat }
   | { type: 'swapMeet'; target: Seat; giveCardId: string }
   | { type: 'discard'; cardIds: string[] }
+  | { type: 'addToDecree'; cards: AddToDecreeCard[] }
+  | { type: 'newRoost'; clearing: ClearingId }
+  | { type: 'turmoil' }
+  | {
+      type: 'decree'
+      column: DecreeColumn
+      cardId: string
+      clearing?: ClearingId
+      defender?: Seat
+      moves?: MarchMove[]
+    }
   | ResolveEventAction
 
 export type ResolveEventAction = {

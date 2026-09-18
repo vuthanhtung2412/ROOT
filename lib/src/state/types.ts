@@ -2,7 +2,7 @@ import type { DeckState } from '../cards/Deck.js'
 import type { Card } from '../cards/types.js'
 import type { Event } from '../events/types.js'
 import type { FactionId, ItemType, Piece, Seat } from '../pieces/types.js'
-import type { FactionBoard } from './boards.js'
+import type { DecreeColumn, FactionBoard } from './boards.js'
 
 export type Phase = 'birdsong' | 'daylight' | 'evening'
 
@@ -24,6 +24,11 @@ export type PlayerState = {
   playArea: Card[]
   craftedItems: ItemType[]
   board: FactionBoard
+}
+
+export type DecreeCursor = {
+  column: DecreeColumn
+  remaining: string[]
 }
 
 export type GameState = {
@@ -50,5 +55,8 @@ export type GameState = {
     birdsongWoodDone: boolean
     eveningDrawDone: boolean
     swapMeetUsed: boolean
+    emergencyOrdersDone: boolean
+    eveningScoreDone: boolean
+    decree: DecreeCursor | null
   }
 }

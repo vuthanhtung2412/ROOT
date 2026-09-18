@@ -127,6 +127,9 @@ function initialState(args: {
       birdsongWoodDone: false,
       eveningDrawDone: false,
       swapMeetUsed: false,
+      emergencyOrdersDone: false,
+      eveningScoreDone: false,
+      decree: null,
     },
   }
 }
@@ -252,6 +255,10 @@ export class Game {
 
     if (action.type === 'endPhase' && this.state.status === 'playing') {
       logs.push(...this.advanceStepOrPhase())
+      logs.push(...this.runAutoActions())
+    }
+
+    if (action.type === 'turmoil' && this.state.status === 'playing') {
       logs.push(...this.runAutoActions())
     }
 
@@ -430,6 +437,9 @@ export class Game {
       birdsongWoodDone: false,
       eveningDrawDone: false,
       swapMeetUsed: false,
+      emergencyOrdersDone: false,
+      eveningScoreDone: false,
+      decree: null,
     }
 
     const ctx = this.makeCtx()
@@ -514,7 +524,13 @@ export class Game {
           birdsongWoodDone: false,
           eveningDrawDone: false,
           swapMeetUsed: false,
+          emergencyOrdersDone: false,
+          eveningScoreDone: false,
+          decree: null,
         }
+      }
+      if (state.phase === 'daylight' && state.step === 'decree') {
+        state.turnScratch.decree = null
       }
       logs.push({
         t: 'phase',
