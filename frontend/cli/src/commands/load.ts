@@ -13,7 +13,9 @@ export async function cmdLoad(path: string) {
   }
   const { state } = await api.loadSnapshot(body)
   console.log(`loaded ${abs}`)
+  const current = state.players.find((p) => p.seat === state.currentSeat)
+  const who = current ? `${current.faction}/${current.playerId}` : 'nobody'
   console.log(
-    `game ${state.id} seed=${state.seed} status=${state.status} turn=${state.turn} seat=${state.currentSeat}`,
+    `game ${state.id} status=${state.status} turn=${state.turn} ${who}`,
   )
 }

@@ -224,7 +224,7 @@ export async function cmdAuto(turns: number, players: number) {
     await api.join(`auto-p${i}`)
   }
   let state = (await api.start()).state
-  console.log(`auto start seed=${state.seed} players=${players} maxTurns=${turns}`)
+  console.log(`auto start players=${players} maxTurns=${turns}`)
 
   let steps = 0
   while (state.status === 'playing' && state.turn <= turns && steps < turns * 30) {
@@ -235,11 +235,13 @@ export async function cmdAuto(turns: number, players: number) {
   }
 
   if (state.status === 'finished') {
-    console.log(`winner seat ${state.winner} turn ${state.turn}`)
+    const winner = state.players.find((p) => p.seat === state.winner)
+    const who = winner ? `${winner.faction}/${winner.playerId}` : 'unknown'
+    console.log(`winner ${who} turn ${state.turn}`)
   } else {
     console.log(`turn cap turn=${state.turn} status=${state.status}`)
   }
   for (const p of state.players) {
-    console.log(`  seat ${p.seat} vp=${p.vp}`)
+    console.log(`  ${p.faction}/${p.playerId} vp=${p.vp}`)
   }
 }
