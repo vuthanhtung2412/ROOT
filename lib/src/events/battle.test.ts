@@ -42,7 +42,7 @@ function apply(
   context: Ctx,
 ) {
   state.pending = [event]
-  return battleResolver.apply(state, event, action, actor, context)
+  return battleResolver.apply(state, { event, action, actor }, context)
 }
 
 describe('battleResolver', () => {
@@ -203,9 +203,11 @@ describe('battleResolver', () => {
     state.pending = [event]
     battleResolver.apply(
       state,
-      event,
-      { type: 'resolveEvent', order: [1, 0] as (0 | 1)[] },
-      0,
+      {
+        event,
+        action: { type: 'resolveEvent', order: [1, 0] as (0 | 1)[] },
+        actor: 0,
+      },
       context,
     )
     expect((state.pending[0] as BattleEvent).effectsOrder).toEqual([1, 0])
@@ -216,8 +218,8 @@ describe('battleResolver', () => {
       { id: 'w1', kind: 'warrior', owner: 1 },
       { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
     ])
-    expect(isValidRemoval(state, 4, 1, ['b1'], 1)).toBe(false)
-    expect(isValidRemoval(state, 4, 1, ['w1'], 1)).toBe(true)
+    expect(isValidRemoval(state, { clearing: 4, victim: 1, pieceIds: ['b1'], maxHits: 1 })).toBe(false)
+    expect(isValidRemoval(state, { clearing: 4, victim: 1, pieceIds: ['w1'], maxHits: 1 })).toBe(true)
   })
 
   it('battle emits battle.start/hits/end signals', () => {
@@ -234,7 +236,7 @@ describe('battleResolver', () => {
       dice: [3, 1],
       onSignal: (signal) => signals.push(signal),
     })
-    openBattle(state, 4, 0, 1, context)
+    openBattle(state, { clearing: 4, attacker: 0, defender: 1 }, context)
     expect(signals.some((signal) => signal.s === 'battle.start')).toBe(true)
 
     let event = state.pending[0] as BattleEvent

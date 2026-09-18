@@ -15,16 +15,37 @@ import type { GameState } from '../state/types.js'
 import { hasBattleEffect, applyBattleEffect } from '../effects/partisans.js'
 import type { BattleEvent } from './types.js'
 
+export type RemovalSelection = {
+  clearing: ClearingId
+  victim: Seat
+  pieceIds: string[]
+  maxHits: number
+}
+
+export type RemovalStage = {
+  event: BattleEvent
+  action: ResolveEventAction
+  victim: Seat
+  maxHits: number
+  scorer: Seat
+}
+
+export type OpenBattle = {
+  clearing: ClearingId
+  attacker: Seat
+  defender: Seat
+}
+
+export type BattleEventApply = {
+  event: BattleEvent
+  action: ResolveEventAction
+  actor: Seat
+}
+
 export type EventResolver = {
-  legalActions(state: GameState, ev: BattleEvent, ctx: Ctx): ActionSpec[]
-  apply(
-    state: GameState,
-    ev: BattleEvent,
-    action: ResolveEventAction,
-    actor: Seat,
-    ctx: Ctx,
-  ): LogEntry[]
-  matchesAction(state: GameState, ev: BattleEvent, action: Action, ctx: Ctx): boolean
+  legalActions(state: GameState, event: BattleEvent, ctx: Ctx): ActionSpec[]
+  apply(state: GameState, apply: BattleEventApply, ctx: Ctx): LogEntry[]
+  matchesAction(state: GameState, event: BattleEvent, action: Action, ctx: Ctx): boolean
 }
 
 function clearingSuit(clearing: ClearingId) {
@@ -38,13 +59,13 @@ function ambushCards(state: GameState, seat: Seat, clearing: ClearingId) {
   )
 }
 
-function attackerPresent(state: GameState, ev: BattleEvent): boolean {
-  return warriors(state, ev.clearing, ev.attacker) > 0
+function attackerPresent(state: GameState, event: BattleEvent): boolean {
+  return warriors(state, event.clearing, event.attacker) > 0
 }
 
-function sideOf(seat: Seat, ev: BattleEvent): 'attacker' | 'defender' | null {
-  if (seat === ev.attacker) return 'attacker'
-  if (seat === ev.defender) return 'defender'
+function sideOf(seat: Seat, event: BattleEvent): 'attacker' | 'defender' | null {
+  if (seat === event.attacker) return 'attacker'
+  if (seat === event.defender) return 'defender'
   return null
 }
 
@@ -63,27 +84,22 @@ function victimPieces(state: GameState, clearing: ClearingId, victim: Seat): Pie
 }
 
 /** Rule: Battle 4 — warriors removed before buildings/tokens. */
-export function isValidRemoval(
-  state: GameState,
-  clearing: ClearingId,
-  victim: Seat,
-  pieceIds: string[],
-  maxHits: number,
-): boolean {
+export function isValidRemoval(state: GameState, selection: RemovalSelection): boolean {
+  const { clearing, victim, pieceIds, maxHits } = selection
   if (pieceIds.length === 0 || pieceIds.length > maxHits) return false
   const ids = new Set(pieceIds)
   if (ids.size !== pieceIds.length) return false
 
   const onBoard = victimPieces(state, clearing, victim)
-  const byId = new Map(onBoard.map((p) => [p.id, p]))
+  const byId = new Map(onBoard.map((piece) => [piece.id, piece]))
   for (const id of pieceIds) {
     if (!byId.has(id)) return false
   }
 
   const selected = pieceIds.map((id) => byId.get(id)!)
-  const boardWarriors = onBoard.filter((p) => p.kind === 'warrior')
-  const selectedWarriors = selected.filter((p) => p.kind === 'warrior')
-  const selectedOther = selected.filter((p) => p.kind !== 'warrior')
+  const boardWarriors = onBoard.filter((piece) => piece.kind === 'warrior')
+  const selectedWarriors = selected.filter((piece) => piece.kind === 'warrior')
+  const selectedOther = selected.filter((piece) => piece.kind !== 'warrior')
   if (selectedOther.length > 0 && selectedWarriors.length < boardWarriors.length) {
     return false
   }
@@ -92,12 +108,12 @@ export function isValidRemoval(
 
 function legalRemovalSpecs(
   state: GameState,
-  ev: BattleEvent,
+  event: BattleEvent,
   victim: Seat,
   maxHits: number,
 ): ActionSpec[] {
   if (maxHits <= 0) return []
-  const pieces = victimPieces(state, ev.clearing, victim)
+  const pieces = victimPieces(state, event.clearing, victim)
   if (pieces.length === 0) return []
 
   const specs: ActionSpec[] = []
@@ -143,111 +159,118 @@ function legalRemovalSpecs(
 
 function applyRemovalStage(
   state: GameState,
-  ev: BattleEvent,
-  action: ResolveEventAction,
-  victim: Seat,
-  maxHits: number,
-  scorer: Seat,
+  stage: RemovalStage,
   ctx: Ctx,
 ): LogEntry[] {
+  const { event, action, victim, maxHits, scorer } = stage
   if (!action.pieceIds) {
     throw new RuleError('INVALID_REMOVAL', { action })
   }
-  if (!isValidRemoval(state, ev.clearing, victim, action.pieceIds, maxHits)) {
+  if (
+    !isValidRemoval(state, {
+      clearing: event.clearing,
+      victim,
+      pieceIds: action.pieceIds,
+      maxHits,
+    })
+  ) {
     throw new RuleError('INVALID_REMOVAL_ORDER', { pieceIds: action.pieceIds })
   }
-  const logs = removePieces(state, { clearing: ev.clearing, pieceIds: action.pieceIds, scorer }, ctx)
-  return logs
-}
-
-function finishBattle(state: GameState, ev: BattleEvent, ctx: Ctx): LogEntry[] {
-  const idx = state.pending.indexOf(ev)
-  if (idx >= 0) state.pending.splice(idx, 1)
-  ctx.emit({ s: 'battle.end', ev })
-  return [{ t: 'event', event: { ...ev, stage: 'removeAttacker' } }]
-}
-
-function advanceAfterAmbushRemoval(state: GameState, ev: BattleEvent, ctx: Ctx): LogEntry[] {
-  if (!attackerPresent(state, ev)) {
-    return finishBattle(state, ev, ctx)
-  }
-  ev.stage = 'roll'
-  return rollStage(state, ev, ctx)
-}
-
-function rollStage(state: GameState, ev: BattleEvent, ctx: Ctx): LogEntry[] {
-  const rolls = rollBattleDice(ctx)
-  ev.rolls = rolls
-  const [high, low] = rolls
-  ev.hits.attacker += capHits(high, warriors(state, ev.clearing, ev.attacker))
-  ev.hits.defender += capHits(low, warriors(state, ev.clearing, ev.defender))
-  return enterEffectsPipeline(state, ev, ctx)
-}
-
-function bothHaveBattleEffects(state: GameState, ev: BattleEvent): boolean {
-  return (
-    hasBattleEffect(state, ev, ev.attacker) && hasBattleEffect(state, ev, ev.defender)
+  return removePieces(
+    state,
+    { clearing: event.clearing, pieceIds: action.pieceIds, scorer },
+    ctx,
   )
 }
 
-function enterEffectsPipeline(state: GameState, ev: BattleEvent, ctx: Ctx): LogEntry[] {
-  if (bothHaveBattleEffects(state, ev)) {
-    ev.stage = 'effectsOrder'
+function finishBattle(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
+  const idx = state.pending.indexOf(event)
+  if (idx >= 0) state.pending.splice(idx, 1)
+  ctx.emit({ s: 'battle.end', ev: event })
+  return [{ t: 'event', event: { ...event, stage: 'removeAttacker' } }]
+}
+
+function advanceAfterAmbushRemoval(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
+  if (!attackerPresent(state, event)) {
+    return finishBattle(state, event, ctx)
+  }
+  event.stage = 'roll'
+  return rollStage(state, event, ctx)
+}
+
+function rollStage(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
+  const rolls = rollBattleDice(ctx)
+  event.rolls = rolls
+  const [high, low] = rolls
+  event.hits.attacker += capHits(high, warriors(state, event.clearing, event.attacker))
+  event.hits.defender += capHits(low, warriors(state, event.clearing, event.defender))
+  return enterEffectsPipeline(state, event, ctx)
+}
+
+function bothHaveBattleEffects(state: GameState, event: BattleEvent): boolean {
+  return (
+    hasBattleEffect(state, event, event.attacker) && hasBattleEffect(state, event, event.defender)
+  )
+}
+
+function enterEffectsPipeline(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
+  if (bothHaveBattleEffects(state, event)) {
+    event.stage = 'effectsOrder'
     return []
   }
-  ev.effectsOrder = [ev.attacker, ev.defender]
-  return startEffectsStage(state, ev, ctx)
+  event.effectsOrder = [event.attacker, event.defender]
+  return startEffectsStage(state, event, ctx)
 }
 
-function startEffectsStage(state: GameState, ev: BattleEvent, ctx: Ctx): LogEntry[] {
-  ev.stage = 'effects'
-  ev.effectsUsed = {}
-  return processEffectsQueue(state, ev, ctx)
+function startEffectsStage(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
+  event.stage = 'effects'
+  event.effectsUsed = {}
+  return processEffectsQueue(state, event, ctx)
 }
 
-function nextEffectSeat(ev: BattleEvent): Seat | null {
-  const order = ev.effectsOrder ?? [ev.attacker, ev.defender]
+function nextEffectSeat(event: BattleEvent): Seat | null {
+  const order = event.effectsOrder ?? [event.attacker, event.defender]
   for (const seat of order) {
-    const side = sideOf(seat, ev)!
-    if (ev.effectsUsed && side in ev.effectsUsed) continue
+    const side = sideOf(seat, event)!
+    if (event.effectsUsed && side in event.effectsUsed) continue
     return seat
   }
   return null
 }
 
 /** Rule: Battle 3 — defenseless defender gives attacker +1 hit. */
-export function applyDefenseless(state: GameState, ev: BattleEvent): void {
-  if (warriors(state, ev.clearing, ev.defender) === 0) {
-    ev.hits.attacker += 1
+export function applyDefenseless(state: GameState, event: BattleEvent): void {
+  if (warriors(state, event.clearing, event.defender) === 0) {
+    event.hits.attacker += 1
   }
 }
 
-function finalizeHitsAndRemoval(state: GameState, ev: BattleEvent, ctx: Ctx): LogEntry[] {
-  applyDefenseless(state, ev)
-  ctx.emit({ s: 'battle.hits', ev, side: 'attacker' })
-  ctx.emit({ s: 'battle.hits', ev, side: 'defender' })
+function finalizeHitsAndRemoval(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
+  applyDefenseless(state, event)
+  ctx.emit({ s: 'battle.hits', ev: event, side: 'attacker' })
+  ctx.emit({ s: 'battle.hits', ev: event, side: 'defender' })
 
-  if (ev.hits.attacker > 0) {
-    ev.stage = 'removeDefender'
+  if (event.hits.attacker > 0) {
+    event.stage = 'removeDefender'
     return []
   }
-  if (ev.hits.defender > 0) {
-    ev.stage = 'removeAttacker'
+  if (event.hits.defender > 0) {
+    event.stage = 'removeAttacker'
     return []
   }
-  return finishBattle(state, ev, ctx)
+  return finishBattle(state, event, ctx)
 }
 
-function processEffectsQueue(state: GameState, ev: BattleEvent, ctx: Ctx): LogEntry[] {
+function processEffectsQueue(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   while (true) {
-    const seat = nextEffectSeat(ev)
+    const seat = nextEffectSeat(event)
     if (seat === null) {
-      return finalizeHitsAndRemoval(state, ev, ctx)
+      return finalizeHitsAndRemoval(state, event, ctx)
     }
-    if (!hasBattleEffect(state, ev, seat)) {
-      const side = sideOf(seat, ev)!
-      ev.effectsUsed ??= {}
-      ev.effectsUsed[side] = false
+    if (!hasBattleEffect(state, event, seat)) {
+      const side = sideOf(seat, event)!
+      event.effectsUsed ??= {}
+      event.effectsUsed[side] = false
       continue
     }
     return []
@@ -255,9 +278,9 @@ function processEffectsQueue(state: GameState, ev: BattleEvent, ctx: Ctx): LogEn
 }
 
 export const battleResolver: EventResolver = {
-  matchesAction(state, ev, action, ctx) {
+  matchesAction(state, event, action, ctx) {
     if (action.type !== 'resolveEvent') return false
-    return this.legalActions(state, ev, ctx).some((spec) => {
+    return this.legalActions(state, event, ctx).some((spec) => {
       if (spec.type !== 'resolveEvent') return false
       if (spec.actor !== undefined && action.type === 'resolveEvent') {
         // match params
@@ -284,25 +307,25 @@ export const battleResolver: EventResolver = {
     })
   },
 
-  legalActions(state, ev, ctx) {
-    switch (ev.stage) {
+  legalActions(state, event, ctx) {
+    switch (event.stage) {
       case 'ambush': {
-        const specs: ActionSpec[] = [{ type: 'resolveEvent', actor: ev.defender, params: { decline: [true] } }]
-        for (const c of ambushCards(state, ev.defender, ev.clearing)) {
+        const specs: ActionSpec[] = [{ type: 'resolveEvent', actor: event.defender, params: { decline: [true] } }]
+        for (const c of ambushCards(state, event.defender, event.clearing)) {
           specs.push({
             type: 'resolveEvent',
-            actor: ev.defender,
+            actor: event.defender,
             params: { cardIds: [c.id] },
           })
         }
         return specs
       }
       case 'foil': {
-        const specs: ActionSpec[] = [{ type: 'resolveEvent', actor: ev.attacker, params: { decline: [true] } }]
-        for (const c of ambushCards(state, ev.attacker, ev.clearing)) {
+        const specs: ActionSpec[] = [{ type: 'resolveEvent', actor: event.attacker, params: { decline: [true] } }]
+        for (const c of ambushCards(state, event.attacker, event.clearing)) {
           specs.push({
             type: 'resolveEvent',
-            actor: ev.attacker,
+            actor: event.attacker,
             params: { cardIds: [c.id] },
           })
         }
@@ -312,25 +335,25 @@ export const battleResolver: EventResolver = {
         return [
           {
             type: 'resolveEvent',
-            actor: ev.attacker,
-            params: { order: [[ev.attacker, ev.defender], [ev.defender, ev.attacker]] },
+            actor: event.attacker,
+            params: { order: [[event.attacker, event.defender], [event.defender, event.attacker]] },
           },
         ]
       }
       case 'effects': {
-        const seat = nextEffectSeat(ev)
+        const seat = nextEffectSeat(event)
         if (seat === null) return []
-        const side = sideOf(seat, ev)!
-        if (!hasBattleEffect(state, ev, seat)) return []
+        const side = sideOf(seat, event)!
+        if (!hasBattleEffect(state, event, seat)) return []
         return [
           { type: 'resolveEvent', actor: seat, params: { useEffect: [false] } },
           { type: 'resolveEvent', actor: seat, params: { useEffect: [true] } },
         ]
       }
       case 'removeDefender':
-        return legalRemovalSpecs(state, ev, ev.defender, ev.hits.attacker)
+        return legalRemovalSpecs(state, event, event.defender, event.hits.attacker)
       case 'removeAttacker':
-        return legalRemovalSpecs(state, ev, ev.attacker, ev.hits.defender)
+        return legalRemovalSpecs(state, event, event.attacker, event.hits.defender)
       case 'roll':
         return []
       default:
@@ -338,134 +361,153 @@ export const battleResolver: EventResolver = {
     }
   },
 
-  apply(state, ev, action, actor, ctx) {
+  apply(state, { event, action, actor }, ctx) {
     const logs: LogEntry[] = []
 
-    switch (ev.stage) {
+    switch (event.stage) {
       case 'ambush': {
-        if (actor !== ev.defender) throw new RuleError('WRONG_ACTOR', { actor })
+        if (actor !== event.defender) throw new RuleError('WRONG_ACTOR', { actor })
         if (action.decline) {
-          logs.push(...rollStage(state, ev, ctx))
+          logs.push(...rollStage(state, event, ctx))
           return logs
         }
         if (!action.cardId) throw new RuleError('MISSING_AMBUSH_CARD')
-        const card = playerOf(state, ev.defender).hand.find((c) => c.id === action.cardId)
+        const card = playerOf(state, event.defender).hand.find((c) => c.id === action.cardId)
         if (!card || defOf(card).type !== 'ambush') {
           throw new RuleError('INVALID_AMBUSH', { cardId: action.cardId })
         }
-        if (!matchesSuit(card, clearingSuit(ev.clearing))) {
+        if (!matchesSuit(card, clearingSuit(event.clearing))) {
           throw new RuleError('AMBUSH_SUIT_MISMATCH', { cardId: action.cardId })
         }
-        ev.ambushCardId = action.cardId
-        ev.stage = 'foil'
+        event.ambushCardId = action.cardId
+        event.stage = 'foil'
         return logs
       }
 
       case 'foil': {
-        if (actor !== ev.attacker) throw new RuleError('WRONG_ACTOR', { actor })
+        if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
         if (action.decline) {
-          const idx = playerOf(state, ev.defender).hand.findIndex((c) => c.id === ev.ambushCardId)
-          const ambush = playerOf(state, ev.defender).hand.splice(idx, 1)[0]!
+          const idx = playerOf(state, event.defender).hand.findIndex((c) => c.id === event.ambushCardId)
+          const ambush = playerOf(state, event.defender).hand.splice(idx, 1)[0]!
           Deck.discard(state.deck, ambush, {
             onDominance: (c) => state.dominanceAvailable.push(c),
           })
-          ev.hits.defender = 2
-          ev.stage = 'removeAttacker'
+          event.hits.defender = 2
+          event.stage = 'removeAttacker'
           return logs
         }
         if (!action.cardId) throw new RuleError('MISSING_FOIL_CARD')
-        const foil = playerOf(state, ev.attacker).hand.find((c) => c.id === action.cardId)
+        const foil = playerOf(state, event.attacker).hand.find((c) => c.id === action.cardId)
         if (!foil || defOf(foil).type !== 'ambush') {
           throw new RuleError('INVALID_FOIL', { cardId: action.cardId })
         }
-        if (!matchesSuit(foil, clearingSuit(ev.clearing))) {
+        if (!matchesSuit(foil, clearingSuit(event.clearing))) {
           throw new RuleError('FOIL_SUIT_MISMATCH', { cardId: action.cardId })
         }
-        const defIdx = playerOf(state, ev.defender).hand.findIndex((c) => c.id === ev.ambushCardId)
-        const defAmbush = playerOf(state, ev.defender).hand.splice(defIdx, 1)[0]!
+        const defIdx = playerOf(state, event.defender).hand.findIndex((c) => c.id === event.ambushCardId)
+        const defAmbush = playerOf(state, event.defender).hand.splice(defIdx, 1)[0]!
         Deck.discard(state.deck, defAmbush, {
           onDominance: (c) => state.dominanceAvailable.push(c),
         })
-        const atkIdx = playerOf(state, ev.attacker).hand.findIndex((c) => c.id === action.cardId)
-        const atkAmbush = playerOf(state, ev.attacker).hand.splice(atkIdx, 1)[0]!
+        const atkIdx = playerOf(state, event.attacker).hand.findIndex((c) => c.id === action.cardId)
+        const atkAmbush = playerOf(state, event.attacker).hand.splice(atkIdx, 1)[0]!
         Deck.discard(state.deck, atkAmbush, {
           onDominance: (c) => state.dominanceAvailable.push(c),
         })
-        delete ev.ambushCardId
-        logs.push(...rollStage(state, ev, ctx))
+        delete event.ambushCardId
+        logs.push(...rollStage(state, event, ctx))
         return logs
       }
 
       case 'effectsOrder': {
-        if (actor !== ev.attacker) throw new RuleError('WRONG_ACTOR', { actor })
+        if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
         if (!action.order || action.order.length !== 2) {
           throw new RuleError('INVALID_EFFECTS_ORDER', { order: action.order })
         }
-        ev.effectsOrder = action.order
-        logs.push(...startEffectsStage(state, ev, ctx))
+        event.effectsOrder = action.order
+        logs.push(...startEffectsStage(state, event, ctx))
         return logs
       }
 
       case 'effects': {
-        const seat = nextEffectSeat(ev)
+        const seat = nextEffectSeat(event)
         if (seat === null || actor !== seat) throw new RuleError('WRONG_ACTOR', { actor })
-        const side = sideOf(seat, ev)!
+        const side = sideOf(seat, event)!
         if (action.useEffect) {
-          const extra = ctx.hooks.extraHits(state, ev, side)
+          const extra = ctx.hooks.extraHits(state, event, side)
           if (extra > 0) {
-            ev.hits[side] += extra
+            event.hits[side] += extra
           }
-          applyBattleEffect(state, ev, seat, ctx)
-          ev.effectsUsed![side] = true
+          applyBattleEffect(state, event, seat, ctx)
+          event.effectsUsed![side] = true
         } else {
-          ev.effectsUsed![side] = false
+          event.effectsUsed![side] = false
         }
-        logs.push(...processEffectsQueue(state, ev, ctx))
+        logs.push(...processEffectsQueue(state, event, ctx))
         return logs
       }
 
       case 'removeDefender': {
-        if (actor !== ev.defender) throw new RuleError('WRONG_ACTOR', { actor })
+        if (actor !== event.defender) throw new RuleError('WRONG_ACTOR', { actor })
         logs.push(
-          ...applyRemovalStage(state, ev, action, ev.defender, ev.hits.attacker, ev.attacker, ctx),
+          ...applyRemovalStage(
+            state,
+            {
+              event,
+              action,
+              victim: event.defender,
+              maxHits: event.hits.attacker,
+              scorer: event.attacker,
+            },
+            ctx,
+          ),
         )
-        ev.hits.attacker = 0
-        if (ev.hits.defender > 0 && attackerPresent(state, ev)) {
-          ev.stage = 'removeAttacker'
+        event.hits.attacker = 0
+        if (event.hits.defender > 0 && attackerPresent(state, event)) {
+          event.stage = 'removeAttacker'
         } else {
-          logs.push(...finishBattle(state, ev, ctx))
+          logs.push(...finishBattle(state, event, ctx))
         }
         return logs
       }
 
       case 'removeAttacker': {
-        if (actor !== ev.attacker) throw new RuleError('WRONG_ACTOR', { actor })
+        if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
         logs.push(
-          ...applyRemovalStage(state, ev, action, ev.attacker, ev.hits.defender, ev.defender, ctx),
+          ...applyRemovalStage(
+            state,
+            {
+              event,
+              action,
+              victim: event.attacker,
+              maxHits: event.hits.defender,
+              scorer: event.defender,
+            },
+            ctx,
+          ),
         )
-        ev.hits.defender = 0
-        if (!ev.rolls) {
-          logs.push(...advanceAfterAmbushRemoval(state, ev, ctx))
+        event.hits.defender = 0
+        if (!event.rolls) {
+          logs.push(...advanceAfterAmbushRemoval(state, event, ctx))
           return logs
         }
-        logs.push(...finishBattle(state, ev, ctx))
+        logs.push(...finishBattle(state, event, ctx))
         return logs
       }
 
       default:
-        throw new RuleError('INVALID_BATTLE_STAGE', { stage: ev.stage })
+        throw new RuleError('INVALID_BATTLE_STAGE', { stage: event.stage })
     }
   },
 }
 
 export function openBattle(
   state: GameState,
-  clearing: ClearingId,
-  attacker: Seat,
-  defender: Seat,
+  open: OpenBattle,
   ctx: Ctx,
 ): LogEntry[] {
-  const ev: BattleEvent = {
+  const { clearing, attacker, defender } = open
+  const event: BattleEvent = {
     type: 'battle',
     clearing,
     attacker,
@@ -473,7 +515,7 @@ export function openBattle(
     stage: 'ambush',
     hits: { attacker: 0, defender: 0 },
   }
-  state.pending.push(ev)
-  ctx.emit({ s: 'battle.start', ev })
-  return [{ t: 'event', event: ev }]
+  state.pending.push(event)
+  ctx.emit({ s: 'battle.start', ev: event })
+  return [{ t: 'event', event }]
 }

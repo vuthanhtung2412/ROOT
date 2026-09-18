@@ -39,7 +39,7 @@ describe('Fox Partisans', () => {
     }
     state.pending = [event]
     const context = testContext({ state })
-    battleResolver.apply(state, event, { type: 'resolveEvent', useEffect: true }, 0, context)
+    battleResolver.apply(state, { event: event, action: { type: 'resolveEvent', useEffect: true }, actor: 0 }, context)
     expect(event.hits.attacker).toBe(2)
     expect(state.players[0]!.hand.every((handCard) => defOf(handCard).suit === 'fox')).toBe(true)
   })
