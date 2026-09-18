@@ -30,7 +30,7 @@ commands:
   act '<json>'
   log
   undo
-  auto [--turns 50] [--players 2]
+  auto [--turns 50] [--players 2] [--factions marquise,eyrie]
 
 env: ROOT_API (default http://localhost:3000)`)
 }
@@ -83,7 +83,9 @@ async function main() {
       case 'auto': {
         const turns = Number(flag(rest, '--turns') ?? 50)
         const players = Number(flag(rest, '--players') ?? 2)
-        await cmdAuto(turns, players)
+        const raw = flag(rest, '--factions')
+        const factions = raw?.split(',').map((s) => s.trim())
+        await cmdAuto(turns, players, factions)
         break
       }
       default:

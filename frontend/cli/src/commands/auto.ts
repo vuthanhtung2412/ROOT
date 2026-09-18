@@ -192,6 +192,60 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       if (!target || !give) return null
       return { type: 'swapMeet', target: target.seat, giveCardId: give.id }
     }
+    case 'emergencyOrders':
+      return { type: 'emergencyOrders' }
+    case 'eveningScore':
+      return { type: 'eveningScore' }
+    case 'turmoil':
+      return { type: 'turmoil' }
+    case 'addToDecree': {
+      const hand = state.players[seat]?.hand ?? []
+      if (hand.length === 0) return null
+      const columns = ['recruit', 'move', 'battle', 'build'] as const
+      const n = Math.min(hand.length, Math.random() < 0.5 ? 1 : 2)
+      const cards = []
+      let birds = 0
+      for (let i = 0; i < n; i++) {
+        const c = hand[i]!
+        // suit unknown without defs — allow first bird only by alternating columns
+        const column = columns[(i + seat) % 4]!
+        cards.push({ cardId: c.id, column })
+        birds += 1 // CLI smoke: prefer 1 card if unsure
+      }
+      return { type: 'addToDecree', cards: cards.slice(0, birds > 1 ? 1 : cards.length) }
+    }
+    case 'newRoost': {
+      const clearings = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+      return { type: 'newRoost', clearing: pick(clearings) ?? 0 }
+    }
+    case 'decree': {
+      const clearings = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+      const handish = state.players[seat]
+      const board = handish && 'board' in handish ? (handish as { board?: { kind?: string; decree?: Record<string, { id: string }[]> } }).board : undefined
+      const columns = ['recruit', 'move', 'battle', 'build'] as const
+      for (const column of columns) {
+        const pile = board?.kind === 'eyrie' ? board.decree?.[column] ?? [] : []
+        const cardId = pick(pile.map((c) => c.id))
+        if (!cardId) continue
+        if (column === 'recruit' || column === 'build') {
+          return { type: 'decree', column, cardId, clearing: pick(clearings) }
+        }
+        if (column === 'battle') {
+          const defender = pick(state.players.map((p) => p.seat).filter((s) => s !== seat))
+          if (defender === undefined) continue
+          return { type: 'decree', column, cardId, clearing: pick(clearings), defender }
+        }
+        if (column === 'move') {
+          const froms = clearings.filter((c) => warriorsAt(state, seat, c) > 0)
+          const from = pick(froms)
+          if (from === undefined) continue
+          const to = pick(ADJ.get(from) ?? [])
+          if (to === undefined) continue
+          return { type: 'decree', column, cardId, moves: [{ from, to, count: 1 }] }
+        }
+      }
+      return null
+    }
     case 'resolveEvent': {
       const p = spec.params
       // Removal stage: params.pieceIds is domain of removable piece ids
@@ -217,9 +271,9 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
   }
 }
 
-export async function cmdAuto(turns: number, players: number) {
+export async function cmdAuto(turns: number, players: number, factions?: string[]) {
   await api.delete().catch(() => {})
-  await api.create()
+  await api.create(factions)
   for (let i = 0; i < players; i++) {
     await api.join(`auto-p${i}`)
   }
