@@ -60,6 +60,9 @@ importers:
       '@root/lib':
         specifier: workspace:*
         version: link:../../lib
+      '@root/web-client':
+        specifier: workspace:*
+        version: link:../../backend/web_client
     devDependencies:
       '@types/node':
         specifier: ^22.20.3
