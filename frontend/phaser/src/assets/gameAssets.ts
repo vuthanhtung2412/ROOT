@@ -15,7 +15,11 @@ export type GameImageAsset = {
   path: string
 }
 
-/** Core board + faction icons (card faces load later / use vector fallback). */
+/**
+ * Core board + faction icons.
+ * Card faces: suit-colored vector glyphs (see CardView) — EP PNGs are
+ * reference-only until distribution rights are resolved.
+ */
 export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   { key: GAME_ASSET_KEYS.autumnMap, path: 'assets/map/autumn-map.jpg' },
   {
