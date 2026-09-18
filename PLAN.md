@@ -90,10 +90,11 @@
    - `lib/src/factions/Marquise.ts`
    - `lib/src/factions/Marquise.test.ts`
    - March routes + counts; build as **paired** clearing × building (6.5.4); battle clearing × defender; recruit flag-only
-5. `feat(lib): pair Eyrie decree choices`
+5. `feat(lib): pair Eyrie decree choices` *(done)*
    - `lib/src/factions/Eyrie.ts`
    - `lib/src/factions/Eyrie.test.ts`
    - Correlated decree recruit/move/battle/build; addToDecree card×column domains; newRoost clearing list
+   - `frontend/cli/src/commands/auto.ts` — consume paired params (same intent unblock)
 6. `fix(lib): align Autumn clearing layout`
    - `lib/src/layout/fall.ts`
    - `lib/src/layout/render/svg.test.ts`
