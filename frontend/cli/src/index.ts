@@ -21,7 +21,7 @@ function usage() {
   console.error(`usage: root-cli <command> [options]
 
 commands:
-  new [--factions marquise,marquise]
+  new [--factions marquise,eyrie]
   join <playerId>
   start
   load <snapshot.json>
@@ -31,6 +31,7 @@ commands:
   log
   undo
   auto [--turns 50] [--players 2] [--factions marquise,eyrie]
+    (creates game, joins as faction names, starts — no manual lobby)
 
 env: ROOT_API (default http://localhost:3000)`)
 }
