@@ -7,6 +7,7 @@ import {
   minimalState,
   player,
   testContext,
+  type DieFace,
   withPieces,
 } from '../test/fixtures.js'
 import type { BattleEvent } from './types.js'
@@ -15,7 +16,7 @@ import type { Ctx } from '../game/ctx.js'
 import type { GameSignal } from '../triggers/signals.js'
 
 function battleContext(options?: {
-  dice?: number[]
+  dice?: DieFace[]
   onSignal?: (signal: GameSignal) => void
 }): Ctx {
   return testContext(options)
@@ -111,13 +112,13 @@ describe('battleResolver', () => {
         { id: 'd3', kind: 'warrior', owner: 1 },
       ],
     )
-    // faces [2, 5] → sorted high/low [5, 2]; attacker capped to 1 warrior
-    const context = battleContext({ dice: [2, 5] })
+    // faces [2, 3] → sorted high/low [3, 2]; attacker capped to 1 warrior
+    const context = battleContext({ dice: [2, 3] })
     let event = battleEvent({ clearing: 5 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
     event = state.pending[0] as BattleEvent
-    expect(event.rolls).toEqual([5, 2])
+    expect(event.rolls).toEqual([3, 2])
     expect(event.hits.attacker).toBe(1)
     expect(event.hits.defender).toBe(2)
   })
@@ -156,13 +157,13 @@ describe('battleResolver', () => {
         { id: 'd3', kind: 'warrior', owner: 1 },
       ],
     )
-    // raw [1, 4] → attacker high 4, defender low 1
-    const context = battleContext({ dice: [1, 4] })
+    // raw [1, 3] → attacker high 3, defender low 1
+    const context = battleContext({ dice: [1, 3] })
     let event = battleEvent({ clearing: 0 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
     event = state.pending[0] as BattleEvent
-    expect(event.rolls).toEqual([4, 1])
+    expect(event.rolls).toEqual([3, 1])
     expect(event.hits.attacker).toBe(3)
     expect(event.hits.defender).toBe(1)
   })

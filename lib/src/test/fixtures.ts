@@ -9,8 +9,18 @@ import type { ClearingState, GameState, PlayerState } from '../state/types.js'
 import { buildRuleHooks } from '../triggers/buildHooks.js'
 import type { GameSignal } from '../triggers/signals.js'
 
-/** Impose die faces in order (1–6). No PRNG in tests. */
-export function createTestRng(faces: number[] = []): Rng {
+/** Root battle die face: 1–3 (not a d6). */
+export type DieFace = 1 | 2 | 3
+
+function assertDieFace(face: number): asserts face is DieFace {
+  if (face !== 1 && face !== 2 && face !== 3) {
+    throw new Error(`createTestRng: invalid die face ${face} (must be 1–3)`)
+  }
+}
+
+/** Impose die faces in order (1–3). No PRNG in tests. */
+export function createTestRng(faces: DieFace[] = []): Rng {
+  for (const face of faces) assertDieFace(face)
   let cursor = 0
   return {
     roll() {
@@ -30,8 +40,8 @@ export function createTestRng(faces: number[] = []): Rng {
 
 export function testContext(options?: {
   state?: GameState
-  /** Imposed die faces in roll order. Required if the test path rolls. */
-  dice?: number[]
+  /** Imposed battle die faces (1–3) in roll order. Required if the test path rolls. */
+  dice?: DieFace[]
   onSignal?: (signal: GameSignal) => void
 }): Ctx {
   const state = options?.state ?? minimalState()
