@@ -334,8 +334,8 @@ export class Eyrie extends Faction {
 
     const start = eyrieStartClearing(state)
     // Rule: Eyrie > Setup 2 — roost + 6 warriors; 6 remain on track.
-    placeUpTo(state, seat, start, { kind: 'building', type: 'roost' }, 1)
-    placeUpTo(state, seat, start, { kind: 'warrior' }, 6)
+    placeUpTo(state, { seat, clearing: start, spec: { kind: 'building', type: 'roost' }, count: 1 })
+    placeUpTo(state, { seat, clearing: start, spec: { kind: 'warrior' }, count: 6 })
 
     // Rule: Eyrie > Setup 3–4 / 7.8.1 Builder viziers on Recruit + Move.
     tuckBuilderViziers(board)
@@ -714,8 +714,8 @@ export class Eyrie extends Faction {
       case 'newRoost': {
         const board = boardOf(state, seat)
         board.roostTrack.placed -= 1
-        placeUpTo(state, seat, action.clearing, { kind: 'building', type: 'roost' }, 1)
-        placeUpTo(state, seat, action.clearing, { kind: 'warrior' }, 3)
+        placeUpTo(state, { seat, clearing: action.clearing, spec: { kind: 'building', type: 'roost' }, count: 1 })
+        placeUpTo(state, { seat, clearing: action.clearing, spec: { kind: 'warrior' }, count: 3 })
         logs.push({ t: 'action', actor: seat, action })
         return logs
       }
@@ -729,7 +729,7 @@ export class Eyrie extends Faction {
 
         switch (action.column) {
           case 'recruit':
-            placeUpTo(state, seat, action.clearing!, { kind: 'warrior' }, 1)
+            placeUpTo(state, { seat, clearing: action.clearing!, spec: { kind: 'warrior' }, count: 1 })
             break
           case 'move':
             for (const move of action.moves!) {
@@ -744,7 +744,7 @@ export class Eyrie extends Faction {
           }
           case 'build': {
             board.roostTrack.placed -= 1
-            placeUpTo(state, seat, action.clearing!, { kind: 'building', type: 'roost' }, 1)
+            placeUpTo(state, { seat, clearing: action.clearing!, spec: { kind: 'building', type: 'roost' }, count: 1 })
             break
           }
         }

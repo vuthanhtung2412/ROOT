@@ -1,13 +1,22 @@
 import type { BuildingType, Seat, TokenType } from '../pieces/types.js'
 import type { Building, Piece, Token, Warrior } from '../pieces/types.js'
+import type { ClearingId } from '../map/types.js'
 import { canPlace } from '../queries/place.js'
 import { openSlots } from '../queries/slots.js'
 import type { GameState } from '../state/types.js'
 import { playerOf } from '../queries/seat.js'
+
 export type PlaceSpec =
   | { kind: 'warrior' }
   | { kind: 'token'; type: TokenType }
   | { kind: 'building'; type: BuildingType }
+
+export type PlaceRequest = {
+  seat: Seat
+  clearing: ClearingId
+  spec: PlaceSpec
+  count: number
+}
 
 let nextPieceId = 0
 
@@ -22,51 +31,37 @@ export function resetPlaceIds(): void {
 }
 
 /** Rule: Pieces — place max possible; capped by supply and open slots. */
-export function placeUpTo(
-  state: GameState,
-  seat: Seat,
-  clearing: number,
-  spec: PlaceSpec,
-  n: number,
-): number {
-  return placeInternal(state, seat, clearing, spec, n, true)
+export function placeUpTo(state: GameState, request: PlaceRequest): number {
+  return placeInternal(state, request, true)
 }
 
 /**
  * Place pieces already removed from the map (e.g. Field Hospitals).
  * Does not draw from supply — leftover count stays unplaced (caller returns to supply).
  */
-export function placeReturning(
-  state: GameState,
-  seat: Seat,
-  clearing: number,
-  spec: PlaceSpec,
-  n: number,
-): number {
-  return placeInternal(state, seat, clearing, spec, n, false)
+export function placeReturning(state: GameState, request: PlaceRequest): number {
+  return placeInternal(state, request, false)
 }
 
 function placeInternal(
   state: GameState,
-  seat: Seat,
-  clearing: number,
-  spec: PlaceSpec,
-  n: number,
+  request: PlaceRequest,
   fromSupply: boolean,
 ): number {
-  if (n <= 0) return 0
+  const { seat, clearing, spec, count } = request
+  if (count <= 0) return 0
   if (!canPlace(state, seat, clearing)) return 0
 
-  const cs = state.clearings[clearing]
-  if (!cs) return 0
+  const clearingState = state.clearings[clearing]
+  if (!clearingState) return 0
 
   let placed = 0
-  while (placed < n) {
+  while (placed < count) {
     if (spec.kind === 'building' && openSlots(state, clearing) < 1) break
     if (fromSupply && !takeFromSupply(state, seat, spec)) break
 
     const piece = makePiece(seat, spec)
-    cs.pieces.push(piece)
+    clearingState.pieces.push(piece)
     placed += 1
   }
 
