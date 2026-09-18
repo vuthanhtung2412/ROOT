@@ -7,7 +7,6 @@ import {
   minimalState,
   player,
   testContext,
-  type TestDice,
   withPieces,
 } from '../test/fixtures.js'
 import type { BattleEvent } from './types.js'
@@ -16,7 +15,7 @@ import type { Ctx } from '../game/ctx.js'
 import type { GameSignal } from '../triggers/signals.js'
 
 function battleContext(options?: {
-  dice?: TestDice
+  dice?: number[]
   onSignal?: (signal: GameSignal) => void
 }): Ctx {
   return testContext(options)
@@ -113,7 +112,7 @@ describe('battleResolver', () => {
       ],
     )
     // faces [2, 5] → sorted high/low [5, 2]; attacker capped to 1 warrior
-    const context = battleContext({ dice: { mode: 'fixed', faces: [2, 5] } })
+    const context = battleContext({ dice: [2, 5] })
     let event = battleEvent({ clearing: 5 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
@@ -134,7 +133,7 @@ describe('battleResolver', () => {
         { id: 'd2', kind: 'warrior', owner: 1 },
       ],
     )
-    const context = battleContext({ dice: { mode: 'fixed', faces: [3, 3] } })
+    const context = battleContext({ dice: [3, 3] })
     let event = battleEvent({ clearing: 0 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
@@ -158,7 +157,7 @@ describe('battleResolver', () => {
       ],
     )
     // raw [1, 4] → attacker high 4, defender low 1
-    const context = battleContext({ dice: { mode: 'fixed', faces: [1, 4] } })
+    const context = battleContext({ dice: [1, 4] })
     let event = battleEvent({ clearing: 0 })
     state.pending = [event]
     apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
@@ -230,7 +229,10 @@ describe('battleResolver', () => {
       ],
     )
     const signals: GameSignal[] = []
-    const context = battleContext({ onSignal: (signal) => signals.push(signal) })
+    const context = battleContext({
+      dice: [3, 1],
+      onSignal: (signal) => signals.push(signal),
+    })
     openBattle(state, 4, 0, 1, context)
     expect(signals.some((signal) => signal.s === 'battle.start')).toBe(true)
 
