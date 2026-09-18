@@ -27,16 +27,16 @@ describe('Game lobby', () => {
     expect(game.state.players).toHaveLength(0)
   })
 
-  it('Game.join assigns factions[seat] — GP1 both marquise', () => {
+  it('Game.join assigns factions[seat] — marquise then eyrie', () => {
     const game = Game.create({ seed: 1 })
     game.join('p0')
     game.join('p1')
     expect(game.state.players[0]!.faction).toBe('marquise')
-    expect(game.state.players[1]!.faction).toBe('marquise')
+    expect(game.state.players[1]!.faction).toBe('eyrie')
   })
 
   it('Game.join rejects when full', () => {
-    const game = Game.create({ seed: 1, factions: ['marquise', 'marquise'] })
+    const game = Game.create({ seed: 1, factions: ['marquise', 'eyrie'] })
     game.join('a')
     game.join('b')
     expect(() => game.join('c')).toThrow(RuleError)
@@ -84,9 +84,15 @@ describe('Game.start', () => {
     game.start()
     expect(game.state.status).toBe('playing')
     expect(keepCornerFor(game.state, 0)).toBe(FALL.corners[0])
-    expect(keepCornerFor(game.state, 1)).toBe(FALL.opposite(FALL.corners[0]))
     expect(warriors(game.state, FALL.corners[0]!, 0)).toBe(1)
-    expect(warriors(game.state, FALL.opposite(FALL.corners[0])!, 1)).toBe(1)
+    // Eyrie at opposite corner with roost + 6
+    const eyrieStart = FALL.opposite(FALL.corners[0])!
+    expect(warriors(game.state, eyrieStart, 1)).toBe(6)
+    expect(
+      game.state.clearings[eyrieStart]!.pieces.some(
+        (p) => p.kind === 'building' && p.type === 'roost' && p.owner === 1,
+      ),
+    ).toBe(true)
   })
 })
 

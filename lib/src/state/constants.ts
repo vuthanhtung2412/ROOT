@@ -1,7 +1,7 @@
 import type { FactionId, ItemType } from '../pieces/types.js'
 
-/** Seat order = join order = setup A→D: marquise → eyrie → alliance → vagabond. GP1: both marquise. */
-export const DEFAULT_FACTIONS: FactionId[] = ['marquise', 'marquise']
+/** Seat order = join order = setup A→D: marquise → eyrie → alliance → vagabond. */
+export const DEFAULT_FACTIONS: FactionId[] = ['marquise', 'eyrie']
 
 /** Rule: Setup 5 — item supply on map. */
 export const ITEM_SUPPLY: Record<ItemType, number> = {
