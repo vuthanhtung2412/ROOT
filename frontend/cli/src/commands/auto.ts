@@ -303,12 +303,23 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
 
 export async function cmdAuto(turns: number, players: number, factions?: string[]) {
   await api.delete().catch(() => {})
-  await api.create(factions)
-  for (let i = 0; i < players; i++) {
-    await api.join(`auto-p${i}`)
+  const created = await api.create(factions)
+  const roster = created.state.factions.slice(0, players)
+  if (roster.length < 2) {
+    throw new Error(`need ≥2 factions to auto-play, got ${roster.length}`)
+  }
+  // playerId = faction id (marquise, eyrie, …); suffix if duplicate seats
+  const seen = new Map<string, number>()
+  for (const faction of roster) {
+    const n = (seen.get(faction) ?? 0) + 1
+    seen.set(faction, n)
+    const playerId = n === 1 ? faction : `${faction}-${n}`
+    await api.join(playerId)
   }
   let state = (await api.start()).state
-  console.log(`auto start players=${players} maxTurns=${turns}`)
+  console.log(
+    `auto start factions=${roster.join(',')} maxTurns=${turns} (new+join+start)`,
+  )
 
   let steps = 0
   while (state.status === 'playing' && state.turn <= turns && steps < turns * 30) {
@@ -320,12 +331,12 @@ export async function cmdAuto(turns: number, players: number, factions?: string[
 
   if (state.status === 'finished') {
     const winner = state.players.find((p) => p.seat === state.winner)
-    const who = winner ? `${winner.faction}/${winner.playerId}` : 'unknown'
+    const who = winner ? winner.playerId : 'unknown'
     console.log(`winner ${who} turn ${state.turn}`)
   } else {
     console.log(`turn cap turn=${state.turn} status=${state.status}`)
   }
   for (const p of state.players) {
-    console.log(`  ${p.faction}/${p.playerId} vp=${p.vp}`)
+    console.log(`  ${p.playerId} vp=${p.vp}`)
   }
 }
