@@ -1,21 +1,13 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { FALL } from '../map/fall.js'
 import { warriors } from '../queries/pieces.js'
 import { keepCornerFor } from '../factions/Marquise.js'
 import { resetPlaceIds } from '../rules/place.js'
-import { card, minimalState, player, withPieces } from '../test/fixtures.js'
+import { card, minimalState, player, testCtx, withPieces } from '../test/fixtures.js'
 import { fieldHospitalResolver } from './fieldHospital.js'
 import type { FieldHospitalEvent } from './types.js'
-import { buildRuleHooks } from '../triggers/buildHooks.js'
 
 function ctx() {
-  return {
-    map: FALL,
-    rng: { roll: () => 1, toJSON: () => ({ seed: 1, cursor: 0 }) },
-    emit: () => {},
-    hooks: buildRuleHooks(minimalState(), FALL),
-    grantedActions: () => [],
-  }
+  return testCtx()
 }
 
 describe('fieldHospitalResolver', () => {

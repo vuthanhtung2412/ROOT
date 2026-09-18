@@ -1,25 +1,16 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import type { ResolveEventAction } from '../actions/types.js'
-import { FALL } from '../map/fall.js'
 import { warriors } from '../queries/pieces.js'
 import { resetPlaceIds } from '../rules/place.js'
-import { SeededRng } from '../rules/Rng.js'
-import { buildRuleHooks } from '../triggers/buildHooks.js'
-import { card, minimalState, player, withPieces } from '../test/fixtures.js'
+import { card, minimalState, player, testCtx, withPieces } from '../test/fixtures.js'
 import type { BattleEvent } from './types.js'
 import { applyDefenseless, battleResolver, isValidRemoval, openBattle } from './battle.js'
 import type { Ctx } from '../game/ctx.js'
 import type { GameSignal } from '../triggers/signals.js'
+import type { TestDie } from '../test/fixtures.js'
 
-function battleCtx(seed = 1, onSignal?: (s: GameSignal) => void): Ctx {
-  const hooks = buildRuleHooks(minimalState(), FALL)
-  return {
-    map: FALL,
-    rng: new SeededRng({ seed, cursor: 0 }),
-    emit: (s) => onSignal?.(s),
-    hooks,
-    grantedActions: () => [],
-  }
+function battleCtx(opts?: { die?: TestDie; onSignal?: (s: GameSignal) => void }): Ctx {
+  return testCtx(opts)
 }
 
 function battleEv(overrides?: Partial<BattleEvent>): BattleEvent {
@@ -112,7 +103,7 @@ describe('battleResolver', () => {
         { id: 'd3', kind: 'warrior', owner: 1 },
       ],
     )
-    const ctx = battleCtx(99)
+    const ctx = battleCtx({ die: { mode: 'seeded', seed: 99 } })
     let ev = battleEv({ clearing: 5 })
     state.pending = [ev]
     apply(state, ev, { type: 'resolveEvent', decline: true }, 1, ctx)
@@ -184,7 +175,7 @@ describe('battleResolver', () => {
       ],
     )
     const signals: GameSignal[] = []
-    const ctx = battleCtx(1, (s) => signals.push(s))
+    const ctx = battleCtx({ onSignal: (s) => signals.push(s) })
     openBattle(state, 4, 0, 1, ctx)
     expect(signals.some((s) => s.s === 'battle.start')).toBe(true)
 
@@ -221,7 +212,7 @@ describe('battleResolver', () => {
         { id: 'd1', kind: 'warrior', owner: 1 },
       ],
     )
-    const ctx = battleCtx(1)
+    const ctx = battleCtx()
     const ev = battleEv({
       stage: 'removeDefender',
       hits: { attacker: 1, defender: 0 },
