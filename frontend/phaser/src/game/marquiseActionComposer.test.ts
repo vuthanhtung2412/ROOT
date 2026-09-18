@@ -63,16 +63,17 @@ describe('marquiseActionComposer cards', () => {
 })
 
 describe('marquiseActionComposer march', () => {
-  it('confirms single move', () => {
-    const { hooks } = createMarquiseMarchComposerHooks()
+  it('prompts from → to → count then confirms single move', () => {
+    const march = createMarquiseMarchComposerHooks()
     const composer = new ActionComposer()
-    composer.setHooks(hooks)
+    composer.setHooks(march.hooks)
 
     composer.begin(
       makeActionSpec({
         type: 'march',
         params: {
           moves: [
+            { from: 0, to: 4, count: 1 },
             { from: 0, to: 4, count: 2 },
             { from: 4, to: 9, count: 1 },
           ],
@@ -83,18 +84,29 @@ describe('marquiseActionComposer march', () => {
     const afterTo = composer.chooseClearing(4)
     expect(afterTo.kind).toBe('incomplete')
     if (afterTo.kind === 'incomplete') {
-      expect(afterTo.prompt.canConfirm).toBe(true)
+      expect(afterTo.prompt.message).toContain('how many')
+      expect(afterTo.prompt.canConfirm).toBe(false)
+    }
+    expect(march.getPromptOptions()).toEqual([
+      { label: '1 warrior', value: '1' },
+      { label: '2 warriors', value: '2' },
+    ])
+
+    const afterCount = composer.chooseColumn('1')
+    expect(afterCount.kind).toBe('incomplete')
+    if (afterCount.kind === 'incomplete') {
+      expect(afterCount.prompt.canConfirm).toBe(true)
     }
     expect(composer.confirm()).toEqual({
       kind: 'ready',
-      action: { type: 'march', moves: [{ from: 0, to: 4, count: 2 }] },
+      action: { type: 'march', moves: [{ from: 0, to: 4, count: 1 }] },
     })
   })
 
-  it('submits two moves without confirm on second', () => {
-    const { hooks } = createMarquiseMarchComposerHooks()
+  it('submits two moves after second count', () => {
+    const march = createMarquiseMarchComposerHooks()
     const composer = new ActionComposer()
-    composer.setHooks(hooks)
+    composer.setHooks(march.hooks)
 
     composer.begin(
       makeActionSpec({
@@ -109,8 +121,10 @@ describe('marquiseActionComposer march', () => {
     )
     composer.chooseClearing(0)
     composer.chooseClearing(4)
+    composer.chooseColumn('2')
     composer.chooseClearing(4)
-    expect(composer.chooseClearing(9)).toEqual({
+    composer.chooseClearing(9)
+    expect(composer.chooseColumn('1')).toEqual({
       kind: 'ready',
       action: {
         type: 'march',

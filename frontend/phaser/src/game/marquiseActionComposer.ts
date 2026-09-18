@@ -165,39 +165,48 @@ export function createMarquiseCardComposerHooks(): {
 
 type MarchMove = { from: number; to: number; count: number }
 
+type MarchPicking =
+  | 'firstFrom'
+  | 'firstTo'
+  | 'firstCount'
+  | 'secondFrom'
+  | 'secondTo'
+  | 'secondCount'
+
 type MarchDraft =
   | { type: 'idle' }
   | {
       type: 'march'
       legalMoves: MarchMove[]
+      picking: MarchPicking
       firstMove: MarchMove | null
-      picking: 'from' | 'to' | 'count' | 'secondFrom' | 'secondTo' | 'secondCount'
       from: number | null
       to: number | null
     }
 
 /**
- * Compound March (6.5.2): one move, Confirm to submit, or continue for second move.
+ * Compound March (6.5.2): each move is from → to → count.
+ * After first move count: Confirm to submit, or start second move.
  */
 export function createMarquiseMarchComposerHooks(): {
   hooks: ActionComposerHooks
   getDraft: () => MarchDraft
+  getPromptOptions: () => Array<{ label: string; value: string }>
 } {
   let draft: MarchDraft = { type: 'idle' }
+  let promptOptions: Array<{ label: string; value: string }> = []
 
-  const incompleteFrom = (
-    legalMoves: MarchMove[],
-    message: string,
-  ): ComposerOutcome => ({
-    kind: 'incomplete',
-    prompt: {
-      message,
-      highlightClearings: unique(legalMoves.map((move) => move.from)),
-      enabledCardIds: null,
-      canConfirm: false,
-      canCancel: true,
-    },
-  })
+  const setCountOptions = (moves: MarchMove[]): void => {
+    const counts = unique(moves.map((move) => move.count)).sort((a, b) => a - b)
+    promptOptions = counts.map((count) => ({
+      label: `${String(count)} warrior${count === 1 ? '' : 's'}`,
+      value: String(count),
+    }))
+  }
+
+  const clearCountOptions = (): void => {
+    promptOptions = []
+  }
 
   const hooks: ActionComposerHooks = {
     begin: (spec: ActionSpec): ComposerOutcome | null => {
@@ -206,15 +215,25 @@ export function createMarquiseMarchComposerHooks(): {
       }
       const params = readChoiceParams(spec)
       const legalMoves = params.moves ?? []
+      clearCountOptions()
       draft = {
         type: 'march',
         legalMoves,
+        picking: 'firstFrom',
         firstMove: null,
-        picking: 'from',
         from: null,
         to: null,
       }
-      return incompleteFrom(legalMoves, 'March — pick origin clearing')
+      return {
+        kind: 'incomplete',
+        prompt: {
+          message: 'March 1/2 — pick origin',
+          highlightClearings: unique(legalMoves.map((move) => move.from)),
+          enabledCardIds: null,
+          canConfirm: false,
+          canCancel: true,
+        },
+      }
     },
 
     chooseClearing: (clearingId: number): ComposerOutcome | null => {
@@ -222,21 +241,23 @@ export function createMarquiseMarchComposerHooks(): {
         return null
       }
 
-      if (draft.picking === 'from' || draft.picking === 'secondFrom') {
+      if (draft.picking === 'firstFrom' || draft.picking === 'secondFrom') {
         const fromMoves = draft.legalMoves.filter((move) => move.from === clearingId)
         if (fromMoves.length === 0) {
           return null
         }
+        const moveIndex = draft.picking === 'firstFrom' ? '1' : '2'
+        clearCountOptions()
         draft = {
           ...draft,
           from: clearingId,
           to: null,
-          picking: draft.picking === 'from' ? 'to' : 'secondTo',
+          picking: draft.picking === 'firstFrom' ? 'firstTo' : 'secondTo',
         }
         return {
           kind: 'incomplete',
           prompt: {
-            message: 'March — pick destination',
+            message: `March ${moveIndex}/2 — pick destination`,
             highlightClearings: unique(fromMoves.map((move) => move.to)),
             enabledCardIds: null,
             canConfirm: false,
@@ -245,7 +266,7 @@ export function createMarquiseMarchComposerHooks(): {
         }
       }
 
-      if (draft.picking === 'to' || draft.picking === 'secondTo') {
+      if (draft.picking === 'firstTo' || draft.picking === 'secondTo') {
         if (draft.from === null) {
           return null
         }
@@ -256,50 +277,32 @@ export function createMarquiseMarchComposerHooks(): {
         if (candidates.length === 0) {
           return null
         }
-        // Prefer max count option when multiple counts listed; UI uses max for simplicity.
-        const chosen =
-          candidates.reduce((best, move) =>
-            move.count > best.count ? move : best,
-          )
-        if (draft.picking === 'to') {
-          draft = {
-            ...draft,
-            firstMove: chosen,
-            picking: 'count',
-            to: clearingId,
-          }
-          return {
-            kind: 'incomplete',
-            prompt: {
-              message: `Move ${String(chosen.count)} — Confirm to submit, or pick 2nd origin`,
-              highlightClearings: unique(
-                draft.legalMoves.map((move) => move.from),
-              ),
-              enabledCardIds: null,
-              canConfirm: true,
-              canCancel: true,
-            },
-          }
+        const moveIndex = draft.picking === 'firstTo' ? '1' : '2'
+        setCountOptions(candidates)
+        draft = {
+          ...draft,
+          to: clearingId,
+          picking: draft.picking === 'firstTo' ? 'firstCount' : 'secondCount',
         }
-
-        // Second move complete → submit both
-        if (draft.firstMove === null) {
-          return null
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: `March ${moveIndex}/2 — how many warriors?`,
+            highlightClearings: [origin, clearingId],
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: true,
+          },
         }
-        const action: ClientAction = {
-          type: 'march',
-          moves: [draft.firstMove, chosen],
-        }
-        draft = { type: 'idle' }
-        return { kind: 'ready', action }
       }
 
-      // After first move confirmed-ready state: clicking a clearing starts second move
-      if (draft.picking === 'count' && draft.firstMove !== null) {
+      // After first count chosen: picking a clearing starts second move origin
+      if (draft.picking === 'firstCount' && draft.firstMove !== null) {
         const fromMoves = draft.legalMoves.filter((move) => move.from === clearingId)
         if (fromMoves.length === 0) {
           return null
         }
+        clearCountOptions()
         draft = {
           ...draft,
           from: clearingId,
@@ -309,7 +312,7 @@ export function createMarquiseMarchComposerHooks(): {
         return {
           kind: 'incomplete',
           prompt: {
-            message: 'March 2nd — pick destination',
+            message: 'March 2/2 — pick destination',
             highlightClearings: unique(fromMoves.map((move) => move.to)),
             enabledCardIds: null,
             canConfirm: true,
@@ -321,18 +324,77 @@ export function createMarquiseMarchComposerHooks(): {
       return null
     },
 
+    chooseColumn: (countValue: string): ComposerOutcome | null => {
+      if (draft.type !== 'march') {
+        return null
+      }
+      if (draft.picking !== 'firstCount' && draft.picking !== 'secondCount') {
+        return null
+      }
+      if (draft.from === null || draft.to === null) {
+        return null
+      }
+
+      const count = Number(countValue)
+      if (!Number.isInteger(count) || count < 1) {
+        return null
+      }
+      const origin = draft.from
+      const destination = draft.to
+      const match = draft.legalMoves.find(
+        (move) =>
+          move.from === origin && move.to === destination && move.count === count,
+      )
+      if (match === undefined) {
+        return null
+      }
+
+      if (draft.picking === 'firstCount') {
+        clearCountOptions()
+        draft = {
+          ...draft,
+          firstMove: match,
+          picking: 'firstCount',
+          from: null,
+          to: null,
+        }
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: `March 1 done (${String(count)}) — Confirm, or pick 2nd origin`,
+            highlightClearings: unique(draft.legalMoves.map((move) => move.from)),
+            enabledCardIds: null,
+            canConfirm: true,
+            canCancel: true,
+          },
+        }
+      }
+
+      if (draft.firstMove === null) {
+        return null
+      }
+      const action: ClientAction = {
+        type: 'march',
+        moves: [draft.firstMove, match],
+      }
+      clearCountOptions()
+      draft = { type: 'idle' }
+      return { kind: 'ready', action }
+    },
+
     confirm: (): ComposerOutcome | null => {
       if (draft.type !== 'march' || draft.firstMove === null) {
         return null
       }
-      if (draft.picking !== 'count' && draft.picking !== 'secondTo') {
+      // Confirm after first count, or abandon incomplete second destination pick
+      if (draft.picking !== 'firstCount' && draft.picking !== 'secondTo') {
         return null
       }
-      // Confirm with only first move (or abandon incomplete second)
       const action: ClientAction = {
         type: 'march',
         moves: [draft.firstMove],
       }
+      clearCountOptions()
       draft = { type: 'idle' }
       return { kind: 'ready', action }
     },
@@ -341,6 +403,7 @@ export function createMarquiseMarchComposerHooks(): {
       if (draft.type !== 'march') {
         return null
       }
+      clearCountOptions()
       draft = { type: 'idle' }
       return { kind: 'idle' }
     },
@@ -349,6 +412,7 @@ export function createMarquiseMarchComposerHooks(): {
   return {
     hooks,
     getDraft: () => draft,
+    getPromptOptions: () => promptOptions,
   }
 }
 

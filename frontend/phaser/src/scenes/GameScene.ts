@@ -59,6 +59,7 @@ export class GameScene extends Phaser.Scene {
   private winnerOverlay: WinnerOverlay | null = null
   private lastHandoffSeat: number | null = null
   private readonly composer = new ActionComposer()
+  private marquiseMarch = createMarquiseMarchComposerHooks()
   private marquiseBoard = createMarquiseBoardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
   private eventComposer = createEventComposerHooks()
@@ -78,14 +79,14 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.scale
 
     const marquiseCards = createMarquiseCardComposerHooks()
-    const marquiseMarch = createMarquiseMarchComposerHooks()
+    this.marquiseMarch = createMarquiseMarchComposerHooks()
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
     this.eventComposer = createEventComposerHooks()
     this.composer.setHooks(
       mergeHooks(
         marquiseCards.hooks,
-        marquiseMarch.hooks,
+        this.marquiseMarch.hooks,
         this.marquiseBoard.hooks,
         this.eyrieComposer.hooks,
         this.eventComposer.hooks,
@@ -212,6 +213,7 @@ export class GameScene extends Phaser.Scene {
       this.selectionPrompt?.sync(
         outcome.prompt,
         [
+          ...this.marquiseMarch.getPromptOptions(),
           ...this.marquiseBoard.getPromptOptions(),
           ...this.eyrieComposer.getPromptOptions(),
           ...this.eventComposer.getPromptOptions(),
