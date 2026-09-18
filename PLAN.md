@@ -146,7 +146,7 @@
     - `frontend/phaser/src/ui/PieceView.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
     - `frontend/phaser/src/game/theme.ts`
-18. `feat(phaser): add turn HUD`
+18. `feat(phaser): add turn HUD` *(done)*
     - `frontend/phaser/src/ui/TurnBanner.ts`
     - `frontend/phaser/src/ui/PlayerRail.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
