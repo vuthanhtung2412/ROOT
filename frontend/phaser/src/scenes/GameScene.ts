@@ -6,6 +6,7 @@ import {
   type ActionComposerHooks,
   type ComposerOutcome,
 } from '../game/ActionComposer.ts'
+import { createEventComposerHooks } from '../game/eventActionComposer.ts'
 import { createEyrieComposerHooks } from '../game/eyrieActionComposer.ts'
 import {
   createMarquiseBoardComposerHooks,
@@ -22,6 +23,7 @@ import { ActionTray } from '../ui/ActionTray.ts'
 import { BoardView } from '../ui/BoardView.ts'
 import { CardHand } from '../ui/CardHand.ts'
 import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
+import { EventOverlay } from '../ui/EventOverlay.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
 import { SelectionPrompt } from '../ui/SelectionPrompt.ts'
 import {
@@ -42,9 +44,11 @@ export class GameScene extends Phaser.Scene {
   private actionTray: ActionTray | null = null
   private selectionPrompt: SelectionPrompt | null = null
   private eyrieDecreePanel: EyrieDecreePanel | null = null
+  private eventOverlay: EventOverlay | null = null
   private readonly composer = new ActionComposer()
   private marquiseBoard = createMarquiseBoardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
+  private eventComposer = createEventComposerHooks()
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -64,12 +68,14 @@ export class GameScene extends Phaser.Scene {
     const marquiseMarch = createMarquiseMarchComposerHooks()
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
+    this.eventComposer = createEventComposerHooks()
     this.composer.setHooks(
       mergeHooks(
         marquiseCards.hooks,
         marquiseMarch.hooks,
         this.marquiseBoard.hooks,
         this.eyrieComposer.hooks,
+        this.eventComposer.hooks,
       ),
     )
 
@@ -84,6 +90,7 @@ export class GameScene extends Phaser.Scene {
       },
     })
     this.eyrieDecreePanel = new EyrieDecreePanel(this)
+    this.eventOverlay = new EventOverlay(this)
     this.selectionPrompt = new SelectionPrompt(this, {
       onConfirm: () => {
         this.applyComposerOutcome(this.composer.confirm())
@@ -132,6 +139,8 @@ export class GameScene extends Phaser.Scene {
     this.actionTray = null
     this.eyrieDecreePanel?.destroy()
     this.eyrieDecreePanel = null
+    this.eventOverlay?.destroy()
+    this.eventOverlay = null
     this.selectionPrompt?.destroy()
     this.selectionPrompt = null
   }
@@ -157,10 +166,15 @@ export class GameScene extends Phaser.Scene {
         [
           ...this.marquiseBoard.getPromptOptions(),
           ...this.eyrieComposer.getPromptOptions(),
+          ...this.eventComposer.getPromptOptions(),
         ],
       )
       this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
       this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)
+      this.eventOverlay?.sync(
+        this.eventComposer.getOverlayKind() === 'fieldHospital',
+        outcome.prompt.message,
+      )
       return
     }
 
@@ -168,6 +182,7 @@ export class GameScene extends Phaser.Scene {
     this.boardView?.setHighlightedClearings([])
     this.cardHand?.setEnabledCards(null)
     this.cardHand?.setSelection([])
+    this.eventOverlay?.sync(false, '')
   }
 
   private async bootstrapBoard(): Promise<void> {
