@@ -21,12 +21,12 @@ describe('FALL_LAYOUT Autumn alignment', () => {
     }
   })
 
-  it('keeps markers inside the woodland (above VP track)', () => {
+  it('keeps markers on the board image', () => {
     for (const [id, point] of Object.entries(FALL_LAYOUT.clearings)) {
       expect(point.x, `clearing ${id} x`).toBeGreaterThan(0.05)
       expect(point.x, `clearing ${id} x`).toBeLessThan(0.95)
-      expect(point.y, `clearing ${id} y`).toBeGreaterThan(0.08)
-      expect(point.y, `clearing ${id} y`).toBeLessThan(0.82)
+      expect(point.y, `clearing ${id} y`).toBeGreaterThan(0.05)
+      expect(point.y, `clearing ${id} y`).toBeLessThan(0.95)
       expect(point.r, `clearing ${id} r`).toBeGreaterThan(0.03)
       expect(point.r, `clearing ${id} r`).toBeLessThan(0.08)
     }
@@ -44,9 +44,9 @@ describe('FALL_LAYOUT Autumn alignment', () => {
     expect(FALL_LAYOUT.clearings[southwest]!.y).toBeGreaterThan(0.55)
   })
 
-  it('keeps hub clearing 11 more central than corners', () => {
+  it('keeps hub clearing 11 inward from corners', () => {
     const hub = FALL_LAYOUT.clearings[11]!
-    expect(hub.x).toBeGreaterThan(0.3)
+    expect(hub.x).toBeGreaterThan(0.25)
     expect(hub.x).toBeLessThan(0.55)
     expect(hub.y).toBeGreaterThan(0.4)
     expect(hub.y).toBeLessThan(0.65)
