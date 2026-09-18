@@ -8,7 +8,8 @@ import {
 } from '../game/boardLayout.ts'
 import { factionColorForSeat } from '../game/theme.ts'
 import {
-  drawPieceGlyph,
+  drawPieceStack,
+  groupPiecesIntoStacks,
   stackOffsets,
   type PieceViewModel,
 } from './PieceView.ts'
@@ -97,25 +98,28 @@ export class BoardView {
         continue
       }
       const viewModels: PieceViewModel[] = clearing.pieces.map((piece) => {
+        const factionId = factions[piece.owner] ?? 'marquise'
         const viewModel: PieceViewModel = {
           id: piece.id,
           kind: piece.kind,
           owner: piece.owner,
           color: factionColorForSeat(piece.owner, factions),
+          factionId,
         }
         if (piece.type !== undefined) {
           return { ...viewModel, type: piece.type }
         }
         return viewModel
       })
-      const offsets = stackOffsets(viewModels.length)
-      for (let index = 0; index < viewModels.length; index += 1) {
-        const piece = viewModels[index]
+      const stacks = groupPiecesIntoStacks(viewModels)
+      const offsets = stackOffsets(stacks.length)
+      for (let index = 0; index < stacks.length; index += 1) {
+        const stack = stacks[index]
         const offset = offsets[index]
-        if (piece === undefined || offset === undefined) {
+        if (stack === undefined || offset === undefined) {
           continue
         }
-        const glyph = drawPieceGlyph(this.scene, piece, {
+        const glyph = drawPieceStack(this.scene, stack, {
           x: visual.hitArea.x + offset.x,
           y: visual.hitArea.y + offset.y,
         })
