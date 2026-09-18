@@ -95,7 +95,7 @@
    - `lib/src/factions/Eyrie.test.ts`
    - Correlated decree recruit/move/battle/build; addToDecree card×column domains; newRoost clearing list
    - `frontend/cli/src/commands/auto.ts` — consume paired params (same intent unblock)
-6. `fix(lib): align Autumn clearing layout`
+6. `fix(lib): align Autumn clearing layout` *(done)*
    - `lib/src/layout/fall.ts`
    - `lib/src/layout/render/svg.test.ts`
 7. `feat(web): expose OpenAPI document` *(done)*
