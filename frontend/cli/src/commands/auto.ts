@@ -138,9 +138,18 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return { type: 'craft', cardId }
     }
     case 'build': {
-      const clearings = (spec.params?.clearing as number[] | undefined) ?? [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-      ]
+      const paired = (spec.params?.options as
+        | { clearing: number; building: string }[]
+        | undefined) ?? []
+      if (paired.length > 0) {
+        const choice = pick(paired)
+        if (!choice) return null
+        return { type: 'build', clearing: choice.clearing, building: choice.building }
+      }
+      const clearings = (spec.params?.clearings as number[] | undefined) ??
+        (spec.params?.clearing as number[] | undefined) ?? [
+          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+        ]
       const buildings = (spec.params?.building as string[] | undefined) ?? [...BUILDINGS]
       for (const clearing of shuffle(clearings)) {
         for (const building of shuffle(buildings)) {
@@ -150,10 +159,19 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return null
     }
     case 'overwork': {
+      const paired = (spec.params?.options as
+        | { cardId: string; clearing: number }[]
+        | undefined) ?? []
+      if (paired.length > 0) {
+        const choice = pick(paired)
+        if (!choice) return null
+        return { type: 'overwork', clearing: choice.clearing, cardId: choice.cardId }
+      }
       const hand = state.players[seat]?.hand ?? []
-      const clearings = (spec.params?.clearing as number[] | undefined) ?? [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-      ]
+      const clearings = (spec.params?.clearings as number[] | undefined) ??
+        (spec.params?.clearing as number[] | undefined) ?? [
+          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+        ]
       const cardIds = (spec.params?.cardIds as string[] | undefined) ?? hand.map((c) => c.id)
       for (const clearing of shuffle(clearings)) {
         for (const cardId of shuffle(cardIds)) {
@@ -163,9 +181,18 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return null
     }
     case 'battle': {
-      const clearings = (spec.params?.clearing as number[] | undefined) ?? [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-      ]
+      const targets = (spec.params?.targets as
+        | { clearing: number; defender: number }[]
+        | undefined) ?? []
+      if (targets.length > 0) {
+        const choice = pick(targets)
+        if (!choice) return null
+        return { type: 'battle', clearing: choice.clearing, defender: choice.defender }
+      }
+      const clearings = (spec.params?.clearings as number[] | undefined) ??
+        (spec.params?.clearing as number[] | undefined) ?? [
+          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+        ]
       const defenders = (spec.params?.defender as number[] | undefined) ??
         state.players.map((p) => p.seat).filter((s) => s !== seat)
       for (const clearing of shuffle(clearings)) {
@@ -176,6 +203,14 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return null
     }
     case 'march': {
+      const listed = (spec.params?.moves as
+        | { from: number; to: number; count: number }[]
+        | undefined) ?? []
+      if (listed.length > 0) {
+        const move = pick(listed)
+        if (!move) return null
+        return { type: 'march', moves: [move] }
+      }
       const froms = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(
         (c) => warriorsAt(state, seat, c) > 0,
       )
@@ -207,10 +242,28 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
     case 'turmoil':
       return { type: 'turmoil' }
     case 'addToDecree': {
-      const cardIds = [...((spec.params?.cardIds as string[] | undefined) ?? [])]
+      const options = (spec.params?.options as
+        | { cardId: string; column: string }[]
+        | undefined) ?? []
       const birdIds = new Set(
         (spec.params?.birdCardIds as string[] | undefined) ?? [],
       )
+      if (options.length > 0) {
+        const n = Math.min(2, Math.random() < 0.5 ? 1 : 2)
+        const picked: { cardId: string; column: string }[] = []
+        let birds = 0
+        for (const option of shuffle(options)) {
+          if (picked.length >= n) break
+          if (picked.some((p) => p.cardId === option.cardId)) continue
+          const isBird = birdIds.has(option.cardId)
+          if (isBird && birds >= 1) continue
+          picked.push(option)
+          if (isBird) birds += 1
+        }
+        if (picked.length === 0) return null
+        return { type: 'addToDecree', cards: picked }
+      }
+      const cardIds = [...((spec.params?.cardIds as string[] | undefined) ?? [])]
       const columns = (spec.params?.columns as string[] | undefined) ?? [
         'recruit',
         'move',
@@ -235,7 +288,10 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return { type: 'addToDecree', cards: picked }
     }
     case 'newRoost': {
-      const clearings = (spec.params?.clearing as number[] | undefined) ?? []
+      const clearings =
+        (spec.params?.clearings as number[] | undefined) ??
+        (spec.params?.clearing as number[] | undefined) ??
+        []
       const clearing = pick(clearings)
       if (clearing === undefined) return null
       return { type: 'newRoost', clearing }
@@ -245,11 +301,29 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       const cardId = pick((spec.params?.cardIds as string[] | undefined) ?? [])
       if (!column || !cardId) return null
       if (column === 'recruit' || column === 'build') {
-        const clearing = pick((spec.params?.clearing as number[] | undefined) ?? [])
+        const clearing = pick(
+          (spec.params?.clearings as number[] | undefined) ??
+            (spec.params?.clearing as number[] | undefined) ??
+            [],
+        )
         if (clearing === undefined) return null
         return { type: 'decree', column, cardId, clearing }
       }
       if (column === 'battle') {
+        const targets = (spec.params?.targets as
+          | { clearing: number; defender: number }[]
+          | undefined) ?? []
+        if (targets.length > 0) {
+          const choice = pick(targets)
+          if (!choice) return null
+          return {
+            type: 'decree',
+            column,
+            cardId,
+            clearing: choice.clearing,
+            defender: choice.defender,
+          }
+        }
         const clearings = (spec.params?.clearing as number[] | undefined) ?? []
         const defenders = (spec.params?.defender as number[] | undefined) ?? []
         if (clearings.length === 0 || defenders.length === 0) return null
@@ -263,6 +337,14 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
         }
       }
       if (column === 'move') {
+        const moves = (spec.params?.moves as
+          | { from: number; to: number; count: number }[]
+          | undefined) ?? []
+        if (moves.length > 0) {
+          const move = pick(moves)
+          if (!move) return null
+          return { type: 'decree', column, cardId, moves: [move] }
+        }
         const froms = (spec.params?.from as number[] | undefined) ?? []
         const tos = (spec.params?.to as number[] | undefined) ?? []
         if (froms.length === 0 || tos.length === 0) return null

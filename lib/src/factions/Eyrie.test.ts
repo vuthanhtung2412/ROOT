@@ -711,3 +711,113 @@ describe('Law 7 extras / integration', () => {
     expect(game.state.phase).toBe('birdsong')
   })
 })
+
+describe('Eyrie legalActions correlated choices', () => {
+  beforeEach(() => resetPlaceIds())
+
+  it('addToDecree exposes paired card×column options', () => {
+    const fox = FOX()
+    const bird = BIRD()
+    const state = eyrieState({
+      phase: 'birdsong',
+      step: 'decreeAdd',
+      hand: [fox, bird],
+    })
+    const spec = EYRIE.legalActions(state, setupCtx()).find((s) => s.type === 'addToDecree')
+    expect(spec?.params?.birdCardIds).toEqual([bird.id])
+    expect(spec?.params?.options).toEqual(
+      expect.arrayContaining([
+        { cardId: fox.id, column: 'recruit' },
+        { cardId: fox.id, column: 'move' },
+        { cardId: bird.id, column: 'battle' },
+        { cardId: bird.id, column: 'build' },
+      ]),
+    )
+    expect(spec?.params?.options).toHaveLength(8)
+  })
+
+  it('newRoost exposes clearings domain', () => {
+    const state = eyrieState({
+      phase: 'birdsong',
+      step: 'newRoost',
+      board: eyrieBoard({ roostTrack: { placed: 6 } }),
+    })
+    // 0 roosts on map → newRoost legal
+    const spec = EYRIE.legalActions(state, setupCtx()).find((s) => s.type === 'newRoost')
+    expect(spec?.params?.clearings?.length).toBeGreaterThan(0)
+    expect(spec?.params?.clearing).toBeUndefined()
+  })
+
+  it('decree battle exposes paired targets not parallel arrays', () => {
+    const fox = FOX()
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'decree',
+        board: eyrieBoard({
+          decree: { recruit: [], move: [], battle: [fox], build: [] },
+        }),
+        turnScratch: scratch({ column: 'battle', remaining: [fox.id] }),
+      }),
+      0, // fox clearing matches FOX card
+      [
+        { id: 'a1', kind: 'warrior', owner: 1 },
+        { id: 'd1', kind: 'warrior', owner: 0 },
+      ],
+    )
+    const spec = EYRIE.legalActions(state, setupCtx()).find((s) => s.type === 'decree')
+    expect(spec?.params?.targets).toEqual([{ clearing: 0, defender: 0 }])
+    expect(spec?.params?.clearing).toBeUndefined()
+    expect(spec?.params?.defender).toBeUndefined()
+  })
+
+  it('decree move exposes paired moves with counts', () => {
+    const [v0] = makeViziers()
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'decree',
+        board: eyrieBoard({
+          decree: { recruit: [], move: [v0!], battle: [], build: [] },
+          supply: { warriors: 10 },
+        }),
+        turnScratch: scratch({ column: 'move', remaining: [v0!.id] }),
+      }),
+      0,
+      [
+        { id: 'r', kind: 'building', type: 'roost', owner: 1, used: false },
+        { id: 'w0', kind: 'warrior', owner: 1 },
+        { id: 'w1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    // Rule origin or dest; roost at 0 rules; move to adjacent
+    const adjacent = FALL.adjacent(0)[0]!
+    state.clearings[adjacent]!.pieces = []
+    const spec = EYRIE.legalActions(state, setupCtx()).find((s) => s.type === 'decree')
+    expect(spec?.params?.moves?.length).toBeGreaterThan(0)
+    expect(spec?.params?.from).toBeUndefined()
+    expect(spec?.params?.to).toBeUndefined()
+    const sample = spec!.params!.moves![0]!
+    expect(sample.count).toBeGreaterThanOrEqual(1)
+  })
+
+  it('decree recruit exposes clearings domain', () => {
+    const fox = FOX()
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'decree',
+        board: eyrieBoard({
+          decree: { recruit: [fox], move: [], battle: [], build: [] },
+          supply: { warriors: 10 },
+        }),
+        turnScratch: scratch({ column: 'recruit', remaining: [fox.id] }),
+      }),
+      0, // fox clearing
+      [{ id: 'r', kind: 'building', type: 'roost', owner: 1, used: false }],
+    )
+    const spec = EYRIE.legalActions(state, setupCtx()).find((s) => s.type === 'decree')
+    expect(spec?.params?.clearings).toContain(0)
+    expect(spec?.params?.clearing).toBeUndefined()
+  })
+})

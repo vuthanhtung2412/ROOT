@@ -1,4 +1,11 @@
-import type { Action, ActionChoiceParams, ActionSpec, MarchMove } from '../actions/types.js'
+import type {
+  Action,
+  ActionChoiceParams,
+  ActionSpec,
+  AddToDecreeCard,
+  BattleTargetChoice,
+  MarchMove,
+} from '../actions/types.js'
 import { defOf } from '../cards/Deck.js'
 import { Deck } from '../cards/Deck.js'
 import type { Card } from '../cards/types.js'
@@ -375,13 +382,18 @@ export class Eyrie extends Faction {
     if (state.phase === 'birdsong' && state.step === 'decreeAdd') {
       const hand = playerOf(state, seat).hand
       if (hand.length > 0) {
+        const options: AddToDecreeCard[] = []
+        for (const handCard of hand) {
+          for (const column of DECREE_COLUMNS) {
+            options.push({ cardId: handCard.id, column })
+          }
+        }
         specs.push({
           type: 'addToDecree',
           actor: seat,
           params: {
-            cardIds: hand.map((c) => c.id),
-            birdCardIds: hand.filter((c) => defOf(c).suit === 'bird').map((c) => c.id),
-            columns: [...DECREE_COLUMNS],
+            options,
+            birdCardIds: hand.filter((handCard) => defOf(handCard).suit === 'bird').map((handCard) => handCard.id),
           },
         })
       } else {
@@ -395,7 +407,7 @@ export class Eyrie extends Faction {
         specs.push({
           type: 'newRoost',
           actor: seat,
-          params: { clearing: fewestWarriorClearings(state, seat) },
+          params: { clearings: fewestWarriorClearings(state, seat) },
         })
         return specs
       }
@@ -404,12 +416,12 @@ export class Eyrie extends Faction {
     }
 
     if (state.phase === 'daylight' && state.step === 'craft') {
-      const craftable = playerOf(state, seat).hand.filter((c) => canCraft(state, seat, c))
+      const craftable = playerOf(state, seat).hand.filter((handCard) => canCraft(state, seat, handCard))
       if (craftable.length > 0) {
         specs.push({
           type: 'craft',
           actor: seat,
-          params: { cardIds: craftable.map((c) => c.id) },
+          params: { cardIds: craftable.map((handCard) => handCard.id) },
         })
       }
       specs.push({ type: 'endPhase', actor: seat })
@@ -434,41 +446,37 @@ export class Eyrie extends Faction {
           cardIds: [cardId],
         }
         if (cursor.column === 'recruit') {
-          params.clearing = Array.from({ length: 12 }, (_, i) => i).filter((c) =>
-            recruitLegal(state, seat, card, c),
+          params.clearings = Array.from({ length: 12 }, (_, clearingId) => clearingId).filter(
+            (clearingId) => recruitLegal(state, seat, card, clearingId),
           )
         } else if (cursor.column === 'build') {
-          params.clearing = Array.from({ length: 12 }, (_, i) => i).filter((c) =>
-            buildLegal(state, { seat, card, clearing: c }, ctx),
+          params.clearings = Array.from({ length: 12 }, (_, clearingId) => clearingId).filter(
+            (clearingId) => buildLegal(state, { seat, card, clearing: clearingId }, ctx),
           )
         } else if (cursor.column === 'battle') {
-          const clearings: ClearingId[] = []
-          const defenders: Seat[] = []
-          for (let c = 0; c < 12; c++) {
-            for (const d of enemySeatsInClearing(state, c, seat)) {
-              if (battleLegal(state, { seat, card, clearing: c, defender: d })) {
-                clearings.push(c)
-                defenders.push(d)
+          const targets: BattleTargetChoice[] = []
+          for (let clearing = 0; clearing < 12; clearing++) {
+            for (const defender of enemySeatsInClearing(state, clearing, seat)) {
+              if (battleLegal(state, { seat, card, clearing, defender })) {
+                targets.push({ clearing, defender })
               }
             }
           }
-          params.clearing = clearings
-          params.defender = defenders
+          params.targets = targets
         } else if (cursor.column === 'move') {
-          const froms: ClearingId[] = []
-          const tos: ClearingId[] = []
+          const moves: MarchMove[] = []
           for (let from = 0; from < 12; from++) {
             if (!cardMatchesClearing(card, from)) continue
-            if (warriors(state, from, seat) < 1) continue
+            const available = warriors(state, from, seat)
+            if (available < 1) continue
             for (let to = 0; to < 12; to++) {
-              if (canMove(state, { seat, from: from, to: to }, ctx.hooks)) {
-                froms.push(from)
-                tos.push(to)
+              if (!canMove(state, { seat, from: from, to: to }, ctx.hooks)) continue
+              for (let count = 1; count <= available; count++) {
+                moves.push({ from, to, count })
               }
             }
           }
-          params.from = froms
-          params.to = tos
+          params.moves = moves
         }
         specs.push({ type: 'decree', actor: seat, params })
       }
@@ -490,9 +498,13 @@ export class Eyrie extends Faction {
     }
 
     if (state.phase === 'evening' && state.step === 'discard') {
-      const handSize = playerOf(state, seat).hand.length
-      if (handSize > HAND_LIMIT) {
-        specs.push({ type: 'discard', actor: seat })
+      const hand = playerOf(state, seat).hand
+      if (hand.length > HAND_LIMIT) {
+        specs.push({
+          type: 'discard',
+          actor: seat,
+          params: { cardIds: hand.map((handCard) => handCard.id) },
+        })
         return specs
       }
       specs.push({ type: 'endPhase', actor: seat })
