@@ -7,6 +7,7 @@
     "build:web": "pnpm --filter @root/web build",
     "build:lib": "pnpm --filter @root/lib build",
     "build:phaser": "pnpm --filter @root/phaser build",
+    "gen:api-client": "pnpm --filter @root/phaser gen:api-client",
     "typecheck": "pnpm -r typecheck"
   },
   "engines": {
