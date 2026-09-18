@@ -5,7 +5,7 @@ import {
   FALL_BOARD_LAYOUT,
   type BoardLayout,
 } from '../game/boardLayout.ts'
-import type { GameSession } from '../game/GameSession.ts'
+import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
 import { BoardView } from '../ui/BoardView.ts'
 
 export type GameSceneData = {
@@ -17,6 +17,7 @@ export class GameScene extends Phaser.Scene {
   private boardView: BoardView | null = null
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
+  private latestSnapshot: GameSessionSnapshot | null = null
 
   constructor() {
     super({ key: 'GameScene' })
@@ -41,7 +42,9 @@ export class GameScene extends Phaser.Scene {
 
     if (this.session !== null) {
       this.unsubscribe = this.session.subscribe((snapshot) => {
+        this.latestSnapshot = snapshot
         this.paintStatus(snapshot.state?.phase, snapshot.state?.step, snapshot.error)
+        this.syncBoardPieces(snapshot)
       })
     }
   }
@@ -64,12 +67,22 @@ export class GameScene extends Phaser.Scene {
       layout,
       onClearingSelected: (clearingId) => {
         this.paintStatus(
-          this.session?.getSnapshot().state?.phase,
-          this.session?.getSnapshot().state?.step,
+          this.latestSnapshot?.state?.phase,
+          this.latestSnapshot?.state?.step,
           `clearing ${String(clearingId)}`,
         )
       },
     })
+    if (this.latestSnapshot !== null) {
+      this.syncBoardPieces(this.latestSnapshot)
+    }
+  }
+
+  private syncBoardPieces(snapshot: GameSessionSnapshot): void {
+    if (this.boardView === null || snapshot.state === null) {
+      return
+    }
+    this.boardView.syncPieces(snapshot.state.clearings, snapshot.state.factions)
   }
 
   private async loadLayout(): Promise<BoardLayout> {

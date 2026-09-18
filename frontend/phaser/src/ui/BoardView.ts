@@ -6,8 +6,23 @@ import {
   type BoardLayout,
   type ClearingPixelHitTarget,
 } from '../game/boardLayout.ts'
+import { factionColorForSeat } from '../game/theme.ts'
+import {
+  drawPieceGlyph,
+  stackOffsets,
+  type PieceViewModel,
+} from './PieceView.ts'
 
 export type ClearingSelectedHandler = (clearingId: number) => void
+
+export type BoardClearingPieces = {
+  pieces: Array<{
+    id: string
+    kind: string
+    owner: number
+    type?: string
+  }>
+}
 
 export type BoardViewOptions = {
   scene: Phaser.Scene
@@ -22,16 +37,17 @@ type ClearingVisual = {
 }
 
 /**
- * Autumn map image + circular clearing hit targets.
- * Piece rendering lands in a later commit.
+ * Autumn map image + circular clearing hit targets + vector pieces.
  */
 export class BoardView {
   private readonly scene: Phaser.Scene
   private readonly root: Phaser.GameObjects.Container
+  private readonly pieceLayer: Phaser.GameObjects.Container
   private readonly mapImage: Phaser.GameObjects.Image
   private readonly clearingVisuals: ClearingVisual[] = []
   private onClearingSelected: ClearingSelectedHandler | null
   private highlightedClearingIds: ReadonlySet<number> = new Set()
+  private pieceNodes: Phaser.GameObjects.GameObject[] = []
 
   constructor(options: BoardViewOptions) {
     this.scene = options.scene
@@ -39,6 +55,7 @@ export class BoardView {
 
     const { width, height } = this.scene.scale
     this.root = this.scene.add.container(0, 0)
+    this.pieceLayer = this.scene.add.container(0, 0)
 
     this.mapImage = this.scene.add
       .image(width / 2, height / 2, GAME_ASSET_KEYS.autumnMap)
@@ -49,6 +66,7 @@ export class BoardView {
 
     const layout = options.layout ?? FALL_BOARD_LAYOUT
     this.buildClearingTargets(layout)
+    this.root.add(this.pieceLayer)
   }
 
   getContainer(): Phaser.GameObjects.Container {
@@ -62,6 +80,49 @@ export class BoardView {
   setHighlightedClearings(clearingIds: readonly number[]): void {
     this.highlightedClearingIds = new Set(clearingIds)
     this.paintHighlights()
+  }
+
+  syncPieces(
+    clearings: readonly BoardClearingPieces[],
+    factions: readonly string[],
+  ): void {
+    for (const node of this.pieceNodes) {
+      node.destroy()
+    }
+    this.pieceNodes = []
+
+    for (const visual of this.clearingVisuals) {
+      const clearing = clearings[visual.clearingId]
+      if (clearing === undefined) {
+        continue
+      }
+      const viewModels: PieceViewModel[] = clearing.pieces.map((piece) => {
+        const viewModel: PieceViewModel = {
+          id: piece.id,
+          kind: piece.kind,
+          owner: piece.owner,
+          color: factionColorForSeat(piece.owner, factions),
+        }
+        if (piece.type !== undefined) {
+          return { ...viewModel, type: piece.type }
+        }
+        return viewModel
+      })
+      const offsets = stackOffsets(viewModels.length)
+      for (let index = 0; index < viewModels.length; index += 1) {
+        const piece = viewModels[index]
+        const offset = offsets[index]
+        if (piece === undefined || offset === undefined) {
+          continue
+        }
+        const glyph = drawPieceGlyph(this.scene, piece, {
+          x: visual.hitArea.x + offset.x,
+          y: visual.hitArea.y + offset.y,
+        })
+        this.pieceLayer.add(glyph)
+        this.pieceNodes.push(glyph)
+      }
+    }
   }
 
   getHitTargets(): ClearingPixelHitTarget[] {
@@ -78,7 +139,6 @@ export class BoardView {
   }
 
   private fitMapToBoardArea(viewWidth: number, viewHeight: number): void {
-    // Leave room for HUD / trays (approx); board sits center-left.
     const boardWidth = viewWidth * 0.62
     const boardHeight = viewHeight * 0.78
     const texture = this.mapImage.texture.getSourceImage()
