@@ -64,7 +64,7 @@ function placeStartingBuildings(state: GameState, seat: Seat, keep: ClearingId):
   const targets = [keep, ...FALL.adjacent(keep).sort((a, b) => a - b)]
   for (const type of MARQUISE_BUILDINGS) {
     for (const clearing of targets) {
-      if (placeUpTo(state, seat, clearing, { kind: 'building', type }, 1) > 0) break
+      if (placeUpTo(state, { seat, clearing, spec: { kind: 'building', type }, count: 1 }) > 0) break
     }
   }
 }
@@ -276,7 +276,7 @@ function placeBirdsongWood(state: GameState, seat: Seat): LogEntry[] {
   const logs: LogEntry[] = []
   for (const clearing of sawmillClearings(state, seat)) {
     if (board.supply.wood < 1) break
-    const placed = placeUpTo(state, seat, clearing, { kind: 'token', type: 'wood' }, 1)
+    const placed = placeUpTo(state, { seat, clearing, spec: { kind: 'token', type: 'wood' }, count: 1 })
     if (placed > 0) {
       logs.push({
         t: 'pieces',
@@ -307,10 +307,10 @@ export class Marquise extends Faction {
 
   setup(state: GameState, seat: Seat, _ctx: Ctx): void {
     const keep = keepCornerFor(state, seat)
-    placeUpTo(state, seat, keep, { kind: 'token', type: 'keep' }, 1)
+    placeUpTo(state, { seat, clearing: keep, spec: { kind: 'token', type: 'keep' }, count: 1 })
 
     for (const clearing of garrisonClearings(state, keep)) {
-      placeUpTo(state, seat, clearing, { kind: 'warrior' }, 1)
+      placeUpTo(state, { seat, clearing, spec: { kind: 'warrior' }, count: 1 })
     }
 
     placeStartingBuildings(state, seat, keep)
@@ -577,7 +577,7 @@ export class Marquise extends Faction {
         consumeAction(state)
         state.turnScratch.recruited = true
         for (const clearing of recruiterClearings(state, seat)) {
-          placeUpTo(state, seat, clearing, { kind: 'warrior' }, 1)
+          placeUpTo(state, { seat, clearing, spec: { kind: 'warrior' }, count: 1 })
         }
         logs.push({ t: 'action', actor: seat, action })
         return logs
@@ -601,7 +601,7 @@ export class Marquise extends Faction {
         const cost = MARQUISE_BUILD_COST[column]!
         payWood(state, seat, action.clearing, cost, ctx)
         track.placed -= 1
-        placeUpTo(state, seat, action.clearing, { kind: 'building', type: action.building }, 1)
+        placeUpTo(state, { seat, clearing: action.clearing, spec: { kind: 'building', type: action.building }, count: 1 })
         const vp = buildVp(action.building, column)
         if (vp > 0) {
           playerOf(state, seat).vp += vp
@@ -619,7 +619,7 @@ export class Marquise extends Faction {
         Deck.discard(state.deck, card, {
           onDominance: (c) => state.dominanceAvailable.push(c),
         })
-        placeUpTo(state, seat, action.clearing, { kind: 'token', type: 'wood' }, 1)
+        placeUpTo(state, { seat, clearing: action.clearing, spec: { kind: 'token', type: 'wood' }, count: 1 })
         logs.push({ t: 'action', actor: seat, action })
         return logs
       }

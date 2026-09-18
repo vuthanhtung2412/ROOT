@@ -81,7 +81,7 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
       returnWarriorsToSupply(state, ev.victim, ev.count)
     } else {
       // Rule: Marquise > Field Hospitals — warriors already off map; do not pull supply.
-      const placed = placeReturning(state, ev.victim, keep, { kind: 'warrior' }, ev.count)
+      const placed = placeReturning(state, { seat: ev.victim, clearing: keep, spec: { kind: 'warrior' }, count: ev.count })
       if (placed < ev.count) {
         returnWarriorsToSupply(state, ev.victim, ev.count - placed)
       }
