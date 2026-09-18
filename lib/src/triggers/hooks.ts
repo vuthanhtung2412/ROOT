@@ -4,6 +4,7 @@ import type { BattleEvent } from '../events/types.js'
 import type { GameMap } from '../map/GameMap.js'
 import type { ClearingId } from '../map/types.js'
 import type { Piece, Seat } from '../pieces/types.js'
+import { playerOf } from '../queries/seat.js'
 import type { GameState } from '../state/types.js'
 
 export type RuleHooks = {
@@ -25,6 +26,15 @@ export function defaultRuleHooks(map: GameMap): RuleHooks {
     ruleWeight: (_state, piece) => (piece.kind === 'token' ? 0 : 1),
     needsRuleToMove: () => true,
     extraHits: () => 0,
-    craftVp: (_state, _seat, card) => defOf(card).vp ?? 0,
+    craftVp(state, seat, card) {
+      const printed = defOf(card).vp ?? 0
+      const player = state.players.find((p) => p.seat === seat)
+      if (!player || player.faction !== 'eyrie') return printed
+      if (defOf(card).type !== 'item') return printed
+      const board = playerOf(state, seat).board
+      // Rule: 7.2.3 Disdain — item → 1 VP; 7.8.1 Builder ignores Disdain.
+      if (board.kind === 'eyrie' && board.leader !== 'builder') return 1
+      return printed
+    },
   }
 }
