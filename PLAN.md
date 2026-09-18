@@ -131,7 +131,7 @@
     - `frontend/phaser/src/assets/gameAssets.ts`
     - `frontend/phaser/src/scenes/BootScene.ts`
     - `frontend/phaser/src/game/config.ts`
-14. `feat(phaser): add GP2 session store`
+14. `feat(phaser): add GP2 session store` *(done)*
     - `frontend/phaser/src/game/GameSession.ts`
     - `frontend/phaser/src/game/GameSession.test.ts`
 15. `feat(phaser): add local game menu`
