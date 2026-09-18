@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { makeActionSpec } from '../test/factories.ts'
 import { ActionComposer } from './ActionComposer.ts'
-import { createMarquiseCardComposerHooks } from './marquiseActionComposer.ts'
+import {
+  createMarquiseCardComposerHooks,
+  createMarquiseMarchComposerHooks,
+} from './marquiseActionComposer.ts'
 
 describe('marquiseActionComposer cards', () => {
   it('overwork pairs card then clearing', () => {
@@ -54,6 +57,67 @@ describe('marquiseActionComposer cards', () => {
     expect(composer.confirm()).toEqual({
       kind: 'ready',
       action: { type: 'discard', cardIds: ['a', 'c'] },
+    })
+  })
+})
+
+describe('marquiseActionComposer march', () => {
+  it('confirms single move', () => {
+    const { hooks } = createMarquiseMarchComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'march',
+        params: {
+          moves: [
+            { from: 0, to: 4, count: 2 },
+            { from: 4, to: 9, count: 1 },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(0)
+    const afterTo = composer.chooseClearing(4)
+    expect(afterTo.kind).toBe('incomplete')
+    if (afterTo.kind === 'incomplete') {
+      expect(afterTo.prompt.canConfirm).toBe(true)
+    }
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: { type: 'march', moves: [{ from: 0, to: 4, count: 2 }] },
+    })
+  })
+
+  it('submits two moves without confirm on second', () => {
+    const { hooks } = createMarquiseMarchComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'march',
+        params: {
+          moves: [
+            { from: 0, to: 4, count: 2 },
+            { from: 4, to: 9, count: 1 },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(0)
+    composer.chooseClearing(4)
+    composer.chooseClearing(4)
+    expect(composer.chooseClearing(9)).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'march',
+        moves: [
+          { from: 0, to: 4, count: 2 },
+          { from: 4, to: 9, count: 1 },
+        ],
+      },
     })
   })
 })

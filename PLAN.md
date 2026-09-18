@@ -167,7 +167,7 @@
     - `frontend/phaser/src/game/marquiseActionComposer.test.ts`
     - `frontend/phaser/src/ui/ActionTray.ts`
     - Craft, spendBird, overwork (paired), discard; also shared craft/discard paths usable by Eyrie seat
-23. `feat(phaser): compose Marquise March`
+23. `feat(phaser): compose Marquise March` *(done)*
     - `frontend/phaser/src/game/marquiseActionComposer.ts`
     - `frontend/phaser/src/game/marquiseActionComposer.test.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
