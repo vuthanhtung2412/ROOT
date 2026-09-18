@@ -209,7 +209,7 @@
     - `frontend/phaser/src/ui/GameDrawer.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
     - `frontend/phaser/src/game/GameSession.test.ts`
-32. `feat(phaser): add hot-seat handoff`
+32. `feat(phaser): add hot-seat handoff` *(done)*
     - `frontend/phaser/src/ui/HandoffOverlay.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
 33. `feat(phaser): show game winner`
