@@ -205,7 +205,7 @@
     - `frontend/phaser/src/ui/GameDrawer.ts`
     - `frontend/phaser/src/ui/GameLog.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-31. `feat(phaser): add game undo`
+31. `feat(phaser): add game undo` *(done)*
     - `frontend/phaser/src/ui/GameDrawer.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
     - `frontend/phaser/src/game/GameSession.test.ts`

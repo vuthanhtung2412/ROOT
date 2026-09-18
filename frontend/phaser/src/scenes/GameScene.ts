@@ -99,7 +99,11 @@ export class GameScene extends Phaser.Scene {
     this.eventOverlay = new EventOverlay(this)
     this.battleOverlay = new BattleOverlay(this)
     this.factionDrawer = new FactionDrawer(this)
-    this.gameDrawer = new GameDrawer(this)
+    this.gameDrawer = new GameDrawer(this, {
+      onUndo: () => {
+        void this.session?.undo()
+      },
+    })
     this.selectionPrompt = new SelectionPrompt(this, {
       onConfirm: () => {
         this.applyComposerOutcome(this.composer.confirm())
@@ -231,7 +235,7 @@ export class GameScene extends Phaser.Scene {
     this.actionTray?.sync(snapshot.legalActions, banner.actorSeat)
     this.eyrieDecreePanel?.sync(snapshot.state)
     this.factionDrawer?.sync(snapshot.state)
-    this.gameDrawer?.sync(snapshot.log)
+    this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.paintStatus(snapshot.error)
   }
 

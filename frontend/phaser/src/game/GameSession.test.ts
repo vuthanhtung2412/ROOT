@@ -159,4 +159,23 @@ describe('GameSession', () => {
     expect(seen[0]).toBeNull()
     expect(seen.at(-1)).toBe('test-game')
   })
+
+  it('undo restores prior historyLength from API', async () => {
+    const undone = makeGameState({ turn: 1, step: 'craft' })
+    stubFetchSequence([
+      { body: { state: undone } },
+      { body: { state: undone, historyLength: 2 } },
+      { body: { actions: [makeActionSpec({ type: 'craft' })] } },
+      { body: { log: [{ t: 'undo' }] } },
+    ])
+
+    const session = new GameSession(
+      createPhaserApi({ baseUrl: 'http://example.test' }),
+    )
+    await session.undo()
+
+    expect(session.getSnapshot().historyLength).toBe(2)
+    expect(session.getSnapshot().state?.step).toBe('craft')
+    expect(session.getSnapshot().log).toEqual([{ t: 'undo' }])
+  })
 })
