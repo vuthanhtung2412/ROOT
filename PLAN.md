@@ -142,7 +142,7 @@
     - `frontend/phaser/src/ui/BoardView.ts`
     - `frontend/phaser/src/game/boardLayout.ts`
     - `frontend/phaser/src/game/config.ts`
-17. `feat(phaser): render clearing pieces`
+17. `feat(phaser): render clearing pieces` *(done)*
     - `frontend/phaser/src/ui/PieceView.ts`
     - `frontend/phaser/src/ui/BoardView.ts`
     - `frontend/phaser/src/game/theme.ts`
