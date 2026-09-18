@@ -20,6 +20,7 @@ import {
 } from '../game/boardLayout.ts'
 import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
 import { ActionTray } from '../ui/ActionTray.ts'
+import { BattleOverlay } from '../ui/BattleOverlay.ts'
 import { BoardView } from '../ui/BoardView.ts'
 import { CardHand } from '../ui/CardHand.ts'
 import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
@@ -45,6 +46,7 @@ export class GameScene extends Phaser.Scene {
   private selectionPrompt: SelectionPrompt | null = null
   private eyrieDecreePanel: EyrieDecreePanel | null = null
   private eventOverlay: EventOverlay | null = null
+  private battleOverlay: BattleOverlay | null = null
   private readonly composer = new ActionComposer()
   private marquiseBoard = createMarquiseBoardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
@@ -91,6 +93,7 @@ export class GameScene extends Phaser.Scene {
     })
     this.eyrieDecreePanel = new EyrieDecreePanel(this)
     this.eventOverlay = new EventOverlay(this)
+    this.battleOverlay = new BattleOverlay(this)
     this.selectionPrompt = new SelectionPrompt(this, {
       onConfirm: () => {
         this.applyComposerOutcome(this.composer.confirm())
@@ -141,6 +144,8 @@ export class GameScene extends Phaser.Scene {
     this.eyrieDecreePanel = null
     this.eventOverlay?.destroy()
     this.eventOverlay = null
+    this.battleOverlay?.destroy()
+    this.battleOverlay = null
     this.selectionPrompt?.destroy()
     this.selectionPrompt = null
   }
@@ -175,6 +180,10 @@ export class GameScene extends Phaser.Scene {
         this.eventComposer.getOverlayKind() === 'fieldHospital',
         outcome.prompt.message,
       )
+      this.battleOverlay?.sync(
+        this.eventComposer.getOverlayKind() === 'battle',
+        outcome.prompt.message,
+      )
       return
     }
 
@@ -183,6 +192,7 @@ export class GameScene extends Phaser.Scene {
     this.cardHand?.setEnabledCards(null)
     this.cardHand?.setSelection([])
     this.eventOverlay?.sync(false, '')
+    this.battleOverlay?.sync(false, '')
   }
 
   private async bootstrapBoard(): Promise<void> {
