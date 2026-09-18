@@ -24,7 +24,7 @@ mapRoutes.openapi(fallMapRoute, (context) => {
       paths: FALL.paths,
       rivers: FALL.rivers,
       forests: FALL.forests,
-      corners: [...FALL.corners] as [number, number, number, number],
+      corners: [...FALL.corners],
       vagabondForest: FALL.vagabondForest,
     },
     200,

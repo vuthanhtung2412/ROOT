@@ -1,12 +1,14 @@
 import type { Context } from 'hono'
 import { RuleError } from '@root/lib'
 
+export type HttpErrorStatus = 400 | 404 | 409
+
 export class HttpError extends Error {
-  readonly status: number
+  readonly status: HttpErrorStatus
   readonly code: string
   readonly detail: unknown
 
-  constructor(status: number, code: string, detail?: unknown) {
+  constructor(status: HttpErrorStatus, code: string, detail?: unknown) {
     super(code)
     this.name = 'HttpError'
     this.status = status
@@ -27,7 +29,7 @@ export function onError(err: Error, context: Context): Response {
   if (err instanceof HttpError) {
     return context.json(
       { code: err.code, detail: err.detail ?? null },
-      err.status as 400 | 404 | 409,
+      err.status,
     )
   }
   if (err instanceof RuleError) {

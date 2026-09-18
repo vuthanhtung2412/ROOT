@@ -58,6 +58,6 @@ app.route('/map', mapRoutes)
 app.doc('/doc', openApiInfo)
 
 /** Dump OpenAPI JSON for `pnpm gen:openapi` / client codegen. */
-export function getOpenApiDocument() {
+export function getOpenApiDocument(): ReturnType<typeof app.getOpenAPIDocument> {
   return app.getOpenAPIDocument(openApiInfo)
 }

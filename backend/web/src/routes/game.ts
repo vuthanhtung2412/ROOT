@@ -4,9 +4,6 @@ import {
   Game,
   toAscii,
   toSvg,
-  type Action,
-  type FactionId,
-  type GameSnapshot,
 } from '@root/lib'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { logGameEvent } from '../debug/logGame.js'
@@ -25,10 +22,15 @@ import {
   UndoResponseSchema,
 } from '../schemas/game.js'
 import { store } from '../store/GameStore.js'
+import {
+  isAction,
+  isFactionIdArray,
+  isGameSnapshot,
+} from '../typeGuards.js'
 
-function requireGame() {
+function requireGame(): Game {
   if (!store.game) noGame()
-  return store.game!
+  return store.game
 }
 
 export const gameRoutes = new OpenAPIHono()
@@ -60,7 +62,15 @@ gameRoutes.openapi(createGameRoute, async (context) => {
   }
   const body = context.req.valid('json') ?? {}
   const seed = Math.floor(Math.random() * 1_000_000_000)
-  store.game = Game.create({ seed, factions: body.factions as FactionId[] | undefined })
+  const factions =
+    body.factions === undefined
+      ? undefined
+      : isFactionIdArray(body.factions)
+        ? body.factions
+        : (() => {
+            throw new HttpError(400, 'BAD_FACTIONS', body.factions)
+          })()
+  store.game = Game.create({ seed, factions })
   logGameEvent('CREATE', store.game.state)
   return context.json({ state: store.game.state }, 201)
 })
@@ -183,7 +193,10 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   if (store.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
-  const body = context.req.valid('json') as GameSnapshot
+  const body = context.req.valid('json')
+  if (!isGameSnapshot(body)) {
+    throw new HttpError(400, 'BAD_SNAPSHOT', 'invalid snapshot shape')
+  }
   try {
     store.game = Game.fromJSON(body)
   } catch (err) {
@@ -238,9 +251,12 @@ const postActionsRoute = createRoute({
 
 gameRoutes.openapi(postActionsRoute, async (context) => {
   const game = requireGame()
-  const action = context.req.valid('json') as Action
-  const result = game.apply(action)
-  logGameEvent('ACT', result.state, action)
+  const body = context.req.valid('json')
+  if (!isAction(body)) {
+    throw new HttpError(400, 'BAD_ACTION', 'invalid action shape')
+  }
+  const result = game.apply(body)
+  logGameEvent('ACT', result.state, body)
   return context.json(result, 200)
 })
 
