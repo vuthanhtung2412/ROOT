@@ -1,5 +1,9 @@
 import type Phaser from 'phaser'
-import cardSuits from '../assets/cardSuits.json'
+import {
+  cardTextureKey,
+  lookupCardCatalog,
+  type CardCatalogEntry,
+} from '../assets/gameAssets.ts'
 
 export type CardViewModel = {
   id: string
@@ -10,57 +14,82 @@ export type CardViewModel = {
 
 export type CardSelectedHandler = (cardId: string) => void
 
-const SUIT_COLORS: Record<string, number> = {
-  fox: 0xc45c26,
-  mouse: 0xb8a078,
-  rabbit: 0xd4c46a,
-  bird: 0x3a5f8a,
-}
+export type CardHoldHandler = (card: {
+  cardId: string
+  defId: string
+  catalog: CardCatalogEntry
+}) => void
 
-function suitForDefId(defId: string): string {
-  const suits = cardSuits as Record<string, string>
-  return suits[defId] ?? 'bird'
-}
+const CARD_WIDTH = 78
+const CARD_HEIGHT = 110
+const HOLD_MS = 350
 
 export class CardView {
   readonly container: Phaser.GameObjects.Container
   readonly cardId: string
-  private readonly background: Phaser.GameObjects.Rectangle
-  private readonly label: Phaser.GameObjects.Text
+  readonly defId: string
+  private readonly frame: Phaser.GameObjects.Rectangle
+  private readonly face: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle
+  private holdTimer: Phaser.Time.TimerEvent | null = null
+  private holdFired = false
 
   constructor(
     scene: Phaser.Scene,
     viewModel: CardViewModel,
     onSelected: CardSelectedHandler | null,
+    onHold: CardHoldHandler | null,
   ) {
     this.cardId = viewModel.id
-    const suit = suitForDefId(viewModel.defId)
-    const color = SUIT_COLORS[suit] ?? 0x666666
+    this.defId = viewModel.defId
 
-    this.background = scene.add
-      .rectangle(0, 0, 72, 100, color, 1)
+    this.frame = scene.add
+      .rectangle(0, 0, CARD_WIDTH + 6, CARD_HEIGHT + 6, 0x1a1a1a, 1)
       .setStrokeStyle(2, viewModel.selected ? 0xffe08a : 0xf0e6d3, 1)
 
-    this.label = scene.add
-      .text(0, 0, viewModel.defId.replace('ROOT-', ''), {
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        color: '#ffffff',
-        align: 'center',
-        wordWrap: { width: 64 },
-      })
-      .setOrigin(0.5)
+    const textureKey = cardTextureKey(viewModel.defId)
+    if (scene.textures.exists(textureKey)) {
+      this.face = scene.add
+        .image(0, 0, textureKey)
+        .setDisplaySize(CARD_WIDTH, CARD_HEIGHT)
+        .setOrigin(0.5)
+    } else {
+      this.face = scene.add.rectangle(0, 0, CARD_WIDTH, CARD_HEIGHT, 0x444444, 1)
+    }
 
-    this.container = scene.add.container(0, 0, [this.background, this.label])
-    this.container.setSize(72, 100)
+    this.container = scene.add.container(0, 0, [this.frame, this.face])
+    this.container.setSize(CARD_WIDTH + 6, CARD_HEIGHT + 6)
     this.container.setAlpha(viewModel.dimmed ? 0.45 : 1)
 
-    if (onSelected !== null) {
-      this.background.setInteractive({ useHandCursor: true })
-      this.background.on('pointerdown', () => {
+    this.face.setInteractive({ useHandCursor: true })
+
+    this.face.on('pointerdown', () => {
+      this.holdFired = false
+      this.clearHoldTimer()
+      if (onHold !== null) {
+        const catalog = lookupCardCatalog(viewModel.defId)
+        if (catalog !== null) {
+          this.holdTimer = scene.time.delayedCall(HOLD_MS, () => {
+            this.holdFired = true
+            onHold({
+              cardId: viewModel.id,
+              defId: viewModel.defId,
+              catalog,
+            })
+          })
+        }
+      }
+    })
+
+    this.face.on('pointerup', () => {
+      this.clearHoldTimer()
+      if (!this.holdFired && onSelected !== null) {
         onSelected(viewModel.id)
-      })
-    }
+      }
+    })
+
+    this.face.on('pointerout', () => {
+      this.clearHoldTimer()
+    })
   }
 
   setPosition(x: number, y: number): void {
@@ -68,7 +97,7 @@ export class CardView {
   }
 
   sync(viewModel: CardViewModel): void {
-    this.background.setStrokeStyle(
+    this.frame.setStrokeStyle(
       2,
       viewModel.selected ? 0xffe08a : 0xf0e6d3,
       1,
@@ -77,6 +106,14 @@ export class CardView {
   }
 
   destroy(): void {
+    this.clearHoldTimer()
     this.container.destroy(true)
+  }
+
+  private clearHoldTimer(): void {
+    if (this.holdTimer !== null) {
+      this.holdTimer.remove(false)
+      this.holdTimer = null
+    }
   }
 }

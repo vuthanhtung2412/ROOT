@@ -34,7 +34,9 @@ Open Vite URL (default `http://localhost:5173`).
 ## Assets
 
 - Autumn map + Marquise/Eyrie icons under `public/assets/` (from `resources/reference/`)
-- Card faces: **suit-colored vectors** with defId text (EP PNGs are reference-only until distribution rights are resolved — do not ship Steam screenshots)
+- EP card faces under `public/assets/cards/` — **hold** a hand card (~350ms) for name + rules text
+- Pieces: faction icon + count (building/token stacks show a type badge)
+- Dev-only Leder reference art — not for redistribution
 
 ## API client
 
