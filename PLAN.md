@@ -102,11 +102,10 @@
    - `backend/web/package.json` — `@hono/zod-openapi`, zod
    - `backend/web/openapi.json` — dumped via `gen:openapi`
    - Behavior unchanged for `legalActions` passthrough
-8. `chore: add gen:api-client script` *(script scaffold landed; commit remaining lock/README if needed)*
+8. `chore: add gen:api-client script` *(done)*
    - `frontend/phaser/scripts/gen-api-client.ts`
    - `backend/web/scripts/export-openapi.ts`
    - `frontend/phaser/package.json`, root `package.json`, `backend/web/package.json`
-   - `pnpm-lock.yaml`
    - Commands: `pnpm --filter @root/web gen:openapi` then `pnpm gen:api-client`
 9. `chore(phaser): configure API development proxy`
    - `frontend/phaser/package.json`
