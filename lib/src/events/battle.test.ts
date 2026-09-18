@@ -103,14 +103,60 @@ describe('battleResolver', () => {
         { id: 'd3', kind: 'warrior', owner: 1 },
       ],
     )
-    const ctx = battleCtx({ die: { mode: 'seeded', seed: 99 } })
+    // faces [2, 5] → sorted high/low [5, 2]; attacker capped to 1 warrior
+    const ctx = battleCtx({ die: { mode: 'fixed', faces: [2, 5] } })
     let ev = battleEv({ clearing: 5 })
     state.pending = [ev]
     apply(state, ev, { type: 'resolveEvent', decline: true }, 1, ctx)
     ev = state.pending[0] as BattleEvent
-    expect(ev.rolls).toBeDefined()
-    expect(ev.hits.attacker).toBeLessThanOrEqual(1)
-    expect(ev.hits.defender).toBeLessThanOrEqual(3)
+    expect(ev.rolls).toEqual([5, 2])
+    expect(ev.hits.attacker).toBe(1)
+    expect(ev.hits.defender).toBe(2)
+  })
+
+  it('Rule: Battle 2 — equal rolls deal equal hits', () => {
+    const state = withPieces(
+      minimalState(),
+      0,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'a2', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+        { id: 'd2', kind: 'warrior', owner: 1 },
+      ],
+    )
+    const ctx = battleCtx({ die: { mode: 'fixed', faces: [3, 3] } })
+    let ev = battleEv({ clearing: 0 })
+    state.pending = [ev]
+    apply(state, ev, { type: 'resolveEvent', decline: true }, 1, ctx)
+    ev = state.pending[0] as BattleEvent
+    expect(ev.rolls).toEqual([3, 3])
+    expect(ev.hits.attacker).toBe(2)
+    expect(ev.hits.defender).toBe(2)
+  })
+
+  it('Rule: Battle 2 — attacker gets higher die', () => {
+    const state = withPieces(
+      minimalState(),
+      0,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'a2', kind: 'warrior', owner: 0 },
+        { id: 'a3', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+        { id: 'd2', kind: 'warrior', owner: 1 },
+        { id: 'd3', kind: 'warrior', owner: 1 },
+      ],
+    )
+    // raw [1, 4] → attacker high 4, defender low 1
+    const ctx = battleCtx({ die: { mode: 'fixed', faces: [1, 4] } })
+    let ev = battleEv({ clearing: 0 })
+    state.pending = [ev]
+    apply(state, ev, { type: 'resolveEvent', decline: true }, 1, ctx)
+    ev = state.pending[0] as BattleEvent
+    expect(ev.rolls).toEqual([4, 1])
+    expect(ev.hits.attacker).toBe(3)
+    expect(ev.hits.defender).toBe(1)
   })
 
   it('Rule: Battle 3 — defenseless +1 attacker hit', () => {
