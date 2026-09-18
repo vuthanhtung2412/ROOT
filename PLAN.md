@@ -78,8 +78,10 @@
 ### Commit plan
 1. `docs(phaser): plan first playable game` *(done)*
    - `PLAN.md`
-2. `feat(lib): type UI action choices`
+2. `feat(lib): type UI action choices` *(done)*
    - `lib/src/actions/types.ts`
+   - `lib/src/index.ts` — re-export choice types
+   - `lib/src/factions/Eyrie.ts` — ActionChoiceParams annotation only
 3. `feat(lib): expose Marquise card choices`
    - `lib/src/factions/Marquise.ts`
    - `lib/src/factions/Marquise.test.ts`

@@ -13,6 +13,62 @@ export type AddToDecreeCard = {
   column: DecreeColumn
 }
 
+/** Marquise daylight build track (not roost/base). */
+export type MarquiseBuildingType = Extract<
+  BuildingType,
+  'sawmill' | 'workshop' | 'recruiter'
+>
+
+/** Paired Marquise overwork: card × sawmill clearing (6.5.5). */
+export type OverworkChoice = {
+  cardId: string
+  clearing: ClearingId
+}
+
+/** Paired Marquise build: clearing × building type (6.5.4). */
+export type BuildChoice = {
+  clearing: ClearingId
+  building: MarquiseBuildingType
+}
+
+/** Paired battle target: clearing × defender seat. */
+export type BattleTargetChoice = {
+  clearing: ClearingId
+  defender: Seat
+}
+
+/**
+ * Typed UI choice metadata for ActionSpec.
+ * Prefer paired fields (`options`, `targets`, `moves`) over parallel arrays
+ * (`clearing`+`defender`, `from`+`to`) — zip-by-index shapes go away in
+ * faction emitter commits.
+ */
+export type ActionChoiceParams = {
+  cardIds?: string[]
+  birdCardIds?: string[]
+  columns?: DecreeColumn[]
+  /** Eyrie decree / newRoost flat clearing domain (singular key, historical). */
+  clearing?: ClearingId[]
+  clearings?: ClearingId[]
+  building?: BuildingType[]
+  defender?: Seat[]
+  from?: ClearingId[]
+  to?: ClearingId[]
+  moves?: MarchMove[]
+  /**
+   * Correlated choices: overwork pairs, build pairs, or addToDecree card×column.
+   * Emitter picks one element shape per action type.
+   */
+  options?: OverworkChoice[] | BuildChoice[] | AddToDecreeCard[]
+  /** Correlated battle / decree-battle targets. */
+  targets?: BattleTargetChoice[]
+  decline?: true[]
+  pieceIds?: string[]
+  order?: Seat[][]
+  useEffect?: boolean[]
+  column?: DecreeColumn[]
+}
+
 export type Action =
   | { type: 'join'; playerId: string }
   | { type: 'start' }
@@ -55,7 +111,7 @@ export type ResolveEventAction = {
 export type ActionSpec = {
   type: string
   actor: Seat
-  params?: Record<string, unknown[]>
+  params?: ActionChoiceParams
 }
 
 export type ActionResult = {

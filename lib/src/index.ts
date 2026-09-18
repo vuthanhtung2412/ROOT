@@ -6,7 +6,18 @@ export { Faction, FACTIONS, Marquise, MARQUISE, keepCornerFor, Eyrie, EYRIE } fr
 export { TurnLog } from './log/TurnLog.js'
 export type { LogEntry } from './log/types.js'
 
-export type { Action, ActionSpec, ActionResult } from './actions/types.js'
+export type {
+  Action,
+  ActionSpec,
+  ActionResult,
+  ActionChoiceParams,
+  OverworkChoice,
+  BuildChoice,
+  BattleTargetChoice,
+  MarquiseBuildingType,
+  MarchMove,
+  AddToDecreeCard,
+} from './actions/types.js'
 export type { FactionId, Seat } from './pieces/types.js'
 export type { GameState, GameStatus, Phase, Step, PlayerState } from './state/types.js'
 export type { GameSnapshot } from './state/snapshot.js'
