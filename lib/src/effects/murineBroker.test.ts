@@ -3,18 +3,18 @@ import './register.js'
 import { craftCard } from '../rules/craft.js'
 import { EFFECTS } from '../triggers/effects.js'
 import type { GameSignal } from '../triggers/signals.js'
-import { card, minimalState, player, testCtx, withPieces } from '../test/fixtures.js'
+import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
 
-function buildCraftCtx(state: ReturnType<typeof minimalState>) {
-  const ctx = testCtx({ state })
-  ctx.emit = (s: GameSignal) => {
-    for (const p of state.players) {
-      for (const c of p.playArea) {
-        EFFECTS[c.defId]?.onSignal?.(state, s, ctx)
+function buildCraftContext(state: ReturnType<typeof minimalState>) {
+  const context = testContext({ state })
+  context.emit = (signal: GameSignal) => {
+    for (const playerState of state.players) {
+      for (const playCard of playerState.playArea) {
+        EFFECTS[playCard.defId]?.onSignal?.(state, signal, context)
       }
     }
   }
-  return ctx
+  return context
 }
 
 describe('Murine Broker', () => {
@@ -31,7 +31,7 @@ describe('Murine Broker', () => {
       0,
       [{ id: 'ws', kind: 'building', owner: 0, type: 'workshop', used: false }],
     )
-    craftCard(state, 0, hammer.id, buildCraftCtx(state))
+    craftCard(state, 0, hammer.id, buildCraftContext(state))
     expect(state.players[1]!.hand).toHaveLength(1)
   })
 })

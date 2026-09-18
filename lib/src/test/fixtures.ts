@@ -10,40 +10,40 @@ import type { ClearingState, GameState, PlayerState } from '../state/types.js'
 import { buildRuleHooks } from '../triggers/buildHooks.js'
 import type { GameSignal } from '../triggers/signals.js'
 
-/** Test die mode: fixed faces in order, or seeded PRNG. */
-export type TestDie =
+/** Test dice resolution: fixed faces in order, or seeded PRNG. */
+export type TestDice =
   | { mode: 'fixed'; faces: number[] }
   | { mode: 'seeded'; seed?: number; cursor?: number }
 
-/** Resolve test dice — `fixed` returns faces in order (1–6). */
-export function testRng(die?: TestDie): Rng {
-  if (die?.mode === 'fixed') {
-    const faces = die.faces
-    let i = 0
+/** Build test RNG — `fixed` returns faces in order (1–6). */
+export function createTestRng(dice?: TestDice): Rng {
+  if (dice?.mode === 'fixed') {
+    const faces = dice.faces
+    let cursor = 0
     return {
       roll() {
-        const n = faces[i++]
-        if (n === undefined) {
-          throw new Error(`testRng fixed: exhausted after ${faces.length} rolls`)
+        const face = faces[cursor++]
+        if (face === undefined) {
+          throw new Error(`createTestRng fixed: exhausted after ${faces.length} rolls`)
         }
-        return n
+        return face
       },
-      toJSON: () => ({ seed: 0, cursor: i }),
+      toJSON: () => ({ seed: 0, cursor }),
     }
   }
-  return new SeededRng({ seed: die?.seed ?? 1, cursor: die?.cursor ?? 0 })
+  return new SeededRng({ seed: dice?.seed ?? 1, cursor: dice?.cursor ?? 0 })
 }
 
-export function testCtx(opts?: {
+export function testContext(options?: {
   state?: GameState
-  die?: TestDie
-  onSignal?: (s: GameSignal) => void
+  dice?: TestDice
+  onSignal?: (signal: GameSignal) => void
 }): Ctx {
-  const state = opts?.state ?? minimalState()
+  const state = options?.state ?? minimalState()
   return {
     map: FALL,
-    rng: testRng(opts?.die),
-    emit: (s) => opts?.onSignal?.(s),
+    rng: createTestRng(options?.dice),
+    emit: (signal) => options?.onSignal?.(signal),
     hooks: buildRuleHooks(state, FALL),
     grantedActions: () => [],
   }
@@ -119,12 +119,12 @@ export function withPieces(
   clearing: number,
   pieces: Piece[],
 ): GameState {
-  const clearings = state.clearings.map((c, i) =>
-    i === clearing ? { ...c, pieces: [...pieces] } : c,
+  const clearings = state.clearings.map((clearingState, index) =>
+    index === clearing ? { ...clearingState, pieces: [...pieces] } : clearingState,
   )
   return { ...state, clearings }
 }
 
-export function card(defId: string, n = 1): Card {
-  return { id: `${defId}#${n}`, defId }
+export function card(defId: string, copyNumber = 1): Card {
+  return { id: `${defId}#${copyNumber}`, defId }
 }

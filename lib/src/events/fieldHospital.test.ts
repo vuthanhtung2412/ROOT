@@ -2,13 +2,9 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { warriors } from '../queries/pieces.js'
 import { keepCornerFor } from '../factions/Marquise.js'
 import { resetPlaceIds } from '../rules/place.js'
-import { card, minimalState, player, testCtx, withPieces } from '../test/fixtures.js'
+import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
 import { fieldHospitalResolver } from './fieldHospital.js'
 import type { FieldHospitalEvent } from './types.js'
-
-function ctx() {
-  return testCtx()
-}
 
 describe('fieldHospitalResolver', () => {
   beforeEach(() => resetPlaceIds())
@@ -33,20 +29,20 @@ describe('fieldHospitalResolver', () => {
     })
     const keep = keepCornerFor(base, 0)
     const state = withPieces(base, keep, [{ id: 'keep', kind: 'token', owner: 0, type: 'keep' }])
-    const ev: FieldHospitalEvent = {
+    const event: FieldHospitalEvent = {
       type: 'fieldHospital',
       victim: 0,
       clearing: keep,
       count: 2,
     }
-    state.pending = [ev]
-    const c = ctx()
+    state.pending = [event]
+    const context = testContext()
     fieldHospitalResolver.apply(
       state,
-      ev,
+      event,
       { type: 'resolveEvent', cardId: 'ROOT-200#1' },
       0,
-      c,
+      context,
     )
     expect(state.pending).toHaveLength(0)
     expect(warriors(state, keep, 0)).toBe(2)
@@ -78,14 +74,20 @@ describe('fieldHospitalResolver', () => {
       0,
       [{ id: 'keep', kind: 'token', owner: 0, type: 'keep' }],
     )
-    const ev: FieldHospitalEvent = {
+    const event: FieldHospitalEvent = {
       type: 'fieldHospital',
       victim: 0,
       clearing: 4,
       count: 2,
     }
-    state.pending = [ev]
-    fieldHospitalResolver.apply(state, ev, { type: 'resolveEvent', decline: true }, 0, ctx())
+    state.pending = [event]
+    fieldHospitalResolver.apply(
+      state,
+      event,
+      { type: 'resolveEvent', decline: true },
+      0,
+      testContext(),
+    )
     expect(state.players[0]!.board.kind).toBe('marquise')
     if (state.players[0]!.board.kind === 'marquise') {
       expect(state.players[0]!.board.supply.warriors).toBe(22)

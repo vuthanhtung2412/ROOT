@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { defOf } from '../cards/Deck.js'
 import type { GameSignal } from '../triggers/signals.js'
-import { card, minimalState, player, testCtx, withPieces } from '../test/fixtures.js'
+import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
 import { craftCard } from './craft.js'
-
-function ctx(onSignal?: (s: GameSignal) => void) {
-  return testCtx({ onSignal })
-}
 
 describe('craftCard', () => {
   it('Rule: Victory — craft item scores printed VP via hooks.craftVp before signal', () => {
@@ -30,14 +26,19 @@ describe('craftCard', () => {
       ],
     )
     const signals: GameSignal[] = []
-    craftCard(state, 0, hammer.id, ctx((s) => signals.push(s)))
+    craftCard(
+      state,
+      0,
+      hammer.id,
+      testContext({ onSignal: (signal) => signals.push(signal) }),
+    )
     expect(state.players[0]!.vp).toBe(defOf(hammer).vp)
     expect(state.players[0]!.craftedItems).toContain('hammer')
-    expect(signals.some((s) => s.s === 'craft.item')).toBe(true)
-    const vpIdx = signals.findIndex((s) => s.s === 'vp')
-    const craftIdx = signals.findIndex((s) => s.s === 'craft.item')
-    expect(vpIdx).toBeGreaterThanOrEqual(0)
-    expect(craftIdx).toBeGreaterThan(vpIdx)
+    expect(signals.some((signal) => signal.s === 'craft.item')).toBe(true)
+    const vpIndex = signals.findIndex((signal) => signal.s === 'vp')
+    const craftIndex = signals.findIndex((signal) => signal.s === 'craft.item')
+    expect(vpIndex).toBeGreaterThanOrEqual(0)
+    expect(craftIndex).toBeGreaterThan(vpIndex)
   })
 
   it('Rule: Craft — persistent goes to playArea and emits craft.persistent', () => {
@@ -56,9 +57,16 @@ describe('craftCard', () => {
       ],
     )
     const signals: GameSignal[] = []
-    craftCard(state, 0, persistent.id, ctx((s) => signals.push(s)))
-    expect(state.players[0]!.playArea.some((c) => c.defId === 'ROOT-57')).toBe(true)
-    expect(signals.some((s) => s.s === 'craft.persistent')).toBe(true)
+    craftCard(
+      state,
+      0,
+      persistent.id,
+      testContext({ onSignal: (signal) => signals.push(signal) }),
+    )
+    expect(state.players[0]!.playArea.some((playCard) => playCard.defId === 'ROOT-57')).toBe(
+      true,
+    )
+    expect(signals.some((signal) => signal.s === 'craft.persistent')).toBe(true)
   })
 
   it('rejects ambush before mutating hand or workshops', () => {
@@ -80,8 +88,10 @@ describe('craftCard', () => {
       0,
       [workshop],
     )
-    expect(() => craftCard(state, 0, ambush.id, ctx())).toThrow(/NOT_CRAFTABLE|CANNOT_CRAFT/)
-    expect(state.players[0]!.hand.map((c) => c.id)).toEqual([ambush.id])
+    expect(() => craftCard(state, 0, ambush.id, testContext())).toThrow(
+      /NOT_CRAFTABLE|CANNOT_CRAFT/,
+    )
+    expect(state.players[0]!.hand.map((handCard) => handCard.id)).toEqual([ambush.id])
     expect(state.players[0]!.vp).toBe(0)
     expect(workshop.used).toBe(false)
   })

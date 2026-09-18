@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import './register.js'
 import { defOf } from '../cards/Deck.js'
 import { resetPlaceIds } from '../rules/place.js'
-import { card, minimalState, player, testCtx, withPieces } from '../test/fixtures.js'
+import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
 import { battleResolver } from '../events/battle.js'
 import type { BattleEvent } from '../events/types.js'
 
@@ -26,7 +26,7 @@ describe('Fox Partisans', () => {
         { id: 'd1', kind: 'warrior', owner: 1 },
       ],
     )
-    const ev: BattleEvent = {
+    const event: BattleEvent = {
       type: 'battle',
       clearing: 0,
       attacker: 0,
@@ -37,10 +37,10 @@ describe('Fox Partisans', () => {
       effectsOrder: [0, 1],
       effectsUsed: {},
     }
-    state.pending = [ev]
-    const ctx = testCtx({ state })
-    battleResolver.apply(state, ev, { type: 'resolveEvent', useEffect: true }, 0, ctx)
-    expect(ev.hits.attacker).toBe(2)
-    expect(state.players[0]!.hand.every((c) => defOf(c).suit === 'fox')).toBe(true)
+    state.pending = [event]
+    const context = testContext({ state })
+    battleResolver.apply(state, event, { type: 'resolveEvent', useEffect: true }, 0, context)
+    expect(event.hits.attacker).toBe(2)
+    expect(state.players[0]!.hand.every((handCard) => defOf(handCard).suit === 'fox')).toBe(true)
   })
 })
