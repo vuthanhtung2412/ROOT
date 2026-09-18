@@ -11,8 +11,8 @@ describe('canMove', () => {
     const state = withPieces(minimalState(), 4, [
       { id: 'w0', kind: 'warrior', owner: 0 },
     ])
-    expect(canMove(state, 0, 4, 0, hooks)).toBe(true)
-    expect(canMove(state, 0, 0, 4, hooks)).toBe(false)
+    expect(canMove(state, { seat: 0, from: 4, to: 0 }, hooks)).toBe(true)
+    expect(canMove(state, { seat: 0, from: 0, to: 4 }, hooks)).toBe(false)
   })
 
   it('Rule: Move 2 — move to one adjacent clearing', () => {
@@ -20,7 +20,7 @@ describe('canMove', () => {
       { id: 'w0', kind: 'warrior', owner: 0 },
       { id: 'w0b', kind: 'warrior', owner: 0 },
     ])
-    expect(canMove(state, 0, 4, 6, hooks)).toBe(false)
+    expect(canMove(state, { seat: 0, from: 4, to: 6 }, hooks)).toBe(false)
   })
 
   it('Rule: Move 3 — must rule origin or destination', () => {
@@ -37,7 +37,7 @@ describe('canMove', () => {
       0,
       [{ id: 'w0b', kind: 'warrior', owner: 0 }],
     )
-    expect(canMove(state, 0, 4, 0, hooks)).toBe(true)
-    expect(canMove(state, 0, 4, 1, hooks)).toBe(false)
+    expect(canMove(state, { seat: 0, from: 4, to: 0 }, hooks)).toBe(true)
+    expect(canMove(state, { seat: 0, from: 4, to: 1 }, hooks)).toBe(false)
   })
 })

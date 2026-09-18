@@ -228,7 +228,7 @@ function canMarchMove(
   to: ClearingId,
   ctx: Ctx,
 ): boolean {
-  return warriors(state, from, seat) > 0 && canMove(state, seat, from, to, ctx.hooks)
+  return warriors(state, from, seat) > 0 && canMove(state, { seat, from, to }, ctx.hooks)
 }
 
 function hasLegalMarch(state: GameState, seat: Seat, ctx: Ctx): boolean {
@@ -585,7 +585,7 @@ export class Marquise extends Faction {
       case 'march': {
         consumeAction(state)
         for (const move of action.moves) {
-          logs.push(...moveWarriors(state, seat, move.from, move.to, move.count, ctx))
+          logs.push(...moveWarriors(state, { seat, from: move.from, to: move.to, count: move.count }, ctx))
         }
         logs.push({ t: 'action', actor: seat, action })
         return logs

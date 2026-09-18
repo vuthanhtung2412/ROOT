@@ -34,6 +34,6 @@ describe('canPlace', () => {
       [{ id: 'w1', kind: 'warrior', owner: 1 }],
     )
     expect(canPlace(state, 1, keepClearing)).toBe(false)
-    expect(canMove(state, 1, adjacent, keepClearing, hooks)).toBe(true)
+    expect(canMove(state, { seat: 1, from: adjacent, to: keepClearing }, hooks)).toBe(true)
   })
 })
