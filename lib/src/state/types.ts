@@ -60,8 +60,8 @@ export type GameState = {
     /** Decree cursor for current column; null until ensure or after column done. */
     decree: DecreeCursor | null
     /**
-     * True after all decree columns resolved once this turn (viziers stay on board,
-     so we must not re-open leftmost column). Rule: 7.5.2.
+     * True after all decree columns resolved once this turn (cards stay on board
+     * until Purge, so we must not re-open leftmost column). Rule: 7.5.2 / 7.7.2.
      */
     decreeDone: boolean
   }

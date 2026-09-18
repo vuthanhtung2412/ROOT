@@ -435,6 +435,12 @@ describe('Law 7.5 Daylight', () => {
     )
     expect(warriors(state, 0, 1)).toBe(1)
     expect(warriors(state, to, 1)).toBe(1)
+    const board = state.players[1]!.board
+    expect(board.kind).toBe('eyrie')
+    if (board.kind === 'eyrie') {
+      // Rule: 7.7.2 — hand cards stay on decree until Purge (not discarded on resolve).
+      expect(board.decree.move.map((c) => c.id)).toEqual([fox.id])
+    }
   })
 
   it('Rule: 7.5.2.III Battle — initiate in clearing matching suit', () => {

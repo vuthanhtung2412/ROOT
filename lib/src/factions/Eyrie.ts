@@ -237,7 +237,7 @@ function findDecreeCard(board: EyrieBoard, column: DecreeColumn, cardId: string)
 }
 
 function ensureDecreeCursor(state: GameState, seat: Seat): DecreeCursor | null {
-  // Rule: 7.5.2 — resolve each column once L→R; viziers remain on decree after resolve.
+  // Rule: 7.5.2 — resolve each column once L→R; cards stay on decree until Purge.
   if (state.turnScratch.decreeDone) return null
   if (state.turnScratch.decree) return state.turnScratch.decree
   const board = boardOf(state, seat)
@@ -749,19 +749,9 @@ export class Eyrie extends Faction {
           }
         }
 
-        // Viziers stay on decree (not discarded); hand cards leave column already via remove.
-        // Loyal Viziers: remove from column when resolved? Law: resolve each card — viziers are
-        // spent for the action but stay on decree until Purge. They remain on the board for the
-        // turn after resolving? Physical game: you take the action for the card; viziers stay
-        // in the column for the whole game until purge. So we should NOT remove viziers from
-        // decree when resolving — only remove from remaining cursor.
-        if (isVizier(card)) {
-          board.decree[action.column].push(card)
-        } else {
-          Deck.discard(state.deck, card, {
-            onDominance: (c) => state.dominanceAvailable.push(c),
-          })
-        }
+        // Rule: 7.5.2 / 7.7.2 — resolve removes card from turn cursor only.
+        // All decree cards (hand + Loyal Viziers) stay until Purge (7.7.2).
+        board.decree[action.column].push(card)
 
         advanceDecreeCursor(state, seat)
         logs.push({ t: 'action', actor: seat, action })
