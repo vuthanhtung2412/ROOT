@@ -1,14 +1,21 @@
 import Phaser from 'phaser'
+import type { ActionSpec } from '../api/client.ts'
 import { createPhaserApi } from '../api/client.ts'
+import {
+  ActionComposer,
+  type ComposerOutcome,
+} from '../game/ActionComposer.ts'
 import {
   boardLayoutFromFallResponse,
   FALL_BOARD_LAYOUT,
   type BoardLayout,
 } from '../game/boardLayout.ts'
 import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
+import { ActionTray } from '../ui/ActionTray.ts'
 import { BoardView } from '../ui/BoardView.ts'
 import { CardHand } from '../ui/CardHand.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
+import { SelectionPrompt } from '../ui/SelectionPrompt.ts'
 import {
   buildTurnBannerViewModel,
   TurnBanner,
@@ -24,6 +31,9 @@ export class GameScene extends Phaser.Scene {
   private turnBanner: TurnBanner | null = null
   private playerRail: PlayerRail | null = null
   private cardHand: CardHand | null = null
+  private actionTray: ActionTray | null = null
+  private selectionPrompt: SelectionPrompt | null = null
+  private readonly composer = new ActionComposer()
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -41,7 +51,22 @@ export class GameScene extends Phaser.Scene {
 
     this.turnBanner = new TurnBanner(this)
     this.playerRail = new PlayerRail(this)
-    this.cardHand = new CardHand(this)
+    this.cardHand = new CardHand(this, (cardId) => {
+      this.applyComposerOutcome(this.composer.chooseCard(cardId))
+    })
+    this.actionTray = new ActionTray(this, {
+      onSelectAction: (spec) => {
+        this.handleSelectAction(spec)
+      },
+    })
+    this.selectionPrompt = new SelectionPrompt(this, {
+      onConfirm: () => {
+        this.applyComposerOutcome(this.composer.confirm())
+      },
+      onCancel: () => {
+        this.applyComposerOutcome(this.composer.cancel())
+      },
+    })
 
     this.statusText = this.add
       .text(width * 0.38, height * 0.92, '', {
@@ -67,22 +92,46 @@ export class GameScene extends Phaser.Scene {
       this.unsubscribe()
       this.unsubscribe = null
     }
-    if (this.boardView !== null) {
-      this.boardView.destroy()
-      this.boardView = null
+    this.boardView?.destroy()
+    this.boardView = null
+    this.turnBanner?.destroy()
+    this.turnBanner = null
+    this.playerRail?.destroy()
+    this.playerRail = null
+    this.cardHand?.destroy()
+    this.cardHand = null
+    this.actionTray?.destroy()
+    this.actionTray = null
+    this.selectionPrompt?.destroy()
+    this.selectionPrompt = null
+  }
+
+  private handleSelectAction(spec: ActionSpec): void {
+    this.applyComposerOutcome(this.composer.begin(spec))
+  }
+
+  private applyComposerOutcome(outcome: ComposerOutcome): void {
+    if (outcome.kind === 'ready') {
+      this.selectionPrompt?.sync(null)
+      this.boardView?.setHighlightedClearings([])
+      this.cardHand?.setEnabledCards(null)
+      this.cardHand?.setSelection([])
+      this.composer.reset()
+      void this.session?.submitAction(outcome.action)
+      return
     }
-    if (this.turnBanner !== null) {
-      this.turnBanner.destroy()
-      this.turnBanner = null
+
+    if (outcome.kind === 'incomplete') {
+      this.selectionPrompt?.sync(outcome.prompt)
+      this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
+      this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)
+      return
     }
-    if (this.playerRail !== null) {
-      this.playerRail.destroy()
-      this.playerRail = null
-    }
-    if (this.cardHand !== null) {
-      this.cardHand.destroy()
-      this.cardHand = null
-    }
+
+    this.selectionPrompt?.sync(null)
+    this.boardView?.setHighlightedClearings([])
+    this.cardHand?.setEnabledCards(null)
+    this.cardHand?.setSelection([])
   }
 
   private async bootstrapBoard(): Promise<void> {
@@ -91,7 +140,7 @@ export class GameScene extends Phaser.Scene {
       scene: this,
       layout,
       onClearingSelected: (clearingId) => {
-        this.paintStatus(`clearing ${String(clearingId)}`)
+        this.applyComposerOutcome(this.composer.chooseClearing(clearingId))
       },
     })
     if (this.latestSnapshot !== null) {
@@ -108,6 +157,7 @@ export class GameScene extends Phaser.Scene {
     this.turnBanner?.sync(banner)
     this.playerRail?.sync(snapshot.state, banner.actorSeat)
     this.cardHand?.sync(snapshot.state)
+    this.actionTray?.sync(snapshot.legalActions, banner.actorSeat)
     this.paintStatus(snapshot.error)
   }
 

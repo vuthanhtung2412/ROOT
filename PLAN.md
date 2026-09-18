@@ -158,7 +158,7 @@
 20. `feat(phaser): add action composer core` *(done)*
     - `frontend/phaser/src/game/ActionComposer.ts`
     - `frontend/phaser/src/game/ActionComposer.test.ts`
-21. `feat(phaser): add action selection shell`
+21. `feat(phaser): add action selection shell` *(done)*
     - `frontend/phaser/src/ui/ActionTray.ts`
     - `frontend/phaser/src/ui/SelectionPrompt.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
