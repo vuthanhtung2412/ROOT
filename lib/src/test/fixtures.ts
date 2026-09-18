@@ -1,9 +1,9 @@
 import type { Card } from '../cards/types.js'
 import type { Ctx } from '../game/ctx.js'
 import { FALL } from '../map/fall.js'
-import type { MarquiseBoard } from '../state/boards.js'
 import type { FactionId, Piece, Seat } from '../pieces/types.js'
 import type { Rng } from '../rules/Rng.js'
+import type { EyrieBoard, MarquiseBoard } from '../state/boards.js'
 import { ITEM_SUPPLY } from '../state/constants.js'
 import type { ClearingState, GameState, PlayerState } from '../state/types.js'
 import { buildRuleHooks } from '../triggers/buildHooks.js'
@@ -68,6 +68,17 @@ export function marquiseBoard(
   }
 }
 
+export function eyrieBoard(overrides?: Partial<EyrieBoard>): EyrieBoard {
+  return {
+    kind: 'eyrie',
+    supply: { warriors: 20 },
+    leader: 'builder',
+    decree: { recruit: [], move: [], battle: [], build: [] },
+    roostTrack: { placed: 6 },
+    ...overrides,
+  }
+}
+
 export function player(
   seat: Seat,
   faction: FactionId,
@@ -81,7 +92,7 @@ export function player(
     hand: [],
     playArea: [],
     craftedItems: [],
-    board: marquiseBoard(),
+    board: faction === 'eyrie' ? eyrieBoard() : marquiseBoard(),
     ...overrides,
   }
 }

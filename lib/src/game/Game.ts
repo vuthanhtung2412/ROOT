@@ -258,6 +258,14 @@ export class Game {
       logs.push(...this.runAutoActions())
     }
 
+    if (
+      (action.type === 'addToDecree' || action.type === 'newRoost') &&
+      this.state.status === 'playing'
+    ) {
+      logs.push(...this.advanceStepOrPhase())
+      logs.push(...this.runAutoActions())
+    }
+
     if (action.type === 'turmoil' && this.state.status === 'playing') {
       logs.push(...this.runAutoActions())
     }
