@@ -1,13 +1,22 @@
 import Phaser from 'phaser'
+import { createPhaserApi } from '../api/client.ts'
+import {
+  boardLayoutFromFallResponse,
+  FALL_BOARD_LAYOUT,
+  type BoardLayout,
+} from '../game/boardLayout.ts'
 import type { GameSession } from '../game/GameSession.ts'
+import { BoardView } from '../ui/BoardView.ts'
 
 export type GameSceneData = {
   session: GameSession
 }
 
-/** Placeholder until board commit; keeps Menu → Game flow runnable. */
 export class GameScene extends Phaser.Scene {
   private session: GameSession | null = null
+  private boardView: BoardView | null = null
+  private unsubscribe: (() => void) | null = null
+  private statusText: Phaser.GameObjects.Text | null = null
 
   constructor() {
     super({ key: 'GameScene' })
@@ -19,29 +28,75 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.scale
-    const state = this.session?.getSnapshot().state
 
-    this.add
-      .text(width / 2, height / 2, 'Game board (coming next)', {
+    this.statusText = this.add
+      .text(width * 0.38, height * 0.92, '', {
         fontFamily: 'monospace',
-        fontSize: '20px',
-        color: '#f0e6d3',
+        fontSize: '13px',
+        color: '#9a9a9a',
       })
       .setOrigin(0.5)
 
-    if (state !== undefined && state !== null) {
-      this.add
-        .text(
-          width / 2,
-          height / 2 + 36,
-          `turn ${String(state.turn)} · ${state.phase}/${state.step}`,
-          {
-            fontFamily: 'monospace',
-            fontSize: '14px',
-            color: '#9a9a9a',
-          },
-        )
-        .setOrigin(0.5)
+    void this.bootstrapBoard()
+
+    if (this.session !== null) {
+      this.unsubscribe = this.session.subscribe((snapshot) => {
+        this.paintStatus(snapshot.state?.phase, snapshot.state?.step, snapshot.error)
+      })
     }
+  }
+
+  shutdown(): void {
+    if (this.unsubscribe !== null) {
+      this.unsubscribe()
+      this.unsubscribe = null
+    }
+    if (this.boardView !== null) {
+      this.boardView.destroy()
+      this.boardView = null
+    }
+  }
+
+  private async bootstrapBoard(): Promise<void> {
+    const layout = await this.loadLayout()
+    this.boardView = new BoardView({
+      scene: this,
+      layout,
+      onClearingSelected: (clearingId) => {
+        this.paintStatus(
+          this.session?.getSnapshot().state?.phase,
+          this.session?.getSnapshot().state?.step,
+          `clearing ${String(clearingId)}`,
+        )
+      },
+    })
+  }
+
+  private async loadLayout(): Promise<BoardLayout> {
+    try {
+      const api = createPhaserApi({ baseUrl: '' })
+      const response = await api.fallLayout()
+      return boardLayoutFromFallResponse(response)
+    } catch {
+      return FALL_BOARD_LAYOUT
+    }
+  }
+
+  private paintStatus(
+    phase: string | undefined,
+    step: string | undefined,
+    extra: string | null | undefined,
+  ): void {
+    if (this.statusText === null) {
+      return
+    }
+    const parts: string[] = []
+    if (phase !== undefined && step !== undefined) {
+      parts.push(`${phase}/${step}`)
+    }
+    if (extra !== null && extra !== undefined && extra !== '') {
+      parts.push(extra)
+    }
+    this.statusText.setText(parts.join(' · '))
   }
 }
