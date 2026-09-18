@@ -21,6 +21,7 @@ import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
 import { ActionTray } from '../ui/ActionTray.ts'
 import { BoardView } from '../ui/BoardView.ts'
 import { CardHand } from '../ui/CardHand.ts'
+import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
 import { SelectionPrompt } from '../ui/SelectionPrompt.ts'
 import {
@@ -40,6 +41,7 @@ export class GameScene extends Phaser.Scene {
   private cardHand: CardHand | null = null
   private actionTray: ActionTray | null = null
   private selectionPrompt: SelectionPrompt | null = null
+  private eyrieDecreePanel: EyrieDecreePanel | null = null
   private readonly composer = new ActionComposer()
   private marquiseBoard = createMarquiseBoardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
@@ -81,6 +83,7 @@ export class GameScene extends Phaser.Scene {
         this.handleSelectAction(spec)
       },
     })
+    this.eyrieDecreePanel = new EyrieDecreePanel(this)
     this.selectionPrompt = new SelectionPrompt(this, {
       onConfirm: () => {
         this.applyComposerOutcome(this.composer.confirm())
@@ -127,6 +130,8 @@ export class GameScene extends Phaser.Scene {
     this.cardHand = null
     this.actionTray?.destroy()
     this.actionTray = null
+    this.eyrieDecreePanel?.destroy()
+    this.eyrieDecreePanel = null
     this.selectionPrompt?.destroy()
     this.selectionPrompt = null
   }
@@ -189,6 +194,7 @@ export class GameScene extends Phaser.Scene {
     this.playerRail?.sync(snapshot.state, banner.actorSeat)
     this.cardHand?.sync(snapshot.state)
     this.actionTray?.sync(snapshot.legalActions, banner.actorSeat)
+    this.eyrieDecreePanel?.sync(snapshot.state)
     this.paintStatus(snapshot.error)
   }
 

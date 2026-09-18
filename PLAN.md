@@ -184,7 +184,7 @@
     - `frontend/phaser/src/game/eyrieActionComposer.test.ts`
     - `frontend/phaser/src/ui/SelectionPrompt.ts`
     - Forced addToDecree (7.4.2), optional newRoost (7.4.3), decree resolve L→R, turmoil when stuck
-26. `feat(phaser): show Eyrie decree panel`
+26. `feat(phaser): show Eyrie decree panel` *(done)*
     - `frontend/phaser/src/ui/EyrieDecreePanel.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
     - Columns + viziers + cursor/remaining; Builder badge (no leader picker)
