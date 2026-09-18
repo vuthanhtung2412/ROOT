@@ -1,49 +1,130 @@
-import { appendFileSync, mkdirSync, existsSync } from 'node:fs'
+import {
+  appendFileSync,
+  mkdirSync,
+  existsSync,
+  writeFileSync,
+} from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { formatGameView, type Action, type GameState } from '@root/lib'
+import {
+  formatGameLogEntry,
+  type Action,
+  type GameState,
+} from '@root/lib'
 
 /** Repo root `./logs` (…/Root/logs), not cwd. */
 const LOGS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../../logs')
 
-let currentLogFile: string | null = null
+/** One game session → `logs/<stamp>/game.md` + `game.json`. */
+let currentLogDir: string | null = null
+let prevLogState: GameState | null = null
+let session: GameSessionLog | null = null
+
+export type GameLogEventLabel = 'CREATE' | 'JOIN' | 'START' | 'ACT' | 'UNDO' | 'LOAD'
+
+/** Structured event for React / DevTools timeline scrubbing. */
+export type GameLogEvent = {
+  seq: number
+  at: string
+  label: GameLogEventLabel
+  action?: Action
+  /** Full state after this event. */
+  state: GameState
+}
+
+export type GameSessionLog = {
+  version: 1
+  openedAt: string
+  dir: string
+  events: GameLogEvent[]
+}
 
 function pad(n: number): string {
   return String(n).padStart(2, '0')
 }
 
-/** `dd-mm-yyyy-<hh>h<mm>m.log`; collide → append `-ss`. */
-function newLogPath(now = new Date()): string {
+/** `logs/dd-mm-yyyy-HHhMMm/` (collide → `-ss` / `-ss-N`). */
+function newLogDir(now = new Date()): string {
   mkdirSync(LOGS_DIR, { recursive: true })
   const base =
     `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()}` +
     `-${pad(now.getHours())}h${pad(now.getMinutes())}m`
-  let path = join(LOGS_DIR, `${base}.log`)
+  let path = join(LOGS_DIR, base)
   if (!existsSync(path)) return path
-  path = join(LOGS_DIR, `${base}-${pad(now.getSeconds())}s.log`)
+  path = join(LOGS_DIR, `${base}-${pad(now.getSeconds())}s`)
   if (!existsSync(path)) return path
   let i = 2
-  while (existsSync(join(LOGS_DIR, `${base}-${pad(now.getSeconds())}s-${i}.log`))) i++
-  return join(LOGS_DIR, `${base}-${pad(now.getSeconds())}s-${i}.log`)
+  while (existsSync(join(LOGS_DIR, `${base}-${pad(now.getSeconds())}s-${i}`))) i++
+  return join(LOGS_DIR, `${base}-${pad(now.getSeconds())}s-${i}`)
 }
 
-/** Open fresh log file for a new game (call on CREATE). */
+function mdPath(): string {
+  return join(currentLogDir!, 'game.md')
+}
+
+function jsonPath(): string {
+  return join(currentLogDir!, 'game.json')
+}
+
+function writeJson(): void {
+  if (!session) return
+  writeFileSync(jsonPath(), `${JSON.stringify(session, null, 2)}\n`, 'utf8')
+}
+
+/** Open fresh log folder for a new game (call on CREATE). */
 export function beginGameLog(): string {
-  currentLogFile = newLogPath()
-  appendFileSync(currentLogFile, `=== game log opened ${new Date().toISOString()} ===\n`, 'utf8')
-  return currentLogFile
+  currentLogDir = newLogDir()
+  mkdirSync(currentLogDir, { recursive: true })
+  prevLogState = null
+  const openedAt = new Date().toISOString()
+  session = {
+    version: 1,
+    openedAt,
+    dir: currentLogDir,
+    events: [],
+  }
+  writeFileSync(
+    mdPath(),
+    `# Root game log\n\nOpened: ${openedAt}\n\n`,
+    'utf8',
+  )
+  writeJson()
+  return currentLogDir
 }
 
-/** Console + file dump after each mutating game call. */
-export function logGameEvent(label: string, state: GameState, action?: Action): void {
+/** Console + `game.md` / `game.json` after each mutating game call. */
+export function logGameEvent(
+  label: GameLogEventLabel,
+  state: GameState,
+  action?: Action,
+): void {
   if (label === 'CREATE') {
-    const path = beginGameLog()
-    console.log(`game log → ${path}`)
+    const dir = beginGameLog()
+    console.log(`game log → ${dir}/`)
   }
 
-  const text = formatGameView(state, { label, ...(action ? { action } : {}) })
+  if (!currentLogDir || !session) beginGameLog()
+
+  const full = label === 'CREATE' || label === 'LOAD' || label === 'START'
+  const text = formatGameLogEntry(state, {
+    label,
+    ...(action ? { action } : {}),
+    prev: full ? undefined : prevLogState,
+    full,
+  })
   console.log(text)
 
-  if (!currentLogFile) beginGameLog()
-  appendFileSync(currentLogFile!, text, 'utf8')
+  appendFileSync(mdPath(), `${text}\n`, 'utf8')
+
+  const event: GameLogEvent = {
+    seq: session!.events.length,
+    at: new Date().toISOString(),
+    label,
+    ...(action ? { action } : {}),
+    state: structuredClone(state),
+  }
+  session!.events.push(event)
+  writeJson()
+
+  prevLogState = structuredClone(state)
 }
