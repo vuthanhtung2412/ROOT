@@ -196,7 +196,7 @@
     - `frontend/phaser/src/game/eventActionComposer.ts`
     - `frontend/phaser/src/game/eventActionComposer.test.ts`
     - `frontend/phaser/src/ui/BattleOverlay.ts`
-29. `feat(phaser): show faction boards`
+29. `feat(phaser): show faction boards` *(done)*
     - `frontend/phaser/src/ui/FactionDrawer.ts`
     - `frontend/phaser/src/ui/MarquiseBoard.ts`
     - `frontend/phaser/src/ui/EyrieBoard.ts`
