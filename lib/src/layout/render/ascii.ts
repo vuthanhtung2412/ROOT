@@ -33,13 +33,13 @@ export function toAscii(
     Array.from({ length: width }, () => ' '),
   )
 
-  const placeChar = (x: number, y: number, ch: string) => {
+  const placeChar = (x: number, y: number, ch: string): void => {
     const col = Math.min(width - 1, Math.max(0, Math.round(x * (width - 1))))
     const row = Math.min(height - 1, Math.max(0, Math.round(y * (height - 1))))
     cells[row]![col] = ch
   }
 
-  const placeText = (x: number, y: number, text: string) => {
+  const placeText = (x: number, y: number, text: string): void => {
     const col0 = Math.min(
       width - text.length,
       Math.max(0, Math.round(x * (width - 1) - (text.length - 1) / 2)),

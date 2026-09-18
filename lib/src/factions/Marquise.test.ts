@@ -6,7 +6,6 @@ import { warriors } from '../queries/pieces.js'
 import { keepOwner } from '../queries/place.js'
 import { resetPlaceIds } from '../rules/place.js'
 import { HAND_LIMIT } from '../state/constants.js'
-import type { GameSignal } from '../triggers/signals.js'
 import { card, player, minimalState, testContext, withPieces } from '../test/fixtures.js'
 import {
   buildColumn,

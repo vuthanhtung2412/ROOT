@@ -157,7 +157,7 @@ function playerBlock(p: GameState['players'][number]): string[] {
 
 /** Human-readable action line (no card ids). */
 export function describeAction(action: Action, state: GameState): string {
-  const findCard = (id: string) => {
+  const findCard = (id: string): string => {
     for (const p of state.players) {
       const c = [...p.hand, ...p.playArea].find((x) => x.id === id)
       if (c) return cardLabel(c)

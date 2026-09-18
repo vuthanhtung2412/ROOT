@@ -3,7 +3,7 @@ import type { GameState } from '../state/types.js'
 import { EFFECTS } from './effects.js'
 import { defaultRuleHooks, type RuleHooks } from './hooks.js'
 
-function activeEffects(state: GameState) {
+function activeEffects(state: GameState): (typeof EFFECTS)[string][] {
   const out: (typeof EFFECTS)[string][] = []
   for (const player of state.players) {
     for (const card of player.playArea) {

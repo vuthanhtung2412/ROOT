@@ -2,14 +2,15 @@ import type { Action, ActionSpec, ResolveEventAction } from '../actions/types.js
 import { defOf } from '../cards/Deck.js'
 import { Deck } from '../cards/Deck.js'
 import { matchesSuit } from '../cards/suit.js'
+import type { Card } from '../cards/types.js'
 import type { Ctx } from '../game/ctx.js'
 import type { LogEntry } from '../log/types.js'
 import { FALL } from '../map/fall.js'
-import type { ClearingId } from '../map/types.js'
+import type { ClearingId, Suit } from '../map/types.js'
 import type { Piece, Seat } from '../pieces/types.js'
 import { warriors } from '../queries/pieces.js'
 import { playerOf } from '../queries/seat.js'
-import { removePieces, returnWarriorsToSupply } from '../rules/remove.js'
+import { removePieces } from '../rules/remove.js'
 import { RuleError } from '../rules/RuleError.js'
 import type { GameState } from '../state/types.js'
 import { hasBattleEffect, applyBattleEffect } from '../effects/partisans.js'
@@ -48,11 +49,11 @@ export type EventResolver = {
   matchesAction(state: GameState, event: BattleEvent, action: Action, ctx: Ctx): boolean
 }
 
-function clearingSuit(clearing: ClearingId) {
+function clearingSuit(clearing: ClearingId): Suit {
   return FALL.clearings[clearing]!.suit
 }
 
-function ambushCards(state: GameState, seat: Seat, clearing: ClearingId) {
+function ambushCards(state: GameState, seat: Seat, clearing: ClearingId): Card[] {
   const suit = clearingSuit(clearing)
   return playerOf(state, seat).hand.filter(
     (c) => defOf(c).type === 'ambush' && matchesSuit(c, suit),
@@ -122,7 +123,7 @@ function legalRemovalSpecs(
 
   const maxRemove = Math.min(maxHits, pieces.length)
 
-  function addCombos(ids: string[], k: number, start: number, cur: string[]) {
+  function addCombos(ids: string[], k: number, start: number, cur: string[]): void {
     if (cur.length === k) {
       specs.push({
         type: 'resolveEvent',
@@ -307,7 +308,7 @@ export const battleResolver: EventResolver = {
     })
   },
 
-  legalActions(state, event, ctx) {
+  legalActions(state, event, _ctx) {
     switch (event.stage) {
       case 'ambush': {
         const specs: ActionSpec[] = [{ type: 'resolveEvent', actor: event.defender, params: { decline: [true] } }]
@@ -343,7 +344,6 @@ export const battleResolver: EventResolver = {
       case 'effects': {
         const seat = nextEffectSeat(event)
         if (seat === null) return []
-        const side = sideOf(seat, event)!
         if (!hasBattleEffect(state, event, seat)) return []
         return [
           { type: 'resolveEvent', actor: seat, params: { useEffect: [false] } },
