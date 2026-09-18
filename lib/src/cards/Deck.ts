@@ -1,6 +1,7 @@
 import { EP_CARD_DEFS } from './ep.generated.js'
 import type { Card } from './types.js'
 import type { CardDef } from './types.js'
+import { VIZIER_DEF, VIZIER_DEF_ID } from '../factions/eyrie/viziers.js'
 
 export type DeckState = {
   draw: Card[]
@@ -8,6 +9,7 @@ export type DeckState = {
 }
 
 export function defOf(card: Card): CardDef {
+  if (card.defId === VIZIER_DEF_ID) return VIZIER_DEF
   const def = EP_CARD_DEFS.find((d) => d.defId === card.defId)
   if (!def) throw new Error(`unknown card def ${card.defId}`)
   return def
