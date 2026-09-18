@@ -28,10 +28,20 @@ export type MarquiseBoard = {
 export type EyrieBoard = {
   kind: 'eyrie'
   supply: { warriors: number }
-  leader: 'builder'
-  decree: Record<'recruit' | 'move' | 'battle' | 'build', Card[]>
+  leader: EyrieLeader
+  decree: Record<DecreeColumn, Card[]>
   roostTrack: { placed: number }
 }
+
+/** Evening VP by roosts on map (index 0..7). Rule: Eyrie roosts track. */
+export const EYRIE_ROOST_VP = [0, 0, 1, 2, 3, 4, 4, 5] as const
+/** Roosts-on-map thresholds that uncover +1 draw. */
+export const EYRIE_ROOST_DRAW_BONUS_THRESHOLDS = [3, 6] as const
+
+export type EyrieLeader = 'builder' | 'charismatic' | 'commander' | 'despot'
+export type DecreeColumn = 'recruit' | 'move' | 'battle' | 'build'
+export const DECREE_COLUMNS: DecreeColumn[] = ['recruit', 'move', 'battle', 'build']
+
 
 export type AllianceBoard = {
   kind: 'alliance'
