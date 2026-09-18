@@ -192,7 +192,7 @@
     - `frontend/phaser/src/game/eventActionComposer.ts`
     - `frontend/phaser/src/game/eventActionComposer.test.ts`
     - `frontend/phaser/src/ui/EventOverlay.ts`
-28. `feat(phaser): resolve battle events`
+28. `feat(phaser): resolve battle events` *(done)*
     - `frontend/phaser/src/game/eventActionComposer.ts`
     - `frontend/phaser/src/game/eventActionComposer.test.ts`
     - `frontend/phaser/src/ui/BattleOverlay.ts`

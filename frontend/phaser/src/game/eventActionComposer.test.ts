@@ -40,3 +40,41 @@ describe('eventActionComposer Field Hospitals', () => {
     })
   })
 })
+
+describe('eventActionComposer battle', () => {
+  it('useEffect option emits boolean', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const mid = composer.begin(
+      makeActionSpec({
+        type: 'resolveEvent',
+        params: { useEffect: [false, true] },
+      }),
+    )
+    expect(mid.kind).toBe('incomplete')
+    expect(events.getOverlayKind()).toBe('battle')
+    expect(composer.chooseColumn('true')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', useEffect: true },
+    })
+  })
+
+  it('effects order emits seat order', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'resolveEvent',
+        params: { order: [[0, 1], [1, 0]] },
+      }),
+    )
+    expect(composer.chooseColumn('1')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', order: [1, 0] },
+    })
+  })
+})
