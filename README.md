@@ -1,6 +1,6 @@
 # Root
 
-TypeScript implementation of the Root board game (GP1: 2-player Marquise vs Marquise).
+TypeScript implementation of the Root board game (GP2 playable: Marquise vs Eyrie Builder; GP1 also supported).
 
 ## Packages
 
@@ -8,7 +8,9 @@ TypeScript implementation of the Root board game (GP1: 2-player Marquise vs Marq
 |---------|------|------|
 | `@root/lib` | `lib/` | Pure game engine — rules, state, actions, snapshot JSON |
 | `@root/web` | `backend/web/` | Hono HTTP API — **one game slot**, no rooms |
+| `@root/web-client` | `backend/web_client/` | Generated OpenAPI client (`createRootWebClient`) |
 | `@root/cli` | `frontend/cli/` | Terminal client — talks **only** to web API |
+| `@root/phaser` | `frontend/phaser/` | Phaser GP2 hot-seat UI — talks **only** to web API |
 
 ## Quick start
 
@@ -79,6 +81,25 @@ pnpm --filter @root/cli start -- auto --turns 50 --players 2
 ```
 
 `new` always uses `?replace=1`. Optional `--factions marquise,eyrie`.
+
+### Phaser (GP2 hot-seat)
+
+```bash
+# terminal 1
+pnpm --filter @root/web dev
+
+# terminal 2
+pnpm --filter @root/phaser dev
+```
+
+Open the Vite URL. **New GP2 game** creates Marquise vs Eyrie, joins both seats, and starts. See `frontend/phaser/README.md`.
+
+Regenerate shared API client after OpenAPI changes:
+
+```bash
+pnpm --filter @root/web gen:openapi
+pnpm gen:api-client
+```
 
 ## Resources
 

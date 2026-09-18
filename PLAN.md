@@ -215,7 +215,7 @@
 33. `feat(phaser): show game winner` *(done)*
     - `frontend/phaser/src/ui/WinnerOverlay.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
-34. `docs(phaser): document GP2 play flow`
+34. `docs(phaser): document GP2 play flow` *(done)*
     - `frontend/phaser/README.md`
     - `README.md`
     - Document `pnpm --filter @root/web gen:openapi` + `pnpm gen:api-client` → `@root/web-client`
