@@ -39,8 +39,8 @@ export type GameSessionLog = {
   events: GameLogEvent[]
 }
 
-function pad(n: number): string {
-  return String(n).padStart(2, '0')
+function pad(value: number): string {
+  return String(value).padStart(2, '0')
 }
 
 /** `logs/dd-mm-yyyy-HHhMMm/` (collide → `-ss` / `-ss-N`). */
