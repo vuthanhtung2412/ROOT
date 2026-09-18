@@ -188,7 +188,7 @@
     - `frontend/phaser/src/ui/EyrieDecreePanel.ts`
     - `frontend/phaser/src/scenes/GameScene.ts`
     - Columns + viziers + cursor/remaining; Builder badge (no leader picker)
-27. `feat(phaser): resolve Field Hospitals`
+27. `feat(phaser): resolve Field Hospitals` *(done)*
     - `frontend/phaser/src/game/eventActionComposer.ts`
     - `frontend/phaser/src/game/eventActionComposer.test.ts`
     - `frontend/phaser/src/ui/EventOverlay.ts`
