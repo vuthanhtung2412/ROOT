@@ -117,6 +117,13 @@ function boardLines(board: GameState['players'][number]['board']): string[] {
       `    tracks: sawmill=${t.sawmill.placed} workshop=${t.workshop.placed} recruiter=${t.recruiter.placed}`,
     ]
   }
+  if (board.kind === 'eyrie') {
+    const d = board.decree
+    return [
+      `    supply: warriors=${board.supply.warriors} leader=${board.leader} roostTrack=${board.roostTrack.placed}`,
+      `    decree: R${d.recruit.length} M${d.move.length} B${d.battle.length} Build${d.build.length}`,
+    ]
+  }
   return [`    board: ${JSON.stringify(board)}`]
 }
 
@@ -174,6 +181,27 @@ export function describeAction(action: Action, state: GameState): string {
       return `DISCARD ${action.cardIds.map(findCard).join('; ')}`
     case 'swapMeet':
       return `SWAP MEET give ${findCard(action.giveCardId)} ↔ ${playerRefBySeat(state, action.target)}`
+    case 'emergencyOrders':
+      return 'EMERGENCY ORDERS draw 1'
+    case 'eveningScore':
+      return 'EVENING score roosts'
+    case 'addToDecree':
+      return `ADD TO DECREE ${action.cards.map((c) => `${findCard(c.cardId)}→${c.column}`).join(', ')}`
+    case 'newRoost':
+      return `NEW ROOST at C${action.clearing}`
+    case 'turmoil':
+      return 'TURMOIL'
+    case 'decree': {
+      const bits = [`DECREE ${action.column} ${findCard(action.cardId)}`]
+      if (action.clearing !== undefined) bits.push(`C${action.clearing}`)
+      if (action.defender !== undefined) {
+        bits.push(`vs ${playerRefBySeat(state, action.defender)}`)
+      }
+      if (action.moves?.length) {
+        bits.push(action.moves.map((m) => `${m.count}w C${m.from}→C${m.to}`).join(', '))
+      }
+      return bits.join(' ')
+    }
     case 'resolveEvent': {
       const bits: string[] = ['RESOLVE EVENT']
       if (action.decline) bits.push('decline')
