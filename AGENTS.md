@@ -38,3 +38,39 @@ export function moveWarriors(
   ctx: Ctx,
 )
 ```
+
++ All variable, function signature must have an explicit type, ban `any`
+
++ Don't use unsafe `as` use explicit typeguard instead
+```typescript
+// ❌ BAD
+
+function handleFile(file: Object) {
+	file = file as ImageFile
+}
+
+// ✅ GOOD
+function isImage(file: ImageFile | VideoFile): file is ImageFile {
+  return file.type === "image"
+}
+
+function isVideo(file: ImageFile | VideoFile): file is VideoFile {
+  return file.type === "video"
+}
+```
+
++ No mutation of function parameters
+
+```tsx
+// BAD ❌
+function addItem(items: string[], newItem: string) {
+  items.push(newItem);
+  return items;
+}
+
+// GOOD ✅
+function addItem(items: string[], newItem: string) {
+  return [...items, newItem];
+}
+
+```
