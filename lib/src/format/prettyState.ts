@@ -1,5 +1,5 @@
 import { defOf } from '../cards/Deck.js'
-import type { Card } from '../cards/types.js'
+import type { Card, CardSuit } from '../cards/types.js'
 import type { Action } from '../actions/types.js'
 import type { Event } from '../events/types.js'
 import { FALL } from '../map/fall.js'
@@ -7,7 +7,11 @@ import { FALL_LAYOUT } from '../layout/fall.js'
 import { toAscii } from '../layout/render/ascii.js'
 import type { LogEntry } from '../log/types.js'
 import type { Seat } from '../pieces/types.js'
+import { DECREE_COLUMNS } from '../state/boards.js'
 import type { GameState, PlayerState } from '../state/types.js'
+
+/** Stable suit order for decree tallies. */
+const DECREE_SUIT_ORDER: CardSuit[] = ['fox', 'mouse', 'rabbit', 'bird']
 
 type Piece = GameState['clearings'][number]['pieces'][number]
 
@@ -109,6 +113,19 @@ function clearingBlock(state: GameState, id: number): string[] {
   return lines
 }
 
+/** Suit counts for one decree column: `fox x2 bird x1` or `(none)`. */
+export function formatDecreeColumn(cards: Card[]): string {
+  if (cards.length === 0) return '(none)'
+  const counts = new Map<CardSuit, number>()
+  for (const c of cards) {
+    const suit = defOf(c).suit
+    counts.set(suit, (counts.get(suit) ?? 0) + 1)
+  }
+  return DECREE_SUIT_ORDER.filter((s) => counts.has(s))
+    .map((s) => `${s} x${counts.get(s)!}`)
+    .join(', ')
+}
+
 function boardLines(board: GameState['players'][number]['board']): string[] {
   if (board.kind === 'marquise') {
     const t = board.tracks
@@ -121,7 +138,8 @@ function boardLines(board: GameState['players'][number]['board']): string[] {
     const d = board.decree
     return [
       `    supply: warriors=${board.supply.warriors} leader=${board.leader} roostTrack=${board.roostTrack.placed}`,
-      `    decree: R${d.recruit.length} M${d.move.length} B${d.battle.length} Build${d.build.length}`,
+      '    decree:',
+      ...DECREE_COLUMNS.map((col) => `      ${col}: ${formatDecreeColumn(d[col])}`),
     ]
   }
   return [`    board: ${JSON.stringify(board)}`]

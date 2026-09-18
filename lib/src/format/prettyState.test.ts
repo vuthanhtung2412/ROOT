@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   cardLabel,
   describeLogEntry,
+  formatDecreeColumn,
   formatGameView,
   formatPieceChunk,
   formatTurnLog,
 } from './prettyState.js'
-import { minimalState, player, withPieces } from '../test/fixtures.js'
+import { eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
+import { makeViziers } from '../factions/eyrie/viziers.js'
 import type { LogEntry } from '../log/types.js'
 
 describe('formatPieceChunk', () => {
@@ -46,7 +48,48 @@ describe('cardLabel', () => {
   })
 })
 
+describe('formatDecreeColumn', () => {
+  it('tallies suits; empty is (none)', () => {
+    expect(formatDecreeColumn([])).toBe('(none)')
+    const [v0] = makeViziers()
+    expect(formatDecreeColumn([v0!])).toBe('bird x1')
+    expect(
+      formatDecreeColumn([
+        { id: 'a', defId: 'ROOT-72' },
+        { id: 'b', defId: 'ROOT-72' },
+        v0!,
+      ]),
+    ).toBe('fox x2, bird x1')
+  })
+})
+
 describe('formatGameView', () => {
+  it('prints eyrie decree by column + suit counts', () => {
+    const [v0, v1] = makeViziers()
+    const state = minimalState({
+      players: [
+        player(0, 'marquise'),
+        player(1, 'eyrie', {
+          board: eyrieBoard({
+            decree: {
+              recruit: [v0!],
+              move: [v1!],
+              battle: [{ id: 'ROOT-72#1', defId: 'ROOT-72' }],
+              build: [],
+            },
+          }),
+        }),
+      ],
+    })
+    const text = formatGameView(state)
+    expect(text).toContain('decree:')
+    expect(text).toMatch(/recruit: bird x1/)
+    expect(text).toMatch(/move: bird x1/)
+    expect(text).toMatch(/battle: fox x1/)
+    expect(text).toMatch(/build: \(none\)/)
+    expect(text).not.toMatch(/decree: R\d/)
+  })
+
   it('drops game id, keeps seed, renames play→crafted, collapses wood', () => {
     let state = minimalState({
       seed: 42,
