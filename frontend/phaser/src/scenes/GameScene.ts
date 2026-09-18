@@ -7,6 +7,11 @@ import {
 } from '../game/boardLayout.ts'
 import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
 import { BoardView } from '../ui/BoardView.ts'
+import { PlayerRail } from '../ui/PlayerRail.ts'
+import {
+  buildTurnBannerViewModel,
+  TurnBanner,
+} from '../ui/TurnBanner.ts'
 
 export type GameSceneData = {
   session: GameSession
@@ -15,6 +20,8 @@ export type GameSceneData = {
 export class GameScene extends Phaser.Scene {
   private session: GameSession | null = null
   private boardView: BoardView | null = null
+  private turnBanner: TurnBanner | null = null
+  private playerRail: PlayerRail | null = null
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -30,6 +37,9 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale
 
+    this.turnBanner = new TurnBanner(this)
+    this.playerRail = new PlayerRail(this)
+
     this.statusText = this.add
       .text(width * 0.38, height * 0.92, '', {
         fontFamily: 'monospace',
@@ -43,7 +53,7 @@ export class GameScene extends Phaser.Scene {
     if (this.session !== null) {
       this.unsubscribe = this.session.subscribe((snapshot) => {
         this.latestSnapshot = snapshot
-        this.paintStatus(snapshot.state?.phase, snapshot.state?.step, snapshot.error)
+        this.paintHud(snapshot)
         this.syncBoardPieces(snapshot)
       })
     }
@@ -58,6 +68,14 @@ export class GameScene extends Phaser.Scene {
       this.boardView.destroy()
       this.boardView = null
     }
+    if (this.turnBanner !== null) {
+      this.turnBanner.destroy()
+      this.turnBanner = null
+    }
+    if (this.playerRail !== null) {
+      this.playerRail.destroy()
+      this.playerRail = null
+    }
   }
 
   private async bootstrapBoard(): Promise<void> {
@@ -66,16 +84,23 @@ export class GameScene extends Phaser.Scene {
       scene: this,
       layout,
       onClearingSelected: (clearingId) => {
-        this.paintStatus(
-          this.latestSnapshot?.state?.phase,
-          this.latestSnapshot?.state?.step,
-          `clearing ${String(clearingId)}`,
-        )
+        this.paintStatus(`clearing ${String(clearingId)}`)
       },
     })
     if (this.latestSnapshot !== null) {
       this.syncBoardPieces(this.latestSnapshot)
+      this.paintHud(this.latestSnapshot)
     }
+  }
+
+  private paintHud(snapshot: GameSessionSnapshot): void {
+    if (snapshot.state === null) {
+      return
+    }
+    const banner = buildTurnBannerViewModel(snapshot.state)
+    this.turnBanner?.sync(banner)
+    this.playerRail?.sync(snapshot.state, banner.actorSeat)
+    this.paintStatus(snapshot.error)
   }
 
   private syncBoardPieces(snapshot: GameSessionSnapshot): void {
@@ -95,21 +120,10 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private paintStatus(
-    phase: string | undefined,
-    step: string | undefined,
-    extra: string | null | undefined,
-  ): void {
+  private paintStatus(extra: string | null | undefined): void {
     if (this.statusText === null) {
       return
     }
-    const parts: string[] = []
-    if (phase !== undefined && step !== undefined) {
-      parts.push(`${phase}/${step}`)
-    }
-    if (extra !== null && extra !== undefined && extra !== '') {
-      parts.push(extra)
-    }
-    this.statusText.setText(parts.join(' · '))
+    this.statusText.setText(extra ?? '')
   }
 }
