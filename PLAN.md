@@ -112,7 +112,7 @@
 9. `feat(web-client): shared generated API package` *(done)*
    - `backend/web_client/**` — `@root/web-client` with `createRootWebClient` + `schema.d.ts`
    - Wire `frontend/phaser` (and later CLI) via `workspace:*`
-10. `chore(phaser): configure API development proxy`
+10. `chore(phaser): configure API development proxy` *(done)*
     - `frontend/phaser/package.json`
     - `frontend/phaser/vite.config.ts`
     - `pnpm-lock.yaml`
