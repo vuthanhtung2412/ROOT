@@ -39,9 +39,11 @@ describe('fieldHospitalResolver', () => {
     const context = testContext()
     fieldHospitalResolver.apply(
       state,
-      event,
-      { type: 'resolveEvent', cardId: 'ROOT-200#1' },
-      0,
+      {
+        event,
+        action: { type: 'resolveEvent', cardId: 'ROOT-200#1' },
+        actor: 0,
+      },
       context,
     )
     expect(state.pending).toHaveLength(0)
@@ -83,9 +85,11 @@ describe('fieldHospitalResolver', () => {
     state.pending = [event]
     fieldHospitalResolver.apply(
       state,
-      event,
-      { type: 'resolveEvent', decline: true },
-      0,
+      {
+        event,
+        action: { type: 'resolveEvent', decline: true },
+        actor: 0,
+      },
       testContext(),
     )
     expect(state.players[0]!.board.kind).toBe('marquise')

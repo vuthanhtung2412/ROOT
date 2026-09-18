@@ -738,7 +738,15 @@ export class Eyrie extends Faction {
             break
           case 'battle': {
             logs.push(
-              ...openBattle(state, action.clearing!, seat, action.defender!, ctx),
+              ...openBattle(
+                state,
+                {
+                  clearing: action.clearing!,
+                  attacker: seat,
+                  defender: action.defender!,
+                },
+                ctx,
+              ),
             )
             break
           }

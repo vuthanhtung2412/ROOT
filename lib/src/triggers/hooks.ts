@@ -13,7 +13,7 @@ export type RuleHooks = {
   needsRuleToMove: (state: GameState, seat: Seat) => boolean
   extraHits: (
     state: GameState,
-    ev: BattleEvent,
+    event: BattleEvent,
     side: 'attacker' | 'defender',
   ) => number
   craftVp: (state: GameState, seat: Seat, card: Card) => number

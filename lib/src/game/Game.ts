@@ -630,7 +630,11 @@ export class Game {
       return false
     })
     if (!spec) throw new RuleError('ILLEGAL_ACTION', { action })
-    return RESOLVERS[head.type].apply(this.state, head, action, spec.actor, ctx)
+    return RESOLVERS[head.type].apply(
+      this.state,
+      { event: head, action, actor: spec.actor },
+      ctx,
+    )
   }
 
   private checkWin(): LogEntry[] {

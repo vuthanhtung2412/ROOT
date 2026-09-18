@@ -13,80 +13,90 @@ import { RuleError } from '../rules/RuleError.js'
 import type { GameState } from '../state/types.js'
 import type { FieldHospitalEvent } from './types.js'
 
+export type FieldHospitalApply = {
+  event: FieldHospitalEvent
+  action: ResolveEventAction
+  actor: Seat
+}
+
 export type FieldHospitalResolver = {
-  legalActions(state: GameState, ev: FieldHospitalEvent, ctx: Ctx): ActionSpec[]
-  apply(
+  legalActions(state: GameState, event: FieldHospitalEvent, ctx: Ctx): ActionSpec[]
+  apply(state: GameState, apply: FieldHospitalApply, ctx: Ctx): LogEntry[]
+  matchesAction(
     state: GameState,
-    ev: FieldHospitalEvent,
-    action: ResolveEventAction,
-    actor: Seat,
+    event: FieldHospitalEvent,
+    action: Action,
     ctx: Ctx,
-  ): LogEntry[]
-  matchesAction(state: GameState, ev: FieldHospitalEvent, action: Action, ctx: Ctx): boolean
+  ): boolean
 }
 
 export const fieldHospitalResolver: FieldHospitalResolver = {
-  matchesAction(state, ev, action, ctx) {
+  matchesAction(state, event, action, ctx) {
     if (action.type !== 'resolveEvent') return false
-    return this.legalActions(state, ev, ctx).some((spec) => {
-      if (spec.type !== 'resolveEvent' || spec.actor !== ev.victim) return false
+    return this.legalActions(state, event, ctx).some((spec) => {
+      if (spec.type !== 'resolveEvent' || spec.actor !== event.victim) return false
       if (action.decline && spec.params?.decline?.includes(true)) return true
       if (action.cardId && spec.params?.cardIds?.includes(action.cardId)) return true
       return false
     })
   },
 
-  legalActions(state, ev, _ctx) {
-    const suit = FALL.clearings[ev.clearing]!.suit
+  legalActions(state, event, _ctx) {
+    const suit = FALL.clearings[event.clearing]!.suit
     const specs: ActionSpec[] = [
-      { type: 'resolveEvent', actor: ev.victim, params: { decline: [true] } },
+      { type: 'resolveEvent', actor: event.victim, params: { decline: [true] } },
     ]
-    for (const c of playerOf(state, ev.victim).hand) {
-      if (matchesSuit(c, suit)) {
+    for (const card of playerOf(state, event.victim).hand) {
+      if (matchesSuit(card, suit)) {
         specs.push({
           type: 'resolveEvent',
-          actor: ev.victim,
-          params: { cardIds: [c.id] },
+          actor: event.victim,
+          params: { cardIds: [card.id] },
         })
       }
     }
     return specs
   },
 
-  apply(state, ev, action, actor, ctx) {
-    if (actor !== ev.victim) throw new RuleError('WRONG_ACTOR', { actor })
+  apply(state, { event, action, actor }, _ctx) {
+    if (actor !== event.victim) throw new RuleError('WRONG_ACTOR', { actor })
 
-    const idx = state.pending.indexOf(ev)
-    if (idx >= 0) state.pending.splice(idx, 1)
+    const pendingIndex = state.pending.indexOf(event)
+    if (pendingIndex >= 0) state.pending.splice(pendingIndex, 1)
 
     if (action.decline) {
-      returnWarriorsToSupply(state, ev.victim, ev.count)
-      return [{ t: 'event', event: ev }]
+      returnWarriorsToSupply(state, event.victim, event.count)
+      return [{ t: 'event', event }]
     }
 
     if (!action.cardId) throw new RuleError('MISSING_FIELD_HOSPITAL_CARD')
-    const player = playerOf(state, ev.victim)
-    const cardIdx = player.hand.findIndex((c) => c.id === action.cardId)
-    if (cardIdx < 0) throw new RuleError('CARD_NOT_IN_HAND', { cardId: action.cardId })
-    const card = player.hand.splice(cardIdx, 1)[0]!
-    if (!matchesSuit(card, FALL.clearings[ev.clearing]!.suit)) {
+    const player = playerOf(state, event.victim)
+    const cardIndex = player.hand.findIndex((card) => card.id === action.cardId)
+    if (cardIndex < 0) throw new RuleError('CARD_NOT_IN_HAND', { cardId: action.cardId })
+    const card = player.hand.splice(cardIndex, 1)[0]!
+    if (!matchesSuit(card, FALL.clearings[event.clearing]!.suit)) {
       throw new RuleError('FIELD_HOSPITAL_SUIT_MISMATCH', { cardId: action.cardId })
     }
     Deck.discard(state.deck, card, {
-      onDominance: (c) => state.dominanceAvailable.push(c),
+      onDominance: (dominanceCard) => state.dominanceAvailable.push(dominanceCard),
     })
 
-    const keep = keepClearingFor(state, ev.victim)
+    const keep = keepClearingFor(state, event.victim)
     if (keep === null) {
-      returnWarriorsToSupply(state, ev.victim, ev.count)
+      returnWarriorsToSupply(state, event.victim, event.count)
     } else {
       // Rule: Marquise > Field Hospitals — warriors already off map; do not pull supply.
-      const placed = placeReturning(state, { seat: ev.victim, clearing: keep, spec: { kind: 'warrior' }, count: ev.count })
-      if (placed < ev.count) {
-        returnWarriorsToSupply(state, ev.victim, ev.count - placed)
+      const placed = placeReturning(state, {
+        seat: event.victim,
+        clearing: keep,
+        spec: { kind: 'warrior' },
+        count: event.count,
+      })
+      if (placed < event.count) {
+        returnWarriorsToSupply(state, event.victim, event.count - placed)
       }
     }
 
-    return [{ t: 'event', event: ev }]
+    return [{ t: 'event', event }]
   },
 }

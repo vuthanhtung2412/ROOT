@@ -18,17 +18,17 @@ export function hasPartisan(state: GameState, seat: Seat, clearing: BattleEvent[
   })
 }
 
-export function hasBattleEffect(state: GameState, ev: BattleEvent, seat: Seat): boolean {
-  return hasPartisan(state, seat, ev.clearing)
+export function hasBattleEffect(state: GameState, event: BattleEvent, seat: Seat): boolean {
+  return hasPartisan(state, seat, event.clearing)
 }
 
 export function applyBattleEffect(
   state: GameState,
-  ev: BattleEvent,
+  event: BattleEvent,
   seat: Seat,
   _ctx: Ctx,
 ): void {
-  const suit = FALL.clearings[ev.clearing]!.suit
+  const suit = FALL.clearings[event.clearing]!.suit
   const player = playerOf(state, seat)
   const kept: typeof player.hand = []
   for (const c of player.hand) {
@@ -47,10 +47,10 @@ export function applyBattleEffect(
 export const foxPartisansEffect: CardEffect = {
   defId: 'ROOT-77',
   hooks: {
-    extraHits(state, ev, side) {
-      const seat = side === 'attacker' ? ev.attacker : ev.defender
-      if (!hasPartisan(state, seat, ev.clearing)) return 0
-      if (FALL.clearings[ev.clearing]!.suit !== 'fox') return 0
+    extraHits(state, event, side) {
+      const seat = side === 'attacker' ? event.attacker : event.defender
+      if (!hasPartisan(state, seat, event.clearing)) return 0
+      if (FALL.clearings[event.clearing]!.suit !== 'fox') return 0
       return 1
     },
   },

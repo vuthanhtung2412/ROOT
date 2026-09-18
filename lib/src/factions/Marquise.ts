@@ -627,7 +627,11 @@ export class Marquise extends Faction {
         return craftCard(state, seat, action.cardId, ctx)
       case 'battle': {
         consumeAction(state)
-        const logs = openBattle(state, action.clearing, seat, action.defender, ctx)
+        const logs = openBattle(
+          state,
+          { clearing: action.clearing, attacker: seat, defender: action.defender },
+          ctx,
+        )
         logs.push({ t: 'action', actor: seat, action })
         return logs
       }

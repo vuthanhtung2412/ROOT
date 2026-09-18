@@ -42,10 +42,10 @@ export function buildRuleHooks(state: GameState, map: GameMap): RuleHooks {
       }
       return base.needsRuleToMove(state, seat)
     },
-    extraHits(state, ev, side) {
-      let total = base.extraHits(state, ev, side)
+    extraHits(state, event, side) {
+      let total = base.extraHits(state, event, side)
       for (const effect of effects) {
-        total += effect.hooks?.extraHits?.(state, ev, side) ?? 0
+        total += effect.hooks?.extraHits?.(state, event, side) ?? 0
       }
       return total
     },
