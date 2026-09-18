@@ -1,7 +1,9 @@
 import Phaser from 'phaser'
 import { BootScene } from '../scenes/BootScene.ts'
+import { MenuScene } from '../scenes/MenuScene.ts'
+import { GameScene } from '../scenes/GameScene.ts'
 
-/** Desktop-first hot-seat canvas; scenes: Boot → Menu → Game (later commits). */
+/** Desktop-first hot-seat canvas; scenes: Boot → Menu → Game. */
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game',
@@ -12,5 +14,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     width: 1280,
     height: 720,
   },
-  scene: [BootScene],
+  scene: [BootScene, MenuScene, GameScene],
 }
