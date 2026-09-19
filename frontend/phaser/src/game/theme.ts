@@ -35,6 +35,6 @@ export const PIECE_DRAW = {
   buildingSize: 14,
   tokenRadius: 6,
   iconSize: 28,
-  buildingIconSize: 24,
+  buildingIconSize: 30,
   stackGap: 34,
 } as const

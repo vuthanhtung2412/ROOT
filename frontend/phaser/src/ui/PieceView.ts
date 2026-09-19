@@ -1,5 +1,8 @@
 import type Phaser from 'phaser'
-import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
+import {
+  GAME_ASSET_KEYS,
+  pieceTokenTextureKey,
+} from '../assets/gameAssets.ts'
 import { PIECE_DRAW } from '../game/theme.ts'
 
 export type PieceViewModel = {
@@ -33,26 +36,12 @@ function factionTextureKey(factionId: string): string {
   return GAME_ASSET_KEYS.factionMarquise
 }
 
-function typeBadge(piece: Pick<PieceStackViewModel, 'kind' | 'type'>): string {
-  if (piece.kind === 'warrior') {
-    return ''
+function textureKeyForStack(stack: PieceStackViewModel): string {
+  const tokenKey = pieceTokenTextureKey(stack.kind, stack.type)
+  if (tokenKey !== null) {
+    return tokenKey
   }
-  if (piece.kind === 'building') {
-    if (piece.type === 'sawmill') return 'S'
-    if (piece.type === 'workshop') return 'W'
-    if (piece.type === 'recruiter') return 'R'
-    if (piece.type === 'roost') return 'O'
-    if (piece.type === 'keep') return 'K'
-    if (piece.type === 'base') return 'B'
-    return 'B'
-  }
-  if (piece.kind === 'token') {
-    if (piece.type === 'wood') return 'w'
-    if (piece.type === 'keep') return 'K'
-    if (piece.type === 'sympathy') return 's'
-    return 't'
-  }
-  return '?'
+  return factionTextureKey(stack.factionId)
 }
 
 /**
@@ -92,16 +81,20 @@ export function groupPiecesIntoStacks(
 }
 
 /**
- * Faction icon with count (and optional type badge for buildings/tokens).
+ * Token/building art when known; else faction icon. Count overlay.
  */
 export function drawPieceStack(
   scene: Phaser.Scene,
   stack: PieceStackViewModel,
   position: PieceDrawPosition,
 ): Phaser.GameObjects.Container {
-  const size =
-    stack.kind === 'warrior' ? PIECE_DRAW.iconSize : PIECE_DRAW.buildingIconSize
-  const textureKey = factionTextureKey(stack.factionId)
+  const usesTokenArt = pieceTokenTextureKey(stack.kind, stack.type) !== null
+  const size = usesTokenArt
+    ? PIECE_DRAW.buildingIconSize
+    : stack.kind === 'warrior'
+      ? PIECE_DRAW.iconSize
+      : PIECE_DRAW.buildingIconSize
+  const textureKey = textureKeyForStack(stack)
 
   const icon = scene.add
     .image(0, 0, textureKey)
@@ -123,23 +116,7 @@ export function drawPieceStack(
     })
     .setOrigin(0.5)
 
-  const children: Phaser.GameObjects.GameObject[] = [icon, ring, countText]
-
-  const badge = typeBadge(stack)
-  if (badge !== '') {
-    const badgeText = scene.add
-      .text(size * 0.35, -size * 0.35, badge, {
-        fontFamily: 'monospace',
-        fontSize: '11px',
-        color: '#1a1a1a',
-        backgroundColor: '#f0e6d3',
-        padding: { x: 3, y: 1 },
-      })
-      .setOrigin(0.5)
-    children.push(badgeText)
-  }
-
-  return scene.add.container(position.x, position.y, children)
+  return scene.add.container(position.x, position.y, [icon, ring, countText])
 }
 
 export function stackOffsets(count: number): PieceDrawPosition[] {
