@@ -114,7 +114,7 @@ describe('marquiseActionComposer march', () => {
         params: {
           moves: [
             { from: 0, to: 4, count: 2 },
-            { from: 4, to: 9, count: 1 },
+            { from: 4, to: 1, count: 1 },
           ],
         },
       }),
@@ -123,14 +123,59 @@ describe('marquiseActionComposer march', () => {
     composer.chooseClearing(4)
     composer.chooseColumn('2')
     composer.chooseClearing(4)
-    composer.chooseClearing(9)
+    composer.chooseClearing(1)
     expect(composer.chooseColumn('1')).toEqual({
       kind: 'ready',
       action: {
         type: 'march',
         moves: [
           { from: 0, to: 4, count: 2 },
-          { from: 4, to: 9, count: 1 },
+          { from: 4, to: 1, count: 1 },
+        ],
+      },
+    })
+  })
+
+  it('second move can take warriors that arrived on first', () => {
+    // C1:1, C5:1 → C1→C5 (1), C5→C10 (2)
+    const march = createMarquiseMarchComposerHooks({
+      warriorCountsForCurrentSeat: () =>
+        new Map([
+          [1, 1],
+          [5, 1],
+        ]),
+    })
+    const composer = new ActionComposer()
+    composer.setHooks(march.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'march',
+        params: {
+          moves: [
+            { from: 1, to: 5, count: 1 },
+            { from: 5, to: 10, count: 1 },
+            { from: 5, to: 1, count: 1 },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(1)
+    composer.chooseClearing(5)
+    composer.chooseColumn('1')
+    composer.chooseClearing(5)
+    composer.chooseClearing(10)
+    expect(march.getPromptOptions()).toEqual([
+      { label: '1 warrior', value: '1' },
+      { label: '2 warriors', value: '2' },
+    ])
+    expect(composer.chooseColumn('2')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'march',
+        moves: [
+          { from: 1, to: 5, count: 1 },
+          { from: 5, to: 10, count: 2 },
         ],
       },
     })
