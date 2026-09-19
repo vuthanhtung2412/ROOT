@@ -259,6 +259,44 @@ function legalMarchMoves(state: GameState, seat: Seat, ctx: Ctx): MarchMove[] {
   return moves
 }
 
+/**
+ * Rule: 6.5.2 March — up to two moves, resolved in order.
+ * Second move may use warriors that arrived from the first.
+ */
+function validateMarchMoves(
+  state: GameState,
+  seat: Seat,
+  moves: MarchMove[],
+  ctx: Ctx,
+): void {
+  const simulated: GameState = {
+    ...state,
+    clearings: state.clearings.map((clearing) => ({
+      pieces: [...clearing.pieces],
+    })),
+  }
+  const silentContext: Ctx = {
+    ...ctx,
+    emit: () => {},
+  }
+  for (const move of moves) {
+    if (move.count < 1) {
+      throw new RuleError('INVALID_MOVE_COUNT', { move })
+    }
+    if (!canMarchMove(simulated, { seat, from: move.from, to: move.to }, silentContext)) {
+      throw new RuleError('CANNOT_MOVE', { move })
+    }
+    if (move.count > warriors(simulated, move.from, seat)) {
+      throw new RuleError('NOT_ENOUGH_WARRIORS', { move })
+    }
+    moveWarriors(
+      simulated,
+      { seat, from: move.from, to: move.to, count: move.count },
+      silentContext,
+    )
+  }
+}
+
 function legalBuildChoices(state: GameState, seat: Seat, ctx: Ctx): BuildChoice[] {
   const choices: BuildChoice[] = []
   for (let clearing = 0; clearing < 12; clearing++) {
@@ -506,15 +544,7 @@ export class Marquise extends Faction {
         if (action.moves.length < 1 || action.moves.length > 2) {
           throw new RuleError('INVALID_MARCH', { count: action.moves.length })
         }
-        for (const move of action.moves) {
-          if (move.count < 1) throw new RuleError('INVALID_MOVE_COUNT', { move })
-          if (!canMarchMove(state, { seat, from: move.from, to: move.to }, ctx)) {
-            throw new RuleError('CANNOT_MOVE', { move })
-          }
-          if (move.count > warriors(state, move.from, seat)) {
-            throw new RuleError('NOT_ENOUGH_WARRIORS', { move })
-          }
-        }
+        validateMarchMoves(state, seat, action.moves, ctx)
         return
       }
       case 'build': {
