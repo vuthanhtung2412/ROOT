@@ -11,7 +11,6 @@ type EventDraft =
   | { type: 'pickCard'; cardIds: string[]; kind: 'fieldHospital' | 'battle' }
   | { type: 'pickOrder'; orders: number[][] }
   | { type: 'pickEffect' }
-  | { type: 'pickPieces'; pieceIds: string[] }
 
 /**
  * Pending resolveEvent composers (Field Hospitals + battle stages).
@@ -83,6 +82,17 @@ export function createEventComposerHooks(): {
 
       if (params.useEffect !== undefined) {
         overlayKind = 'battle'
+        if (params.useEffect.length === 1) {
+          const only = params.useEffect[0]
+          if (only === undefined) {
+            return null
+          }
+          clear()
+          return {
+            kind: 'ready',
+            action: { type: 'resolveEvent', useEffect: only },
+          }
+        }
         draft = { type: 'pickEffect' }
         promptOptions = params.useEffect.map((value) => ({
           label: value ? 'Use effect' : 'Skip effect',
@@ -121,20 +131,11 @@ export function createEventComposerHooks(): {
 
       if (params.pieceIds !== undefined) {
         overlayKind = 'battle'
-        draft = { type: 'pickPieces', pieceIds: params.pieceIds }
-        promptOptions = params.pieceIds.map((pieceId) => ({
-          label: pieceId.slice(0, 10),
-          value: pieceId,
-        }))
+        // Each ActionSpec already encodes one full removal combo.
+        clear()
         return {
-          kind: 'incomplete',
-          prompt: {
-            message: 'Choose piece to remove',
-            highlightClearings: [],
-            enabledCardIds: null,
-            canConfirm: false,
-            canCancel: true,
-          },
+          kind: 'ready',
+          action: { type: 'resolveEvent', pieceIds: params.pieceIds },
         }
       }
 
@@ -165,16 +166,6 @@ export function createEventComposerHooks(): {
         }
         clear()
         return { kind: 'ready', action: { type: 'resolveEvent', order } }
-      }
-      if (draft.type === 'pickPieces') {
-        if (!draft.pieceIds.includes(value)) {
-          return null
-        }
-        clear()
-        return {
-          kind: 'ready',
-          action: { type: 'resolveEvent', pieceIds: [value] },
-        }
       }
       return null
     },

@@ -77,4 +77,22 @@ describe('eventActionComposer battle', () => {
       action: { type: 'resolveEvent', order: [1, 0] },
     })
   })
+
+  it('pieceIds combo submits whole list', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    expect(
+      composer.begin(
+        makeActionSpec({
+          type: 'resolveEvent',
+          params: { pieceIds: ['w1', 'w2'] },
+        }),
+      ),
+    ).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', pieceIds: ['w1', 'w2'] },
+    })
+  })
 })

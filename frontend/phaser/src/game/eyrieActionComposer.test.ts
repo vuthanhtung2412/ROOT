@@ -75,6 +75,76 @@ describe('eyrieActionComposer', () => {
     })
   })
 
+  it('decree battle picks clearing then defender', () => {
+    const { hooks } = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+    composer.begin(
+      makeActionSpec({
+        type: 'decree',
+        params: {
+          column: ['battle'],
+          cardIds: ['vizier'],
+          targets: [
+            { clearing: 4, defender: 0 },
+            { clearing: 4, defender: 2 },
+          ],
+        },
+      }),
+    )
+    const mid = composer.chooseClearing(4)
+    expect(mid.kind).toBe('incomplete')
+    expect(composer.chooseColumn('0')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'decree',
+        column: 'battle',
+        cardId: 'vizier',
+        clearing: 4,
+        defender: 0,
+      },
+    })
+  })
+
+  it('decree move picks from → to → count', () => {
+    const eyrie = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(eyrie.hooks)
+    composer.begin(
+      makeActionSpec({
+        type: 'decree',
+        params: {
+          column: ['move'],
+          cardIds: ['vizier'],
+          moves: [
+            { from: 1, to: 2, count: 1 },
+            { from: 1, to: 2, count: 2 },
+            { from: 1, to: 3, count: 1 },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(1)
+    const afterTo = composer.chooseClearing(2)
+    expect(afterTo.kind).toBe('incomplete')
+    if (afterTo.kind === 'incomplete') {
+      expect(afterTo.prompt.message).toContain('how many')
+    }
+    expect(eyrie.getPromptOptions()).toEqual([
+      { label: '1 warrior', value: '1' },
+      { label: '2 warriors', value: '2' },
+    ])
+    expect(composer.chooseColumn('2')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'decree',
+        column: 'move',
+        cardId: 'vizier',
+        moves: [{ from: 1, to: 2, count: 2 }],
+      },
+    })
+  })
+
   it('turmoil stays immediate via core', () => {
     const composer = new ActionComposer()
     expect(composer.begin(makeActionSpec({ type: 'turmoil' }))).toEqual({
