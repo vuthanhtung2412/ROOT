@@ -21,7 +21,7 @@ const hooks = defaultRuleHooks(FALL)
 function setupCtx() {
   return {
     map: FALL,
-    rng: { roll: () => 1, toJSON: () => ({ seed: 1, cursor: 0 }) },
+    rng: { roll: () => 0, toJSON: () => ({ seed: 1, cursor: 0 }) },
     emit: () => {},
     hooks,
     grantedActions: () => [],

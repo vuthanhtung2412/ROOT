@@ -3,6 +3,7 @@ import type { CardEffect } from '../triggers/effects.js'
 import type { Ctx } from '../game/ctx.js'
 import { playerOf } from '../queries/seat.js'
 import { RuleError } from '../rules/RuleError.js'
+import { randomIndex } from '../rules/Rng.js'
 import type { GameState } from '../state/types.js'
 import type { Seat } from '../pieces/types.js'
 
@@ -36,11 +37,7 @@ export function tryApplySwapMeet(
   if (giveIdx < 0) throw new RuleError('CARD_NOT_IN_HAND', { cardId: action.giveCardId })
 
   const takeIdx =
-    target.hand.length === 1
-      ? 0
-      : Math.floor(
-          ((ctx.rng.roll() - 1) + (ctx.rng.roll() - 1) * 6) % target.hand.length,
-        )
+    target.hand.length === 1 ? 0 : randomIndex(ctx.rng, target.hand.length)
   const taken = target.hand.splice(takeIdx, 1)[0]!
   const given = giver.hand.splice(giveIdx, 1)[0]!
   giver.hand.push(taken)

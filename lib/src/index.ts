@@ -37,7 +37,7 @@ export { toAscii } from './layout/render/ascii.js'
 export type { AsciiOpts } from './layout/render/ascii.js'
 export { defOf } from './cards/Deck.js'
 export { RuleError } from './rules/RuleError.js'
-export { SeededRng, type Rng, type RngState } from './rules/Rng.js'
+export { SeededRng, randomIndex, type Rng, type RngState } from './rules/Rng.js'
 export {
   formatGameView,
   formatGameLogEntry,

@@ -10,7 +10,7 @@ import type { ClearingId } from '../map/types.js'
 import { factionOf } from '../queries/seat.js'
 import { resetPlaceIds } from '../rules/place.js'
 import { RuleError } from '../rules/RuleError.js'
-import { SeededRng, type Rng } from '../rules/Rng.js'
+import { SeededRng, randomIndex, type Rng } from '../rules/Rng.js'
 import {
   DEFAULT_FACTIONS,
   ITEM_SUPPLY,
@@ -34,13 +34,6 @@ import { SignalBus } from '../triggers/SignalBus.js'
 const RUIN_CLEARINGS: ClearingId[] = [5, 9, 10, 11]
 
 const PHASES: Phase[] = ['birdsong', 'daylight', 'evening']
-
-function randomIndex(rng: Rng, max: number): number {
-  if (max <= 1) return 0
-  const a = rng.roll() - 1
-  const b = rng.roll() - 1
-  return (a + b * 6) % max
-}
 
 function shuffleWithRng<T>(items: T[], rng: Rng): T[] {
   const out = [...items]

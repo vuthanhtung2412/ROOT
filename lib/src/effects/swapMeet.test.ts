@@ -10,12 +10,13 @@ describe('Swap Meet', () => {
     game.start()
     game.state.players[0]!.playArea.push(card('ROOT-103'))
     game.state.players[0]!.hand.push(card('ROOT-209'))
-    game.state.players[1]!.hand.push(card('ROOT-211', 2), card('ROOT-72'))
+    game.state.players[1]!.hand = [card('ROOT-211', 2)]
 
     expect(game.legalActions().some((a) => a.type === 'swapMeet')).toBe(true)
     game.apply({ type: 'swapMeet', target: 1, giveCardId: 'ROOT-209#1' })
     expect(game.state.turnScratch.swapMeetUsed).toBe(true)
     expect(game.legalActions().some((a) => a.type === 'swapMeet')).toBe(false)
     expect(game.state.players[0]!.hand.some((c) => c.id === 'ROOT-211#2')).toBe(true)
+    expect(game.state.players[1]!.hand.some((c) => c.id === 'ROOT-209#1')).toBe(true)
   })
 })
