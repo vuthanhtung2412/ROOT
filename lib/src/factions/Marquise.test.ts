@@ -194,6 +194,45 @@ describe('Marquise turn', () => {
     expect(game.state.turnScratch.actionsLeft + game.state.turnScratch.extraActions).toBe(2)
   })
 
+  it('Rule: 6.5.2 March — second move uses warriors from first', () => {
+    // C1:1w, C5:1w → march C1→C5 (1), C5→C10 (2) → C10:2w
+    const game = lobbyTwo(3)
+    advanceToActions(game)
+    const seat = game.state.currentSeat
+    for (const clearing of game.state.clearings) {
+      clearing.pieces = clearing.pieces.filter(
+        (piece) => !(piece.kind === 'warrior' && piece.owner === seat),
+      )
+    }
+    game.state.clearings[1]!.pieces.push({
+      id: 'w-c1',
+      kind: 'warrior',
+      owner: seat,
+    })
+    game.state.clearings[5]!.pieces.push({
+      id: 'w-c5',
+      kind: 'warrior',
+      owner: seat,
+    })
+    // Clear enemies so Marquise rules origins/destinations for canMove
+    for (const clearingId of [1, 5, 10]) {
+      game.state.clearings[clearingId]!.pieces = game.state.clearings[
+        clearingId
+      ]!.pieces.filter((piece) => piece.owner === seat)
+    }
+
+    game.apply({
+      type: 'march',
+      moves: [
+        { from: 1, to: 5, count: 1 },
+        { from: 5, to: 10, count: 2 },
+      ],
+    })
+    expect(warriors(game.state, 1, seat)).toBe(0)
+    expect(warriors(game.state, 5, seat)).toBe(0)
+    expect(warriors(game.state, 10, seat)).toBe(2)
+  })
+
   it('Rule: Marquise > Build 1–4 — pay wood, place building, score track VP', () => {
     const game = lobbyTwo(3)
     advanceToActions(game)
