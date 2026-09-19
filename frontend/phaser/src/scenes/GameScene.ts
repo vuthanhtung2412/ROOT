@@ -18,6 +18,7 @@ import {
   FALL_BOARD_LAYOUT,
   type BoardLayout,
 } from '../game/boardLayout.ts'
+import { buildBattleOverlayViewModel } from '../game/battleOverlayModel.ts'
 import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
 import { ActionTray } from '../ui/ActionTray.ts'
 import { BattleOverlay } from '../ui/BattleOverlay.ts'
@@ -225,10 +226,7 @@ export class GameScene extends Phaser.Scene {
         this.eventComposer.getOverlayKind() === 'fieldHospital',
         outcome.prompt.message,
       )
-      this.battleOverlay?.sync(
-        this.eventComposer.getOverlayKind() === 'battle',
-        outcome.prompt.message,
-      )
+      this.syncBattleOverlay(outcome.prompt.message)
       return
     }
 
@@ -237,7 +235,16 @@ export class GameScene extends Phaser.Scene {
     this.cardHand?.setEnabledCards(null)
     this.cardHand?.setSelection([])
     this.eventOverlay?.sync(false, '')
-    this.battleOverlay?.sync(false, '')
+    this.syncBattleOverlay(null)
+  }
+
+  private syncBattleOverlay(prompt: string | null): void {
+    const state = this.latestSnapshot?.state
+    if (state === null || state === undefined) {
+      this.battleOverlay?.sync(null)
+      return
+    }
+    this.battleOverlay?.sync(buildBattleOverlayViewModel(state, prompt))
   }
 
   private async bootstrapBoard(): Promise<void> {
@@ -259,14 +266,18 @@ export class GameScene extends Phaser.Scene {
     if (snapshot.state === null) {
       return
     }
-    const banner = buildTurnBannerViewModel(snapshot.state)
+    const banner = buildTurnBannerViewModel(
+      snapshot.state,
+      snapshot.legalActions,
+    )
     this.turnBanner?.sync(banner)
     this.playerRail?.sync(snapshot.state, banner.actorSeat)
-    this.cardHand?.sync(snapshot.state)
+    this.cardHand?.sync(snapshot.state, snapshot.legalActions)
     this.actionTray?.sync(snapshot.legalActions, banner.actorSeat)
     this.eyrieDecreePanel?.sync(snapshot.state)
     this.factionDrawer?.sync(snapshot.state)
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
+    this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
     this.maybeShowHandoff(banner.actorSeat, banner.actorFaction)
     this.syncWinner(snapshot.state)
     this.paintStatus(snapshot.error)
