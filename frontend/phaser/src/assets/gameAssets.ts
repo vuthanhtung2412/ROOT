@@ -7,6 +7,12 @@ export const GAME_ASSET_KEYS = {
   autumnMap: 'autumn-map',
   factionMarquise: 'faction-marquise',
   factionEyrie: 'faction-eyrie',
+  tokenMarquiseSawmill: 'token-marquise-sawmill',
+  tokenMarquiseWorkshop: 'token-marquise-workshop',
+  tokenMarquiseRecruiter: 'token-marquise-recruiter',
+  tokenMarquiseWood: 'token-marquise-wood',
+  tokenMarquiseKeep: 'token-marquise-keep',
+  tokenEyrieRoost: 'token-eyrie-roost',
 } as const
 
 export type GameAssetKey = (typeof GAME_ASSET_KEYS)[keyof typeof GAME_ASSET_KEYS]
@@ -14,6 +20,41 @@ export type GameAssetKey = (typeof GAME_ASSET_KEYS)[keyof typeof GAME_ASSET_KEYS
 export type GameImageAsset = {
   key: string
   path: string
+}
+
+/** Map piece kind+type → token texture (GP2 Marquise / Eyrie). */
+export function pieceTokenTextureKey(
+  kind: string,
+  pieceType: string | undefined,
+): string | null {
+  if (pieceType === undefined) {
+    return null
+  }
+  if (kind === 'building') {
+    if (pieceType === 'sawmill') {
+      return GAME_ASSET_KEYS.tokenMarquiseSawmill
+    }
+    if (pieceType === 'workshop') {
+      return GAME_ASSET_KEYS.tokenMarquiseWorkshop
+    }
+    if (pieceType === 'recruiter') {
+      return GAME_ASSET_KEYS.tokenMarquiseRecruiter
+    }
+    if (pieceType === 'roost') {
+      return GAME_ASSET_KEYS.tokenEyrieRoost
+    }
+    return null
+  }
+  if (kind === 'token') {
+    if (pieceType === 'wood') {
+      return GAME_ASSET_KEYS.tokenMarquiseWood
+    }
+    if (pieceType === 'keep') {
+      return GAME_ASSET_KEYS.tokenMarquiseKeep
+    }
+    return null
+  }
+  return null
 }
 
 export type CardCatalogEntry = {
@@ -41,6 +82,30 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.factionEyrie,
     path: 'assets/factions/eyrie.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenMarquiseSawmill,
+    path: 'assets/tokens/marquise/sawmill.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenMarquiseWorkshop,
+    path: 'assets/tokens/marquise/workshop.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenMarquiseRecruiter,
+    path: 'assets/tokens/marquise/recruiter.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenMarquiseWood,
+    path: 'assets/tokens/marquise/wood.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenMarquiseKeep,
+    path: 'assets/tokens/marquise/keep.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenEyrieRoost,
+    path: 'assets/tokens/eyrie/roost.png',
   },
 ]
 
