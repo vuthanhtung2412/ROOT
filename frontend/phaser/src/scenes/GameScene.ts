@@ -80,7 +80,9 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.scale
 
     const marquiseCards = createMarquiseCardComposerHooks()
-    this.marquiseMarch = createMarquiseMarchComposerHooks()
+    this.marquiseMarch = createMarquiseMarchComposerHooks({
+      warriorCountsForCurrentSeat: () => this.readCurrentSeatWarriorCounts(),
+    })
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
     this.eventComposer = createEventComposerHooks()
@@ -245,6 +247,27 @@ export class GameScene extends Phaser.Scene {
       return
     }
     this.battleOverlay?.sync(buildBattleOverlayViewModel(state, prompt))
+  }
+
+  private readCurrentSeatWarriorCounts(): Map<number, number> {
+    const counts = new Map<number, number>()
+    const state = this.latestSnapshot?.state
+    if (state === null || state === undefined) {
+      return counts
+    }
+    const seat = state.currentSeat
+    state.clearings.forEach((clearing, clearingId) => {
+      let warriors = 0
+      for (const piece of clearing.pieces) {
+        if (piece.kind === 'warrior' && piece.owner === seat) {
+          warriors += 1
+        }
+      }
+      if (warriors > 0) {
+        counts.set(clearingId, warriors)
+      }
+    })
+    return counts
   }
 
   private async bootstrapBoard(): Promise<void> {

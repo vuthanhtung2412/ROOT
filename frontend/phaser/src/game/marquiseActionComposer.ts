@@ -5,6 +5,7 @@ import {
   type ClientAction,
   type ComposerOutcome,
 } from './ActionComposer.ts'
+import { fallAdjacentClearings } from './fallPaths.ts'
 
 type OverworkOption = { cardId: string; clearing: number }
 
@@ -178,17 +179,75 @@ type MarchDraft =
   | {
       type: 'march'
       legalMoves: MarchMove[]
+      /** Warrior counts before any march move (current seat). */
+      initialCounts: Map<number, number>
       picking: MarchPicking
       firstMove: MarchMove | null
       from: number | null
       to: number | null
     }
 
+export type MarchBoardSource = {
+  warriorCountsForCurrentSeat: () => Map<number, number>
+}
+
+function unique(values: number[]): number[] {
+  return [...new Set(values)]
+}
+
+function countsFromLegalMoves(legalMoves: MarchMove[]): Map<number, number> {
+  const counts = new Map<number, number>()
+  for (const move of legalMoves) {
+    counts.set(move.from, Math.max(counts.get(move.from) ?? 0, move.count))
+  }
+  return counts
+}
+
+/** Apply one march leg to warrior counts (6.5.2 sequential). */
+export function warriorCountsAfterMove(
+  before: ReadonlyMap<number, number>,
+  move: MarchMove,
+): Map<number, number> {
+  const next = new Map(before)
+  next.set(move.from, (next.get(move.from) ?? 0) - move.count)
+  next.set(move.to, (next.get(move.to) ?? 0) + move.count)
+  return next
+}
+
+/** Adjacent march legs from current warrior counts (paths only; server checks rule). */
+export function legalMarchLegsFromCounts(
+  counts: ReadonlyMap<number, number>,
+): MarchMove[] {
+  const moves: MarchMove[] = []
+  for (const [from, available] of counts) {
+    if (available < 1) {
+      continue
+    }
+    for (const to of fallAdjacentClearings(from)) {
+      for (let count = 1; count <= available; count += 1) {
+        moves.push({ from, to, count })
+      }
+    }
+  }
+  return moves
+}
+
+function activeLegs(draft: Extract<MarchDraft, { type: 'march' }>): MarchMove[] {
+  if (draft.firstMove === null) {
+    return draft.legalMoves
+  }
+  const afterFirst = warriorCountsAfterMove(draft.initialCounts, draft.firstMove)
+  return legalMarchLegsFromCounts(afterFirst)
+}
+
 /**
  * Compound March (6.5.2): each move is from → to → count.
- * After first move count: Confirm to submit, or start second move.
+ * After first move count: Confirm to submit, or start second move
+ * (second may use warriors that arrived on the first).
  */
-export function createMarquiseMarchComposerHooks(): {
+export function createMarquiseMarchComposerHooks(
+  board?: MarchBoardSource,
+): {
   hooks: ActionComposerHooks
   getDraft: () => MarchDraft
   getPromptOptions: () => Array<{ label: string; value: string }>
@@ -215,10 +274,16 @@ export function createMarquiseMarchComposerHooks(): {
       }
       const params = readChoiceParams(spec)
       const legalMoves = params.moves ?? []
+      const fromBoard = board?.warriorCountsForCurrentSeat()
+      const initialCounts =
+        fromBoard !== undefined && fromBoard.size > 0
+          ? fromBoard
+          : countsFromLegalMoves(legalMoves)
       clearCountOptions()
       draft = {
         type: 'march',
         legalMoves,
+        initialCounts,
         picking: 'firstFrom',
         firstMove: null,
         from: null,
@@ -241,8 +306,10 @@ export function createMarquiseMarchComposerHooks(): {
         return null
       }
 
+      const legs = activeLegs(draft)
+
       if (draft.picking === 'firstFrom' || draft.picking === 'secondFrom') {
-        const fromMoves = draft.legalMoves.filter((move) => move.from === clearingId)
+        const fromMoves = legs.filter((move) => move.from === clearingId)
         if (fromMoves.length === 0) {
           return null
         }
@@ -271,7 +338,7 @@ export function createMarquiseMarchComposerHooks(): {
           return null
         }
         const origin = draft.from
-        const candidates = draft.legalMoves.filter(
+        const candidates = legs.filter(
           (move) => move.from === origin && move.to === clearingId,
         )
         if (candidates.length === 0) {
@@ -298,7 +365,8 @@ export function createMarquiseMarchComposerHooks(): {
 
       // After first count chosen: picking a clearing starts second move origin
       if (draft.picking === 'firstCount' && draft.firstMove !== null) {
-        const fromMoves = draft.legalMoves.filter((move) => move.from === clearingId)
+        const secondLegs = activeLegs(draft)
+        const fromMoves = secondLegs.filter((move) => move.from === clearingId)
         if (fromMoves.length === 0) {
           return null
         }
@@ -341,7 +409,8 @@ export function createMarquiseMarchComposerHooks(): {
       }
       const origin = draft.from
       const destination = draft.to
-      const match = draft.legalMoves.find(
+      const legs = activeLegs(draft)
+      const match = legs.find(
         (move) =>
           move.from === origin && move.to === destination && move.count === count,
       )
@@ -358,11 +427,14 @@ export function createMarquiseMarchComposerHooks(): {
           from: null,
           to: null,
         }
+        const secondOrigins = unique(
+          activeLegs(draft).map((move) => move.from),
+        )
         return {
           kind: 'incomplete',
           prompt: {
             message: `March 1 done (${String(count)}) — Confirm, or pick 2nd origin`,
-            highlightClearings: unique(draft.legalMoves.map((move) => move.from)),
+            highlightClearings: secondOrigins,
             enabledCardIds: null,
             canConfirm: true,
             canCancel: true,
@@ -414,10 +486,6 @@ export function createMarquiseMarchComposerHooks(): {
     getDraft: () => draft,
     getPromptOptions: () => promptOptions,
   }
-}
-
-function unique(values: number[]): number[] {
-  return [...new Set(values)]
 }
 
 type BuildOption = { clearing: number; building: string }
