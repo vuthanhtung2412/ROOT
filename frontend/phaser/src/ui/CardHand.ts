@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import type { GameState } from '../api/client.ts'
+import type { ActionSpec, GameState } from '../api/client.ts'
 import { buildTurnBannerViewModel } from './TurnBanner.ts'
 import {
   CardView,
@@ -46,13 +46,13 @@ export class CardHand {
     this.repaintSelection()
   }
 
-  sync(state: GameState): void {
+  sync(state: GameState, legalActions: readonly ActionSpec[] = []): void {
     for (const card of this.cards) {
       card.destroy()
     }
     this.cards = []
 
-    const banner = buildTurnBannerViewModel(state)
+    const banner = buildTurnBannerViewModel(state, legalActions)
     const actor = state.players.find((player) => player.seat === banner.actorSeat)
     const hand = actor?.hand ?? []
 

@@ -28,7 +28,14 @@ type EyrieDraft =
       targets: BattleTarget[]
       moves: MarchMove[]
       from: number | null
-      picking: 'clearing' | 'defender' | 'moveFrom' | 'moveTo' | 'done'
+      to: number | null
+      picking:
+        | 'clearing'
+        | 'defender'
+        | 'moveFrom'
+        | 'moveTo'
+        | 'moveCount'
+        | 'done'
     }
 
 function isDecreeCardOption(value: unknown): value is DecreeCardOption {
@@ -116,6 +123,7 @@ export function createEyrieComposerHooks(): {
             targets,
             moves,
             from: null,
+            to: null,
             picking: 'clearing',
           }
           return {
@@ -139,6 +147,7 @@ export function createEyrieComposerHooks(): {
             targets,
             moves,
             from: null,
+            to: null,
             picking: 'clearing',
           }
           return {
@@ -162,6 +171,7 @@ export function createEyrieComposerHooks(): {
             targets,
             moves,
             from: null,
+            to: null,
             picking: 'moveFrom',
           }
           return {
@@ -293,6 +303,39 @@ export function createEyrieComposerHooks(): {
         return { kind: 'ready', action }
       }
 
+      // Warrior count for decree move
+      if (
+        draft.type === 'decree' &&
+        draft.picking === 'moveCount' &&
+        draft.from !== null &&
+        draft.to !== null
+      ) {
+        const count = Number(column)
+        if (!Number.isInteger(count) || count < 1) {
+          return null
+        }
+        const origin = draft.from
+        const destination = draft.to
+        const match = draft.moves.find(
+          (move) =>
+            move.from === origin &&
+            move.to === destination &&
+            move.count === count,
+        )
+        if (match === undefined) {
+          return null
+        }
+        const action: ClientAction = {
+          type: 'decree',
+          column: draft.column,
+          cardId: draft.cardId,
+          moves: [match],
+        }
+        draft = { type: 'idle' }
+        promptOptions = []
+        return { kind: 'ready', action }
+      }
+
       return null
     },
 
@@ -373,7 +416,8 @@ export function createEyrieComposerHooks(): {
         if (fromMoves.length === 0) {
           return null
         }
-        draft = { ...draft, from: clearingId, picking: 'moveTo' }
+        draft = { ...draft, from: clearingId, to: null, picking: 'moveTo' }
+        promptOptions = []
         return {
           kind: 'incomplete',
           prompt: {
@@ -398,17 +442,28 @@ export function createEyrieComposerHooks(): {
         if (candidates.length === 0) {
           return null
         }
-        const chosen = candidates.reduce((best, move) =>
-          move.count > best.count ? move : best,
+        const counts = unique(candidates.map((move) => move.count)).sort(
+          (left, right) => left - right,
         )
-        const action: ClientAction = {
-          type: 'decree',
-          column: draft.column,
-          cardId: draft.cardId,
-          moves: [chosen],
+        promptOptions = counts.map((count) => ({
+          label: `${String(count)} warrior${count === 1 ? '' : 's'}`,
+          value: String(count),
+        }))
+        draft = {
+          ...draft,
+          to: clearingId,
+          picking: 'moveCount',
         }
-        draft = { type: 'idle' }
-        return { kind: 'ready', action }
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: 'Decree move — how many warriors?',
+            highlightClearings: [origin, clearingId],
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: true,
+          },
+        }
       }
 
       return null

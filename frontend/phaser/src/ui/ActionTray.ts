@@ -1,5 +1,6 @@
 import type Phaser from 'phaser'
 import type { ActionSpec } from '../api/client.ts'
+import { readChoiceParams } from '../game/ActionComposer.ts'
 
 export type ActionTrayHandlers = {
   onSelectAction: (spec: ActionSpec) => void
@@ -42,7 +43,7 @@ export class ActionTray {
 
     forActor.forEach((spec, index) => {
       const button = this.scene.add
-        .text(0, 28 + index * 34, spec.type, {
+        .text(0, 28 + index * 34, formatActionLabel(spec), {
           fontFamily: 'monospace',
           fontSize: '14px',
           color: '#1a1a1a',
@@ -63,4 +64,38 @@ export class ActionTray {
   destroy(): void {
     this.root.destroy(true)
   }
+}
+
+function formatActionLabel(spec: ActionSpec): string {
+  const params = readChoiceParams(spec)
+  if (spec.type === 'decree') {
+    const column = params.column?.[0]
+    return column !== undefined ? `decree:${column}` : 'decree'
+  }
+  if (spec.type === 'resolveEvent') {
+    if (params.decline !== undefined) {
+      return 'skip ambush'
+    }
+    if (params.cardIds !== undefined) {
+      return 'play ambush'
+    }
+    if (params.pieceIds !== undefined) {
+      return `remove ×${String(params.pieceIds.length)}`
+    }
+    if (params.useEffect !== undefined) {
+      const only = params.useEffect[0]
+      if (params.useEffect.length === 1 && only === true) {
+        return 'use effect'
+      }
+      if (params.useEffect.length === 1 && only === false) {
+        return 'skip effect'
+      }
+      return 'battle effect'
+    }
+    if (params.order !== undefined) {
+      return 'effects order'
+    }
+    return 'resolveEvent'
+  }
+  return spec.type
 }
