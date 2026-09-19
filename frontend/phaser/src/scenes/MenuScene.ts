@@ -53,7 +53,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
 
     const startButton = this.add
-      .text(width / 2, height * 0.55, 'New GP2 game', {
+      .text(width / 2, height * 0.52, 'New GP2 game', {
         fontFamily: 'Georgia, serif',
         fontSize: '24px',
         color: '#1a1a1a',
@@ -65,6 +65,21 @@ export class MenuScene extends Phaser.Scene {
 
     startButton.on('pointerdown', () => {
       void this.handleStartGame(startButton)
+    })
+
+    const continueButton = this.add
+      .text(width / 2, height * 0.62, 'Continue loaded game', {
+        fontFamily: 'Georgia, serif',
+        fontSize: '18px',
+        color: '#1a1a1a',
+        backgroundColor: '#c8d8f0',
+        padding: { x: 16, y: 10 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+
+    continueButton.on('pointerdown', () => {
+      void this.handleContinueGame(continueButton)
     })
   }
 
@@ -86,6 +101,31 @@ export class MenuScene extends Phaser.Scene {
     if (snapshot.error !== null) {
       this.setStatus(snapshot.error, '#c44')
       startButton.setInteractive({ useHandCursor: true })
+      return
+    }
+
+    this.scene.start('GameScene', { session: this.session })
+  }
+
+  private async handleContinueGame(
+    continueButton: Phaser.GameObjects.Text,
+  ): Promise<void> {
+    if (this.session === null) {
+      return
+    }
+    continueButton.disableInteractive()
+    this.setStatus('Loading game…', '#9a9a9a')
+
+    await this.session.refresh()
+    const snapshot = this.session.getSnapshot()
+    if (snapshot.error !== null) {
+      this.setStatus(snapshot.error, '#c44')
+      continueButton.setInteractive({ useHandCursor: true })
+      return
+    }
+    if (snapshot.state === null || snapshot.state.status !== 'playing') {
+      this.setStatus('No playing game on API — load a snapshot first', '#c44')
+      continueButton.setInteractive({ useHandCursor: true })
       return
     }
 
