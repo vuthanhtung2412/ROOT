@@ -29,7 +29,6 @@ import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
 import { EventOverlay } from '../ui/EventOverlay.ts'
 import { FactionDrawer } from '../ui/FactionDrawer.ts'
 import { GameDrawer } from '../ui/GameDrawer.ts'
-import { HandoffOverlay } from '../ui/HandoffOverlay.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
 import { SelectionPrompt } from '../ui/SelectionPrompt.ts'
 import {
@@ -56,9 +55,7 @@ export class GameScene extends Phaser.Scene {
   private battleOverlay: BattleOverlay | null = null
   private factionDrawer: FactionDrawer | null = null
   private gameDrawer: GameDrawer | null = null
-  private handoffOverlay: HandoffOverlay | null = null
   private winnerOverlay: WinnerOverlay | null = null
-  private lastHandoffSeat: number | null = null
   private readonly composer = new ActionComposer()
   private marquiseMarch = createMarquiseMarchComposerHooks()
   private marquiseBoard = createMarquiseBoardComposerHooks()
@@ -124,10 +121,8 @@ export class GameScene extends Phaser.Scene {
       onUndo: () => {
         void this.session?.undo()
       },
-    })
-    this.handoffOverlay = new HandoffOverlay(this, {
-      onContinue: () => {
-        this.handoffOverlay?.hide()
+      onEndGame: () => {
+        void this.handleEndGame()
       },
     })
     this.winnerOverlay = new WinnerOverlay(this)
@@ -189,12 +184,18 @@ export class GameScene extends Phaser.Scene {
     this.factionDrawer = null
     this.gameDrawer?.destroy()
     this.gameDrawer = null
-    this.handoffOverlay?.destroy()
-    this.handoffOverlay = null
     this.winnerOverlay?.destroy()
     this.winnerOverlay = null
     this.selectionPrompt?.destroy()
     this.selectionPrompt = null
+  }
+
+  private async handleEndGame(): Promise<void> {
+    if (this.session === null) {
+      return
+    }
+    await this.session.restart()
+    this.scene.start('MenuScene', { session: this.session })
   }
 
   private handleSelectAction(spec: ActionSpec): void {
@@ -287,23 +288,44 @@ export class GameScene extends Phaser.Scene {
 
   private paintHud(snapshot: GameSessionSnapshot): void {
     if (snapshot.state === null) {
+      if (this.session !== null) {
+        this.scene.start('MenuScene', { session: this.session })
+      }
       return
     }
     const banner = buildTurnBannerViewModel(
       snapshot.state,
       snapshot.legalActions,
     )
+    const localControlsActor = this.localPlayerControlsSeat(banner.actorSeat)
     this.turnBanner?.sync(banner)
     this.playerRail?.sync(snapshot.state, banner.actorSeat)
     this.cardHand?.sync(snapshot.state, snapshot.legalActions)
-    this.actionTray?.sync(snapshot.legalActions, banner.actorSeat)
+    this.actionTray?.sync(
+      localControlsActor ? snapshot.legalActions : [],
+      banner.actorSeat,
+    )
     this.eyrieDecreePanel?.sync(snapshot.state)
     this.factionDrawer?.sync(snapshot.state)
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
-    this.maybeShowHandoff(banner.actorSeat, banner.actorFaction)
     this.syncWinner(snapshot.state)
-    this.paintStatus(snapshot.error)
+    this.paintStatus(
+      localControlsActor
+        ? snapshot.error
+        : (snapshot.error ?? 'Waiting for other player…'),
+    )
+  }
+
+  /** QA (no localPlayerId) may control any seat; remote only own seat. */
+  private localPlayerControlsSeat(actorSeat: number): boolean {
+    if (this.session === null) {
+      return false
+    }
+    if (this.session.getLocalPlayerId() === null) {
+      return true
+    }
+    return this.session.getLocalSeat() === actorSeat
   }
 
   private syncWinner(state: GameState): void {
@@ -318,18 +340,6 @@ export class GameScene extends Phaser.Scene {
     this.winnerOverlay?.sync(
       winnerPlayer?.faction ?? `seat ${String(winnerSeat)}`,
     )
-  }
-
-  private maybeShowHandoff(actorSeat: number, actorFaction: string): void {
-    if (this.lastHandoffSeat === null) {
-      this.lastHandoffSeat = actorSeat
-      return
-    }
-    if (this.lastHandoffSeat === actorSeat) {
-      return
-    }
-    this.lastHandoffSeat = actorSeat
-    this.handoffOverlay?.show(actorFaction)
   }
 
   private syncBoardPieces(snapshot: GameSessionSnapshot): void {
