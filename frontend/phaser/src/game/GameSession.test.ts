@@ -157,6 +157,46 @@ describe('GameSession', () => {
     expect(session.getSnapshot().error).toBe('Not your seat')
   })
 
+  it('submitAction allows pending fieldHospital victim not currentSeat', async () => {
+    const state = makeGameState({
+      currentSeat: 1,
+      pending: [
+        {
+          type: 'fieldHospital',
+          victim: 0,
+          clearing: 4,
+          count: 2,
+        },
+      ],
+    })
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.phaser.playerIdentity',
+      JSON.stringify({
+        playerId: 'marquise',
+        apiBaseUrl: 'http://example.test',
+      }),
+    )
+    const fetchMock = stubFetchSequence([])
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ storage, socket })
+
+    await session.continueWithStoredIdentity()
+    socket.push({
+      state,
+      historyLength: 1,
+      legalActions: [
+        makeActionSpec({ type: 'resolveEvent', actor: 0 }),
+      ],
+      log: [],
+    })
+    fetchMock.mockResolvedValueOnce(makeFetchResponse({ state, log: [] }))
+    await session.submitAction({ type: 'resolveEvent', decline: true })
+
+    expect(session.getSnapshot().error).toBeNull()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('submitAction posts REST without GET refresh', async () => {
     const state = makeGameState({ currentSeat: 0 })
     const fetchMock = stubFetchSequence([
