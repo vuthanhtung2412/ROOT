@@ -65,8 +65,8 @@ There a 3 types of backend QA
 
 ## Frontend QA
 
-1. Create desired state: dump via `GET /game/snapshot` (or craft `GameSnapshot` JSON), then `pnpm --filter @root/cli start -- load path/to.json` (`PUT /game/snapshot?replace=1`). Or build via CLI `new`/`join`/`start`/`act` / lib fixtures. Helper: `pnpm --filter @root/lib exec tsx ../tmp/qa/make-snapshots.ts`.
+1. Create desired state: dump via `GET /game/snapshot` (or craft `GameSnapshot` JSON), then `pnpm --filter @root/cli start -- load path/to.json` (`PUT /game/snapshot?replace=1`). Or build via CLI `new`/`join`/`start`/`act` / lib fixtures. Helper: `pnpm --filter @root/lib exec tsx ../../.cursor/skills/QA/make-snapshots.ts` (writes `tmp/qa/snapshots/`).
 2. `pnpm --filter @root/web dev` (http://localhost:3000) + `pnpm --filter @root/phaser dev` (Vite, often `:5173`/`:5174`).
 3. Open Phaser → **Continue loaded game** (do not New GP2 — that replaces the snapshot). Drive the feature on canvas (action tray, clearings, Confirm). Chrome DevTools MCP OK for screenshots/console; canvas clicks need coords or Playwright.
-4. Evidence under `tmp/artifacts`: screenshots and/or video. Record: `ROOT_PHASER_URL=http://localhost:5174 node tmp/qa/record-ui-scenario.mjs <march|turmoil>`. After UI, verify via `GET /game` + `/game/log` (not screenshot alone).
+4. Evidence under `tmp/artifacts`: screenshots and/or video. Record: `ROOT_PHASER_URL=http://localhost:5174 node .cursor/skills/QA/record-ui-scenario.mjs <march|turmoil>`. First time: `cd .cursor/skills/QA && npm i && npx playwright install chromium`. Click highlight: `click-highlight.mjs` (auto red blink). After UI, verify via `GET /game` + `/game/log` (not screenshot alone).
 5. Open PR with evidence + short repro steps.
