@@ -30,6 +30,7 @@ import {
   DECREE_COLUMNS,
   EYRIE_ROOST_DRAW_BONUS_THRESHOLDS,
   EYRIE_ROOST_VP,
+  eyrieLeaderPools,
   type DecreeColumn,
   type EyrieBoard,
 } from '../state/boards.js'
@@ -341,7 +342,10 @@ export class Eyrie extends Faction {
   setup(state: GameState, seat: Seat, _ctx: Ctx): void {
     const board = boardOf(state, seat)
     board.supply.warriors = 20
+    const pools = eyrieLeaderPools('builder')
     board.leader = 'builder'
+    board.leadersFaceUp = pools.leadersFaceUp
+    board.leadersFaceDown = pools.leadersFaceDown
     board.roostTrack.placed = 6
 
     const start = eyrieStartClearing(state)

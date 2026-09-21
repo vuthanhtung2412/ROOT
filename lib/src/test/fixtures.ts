@@ -3,7 +3,12 @@ import type { Ctx } from '../game/ctx.js'
 import { FALL } from '../map/fall.js'
 import type { FactionId, Piece, Seat } from '../pieces/types.js'
 import type { Rng } from '../rules/Rng.js'
-import type { EyrieBoard, MarquiseBoard } from '../state/boards.js'
+import {
+  EYRIE_LEADERS,
+  eyrieLeaderPools,
+  type EyrieBoard,
+  type MarquiseBoard,
+} from '../state/boards.js'
 import { ITEM_SUPPLY } from '../state/constants.js'
 import type { ClearingState, GameState, PlayerState } from '../state/types.js'
 import { buildRuleHooks } from '../triggers/buildHooks.js'
@@ -69,13 +74,20 @@ export function marquiseBoard(
 }
 
 export function eyrieBoard(overrides?: Partial<EyrieBoard>): EyrieBoard {
+  const leader = overrides?.leader !== undefined ? overrides.leader : 'builder'
+  const defaultPools =
+    leader === null
+      ? { leadersFaceUp: [...EYRIE_LEADERS], leadersFaceDown: [] as EyrieBoard['leadersFaceDown'] }
+      : eyrieLeaderPools(leader)
   return {
     kind: 'eyrie',
     supply: { warriors: 20 },
-    leader: 'builder',
     decree: { recruit: [], move: [], battle: [], build: [] },
     roostTrack: { placed: 6 },
     ...overrides,
+    leader,
+    leadersFaceUp: overrides?.leadersFaceUp ?? defaultPools.leadersFaceUp,
+    leadersFaceDown: overrides?.leadersFaceDown ?? defaultPools.leadersFaceDown,
   }
 }
 
