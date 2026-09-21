@@ -115,25 +115,62 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
 
 export function cardImageAssets(): GameImageAsset[] {
   const assets: GameImageAsset[] = []
-  for (const [defId, entry] of Object.entries(CARD_CATALOG)) {
-    assets.push({
-      key: cardTextureKey(defId),
-      path: `assets/cards/${entry.image}`,
-    })
+  for (const defId of Object.keys(CARD_CATALOG)) {
+    const asset = cardImageAssetForDefId(defId)
+    if (asset !== null) {
+      assets.push(asset)
+    }
   }
   return assets
 }
 
-/** Boot: map + faction/token icons only (cards deferred to GameScene). */
-export function preloadCoreGameAssets(loader: ImageAssetLoader): void {
-  for (const asset of CORE_IMAGE_ASSETS) {
-    loader.image(asset.key, asset.path)
+export function cardImageAssetForDefId(defId: string): GameImageAsset | null {
+  const entry = CARD_CATALOG[defId]
+  if (entry === undefined) {
+    return null
+  }
+  return {
+    key: cardTextureKey(defId),
+    path: `assets/cards/${entry.image}`,
   }
 }
 
-/** GameScene: EP card faces (~13 MB) — load after join, not on boot. */
-export function preloadCardImageAssets(loader: ImageAssetLoader): void {
-  for (const asset of cardImageAssets()) {
+/**
+ * Queue card faces not yet in the texture cache.
+ * Returns how many new loads were queued.
+ */
+export function queueMissingCardImages(
+  loader: ImageAssetLoader,
+  textureExists: (key: string) => boolean,
+  defIds: readonly string[],
+  alreadyQueued: ReadonlySet<string> = new Set(),
+): { queuedCount: number; newlyQueuedKeys: string[] } {
+  const newlyQueuedKeys: string[] = []
+  const seenDefIds = new Set<string>()
+  for (const defId of defIds) {
+    if (seenDefIds.has(defId)) {
+      continue
+    }
+    seenDefIds.add(defId)
+    const asset = cardImageAssetForDefId(defId)
+    if (asset === null) {
+      continue
+    }
+    if (textureExists(asset.key) || alreadyQueued.has(asset.key)) {
+      continue
+    }
+    loader.image(asset.key, asset.path)
+    newlyQueuedKeys.push(asset.key)
+  }
+  return {
+    queuedCount: newlyQueuedKeys.length,
+    newlyQueuedKeys,
+  }
+}
+
+/** Boot: map + faction/token icons only (cards load on demand in GameScene). */
+export function preloadCoreGameAssets(loader: ImageAssetLoader): void {
+  for (const asset of CORE_IMAGE_ASSETS) {
     loader.image(asset.key, asset.path)
   }
 }
