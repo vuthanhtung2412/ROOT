@@ -34,6 +34,9 @@ export type GameSessionListener = (snapshot: GameSessionSnapshot) => void
 /** First click creates lobby as Marquise; second joins as Eyrie and starts. */
 export type JoinMatchResult = 'waiting' | 'playing'
 
+/** Play = resume stored seat when still in slot, else joinMatch. */
+export type PlayResult = 'continued' | JoinMatchResult
+
 const FIRST_PLAYER_ID = 'marquise'
 const SECOND_PLAYER_ID = 'eyrie'
 const DEFAULT_FACTIONS: string[] = ['marquise', 'eyrie']
@@ -135,6 +138,46 @@ export class GameSession {
   }
 
   /**
+   * One-click play: resume stored seat if still in the API slot, else joinMatch.
+   * Stale identity (missing / finished / wrong slot) is cleared before join.
+   */
+  async play(input: { factions?: string[] } = {}): Promise<PlayResult | null> {
+    const storage =
+      this.identityStorage === undefined ? undefined : this.identityStorage
+    const stored = loadPlayerIdentity(storage)
+    if (stored !== null) {
+      this.setLoading(true)
+      try {
+        const game = await this.api.getGame()
+        if (
+          playerIdInState(game.state, stored.playerId) &&
+          isResumableStatus(game.state.status)
+        ) {
+          this.bindLocalPlayer(stored.playerId, stored.apiBaseUrl)
+          this.connectLocalSocket(stored.playerId)
+          this.publish({
+            state: game.state,
+            legalActions: [],
+            historyLength: game.historyLength,
+            log: [],
+            error: null,
+            loading: false,
+          })
+          return 'continued'
+        }
+      } catch (error: unknown) {
+        if (!isNoGameError(error)) {
+          this.setError(errorMessage(error))
+          return null
+        }
+      }
+      clearPlayerIdentity(storage)
+      this.localPlayerId = null
+    }
+    return this.joinMatch(input)
+  }
+
+  /**
    * One-click matchmaking against the single server slot.
    * - Empty slot → create, join Marquise, return `waiting` (peer starts).
    * - Occupied lobby → join Eyrie, auto-start, return `playing`.
@@ -174,7 +217,7 @@ export class GameSession {
 
   /**
    * Continue: restore stored playerId, open WS, map to seat.
-   * Unknown id → error (no new join).
+   * Unknown id → error (no new join). Prefer `play()` from the menu.
    */
   async continueWithStoredIdentity(
     identity?: StoredPlayerIdentity | null,
@@ -357,6 +400,17 @@ export class GameSession {
 
 function isGameExistsError(error: unknown): boolean {
   return error instanceof ApiError && error.code === 'GAME_EXISTS'
+}
+
+function isNoGameError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    (error.code === 'NO_GAME' || error.status === 404)
+  )
+}
+
+function isResumableStatus(status: GameState['status']): boolean {
+  return status === 'waiting' || status === 'setup' || status === 'playing'
 }
 
 function playerIdInState(state: GameState, playerId: string): boolean {
