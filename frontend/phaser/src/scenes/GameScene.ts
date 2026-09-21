@@ -33,6 +33,7 @@ import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
 import { EventOverlay } from '../ui/EventOverlay.ts'
 import { FactionDrawer } from '../ui/FactionDrawer.ts'
 import { GameDrawer } from '../ui/GameDrawer.ts'
+import { LeaderPickOverlay } from '../ui/LeaderPickOverlay.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
 import {
   buildTurnBannerViewModel,
@@ -58,6 +59,7 @@ export class GameScene extends Phaser.Scene {
   private factionDrawer: FactionDrawer | null = null
   private gameDrawer: GameDrawer | null = null
   private winnerOverlay: WinnerOverlay | null = null
+  private leaderPickOverlay: LeaderPickOverlay | null = null
   private readonly composer = new ActionComposer()
   private marquiseMarch = createMarquiseMarchComposerHooks()
   private marquiseBoard = createMarquiseBoardComposerHooks()
@@ -147,6 +149,10 @@ export class GameScene extends Phaser.Scene {
       },
     })
     this.winnerOverlay = new WinnerOverlay(this)
+    this.leaderPickOverlay = new LeaderPickOverlay(this)
+    this.leaderPickOverlay.setOnPicked((leaderId) => {
+      this.applyComposerOutcome(this.composer.chooseColumn(leaderId))
+    })
 
     this.statusText = this.add
       .text(width * 0.38, height * 0.92, '', {
@@ -200,6 +206,8 @@ export class GameScene extends Phaser.Scene {
     this.gameDrawer = null
     this.winnerOverlay?.destroy()
     this.winnerOverlay = null
+    this.leaderPickOverlay?.destroy()
+    this.leaderPickOverlay = null
   }
 
   private async handleEndGame(): Promise<void> {
@@ -217,6 +225,7 @@ export class GameScene extends Phaser.Scene {
   private applyComposerOutcome(outcome: ComposerOutcome): void {
     if (outcome.kind === 'ready') {
       this.turnBanner?.syncComposer(null)
+      this.leaderPickOverlay?.sync(null)
       this.boardView?.setHighlightedClearings([])
       this.cardHand?.setEnabledCards(null)
       this.cardHand?.setSelection([])
@@ -229,16 +238,23 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (outcome.kind === 'incomplete') {
+      const leaderDraft = this.eventComposer.getDraft()
+      const pickingLeader =
+        leaderDraft.type === 'pickLeader' ? leaderDraft.leaders : null
+      this.leaderPickOverlay?.sync(pickingLeader)
       this.turnBanner?.syncComposer({
         message: outcome.prompt.message,
         canConfirm: outcome.prompt.canConfirm,
         canCancel: outcome.prompt.canCancel,
-        options: [
-          ...this.marquiseMarch.getPromptOptions(),
-          ...this.marquiseBoard.getPromptOptions(),
-          ...this.eyrieComposer.getPromptOptions(),
-          ...this.eventComposer.getPromptOptions(),
-        ],
+        options:
+          pickingLeader !== null
+            ? []
+            : [
+                ...this.marquiseMarch.getPromptOptions(),
+                ...this.marquiseBoard.getPromptOptions(),
+                ...this.eyrieComposer.getPromptOptions(),
+                ...this.eventComposer.getPromptOptions(),
+              ],
       })
       this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
       this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)
@@ -254,6 +270,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.turnBanner?.syncComposer(null)
+    this.leaderPickOverlay?.sync(null)
     this.boardView?.setHighlightedClearings([])
     this.cardHand?.setEnabledCards(null)
     this.cardHand?.setSelection([])

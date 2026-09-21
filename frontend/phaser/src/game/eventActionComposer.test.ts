@@ -134,6 +134,10 @@ describe('eventActionComposer setup picks', () => {
       'builder',
       'charismatic',
     ])
+    expect(events.getPromptOptions().map((option) => option.label)).toEqual([
+      'Builder · Recruit & Move',
+      'Charismatic · Recruit & Battle',
+    ])
     expect(composer.chooseColumn('charismatic')).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', leader: 'charismatic' },
