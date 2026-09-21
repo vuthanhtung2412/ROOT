@@ -11,6 +11,13 @@ function lobbyAfterKeep(seed = 42): Game {
   game.join('b')
   game.start()
   game.apply({ type: 'resolveEvent', clearing: FALL.corners[0]! })
+  while (game.state.pending[0]?.type === 'placeStartingBuilding') {
+    const clearings = game.legalActions()[0]?.params?.clearing
+    if (clearings === undefined || clearings.length === 0) {
+      throw new Error('no legal starting building clearings')
+    }
+    game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
+  }
   return game
 }
 

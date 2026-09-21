@@ -7,12 +7,14 @@ import { battleResolver } from './battle.js'
 import { chooseKeepResolver } from './chooseKeep.js'
 import { chooseLeaderResolver } from './chooseLeader.js'
 import { fieldHospitalResolver } from './fieldHospital.js'
+import { placeStartingBuildingResolver } from './placeStartingBuilding.js'
 import type { Event } from './types.js'
 import {
   isBattleEvent,
   isChooseKeepEvent,
   isChooseLeaderEvent,
   isFieldHospitalEvent,
+  isPlaceStartingBuildingEvent,
 } from '../typeGuards.js'
 
 export type EventApply = {
@@ -80,6 +82,24 @@ export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
     matchesAction(state, event, action, ctx) {
       if (!isChooseKeepEvent(event)) return false
       return chooseKeepResolver.matchesAction(state, event, action, ctx)
+    },
+  },
+  placeStartingBuilding: {
+    legalActions(state, event, ctx) {
+      if (!isPlaceStartingBuildingEvent(event)) return []
+      return placeStartingBuildingResolver.legalActions(state, event, ctx)
+    },
+    apply(state, apply, ctx) {
+      if (!isPlaceStartingBuildingEvent(apply.event)) return []
+      return placeStartingBuildingResolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
+    },
+    matchesAction(state, event, action, ctx) {
+      if (!isPlaceStartingBuildingEvent(event)) return false
+      return placeStartingBuildingResolver.matchesAction(state, event, action, ctx)
     },
   },
   chooseLeader: {

@@ -9,6 +9,13 @@ describe('Swap Meet', () => {
     game.join('b')
     game.start()
     game.apply({ type: 'resolveEvent', clearing: 0 })
+    while (game.state.pending[0]?.type === 'placeStartingBuilding') {
+      const clearings = game.legalActions()[0]?.params?.clearing
+      if (clearings === undefined || clearings.length === 0) {
+        throw new Error('no legal starting building clearings')
+      }
+      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
+    }
     game.apply({ type: 'resolveEvent', leader: 'builder' })
     game.state.players[0]!.playArea.push(card('ROOT-103'))
     game.state.players[0]!.hand.push(card('ROOT-209'))

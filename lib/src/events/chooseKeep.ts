@@ -1,7 +1,5 @@
 import type { Action, ActionSpec, ResolveEventAction } from '../actions/types.js'
-import { placeEyrieRoostSetup } from '../factions/Eyrie.js'
-import { FACTIONS } from '../factions/index.js'
-import { placeMarquiseSetup } from '../factions/Marquise.js'
+import { placeMarquiseKeepAndGarrison } from '../factions/Marquise.js'
 import type { Ctx } from '../game/ctx.js'
 import type { LogEntry } from '../log/types.js'
 import { FALL } from '../map/fall.js'
@@ -53,7 +51,7 @@ export const chooseKeepResolver: ChooseKeepResolver = {
     ]
   },
 
-  apply(state, { event, action, actor }, ctx) {
+  apply(state, { event, action, actor }, _ctx) {
     if (actor !== event.seat) throw new RuleError('WRONG_ACTOR', { actor })
     if (action.clearing === undefined || !isClearingId(action.clearing)) {
       throw new RuleError('MISSING_KEEP_CLEARING')
@@ -65,23 +63,13 @@ export const chooseKeepResolver: ChooseKeepResolver = {
     const pendingIndex = state.pending.indexOf(event)
     if (pendingIndex >= 0) state.pending.splice(pendingIndex, 1)
 
-    placeMarquiseSetup(state, event.seat, action.clearing)
-
-    // Remaining factions in seat order; Eyrie roost now, leader via chooseLeader.
-    const seats = [...state.players].sort((a, b) => a.seat - b.seat)
-    for (const player of seats) {
-      if (player.seat === event.seat) continue
-      if (player.faction === 'eyrie') {
-        placeEyrieRoostSetup(state, player.seat)
-      } else {
-        FACTIONS[player.faction].setup(state, player.seat, ctx)
-      }
-    }
-
-    const eyrie = state.players.find((player) => player.faction === 'eyrie')
-    if (eyrie) {
-      state.pending.push({ type: 'chooseLeader', seat: eyrie.seat, reason: 'setup' })
-    }
+    // Rule: Marquise > Setup 2–3 — keep + garrison; buildings via placeStartingBuilding.
+    placeMarquiseKeepAndGarrison(state, event.seat, action.clearing)
+    state.pending.push({
+      type: 'placeStartingBuilding',
+      seat: event.seat,
+      building: 'sawmill',
+    })
 
     return [{ t: 'event', event }]
   },

@@ -4,6 +4,7 @@ import type {
   ChooseLeaderEvent,
   Event,
   FieldHospitalEvent,
+  PlaceStartingBuildingEvent,
 } from './events/types.js'
 import type { ClearingId } from './map/types.js'
 import type { Seat } from './pieces/types.js'
@@ -36,6 +37,12 @@ export function isFieldHospitalEvent(event: Event): event is FieldHospitalEvent 
 
 export function isChooseKeepEvent(event: Event): event is ChooseKeepEvent {
   return event.type === 'chooseKeep'
+}
+
+export function isPlaceStartingBuildingEvent(
+  event: Event,
+): event is PlaceStartingBuildingEvent {
+  return event.type === 'placeStartingBuilding'
 }
 
 export function isChooseLeaderEvent(event: Event): event is ChooseLeaderEvent {

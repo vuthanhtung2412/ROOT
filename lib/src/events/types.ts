@@ -38,6 +38,13 @@ export type ChooseKeepEvent = {
   seat: Seat
 }
 
+/** Rule: Marquise > Setup 4 — place one starting building (sawmill → workshop → recruiter). */
+export type PlaceStartingBuildingEvent = {
+  type: 'placeStartingBuilding'
+  seat: Seat
+  building: 'sawmill' | 'workshop' | 'recruiter'
+}
+
 /** Rule: Eyrie > Setup 3 / 7.7.3 Depose — choose face-up leader. */
 export type ChooseLeaderEvent = {
   type: 'chooseLeader'
@@ -60,6 +67,7 @@ export type Event =
   | BattleEvent
   | FieldHospitalEvent
   | ChooseKeepEvent
+  | PlaceStartingBuildingEvent
   | ChooseLeaderEvent
   | OutrageEvent
   | VagabondDamageEvent

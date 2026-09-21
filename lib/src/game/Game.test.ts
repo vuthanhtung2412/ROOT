@@ -19,7 +19,7 @@ function lobbyTwo(seed = 42): Game {
   return game
 }
 
-/** Resolve Marquise keep + Eyrie leader so tests reach `playing`. */
+/** Resolve Marquise keep + starting buildings + Eyrie leader so tests reach `playing`. */
 function finishSetup(
   game: Game,
   keep: number = FALL.corners[0]!,
@@ -28,6 +28,13 @@ function finishSetup(
   if (game.state.status !== 'setup') return
   if (game.state.pending[0]?.type === 'chooseKeep') {
     game.apply({ type: 'resolveEvent', clearing: keep })
+  }
+  while (game.state.pending[0]?.type === 'placeStartingBuilding') {
+    const clearings = game.legalActions()[0]?.params?.clearing
+    if (clearings === undefined || clearings.length === 0) {
+      throw new Error('no legal starting building clearings')
+    }
+    game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
   }
   if (game.state.pending[0]?.type === 'chooseLeader') {
     game.apply({ type: 'resolveEvent', leader })
@@ -269,7 +276,7 @@ describe('Game replay and undo', () => {
     game.apply({ type: 'endPhase' })
     game.undo()
     expect(game.state).toEqual(before)
-    expect(game.history).toHaveLength(5) // join join start chooseKeep chooseLeader
+    expect(game.history).toHaveLength(8) // join×2 start keep sawmill workshop recruiter leader
   })
 })
 
