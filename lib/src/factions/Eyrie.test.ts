@@ -15,6 +15,7 @@ import { card, eyrieBoard, minimalState, player, withPieces } from '../test/fixt
 import { isVizier, makeViziers } from './eyrie/viziers.js'
 import { EYRIE, eyrieStartClearing, tuckViziersFor } from './Eyrie.js'
 import { MARQUISE } from './Marquise.js'
+import { chooseLeaderResolver } from '../events/chooseLeader.js'
 
 const hooks = defaultRuleHooks(FALL)
 
@@ -590,7 +591,7 @@ describe('Law 7.6 Evening', () => {
 describe('Law 7.7 Turmoil', () => {
   beforeEach(() => resetPlaceIds())
 
-  it('Rule: 7.7.1–4 Humiliate, Purge, Depose (Builder retuck), Rest', () => {
+  it('Rule: 7.7.1–3 Humiliate, Purge, Depose pending chooseLeader', () => {
     const [v0, v1] = makeViziers()
     const bird = BIRD()
     const fox = FOX()
@@ -614,17 +615,88 @@ describe('Law 7.7 Turmoil', () => {
     expect(state.players[1]!.vp).toBe(2)
     const board = state.players[1]!.board
     expect(board.kind).toBe('eyrie')
+    if (board.kind !== 'eyrie') throw new Error('expected eyrie')
+    expect(board.decree.battle).toHaveLength(0)
+    expect(board.leader).toBeNull()
+    expect(board.leadersFaceDown).toEqual(['builder'])
+    expect(board.leadersFaceUp).not.toContain('builder')
+    expect(state.pending[0]?.type).toBe('chooseLeader')
+    expect(state.phase).toBe('daylight')
+  })
+
+  it('Rule: 7.7.3–4 Depose choose then Rest', () => {
+    const [v0, v1] = makeViziers()
+    const bird = BIRD()
+    const state = eyrieState({
+      phase: 'daylight',
+      step: 'decree',
+      vp: 5,
+      board: eyrieBoard({
+        leader: 'builder',
+        decree: {
+          recruit: [v0],
+          move: [v1],
+          battle: [bird],
+          build: [],
+        },
+      }),
+      turnScratch: scratch({ column: 'battle', remaining: [bird.id] }),
+    })
+    EYRIE.apply(state, { type: 'turmoil' }, setupCtx())
+    const pending = state.pending[0]
+    expect(pending?.type).toBe('chooseLeader')
+    if (!pending || pending.type !== 'chooseLeader') throw new Error('expected chooseLeader')
+
+    chooseLeaderResolver.apply(
+      state,
+      {
+        event: pending,
+        action: { type: 'resolveEvent', leader: 'charismatic' },
+        actor: 1,
+      },
+      setupCtx(),
+    )
+    const board = state.players[1]!.board
+    expect(board.kind).toBe('eyrie')
     if (board.kind === 'eyrie') {
-      // Purge: fox+bird gone; Depose: viziers on Recruit+Move
-      expect(board.decree.battle).toHaveLength(0)
-      expect(board.decree.recruit).toHaveLength(1)
-      expect(board.decree.move).toHaveLength(1)
+      expect(board.leader).toBe('charismatic')
+      expect(board.leadersFaceDown).toEqual(['builder'])
       expect(isVizier(board.decree.recruit[0]!)).toBe(true)
-      expect(board.leader).toBe('builder')
+      expect(isVizier(board.decree.battle[0]!)).toBe(true)
     }
-    // Rest → evening score
     expect(state.phase).toBe('evening')
     expect(state.step).toBe('score')
+  })
+
+  it('Rule: 7.7.3.I New Clutch — flip all face-up when none remain', () => {
+    const [v0, v1] = makeViziers()
+    const bird = BIRD()
+    const state = eyrieState({
+      phase: 'daylight',
+      step: 'decree',
+      board: eyrieBoard({
+        leader: 'despot',
+        leadersFaceUp: [],
+        leadersFaceDown: ['builder', 'charismatic', 'commander'],
+        decree: {
+          recruit: [],
+          move: [v0],
+          battle: [bird],
+          build: [v1],
+        },
+      }),
+      turnScratch: scratch({ column: 'battle', remaining: [bird.id] }),
+    })
+    EYRIE.apply(state, { type: 'turmoil' }, setupCtx())
+    const board = state.players[1]!.board
+    expect(board.kind).toBe('eyrie')
+    if (board.kind === 'eyrie') {
+      expect(board.leader).toBeNull()
+      expect(board.leadersFaceDown).toEqual([])
+      expect([...board.leadersFaceUp].sort()).toEqual(
+        ['builder', 'charismatic', 'commander', 'despot'].sort(),
+      )
+    }
   })
 
   it('Rule: 7.7.1 Humiliate — score track cannot go below 0', () => {

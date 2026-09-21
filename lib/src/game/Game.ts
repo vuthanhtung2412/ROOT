@@ -647,6 +647,8 @@ export class Game {
     )
     if (this.state.status === 'setup' && this.state.pending.length === 0) {
       logs.push(...this.beginPlaying())
+    } else if (this.state.status === 'playing' && this.state.pending.length === 0) {
+      logs.push(...this.runAutoActions())
     }
     return logs
   }

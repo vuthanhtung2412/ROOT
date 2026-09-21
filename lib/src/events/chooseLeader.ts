@@ -71,6 +71,13 @@ export const chooseLeaderResolver: ChooseLeaderResolver = {
 
     assignEyrieLeader(board, action.leader)
 
-    return [{ t: 'event', event }]
+    const logs: LogEntry[] = [{ t: 'event', event }]
+    if (event.reason === 'depose') {
+      // Rule: 7.7.4 Rest — end Daylight → Evening score.
+      state.phase = 'evening'
+      state.step = 'score'
+      logs.push({ t: 'phase', actor: event.seat, phase: 'evening', step: 'score' })
+    }
+    return logs
   },
 }
