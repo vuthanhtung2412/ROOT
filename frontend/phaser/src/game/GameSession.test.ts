@@ -237,6 +237,113 @@ describe('GameSession', () => {
     expect(storage.getItem('root.phaser.playerIdentity')).toBeNull()
   })
 
+  it('continueQaLoadedGame binds actor, opens socket, skips identity save', async () => {
+    const state = makeGameState({ currentSeat: 1 })
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.phaser.playerIdentity',
+      JSON.stringify({
+        playerId: 'marquise',
+        apiBaseUrl: 'http://example.test',
+      }),
+    )
+    const connectCalls: string[] = []
+    stubFetchSequence([
+      { body: { state, historyLength: 2 } },
+      { body: { actions: [makeActionSpec({ type: 'turmoil', actor: 1 })] } },
+      { body: { log: [] } },
+    ])
+    const session = new GameSession({
+      api: createPhaserApi({ baseUrl: 'http://example.test' }),
+      apiBaseUrl: 'http://example.test',
+      identityStorage: storage,
+      connectSocket: ({ url, handlers }) => {
+        connectCalls.push(url)
+        void handlers
+        return { close: vi.fn() }
+      },
+      resolveSocketUrl: (_base, playerId) => `ws://example/ws?playerId=${playerId}`,
+    })
+
+    await session.continueQaLoadedGame()
+
+    expect(session.getLocalPlayerId()).toBe('eyrie')
+    expect(session.getLocalSeat()).toBe(1)
+    expect(connectCalls).toEqual(['ws://example/ws?playerId=eyrie'])
+    expect(storage.getItem('root.phaser.playerIdentity')).toContain('marquise')
+  })
+
+  it('qaMode socket push wakes REST refresh (not applySocketPush)', async () => {
+    const before = makeGameState({ currentSeat: 1, step: 'decree' })
+    const after = makeGameState({
+      currentSeat: 1,
+      step: 'decree',
+      pending: [{ type: 'chooseLeader', seat: 1, reason: 'depose' }],
+    })
+    const socket: SocketController = { push: () => undefined }
+    const fetchMock = stubFetchSequence([
+      { body: { state: before, historyLength: 1 } },
+      { body: { actions: [makeActionSpec({ type: 'turmoil', actor: 1 })] } },
+      { body: { log: [] } },
+      { body: { state: after, historyLength: 2 } },
+      {
+        body: {
+          actions: [
+            makeActionSpec({
+              type: 'resolveEvent',
+              actor: 1,
+              params: { leaders: ['charismatic', 'commander', 'despot'] },
+            }),
+          ],
+        },
+      },
+      { body: { log: [{ t: 'action' }] } },
+    ])
+    const session = createSession({ socket })
+    await session.continueQaLoadedGame()
+    fetchMock.mockClear()
+
+    socket.push({
+      state: after,
+      historyLength: 2,
+      legalActions: [],
+      log: [],
+    })
+    await vi.waitFor(() => {
+      expect(session.getSnapshot().state?.pending).toEqual([
+        { type: 'chooseLeader', seat: 1, reason: 'depose' },
+      ])
+    })
+
+    expect(fetchMock.mock.calls.length).toBe(3)
+    expect(session.getSnapshot().legalActions[0]?.type).toBe('resolveEvent')
+  })
+
+  it('qaMode restart leaves Play identity storage intact', async () => {
+    const state = makeGameState({ currentSeat: 1 })
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.phaser.playerIdentity',
+      JSON.stringify({
+        playerId: 'marquise',
+        apiBaseUrl: 'http://example.test',
+      }),
+    )
+    stubFetchSequence([
+      { body: { state, historyLength: 0 } },
+      { body: { actions: [] } },
+      { body: { log: [] } },
+      { body: null, status: 204 },
+    ])
+    const session = createSession({ storage })
+    await session.continueQaLoadedGame()
+    await session.restart()
+
+    expect(session.getSnapshot().state).toBeNull()
+    expect(session.getLocalPlayerId()).toBeNull()
+    expect(storage.getItem('root.phaser.playerIdentity')).toContain('marquise')
+  })
+
   it('play resumes when stored seat still in slot', async () => {
     const playing = makeGameState({ status: 'playing' })
     const storage = createMemoryStorage()

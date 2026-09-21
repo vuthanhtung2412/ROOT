@@ -67,6 +67,8 @@ export class GameSession {
   private readonly listeners: Set<GameSessionListener> = new Set()
   private localPlayerId: string | null = null
   private socket: GameSocketConnection | null = null
+  /** QA Continue: live WS wake + REST refresh; never touch Play identity storage. */
+  private qaMode = false
   private snapshot: GameSessionSnapshot = {
     state: null,
     legalActions: [],
@@ -242,9 +244,14 @@ export class GameSession {
     })
   }
 
-  /** QA-only: poll full slot via REST (hands unredacted — local dump playtest). */
+  /**
+   * QA-only: REST full slot (hands unredacted) + listen WS as wake signal.
+   * Does not save/clear Play `playerIdentity` storage.
+   */
   async continueQaLoadedGame(): Promise<void> {
+    this.qaMode = true
     await this.refresh()
+    this.syncQaViewerToActor()
   }
 
   async refresh(): Promise<void> {
@@ -263,6 +270,9 @@ export class GameSession {
         error: null,
         loading: false,
       })
+      if (this.qaMode) {
+        this.syncQaViewerToActor()
+      }
     } catch (error: unknown) {
       this.setError(errorMessage(error))
     }
@@ -300,17 +310,20 @@ export class GameSession {
     }
   }
 
-  /** End game: delete server slot, clear identity, close socket. */
+  /** End game: delete server slot, clear identity (Play only), close socket. */
   async restart(): Promise<void> {
     this.setLoading(true)
     try {
       await this.api.deleteGame()
       this.disconnectSocket()
-      clearPlayerIdentity(
-        this.identityStorage === undefined
-          ? undefined
-          : this.identityStorage,
-      )
+      if (!this.qaMode) {
+        clearPlayerIdentity(
+          this.identityStorage === undefined
+            ? undefined
+            : this.identityStorage,
+        )
+      }
+      this.qaMode = false
       this.localPlayerId = null
       this.publish({
         state: null,
@@ -364,6 +377,28 @@ export class GameSession {
     )
   }
 
+  /**
+   * QA: follow current actor seat without persisting identity.
+   * Reconnect socket when actor playerId changes.
+   */
+  private syncQaViewerToActor(): void {
+    const state = this.snapshot.state
+    if (!this.qaMode || state === null) {
+      return
+    }
+    const actorSeat = actorSeatFromState(state, this.snapshot.legalActions)
+    const actorPlayer = state.players.find((player) => player.seat === actorSeat)
+    if (actorPlayer === undefined) {
+      return
+    }
+    const needsReconnect =
+      actorPlayer.playerId !== this.localPlayerId || this.socket === null
+    this.localPlayerId = actorPlayer.playerId
+    if (needsReconnect) {
+      this.connectLocalSocket(actorPlayer.playerId)
+    }
+  }
+
   private connectLocalSocket(playerId: string): void {
     this.disconnectSocket()
     const url = this.resolveSocketUrl(this.apiBaseUrl, playerId)
@@ -371,6 +406,10 @@ export class GameSession {
       url,
       handlers: {
         onPush: (payload) => {
+          if (this.qaMode) {
+            void this.refresh()
+            return
+          }
           this.applySocketPush(payload)
         },
       },
