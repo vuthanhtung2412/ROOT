@@ -16,7 +16,10 @@ describe('createPhaserApi', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const api = createPhaserApi({ baseUrl: 'http://example.test' })
-    const result = await api.createGame(['marquise', 'eyrie'])
+    const result = await api.createGame({
+      factions: ['marquise', 'eyrie'],
+      replace: true,
+    })
 
     expect(result.state.status).toBe('waiting')
     expect(fetchMock).toHaveBeenCalled()

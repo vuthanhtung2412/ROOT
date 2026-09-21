@@ -120,6 +120,12 @@ export type CreatePhaserApiOptions = {
   client?: RootWebClient
 }
 
+export type CreateGameInput = {
+  factions?: string[]
+  /** When true, overwrite occupied slot. Host remote path omits this (409 if full). */
+  replace?: boolean
+}
+
 /** Thin Phaser-facing helpers over the shared OpenAPI client. */
 export function createPhaserApi(options: CreatePhaserApiOptions = {}) {
   const client =
@@ -129,13 +135,19 @@ export function createPhaserApi(options: CreatePhaserApiOptions = {}) {
     })
 
   return {
-    async createGame(factions?: string[]): Promise<{ state: GameState }> {
+    async createGame(input: CreateGameInput = {}): Promise<{ state: GameState }> {
       const result = await client.POST('/game', {
-        params: { query: { replace: '1' } },
+        params: {
+          query:
+            input.replace === true ? { replace: '1' } : {},
+        },
         body:
-          factions === undefined
+          input.factions === undefined
             ? {}
-            : { factions: factions as components['schemas']['FactionId'][] },
+            : {
+                factions:
+                  input.factions as components['schemas']['FactionId'][],
+              },
       })
       const data = throwIfError(result)
       return { state: asGameState(data.state) }
