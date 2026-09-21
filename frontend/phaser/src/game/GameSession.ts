@@ -92,7 +92,10 @@ export class GameSession {
   async startHotSeatGame(input: StartHotSeatGameInput): Promise<void> {
     this.setLoading(true)
     try {
-      await this.api.createGame(input.factions)
+      await this.api.createGame({
+        factions: input.factions,
+        replace: true,
+      })
       for (const playerId of input.playerIds) {
         await this.api.join(playerId)
       }
