@@ -8,6 +8,7 @@
     "build:lib": "pnpm --filter @root/lib build",
     "build:phaser": "pnpm --filter @root/phaser build",
     "serve:game": "pnpm --filter @root/web serve:phaser",
+    "build:ios": "pnpm --filter @root/phaser build:ios",
     "gen:api-client": "pnpm --filter @root/web-client gen",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint lib/src lib/scripts backend/web/src backend/web/scripts"

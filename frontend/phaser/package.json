@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:ios": "tsx scripts/build-ios.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",
     "@capacitor/ios": "^8.5.2",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.1"
