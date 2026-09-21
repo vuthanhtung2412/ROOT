@@ -13,10 +13,10 @@ pnpm --filter @root/phaser dev
 
 Open Vite URL **twice** (two tabs or windows):
 
-1. Window A → **Join game** → Marquise, waits (“Waiting for second player…”)
-2. Window B → **Join game** → Eyrie, auto-starts; both enter the board
+1. Window A → **Play** → Marquise, waits (“Waiting for second player…”)
+2. Window B → **Play** → Eyrie, auto-starts; both enter the board
 3. Play; waiting window cannot submit
-4. **Continue** after refresh uses **sessionStorage** (per tab)
+4. **Play** after refresh resumes stored seat when still in the API slot (`sessionStorage`, per tab)
 5. **End game** (drawer, two-click) → clears slot; peers return to menu
 6. **QA: Continue loaded game** — REST poll of slot dumps (not normal play)
 
@@ -29,7 +29,7 @@ Identity: `sessionStorage` key `root.phaser.playerIdentity` (`playerId` + `apiBa
 
 | Layer | Role |
 |---|---|
-| `GameSession` | host/join/start/continue + REST commands + WS apply |
+| `GameSession` | play (resume-or-join) / host/join/start + REST commands + WS apply |
 | `gameSocket` | connect / reconnect / parse push |
 | `playerIdentity` | persist `playerId` + `apiBaseUrl` (sessionStorage) |
 | `ActionComposer` + faction/event hooks | stage choices → `Action` |
