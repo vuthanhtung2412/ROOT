@@ -30,7 +30,7 @@ export type ChooseKeepResolver = {
 }
 
 function isCornerClearing(clearing: ClearingId): boolean {
-  return (FALL.corners as readonly ClearingId[]).includes(clearing)
+  return FALL.corners.some((corner) => corner === clearing)
 }
 
 export const chooseKeepResolver: ChooseKeepResolver = {

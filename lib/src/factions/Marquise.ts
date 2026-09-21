@@ -96,7 +96,7 @@ export function placeMarquiseSetup(
   if (playerOf(state, seat).faction !== 'marquise') {
     throw new RuleError('NOT_MARQUISE', { seat })
   }
-  if (!(FALL.corners as readonly ClearingId[]).includes(keep)) {
+  if (!FALL.corners.some((corner) => corner === keep)) {
     throw new RuleError('NOT_CORNER', { clearing: keep })
   }
   placeUpTo(state, { seat, clearing: keep, spec: { kind: 'token', type: 'keep' }, count: 1 })

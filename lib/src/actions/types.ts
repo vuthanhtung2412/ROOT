@@ -100,8 +100,6 @@ export type Action =
     }
   | ResolveEventAction
 
-import type { EyrieLeader } from '../state/boards.js'
-
 export type ResolveEventAction = {
   type: 'resolveEvent'
   order?: Seat[]

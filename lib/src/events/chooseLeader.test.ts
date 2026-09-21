@@ -3,7 +3,7 @@ import { isVizier } from '../factions/eyrie/viziers.js'
 import { Game } from '../game/Game.js'
 import { FALL } from '../map/fall.js'
 import { resetPlaceIds } from '../rules/place.js'
-import type { EyrieLeader } from '../state/boards.js'
+import { EYRIE_LEADERS, type DecreeColumn, type EyrieLeader } from '../state/boards.js'
 
 function lobbyAfterKeep(seed = 42): Game {
   const game = Game.create({ seed })
@@ -31,16 +31,14 @@ describe('chooseLeader setup', () => {
   })
 
   it('Rule: 7.3.3 / 7.8 — each leader tucks viziers on matching columns', () => {
-    const expected: Record<EyrieLeader, [string, string]> = {
+    const expected: Record<EyrieLeader, [DecreeColumn, DecreeColumn]> = {
       builder: ['recruit', 'move'],
       charismatic: ['recruit', 'battle'],
       commander: ['move', 'battle'],
       despot: ['move', 'build'],
     }
-    for (const [leader, [colA, colB]] of Object.entries(expected) as [
-      EyrieLeader,
-      [string, string],
-    ][]) {
+    for (const leader of EYRIE_LEADERS) {
+      const [colA, colB] = expected[leader]
       resetPlaceIds()
       const game = lobbyAfterKeep(leader.length)
       game.apply({ type: 'resolveEvent', leader })
@@ -51,8 +49,8 @@ describe('chooseLeader setup', () => {
       expect(board.leader).toBe(leader)
       expect(board.leadersFaceUp).not.toContain(leader)
       expect(board.leadersFaceDown).toEqual([])
-      expect(isVizier(board.decree[colA as 'recruit'][0]!)).toBe(true)
-      expect(isVizier(board.decree[colB as 'move'][0]!)).toBe(true)
+      expect(isVizier(board.decree[colA][0]!)).toBe(true)
+      expect(isVizier(board.decree[colB][0]!)).toBe(true)
     }
   })
 })
