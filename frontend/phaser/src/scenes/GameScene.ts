@@ -23,6 +23,7 @@ import {
 import { buildBattleOverlayViewModel } from '../game/battleOverlayModel.ts'
 import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '../game/hiDpi.ts'
+import { applyMarchMovesToClearings } from '../game/marchClearingsPreview.ts'
 import { ActionTray } from '../ui/ActionTray.ts'
 import { BattleOverlay } from '../ui/BattleOverlay.ts'
 import { BoardView } from '../ui/BoardView.ts'
@@ -222,6 +223,9 @@ export class GameScene extends Phaser.Scene {
       this.cardHand?.setEnabledCards(null)
       this.cardHand?.setSelection([])
       this.composer.reset()
+      if (this.latestSnapshot !== null) {
+        this.syncBoardPieces(this.latestSnapshot)
+      }
       void this.session?.submitAction(outcome.action)
       return
     }
@@ -243,6 +247,9 @@ export class GameScene extends Phaser.Scene {
         outcome.prompt.message,
       )
       this.syncBattleOverlay(outcome.prompt.message)
+      if (this.latestSnapshot !== null) {
+        this.syncBoardPieces(this.latestSnapshot)
+      }
       return
     }
 
@@ -252,6 +259,9 @@ export class GameScene extends Phaser.Scene {
     this.cardHand?.setSelection([])
     this.eventOverlay?.sync(false, '')
     this.syncBattleOverlay(null)
+    if (this.latestSnapshot !== null) {
+      this.syncBoardPieces(this.latestSnapshot)
+    }
   }
 
   private syncBattleOverlay(prompt: string | null): void {
@@ -428,7 +438,24 @@ export class GameScene extends Phaser.Scene {
     if (this.boardView === null || snapshot.state === null) {
       return
     }
-    this.boardView.syncPieces(snapshot.state.clearings, snapshot.state.factions)
+    const clearings = this.clearingsWithMarchPreview(
+      snapshot.state.clearings,
+      snapshot.state.currentSeat,
+    )
+    this.boardView.syncPieces(clearings, snapshot.state.factions)
+  }
+
+  private clearingsWithMarchPreview(
+    clearings: GameState['clearings'],
+    warriorOwnerSeat: number,
+  ): GameState['clearings'] {
+    const draft = this.marquiseMarch.getDraft()
+    if (draft.type !== 'march' || draft.firstMove === null) {
+      return clearings
+    }
+    return applyMarchMovesToClearings(clearings, warriorOwnerSeat, [
+      draft.firstMove,
+    ])
   }
 
   private async loadLayout(): Promise<BoardLayout> {
