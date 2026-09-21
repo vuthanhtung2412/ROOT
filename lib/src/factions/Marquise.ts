@@ -13,7 +13,7 @@ import { FALL } from '../map/fall.js'
 import type { ClearingId } from '../map/types.js'
 import { canCraft } from '../queries/craft.js'
 import { canMove } from '../queries/move.js'
-import { canPlace } from '../queries/place.js'
+import { canPlace, keepClearingFor } from '../queries/place.js'
 import { warriors } from '../queries/pieces.js'
 import { rules } from '../queries/ruler.js'
 import { playerOf } from '../queries/seat.js'
@@ -56,12 +56,14 @@ function isMarquiseBuilding(type: BuildingType): type is MarquiseBuilding {
   return false
 }
 
-/** Rule: Marquise > Setup 1–2 — keep at FALL.corners[0]. */
+/** Rule: Marquise > Setup 1–2 — keep clearing (must already be placed). */
 export function keepCornerFor(state: GameState, seat: Seat): ClearingId {
   if (playerOf(state, seat).faction !== 'marquise') {
     throw new RuleError('NOT_MARQUISE', { seat })
   }
-  return FALL.corners[0]
+  const keep = keepClearingFor(state, seat)
+  if (keep === null) throw new RuleError('NO_KEEP', { seat })
+  return keep
 }
 
 function garrisonClearings(_state: GameState, keep: ClearingId): ClearingId[] {
@@ -83,6 +85,31 @@ function fillTracks(board: MarquiseBoard): void {
   board.tracks.sawmill.placed = 5
   board.tracks.workshop.placed = 5
   board.tracks.recruiter.placed = 5
+}
+
+/** Rule: Marquise > Setup 2–5 — place keep at chosen corner + garrison + buildings + tracks. */
+export function placeMarquiseSetup(
+  state: GameState,
+  seat: Seat,
+  keep: ClearingId,
+): void {
+  if (playerOf(state, seat).faction !== 'marquise') {
+    throw new RuleError('NOT_MARQUISE', { seat })
+  }
+  if (!(FALL.corners as readonly ClearingId[]).includes(keep)) {
+    throw new RuleError('NOT_CORNER', { clearing: keep })
+  }
+  placeUpTo(state, { seat, clearing: keep, spec: { kind: 'token', type: 'keep' }, count: 1 })
+
+  for (const clearing of garrisonClearings(state, keep)) {
+    placeUpTo(state, { seat, clearing, spec: { kind: 'warrior' }, count: 1 })
+  }
+
+  placeStartingBuildings(state, seat, keep)
+
+  const board = playerOf(state, seat).board
+  if (board.kind !== 'marquise') throw new RuleError('NOT_MARQUISE', { seat })
+  fillTracks(board)
 }
 
 function boardOf(state: GameState, seat: Seat): MarquiseBoard {
@@ -377,18 +404,8 @@ export class Marquise extends Faction {
   readonly steps = STEPS
 
   setup(state: GameState, seat: Seat, _ctx: Ctx): void {
-    const keep = keepCornerFor(state, seat)
-    placeUpTo(state, { seat, clearing: keep, spec: { kind: 'token', type: 'keep' }, count: 1 })
-
-    for (const clearing of garrisonClearings(state, keep)) {
-      placeUpTo(state, { seat, clearing, spec: { kind: 'warrior' }, count: 1 })
-    }
-
-    placeStartingBuildings(state, seat, keep)
-
-    const board = playerOf(state, seat).board
-    if (board.kind !== 'marquise') throw new RuleError('NOT_MARQUISE', { seat })
-    fillTracks(board)
+    // Direct-call path (unit tests): default NW corner. Game.start uses chooseKeep.
+    placeMarquiseSetup(state, seat, FALL.corners[0])
   }
 
   autoActions(state: GameState, phase: Phase, step: Step): Action[] {

@@ -32,6 +32,19 @@ export type FieldHospitalEvent = {
   count: number
 }
 
+/** Rule: Marquise > Setup 2 — choose keep corner. */
+export type ChooseKeepEvent = {
+  type: 'chooseKeep'
+  seat: Seat
+}
+
+/** Rule: Eyrie > Setup 3 / 7.7.3 Depose — choose face-up leader. */
+export type ChooseLeaderEvent = {
+  type: 'chooseLeader'
+  seat: Seat
+  reason: 'setup' | 'depose'
+}
+
 export type OutrageEvent = {
   type: 'outrage'
   offender: Seat
@@ -46,5 +59,7 @@ export type VagabondDamageEvent = {
 export type Event =
   | BattleEvent
   | FieldHospitalEvent
+  | ChooseKeepEvent
+  | ChooseLeaderEvent
   | OutrageEvent
   | VagabondDamageEvent

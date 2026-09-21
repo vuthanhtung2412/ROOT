@@ -8,7 +8,7 @@ export type Phase = 'birdsong' | 'daylight' | 'evening'
 
 export type Step = string
 
-export type GameStatus = 'waiting' | 'playing' | 'finished'
+export type GameStatus = 'waiting' | 'setup' | 'playing' | 'finished'
 
 export type ClearingState = {
   pieces: Piece[]
