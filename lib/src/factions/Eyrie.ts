@@ -327,12 +327,6 @@ export function tuckViziersFor(
   if (pair[1]) board.decree[secondColumn].push(pair[1])
 }
 
-function retuckViziersAfterPurge(board: EyrieBoard): void {
-  const viziers = DECREE_COLUMNS.flatMap((col) => board.decree[col].filter(isVizier))
-  const leader = board.leader ?? 'builder'
-  tuckViziersFor(board, leader, viziers)
-}
-
 function warriorCount(state: GameState, clearing: ClearingId): number {
   return state.clearings[clearing]!.pieces.filter((p) => p.kind === 'warrior').length
 }
@@ -376,14 +370,21 @@ export function placeEyrieRoostSetup(state: GameState, seat: Seat): void {
   placeUpTo(state, { seat, clearing: start, spec: { kind: 'warrior' }, count: 6 })
 }
 
-/** Rule: 7.3.3 / 7.7.3 — put chosen leader in slot; remaining stay face-up. */
+/** Rule: 7.3.3 / 7.7.3 — put chosen leader in slot; retuck viziers (existing or new). */
 export function assignEyrieLeader(board: EyrieBoard, leader: EyrieLeader): void {
   if (!board.leadersFaceUp.includes(leader)) {
     throw new RuleError('LEADER_NOT_FACE_UP', { leader })
   }
+  const existingViziers = DECREE_COLUMNS.flatMap((column) =>
+    board.decree[column].filter(isVizier),
+  )
   board.leader = leader
   board.leadersFaceUp = board.leadersFaceUp.filter((candidate) => candidate !== leader)
-  tuckViziersFor(board, leader)
+  tuckViziersFor(
+    board,
+    leader,
+    existingViziers.length > 0 ? existingViziers : undefined,
+  )
 }
 
 export class Eyrie extends Faction {
@@ -867,15 +868,19 @@ export class Eyrie extends Faction {
           }
           board.decree[col] = kept
         }
-        // Rule: 7.7.3 Depose — Builder-only: retuck viziers Recruit+Move.
-        retuckViziersAfterPurge(board)
+        // Rule: 7.7.3 Depose — flip current face down; choose from face-up (New Clutch if none).
+        if (board.leader !== null) {
+          board.leadersFaceDown = [...board.leadersFaceDown, board.leader]
+          board.leader = null
+        }
+        if (board.leadersFaceUp.length === 0) {
+          board.leadersFaceUp = [...board.leadersFaceDown]
+          board.leadersFaceDown = []
+        }
         state.turnScratch.decree = null
         state.turnScratch.decreeDone = true
-        // Rule: 7.7.4 Rest — end Daylight → Evening score.
-        state.phase = 'evening'
-        state.step = 'score'
+        state.pending.push({ type: 'chooseLeader', seat, reason: 'depose' })
         logs.push({ t: 'action', actor: seat, action })
-        logs.push({ t: 'phase', actor: seat, phase: 'evening', step: 'score' })
         return logs
       }
       case 'eveningScore': {
