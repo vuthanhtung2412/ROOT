@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { preloadCardImageAssets } from '../assets/gameAssets.ts'
+import { CardTextureWarmup } from '../assets/cardTextureWarmup.ts'
 import type { ActionSpec, GameState } from '../api/client.ts'
 import { createPhaserApi } from '../api/client.ts'
 import {
@@ -68,6 +68,7 @@ export class GameScene extends Phaser.Scene {
   private latestSnapshot: GameSessionSnapshot | null = null
   /** Avoid re-opening the same setup pick every HUD paint. */
   private autoSetupPromptKey: string | null = null
+  private cardTextureWarmup: CardTextureWarmup | null = null
 
   constructor() {
     super({ key: 'GameScene' })
@@ -75,10 +76,6 @@ export class GameScene extends Phaser.Scene {
 
   init(data: GameSceneData): void {
     this.session = data.session
-  }
-
-  preload(): void {
-    preloadCardImageAssets(this.load)
   }
 
   create(): void {
@@ -104,12 +101,17 @@ export class GameScene extends Phaser.Scene {
 
     this.turnBanner = new TurnBanner(this)
     this.playerRail = new PlayerRail(this)
+    this.cardTextureWarmup = new CardTextureWarmup(this)
+    this.cardTextureWarmup.setOnReady(() => {
+      this.repaintCardHandFromLatestSnapshot()
+    })
     this.cardHand = new CardHand(
       this,
       (cardId) => {
         this.applyComposerOutcome(this.composer.chooseCard(cardId))
       },
       (held) => {
+        this.cardTextureWarmup?.ensure([held.defId])
         this.cardDetailOverlay?.show({
           defId: held.defId,
           catalog: held.catalog,
@@ -179,6 +181,7 @@ export class GameScene extends Phaser.Scene {
     this.playerRail = null
     this.cardHand?.destroy()
     this.cardHand = null
+    this.cardTextureWarmup = null
     this.cardDetailOverlay?.destroy()
     this.cardDetailOverlay = null
     this.actionTray?.destroy()
@@ -309,6 +312,11 @@ export class GameScene extends Phaser.Scene {
     const localControlsActor = this.localPlayerControlsSeat(banner.actorSeat)
     this.turnBanner?.sync(banner)
     this.playerRail?.sync(snapshot.state, banner.actorSeat)
+    this.warmCardTexturesForHand(
+      snapshot.state,
+      snapshot.legalActions,
+      this.session?.getLocalSeat() ?? null,
+    )
     this.cardHand?.sync(
       snapshot.state,
       snapshot.legalActions,
@@ -332,6 +340,31 @@ export class GameScene extends Phaser.Scene {
       localControlsActor
         ? snapshot.error
         : (snapshot.error ?? 'Waiting for other player…'),
+    )
+  }
+
+  private warmCardTexturesForHand(
+    state: GameState,
+    legalActions: readonly ActionSpec[],
+    localSeat: number | null,
+  ): void {
+    const seat =
+      localSeat ??
+      buildTurnBannerViewModel(state, legalActions).actorSeat
+    const player = state.players.find((entry) => entry.seat === seat)
+    const defIds = (player?.hand ?? []).map((card) => card.defId)
+    this.cardTextureWarmup?.ensure(defIds)
+  }
+
+  private repaintCardHandFromLatestSnapshot(): void {
+    const snapshot = this.latestSnapshot
+    if (snapshot === null || snapshot.state === null) {
+      return
+    }
+    this.cardHand?.sync(
+      snapshot.state,
+      snapshot.legalActions,
+      this.session?.getLocalSeat() ?? null,
     )
   }
 
