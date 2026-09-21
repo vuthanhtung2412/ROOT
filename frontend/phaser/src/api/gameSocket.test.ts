@@ -52,6 +52,23 @@ describe('resolveWebSocketUrl', () => {
     )
   })
 
+  it('maps empty base on https tunnel host to wss', () => {
+    vi.stubGlobal('window', {
+      location: {
+        protocol: 'https:',
+        host: 'abc.trycloudflare.com',
+      },
+    })
+    expect(resolveWebSocketUrl('', 'eyrie')).toBe(
+      'wss://abc.trycloudflare.com/ws?playerId=eyrie',
+    )
+  })
+
+  it('maps https API base to wss host', () => {
+    expect(
+      resolveWebSocketUrl('https://machine.tailnet.ts.net', 'marquise'),
+    ).toBe('wss://machine.tailnet.ts.net/ws?playerId=marquise')
+  })
   it('maps http API base to ws host', () => {
     expect(resolveWebSocketUrl('http://192.168.1.10:3000', 'eyrie')).toBe(
       'ws://192.168.1.10:3000/ws?playerId=eyrie',
