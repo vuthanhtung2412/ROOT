@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { keepCornerFor } from '../factions/Marquise.js'
+import { FALL } from '../map/fall.js'
 import { canPlace } from '../queries/place.js'
 import { resetPlaceIds } from './place.js'
 import { eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
@@ -104,7 +104,7 @@ describe('removePieces', () => {
         player(1, 'marquise'),
       ],
     })
-    const keep = keepCornerFor(base, 0)
+    const keep = FALL.corners[0]!
     const state = withPieces(
       withPieces(base, keep, [{ id: 'keep', kind: 'token', owner: 0, type: 'keep' }]),
       4,

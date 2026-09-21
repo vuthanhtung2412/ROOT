@@ -19,6 +19,20 @@ function lobbyTwo(seed = 42): Game {
   return game
 }
 
+/** Resolve Marquise keep at NW corner so tests reach `playing`. */
+function finishSetup(game: Game, keep: number = FALL.corners[0]!): void {
+  if (game.state.status === 'setup') {
+    game.apply({ type: 'resolveEvent', clearing: keep })
+  }
+}
+
+function startPlaying(seed = 42): Game {
+  const game = lobbyTwo(seed)
+  game.start()
+  finishSetup(game)
+  return game
+}
+
 describe('Game lobby', () => {
   it('Game.create → waiting status', () => {
     const game = Game.create({ seed: 1 })
@@ -58,8 +72,7 @@ describe('Game.start', () => {
   })
 
   it('Rule: Setup 3 — 2p strips dominance from deck', () => {
-    const game = lobbyTwo(99)
-    game.start()
+    const game = startPlaying(99)
     const allCards = [...game.state.deck.draw, ...game.state.deck.discard]
     for (const player of game.state.players) {
       allCards.push(...player.hand)
@@ -69,8 +82,7 @@ describe('Game.start', () => {
   })
 
   it('Rule: Setup 2–5 — deals hands, ruins, item supply', () => {
-    const game = lobbyTwo(7)
-    game.start()
+    const game = startPlaying(7)
     for (const player of game.state.players) {
       expect(player.hand).toHaveLength(STARTING_HAND)
     }
@@ -79,13 +91,15 @@ describe('Game.start', () => {
     expect(ruins).toHaveLength(4)
   })
 
-  it('Game.start runs faction setups by seat', () => {
+  it('Game.start → setup chooseKeep; resolve → playing + faction pieces', () => {
     const game = lobbyTwo(5)
     game.start()
+    expect(game.state.status).toBe('setup')
+    expect(game.state.pending[0]?.type).toBe('chooseKeep')
+    finishSetup(game)
     expect(game.state.status).toBe('playing')
     expect(keepCornerFor(game.state, 0)).toBe(FALL.corners[0])
     expect(warriors(game.state, FALL.corners[0]!, 0)).toBe(1)
-    // Eyrie at opposite corner with roost + 6
     const eyrieStart = FALL.opposite(FALL.corners[0])!
     expect(warriors(game.state, eyrieStart, 1)).toBe(6)
     expect(
@@ -109,8 +123,7 @@ describe('Game.legalActions', () => {
 
 describe('Game.apply', () => {
   it('endPhase advances steps and phases', () => {
-    const game = lobbyTwo(3)
-    game.start()
+    const game = startPlaying(3)
     expect(game.state.phase).toBe('birdsong')
     expect(game.state.step).toBe('wood')
 
@@ -123,16 +136,14 @@ describe('Game.apply', () => {
   })
 
   it('Game.apply runs autoActions — empty for Phase 5 skeleton', () => {
-    const game = lobbyTwo(3)
-    game.start()
+    const game = startPlaying(3)
     const len = game.history.length
     game.apply({ type: 'endPhase' })
     expect(game.history.length).toBe(len + 1)
   })
 
   it('Game.apply gates on pending queue head — FIFO', () => {
-    const game = lobbyTwo(3)
-    game.start()
+    const game = startPlaying(3)
     game.state.pending.push({
       type: 'fieldHospital',
       victim: 0,
@@ -146,8 +157,7 @@ describe('Game.apply', () => {
   })
 
   it('Game emits phase.start/end signals', () => {
-    const game = lobbyTwo(3)
-    game.start()
+    const game = startPlaying(3)
     const signals: GameSignal[] = []
     const unsub = game.subscribeSignals((_, signal) => {
       signals.push(signal)
@@ -159,8 +169,7 @@ describe('Game.apply', () => {
   })
 
   it('Game merges granted actions into legalActions', () => {
-    const game = lobbyTwo(3)
-    game.start()
+    const game = startPlaying(3)
     const granted: ActionSpec = { type: 'swapMeet', actor: 0 }
     EFFECTS['test-grant'] = {
       defId: 'test-grant',
@@ -174,8 +183,7 @@ describe('Game.apply', () => {
   })
 
   it('Rule: Victory — 30 VP seat winner; tie-break currentSeat', () => {
-    const game = lobbyTwo(3)
-    game.start()
+    const game = startPlaying(3)
     game.state.players[0]!.vp = 30
     game.state.players[1]!.vp = 30
     game.apply({ type: 'endPhase' })
@@ -186,8 +194,7 @@ describe('Game.apply', () => {
 
 describe('evening discard validation', () => {
   it('rejects partial discard (DISCARD_TOO_FEW)', () => {
-    const game = lobbyTwo(1)
-    game.start()
+    const game = startPlaying(1)
     const s = game.state
     s.phase = 'evening'
     s.step = 'discard'
@@ -199,8 +206,7 @@ describe('evening discard validation', () => {
   })
 
   it('omits endPhase from legal actions until hand at limit', () => {
-    const game = lobbyTwo(1)
-    game.start()
+    const game = startPlaying(1)
     const s = game.state
     s.phase = 'evening'
     s.step = 'discard'
@@ -212,8 +218,7 @@ describe('evening discard validation', () => {
   })
 
   it('rejects endPhase at discard while hand over limit', () => {
-    const game = lobbyTwo(1)
-    game.start()
+    const game = startPlaying(1)
     const s = game.state
     s.phase = 'evening'
     s.step = 'discard'
@@ -225,8 +230,7 @@ describe('evening discard validation', () => {
   })
 
   it('accepts discard down to hand limit', () => {
-    const game = lobbyTwo(99)
-    game.start()
+    const game = startPlaying(99)
     const s = game.state
     s.phase = 'evening'
     s.step = 'discard'
@@ -243,8 +247,7 @@ describe('evening discard validation', () => {
 
 describe('Game replay and undo', () => {
   it('replay reproduces state', () => {
-    const game = lobbyTwo(11)
-    game.start()
+    const game = startPlaying(11)
     game.apply({ type: 'endPhase' })
     game.apply({ type: 'endPhase' })
     const replayed = Game.replay(11, [...game.history])
@@ -253,20 +256,18 @@ describe('Game replay and undo', () => {
   })
 
   it('undo rewinds one action', () => {
-    const game = lobbyTwo(11)
-    game.start()
+    const game = startPlaying(11)
     const before = structuredClone(game.state)
     game.apply({ type: 'endPhase' })
     game.undo()
     expect(game.state).toEqual(before)
-    expect(game.history).toHaveLength(3) // join join start
+    expect(game.history).toHaveLength(4) // join join start chooseKeep
   })
 })
 
 describe('Game snapshot', () => {
   it('toJSON/fromJSON round-trip — state + rng cursor', () => {
-    const game = lobbyTwo(123)
-    game.start()
+    const game = startPlaying(123)
     game.apply({ type: 'endPhase' })
     const rngBefore = game.toJSON().rng
     const nextRoll = SeededRng.fromJSON(rngBefore).roll()
@@ -281,8 +282,7 @@ describe('Game snapshot', () => {
   })
 
   it('fromJSON runs pending autoActions — Rule: 7.6.1 evening score on load', () => {
-    const game = lobbyTwo(7)
-    game.start()
+    const game = startPlaying(7)
     const snap = game.toJSON()
     // Land on Eyrie evening score with 3 roosts, score not yet applied
     snap.state.currentSeat = 1

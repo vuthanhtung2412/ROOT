@@ -53,19 +53,24 @@ function boardOf(state: GameState, seat: Seat): EyrieBoard {
   return board
 }
 
-/** Rule: Eyrie > Setup 2 — free corner, prefer opposite Marquise start. */
+/** Rule: Eyrie > Setup 2 — free corner, prefer diagonally opposite Marquise keep. */
 export function eyrieStartClearing(state: GameState): ClearingId {
   const taken = new Set<ClearingId>()
+  let marquiseKeep: ClearingId | null = null
   for (const p of state.players) {
     if (p.faction !== 'marquise') continue
     for (const corner of FALL.corners) {
       const hasKeep = state.clearings[corner]!.pieces.some(
         (x) => x.kind === 'token' && x.type === 'keep' && x.owner === p.seat,
       )
-      if (hasKeep) taken.add(corner)
+      if (hasKeep) {
+        taken.add(corner)
+        marquiseKeep = corner
+      }
     }
   }
-  const preferred = FALL.opposite(FALL.corners[0])
+  const preferred =
+    marquiseKeep !== null ? FALL.opposite(marquiseKeep) : FALL.opposite(FALL.corners[0])
   if (!taken.has(preferred)) return preferred
   for (const corner of FALL.corners) {
     if (!taken.has(corner)) return corner

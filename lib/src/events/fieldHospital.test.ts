@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { warriors } from '../queries/pieces.js'
-import { keepCornerFor } from '../factions/Marquise.js'
+import { FALL } from '../map/fall.js'
 import { resetPlaceIds } from '../rules/place.js'
 import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
 import { fieldHospitalResolver } from './fieldHospital.js'
@@ -27,7 +27,7 @@ describe('fieldHospitalResolver', () => {
         player(1, 'marquise'),
       ],
     })
-    const keep = keepCornerFor(base, 0)
+    const keep = FALL.corners[0]!
     const state = withPieces(base, keep, [{ id: 'keep', kind: 'token', owner: 0, type: 'keep' }])
     const event: FieldHospitalEvent = {
       type: 'fieldHospital',

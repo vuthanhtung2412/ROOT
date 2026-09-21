@@ -1,4 +1,10 @@
-import type { BattleEvent, Event, FieldHospitalEvent } from './events/types.js'
+import type {
+  BattleEvent,
+  ChooseKeepEvent,
+  ChooseLeaderEvent,
+  Event,
+  FieldHospitalEvent,
+} from './events/types.js'
 import type { ClearingId } from './map/types.js'
 import type { Seat } from './pieces/types.js'
 import type { EyrieBoard, FactionBoard, MarquiseBoard } from './state/boards.js'
@@ -26,6 +32,14 @@ export function isBattleEvent(event: Event): event is BattleEvent {
 
 export function isFieldHospitalEvent(event: Event): event is FieldHospitalEvent {
   return event.type === 'fieldHospital'
+}
+
+export function isChooseKeepEvent(event: Event): event is ChooseKeepEvent {
+  return event.type === 'chooseKeep'
+}
+
+export function isChooseLeaderEvent(event: Event): event is ChooseLeaderEvent {
+  return event.type === 'chooseLeader'
 }
 
 export function isMarquiseBoard(board: FactionBoard): board is MarquiseBoard {

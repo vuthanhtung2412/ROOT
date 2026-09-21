@@ -1,6 +1,6 @@
 import type { ClearingId } from '../map/types.js'
 import type { BuildingType, Seat } from '../pieces/types.js'
-import type { DecreeColumn } from '../state/boards.js'
+import type { DecreeColumn, EyrieLeader } from '../state/boards.js'
 
 export type MarchMove = {
   from: ClearingId
@@ -67,6 +67,7 @@ export type ActionChoiceParams = {
   order?: Seat[][]
   useEffect?: boolean[]
   column?: DecreeColumn[]
+  leaders?: EyrieLeader[]
 }
 
 export type Action =
@@ -99,6 +100,8 @@ export type Action =
     }
   | ResolveEventAction
 
+import type { EyrieLeader } from '../state/boards.js'
+
 export type ResolveEventAction = {
   type: 'resolveEvent'
   order?: Seat[]
@@ -106,6 +109,8 @@ export type ResolveEventAction = {
   cardId?: string
   decline?: boolean
   useEffect?: boolean
+  clearing?: ClearingId
+  leader?: EyrieLeader
 }
 
 export type ActionSpec = {

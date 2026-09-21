@@ -437,33 +437,18 @@ export class Game {
     if (state.players.length <= 1) {
       throw new RuleError('NOT_ENOUGH_PLAYERS', { count: state.players.length })
     }
-    this.runSetup()
-    state.status = 'playing'
-    state.currentSeat = 0
-    const first = FACTIONS[factionOf(state, 0)]
-    state.phase = 'birdsong'
-    state.step = first.steps.birdsong[0]!
-    state.turnScratch = {
-      actionsLeft: 0,
-      extraActions: 0,
-      recruited: false,
-      birdsongWoodDone: false,
-      eveningDrawDone: false,
-      swapMeetUsed: false,
-      emergencyOrdersDone: false,
-      eveningScoreDone: false,
-      decree: null,
-      decreeDone: false,
-    }
+    this.runSharedSetup()
+    state.status = 'setup'
 
-    const ctx = this.makeCtx()
-    ctx.emit({ s: 'phase.start', actor: 0, phase: 'birdsong' })
+    const marquise = state.players.find((player) => player.faction === 'marquise')
+    if (!marquise) throw new RuleError('NO_MARQUISE_FOR_SETUP')
+    state.pending.push({ type: 'chooseKeep', seat: marquise.seat })
 
-    const autoLogs = this.runAutoActions()
-    return [{ t: 'start' }, { t: 'phase', actor: 0, phase: 'birdsong', step: state.step }, ...autoLogs]
+    return [{ t: 'start' }]
   }
 
-  private runSetup(): void {
+  /** Shared deck/hands/ruins; faction placement waits on chooseKeep (and later chooseLeader). */
+  private runSharedSetup(): void {
     const { state } = this
     resetPlaceIds()
 
@@ -503,12 +488,33 @@ export class Game {
         ruin: { items: [ruinItems[i]!] },
       }
     }
+  }
+
+  private beginPlaying(): LogEntry[] {
+    const { state } = this
+    state.status = 'playing'
+    state.currentSeat = 0
+    const first = FACTIONS[factionOf(state, 0)]
+    state.phase = 'birdsong'
+    state.step = first.steps.birdsong[0]!
+    state.turnScratch = {
+      actionsLeft: 0,
+      extraActions: 0,
+      recruited: false,
+      birdsongWoodDone: false,
+      eveningDrawDone: false,
+      swapMeetUsed: false,
+      emergencyOrdersDone: false,
+      eveningScoreDone: false,
+      decree: null,
+      decreeDone: false,
+    }
 
     const ctx = this.makeCtx()
-    const seats = [...state.players].sort((a, b) => a.seat - b.seat)
-    for (const player of seats) {
-      FACTIONS[player.faction].setup(state, player.seat, ctx)
-    }
+    ctx.emit({ s: 'phase.start', actor: 0, phase: 'birdsong' })
+
+    const autoLogs = this.runAutoActions()
+    return [{ t: 'phase', actor: 0, phase: 'birdsong', step: state.step }, ...autoLogs]
   }
 
   private applyEndPhase(): LogEntry[] {
@@ -617,6 +623,12 @@ export class Game {
       if (action.useEffect !== undefined && s.params?.useEffect?.includes(action.useEffect)) {
         return true
       }
+      if (action.clearing !== undefined && s.params?.clearing?.includes(action.clearing)) {
+        return true
+      }
+      if (action.leader !== undefined && s.params?.leaders?.includes(action.leader)) {
+        return true
+      }
       if (action.pieceIds && s.params?.pieceIds) {
         const domain = s.params.pieceIds
         if (JSON.stringify(action.pieceIds) === JSON.stringify(domain)) return true
@@ -628,11 +640,15 @@ export class Game {
       return false
     })
     if (!spec) throw new RuleError('ILLEGAL_ACTION', { action })
-    return RESOLVERS[head.type].apply(
+    const logs = RESOLVERS[head.type].apply(
       this.state,
       { event: head, action, actor: spec.actor },
       ctx,
     )
+    if (this.state.status === 'setup' && this.state.pending.length === 0) {
+      logs.push(...this.beginPlaying())
+    }
+    return logs
   }
 
   private checkWin(): LogEntry[] {

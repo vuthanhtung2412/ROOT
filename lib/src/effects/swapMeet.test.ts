@@ -8,6 +8,7 @@ describe('Swap Meet', () => {
     game.join('a')
     game.join('b')
     game.start()
+    game.apply({ type: 'resolveEvent', clearing: 0 })
     game.state.players[0]!.playArea.push(card('ROOT-103'))
     game.state.players[0]!.hand.push(card('ROOT-209'))
     game.state.players[1]!.hand = [card('ROOT-211', 2)]
