@@ -74,3 +74,5 @@ function addItem(items: string[], newItem: string) {
 }
 
 ```
+
++ Make as few code modification as possible for a feature
