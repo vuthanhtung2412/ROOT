@@ -17,7 +17,7 @@ import {
   RUIN_ITEMS,
   STARTING_HAND,
 } from '../state/constants.js'
-import { eyrieLeaderPools, type FactionBoard } from '../state/boards.js'
+import { EYRIE_LEADERS, type FactionBoard } from '../state/boards.js'
 import type { GameSnapshot } from '../state/snapshot.js'
 import type { Seat } from '../pieces/types.js'
 import type { GameState, Phase, PlayerState } from '../state/types.js'
@@ -61,13 +61,12 @@ function createBoard(faction: PlayerState['faction']): FactionBoard {
         },
       }
     case 'eyrie': {
-      const pools = eyrieLeaderPools('builder')
       return {
         kind: 'eyrie',
         supply: { warriors: 20 },
-        leader: 'builder',
-        leadersFaceUp: pools.leadersFaceUp,
-        leadersFaceDown: pools.leadersFaceDown,
+        leader: null,
+        leadersFaceUp: [...EYRIE_LEADERS],
+        leadersFaceDown: [],
         decree: { recruit: [], move: [], battle: [], build: [] },
         roostTrack: { placed: 0 },
       }
