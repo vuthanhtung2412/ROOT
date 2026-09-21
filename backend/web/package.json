@@ -6,6 +6,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "gen:openapi": "tsx scripts/export-openapi.ts",
     "lint": "eslint src scripts"
   },
@@ -14,11 +16,14 @@
     "@hono/zod-openapi": "^1.6.3",
     "@root/lib": "workspace:*",
     "hono": "^4.13.8",
+    "ws": "^8.21.3",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.23.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
   }
 }
