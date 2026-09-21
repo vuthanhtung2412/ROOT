@@ -1,5 +1,8 @@
 import type { ActionSpec } from '../api/client.ts'
 import {
+  formatEyrieLeaderOptionLabel,
+} from '../assets/eyrieLeaderCatalog.ts'
+import {
   readChoiceParams,
   type ActionComposerHooks,
   type ClientAction,
@@ -87,13 +90,13 @@ export function createEventComposerHooks(): {
       if (params.leaders !== undefined) {
         draft = { type: 'pickLeader', leaders: params.leaders }
         promptOptions = params.leaders.map((leader) => ({
-          label: leader,
+          label: formatEyrieLeaderOptionLabel(leader),
           value: leader,
         }))
         return {
           kind: 'incomplete',
           prompt: {
-            message: 'Choose Eyrie leader',
+            message: 'Choose Eyrie leader — see cards below',
             highlightClearings: [],
             enabledCardIds: null,
             canConfirm: false,
