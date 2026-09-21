@@ -127,4 +127,36 @@ describe('connectGameSocket', () => {
     vi.advanceTimersByTime(100)
     expect(factory).toHaveBeenCalledTimes(2)
   })
+
+  it('resets reconnect budget after successful open', () => {
+    vi.useFakeTimers()
+    const sockets = [
+      createMockSocket(),
+      createMockSocket(),
+      createMockSocket(),
+    ]
+    const factory = vi
+      .fn()
+      .mockReturnValueOnce(sockets[0]!.socket)
+      .mockReturnValueOnce(sockets[1]!.socket)
+      .mockReturnValueOnce(sockets[2]!.socket)
+
+    connectGameSocket({
+      url: 'ws://example/ws?playerId=a',
+      handlers: { onPush: vi.fn() },
+      webSocketFactory: factory,
+      maxReconnectAttempts: 1,
+      reconnectDelayMilliseconds: 50,
+    })
+
+    sockets[0]!.emit('open', new Event('open'))
+    sockets[0]!.emit('close', new Event('close'))
+    vi.advanceTimersByTime(50)
+    expect(factory).toHaveBeenCalledTimes(2)
+
+    sockets[1]!.emit('open', new Event('open'))
+    sockets[1]!.emit('close', new Event('close'))
+    vi.advanceTimersByTime(50)
+    expect(factory).toHaveBeenCalledTimes(3)
+  })
 })
