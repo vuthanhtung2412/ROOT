@@ -5,11 +5,12 @@ import { buildTurnBannerViewModel } from './TurnBanner.ts'
 function makeState(overrides: {
   currentSeat?: number
   pending?: unknown[]
+  status?: GameState['status']
 }): GameState {
   return {
     id: 'g',
     seed: 1,
-    status: 'playing',
+    status: overrides.status ?? 'playing',
     turn: 1,
     currentSeat: overrides.currentSeat ?? 1,
     phase: 'daylight',
@@ -55,6 +56,55 @@ describe('buildTurnBannerViewModel pending actor', () => {
     )
     expect(view.actorSeat).toBe(0)
     expect(view.actorFaction).toBe('marquise')
+  })
+
+  it('setup prompts keep → building → leader in order', () => {
+    expect(
+      buildTurnBannerViewModel(
+        makeState({
+          status: 'setup',
+          pending: [{ type: 'chooseKeep', seat: 0 }],
+        }),
+      ).prompt,
+    ).toBe('Choose keep corner')
+    expect(
+      buildTurnBannerViewModel(
+        makeState({
+          status: 'setup',
+          pending: [
+            { type: 'placeStartingBuilding', seat: 0, building: 'sawmill' },
+          ],
+        }),
+      ).prompt,
+    ).toBe('Place sawmill')
+    expect(
+      buildTurnBannerViewModel(
+        makeState({
+          status: 'setup',
+          pending: [
+            { type: 'placeStartingBuilding', seat: 0, building: 'workshop' },
+          ],
+        }),
+      ).prompt,
+    ).toBe('Place workshop')
+    expect(
+      buildTurnBannerViewModel(
+        makeState({
+          status: 'setup',
+          pending: [
+            { type: 'placeStartingBuilding', seat: 0, building: 'recruiter' },
+          ],
+        }),
+      ).prompt,
+    ).toBe('Place recruiter')
+    expect(
+      buildTurnBannerViewModel(
+        makeState({
+          status: 'setup',
+          pending: [{ type: 'chooseLeader', seat: 1, reason: 'setup' }],
+        }),
+      ).prompt,
+    ).toBe('Choose Eyrie leader')
   })
 
   it('prefers legalActions actor for effects stage', () => {

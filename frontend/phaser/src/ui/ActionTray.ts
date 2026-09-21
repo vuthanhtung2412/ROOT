@@ -74,6 +74,10 @@ function formatActionLabel(spec: ActionSpec): string {
     return column !== undefined ? `decree:${column}` : 'decree'
   }
   if (spec.type === 'resolveEvent') {
+    const startingBuilding = params.building?.[0]
+    if (startingBuilding !== undefined) {
+      return `place ${startingBuilding}`
+    }
     if (params.clearing !== undefined) {
       return 'choose keep'
     }
@@ -106,3 +110,6 @@ function formatActionLabel(spec: ActionSpec): string {
   }
   return spec.type
 }
+
+/** Exported for unit tests. */
+export { formatActionLabel }

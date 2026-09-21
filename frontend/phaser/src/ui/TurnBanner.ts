@@ -123,9 +123,7 @@ function buildPrompt(
     return 'Game over'
   }
   if (state.status === 'setup') {
-    return fromPending
-      ? `Setup choice · seat ${String(actorSeat)}`
-      : 'Setup'
+    return setupPrompt(state.pending[0]) ?? 'Setup'
   }
   if (fromPending) {
     return `Pending choice · seat ${String(actorSeat)}`
@@ -146,6 +144,27 @@ function buildPrompt(
     return 'Evening'
   }
   return 'Daylight actions'
+}
+
+function setupPrompt(pending: unknown): string | null {
+  if (typeof pending !== 'object' || pending === null) {
+    return null
+  }
+  const type = Reflect.get(pending, 'type')
+  if (type === 'chooseKeep') {
+    return 'Choose keep corner'
+  }
+  if (type === 'placeStartingBuilding') {
+    const building = Reflect.get(pending, 'building')
+    if (typeof building === 'string') {
+      return `Place ${building}`
+    }
+    return 'Place starting building'
+  }
+  if (type === 'chooseLeader') {
+    return 'Choose Eyrie leader'
+  }
+  return null
 }
 
 export class TurnBanner {
