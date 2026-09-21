@@ -773,6 +773,7 @@ describe('Law 7 extras / integration', () => {
     game.apply({ type: 'join', playerId: 'b' })
     game.apply({ type: 'start' })
     game.apply({ type: 'resolveEvent', clearing: 0 })
+    game.apply({ type: 'resolveEvent', leader: 'builder' })
     expect(game.state.players[1]!.faction).toBe('eyrie')
     expect(game.state.phase).toBe('birdsong')
   })

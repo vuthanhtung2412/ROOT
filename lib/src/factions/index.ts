@@ -12,4 +12,4 @@ export const FACTIONS: Record<FactionId, Faction> = {
 
 export { Faction } from './Faction.js'
 export { Marquise, MARQUISE, keepCornerFor, placeMarquiseSetup } from './Marquise.js'
-export { Eyrie, EYRIE, eyrieStartClearing, tuckViziersFor } from './Eyrie.js'
+export { Eyrie, EYRIE, eyrieStartClearing, tuckViziersFor, placeEyrieRoostSetup, assignEyrieLeader } from './Eyrie.js'

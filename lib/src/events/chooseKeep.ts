@@ -1,4 +1,5 @@
 import type { Action, ActionSpec, ResolveEventAction } from '../actions/types.js'
+import { placeEyrieRoostSetup } from '../factions/Eyrie.js'
 import { FACTIONS } from '../factions/index.js'
 import { placeMarquiseSetup } from '../factions/Marquise.js'
 import type { Ctx } from '../game/ctx.js'
@@ -66,11 +67,20 @@ export const chooseKeepResolver: ChooseKeepResolver = {
 
     placeMarquiseSetup(state, event.seat, action.clearing)
 
-    // Remaining factions in seat order (Eyrie roost opposite keep; leader still Builder).
+    // Remaining factions in seat order; Eyrie roost now, leader via chooseLeader.
     const seats = [...state.players].sort((a, b) => a.seat - b.seat)
     for (const player of seats) {
       if (player.seat === event.seat) continue
-      FACTIONS[player.faction].setup(state, player.seat, ctx)
+      if (player.faction === 'eyrie') {
+        placeEyrieRoostSetup(state, player.seat)
+      } else {
+        FACTIONS[player.faction].setup(state, player.seat, ctx)
+      }
+    }
+
+    const eyrie = state.players.find((player) => player.faction === 'eyrie')
+    if (eyrie) {
+      state.pending.push({ type: 'chooseLeader', seat: eyrie.seat, reason: 'setup' })
     }
 
     return [{ t: 'event', event }]

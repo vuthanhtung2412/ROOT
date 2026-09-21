@@ -3,15 +3,17 @@ import type { Ctx } from '../game/ctx.js'
 import type { LogEntry } from '../log/types.js'
 import type { Seat } from '../pieces/types.js'
 import type { GameState } from '../state/types.js'
+import { battleResolver } from './battle.js'
+import { chooseKeepResolver } from './chooseKeep.js'
+import { chooseLeaderResolver } from './chooseLeader.js'
+import { fieldHospitalResolver } from './fieldHospital.js'
+import type { Event } from './types.js'
 import {
   isBattleEvent,
   isChooseKeepEvent,
+  isChooseLeaderEvent,
   isFieldHospitalEvent,
 } from '../typeGuards.js'
-import { battleResolver } from './battle.js'
-import { chooseKeepResolver } from './chooseKeep.js'
-import { fieldHospitalResolver } from './fieldHospital.js'
-import type { Event } from './types.js'
 
 export type EventApply = {
   event: Event
@@ -81,14 +83,21 @@ export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
     },
   },
   chooseLeader: {
-    legalActions(_state, _event, _ctx) {
-      return []
+    legalActions(state, event, ctx) {
+      if (!isChooseLeaderEvent(event)) return []
+      return chooseLeaderResolver.legalActions(state, event, ctx)
     },
-    apply() {
-      return []
+    apply(state, apply, ctx) {
+      if (!isChooseLeaderEvent(apply.event)) return []
+      return chooseLeaderResolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
     },
-    matchesAction() {
-      return false
+    matchesAction(state, event, action, ctx) {
+      if (!isChooseLeaderEvent(event)) return false
+      return chooseLeaderResolver.matchesAction(state, event, action, ctx)
     },
   },
   outrage: {

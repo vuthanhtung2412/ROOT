@@ -28,6 +28,7 @@ import { placeUpTo } from '../rules/place.js'
 import { RuleError } from '../rules/RuleError.js'
 import {
   DECREE_COLUMNS,
+  EYRIE_LEADERS,
   EYRIE_ROOST_DRAW_BONUS_THRESHOLDS,
   EYRIE_ROOST_VP,
   eyrieLeaderPools,
@@ -360,25 +361,43 @@ function eveningDrawBonus(roostCount: number): number {
   return bonus
 }
 
+/** Rule: Eyrie > Setup 2 + 5 — roost + warriors; leader chosen later (7.3.3). */
+export function placeEyrieRoostSetup(state: GameState, seat: Seat): void {
+  const board = boardOf(state, seat)
+  board.supply.warriors = 20
+  board.leader = null
+  board.leadersFaceUp = [...EYRIE_LEADERS]
+  board.leadersFaceDown = []
+  board.roostTrack.placed = 6
+  board.decree = { recruit: [], move: [], battle: [], build: [] }
+
+  const start = eyrieStartClearing(state)
+  placeUpTo(state, { seat, clearing: start, spec: { kind: 'building', type: 'roost' }, count: 1 })
+  placeUpTo(state, { seat, clearing: start, spec: { kind: 'warrior' }, count: 6 })
+}
+
+/** Rule: 7.3.3 / 7.7.3 — put chosen leader in slot; remaining stay face-up. */
+export function assignEyrieLeader(board: EyrieBoard, leader: EyrieLeader): void {
+  if (!board.leadersFaceUp.includes(leader)) {
+    throw new RuleError('LEADER_NOT_FACE_UP', { leader })
+  }
+  board.leader = leader
+  board.leadersFaceUp = board.leadersFaceUp.filter((candidate) => candidate !== leader)
+  tuckViziersFor(board, leader)
+}
+
 export class Eyrie extends Faction {
   readonly id = 'eyrie' as const
   readonly steps = STEPS
 
   setup(state: GameState, seat: Seat, _ctx: Ctx): void {
+    // Direct-call path (unit tests): roost + Builder. Game.start uses chooseLeader.
+    placeEyrieRoostSetup(state, seat)
     const board = boardOf(state, seat)
-    board.supply.warriors = 20
     const pools = eyrieLeaderPools('builder')
     board.leader = 'builder'
     board.leadersFaceUp = pools.leadersFaceUp
     board.leadersFaceDown = pools.leadersFaceDown
-    board.roostTrack.placed = 6
-
-    const start = eyrieStartClearing(state)
-    // Rule: Eyrie > Setup 2 — roost + 6 warriors; 6 remain on track.
-    placeUpTo(state, { seat, clearing: start, spec: { kind: 'building', type: 'roost' }, count: 1 })
-    placeUpTo(state, { seat, clearing: start, spec: { kind: 'warrior' }, count: 6 })
-
-    // Rule: Eyrie > Setup 3–4 / 7.8 — viziers per chosen leader columns.
     tuckViziersFor(board, 'builder')
   }
 
