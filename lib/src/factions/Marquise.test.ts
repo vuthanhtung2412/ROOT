@@ -101,6 +101,7 @@ function lobbyTwo(seed = 42): Game {
   game.join('b')
   game.start()
   game.apply({ type: 'resolveEvent', clearing: 0 })
+  game.apply({ type: 'resolveEvent', leader: 'builder' })
   return game
 }
 

@@ -19,10 +19,18 @@ function lobbyTwo(seed = 42): Game {
   return game
 }
 
-/** Resolve Marquise keep at NW corner so tests reach `playing`. */
-function finishSetup(game: Game, keep: number = FALL.corners[0]!): void {
-  if (game.state.status === 'setup') {
+/** Resolve Marquise keep + Eyrie leader so tests reach `playing`. */
+function finishSetup(
+  game: Game,
+  keep: number = FALL.corners[0]!,
+  leader: 'builder' | 'charismatic' | 'commander' | 'despot' = 'builder',
+): void {
+  if (game.state.status !== 'setup') return
+  if (game.state.pending[0]?.type === 'chooseKeep') {
     game.apply({ type: 'resolveEvent', clearing: keep })
+  }
+  if (game.state.pending[0]?.type === 'chooseLeader') {
+    game.apply({ type: 'resolveEvent', leader })
   }
 }
 
@@ -261,7 +269,7 @@ describe('Game replay and undo', () => {
     game.apply({ type: 'endPhase' })
     game.undo()
     expect(game.state).toEqual(before)
-    expect(game.history).toHaveLength(4) // join join start chooseKeep
+    expect(game.history).toHaveLength(5) // join join start chooseKeep chooseLeader
   })
 })
 
