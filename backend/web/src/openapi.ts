@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { compress } from 'hono/compress'
 import { LIB_NAME, LIB_VERSION } from '@root/lib'
 import { corsMiddleware } from './middleware/cors.js'
 import { onError } from './middleware/errors.js'
@@ -17,6 +18,7 @@ const openApiInfo = {
 export const app = new OpenAPIHono()
 
 app.use('*', corsMiddleware)
+app.use('*', compress())
 app.onError(onError)
 
 const healthRoute = createRoute({
