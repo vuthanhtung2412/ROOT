@@ -599,8 +599,8 @@ Documented choices where this engine differs from Law-exact play (GP1+):
 | First player | Random | **Seat 0** starts |
 | Lobby start | Implied when roster ready | **Explicit** `{ type:'start' }` / `POST /game/start` when `players.length > 1` and status still `waiting` (no auto-start on last join) |
 | Role sequence | Reach / advanced setup | Join order assigns factions **marquise → eyrie → alliance → vagabond** (`DEFAULT_FACTIONS`) |
-| Marquise starting buildings | Any split among keep + adjacent | **Keep first**, then adjacent by ascending clearing id (`placeUpTo`) |
 | Marquise keep corner | Player chooses any corner | Interactive `chooseKeep` pending during `status: 'setup'` |
+| Marquise starting buildings | Any split among keep + adjacent | Interactive `placeStartingBuilding` (sawmill → workshop → recruiter) |
 | Eyrie starting clearing | Free corner; prefer diagonal opposite | **Always** `opposite(marquise keep)` |
 | Eyrie leaders | Four leaders with specials | All four; setup `chooseLeader`; turmoil depose flips leader face-down then choose from face-up (**A New Clutch** if none) |
 | Vagabond characters | Thief / Tinker / Ranger | **Thief only** until later GP |

@@ -35,6 +35,7 @@ export type ActionChoiceParamsView = {
   defender?: number[]
   order?: number[][]
   leaders?: string[]
+  building?: string[]
 }
 
 export function readChoiceParams(
@@ -103,6 +104,10 @@ export function readChoiceParams(
   const leaders = asStringArray(raw.leaders)
   if (leaders !== undefined) {
     view.leaders = leaders
+  }
+  const building = asStringArray(raw.building)
+  if (building !== undefined) {
+    view.building = building
   }
   return view
 }

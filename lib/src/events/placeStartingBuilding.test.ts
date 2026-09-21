@@ -69,11 +69,13 @@ describe('placeStartingBuilding', () => {
             piece.type === 'recruiter'),
       ),
     )
-    expect(buildings.map((piece) => piece.type).sort()).toEqual([
-      'recruiter',
-      'sawmill',
-      'workshop',
-    ])
+    const types = buildings.map((piece) => {
+      if (piece.kind !== 'building') {
+        throw new Error('expected building')
+      }
+      return piece.type
+    })
+    expect(types.sort()).toEqual(['recruiter', 'sawmill', 'workshop'])
     expect(keepCornerFor(game.state, 0)).toBe(keep)
   })
 
