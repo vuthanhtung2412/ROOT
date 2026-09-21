@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPhaserApi } from '../api/client.ts'
-import { makeActionSpec, makeFetchResponse, makeGameState } from '../test/factories.ts'
+import type { GameSocketPush } from '../api/gameSocket.ts'
+import {
+  makeActionSpec,
+  makeFetchResponse,
+  makeGameState,
+} from '../test/factories.ts'
 import { GameSession } from './GameSession.ts'
+import type { PlayerIdentityStorage } from './playerIdentity.ts'
 
 function stubFetchSequence(
   responses: Array<{ body: unknown; status?: number }>,
@@ -14,6 +20,49 @@ function stubFetchSequence(
   }
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
+}
+
+function createMemoryStorage(): PlayerIdentityStorage {
+  const map = new Map<string, string>()
+  return {
+    getItem: (key) => map.get(key) ?? null,
+    setItem: (key, value) => {
+      map.set(key, value)
+    },
+    removeItem: (key) => {
+      map.delete(key)
+    },
+  }
+}
+
+type SocketController = {
+  push: (payload: GameSocketPush) => void
+}
+
+function createSession(options?: {
+  storage?: PlayerIdentityStorage | null
+  socket?: SocketController
+}): GameSession {
+  const socketController: SocketController = options?.socket ?? {
+    push: () => {
+      /* no-op until connect */
+    },
+  }
+  let onPush: ((payload: GameSocketPush) => void) | null = null
+  socketController.push = (payload) => {
+    onPush?.(payload)
+  }
+
+  return new GameSession({
+    api: createPhaserApi({ baseUrl: 'http://example.test' }),
+    apiBaseUrl: 'http://example.test',
+    identityStorage: options?.storage ?? createMemoryStorage(),
+    connectSocket: ({ handlers }) => {
+      onPush = handlers.onPush
+      return { close: vi.fn() }
+    },
+    resolveSocketUrl: () => 'ws://example/ws',
+  })
 }
 
 describe('GameSession', () => {
@@ -31,9 +80,7 @@ describe('GameSession', () => {
       { body: { log: [{ type: 'turnStart' }] } },
     ])
 
-    const session = new GameSession(
-      createPhaserApi({ baseUrl: 'http://example.test' }),
-    )
+    const session = createSession()
     await session.refresh()
 
     const snapshot = session.getSnapshot()
@@ -45,97 +92,137 @@ describe('GameSession', () => {
     expect(snapshot.error).toBeNull()
   })
 
-  it('startHotSeatGame creates, joins, starts, then refreshes', async () => {
+  it('hostGame creates and joins once each then opens socket', async () => {
     const waiting = makeGameState({ status: 'waiting' })
-    const playing = makeGameState({ status: 'playing', step: 'birdsong' })
     const fetchMock = stubFetchSequence([
       { body: { state: waiting }, status: 201 },
       { body: { state: waiting, log: [] } },
-      { body: { state: waiting, log: [] } },
-      { body: { state: playing, log: [] } },
-      { body: { state: playing, historyLength: 4 } },
-      { body: { actions: [makeActionSpec()] } },
-      { body: { log: [] } },
     ])
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ socket })
 
-    const session = new GameSession(
-      createPhaserApi({ baseUrl: 'http://example.test' }),
-    )
-    await session.startHotSeatGame({
-      factions: ['marquise', 'eyrie'],
-      playerIds: ['marquise', 'eyrie'],
+    await session.hostGame({ playerId: 'marquise' })
+
+    expect(fetchMock.mock.calls.length).toBe(2)
+    expect(session.getLocalPlayerId()).toBe('marquise')
+    expect(session.getSnapshot().error).toBeNull()
+
+    socket.push({
+      state: waiting,
+      historyLength: 0,
+      legalActions: [],
+      log: [],
     })
-
-    expect(session.getSnapshot().state?.status).toBe('playing')
-    expect(fetchMock.mock.calls.length).toBe(7)
+    expect(session.getSnapshot().state?.status).toBe('waiting')
+    expect(session.getLocalSeat()).toBe(0)
   })
 
-  it('submitAction refreshes after success', async () => {
-    const after = makeGameState({ step: 'actions' })
-    stubFetchSequence([
-      { body: { state: after, log: [] } },
-      { body: { state: after, historyLength: 5 } },
-      { body: { actions: [] } },
-      { body: { log: [{ type: 'action' }] } },
+  it('joinGame joins once and applies WS push', async () => {
+    const waiting = makeGameState({ status: 'waiting' })
+    const fetchMock = stubFetchSequence([
+      { body: { state: waiting, log: [] } },
     ])
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ socket })
 
-    const session = new GameSession(
-      createPhaserApi({ baseUrl: 'http://example.test' }),
+    await session.joinGame({ playerId: 'eyrie' })
+
+    expect(fetchMock.mock.calls.length).toBe(1)
+    socket.push({
+      state: waiting,
+      historyLength: 0,
+      legalActions: [],
+      log: [],
+    })
+    expect(session.getLocalSeat()).toBe(1)
+  })
+
+  it('submitAction errors when local seat is not actor', async () => {
+    const state = makeGameState({ currentSeat: 0 })
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.phaser.playerIdentity',
+      JSON.stringify({ playerId: 'eyrie', apiBaseUrl: 'http://example.test' }),
     )
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ storage, socket })
+
+    await session.continueWithStoredIdentity()
+    socket.push({
+      state,
+      historyLength: 1,
+      legalActions: [],
+      log: [],
+    })
     await session.submitAction({ type: 'endPhase' })
 
-    expect(session.getSnapshot().state?.step).toBe('actions')
-    expect(session.getSnapshot().historyLength).toBe(5)
+    expect(session.getSnapshot().error).toBe('Not your seat')
   })
 
-  it('undo refreshes after success', async () => {
-    const undone = makeGameState({ turn: 1 })
-    stubFetchSequence([
-      { body: { state: undone } },
-      { body: { state: undone, historyLength: 2 } },
-      { body: { actions: [makeActionSpec()] } },
-      { body: { log: [] } },
+  it('submitAction posts REST without GET refresh', async () => {
+    const state = makeGameState({ currentSeat: 0 })
+    const fetchMock = stubFetchSequence([
+      { body: { state }, status: 201 },
+      { body: { state, log: [] } },
     ])
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ socket })
+    await session.hostGame({ playerId: 'marquise' })
+    socket.push({
+      state,
+      historyLength: 2,
+      legalActions: [makeActionSpec()],
+      log: [],
+    })
 
-    const session = new GameSession(
-      createPhaserApi({ baseUrl: 'http://example.test' }),
-    )
-    await session.undo()
+    fetchMock.mockClear()
+    fetchMock.mockResolvedValueOnce(makeFetchResponse({ state, log: [] }))
+    await session.submitAction({ type: 'endPhase' })
 
-    expect(session.getSnapshot().historyLength).toBe(2)
+    expect(fetchMock.mock.calls.length).toBe(1)
     expect(session.getSnapshot().error).toBeNull()
   })
 
-  it('restart clears snapshot after delete', async () => {
-    stubFetchSequence([{ body: null, status: 204 }])
-
-    const session = new GameSession(
-      createPhaserApi({ baseUrl: 'http://example.test' }),
+  it('restart clears snapshot and identity', async () => {
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.phaser.playerIdentity',
+      JSON.stringify({ playerId: 'marquise', apiBaseUrl: '' }),
     )
+    stubFetchSequence([{ body: null, status: 204 }])
+    const session = createSession({ storage })
+
     await session.restart()
 
     expect(session.getSnapshot().state).toBeNull()
-    expect(session.getSnapshot().legalActions).toEqual([])
+    expect(session.getLocalPlayerId()).toBeNull()
+    expect(storage.getItem('root.phaser.playerIdentity')).toBeNull()
   })
 
-  it('keeps prior snapshot and sets error on failure', async () => {
-    const state = makeGameState()
-    stubFetchSequence([
-      { body: { state, historyLength: 1 } },
-      { body: { actions: [] } },
-      { body: { log: [] } },
-      { body: { code: 'BAD_ACTION', detail: null }, status: 400 },
-    ])
-
-    const session = new GameSession(
-      createPhaserApi({ baseUrl: 'http://example.test' }),
+  it('continueWithStoredIdentity errors when playerId missing from state', async () => {
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.phaser.playerIdentity',
+      JSON.stringify({
+        playerId: 'unknown',
+        apiBaseUrl: 'http://example.test',
+      }),
     )
-    await session.refresh()
-    await session.submitAction({ type: 'recruit' })
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ storage, socket })
+    const state = makeGameState()
 
-    expect(session.getSnapshot().state).toEqual(state)
-    expect(session.getSnapshot().error).toBe('BAD_ACTION')
-    expect(session.getSnapshot().loading).toBe(false)
+    await session.continueWithStoredIdentity()
+    socket.push({
+      state,
+      historyLength: 0,
+      legalActions: [],
+      log: [],
+    })
+
+    expect(session.getSnapshot().error).toBe(
+      'Stored playerId not in this game',
+    )
   })
 
   it('notifies subscribers on publish', async () => {
@@ -146,9 +233,7 @@ describe('GameSession', () => {
       { body: { log: [] } },
     ])
 
-    const session = new GameSession(
-      createPhaserApi({ baseUrl: 'http://example.test' }),
-    )
+    const session = createSession()
     const seen: Array<string | null> = []
     const unsubscribe = session.subscribe((snapshot) => {
       seen.push(snapshot.state?.id ?? null)
@@ -158,24 +243,5 @@ describe('GameSession', () => {
 
     expect(seen[0]).toBeNull()
     expect(seen.at(-1)).toBe('test-game')
-  })
-
-  it('undo restores prior historyLength from API', async () => {
-    const undone = makeGameState({ turn: 1, step: 'craft' })
-    stubFetchSequence([
-      { body: { state: undone } },
-      { body: { state: undone, historyLength: 2 } },
-      { body: { actions: [makeActionSpec({ type: 'craft' })] } },
-      { body: { log: [{ t: 'undo' }] } },
-    ])
-
-    const session = new GameSession(
-      createPhaserApi({ baseUrl: 'http://example.test' }),
-    )
-    await session.undo()
-
-    expect(session.getSnapshot().historyLength).toBe(2)
-    expect(session.getSnapshot().state?.step).toBe('craft')
-    expect(session.getSnapshot().log).toEqual([{ t: 'undo' }])
   })
 })
