@@ -3,6 +3,7 @@ import type {
   GameState,
   PhaserApiClient,
 } from '../api/client.ts'
+import { ApiError } from '../api/client.ts'
 import {
   connectGameSocket,
   resolveWebSocketUrl,
@@ -29,14 +30,12 @@ export type GameSessionSnapshot = {
 
 export type GameSessionListener = (snapshot: GameSessionSnapshot) => void
 
-export type HostGameInput = {
-  playerId: string
-  factions?: string[]
-}
+/** First click creates lobby as Marquise; second joins as Eyrie and starts. */
+export type JoinMatchResult = 'waiting' | 'playing'
 
-export type JoinGameInput = {
-  playerId: string
-}
+const FIRST_PLAYER_ID = 'marquise'
+const SECOND_PLAYER_ID = 'eyrie'
+const DEFAULT_FACTIONS: string[] = ['marquise', 'eyrie']
 
 export type GameSessionDependencies = {
   api: PhaserApiClient
@@ -134,52 +133,41 @@ export class GameSession {
     })
   }
 
-  /** Host: create lobby (no replace), join self, persist id, open WS. */
-  async hostGame(input: HostGameInput): Promise<void> {
+  /**
+   * One-click matchmaking against the single server slot.
+   * - Empty slot → create, join Marquise, return `waiting` (peer starts).
+   * - Occupied lobby → join Eyrie, auto-start, return `playing`.
+   * - On failure → `null` and `snapshot.error` set.
+   */
+  async joinMatch(
+    input: { factions?: string[] } = {},
+  ): Promise<JoinMatchResult | null> {
     this.setLoading(true)
     try {
-      await this.api.createGame({
-        factions: input.factions ?? ['marquise', 'eyrie'],
-      })
-      await this.api.join(input.playerId)
-      this.bindLocalPlayer(input.playerId)
-      this.connectLocalSocket(input.playerId)
-      this.publish({
-        ...this.snapshot,
-        loading: false,
-      })
-    } catch (error: unknown) {
-      this.setError(errorMessage(error))
-    }
-  }
+      const created = await this.tryCreateLobby(input.factions)
+      if (created) {
+        await this.api.join(FIRST_PLAYER_ID)
+        this.bindLocalPlayer(FIRST_PLAYER_ID)
+        this.connectLocalSocket(FIRST_PLAYER_ID)
+        this.publish({
+          ...this.snapshot,
+          loading: false,
+        })
+        return 'waiting'
+      }
 
-  /** Guest: join lobby, persist id, open WS. */
-  async joinGame(input: JoinGameInput): Promise<void> {
-    this.setLoading(true)
-    try {
-      await this.api.join(input.playerId)
-      this.bindLocalPlayer(input.playerId)
-      this.connectLocalSocket(input.playerId)
-      this.publish({
-        ...this.snapshot,
-        loading: false,
-      })
-    } catch (error: unknown) {
-      this.setError(errorMessage(error))
-    }
-  }
-
-  /** Either side: start when lobby has enough players. */
-  async startLobby(): Promise<void> {
-    this.setLoading(true)
-    try {
+      await this.api.join(SECOND_PLAYER_ID)
+      this.bindLocalPlayer(SECOND_PLAYER_ID)
+      this.connectLocalSocket(SECOND_PLAYER_ID)
       await this.api.start()
       this.publish({
         ...this.snapshot,
         loading: false,
       })
+      return 'playing'
     } catch (error: unknown) {
       this.setError(errorMessage(error))
+      return null
     }
   }
 
@@ -297,6 +285,20 @@ export class GameSession {
     this.disconnectSocket()
   }
 
+  private async tryCreateLobby(factions?: string[]): Promise<boolean> {
+    try {
+      await this.api.createGame({
+        factions: factions ?? DEFAULT_FACTIONS,
+      })
+      return true
+    } catch (error: unknown) {
+      if (isGameExistsError(error)) {
+        return false
+      }
+      throw error
+    }
+  }
+
   private localSeatMayAct(): boolean {
     const localSeat = this.getLocalSeat()
     const state = this.snapshot.state
@@ -347,6 +349,10 @@ export class GameSession {
   private setError(message: string): void {
     this.publish({ ...this.snapshot, loading: false, error: message })
   }
+}
+
+function isGameExistsError(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'GAME_EXISTS'
 }
 
 function playerIdInState(state: GameState, playerId: string): boolean {

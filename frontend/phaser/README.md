@@ -13,17 +13,17 @@ pnpm --filter @root/phaser dev
 
 Open Vite URL **twice** (two tabs or windows):
 
-1. Window A → **Host GP2** (API base empty) → joins as `marquise`
-2. Window B → **Join GP2** → joins as `eyrie`
-3. Either window confirms **Start** when prompted
-4. Play; waiting window cannot submit
-5. **Continue** after refresh uses **sessionStorage** (per tab — seats stay separate)
-6. **End game** (drawer, two-click) → clears slot; peers return to menu
-7. **QA: Continue loaded game** — REST poll of slot dumps (not normal play)
+1. Window A → **Join game** → Marquise, waits (“Waiting for second player…”)
+2. Window B → **Join game** → Eyrie, auto-starts; both enter the board
+3. Play; waiting window cannot submit
+4. **Continue** after refresh uses **sessionStorage** (per tab)
+5. **End game** (drawer, two-click) → clears slot; peers return to menu
+6. **QA: Continue loaded game** — REST poll of slot dumps (not normal play)
 
-Same flow on two machines: B sets API base to `http://<A-ip>:3000` (or open A’s Vite LAN URL). Vite `server.host: true` + proxies `/game`, `/map`, `/ws`.
+Same on two machines: B sets API base to `http://<A-ip>:3000`.
 
 Identity: `sessionStorage` key `root.phaser.playerIdentity` (`playerId` + `apiBaseUrl`).
+
 
 ## Architecture
 
