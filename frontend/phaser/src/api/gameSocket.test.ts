@@ -52,15 +52,15 @@ describe('resolveWebSocketUrl', () => {
     )
   })
 
-  it('maps empty base on https tunnel host to wss', () => {
+  it('maps empty base on https Funnel host to wss', () => {
     vi.stubGlobal('window', {
       location: {
         protocol: 'https:',
-        host: 'abc.trycloudflare.com',
+        host: 'laptop.tailnet.ts.net',
       },
     })
     expect(resolveWebSocketUrl('', 'eyrie')).toBe(
-      'wss://abc.trycloudflare.com/ws?playerId=eyrie',
+      'wss://laptop.tailnet.ts.net/ws?playerId=eyrie',
     )
   })
 

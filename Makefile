@@ -1,7 +1,7 @@
 # Root repo utilities
 .PHONY: clean clean-logs clean-tmp remote
 
-# Build Phaser → serve via @root/web → Cloudflare → print public URL
+# Build Phaser → serve via @root/web → Tailscale Funnel → print stable URL
 remote:
 	@bash scripts/remote-play.sh
 
