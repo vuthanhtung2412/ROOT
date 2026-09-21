@@ -33,6 +33,7 @@ import {
   eyrieLeaderPools,
   type DecreeColumn,
   type EyrieBoard,
+  type EyrieLeader,
 } from '../state/boards.js'
 import { HAND_LIMIT } from '../state/constants.js'
 import type { DecreeCursor, GameState, Phase, Step } from '../state/types.js'
@@ -292,11 +293,33 @@ function removeDecreeCard(board: EyrieBoard, column: DecreeColumn, cardId: strin
   return board.decree[column].splice(idx, 1)[0]!
 }
 
-function tuckBuilderViziers(board: EyrieBoard): void {
-  const [v0, v1] = makeViziers()
+/** Rule: 7.8 — Loyal Viziers begin on these Decree columns per leader. */
+export const LEADER_VIZIER_COLUMNS: Record<
+  EyrieLeader,
+  readonly [DecreeColumn, DecreeColumn]
+> = {
+  builder: ['recruit', 'move'],
+  charismatic: ['recruit', 'battle'],
+  commander: ['move', 'battle'],
+  despot: ['move', 'build'],
+}
+
+export function tuckViziersFor(
+  board: EyrieBoard,
+  leader: EyrieLeader,
+  viziers?: Card[],
+): void {
+  const [firstColumn, secondColumn] = LEADER_VIZIER_COLUMNS[leader]
+  const pair = viziers ?? makeViziers()
   board.decree = { recruit: [], move: [], battle: [], build: [] }
-  board.decree.recruit.push(v0)
-  board.decree.move.push(v1)
+  if (pair[0]) board.decree[firstColumn].push(pair[0])
+  if (pair[1]) board.decree[secondColumn].push(pair[1])
+}
+
+function retuckViziersAfterPurge(board: EyrieBoard): void {
+  const viziers = DECREE_COLUMNS.flatMap((col) => board.decree[col].filter(isVizier))
+  const leader = board.leader ?? 'builder'
+  tuckViziersFor(board, leader, viziers)
 }
 
 function warriorCount(state: GameState, clearing: ClearingId): number {
@@ -327,14 +350,6 @@ function eveningDrawBonus(roostCount: number): number {
   return bonus
 }
 
-function retuckViziersAfterPurge(board: EyrieBoard): void {
-  const viziers = DECREE_COLUMNS.flatMap((col) => board.decree[col].filter(isVizier))
-  board.decree = { recruit: [], move: [], battle: [], build: [] }
-  // Rule: 7.8.1 Builder — Recruit + Move. House: Builder-only depose retucks same.
-  if (viziers[0]) board.decree.recruit.push(viziers[0])
-  if (viziers[1]) board.decree.move.push(viziers[1])
-}
-
 export class Eyrie extends Faction {
   readonly id = 'eyrie' as const
   readonly steps = STEPS
@@ -353,8 +368,8 @@ export class Eyrie extends Faction {
     placeUpTo(state, { seat, clearing: start, spec: { kind: 'building', type: 'roost' }, count: 1 })
     placeUpTo(state, { seat, clearing: start, spec: { kind: 'warrior' }, count: 6 })
 
-    // Rule: Eyrie > Setup 3–4 / 7.8.1 Builder viziers on Recruit + Move.
-    tuckBuilderViziers(board)
+    // Rule: Eyrie > Setup 3–4 / 7.8 — viziers per chosen leader columns.
+    tuckViziersFor(board, 'builder')
   }
 
   autoActions(state: GameState, phase: Phase, step: Step): Action[] {

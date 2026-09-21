@@ -13,7 +13,7 @@ import type { DecreeCursor } from '../state/types.js'
 import { defaultRuleHooks } from '../triggers/hooks.js'
 import { card, eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
 import { isVizier, makeViziers } from './eyrie/viziers.js'
-import { EYRIE, eyrieStartClearing } from './Eyrie.js'
+import { EYRIE, eyrieStartClearing, tuckViziersFor } from './Eyrie.js'
 import { MARQUISE } from './Marquise.js'
 
 const hooks = defaultRuleHooks(FALL)
@@ -679,11 +679,28 @@ describe('Law 7.8 Leaders Reference', () => {
     expect(craftState.players[1]!.vp).toBe(defOf(hammer).vp)
   })
 
-  it('Rule: 7.8.2–4 Charismatic/Commander/Despot — deferred (Builder-only house)', () => {
-    // Documented house rule: only Builder implemented this GP.
-    expect(EYRIE.id).toBe('eyrie')
-    const board = eyrieBoard({ leader: 'builder' })
-    expect(board.leader).toBe('builder')
+  it('Rule: 7.8 — vizier columns match each leader', () => {
+    const expected = {
+      builder: ['recruit', 'move'],
+      charismatic: ['recruit', 'battle'],
+      commander: ['move', 'battle'],
+      despot: ['move', 'build'],
+    } as const
+    for (const [leader, [colA, colB]] of Object.entries(expected)) {
+      const board = eyrieBoard({
+        leader: leader as 'builder' | 'charismatic' | 'commander' | 'despot',
+      })
+      tuckViziersFor(board, leader as 'builder' | 'charismatic' | 'commander' | 'despot')
+      expect(board.decree[colA]).toHaveLength(1)
+      expect(board.decree[colB]).toHaveLength(1)
+      expect(isVizier(board.decree[colA]![0]!)).toBe(true)
+      expect(isVizier(board.decree[colB]![0]!)).toBe(true)
+      for (const column of ['recruit', 'move', 'battle', 'build'] as const) {
+        if (column !== colA && column !== colB) {
+          expect(board.decree[column]).toHaveLength(0)
+        }
+      }
+    }
   })
 })
 
