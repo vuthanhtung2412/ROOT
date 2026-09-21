@@ -18,7 +18,7 @@ Open Vite URL **twice** (two tabs or windows):
 3. Play; waiting window cannot submit
 4. **Play** after refresh resumes stored seat when still in the API slot (`sessionStorage`, per tab)
 5. **End game** (drawer, two-click) → clears slot; peers return to menu
-6. **QA: Continue loaded game** — REST poll of slot dumps (not normal play)
+6. **QA: Continue loaded game** — REST full-slot refresh + WS wake (live after CLI/UI acts); does **not** touch stored Play identity
 
 Same on two machines: B sets API base to `http://<A-ip>:3000`.
 
