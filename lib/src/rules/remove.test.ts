@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { keepCornerFor } from '../factions/Marquise.js'
 import { canPlace } from '../queries/place.js'
 import { resetPlaceIds } from './place.js'
-import { minimalState, player, withPieces } from '../test/fixtures.js'
+import { eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
 import { removePieces } from './remove.js'
 
 describe('removePieces', () => {
@@ -125,5 +125,78 @@ describe('removePieces', () => {
     removePieces(state, { clearing: 0, pieceIds: ['keep'], scorer: 1 })
     expect(canPlace(state, 1, 0)).toBe(true)
     expect(state.clearings[0]!.pieces).toHaveLength(0)
+  })
+
+  it('Rule: 7.8.4 Despot — +1 extra VP when battle removes building/token', () => {
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'eyrie', { board: eyrieBoard({ leader: 'despot' }) }),
+          player(1, 'marquise'),
+        ],
+      }),
+      4,
+      [
+        {
+          id: 'b1',
+          kind: 'building',
+          owner: 1,
+          type: 'sawmill',
+          used: false,
+        },
+      ],
+    )
+    removePieces(
+      state,
+      { clearing: 4, pieceIds: ['b1'], scorer: 0, options: { fromBattle: true } },
+    )
+    // 1 from 3.2.1 + 1 Despot
+    expect(state.players[0]!.vp).toBe(2)
+  })
+
+  it('Rule: 7.8.4 Despot — no bonus outside battle', () => {
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'eyrie', { board: eyrieBoard({ leader: 'despot' }) }),
+          player(1, 'marquise'),
+        ],
+      }),
+      4,
+      [
+        {
+          id: 'b1',
+          kind: 'building',
+          owner: 1,
+          type: 'sawmill',
+          used: false,
+        },
+      ],
+    )
+    removePieces(state, { clearing: 4, pieceIds: ['b1'], scorer: 0 })
+    expect(state.players[0]!.vp).toBe(1)
+  })
+
+  it('Rule: 7.8.4 Despot — warriors-only remove grants no bonus', () => {
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'eyrie', { board: eyrieBoard({ leader: 'despot' }) }),
+          player(1, 'marquise'),
+        ],
+      }),
+      4,
+      [{ id: 'w1', kind: 'warrior', owner: 1 }],
+    )
+    removePieces(
+      state,
+      {
+        clearing: 4,
+        pieceIds: ['w1'],
+        scorer: 0,
+        options: { fromBattle: true, skipFieldHospital: true },
+      },
+    )
+    expect(state.players[0]!.vp).toBe(0)
   })
 })
