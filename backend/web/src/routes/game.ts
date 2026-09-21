@@ -22,6 +22,7 @@ import {
   UndoResponseSchema,
 } from '../schemas/game.js'
 import { store } from '../store/GameStore.js'
+import { broadcastCurrentGame } from '../ws/GameHub.js'
 import {
   isAction,
   isFactionIdArray,
@@ -72,6 +73,7 @@ gameRoutes.openapi(createGameRoute, async (context) => {
           })()
   store.game = Game.create({ seed, factions })
   logGameEvent('CREATE', store.game.state)
+  broadcastCurrentGame()
   return context.json({ state: store.game.state }, 201)
 })
 
@@ -100,6 +102,7 @@ gameRoutes.openapi(joinRoute, async (context) => {
   const body = context.req.valid('json')
   const result = game.join(body.playerId)
   logGameEvent('JOIN', result.state, { type: 'join', playerId: body.playerId })
+  broadcastCurrentGame()
   return context.json(result, 200)
 })
 
@@ -121,6 +124,7 @@ gameRoutes.openapi(startRoute, (context) => {
   const game = requireGame()
   const result = game.start()
   logGameEvent('START', result.state, { type: 'start' })
+  broadcastCurrentGame()
   return context.json(result, 200)
 })
 
@@ -257,6 +261,7 @@ gameRoutes.openapi(postActionsRoute, async (context) => {
   }
   const result = game.apply(body)
   logGameEvent('ACT', result.state, body)
+  broadcastCurrentGame()
   return context.json(result, 200)
 })
 
@@ -297,6 +302,7 @@ gameRoutes.openapi(undoRoute, (context) => {
   const game = requireGame()
   game.undo()
   logGameEvent('UNDO', game.state)
+  broadcastCurrentGame()
   return context.json({ state: game.state }, 200)
 })
 
@@ -352,5 +358,6 @@ const deleteGameRoute = createRoute({
 
 gameRoutes.openapi(deleteGameRoute, (context) => {
   store.game = null
+  broadcastCurrentGame()
   return context.body(null, 204)
 })
