@@ -87,8 +87,30 @@ function fillTracks(board: MarquiseBoard): void {
   board.tracks.recruiter.placed = 5
 }
 
-/** Rule: Marquise > Setup 2–5 — place keep at chosen corner + garrison + buildings + tracks. */
-export function placeMarquiseSetup(
+/** Keep clearing + adjacent clearings (Law 6.3.4 zone). */
+export function startingBuildingZone(
+  state: GameState,
+  seat: Seat,
+): ClearingId[] {
+  const keep = keepCornerFor(state, seat)
+  return [keep, ...FALL.adjacent(keep)]
+}
+
+/**
+ * Clearings in the starting zone that can accept a building.
+ * Rule: Marquise > Setup 4 — keep + adjacent; need open slot.
+ */
+export function legalStartingBuildingClearings(
+  state: GameState,
+  seat: Seat,
+): ClearingId[] {
+  return startingBuildingZone(state, seat).filter(
+    (clearing) => openSlots(state, clearing) > 0 && canPlace(state, seat, clearing),
+  )
+}
+
+/** Rule: Marquise > Setup 2–3 — keep token + garrison (buildings via pending). */
+export function placeMarquiseKeepAndGarrison(
   state: GameState,
   seat: Seat,
   keep: ClearingId,
@@ -104,12 +126,55 @@ export function placeMarquiseSetup(
   for (const clearing of garrisonClearings(state, keep)) {
     placeUpTo(state, { seat, clearing, spec: { kind: 'warrior' }, count: 1 })
   }
+}
 
-  placeStartingBuildings(state, seat, keep)
+/** Rule: Marquise > Setup 4 — place one starting building in keep∪adjacent. */
+export function placeMarquiseStartingBuilding(
+  state: GameState,
+  placement: {
+    seat: Seat
+    clearing: ClearingId
+    building: (typeof MARQUISE_BUILDINGS)[number]
+  },
+): void {
+  const { seat, clearing, building } = placement
+  if (playerOf(state, seat).faction !== 'marquise') {
+    throw new RuleError('NOT_MARQUISE', { seat })
+  }
+  const zone = startingBuildingZone(state, seat)
+  if (!zone.some((id) => id === clearing)) {
+    throw new RuleError('OUTSIDE_STARTING_ZONE', { clearing })
+  }
+  if (openSlots(state, clearing) < 1) {
+    throw new RuleError('NO_SLOT', { clearing })
+  }
+  const placed = placeUpTo(state, {
+    seat,
+    clearing,
+    spec: { kind: 'building', type: building },
+    count: 1,
+  })
+  if (placed < 1) {
+    throw new RuleError('CANNOT_PLACE', { clearing, building })
+  }
+}
 
+/** Rule: Marquise > Setup 5 — remaining buildings on tracks (leftmost empty). */
+export function fillMarquiseSetupTracks(state: GameState, seat: Seat): void {
   const board = playerOf(state, seat).board
   if (board.kind !== 'marquise') throw new RuleError('NOT_MARQUISE', { seat })
   fillTracks(board)
+}
+
+/** Rule: Marquise > Setup 2–5 — full auto setup (unit-test / direct Faction.setup path). */
+export function placeMarquiseSetup(
+  state: GameState,
+  seat: Seat,
+  keep: ClearingId,
+): void {
+  placeMarquiseKeepAndGarrison(state, seat, keep)
+  placeStartingBuildings(state, seat, keep)
+  fillMarquiseSetupTracks(state, seat)
 }
 
 function boardOf(state: GameState, seat: Seat): MarquiseBoard {

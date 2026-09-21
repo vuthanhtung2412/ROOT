@@ -34,6 +34,12 @@ describe('chooseKeep', () => {
       game.start()
       game.apply({ type: 'resolveEvent', clearing: corner })
       expect(game.state.status).toBe('setup')
+      expect(game.state.pending[0]?.type).toBe('placeStartingBuilding')
+      while (game.state.pending[0]?.type === 'placeStartingBuilding') {
+        const clearings = game.legalActions()[0]?.params?.clearing
+        expect(clearings?.length).toBeGreaterThan(0)
+        game.apply({ type: 'resolveEvent', clearing: clearings![0]! })
+      }
       expect(game.state.pending[0]?.type).toBe('chooseLeader')
       game.apply({ type: 'resolveEvent', leader: 'builder' })
       expect(game.state.status).toBe('playing')
