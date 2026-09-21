@@ -28,7 +28,12 @@ export type MarquiseBoard = {
 export type EyrieBoard = {
   kind: 'eyrie'
   supply: { warriors: number }
-  leader: EyrieLeader
+  /** Leader in the Leader Card slot (null only while choosing). */
+  leader: EyrieLeader | null
+  /** Face-up leaders near the board — choosable (Law 7.3.3 / 7.7.3). */
+  leadersFaceUp: EyrieLeader[]
+  /** Face-down leaders set aside after depose (Law 7.7.3). */
+  leadersFaceDown: EyrieLeader[]
   decree: Record<DecreeColumn, Card[]>
   roostTrack: { placed: number }
 }
@@ -39,6 +44,24 @@ export const EYRIE_ROOST_VP = [0, 0, 1, 2, 3, 4, 4, 5] as const
 export const EYRIE_ROOST_DRAW_BONUS_THRESHOLDS = [3, 6] as const
 
 export type EyrieLeader = 'builder' | 'charismatic' | 'commander' | 'despot'
+export const EYRIE_LEADERS: readonly EyrieLeader[] = [
+  'builder',
+  'charismatic',
+  'commander',
+  'despot',
+]
+
+/** Face-up pool = all leaders except the one in the slot; none face-down. */
+export function eyrieLeaderPools(leader: EyrieLeader): {
+  leadersFaceUp: EyrieLeader[]
+  leadersFaceDown: EyrieLeader[]
+} {
+  return {
+    leadersFaceUp: EYRIE_LEADERS.filter((candidate) => candidate !== leader),
+    leadersFaceDown: [],
+  }
+}
+
 export type DecreeColumn = 'recruit' | 'move' | 'battle' | 'build'
 export const DECREE_COLUMNS: DecreeColumn[] = ['recruit', 'move', 'battle', 'build']
 

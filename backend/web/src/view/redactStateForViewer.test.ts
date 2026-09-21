@@ -42,6 +42,8 @@ function eyriePlayer(
       kind: 'eyrie',
       supply: { warriors: 20 },
       leader: 'builder',
+      leadersFaceUp: ['charismatic', 'commander', 'despot'],
+      leadersFaceDown: [],
       decree: { recruit: [], move: [], battle: [], build: [] },
       roostTrack: { placed: 6 },
     },

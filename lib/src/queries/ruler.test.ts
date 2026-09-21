@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { FALL } from '../map/fall.js'
 import { defaultRuleHooks } from '../triggers/hooks.js'
 import type { Piece } from '../pieces/types.js'
-import { marquiseBoard, minimalState, player, withPieces } from '../test/fixtures.js'
+import { eyrieBoard, marquiseBoard, minimalState, player, withPieces } from '../test/fixtures.js'
 import { ruler } from './ruler.js'
 
 const hooks = defaultRuleHooks(FALL)
@@ -47,13 +47,7 @@ describe('ruler', () => {
         players: [
           player(0, 'marquise', { board: marquiseBoard() }),
           player(1, 'eyrie', {
-            board: {
-              kind: 'eyrie',
-              supply: { warriors: 20 },
-              leader: 'builder',
-              decree: { recruit: [], move: [], battle: [], build: [] },
-              roostTrack: { placed: 6 },
-            },
+            board: eyrieBoard(),
           }),
         ],
       }),
