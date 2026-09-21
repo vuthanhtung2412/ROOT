@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { ensureAutumnMapLoaded } from '../assets/autumnMapLoader.ts'
 import { createPhaserApi } from '../api/client.ts'
 import { GameSession } from '../game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '../game/hiDpi.ts'
@@ -32,6 +33,9 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     applyHiDpiCamera(this)
     const { width, height } = gameViewSize()
+
+    // Warm map while player uses menu (GameScene skips wait if ready).
+    void ensureAutumnMapLoaded(this)
 
     this.add
       .text(width / 2, height * 0.18, 'Root', {
