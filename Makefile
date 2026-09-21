@@ -1,5 +1,9 @@
 # Root repo utilities
-.PHONY: clean clean-logs clean-tmp
+.PHONY: clean clean-logs clean-tmp remote
+
+# Build Phaser → serve via @root/web → Cloudflare → print public URL
+remote:
+	@bash scripts/remote-play.sh
 
 clean: clean-logs clean-tmp
 

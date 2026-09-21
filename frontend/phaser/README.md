@@ -34,6 +34,13 @@ pnpm serve:game
 
 Open `http://localhost:3000/` (or `http://<lan-ip>:3000/` from another device). Empty API base = same origin. Service JSON lives at `/health`.
 
+## Remote play (Cloudflare tunnel)
+
+```bash
+make remote   # build Phaser → @root/web → Cloudflare → print URL
+```
+
+Leave API base **empty**. Ctrl+C stops everything.
 ## Build iOS (Capacitor)
 
 Requires macOS + Xcode. App is a WebView shell; game server still `@root/web`.
@@ -94,6 +101,7 @@ pnpm gen:api-client
 | `pnpm --filter @root/phaser typecheck` | `tsc --noEmit` |
 | `pnpm --filter @root/phaser build` | production → `dist/` |
 | `pnpm gen:api-client` | regenerate `@root/web-client` |
+| `make remote` | build + web serve + Cloudflare → public URL |
 
 ## Out of scope
 
