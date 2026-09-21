@@ -1,17 +1,20 @@
 import Phaser from 'phaser'
 import { createPhaserApi } from '../api/client.ts'
 import { GameSession } from '../game/GameSession.ts'
+import { loadPlayerIdentity } from '../game/playerIdentity.ts'
 
 export type MenuSceneData = {
   session?: GameSession
 }
 
 const GP2_FACTIONS: string[] = ['marquise', 'eyrie']
-const GP2_PLAYER_IDS: string[] = ['marquise', 'eyrie']
+const DEFAULT_HOST_PLAYER_ID = 'marquise'
+const DEFAULT_GUEST_PLAYER_ID = 'eyrie'
 
 export class MenuScene extends Phaser.Scene {
   private session: GameSession | null = null
   private statusText: Phaser.GameObjects.Text | null = null
+  private apiBaseUrlInput: string = ''
 
   constructor() {
     super({ key: 'MenuScene' })
@@ -20,14 +23,17 @@ export class MenuScene extends Phaser.Scene {
   init(data: MenuSceneData): void {
     this.session =
       data.session ??
-      new GameSession(createPhaserApi({ baseUrl: '' }))
+      new GameSession({
+        api: createPhaserApi({ baseUrl: '' }),
+        apiBaseUrl: '',
+      })
   }
 
   create(): void {
     const { width, height } = this.scale
 
     this.add
-      .text(width / 2, height * 0.28, 'Root', {
+      .text(width / 2, height * 0.14, 'Root', {
         fontFamily: 'Georgia, serif',
         fontSize: '56px',
         color: '#f0e6d3',
@@ -35,15 +41,51 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
 
     this.add
-      .text(width / 2, height * 0.38, 'Marquise vs Eyrie · local hot-seat', {
+      .text(width / 2, height * 0.22, 'Marquise vs Eyrie · two machines', {
         fontFamily: 'monospace',
         fontSize: '16px',
         color: '#9a9a9a',
       })
       .setOrigin(0.5)
 
+    this.add
+      .text(width / 2, height * 0.3, 'API base (empty = Vite proxy)', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#7a7a7a',
+      })
+      .setOrigin(0.5)
+
+    const apiField = this.add
+      .text(width / 2, height * 0.34, 'http://HOST:3000', {
+        fontFamily: 'monospace',
+        fontSize: '14px',
+        color: '#1a1a1a',
+        backgroundColor: '#e8e0d0',
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+
+    apiField.on('pointerdown', () => {
+      const entered = window.prompt(
+        'API base URL (empty for same-origin proxy)',
+        this.apiBaseUrlInput,
+      )
+      if (entered === null) {
+        return
+      }
+      this.apiBaseUrlInput = entered.trim()
+      apiField.setText(
+        this.apiBaseUrlInput === ''
+          ? '(same-origin proxy)'
+          : this.apiBaseUrlInput,
+      )
+      this.rebindSessionApi()
+    })
+
     this.statusText = this.add
-      .text(width / 2, height * 0.72, '', {
+      .text(width / 2, height * 0.88, '', {
         fontFamily: 'monospace',
         fontSize: '14px',
         color: '#c44',
@@ -52,83 +94,148 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
 
-    const startButton = this.add
-      .text(width / 2, height * 0.52, 'New GP2 game', {
-        fontFamily: 'Georgia, serif',
-        fontSize: '24px',
-        color: '#1a1a1a',
-        backgroundColor: '#f0e6d3',
-        padding: { x: 20, y: 12 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-
-    startButton.on('pointerdown', () => {
-      void this.handleStartGame(startButton)
+    this.addMenuButton(width / 2, height * 0.44, 'Host GP2', () => {
+      void this.handleHost()
     })
-
-    const continueButton = this.add
-      .text(width / 2, height * 0.62, 'Continue loaded game', {
-        fontFamily: 'Georgia, serif',
-        fontSize: '18px',
-        color: '#1a1a1a',
-        backgroundColor: '#c8d8f0',
-        padding: { x: 16, y: 10 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-
-    continueButton.on('pointerdown', () => {
-      void this.handleContinueGame(continueButton)
+    this.addMenuButton(width / 2, height * 0.54, 'Join GP2', () => {
+      void this.handleJoin()
     })
+    this.addMenuButton(width / 2, height * 0.64, 'Continue', () => {
+      void this.handleContinue()
+    })
+    this.addMenuButton(
+      width / 2,
+      height * 0.74,
+      'QA: Continue loaded game',
+      () => {
+        void this.handleQaContinue()
+      },
+      '#c8d8f0',
+    )
   }
 
-  private async handleStartGame(
-    startButton: Phaser.GameObjects.Text,
-  ): Promise<void> {
+  private addMenuButton(
+    x: number,
+    y: number,
+    label: string,
+    onClick: () => void,
+    backgroundColor = '#f0e6d3',
+  ): Phaser.GameObjects.Text {
+    const button = this.add
+      .text(x, y, label, {
+        fontFamily: 'Georgia, serif',
+        fontSize: '22px',
+        color: '#1a1a1a',
+        backgroundColor,
+        padding: { x: 18, y: 10 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+    button.on('pointerdown', onClick)
+    return button
+  }
+
+  private rebindSessionApi(): void {
     if (this.session === null) {
       return
     }
-    startButton.disableInteractive()
-    this.setStatus('Creating game…', '#9a9a9a')
+    this.session.rebindApi(
+      createPhaserApi({ baseUrl: this.apiBaseUrlInput }),
+      this.apiBaseUrlInput,
+    )
+  }
 
-    await this.session.startHotSeatGame({
+  private async handleHost(): Promise<void> {
+    if (this.session === null) {
+      return
+    }
+    this.rebindSessionApi()
+    this.setStatus('Hosting lobby…', '#9a9a9a')
+    await this.session.hostGame({
+      playerId: DEFAULT_HOST_PLAYER_ID,
       factions: GP2_FACTIONS,
-      playerIds: GP2_PLAYER_IDS,
     })
-
     const snapshot = this.session.getSnapshot()
     if (snapshot.error !== null) {
       this.setStatus(snapshot.error, '#c44')
-      startButton.setInteractive({ useHandCursor: true })
       return
     }
+    this.setStatus('Lobby ready — waiting / Start when 2 players', '#9a9a9a')
+    await this.maybeStartAndEnter()
+  }
 
+  private async handleJoin(): Promise<void> {
+    if (this.session === null) {
+      return
+    }
+    this.rebindSessionApi()
+    this.setStatus('Joining…', '#9a9a9a')
+    await this.session.joinGame({ playerId: DEFAULT_GUEST_PLAYER_ID })
+    const snapshot = this.session.getSnapshot()
+    if (snapshot.error !== null) {
+      this.setStatus(snapshot.error, '#c44')
+      return
+    }
+    this.setStatus('Joined — Start when ready', '#9a9a9a')
+    await this.maybeStartAndEnter()
+  }
+
+  private async maybeStartAndEnter(): Promise<void> {
+    if (this.session === null) {
+      return
+    }
+    const shouldStart = window.confirm(
+      'Start game now? (Cancel to wait — use Continue later)',
+    )
+    if (!shouldStart) {
+      return
+    }
+    await this.session.startLobby()
+    const snapshot = this.session.getSnapshot()
+    if (snapshot.error !== null) {
+      this.setStatus(snapshot.error, '#c44')
+      return
+    }
     this.scene.start('GameScene', { session: this.session })
   }
 
-  private async handleContinueGame(
-    continueButton: Phaser.GameObjects.Text,
-  ): Promise<void> {
+  private async handleContinue(): Promise<void> {
     if (this.session === null) {
       return
     }
-    continueButton.disableInteractive()
-    this.setStatus('Loading game…', '#9a9a9a')
-
-    await this.session.refresh()
+    const stored = loadPlayerIdentity()
+    if (stored === null) {
+      this.setStatus('No stored player identity', '#c44')
+      return
+    }
+    this.apiBaseUrlInput = stored.apiBaseUrl
+    this.rebindSessionApi()
+    this.setStatus('Reconnecting…', '#9a9a9a')
+    await this.session.continueWithStoredIdentity(stored)
     const snapshot = this.session.getSnapshot()
     if (snapshot.error !== null) {
       this.setStatus(snapshot.error, '#c44')
-      continueButton.setInteractive({ useHandCursor: true })
+      return
+    }
+    this.scene.start('GameScene', { session: this.session })
+  }
+
+  private async handleQaContinue(): Promise<void> {
+    if (this.session === null) {
+      return
+    }
+    this.rebindSessionApi()
+    this.setStatus('QA loading slot…', '#9a9a9a')
+    await this.session.continueQaLoadedGame()
+    const snapshot = this.session.getSnapshot()
+    if (snapshot.error !== null) {
+      this.setStatus(snapshot.error, '#c44')
       return
     }
     if (snapshot.state === null || snapshot.state.status !== 'playing') {
       this.setStatus('No playing game on API — load a snapshot first', '#c44')
-      continueButton.setInteractive({ useHandCursor: true })
       return
     }
-
     this.scene.start('GameScene', { session: this.session })
   }
 
