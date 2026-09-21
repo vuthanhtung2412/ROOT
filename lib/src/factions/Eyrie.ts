@@ -122,7 +122,11 @@ function canBattleHere(
   return enemySeatsInClearing(state, clearing, seat).includes(defender)
 }
 
-/** Check recruit — supply + roost + suit + canPlace. */
+/** Check recruit — supply + roost + suit + canPlace. Rule: 7.8.2 Charismatic places 2. */
+function recruitWarriorCount(state: GameState, seat: Seat): number {
+  return boardOf(state, seat).leader === 'charismatic' ? 2 : 1
+}
+
 function recruitLegal(
   state: GameState,
   seat: Seat,
@@ -131,7 +135,8 @@ function recruitLegal(
 ): boolean {
   if (!cardMatchesClearing(card, clearing)) return false
   if (!roostClearings(state, seat).includes(clearing)) return false
-  if (boardOf(state, seat).supply.warriors < 1) return false
+  const needed = recruitWarriorCount(state, seat)
+  if (boardOf(state, seat).supply.warriors < needed) return false
   return canPlace(state, seat, clearing)
 }
 
@@ -765,7 +770,12 @@ export class Eyrie extends Faction {
 
         switch (action.column) {
           case 'recruit':
-            placeUpTo(state, { seat, clearing: action.clearing!, spec: { kind: 'warrior' }, count: 1 })
+            placeUpTo(state, {
+              seat,
+              clearing: action.clearing!,
+              spec: { kind: 'warrior' },
+              count: recruitWarriorCount(state, seat),
+            })
             break
           case 'move':
             for (const move of action.moves!) {
