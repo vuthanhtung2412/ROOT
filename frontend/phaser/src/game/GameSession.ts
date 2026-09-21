@@ -11,6 +11,7 @@ import {
   type GameSocketConnection,
   type GameSocketPush,
 } from '../api/gameSocket.ts'
+import { buildTurnBannerViewModel } from '../ui/TurnBanner.ts'
 import {
   clearPlayerIdentity,
   loadPlayerIdentity,
@@ -305,7 +306,10 @@ export class GameSession {
     if (localSeat === null || state === null) {
       return false
     }
-    return localSeat === actorSeatFromState(state)
+    return (
+      localSeat ===
+      actorSeatFromState(state, this.snapshot.legalActions)
+    )
   }
 
   private bindLocalPlayer(playerId: string, apiBaseUrl?: string): void {
@@ -359,20 +363,12 @@ function playerIdInState(state: GameState, playerId: string): boolean {
   return state.players.some((player) => player.playerId === playerId)
 }
 
-function actorSeatFromState(state: GameState): number {
-  const pending = state.pending
-  if (Array.isArray(pending) && pending.length > 0) {
-    const head = pending[0]
-    if (
-      typeof head === 'object' &&
-      head !== null &&
-      'actor' in head &&
-      typeof head.actor === 'number'
-    ) {
-      return head.actor
-    }
-  }
-  return state.currentSeat
+/** Same pending-responder rules as turn banner (victim / battle stages). */
+function actorSeatFromState(
+  state: GameState,
+  legalActions: readonly ActionSpec[],
+): number {
+  return buildTurnBannerViewModel(state, legalActions).actorSeat
 }
 
 function errorMessage(error: unknown): string {
