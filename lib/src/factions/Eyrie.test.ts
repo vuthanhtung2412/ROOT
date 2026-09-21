@@ -702,6 +702,54 @@ describe('Law 7.8 Leaders Reference', () => {
       }
     }
   })
+
+  it('Rule: 7.8.2 Charismatic — Recruit places two warriors', () => {
+    const fox = FOX()
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'decree',
+        board: eyrieBoard({
+          leader: 'charismatic',
+          decree: { recruit: [fox], move: [], battle: [], build: [] },
+          supply: { warriors: 10 },
+        }),
+        turnScratch: scratch({ column: 'recruit', remaining: [fox.id] }),
+      }),
+      0,
+      [{ id: 'r', kind: 'building', type: 'roost', owner: 1, used: false }],
+    )
+    EYRIE.apply(
+      state,
+      { type: 'decree', column: 'recruit', cardId: fox.id, clearing: 0 },
+      setupCtx(),
+    )
+    expect(warriors(state, 0, 1)).toBe(2)
+    const board = state.players[1]!.board
+    expect(board.kind).toBe('eyrie')
+    if (board.kind === 'eyrie') expect(board.supply.warriors).toBe(8)
+  })
+
+  it('Rule: 7.8.2 Charismatic — Recruit illegal when supply < 2', () => {
+    const fox = FOX()
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'decree',
+        board: eyrieBoard({
+          leader: 'charismatic',
+          decree: { recruit: [fox], move: [], battle: [], build: [] },
+          supply: { warriors: 1 },
+        }),
+        turnScratch: scratch({ column: 'recruit', remaining: [fox.id] }),
+      }),
+      0,
+      [{ id: 'r', kind: 'building', type: 'roost', owner: 1, used: false }],
+    )
+    const specs = EYRIE.legalActions(state, setupCtx())
+    expect(specs.some((spec) => spec.type === 'decree')).toBe(false)
+    expect(specs.map((spec) => spec.type)).toContain('turmoil')
+  })
 })
 
 describe('Law 7 extras / integration', () => {
