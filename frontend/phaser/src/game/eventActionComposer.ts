@@ -61,7 +61,7 @@ export function createEventComposerHooks(): {
         return {
           kind: 'incomplete',
           prompt: {
-            message: `Place starting ${building}`,
+            message: `Place ${building}`,
             highlightClearings: params.clearing,
             enabledCardIds: null,
             canConfirm: false,

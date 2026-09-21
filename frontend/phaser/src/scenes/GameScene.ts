@@ -65,6 +65,8 @@ export class GameScene extends Phaser.Scene {
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
+  /** Avoid re-opening the same setup pick every HUD paint. */
+  private autoSetupPromptKey: string | null = null
 
   constructor() {
     super({ key: 'GameScene' })
@@ -316,11 +318,45 @@ export class GameScene extends Phaser.Scene {
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
     this.syncWinner(snapshot.state)
+    this.maybeAutoBeginSetupPrompt(
+      snapshot,
+      banner.actorSeat,
+      localControlsActor,
+    )
     this.paintStatus(
       localControlsActor
         ? snapshot.error
         : (snapshot.error ?? 'Waiting for other player…'),
     )
+  }
+
+  /**
+   * Setup picks (keep → buildings → leader): open composer so board highlights
+   * without clicking the Actions tray each time.
+   */
+  private maybeAutoBeginSetupPrompt(
+    snapshot: GameSessionSnapshot,
+    actorSeat: number,
+    localControlsActor: boolean,
+  ): void {
+    if (!localControlsActor || snapshot.state?.status !== 'setup') {
+      this.autoSetupPromptKey = null
+      return
+    }
+    const setupSpec = snapshot.legalActions.find(
+      (spec) => spec.type === 'resolveEvent' && spec.actor === actorSeat,
+    )
+    if (setupSpec === undefined) {
+      this.autoSetupPromptKey = null
+      return
+    }
+    const pending = snapshot.state.pending[0]
+    const key = JSON.stringify({ pending, params: setupSpec.params })
+    if (key === this.autoSetupPromptKey) {
+      return
+    }
+    this.autoSetupPromptKey = key
+    this.applyComposerOutcome(this.composer.begin(setupSpec))
   }
 
   /** QA (no localPlayerId) may control any seat; remote only own seat. */
