@@ -7,8 +7,7 @@ Phaser **never mutates** engine state. Commands go REST (`POST /game/...`). UI s
 ## Play GP2 (one machine, two windows)
 
 ```bash
-pnpm --filter @root/web dev
-pnpm --filter @root/phaser dev
+pnpm dev   # process-compose: web + Phaser (`/` filter, F3 log search)
 ```
 
 Open Vite URL **twice** (two tabs or windows):
@@ -37,8 +36,8 @@ Open `http://localhost:3000/` (or `http://<lan-ip>:3000/` from another device). 
 ## Remote play (Tailscale Funnel)
 
 ```bash
-make remote   # Funnel URL — leave API base empty
-# FUNNEL_HTTPS_PORT=10000 make remote   # if 8443 busy (443/8443/10000 only)
+pnpm remote   # Funnel URL — leave API base empty
+# FUNNEL_HTTPS_PORT=10000 pnpm remote   # if 8443 busy (443/8443/10000 only)
 ```
 
 Needs Tailscale.app + Funnel enabled. Ctrl+C stops.
@@ -96,13 +95,15 @@ pnpm gen:api-client
 | Command | What |
 |---|---|
 | `pnpm --filter @root/phaser dev` | Vite + API/WS proxy |
+| `pnpm dev` | process-compose: web + Phaser |
 | `pnpm serve:game` | build Phaser → serve via `@root/web` |
+| `pnpm remote` | build + web serve + Tailscale Funnel → stable public URL |
 | `pnpm build:ios` | build Phaser → Capacitor sync → open Xcode |
 | `pnpm --filter @root/phaser test` | Vitest (factories + mocked fetch) |
 | `pnpm --filter @root/phaser typecheck` | `tsc --noEmit` |
 | `pnpm --filter @root/phaser build` | production → `dist/` |
 | `pnpm gen:api-client` | regenerate `@root/web-client` |
-| `make remote` | build + web serve + Tailscale Funnel → stable public URL |
+| `pnpm remote` | build + web serve + Tailscale Funnel → stable public URL |
 
 ## Out of scope
 

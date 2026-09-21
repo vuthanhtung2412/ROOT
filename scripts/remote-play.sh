@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# make remote — serve:game + Tailscale Funnel → stable URL
+# pnpm remote — serve:game + Tailscale Funnel → stable URL
 set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
