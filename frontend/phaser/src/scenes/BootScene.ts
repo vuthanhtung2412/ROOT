@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { preloadCoreGameAssets } from '../assets/gameAssets.ts'
+import { applyHiDpiCamera, gameViewSize } from '../game/hiDpi.ts'
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,7 +8,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const { width, height } = this.scale
+    applyHiDpiCamera(this)
+    const { width, height } = gameViewSize()
 
     const progressBar = this.add.graphics()
     const progressBox = this.add.graphics()

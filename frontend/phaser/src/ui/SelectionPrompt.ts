@@ -1,5 +1,6 @@
 import type Phaser from 'phaser'
 import type { ComposerPrompt } from '../game/ActionComposer.ts'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 export type SelectionPromptHandlers = {
   onConfirm: () => void
@@ -25,7 +26,7 @@ export class SelectionPrompt {
   constructor(scene: Phaser.Scene, handlers: SelectionPromptHandlers) {
     this.scene = scene
     this.handlers = handlers
-    const { width, height } = scene.scale
+    const { width, height } = gameViewSize()
 
     this.message = scene.add
       .text(0, -28, '', {

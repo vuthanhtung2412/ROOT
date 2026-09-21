@@ -6,6 +6,7 @@ import {
   type BoardLayout,
   type ClearingPixelHitTarget,
 } from '../game/boardLayout.ts'
+import { gameViewSize } from '../game/hiDpi.ts'
 import { factionColorForSeat } from '../game/theme.ts'
 import {
   drawPieceStack,
@@ -54,7 +55,7 @@ export class BoardView {
     this.scene = options.scene
     this.onClearingSelected = options.onClearingSelected ?? null
 
-    const { width, height } = this.scene.scale
+    const { width, height } = gameViewSize()
     this.root = this.scene.add.container(0, 0)
     this.pieceLayer = this.scene.add.container(0, 0)
 

@@ -1,4 +1,5 @@
 import type Phaser from 'phaser'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 /** Blocking banner for Field Hospitals / generic pending events. */
 export class EventOverlay {
@@ -6,7 +7,7 @@ export class EventOverlay {
   private readonly label: Phaser.GameObjects.Text
 
   constructor(scene: Phaser.Scene) {
-    const { width, height } = scene.scale
+    const { width, height } = gameViewSize()
     const veil = scene.add.rectangle(0, 0, width, height, 0x000000, 0.35).setOrigin(0)
     this.label = scene.add
       .text(width / 2, 64, '', {

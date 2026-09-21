@@ -20,6 +20,7 @@ import {
 } from '../game/boardLayout.ts'
 import { buildBattleOverlayViewModel } from '../game/battleOverlayModel.ts'
 import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
+import { applyHiDpiCamera, gameViewSize } from '../game/hiDpi.ts'
 import { ActionTray } from '../ui/ActionTray.ts'
 import { BattleOverlay } from '../ui/BattleOverlay.ts'
 import { BoardView } from '../ui/BoardView.ts'
@@ -74,7 +75,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale
+    applyHiDpiCamera(this)
+    const { width, height } = gameViewSize()
 
     const marquiseCards = createMarquiseCardComposerHooks()
     this.marquiseMarch = createMarquiseMarchComposerHooks({
