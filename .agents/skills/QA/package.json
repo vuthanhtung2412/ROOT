@@ -1,0 +1,8 @@
+{
+  "name": "root-qa-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "playwright": "^1.55.0"
+  }
+}
