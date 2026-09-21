@@ -81,7 +81,7 @@ export class EyrieDecreePanel {
 
     const board = eyriePlayer.board
     const cursor = readDecreeCursor(state.turnScratch)
-    const leader = board.leader ?? 'builder'
+    const leader = board.leader ?? 'unset'
 
     const title = this.scene.add.text(0, 0, `Decree · ${leader}`, {
       fontFamily: 'Georgia, serif',

@@ -35,7 +35,7 @@ export class EyrieBoard {
     this.gameObject.setText(
       [
         'Eyrie',
-        `leader ${board.leader ?? '—'}`,
+        `leader ${board.leader ?? 'unset'}`,
         `face-up ${Array.isArray(Reflect.get(board, 'leadersFaceUp')) ? (Reflect.get(board, 'leadersFaceUp') as string[]).join(', ') : '—'}`,
         `warriors ${String(board.supply.warriors)}`,
         `roosts left on track ${String(board.roostTrack.placed)}`,
