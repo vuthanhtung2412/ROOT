@@ -2,16 +2,21 @@
   "name": "root",
   "private": true,
   "scripts": {
+    "dev": "process-compose up",
     "dev:web": "pnpm --filter @root/web dev",
     "dev:phaser": "pnpm --filter @root/phaser dev",
     "build:web": "pnpm --filter @root/web build",
     "build:lib": "pnpm --filter @root/lib build",
     "build:phaser": "pnpm --filter @root/phaser build",
     "serve:game": "pnpm --filter @root/web serve:phaser",
+    "remote": "bash scripts/remote-play.sh",
     "build:ios": "pnpm --filter @root/phaser build:ios",
     "gen:api-client": "pnpm --filter @root/web-client gen",
     "typecheck": "pnpm -r typecheck",
-    "lint": "eslint lib/src lib/scripts backend/web/src backend/web/scripts"
+    "lint": "eslint lib/src lib/scripts backend/web/src backend/web/scripts",
+    "clean": "pnpm clean:logs && pnpm clean:tmp",
+    "clean:logs": "mkdir -p logs && find logs -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + && echo 'cleared logs/'",
+    "clean:tmp": "mkdir -p tmp && find tmp -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + && echo 'cleared tmp/'"
   },
   "engines": {
     "node": ">=24",
