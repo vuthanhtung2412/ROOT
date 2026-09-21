@@ -3,6 +3,7 @@
 - Rules **SoT** = `./resources/rules/Law_of_Root.pdf` (markdown twin: `./resources/rules/Law_of_Root.md`).
   - Simplified implementable summary (non-SoT): `./resources/notes/root-base-rules.md`
   - Build plan: `./resources/notes/grand-plan-toward-base-game.md` + commit plan in `PLAN.md`
+  - Riverfolk expansion (Lizard + Riverfolk): `./resources/notes/grand-plan-riverfolk-lizard.md`
 - Commit as soon as a step in the plan is done.
 - Stay close to the commit plan in PLAN.md and if something need tweak stop and ask user.
 - All unit tests should use fixture factory or mock of any kind.
