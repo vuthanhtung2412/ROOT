@@ -77,8 +77,13 @@ export function cardTextureKey(defId: string): string {
   return `card:${defId}`
 }
 
+export const AUTUMN_MAP_ASSET: GameImageAsset = {
+  key: GAME_ASSET_KEYS.autumnMap,
+  path: 'assets/map/autumn-map.jpg',
+}
+
+/** Boot tokens/factions only — autumn map loads later (Menu warm / GameScene). */
 export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
-  { key: GAME_ASSET_KEYS.autumnMap, path: 'assets/map/autumn-map.jpg' },
   {
     key: GAME_ASSET_KEYS.factionMarquise,
     path: 'assets/factions/marquise.png',
@@ -168,11 +173,22 @@ export function queueMissingCardImages(
   }
 }
 
-/** Boot: map + faction/token icons only (cards load on demand in GameScene). */
+/** Boot: faction/token icons only (map + cards load later). */
 export function preloadCoreGameAssets(loader: ImageAssetLoader): void {
   for (const asset of CORE_IMAGE_ASSETS) {
     loader.image(asset.key, asset.path)
   }
+}
+
+export function queueAutumnMapImage(
+  loader: ImageAssetLoader,
+  textureExists: (key: string) => boolean,
+): boolean {
+  if (textureExists(AUTUMN_MAP_ASSET.key)) {
+    return false
+  }
+  loader.image(AUTUMN_MAP_ASSET.key, AUTUMN_MAP_ASSET.path)
+  return true
 }
 
 export function lookupCardCatalog(defId: string): CardCatalogEntry | null {
