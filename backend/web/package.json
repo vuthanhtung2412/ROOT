@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "gen:openapi": "tsx scripts/export-openapi.ts",
+    "serve:phaser": "tsx scripts/serve-phaser.ts",
     "lint": "eslint src scripts"
   },
   "dependencies": {
