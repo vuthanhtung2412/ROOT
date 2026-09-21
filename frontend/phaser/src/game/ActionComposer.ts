@@ -34,6 +34,7 @@ export type ActionChoiceParamsView = {
   useEffect?: boolean[]
   defender?: number[]
   order?: number[][]
+  leaders?: string[]
 }
 
 export function readChoiceParams(
@@ -98,6 +99,10 @@ export function readChoiceParams(
   const order = asSeatOrderArray(raw.order)
   if (order !== undefined) {
     view.order = order
+  }
+  const leaders = asStringArray(raw.leaders)
+  if (leaders !== undefined) {
+    view.leaders = leaders
   }
   return view
 }
