@@ -11,9 +11,11 @@ type EventDraft =
   | { type: 'pickCard'; cardIds: string[]; kind: 'fieldHospital' | 'battle' }
   | { type: 'pickOrder'; orders: number[][] }
   | { type: 'pickEffect' }
+  | { type: 'pickKeep'; clearings: number[] }
+  | { type: 'pickLeader'; leaders: string[] }
 
 /**
- * Pending resolveEvent composers (Field Hospitals + battle stages).
+ * Pending resolveEvent composers (Field Hospitals + battle + setup picks).
  */
 export function createEventComposerHooks(): {
   hooks: ActionComposerHooks
@@ -39,6 +41,38 @@ export function createEventComposerHooks(): {
       }
 
       const params = readChoiceParams(spec)
+
+      if (params.clearing !== undefined) {
+        draft = { type: 'pickKeep', clearings: params.clearing }
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: 'Choose keep corner',
+            highlightClearings: params.clearing,
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: false,
+          },
+        }
+      }
+
+      if (params.leaders !== undefined) {
+        draft = { type: 'pickLeader', leaders: params.leaders }
+        promptOptions = params.leaders.map((leader) => ({
+          label: leader,
+          value: leader,
+        }))
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: 'Choose Eyrie leader',
+            highlightClearings: [],
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: false,
+          },
+        }
+      }
 
       if (params.decline !== undefined && params.cardIds === undefined) {
         overlayKind = 'fieldHospital'
@@ -131,7 +165,6 @@ export function createEventComposerHooks(): {
 
       if (params.pieceIds !== undefined) {
         overlayKind = 'battle'
-        // Each ActionSpec already encodes one full removal combo.
         clear()
         return {
           kind: 'ready',
@@ -150,7 +183,25 @@ export function createEventComposerHooks(): {
       return { kind: 'ready', action: { type: 'resolveEvent', cardId } }
     },
 
+    chooseClearing: (clearingId: number): ComposerOutcome | null => {
+      if (draft.type !== 'pickKeep' || !draft.clearings.includes(clearingId)) {
+        return null
+      }
+      clear()
+      return {
+        kind: 'ready',
+        action: { type: 'resolveEvent', clearing: clearingId },
+      }
+    },
+
     chooseColumn: (value: string): ComposerOutcome | null => {
+      if (draft.type === 'pickLeader') {
+        if (!draft.leaders.includes(value)) {
+          return null
+        }
+        clear()
+        return { kind: 'ready', action: { type: 'resolveEvent', leader: value } }
+      }
       if (draft.type === 'pickEffect') {
         clear()
         return {
@@ -172,6 +223,9 @@ export function createEventComposerHooks(): {
 
     cancel: (): ComposerOutcome | null => {
       if (draft.type === 'idle' && overlayKind === null) {
+        return null
+      }
+      if (draft.type === 'pickKeep' || draft.type === 'pickLeader') {
         return null
       }
       clear()

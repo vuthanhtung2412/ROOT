@@ -96,3 +96,47 @@ describe('eventActionComposer battle', () => {
     })
   })
 })
+
+describe('eventActionComposer setup picks', () => {
+  it('chooseKeep highlights corners then submits clearing', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const mid = composer.begin(
+      makeActionSpec({
+        type: 'resolveEvent',
+        params: { clearing: [0, 1, 2, 3] },
+      }),
+    )
+    expect(mid.kind).toBe('incomplete')
+    if (mid.kind !== 'incomplete') throw new Error('expected incomplete')
+    expect(mid.prompt.highlightClearings).toEqual([0, 1, 2, 3])
+    expect(composer.chooseClearing(2)).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', clearing: 2 },
+    })
+  })
+
+  it('chooseLeader lists leaders then submits', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const mid = composer.begin(
+      makeActionSpec({
+        type: 'resolveEvent',
+        params: { leaders: ['builder', 'charismatic'] },
+      }),
+    )
+    expect(mid.kind).toBe('incomplete')
+    expect(events.getPromptOptions().map((option) => option.value)).toEqual([
+      'builder',
+      'charismatic',
+    ])
+    expect(composer.chooseColumn('charismatic')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', leader: 'charismatic' },
+    })
+  })
+})

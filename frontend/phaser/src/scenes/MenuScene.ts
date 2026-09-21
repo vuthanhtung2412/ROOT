@@ -179,7 +179,7 @@ export class MenuScene extends Phaser.Scene {
         this.setStatus(snapshot.error, '#c44')
         return
       }
-      if (snapshot.state?.status === 'playing') {
+      if (snapshot.state?.status === 'playing' || snapshot.state?.status === 'setup') {
         this.enterGame()
       }
     })
@@ -219,7 +219,7 @@ export class MenuScene extends Phaser.Scene {
       this.setStatus(snapshot.error, '#c44')
       return
     }
-    if (snapshot.state?.status === 'playing') {
+    if (snapshot.state?.status === 'playing' || snapshot.state?.status === 'setup') {
       this.enterGame()
       return
     }
@@ -239,7 +239,10 @@ export class MenuScene extends Phaser.Scene {
       this.setStatus(snapshot.error, '#c44')
       return
     }
-    if (snapshot.state === null || snapshot.state.status !== 'playing') {
+    if (
+      snapshot.state === null ||
+      (snapshot.state.status !== 'playing' && snapshot.state.status !== 'setup')
+    ) {
       this.setStatus('No playing game on API — load a snapshot first', '#c44')
       return
     }

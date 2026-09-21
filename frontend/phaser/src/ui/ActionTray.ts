@@ -73,6 +73,12 @@ function formatActionLabel(spec: ActionSpec): string {
     return column !== undefined ? `decree:${column}` : 'decree'
   }
   if (spec.type === 'resolveEvent') {
+    if (params.clearing !== undefined) {
+      return 'choose keep'
+    }
+    if (params.leaders !== undefined) {
+      return 'choose leader'
+    }
     if (params.decline !== undefined) {
       return 'skip ambush'
     }

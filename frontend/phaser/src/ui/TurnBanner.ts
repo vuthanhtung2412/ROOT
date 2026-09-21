@@ -55,6 +55,10 @@ function readPendingActorFromEvent(event: unknown): number | null {
     const victim = Reflect.get(event, 'victim')
     return typeof victim === 'number' ? victim : null
   }
+  if (type === 'chooseKeep' || type === 'chooseLeader') {
+    const seat = Reflect.get(event, 'seat')
+    return typeof seat === 'number' ? seat : null
+  }
   if (type !== 'battle') {
     return null
   }
@@ -112,6 +116,11 @@ function buildPrompt(
 ): string {
   if (state.status === 'finished') {
     return 'Game over'
+  }
+  if (state.status === 'setup') {
+    return fromPending
+      ? `Setup choice · seat ${String(actorSeat)}`
+      : 'Setup'
   }
   if (fromPending) {
     return `Pending choice · seat ${String(actorSeat)}`

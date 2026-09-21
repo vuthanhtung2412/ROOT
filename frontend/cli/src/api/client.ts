@@ -45,7 +45,7 @@ function throwIfError<T>(result: ClientResult<T>): T {
 export type GameState = {
   id: string
   seed: number
-  status: 'waiting' | 'playing' | 'finished'
+  status: 'waiting' | 'setup' | 'playing' | 'finished'
   turn: number
   currentSeat: number
   phase: string
