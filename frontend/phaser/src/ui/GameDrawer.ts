@@ -1,4 +1,5 @@
 import type Phaser from 'phaser'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 export type GameDrawerHandlers = {
   onUndo: () => void
@@ -13,7 +14,7 @@ export class GameDrawer {
   private endGameArmed = false
 
   constructor(scene: Phaser.Scene, handlers: GameDrawerHandlers) {
-    const { height } = scene.scale
+    const { height } = gameViewSize()
     this.undoButton = scene.add
       .text(0, 0, 'Undo', {
         fontFamily: 'monospace',

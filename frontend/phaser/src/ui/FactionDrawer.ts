@@ -1,5 +1,6 @@
 import type Phaser from 'phaser'
 import type { GameState } from '../api/client.ts'
+import { gameViewSize } from '../game/hiDpi.ts'
 import { EyrieBoard } from './EyrieBoard.ts'
 import { MarquiseBoard } from './MarquiseBoard.ts'
 
@@ -15,7 +16,7 @@ export class FactionDrawer {
   private readonly openX: number
 
   constructor(scene: Phaser.Scene) {
-    const { width, height } = scene.scale
+    const { width, height } = gameViewSize()
     this.closedX = width
     this.openX = width - this.panelWidth
 

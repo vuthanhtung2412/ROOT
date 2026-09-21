@@ -1,4 +1,5 @@
 import type Phaser from 'phaser'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 /** Full-screen winner banner when status === finished. */
 export class WinnerOverlay {
@@ -6,7 +7,7 @@ export class WinnerOverlay {
   private readonly message: Phaser.GameObjects.Text
 
   constructor(scene: Phaser.Scene) {
-    const { width, height } = scene.scale
+    const { width, height } = gameViewSize()
     const veil = scene.add
       .rectangle(0, 0, width, height, 0x102010, 0.85)
       .setOrigin(0)

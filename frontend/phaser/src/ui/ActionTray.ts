@@ -1,6 +1,7 @@
 import type Phaser from 'phaser'
 import type { ActionSpec } from '../api/client.ts'
 import { readChoiceParams } from '../game/ActionComposer.ts'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 export type ActionTrayHandlers = {
   onSelectAction: (spec: ActionSpec) => void
@@ -17,7 +18,7 @@ export class ActionTray {
   constructor(scene: Phaser.Scene, handlers: ActionTrayHandlers) {
     this.scene = scene
     this.handlers = handlers
-    const { width } = scene.scale
+    const { width } = gameViewSize()
     this.title = scene.add.text(0, 0, 'Actions', {
       fontFamily: 'Georgia, serif',
       fontSize: '16px',

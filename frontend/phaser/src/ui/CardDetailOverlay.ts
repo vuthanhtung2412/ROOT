@@ -1,6 +1,7 @@
 import type Phaser from 'phaser'
 import type { CardCatalogEntry } from '../assets/gameAssets.ts'
 import { cardTextureKey } from '../assets/gameAssets.ts'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 export type CardDetailContent = {
   defId: string
@@ -22,7 +23,7 @@ export class CardDetailOverlay {
 
   show(content: CardDetailContent): void {
     this.root.removeAll(true)
-    const { width, height } = this.scene.scale
+    const { width, height } = gameViewSize()
 
     const dimmer = this.scene.add
       .rectangle(width / 2, height / 2, width, height, 0x000000, 0.65)

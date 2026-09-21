@@ -1,4 +1,5 @@
 import type Phaser from 'phaser'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 export type BattleOverlayViewModel = {
   clearing: number
@@ -35,7 +36,7 @@ export class BattleOverlay {
   private readonly defenderMeta: Phaser.GameObjects.Text
 
   constructor(scene: Phaser.Scene) {
-    const { width } = scene.scale
+    const { width } = gameViewSize()
     const centerX = width / 2
     // Sit under TurnBanner (~y 18–46)
     const panelY = 118

@@ -1,5 +1,6 @@
 import type Phaser from 'phaser'
 import type { ActionSpec, GameState } from '../api/client.ts'
+import { gameViewSize } from '../game/hiDpi.ts'
 import { buildTurnBannerViewModel } from './TurnBanner.ts'
 import {
   CardView,
@@ -24,7 +25,7 @@ export class CardHand {
     this.scene = scene
     this.onCardSelected = onCardSelected ?? null
     this.onCardHold = onCardHold ?? null
-    const { width, height } = scene.scale
+    const { width, height } = gameViewSize()
     this.root = scene.add.container(width / 2, height - 70).setDepth(120)
   }
 

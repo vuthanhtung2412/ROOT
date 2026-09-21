@@ -1,5 +1,6 @@
 import type Phaser from 'phaser'
 import type { ActionSpec, GameState } from '../api/client.ts'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 export type TurnBannerViewModel = {
   actorSeat: number
@@ -147,7 +148,7 @@ export class TurnBanner {
   private readonly text: Phaser.GameObjects.Text
 
   constructor(scene: Phaser.Scene) {
-    const { width } = scene.scale
+    const { width } = gameViewSize()
     this.text = scene.add
       .text(width / 2, 18, '', {
         fontFamily: 'Georgia, serif',

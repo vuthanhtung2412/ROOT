@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { createPhaserApi } from '../api/client.ts'
 import { GameSession } from '../game/GameSession.ts'
+import { applyHiDpiCamera, gameViewSize } from '../game/hiDpi.ts'
 import { loadPlayerIdentity } from '../game/playerIdentity.ts'
 
 export type MenuSceneData = {
@@ -29,7 +30,8 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale
+    applyHiDpiCamera(this)
+    const { width, height } = gameViewSize()
 
     this.add
       .text(width / 2, height * 0.18, 'Root', {

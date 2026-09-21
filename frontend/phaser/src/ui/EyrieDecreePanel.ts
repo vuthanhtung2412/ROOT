@@ -1,6 +1,7 @@
 import type Phaser from 'phaser'
 import type { GameState } from '../api/client.ts'
 import { lookupCardCatalog } from '../assets/gameAssets.ts'
+import { gameViewSize } from '../game/hiDpi.ts'
 
 const DECREE_COLUMNS = ['recruit', 'move', 'battle', 'build'] as const
 
@@ -64,7 +65,7 @@ export class EyrieDecreePanel {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene
-    const { width } = scene.scale
+    const { width } = gameViewSize()
     this.root = scene.add.container(width - 210, 280).setDepth(105)
   }
 
