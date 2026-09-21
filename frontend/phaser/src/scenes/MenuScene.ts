@@ -160,7 +160,8 @@ export class MenuScene extends Phaser.Scene {
     }
 
     if (result === 'playing') {
-      this.enterGame()
+      this.setStatus('Starting…', '#9a9a9a')
+      this.waitUntilPlaying()
       return
     }
 
