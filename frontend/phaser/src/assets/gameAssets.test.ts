@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  AUTUMN_MAP_ASSET,
   CARD_CATALOG,
   CORE_IMAGE_ASSETS,
   cardImageAssetForDefId,
   cardImageAssets,
   preloadCoreGameAssets,
+  queueAutumnMapImage,
   queueMissingCardImages,
   type ImageAssetLoader,
 } from './gameAssets.ts'
@@ -26,7 +28,7 @@ function firstCatalogDefId(): string {
 }
 
 describe('preloadCoreGameAssets', () => {
-  it('loads map and tokens only, not card faces', () => {
+  it('loads tokens only, not autumn map or card faces', () => {
     const loader = makeLoaderMock()
     preloadCoreGameAssets(loader)
 
@@ -34,9 +36,30 @@ describe('preloadCoreGameAssets', () => {
     for (const asset of CORE_IMAGE_ASSETS) {
       expect(loader.image).toHaveBeenCalledWith(asset.key, asset.path)
     }
+    expect(loader.image).not.toHaveBeenCalledWith(
+      AUTUMN_MAP_ASSET.key,
+      AUTUMN_MAP_ASSET.path,
+    )
     for (const asset of cardImageAssets()) {
       expect(loader.image).not.toHaveBeenCalledWith(asset.key, asset.path)
     }
+  })
+})
+
+describe('queueAutumnMapImage', () => {
+  it('queues map when texture missing', () => {
+    const loader = makeLoaderMock()
+    expect(queueAutumnMapImage(loader, () => false)).toBe(true)
+    expect(loader.image).toHaveBeenCalledWith(
+      AUTUMN_MAP_ASSET.key,
+      AUTUMN_MAP_ASSET.path,
+    )
+  })
+
+  it('skips when texture already exists', () => {
+    const loader = makeLoaderMock()
+    expect(queueAutumnMapImage(loader, () => true)).toBe(false)
+    expect(loader.image).not.toHaveBeenCalled()
   })
 })
 

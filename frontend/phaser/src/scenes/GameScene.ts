@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { ensureAutumnMapLoaded } from '../assets/autumnMapLoader.ts'
 import { CardTextureWarmup } from '../assets/cardTextureWarmup.ts'
 import type { ActionSpec, GameState } from '../api/client.ts'
 import { createPhaserApi } from '../api/client.ts'
@@ -284,6 +285,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private async bootstrapBoard(): Promise<void> {
+    await ensureAutumnMapLoaded(this)
     const layout = await this.loadLayout()
     this.boardView = new BoardView({
       scene: this,
