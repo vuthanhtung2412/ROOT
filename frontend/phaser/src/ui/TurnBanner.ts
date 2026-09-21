@@ -167,31 +167,183 @@ function setupPrompt(pending: unknown): string | null {
   return null
 }
 
-export class TurnBanner {
-  private readonly text: Phaser.GameObjects.Text
+export type TurnBannerOption = {
+  label: string
+  value: string
+}
 
-  constructor(scene: Phaser.Scene) {
+export type TurnBannerHandlers = {
+  onConfirm: () => void
+  onCancel: () => void
+  onPickOption?: (value: string) => void
+}
+
+export type TurnBannerComposerView = {
+  message: string
+  canConfirm: boolean
+  canCancel: boolean
+  options: readonly TurnBannerOption[]
+}
+
+/**
+ * Single top strip: turn status, or composer prompt + controls when staging.
+ */
+export class TurnBanner {
+  private readonly scene: Phaser.Scene
+  private readonly root: Phaser.GameObjects.Container
+  private readonly panel: Phaser.GameObjects.Rectangle
+  private readonly statusText: Phaser.GameObjects.Text
+  private readonly confirmButton: Phaser.GameObjects.Text
+  private readonly cancelButton: Phaser.GameObjects.Text
+  private optionNodes: Phaser.GameObjects.GameObject[] = []
+  private handlers: TurnBannerHandlers
+  private lastView: TurnBannerViewModel | null = null
+  private lastComposer: TurnBannerComposerView | null = null
+
+  constructor(scene: Phaser.Scene, handlers: TurnBannerHandlers) {
+    this.scene = scene
+    this.handlers = handlers
     const { width } = gameViewSize()
-    this.text = scene.add
-      .text(width / 2, 18, '', {
+    const bannerWidth = Math.min(640, width - 24)
+
+    this.panel = scene.add
+      .rectangle(0, 0, bannerWidth, 36, 0x0a0a0a, 0.9)
+      .setStrokeStyle(1, 0xf0e6d3, 0.25)
+
+    this.statusText = scene.add
+      .text(0, 0, '', {
         fontFamily: 'Georgia, serif',
-        fontSize: '18px',
+        fontSize: '15px',
         color: '#f0e6d3',
-        backgroundColor: '#1a1a1acc',
-        padding: { x: 14, y: 8 },
         align: 'center',
+        wordWrap: { width: bannerWidth - 160 },
       })
-      .setOrigin(0.5, 0)
-      .setDepth(100)
+      .setOrigin(0.5)
+
+    this.confirmButton = scene.add
+      .text(0, 0, 'OK', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#1a1a1a',
+        backgroundColor: '#a8d8a8',
+        padding: { x: 8, y: 4 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false)
+
+    this.cancelButton = scene.add
+      .text(0, 0, 'X', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#1a1a1a',
+        backgroundColor: '#d8a8a8',
+        padding: { x: 8, y: 4 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false)
+
+    this.confirmButton.on('pointerdown', () => {
+      this.handlers.onConfirm()
+    })
+    this.cancelButton.on('pointerdown', () => {
+      this.handlers.onCancel()
+    })
+
+    this.root = scene.add
+      .container(width / 2, 28, [
+        this.panel,
+        this.statusText,
+        this.confirmButton,
+        this.cancelButton,
+      ])
+      .setDepth(130)
   }
 
-  sync(viewModel: TurnBannerViewModel): void {
-    this.text.setText(
-      `${viewModel.actorFaction} · ${viewModel.phase}/${viewModel.step} — ${viewModel.prompt}`,
+  setHandlers(handlers: TurnBannerHandlers): void {
+    this.handlers = handlers
+  }
+
+  syncTurn(viewModel: TurnBannerViewModel): void {
+    this.lastView = viewModel
+    this.repaint()
+  }
+
+  syncComposer(composer: TurnBannerComposerView | null): void {
+    this.lastComposer = composer
+    this.repaint()
+  }
+
+  private repaint(): void {
+    for (const node of this.optionNodes) {
+      node.destroy()
+    }
+    this.optionNodes = []
+
+    const view = this.lastView
+    if (view === null) {
+      return
+    }
+
+    const composer = this.lastComposer
+    const halfWidth = this.panel.width / 2
+
+    if (composer === null) {
+      this.statusText.setText(
+        `${view.actorFaction} · ${view.phase}/${view.step} — ${view.prompt}`,
+      )
+      this.statusText.setPosition(0, 0)
+      this.confirmButton.setVisible(false)
+      this.cancelButton.setVisible(false)
+      this.panel.setSize(this.panel.width, 36)
+      return
+    }
+
+    this.statusText.setText(`${view.actorFaction} · ${composer.message}`)
+    this.statusText.setPosition(0, composer.options.length > 0 ? -14 : 0)
+
+    this.confirmButton.setVisible(composer.canConfirm)
+    this.cancelButton.setVisible(composer.canCancel)
+    this.confirmButton.setPosition(
+      halfWidth - 52,
+      composer.options.length > 0 ? -14 : 0,
+    )
+    this.cancelButton.setPosition(
+      halfWidth - 18,
+      composer.options.length > 0 ? -14 : 0,
+    )
+
+    composer.options.forEach((option, index) => {
+      const button = this.scene.add
+        .text(
+          (index - (composer.options.length - 1) / 2) * 88,
+          14,
+          option.label,
+          {
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            color: '#1a1a1a',
+            backgroundColor: '#c8d8f0',
+            padding: { x: 6, y: 3 },
+          },
+        )
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+      button.on('pointerdown', () => {
+        this.handlers.onPickOption?.(option.value)
+      })
+      this.root.add(button)
+      this.optionNodes.push(button)
+    })
+
+    this.panel.setSize(
+      this.panel.width,
+      composer.options.length > 0 ? 56 : 36,
     )
   }
 
   destroy(): void {
-    this.text.destroy()
+    this.root.destroy(true)
   }
 }

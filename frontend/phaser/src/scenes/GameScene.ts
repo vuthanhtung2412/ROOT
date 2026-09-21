@@ -34,7 +34,6 @@ import { EventOverlay } from '../ui/EventOverlay.ts'
 import { FactionDrawer } from '../ui/FactionDrawer.ts'
 import { GameDrawer } from '../ui/GameDrawer.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
-import { SelectionPrompt } from '../ui/SelectionPrompt.ts'
 import {
   buildTurnBannerViewModel,
   TurnBanner,
@@ -53,7 +52,6 @@ export class GameScene extends Phaser.Scene {
   private cardHand: CardHand | null = null
   private cardDetailOverlay: CardDetailOverlay | null = null
   private actionTray: ActionTray | null = null
-  private selectionPrompt: SelectionPrompt | null = null
   private eyrieDecreePanel: EyrieDecreePanel | null = null
   private eventOverlay: EventOverlay | null = null
   private battleOverlay: BattleOverlay | null = null
@@ -101,7 +99,17 @@ export class GameScene extends Phaser.Scene {
       ),
     )
 
-    this.turnBanner = new TurnBanner(this)
+    this.turnBanner = new TurnBanner(this, {
+      onConfirm: () => {
+        this.applyComposerOutcome(this.composer.confirm())
+      },
+      onCancel: () => {
+        this.applyComposerOutcome(this.composer.cancel())
+      },
+      onPickOption: (value) => {
+        this.applyComposerOutcome(this.composer.chooseColumn(value))
+      },
+    })
     this.playerRail = new PlayerRail(this)
     this.cardTextureWarmup = new CardTextureWarmup(this)
     this.cardTextureWarmup.setOnReady(() => {
@@ -139,25 +147,17 @@ export class GameScene extends Phaser.Scene {
       },
     })
     this.winnerOverlay = new WinnerOverlay(this)
-    this.selectionPrompt = new SelectionPrompt(this, {
-      onConfirm: () => {
-        this.applyComposerOutcome(this.composer.confirm())
-      },
-      onCancel: () => {
-        this.applyComposerOutcome(this.composer.cancel())
-      },
-      onPickOption: (value) => {
-        this.applyComposerOutcome(this.composer.chooseColumn(value))
-      },
-    })
 
     this.statusText = this.add
       .text(width * 0.38, height * 0.92, '', {
         fontFamily: 'monospace',
         fontSize: '13px',
-        color: '#9a9a9a',
+        color: '#f0e6d3',
+        backgroundColor: '#0a0a0add',
+        padding: { x: 10, y: 6 },
       })
       .setOrigin(0.5)
+      .setDepth(120)
 
     void this.bootstrapBoard()
 
@@ -200,8 +200,6 @@ export class GameScene extends Phaser.Scene {
     this.gameDrawer = null
     this.winnerOverlay?.destroy()
     this.winnerOverlay = null
-    this.selectionPrompt?.destroy()
-    this.selectionPrompt = null
   }
 
   private async handleEndGame(): Promise<void> {
@@ -218,7 +216,7 @@ export class GameScene extends Phaser.Scene {
 
   private applyComposerOutcome(outcome: ComposerOutcome): void {
     if (outcome.kind === 'ready') {
-      this.selectionPrompt?.sync(null)
+      this.turnBanner?.syncComposer(null)
       this.boardView?.setHighlightedClearings([])
       this.cardHand?.setEnabledCards(null)
       this.cardHand?.setSelection([])
@@ -231,15 +229,17 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (outcome.kind === 'incomplete') {
-      this.selectionPrompt?.sync(
-        outcome.prompt,
-        [
+      this.turnBanner?.syncComposer({
+        message: outcome.prompt.message,
+        canConfirm: outcome.prompt.canConfirm,
+        canCancel: outcome.prompt.canCancel,
+        options: [
           ...this.marquiseMarch.getPromptOptions(),
           ...this.marquiseBoard.getPromptOptions(),
           ...this.eyrieComposer.getPromptOptions(),
           ...this.eventComposer.getPromptOptions(),
         ],
-      )
+      })
       this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
       this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)
       this.eventOverlay?.sync(
@@ -253,7 +253,7 @@ export class GameScene extends Phaser.Scene {
       return
     }
 
-    this.selectionPrompt?.sync(null)
+    this.turnBanner?.syncComposer(null)
     this.boardView?.setHighlightedClearings([])
     this.cardHand?.setEnabledCards(null)
     this.cardHand?.setSelection([])
@@ -322,7 +322,7 @@ export class GameScene extends Phaser.Scene {
       snapshot.legalActions,
     )
     const localControlsActor = this.localPlayerControlsSeat(banner.actorSeat)
-    this.turnBanner?.sync(banner)
+    this.turnBanner?.syncTurn(banner)
     this.playerRail?.sync(snapshot.state, banner.actorSeat)
     this.warmCardTexturesForHand(
       snapshot.state,
