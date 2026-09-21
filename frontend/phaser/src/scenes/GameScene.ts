@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { preloadCardImageAssets } from '../assets/gameAssets.ts'
 import type { ActionSpec, GameState } from '../api/client.ts'
 import { createPhaserApi } from '../api/client.ts'
 import {
@@ -74,6 +75,10 @@ export class GameScene extends Phaser.Scene {
 
   init(data: GameSceneData): void {
     this.session = data.session
+  }
+
+  preload(): void {
+    preloadCardImageAssets(this.load)
   }
 
   create(): void {

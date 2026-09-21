@@ -1,5 +1,9 @@
-import type Phaser from 'phaser'
 import cardCatalog from './cardCatalog.json'
+
+/** Minimal loader surface for preload helpers (Phaser LoaderPlugin satisfies). */
+export type ImageAssetLoader = {
+  image: (key: string, url: string) => unknown
+}
 
 /** Phaser texture keys and public asset paths for GP2 preload. */
 
@@ -120,12 +124,15 @@ export function cardImageAssets(): GameImageAsset[] {
   return assets
 }
 
-export function preloadCoreGameAssets(
-  loader: Phaser.Loader.LoaderPlugin,
-): void {
+/** Boot: map + faction/token icons only (cards deferred to GameScene). */
+export function preloadCoreGameAssets(loader: ImageAssetLoader): void {
   for (const asset of CORE_IMAGE_ASSETS) {
     loader.image(asset.key, asset.path)
   }
+}
+
+/** GameScene: EP card faces (~13 MB) — load after join, not on boot. */
+export function preloadCardImageAssets(loader: ImageAssetLoader): void {
   for (const asset of cardImageAssets()) {
     loader.image(asset.key, asset.path)
   }
