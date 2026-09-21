@@ -12,6 +12,11 @@ type EventDraft =
   | { type: 'pickOrder'; orders: number[][] }
   | { type: 'pickEffect' }
   | { type: 'pickKeep'; clearings: number[] }
+  | {
+      type: 'pickStartingBuilding'
+      clearings: number[]
+      building: string
+    }
   | { type: 'pickLeader'; leaders: string[] }
 
 /**
@@ -41,6 +46,29 @@ export function createEventComposerHooks(): {
       }
 
       const params = readChoiceParams(spec)
+
+      if (
+        params.clearing !== undefined &&
+        params.building !== undefined &&
+        params.building[0] !== undefined
+      ) {
+        const building = params.building[0]
+        draft = {
+          type: 'pickStartingBuilding',
+          clearings: params.clearing,
+          building,
+        }
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: `Place starting ${building}`,
+            highlightClearings: params.clearing,
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: false,
+          },
+        }
+      }
 
       if (params.clearing !== undefined) {
         draft = { type: 'pickKeep', clearings: params.clearing }
@@ -184,6 +212,16 @@ export function createEventComposerHooks(): {
     },
 
     chooseClearing: (clearingId: number): ComposerOutcome | null => {
+      if (
+        draft.type === 'pickStartingBuilding' &&
+        draft.clearings.includes(clearingId)
+      ) {
+        clear()
+        return {
+          kind: 'ready',
+          action: { type: 'resolveEvent', clearing: clearingId },
+        }
+      }
       if (draft.type !== 'pickKeep' || !draft.clearings.includes(clearingId)) {
         return null
       }
@@ -225,7 +263,11 @@ export function createEventComposerHooks(): {
       if (draft.type === 'idle' && overlayKind === null) {
         return null
       }
-      if (draft.type === 'pickKeep' || draft.type === 'pickLeader') {
+      if (
+        draft.type === 'pickKeep' ||
+        draft.type === 'pickLeader' ||
+        draft.type === 'pickStartingBuilding'
+      ) {
         return null
       }
       clear()

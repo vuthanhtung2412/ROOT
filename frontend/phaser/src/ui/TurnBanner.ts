@@ -56,7 +56,11 @@ function readPendingActorFromEvent(event: unknown): number | null {
     const victim = Reflect.get(event, 'victim')
     return typeof victim === 'number' ? victim : null
   }
-  if (type === 'chooseKeep' || type === 'chooseLeader') {
+  if (
+    type === 'chooseKeep' ||
+    type === 'chooseLeader' ||
+    type === 'placeStartingBuilding'
+  ) {
     const seat = Reflect.get(event, 'seat')
     return typeof seat === 'number' ? seat : null
   }

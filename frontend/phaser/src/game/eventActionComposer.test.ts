@@ -139,4 +139,25 @@ describe('eventActionComposer setup picks', () => {
       action: { type: 'resolveEvent', leader: 'charismatic' },
     })
   })
+
+  it('placeStartingBuilding highlights zone then submits clearing', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const mid = composer.begin(
+      makeActionSpec({
+        type: 'resolveEvent',
+        params: { clearing: [0, 1, 5], building: ['sawmill'] },
+      }),
+    )
+    expect(mid.kind).toBe('incomplete')
+    if (mid.kind !== 'incomplete') throw new Error('expected incomplete')
+    expect(mid.prompt.message).toBe('Place starting sawmill')
+    expect(mid.prompt.highlightClearings).toEqual([0, 1, 5])
+    expect(composer.chooseClearing(5)).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', clearing: 5 },
+    })
+  })
 })
