@@ -1,3 +1,4 @@
+import { redactStateForViewer } from '../view/redactStateForViewer.js'
 import { store } from '../store/GameStore.js'
 
 export type GamePushPayload = {
@@ -13,19 +14,21 @@ export type GameHubClient = {
   isOpen: () => boolean
 }
 
-/** Build the WS push payload from the single game slot (unredacted). */
-export function snapshotGamePush(): GamePushPayload {
+const EMPTY_GAME_PUSH: GamePushPayload = {
+  state: null,
+  historyLength: 0,
+  legalActions: [],
+  log: [],
+}
+
+/** Build the WS push payload for one viewer (opponent hands redacted). */
+export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
   const game = store.game
   if (game === null) {
-    return {
-      state: null,
-      historyLength: 0,
-      legalActions: [],
-      log: [],
-    }
+    return EMPTY_GAME_PUSH
   }
   return {
-    state: game.state,
+    state: redactStateForViewer(game.state, playerId),
     historyLength: game.history.length,
     legalActions: game.legalActions(),
     log: game.log,
@@ -116,3 +119,8 @@ export class GameHub {
 }
 
 export const gameHub = new GameHub()
+
+/** Push current slot to every connected viewer with per-seat hand redaction. */
+export function broadcastCurrentGame(): void {
+  gameHub.broadcastToViewers((playerId) => snapshotGamePushForViewer(playerId))
+}

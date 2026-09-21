@@ -3,7 +3,7 @@ import type { OpenAPIHono } from '@hono/zod-openapi'
 import type { WSContext } from 'hono/ws'
 import {
   gameHub,
-  snapshotGamePush,
+  snapshotGamePushForViewer,
   type GameHubClient,
 } from '../ws/GameHub.js'
 
@@ -39,7 +39,7 @@ export function attachGameWebSocket(app: OpenAPIHono): void {
         onOpen(_event, ws) {
           hubClient = toHubClient(playerId, ws)
           gameHub.addClient(hubClient)
-          ws.send(JSON.stringify(snapshotGamePush()))
+          ws.send(JSON.stringify(snapshotGamePushForViewer(playerId)))
         },
         onClose() {
           if (hubClient !== null) {
