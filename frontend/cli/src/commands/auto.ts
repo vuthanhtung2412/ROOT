@@ -360,6 +360,16 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
     }
     case 'resolveEvent': {
       const p = spec.params
+      // Setup chooseKeep: params.clearing = corner ids
+      if (Array.isArray(p?.clearing) && p.clearing.length > 0 && typeof p.clearing[0] === 'number') {
+        const clearing = pick(p.clearing as number[])
+        if (clearing !== undefined) return { type: 'resolveEvent', clearing }
+      }
+      // Setup / depose chooseLeader
+      if (Array.isArray(p?.leaders) && p.leaders.length > 0 && typeof p.leaders[0] === 'string') {
+        const leader = pick(p.leaders as string[])
+        if (leader) return { type: 'resolveEvent', leader }
+      }
       // Removal stage: params.pieceIds is domain of removable piece ids
       if (Array.isArray(p?.pieceIds) && p.pieceIds.length > 0 && typeof p.pieceIds[0] === 'string') {
         return { type: 'resolveEvent', pieceIds: [...(p.pieceIds as string[])] }
@@ -404,7 +414,11 @@ export async function cmdAuto(turns: number, players: number, factions?: string[
   )
 
   let steps = 0
-  while (state.status === 'playing' && state.turn <= turns && steps < turns * 30) {
+  while (
+    (state.status === 'playing' || state.status === 'setup') &&
+    state.turn <= turns &&
+    steps < turns * 30
+  ) {
     const { actions } = await api.actions()
     state = await tryAct(state, actions)
     steps++
