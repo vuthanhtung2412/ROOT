@@ -300,7 +300,11 @@ export class GameScene extends Phaser.Scene {
     const localControlsActor = this.localPlayerControlsSeat(banner.actorSeat)
     this.turnBanner?.sync(banner)
     this.playerRail?.sync(snapshot.state, banner.actorSeat)
-    this.cardHand?.sync(snapshot.state, snapshot.legalActions)
+    this.cardHand?.sync(
+      snapshot.state,
+      snapshot.legalActions,
+      this.session?.getLocalSeat() ?? null,
+    )
     this.actionTray?.sync(
       localControlsActor ? snapshot.legalActions : [],
       banner.actorSeat,

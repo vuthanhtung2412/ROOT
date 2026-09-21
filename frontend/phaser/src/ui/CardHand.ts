@@ -46,15 +46,21 @@ export class CardHand {
     this.repaintSelection()
   }
 
-  sync(state: GameState, legalActions: readonly ActionSpec[] = []): void {
+  sync(
+    state: GameState,
+    legalActions: readonly ActionSpec[] = [],
+    localSeat: number | null = null,
+  ): void {
     for (const card of this.cards) {
       card.destroy()
     }
     this.cards = []
 
-    const banner = buildTurnBannerViewModel(state, legalActions)
-    const actor = state.players.find((player) => player.seat === banner.actorSeat)
-    const hand = actor?.hand ?? []
+    const seat =
+      localSeat ??
+      buildTurnBannerViewModel(state, legalActions).actorSeat
+    const player = state.players.find((entry) => entry.seat === seat)
+    const hand = player?.hand ?? []
 
     const startX = -((hand.length - 1) * 44)
     hand.forEach((card, index) => {
