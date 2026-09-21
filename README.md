@@ -34,7 +34,7 @@ Use `Game.create` / `join` / `start` / `apply` / `legalActions` / `undo` / `toJS
 pnpm --filter @root/web dev    # http://localhost:3000
 ```
 
-Remote play (friends): **`make remote`** — build + serve + Cloudflare URL. See `frontend/phaser/README.md`.
+Remote play (friends): **`make remote`** — build + serve + Tailscale Funnel URL. See `frontend/phaser/README.md`.
 
 Single game slot at `/game/...` (no game id):
 

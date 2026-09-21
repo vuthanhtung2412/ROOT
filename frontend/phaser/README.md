@@ -34,13 +34,14 @@ pnpm serve:game
 
 Open `http://localhost:3000/` (or `http://<lan-ip>:3000/` from another device). Empty API base = same origin. Service JSON lives at `/health`.
 
-## Remote play (Cloudflare tunnel)
+## Remote play (Tailscale Funnel)
 
 ```bash
-make remote   # build Phaser → @root/web → Cloudflare → print URL
+make remote   # Funnel URL — leave API base empty
+# FUNNEL_HTTPS_PORT=10000 make remote   # if 8443 busy (443/8443/10000 only)
 ```
 
-Leave API base **empty**. Ctrl+C stops everything.
+Needs Tailscale.app + Funnel enabled. Ctrl+C stops.
 ## Build iOS (Capacitor)
 
 Requires macOS + Xcode. App is a WebView shell; game server still `@root/web`.
@@ -101,7 +102,7 @@ pnpm gen:api-client
 | `pnpm --filter @root/phaser typecheck` | `tsc --noEmit` |
 | `pnpm --filter @root/phaser build` | production → `dist/` |
 | `pnpm gen:api-client` | regenerate `@root/web-client` |
-| `make remote` | build + web serve + Cloudflare → public URL |
+| `make remote` | build + web serve + Tailscale Funnel → stable public URL |
 
 ## Out of scope
 
