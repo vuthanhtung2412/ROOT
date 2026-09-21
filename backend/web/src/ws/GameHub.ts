@@ -1,3 +1,4 @@
+import { redactLegalActionsForViewer } from '../view/redactLegalActionsForViewer.js'
 import { redactStateForViewer } from '../view/redactStateForViewer.js'
 import { store } from '../store/GameStore.js'
 
@@ -30,7 +31,11 @@ export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
   return {
     state: redactStateForViewer(game.state, playerId),
     historyLength: game.history.length,
-    legalActions: game.legalActions(),
+    legalActions: redactLegalActionsForViewer(
+      game.legalActions(),
+      game.state,
+      playerId,
+    ),
     log: game.log,
   }
 }
