@@ -24,6 +24,29 @@ Same on two machines: B sets API base to `http://<A-ip>:3000`.
 
 Identity: `sessionStorage` key `root.phaser.playerIdentity` (`playerId` + `apiBaseUrl`).
 
+## Serve from web backend (one process)
+
+Build Phaser, copy into `@root/web` `public/`, start API + static + WS on port 3000:
+
+```bash
+pnpm serve:game
+```
+
+Open `http://localhost:3000/` (or `http://<lan-ip>:3000/` from another device). Empty API base = same origin. Service JSON lives at `/health`.
+
+## Build iOS (Capacitor)
+
+Requires macOS + Xcode. App is a WebView shell; game server still `@root/web`.
+
+```bash
+# Terminal A — host API (or use serve:game)
+pnpm --filter @root/web dev
+
+# Terminal B — build + sync + open Xcode
+pnpm build:ios
+```
+
+In Simulator / device menu, set API base to `http://<host-lan-ip>:3000`, then Join. Cleartext LAN HTTP allowed via ATS + Capacitor `server.cleartext`.
 
 ## Architecture
 
@@ -51,7 +74,7 @@ Shared typed client: `@root/web-client` (`backend/web_client`).
 import { createRootWebClient } from '@root/web-client'
 ```
 
-Phaser wraps it in `createPhaserApi()` (`src/api/client.ts`). Empty `baseUrl` uses Vite proxy; Host/Join menu can set absolute `http://HOST:3000`.
+Phaser wraps it in `createPhaserApi()` (`src/api/client.ts`). Empty `baseUrl` uses Vite proxy / same-origin when served from `@root/web`; Host/Join menu can set absolute `http://HOST:3000`.
 
 Regenerate after API shape changes:
 
@@ -65,6 +88,8 @@ pnpm gen:api-client
 | Command | What |
 |---|---|
 | `pnpm --filter @root/phaser dev` | Vite + API/WS proxy |
+| `pnpm serve:game` | build Phaser → serve via `@root/web` |
+| `pnpm build:ios` | build Phaser → Capacitor sync → open Xcode |
 | `pnpm --filter @root/phaser test` | Vitest (factories + mocked fetch) |
 | `pnpm --filter @root/phaser typecheck` | `tsc --noEmit` |
 | `pnpm --filter @root/phaser build` | production → `dist/` |
@@ -72,4 +97,4 @@ pnpm gen:api-client
 
 ## Out of scope
 
-Alliance, Vagabond, multi-room, auth tokens, WAN/NAT relay, action-over-WS, production asset licensing.
+Alliance, Vagabond, multi-room, auth tokens, WAN/NAT relay, action-over-WS, production asset licensing, Android, App Store signing CI.
