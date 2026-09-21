@@ -1,99 +1,117 @@
 ### Goal
-- Two humans on **different machines** play one GP2 game via Phaser.
-- **Authoritative state stays on `@root/web`** (one game slot, unchanged).
-- **State updates push over WebSocket**; commands stay REST (`POST /game/...`).
-- **Deprecate one-screen hot-seat** (no shared-keyboard path in menu / GameSession).
-- Phaser remembers **`localPlayerId`** across refresh so Continue / reconnect resume same seat.
-- In-game **End game** button deletes server slot (`DELETE /game`) and returns to menu.
-- Opponent **hand cards never reach** the other Phaser client.
+- Marquise **picks keep corner** at start (not hardcode `FALL.corners[0]`).
+- Eyrie roost always **`opposite(keep)`** (no bird corner pick).
+- Eyrie may pick **any of 4 leaders** at setup; each leader special works.
+- Turmoil **depose**: current leader face-down (unavailable); pick next from face-up; **A New Clutch** if none face-up.
 
 ### Approach
-- **Model**: Host machine runs `@root/web`. Both Phaser clients talk to that host (LAN IP or `localhost`).
-- **Commands (REST)**: create / join / start / action / undo / delete — same routes as today.
-- **CLI**: REST response bodies stay **full** (unredacted) — QA / agents unchanged.
-- **Updates (WS)**: `GET /ws?playerId=…` upgrade. On connect + after every successful mutation, server sends **per-viewer** payload: `{ state, historyLength, legalActions, log }` where `state` runs through `redactStateForViewer(state, playerId)` (own hand intact; other seats’ `hand` emptied / card defs stripped; public board + counts OK).
-- **Phaser vs REST leak**: after mutation Phaser **does not trust** unfiltered REST `state` for UI — apply redacted WS push (or optional `?viewerPlayerId=` on GET later). CLI never sends viewer id → full JSON.
-- **Empty game**: no slot → WS payload `{ state: null, … }` (or close); GameScene → MenuScene.
-- **Identity**: each client keeps `localPlayerId` (join id). Derive `localSeat` from `state.players`. Only that seat may submit when it is actor. No handoff overlay (hot-seat gone).
-- **Persist playerId**: on host/join only, write `{ playerId, apiBaseUrl? }` to `localStorage`. Continue + WS reconnect read it; match `state.players[].playerId` → seat. Missing / unknown id → stay menu with clear error (do not invent new join into full/playing game).
-- **Lobby**: Host `POST /game` (**no** `replace=1`; 409 if occupied) + `POST /join` self → wait. Guest `POST /join`. Either side `POST /start` when `players.length === 2`. WS push wakes both UIs.
-- **Menu**: Host / Join / Continue (restore playerId) / **QA-only** “Continue loaded game” (poll full slot via REST — label as QA; not for normal play). Remove “New GP2” hot-seat.
-- **End game**: GameDrawer **End game** → confirm → `GameSession.restart()` / `DELETE /game` → clear stored playerId → MenuScene. Broadcast empty so peer returns menu.
-- **LAN wiring**: Hono CORS; Vite `server.host` + proxy `/ws`; Phaser `baseUrl` / `wsUrl` from env or menu text field (default same-origin proxy). WS stack: Hono node helper + `ws` (`createNodeWebSocket` / equivalent) — pick one in first commit.
-- **Out of scope (this plan)**: multi-room, auth tokens, WAN relay/NAT traversal, action-over-WS, encrypting CLI/full dumps.
+- Reuse **pending `resolveEvent`** (same as Field Hospitals). No free-form mid-setup actions.
+- Add `GameStatus = 'setup'` between lobby `start` and first Birdsong:
+  1. Shared setup (deck / hands / ruins / items) on `start`
+  2. Pending `chooseKeep` → Marquise seat
+  3. On resolve: place keep + garrison + buildings + tracks at chosen corner
+  4. Auto-place Eyrie roost + 6 at `FALL.opposite(keep)` (no leader yet)
+  5. Pending `chooseLeader` → Eyrie seat (face-up pool)
+  6. On resolve: set leader, tuck viziers per leader table → `playing` + seat 0 Birdsong
+- `EyrieBoard` gains pools (Law 7.3.3 / 7.7.3):
+  - `leader: EyrieLeader | null` (slot; null only during choose)
+  - `leadersFaceUp: EyrieLeader[]` (choosable)
+  - `leadersFaceDown: EyrieLeader[]` (deposed / aside)
+- Shared `tuckViziersFor(leader)` table:
+  - Builder → Recruit, Move
+  - Charismatic → Recruit, Battle
+  - Commander → Move, Battle
+  - Despot → Move, Build
+- Leader specials (Law 7.8):
+  - **Builder** — already ignores Disdain (`craftVp`); keep
+  - **Charismatic** — decree Recruit places **2** warriors
+  - **Commander** — `extraHits` +1 when Eyrie is **attacker**
+  - **Despot** — if battle removes ≥1 enemy building/token → **+1 extra VP** (on top of normal 3.2.1)
+- Turmoil: Humiliate + Purge unchanged → Depose flips current into `leadersFaceDown`, clears slot → if `leadersFaceUp` empty, move all face-down → face-up (New Clutch) → pending `chooseLeader` → then Rest (Evening). Stop auto-retuck Builder-only.
+- `keepCornerFor` / `eyrieStartClearing`: derive from **keep token** / `opposite(keep)`, not hardcoded `corners[0]`.
+- Phaser: extend `eventActionComposer` + tray for keep clearing pick + leader pick; drop Builder-only UI copy.
+- Drop Builder-only rows in `resources/notes/root-base-rules.md` house table when lib done.
 
 ### Files to change
-- `backend/web/package.json`: add `ws` (+ types if needed).
-- `backend/web/src/ws/GameHub.ts`: sockets keyed by `playerId` + `broadcastGame()` per-viewer redact.
-- `backend/web/src/view/redactStateForViewer.ts`: strip opponent hands (+ unit test).
-- `backend/web/src/routes/ws.ts`: `/ws` upgrade + snapshot on open.
-- `backend/web/src/routes/game.ts`: call `broadcastGame()` after create/join/start/action/undo/delete.
-- `backend/web/src/index.ts`: wire WS upgrade on `serve`.
-- `backend/web/src/middleware/cors.ts` (or inline): allow Phaser origins.
-- `frontend/phaser/vite.config.ts`: proxy `/ws`, `server.host: true`.
-- `frontend/phaser/src/api/client.ts`: absolute `baseUrl`; Host create **without** `replace=1`; drop hot-seat-only replace default (or `createGame({ replace })`).
-- `frontend/phaser/src/api/gameSocket.ts`: connect with `playerId`, parse push, reconnect light.
-- `frontend/phaser/src/game/playerIdentity.ts`: read/write/clear `localStorage`.
-- `frontend/phaser/src/game/GameSession.ts`: host/join/start/continue-by-id; apply WS snapshot; remove `startHotSeatGame`; `restart()` clears identity.
-- `frontend/phaser/src/scenes/MenuScene.ts`: Host / Join / Continue / QA Continue loaded; remove New GP2 hot-seat.
-- `frontend/phaser/src/scenes/GameScene.ts`: gate tray to `localSeat`; remove handoff overlay path.
-- `frontend/phaser/src/ui/GameDrawer.ts`: **End game** beside Undo → `onEndGame`.
-- `frontend/phaser/src/ui/HandoffOverlay.ts`: unused → delete or leave dead until cleanup commit.
-- `frontend/phaser/README.md`: LAN how-to + continue + end game + QA continue note.
+- `lib/src/state/boards.ts` — leader pools; `leader` nullable
+- `lib/src/state/types.ts` — `'setup'` status
+- `lib/src/events/types.ts` — `chooseKeep` / `chooseLeader` events
+- `lib/src/events/chooseKeep.ts` (+ test) — Marquise corner resolver
+- `lib/src/events/chooseLeader.ts` (+ test) — setup + depose resolver
+- `lib/src/events/resolvers.ts` — wire new resolvers
+- `lib/src/factions/Marquise.ts` — setup split: apply chosen corner; `keepCornerFor` reads keep
+- `lib/src/factions/Eyrie.ts` — roost opposite keep; vizier table; Charismatic recruit; turmoil → pending choose
+- `lib/src/triggers/hooks.ts` / `buildHooks.ts` — Commander `extraHits`
+- `lib/src/events/battle.ts` (or remove/score path) — Despot extra VP
+- `lib/src/game/Game.ts` — `start` → `'setup'` + pending; finish setup → `'playing'`
+- `lib/src/actions/types.ts` — `ActionChoiceParams` for `leaders?: EyrieLeader[]` if needed
+- `lib/src/factions/*.test.ts`, `Game.test.ts` — rewrite fixed-corner / Builder-only setup asserts
+- `frontend/phaser/src/game/eventActionComposer.ts` — keep + leader picks
+- `frontend/phaser/src/ui/ActionTray.ts` / `TurnBanner.ts` / `EyrieBoard.ts` — setup prompts; drop house-rule copy
+- `resources/notes/root-base-rules.md` — remove Builder-only / fixed-corner deviations
 
 ### Test plan
-- Unit: `redactStateForViewer` — own hand kept; opponent hand empty; board pieces unchanged.
-- Unit: `GameHub` — N mock sockets each get **own** redaction; ignore dead sockets; empty game payload.
-- Unit: `GameSession` apply WS payload; host/join call REST once each; no hot-seat helper.
-- Unit: `playerIdentity` save / load / clear (mock `localStorage`).
-- Unit: Continue with stored playerId maps to seat; unknown id errors.
-- Unit: input gate — `submitAction` no-op / error when `localSeat !== actorSeat`.
-- Unit: End game → `DELETE /game` + identity cleared + snapshot null.
-- Manual LAN:
-  1. Machine A: `pnpm --filter @root/web dev` + Phaser Host → lobby waiting.
-  2. Machine B: Phaser Join with A’s IP → both see 2 players via WS.
-  3. Start → alternate turns; B sees A’s move without refresh; **B never sees A’s card faces**.
-  4. Refresh B → Continue → same seat, can play when actor.
-  5. Pending event for other seat: waiting client cannot submit; actor client can.
-  6. End game on A → slot empty; B gets empty WS → menu; Host create works again (no replace).
-  7. CLI `get` / `act` still show **full** hands (QA).
-  8. Menu QA “Continue loaded game” still loads slot for playtest dumps.
+- Unit: `chooseKeep` — only 4 corners legal; place keep/garrison/buildings; illegal non-corner rejects
+- Unit: after keep, Eyrie roost at `opposite(keep)` for each of 4 corners
+- Unit: setup `chooseLeader` — all 4 face-up; viziers match leader columns
+- Unit: Builder craft ignores Disdain; non-Builder item craft = 1 VP
+- Unit: Charismatic decree Recruit places 2 (supply −2); 1 warrior if supply 1? → must place 2 or turmoil (Law: must place two)
+- Unit: Commander attacker gets +1 hit via `extraHits`; defender path unchanged
+- Unit: Despot +1 VP when ≥1 enemy building/token removed in that battle; warriors-only remove → no bonus
+- Unit: turmoil depose — old leader face-down; choose only from face-up; New Clutch when face-up empty
+- Unit: `Game.start` → status `setup` + pending keep; after both choices → `playing` + birdsong seat 0
+- Unit: fixtures / `keepCornerFor` / Field Hospitals still find keep after chosen corner
+- Manual Phaser: Host+Join start → cat picks corner → bird picks leader → first turn; force turmoil → pick new leader (deposed greyed out)
 
 ### Commit plan
-- `feat(web): add GameHub websocket broadcast`
-  - `backend/web/package.json`
-  - `backend/web/src/ws/GameHub.ts`
-  - `backend/web/src/ws/GameHub.test.ts`
-  - `backend/web/src/routes/ws.ts`
-  - `backend/web/src/index.ts`
-- `feat(web): redact opponent hands per viewer`
-  - `backend/web/src/view/redactStateForViewer.ts`
-  - `backend/web/src/view/redactStateForViewer.test.ts`
-  - `backend/web/src/ws/GameHub.ts` (use redact in broadcast)
-- `feat(web): push snapshot after game mutations`
-  - `backend/web/src/routes/game.ts`
-- `feat(web): cors for remote phaser clients`
-  - `backend/web/src/middleware/cors.ts` (or `openapi.ts` / `index.ts`)
-- `feat(phaser): game socket client`
-  - `frontend/phaser/src/api/gameSocket.ts`
-  - `frontend/phaser/src/api/client.ts`
-  - `frontend/phaser/vite.config.ts`
-- `feat(phaser): persist local playerId`
-  - `frontend/phaser/src/game/playerIdentity.ts`
-  - `frontend/phaser/src/game/playerIdentity.test.ts`
-- `feat(phaser): remote host and join session`
-  - `frontend/phaser/src/game/GameSession.ts`
-  - `frontend/phaser/src/game/GameSession.test.ts`
-  - (wire WS apply; drop `startHotSeatGame`; create without replace)
-- `feat(phaser): menu host join continue`
-  - `frontend/phaser/src/scenes/MenuScene.ts`
-  - (Host / Join / Continue by id; QA Continue loaded kept; remove New GP2)
-- `feat(phaser): gate seat input drop handoff`
-  - `frontend/phaser/src/scenes/GameScene.ts`
-  - `frontend/phaser/src/ui/HandoffOverlay.ts` (delete if unused)
-- `feat(phaser): end game delete button`
-  - `frontend/phaser/src/ui/GameDrawer.ts`
-  - `frontend/phaser/src/scenes/GameScene.ts`
-  - `frontend/phaser/src/game/GameSession.ts`
-- `docs(phaser): lan two-player howto`
-  - `frontend/phaser/README.md`
+- `feat(lib): EyrieBoard leader face pools`
+  - `lib/src/state/boards.ts`
+  - `lib/src/game/Game.ts` (`createBoard`)
+  - `lib/src/test/fixtures.ts`
+  - `lib/src/factions/Eyrie.test.ts` (fixture shape only)
+- `feat(lib): tuck viziers by leader table`
+  - `lib/src/factions/Eyrie.ts` (`tuckViziersFor`; setup + turmoil retuck use table; still defaults Builder until choose commits)
+  - `lib/src/factions/Eyrie.test.ts`
+- `feat(lib): Charismatic recruit places two`
+  - `lib/src/factions/Eyrie.ts`
+  - `lib/src/factions/Eyrie.test.ts`
+- `feat(lib): Commander attacker extra hit`
+  - `lib/src/triggers/hooks.ts`
+  - `lib/src/triggers/buildHooks.ts` (if needed)
+  - `lib/src/factions/Eyrie.test.ts` (or battle test)
+- `feat(lib): Despot bonus VP on building/token`
+  - `lib/src/events/battle.ts` (or remove/score hook)
+  - `lib/src/factions/Eyrie.test.ts`
+- `feat(lib): setup status and chooseKeep`
+  - `lib/src/state/types.ts`
+  - `lib/src/events/types.ts`
+  - `lib/src/events/chooseKeep.ts`
+  - `lib/src/events/chooseKeep.test.ts`
+  - `lib/src/events/resolvers.ts`
+  - `lib/src/factions/Marquise.ts`
+  - `lib/src/factions/Eyrie.ts` (`eyrieStartClearing` from keep token)
+  - `lib/src/game/Game.ts`
+  - `lib/src/game/Game.test.ts`
+  - `lib/src/factions/Marquise.test.ts`
+  - (Eyrie roost auto after keep; leader still forced Builder this commit)
+- `feat(lib): setup chooseLeader pending`
+  - `lib/src/events/chooseLeader.ts`
+  - `lib/src/events/chooseLeader.test.ts`
+  - `lib/src/events/resolvers.ts`
+  - `lib/src/factions/Eyrie.ts` (no auto `leader = 'builder'`)
+  - `lib/src/game/Game.ts` (after roost → pending chooseLeader → then `playing`)
+  - `lib/src/factions/Eyrie.test.ts`
+  - `lib/src/game/Game.test.ts`
+- `feat(lib): turmoil depose chooseLeader`
+  - `lib/src/factions/Eyrie.ts` (turmoil stops at Depose → pending; Rest after choose)
+  - `lib/src/events/chooseLeader.ts` (depose path + New Clutch)
+  - `lib/src/game/Game.ts` (if Rest/auto after resolve needs wire)
+  - `lib/src/factions/Eyrie.test.ts`
+- `feat(phaser): setup keep and leader picks`
+  - `frontend/phaser/src/game/eventActionComposer.ts`
+  - `frontend/phaser/src/ui/ActionTray.ts`
+  - `frontend/phaser/src/ui/TurnBanner.ts`
+  - `frontend/phaser/src/ui/EyrieBoard.ts`
+  - matching `*.test.ts`
+- `docs(rules): drop Builder-only setup house rules`
+  - `resources/notes/root-base-rules.md`
