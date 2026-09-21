@@ -92,7 +92,7 @@ describe('GameSession', () => {
     expect(snapshot.error).toBeNull()
   })
 
-  it('hostGame creates and joins once each then opens socket', async () => {
+  it('joinMatch first player creates lobby as marquise and waits', async () => {
     const waiting = makeGameState({ status: 'waiting' })
     const fetchMock = stubFetchSequence([
       { body: { state: waiting }, status: 201 },
@@ -101,8 +101,9 @@ describe('GameSession', () => {
     const socket: SocketController = { push: () => undefined }
     const session = createSession({ socket })
 
-    await session.hostGame({ playerId: 'marquise' })
+    const result = await session.joinMatch()
 
+    expect(result).toBe('waiting')
     expect(fetchMock.mock.calls.length).toBe(2)
     expect(session.getLocalPlayerId()).toBe('marquise')
     expect(session.getSnapshot().error).toBeNull()
@@ -113,28 +114,25 @@ describe('GameSession', () => {
       legalActions: [],
       log: [],
     })
-    expect(session.getSnapshot().state?.status).toBe('waiting')
     expect(session.getLocalSeat()).toBe(0)
   })
 
-  it('joinGame joins once and applies WS push', async () => {
+  it('joinMatch second player joins eyrie and auto-starts', async () => {
     const waiting = makeGameState({ status: 'waiting' })
+    const playing = makeGameState({ status: 'playing' })
     const fetchMock = stubFetchSequence([
+      { body: { code: 'GAME_EXISTS', detail: null }, status: 409 },
       { body: { state: waiting, log: [] } },
+      { body: { state: playing, log: [] } },
     ])
     const socket: SocketController = { push: () => undefined }
     const session = createSession({ socket })
 
-    await session.joinGame({ playerId: 'eyrie' })
+    const result = await session.joinMatch()
 
-    expect(fetchMock.mock.calls.length).toBe(1)
-    socket.push({
-      state: waiting,
-      historyLength: 0,
-      legalActions: [],
-      log: [],
-    })
-    expect(session.getLocalSeat()).toBe(1)
+    expect(result).toBe('playing')
+    expect(fetchMock.mock.calls.length).toBe(3)
+    expect(session.getLocalPlayerId()).toBe('eyrie')
   })
 
   it('submitAction errors when local seat is not actor', async () => {
@@ -167,7 +165,7 @@ describe('GameSession', () => {
     ])
     const socket: SocketController = { push: () => undefined }
     const session = createSession({ socket })
-    await session.hostGame({ playerId: 'marquise' })
+    await session.joinMatch()
     socket.push({
       state,
       historyLength: 2,

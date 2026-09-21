@@ -7,14 +7,12 @@ export type MenuSceneData = {
   session?: GameSession
 }
 
-const GP2_FACTIONS: string[] = ['marquise', 'eyrie']
-const DEFAULT_HOST_PLAYER_ID = 'marquise'
-const DEFAULT_GUEST_PLAYER_ID = 'eyrie'
-
 export class MenuScene extends Phaser.Scene {
   private session: GameSession | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private apiBaseUrlInput: string = ''
+  private unsubscribe: (() => void) | null = null
+  private enteredGame = false
 
   constructor() {
     super({ key: 'MenuScene' })
@@ -27,13 +25,14 @@ export class MenuScene extends Phaser.Scene {
         api: createPhaserApi({ baseUrl: '' }),
         apiBaseUrl: '',
       })
+    this.enteredGame = false
   }
 
   create(): void {
     const { width, height } = this.scale
 
     this.add
-      .text(width / 2, height * 0.14, 'Root', {
+      .text(width / 2, height * 0.18, 'Root', {
         fontFamily: 'Georgia, serif',
         fontSize: '56px',
         color: '#f0e6d3',
@@ -41,7 +40,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
 
     this.add
-      .text(width / 2, height * 0.22, 'Marquise vs Eyrie · two machines', {
+      .text(width / 2, height * 0.28, 'Marquise vs Eyrie', {
         fontFamily: 'monospace',
         fontSize: '16px',
         color: '#9a9a9a',
@@ -49,7 +48,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
 
     this.add
-      .text(width / 2, height * 0.3, 'API base (empty = Vite proxy)', {
+      .text(width / 2, height * 0.36, 'API base (empty = Vite proxy)', {
         fontFamily: 'monospace',
         fontSize: '12px',
         color: '#7a7a7a',
@@ -57,7 +56,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
 
     const apiField = this.add
-      .text(width / 2, height * 0.34, 'http://HOST:3000', {
+      .text(width / 2, height * 0.4, '(same-origin proxy)', {
         fontFamily: 'monospace',
         fontSize: '14px',
         color: '#1a1a1a',
@@ -94,24 +93,25 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
 
-    this.addMenuButton(width / 2, height * 0.44, 'Host GP2', () => {
-      void this.handleHost()
+    this.addMenuButton(width / 2, height * 0.52, 'Join game', () => {
+      void this.handleJoinMatch()
     })
-    this.addMenuButton(width / 2, height * 0.54, 'Join GP2', () => {
-      void this.handleJoin()
-    })
-    this.addMenuButton(width / 2, height * 0.64, 'Continue', () => {
+    this.addMenuButton(width / 2, height * 0.62, 'Continue', () => {
       void this.handleContinue()
     })
     this.addMenuButton(
       width / 2,
-      height * 0.74,
+      height * 0.72,
       'QA: Continue loaded game',
       () => {
         void this.handleQaContinue()
       },
       '#c8d8f0',
     )
+  }
+
+  shutdown(): void {
+    this.clearLobbyWait()
   }
 
   private addMenuButton(
@@ -145,58 +145,59 @@ export class MenuScene extends Phaser.Scene {
     )
   }
 
-  private async handleHost(): Promise<void> {
+  private async handleJoinMatch(): Promise<void> {
     if (this.session === null) {
       return
     }
-    this.rebindSessionApi()
-    this.setStatus('Hosting lobby…', '#9a9a9a')
-    await this.session.hostGame({
-      playerId: DEFAULT_HOST_PLAYER_ID,
-      factions: GP2_FACTIONS,
-    })
-    const snapshot = this.session.getSnapshot()
-    if (snapshot.error !== null) {
-      this.setStatus(snapshot.error, '#c44')
-      return
-    }
-    this.setStatus('Lobby ready — waiting / Start when 2 players', '#9a9a9a')
-    await this.maybeStartAndEnter()
-  }
-
-  private async handleJoin(): Promise<void> {
-    if (this.session === null) {
-      return
-    }
+    this.clearLobbyWait()
     this.rebindSessionApi()
     this.setStatus('Joining…', '#9a9a9a')
-    await this.session.joinGame({ playerId: DEFAULT_GUEST_PLAYER_ID })
-    const snapshot = this.session.getSnapshot()
-    if (snapshot.error !== null) {
-      this.setStatus(snapshot.error, '#c44')
+
+    const result = await this.session.joinMatch()
+    if (result === null) {
+      this.setStatus(this.session.getSnapshot().error ?? 'Join failed', '#c44')
       return
     }
-    this.setStatus('Joined — Start when ready', '#9a9a9a')
-    await this.maybeStartAndEnter()
+
+    if (result === 'playing') {
+      this.enterGame()
+      return
+    }
+
+    this.setStatus('Waiting for second player…', '#9a9a9a')
+    this.waitUntilPlaying()
   }
 
-  private async maybeStartAndEnter(): Promise<void> {
+  private waitUntilPlaying(): void {
     if (this.session === null) {
       return
     }
-    const shouldStart = window.confirm(
-      'Start game now? (Cancel to wait — use Continue later)',
-    )
-    if (!shouldStart) {
+    this.clearLobbyWait()
+    this.unsubscribe = this.session.subscribe((snapshot) => {
+      if (snapshot.error !== null) {
+        this.setStatus(snapshot.error, '#c44')
+        return
+      }
+      if (snapshot.state?.status === 'playing') {
+        this.enterGame()
+      }
+    })
+  }
+
+  private enterGame(): void {
+    if (this.enteredGame || this.session === null) {
       return
     }
-    await this.session.startLobby()
-    const snapshot = this.session.getSnapshot()
-    if (snapshot.error !== null) {
-      this.setStatus(snapshot.error, '#c44')
-      return
-    }
+    this.enteredGame = true
+    this.clearLobbyWait()
     this.scene.start('GameScene', { session: this.session })
+  }
+
+  private clearLobbyWait(): void {
+    if (this.unsubscribe !== null) {
+      this.unsubscribe()
+      this.unsubscribe = null
+    }
   }
 
   private async handleContinue(): Promise<void> {
@@ -217,7 +218,12 @@ export class MenuScene extends Phaser.Scene {
       this.setStatus(snapshot.error, '#c44')
       return
     }
-    this.scene.start('GameScene', { session: this.session })
+    if (snapshot.state?.status === 'playing') {
+      this.enterGame()
+      return
+    }
+    this.setStatus('Waiting for second player…', '#9a9a9a')
+    this.waitUntilPlaying()
   }
 
   private async handleQaContinue(): Promise<void> {
@@ -236,7 +242,7 @@ export class MenuScene extends Phaser.Scene {
       this.setStatus('No playing game on API — load a snapshot first', '#c44')
       return
     }
-    this.scene.start('GameScene', { session: this.session })
+    this.enterGame()
   }
 
   private setStatus(message: string, color: string): void {
