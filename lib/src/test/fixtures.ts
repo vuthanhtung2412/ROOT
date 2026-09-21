@@ -75,9 +75,10 @@ export function marquiseBoard(
 
 export function eyrieBoard(overrides?: Partial<EyrieBoard>): EyrieBoard {
   const leader = overrides?.leader !== undefined ? overrides.leader : 'builder'
+  const emptyLeadersFaceDown: EyrieBoard['leadersFaceDown'] = []
   const defaultPools =
     leader === null
-      ? { leadersFaceUp: [...EYRIE_LEADERS], leadersFaceDown: [] as EyrieBoard['leadersFaceDown'] }
+      ? { leadersFaceUp: [...EYRIE_LEADERS], leadersFaceDown: emptyLeadersFaceDown }
       : eyrieLeaderPools(leader)
   return {
     kind: 'eyrie',

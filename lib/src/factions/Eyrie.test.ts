@@ -9,6 +9,7 @@ import { removePieces } from '../rules/remove.js'
 import { resetPlaceIds } from '../rules/place.js'
 import { craftCard } from '../rules/craft.js'
 import { HAND_LIMIT } from '../state/constants.js'
+import { DECREE_COLUMNS, EYRIE_LEADERS, type DecreeColumn, type EyrieLeader } from '../state/boards.js'
 import type { DecreeCursor } from '../state/types.js'
 import { defaultRuleHooks } from '../triggers/hooks.js'
 import { card, eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
@@ -752,22 +753,21 @@ describe('Law 7.8 Leaders Reference', () => {
   })
 
   it('Rule: 7.8 — vizier columns match each leader', () => {
-    const expected = {
+    const expected: Record<EyrieLeader, [DecreeColumn, DecreeColumn]> = {
       builder: ['recruit', 'move'],
       charismatic: ['recruit', 'battle'],
       commander: ['move', 'battle'],
       despot: ['move', 'build'],
-    } as const
-    for (const [leader, [colA, colB]] of Object.entries(expected)) {
-      const board = eyrieBoard({
-        leader: leader as 'builder' | 'charismatic' | 'commander' | 'despot',
-      })
-      tuckViziersFor(board, leader as 'builder' | 'charismatic' | 'commander' | 'despot')
+    }
+    for (const leader of EYRIE_LEADERS) {
+      const [colA, colB] = expected[leader]
+      const board = eyrieBoard({ leader })
+      tuckViziersFor(board, leader)
       expect(board.decree[colA]).toHaveLength(1)
       expect(board.decree[colB]).toHaveLength(1)
       expect(isVizier(board.decree[colA]![0]!)).toBe(true)
       expect(isVizier(board.decree[colB]![0]!)).toBe(true)
-      for (const column of ['recruit', 'move', 'battle', 'build'] as const) {
+      for (const column of DECREE_COLUMNS) {
         if (column !== colA && column !== colB) {
           expect(board.decree[column]).toHaveLength(0)
         }
