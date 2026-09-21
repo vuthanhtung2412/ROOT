@@ -19,9 +19,9 @@ export const app = new OpenAPIHono()
 app.use('*', corsMiddleware)
 app.onError(onError)
 
-const rootRoute = createRoute({
+const healthRoute = createRoute({
   method: 'get',
-  path: '/',
+  path: '/health',
   tags: ['meta'],
   summary: 'Service info',
   responses: {
@@ -44,7 +44,7 @@ const rootRoute = createRoute({
   },
 })
 
-app.openapi(rootRoute, (context) => {
+app.openapi(healthRoute, (context) => {
   return context.json(
     {
       service: '@root/web',

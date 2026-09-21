@@ -355,7 +355,7 @@
     "parameters": {}
   },
   "paths": {
-    "/": {
+    "/health": {
       "get": {
         "tags": [
           "meta"
