@@ -35,6 +35,9 @@ importers:
       hono:
         specifier: ^4.13.8
         version: 4.13.8
+      ws:
+        specifier: ^8.21.3
+        version: 8.21.3
       zod:
         specifier: ^4.6.5
         version: 4.6.5
@@ -42,12 +45,18 @@ importers:
       '@types/node':
         specifier: ^26.1.1
         version: 26.6.1
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       tsx:
         specifier: ^4.23.0
         version: 4.23.13
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vitest:
+        specifier: ^5.0.1
+        version: 5.0.1(@types/node@26.6.1)(vite@8.3.0(@types/node@26.6.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.1))
 
   backend/web_client:
     dependencies:
@@ -519,6 +528,9 @@ packages:
 
   '@types/node@26.6.1':
     resolution: {integrity: sha512-VqGJBMCtdhqkBUCcBLvywI0NJ+KLuVzgNnlBUNFOQjqVxzo2lxLUNg1DSey8+u2u6ktswSAxg+s68QLzWHNOuA==}
+
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@typescript-eslint/eslint-plugin@8.70.0':
     resolution: {integrity: sha512-/v8HZt6RlyIZxB3ntehELOcUcfxKPVGWXnQdJuHRmzrqgF8nQypcC/oxGW+Ot4VGKDq81XugPKxx0n5PBtf9PA==}
@@ -1328,6 +1340,18 @@ packages:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
 
+  ws@8.21.3:
+    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   yaml@2.9.1:
     resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
     engines: {node: '>= 14.6'}
@@ -1608,6 +1632,10 @@ snapshots:
   '@types/node@26.6.1':
     dependencies:
       undici-types: 8.9.0
+
+  '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 26.6.1
 
   '@typescript-eslint/eslint-plugin@8.70.0(@typescript-eslint/parser@8.70.0(@typescript/typescript6@6.0.2)(eslint@10.10.0))(@typescript/typescript6@6.0.2)(eslint@10.10.0)':
     dependencies:
@@ -2337,6 +2365,8 @@ snapshots:
       stackback: 0.0.2
 
   word-wrap@1.2.5: {}
+
+  ws@8.21.3: {}
 
   yaml@2.9.1: {}
 
