@@ -95,6 +95,10 @@ export function connectGameSocket(
   }
 
   function attach(current: SocketLike): void {
+    current.addEventListener('open', () => {
+      reconnectAttempts = 0
+    })
+
     current.addEventListener('message', (event: Event) => {
       const data = messageData(event)
       if (data === null) {
