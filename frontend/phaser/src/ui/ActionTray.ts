@@ -23,6 +23,8 @@ export class ActionTray {
       fontFamily: 'Georgia, serif',
       fontSize: '16px',
       color: '#f0e6d3',
+      backgroundColor: '#0a0a0add',
+      padding: { x: 8, y: 4 },
     })
     this.root = scene.add
       .container(width - 210, 56, [this.title])
