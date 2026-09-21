@@ -10,7 +10,7 @@ export type PieceRemoval = {
   clearing: ClearingId
   pieceIds: string[]
   scorer?: Seat
-  options?: { skipFieldHospital?: boolean }
+  options?: { skipFieldHospital?: boolean; fromBattle?: boolean }
 }
 
 export function returnWarriorsToSupply(state: GameState, seat: Seat, count: number): void {
@@ -102,6 +102,16 @@ export function removePieces(
       reason: 'removed building/token',
     })
     ctx?.emit({ s: 'vp', actor, delta: victoryPointsDelta })
+
+    // Rule: 7.8.4 Despot — in battle, ≥1 enemy building/token → +1 extra VP.
+    if (options?.fromBattle === true) {
+      const board = playerOf(state, actor).board
+      if (board.kind === 'eyrie' && board.leader === 'despot') {
+        playerOf(state, actor).vp += 1
+        logs.push({ t: 'vp', actor, delta: 1, reason: 'despot' })
+        ctx?.emit({ s: 'vp', actor, delta: 1 })
+      }
+    }
   }
 
   for (const [victim, count] of victims) {

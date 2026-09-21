@@ -179,7 +179,12 @@ function applyRemovalStage(
   }
   return removePieces(
     state,
-    { clearing: event.clearing, pieceIds: action.pieceIds, scorer },
+    {
+      clearing: event.clearing,
+      pieceIds: action.pieceIds,
+      scorer,
+      options: { fromBattle: true },
+    },
     ctx,
   )
 }
