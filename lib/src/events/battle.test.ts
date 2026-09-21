@@ -4,6 +4,7 @@ import { warriors } from '../queries/pieces.js'
 import { resetPlaceIds } from '../rules/place.js'
 import {
   card,
+  eyrieBoard,
   minimalState,
   player,
   testContext,
@@ -186,6 +187,32 @@ describe('battleResolver', () => {
     const event = battleEvent({ hits: { attacker: 0, defender: 0 } })
     applyDefenseless(state, event)
     expect(event.hits.attacker).toBe(1)
+  })
+
+  it('Rule: 7.8.3 Commander — attacker deals +1 hit', () => {
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'eyrie', { board: eyrieBoard({ leader: 'commander' }) }),
+          player(1, 'marquise'),
+        ],
+      }),
+      0,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'a2', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+        { id: 'd2', kind: 'warrior', owner: 1 },
+      ],
+    )
+    // dice [0, 0] → base hits 0; Commander adds 1
+    const context = battleContext({ dice: [0, 0] })
+    let event = battleEvent({ clearing: 0, attacker: 0, defender: 1 })
+    state.pending = [event]
+    apply(state, event, { type: 'resolveEvent', decline: true }, 1, context)
+    event = requireBattleEvent(state.pending[0])
+    expect(event.hits.attacker).toBe(1)
+    expect(event.hits.defender).toBe(0)
   })
 
   it('Rule: Battle 3 — both have effects → attacker picks order', () => {

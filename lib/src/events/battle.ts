@@ -248,6 +248,7 @@ export function applyDefenseless(state: GameState, event: BattleEvent): void {
 
 function finalizeHitsAndRemoval(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   applyDefenseless(state, event)
+  applyCommanderBonus(state, event)
   ctx.emit({ s: 'battle.hits', ev: event, side: 'attacker' })
   ctx.emit({ s: 'battle.hits', ev: event, side: 'defender' })
 
@@ -260,6 +261,14 @@ function finalizeHitsAndRemoval(state: GameState, event: BattleEvent, ctx: Ctx):
     return []
   }
   return finishBattle(state, event, ctx)
+}
+
+/** Rule: 7.8.3 Commander — as attacker, deal an extra hit. */
+function applyCommanderBonus(state: GameState, event: BattleEvent): void {
+  const board = playerOf(state, event.attacker).board
+  if (board.kind === 'eyrie' && board.leader === 'commander') {
+    event.hits.attacker += 1
+  }
 }
 
 function processEffectsQueue(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
