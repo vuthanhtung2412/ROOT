@@ -12,10 +12,11 @@ export type PlayerIdentityStorage = {
 }
 
 function defaultStorage(): PlayerIdentityStorage | null {
-  if (typeof localStorage === 'undefined') {
+  // sessionStorage = per browser tab so two windows on one machine keep seats.
+  if (typeof sessionStorage === 'undefined') {
     return null
   }
-  return localStorage
+  return sessionStorage
 }
 
 function isStoredPlayerIdentity(value: unknown): value is StoredPlayerIdentity {

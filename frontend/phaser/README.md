@@ -1,33 +1,29 @@
 # `@root/phaser`
 
-Vite + Phaser 3 **GP2 remote client**: Marquise vs Eyrie (Builder) on two machines.
+Vite + Phaser 3 **GP2 remote client**: Marquise vs Eyrie (Builder). Two browser sessions talk to one `@root/web`.
 
 Phaser **never mutates** engine state. Commands go REST (`POST /game/...`). UI state comes from **WebSocket** pushes (`/ws?playerId=…`) with **opponent hands redacted**. CLI/REST keep full state for QA.
 
-## Play GP2 (LAN, two machines)
+## Play GP2 (one machine, two windows)
 
 ```bash
-# Machine A (host) — API
 pnpm --filter @root/web dev
-
-# Machine A — Phaser
 pnpm --filter @root/phaser dev
 ```
 
-```bash
-# Machine B — Phaser (same repo)
-pnpm --filter @root/phaser dev
-```
+Open Vite URL **twice** (two tabs or windows):
 
-1. **Host (A):** menu **Host GP2** (API base empty if Vite proxies to local `:3000`). Joins as `marquise`, waits.
-2. **Join (B):** set API base to `http://<A-LAN-IP>:3000` (or leave empty if B’s Vite `ROOT_API` points at A). **Join GP2** as `eyrie`.
-3. Either side confirms **Start** when prompted (2 players in lobby).
-4. Turns alternate; waiting client sees “Waiting for other player…” and cannot submit.
-5. **Continue** after refresh restores seat from `localStorage` (`playerId` + `apiBaseUrl`).
-6. **End game** (drawer, two-click confirm) → `DELETE /game`, clears identity, both return to menu via empty WS.
-7. **QA: Continue loaded game** — REST poll of whatever is in the slot (playtest dumps; not for normal play).
+1. Window A → **Host GP2** (API base empty) → joins as `marquise`
+2. Window B → **Join GP2** → joins as `eyrie`
+3. Either window confirms **Start** when prompted
+4. Play; waiting window cannot submit
+5. **Continue** after refresh uses **sessionStorage** (per tab — seats stay separate)
+6. **End game** (drawer, two-click) → clears slot; peers return to menu
+7. **QA: Continue loaded game** — REST poll of slot dumps (not normal play)
 
-Vite listens on LAN (`server.host: true`) and proxies `/game`, `/map`, `/ws`.
+Same flow on two machines: B sets API base to `http://<A-ip>:3000` (or open A’s Vite LAN URL). Vite `server.host: true` + proxies `/game`, `/map`, `/ws`.
+
+Identity: `sessionStorage` key `root.phaser.playerIdentity` (`playerId` + `apiBaseUrl`).
 
 ## Architecture
 
@@ -35,7 +31,7 @@ Vite listens on LAN (`server.host: true`) and proxies `/game`, `/map`, `/ws`.
 |---|---|
 | `GameSession` | host/join/start/continue + REST commands + WS apply |
 | `gameSocket` | connect / reconnect / parse push |
-| `playerIdentity` | persist `playerId` + `apiBaseUrl` |
+| `playerIdentity` | persist `playerId` + `apiBaseUrl` (sessionStorage) |
 | `ActionComposer` + faction/event hooks | stage choices → `Action` |
 | Scenes | Boot → Menu → Game |
 | UI | board, HUD, hand, trays, overlays |
