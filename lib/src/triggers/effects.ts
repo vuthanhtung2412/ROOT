@@ -6,10 +6,17 @@ import type { RuleHooks } from './hooks.js'
 
 export type Listener = (state: GameState, signal: GameSignal, ctx: Ctx) => void
 
+/** Partial hook overrides may return `undefined` to skip (fold in buildRuleHooks). */
+export type RuleHookOverrides = {
+  [HookName in keyof RuleHooks]?: (
+    ...args: Parameters<RuleHooks[HookName]>
+  ) => ReturnType<RuleHooks[HookName]> | undefined
+}
+
 export type CardEffect = {
   defId: string
   onSignal?: Listener
-  hooks?: Partial<RuleHooks>
+  hooks?: RuleHookOverrides
   grants?: (state: GameState) => ActionSpec[]
 }
 
