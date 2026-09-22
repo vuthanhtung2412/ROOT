@@ -43,6 +43,7 @@ function scratch(decree: DecreeCursor | null = null, decreeDone = false) {
       propagandaUsed: false,
       saboteursUsed: false,
       falseOrdersUsed: false,
+      eyrieEmigreCompleted: false,
     emergencyOrdersDone: false,
     eveningScoreDone: false,
     decree,

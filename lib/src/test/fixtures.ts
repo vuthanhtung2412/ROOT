@@ -143,6 +143,7 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
       propagandaUsed: false,
       saboteursUsed: false,
       falseOrdersUsed: false,
+      eyrieEmigreCompleted: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,

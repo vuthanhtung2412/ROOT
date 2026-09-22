@@ -82,6 +82,7 @@ function makeState(players: PlayerState[]): GameState {
       propagandaUsed: false,
       saboteursUsed: false,
       falseOrdersUsed: false,
+      eyrieEmigreCompleted: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,

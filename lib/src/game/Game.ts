@@ -28,6 +28,7 @@ import { tryApplyLeague } from '../effects/leagueOfAdventurousMice.js'
 import { tryApplyPropagandaBureau } from '../effects/propagandaBureau.js'
 import { tryApplySaboteurs } from '../effects/saboteurs.js'
 import { tryApplyFalseOrders } from '../effects/falseOrders.js'
+import { tryApplyEyrieEmigre } from '../effects/eyrieEmigre.js'
 import { tryApplySwapMeet } from '../effects/swapMeet.js'
 import { RESOLVERS } from '../events/resolvers.js'
 import { EFFECTS } from '../triggers/effects.js'
@@ -135,6 +136,7 @@ function initialState(args: {
       propagandaUsed: false,
       saboteursUsed: false,
       falseOrdersUsed: false,
+      eyrieEmigreCompleted: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
@@ -429,6 +431,13 @@ export class Game {
       if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
       return
     }
+    if (action.type === 'eyrieEmigre') {
+      const ok = legal.some(
+        (spec) => spec.type === 'eyrieEmigre' && spec.actor === this.state.currentSeat,
+      )
+      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
+      return
+    }
     const ok = legal.some(
       (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
     )
@@ -472,6 +481,9 @@ export class Game {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         if (tryApplyFalseOrders(this.state, action, ctx)) {
+          return [{ t: 'action', actor: this.state.currentSeat, action }]
+        }
+        if (tryApplyEyrieEmigre(this.state, action, ctx)) {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
@@ -580,6 +592,7 @@ export class Game {
       propagandaUsed: false,
       saboteursUsed: false,
       falseOrdersUsed: false,
+      eyrieEmigreCompleted: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
@@ -625,6 +638,7 @@ export class Game {
           propagandaUsed: false,
           saboteursUsed: false,
           falseOrdersUsed: false,
+          eyrieEmigreCompleted: false,
           emergencyOrdersDone: false,
           eveningScoreDone: false,
           decree: null,
