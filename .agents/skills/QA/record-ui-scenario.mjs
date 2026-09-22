@@ -538,8 +538,8 @@ async function driveCharacterBoard(page, canvas, seat) {
   })
   await page.waitForTimeout(1800)
 
-  // Close button near bottom center
-  await clickGame(page, canvas, 640, 720 - 40)
+  // Close button top-right corner
+  await clickGame(page, canvas, 1280 - 20, 18)
   await page.waitForTimeout(600)
 }
 

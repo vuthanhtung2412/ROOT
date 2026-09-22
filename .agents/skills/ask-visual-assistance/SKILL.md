@@ -92,4 +92,4 @@ If helper **missing**: create **one** minimal `index.html` (+ tiny inline JS/CSS
 - **Region / cell rect:** `{ x, y, width, height }` where **`x,y` = top-left corner** of the box, `width`/`height` extend right/down. Same as CSS `left`/`top`/`width`/`height` in the helper (`syncRegionDom`).
 - **Track stack:** `tracks[].x,y` = top-left of cell `0`; later cells use `cellSize` + `gaps[]` (or exported `regions` like `sawmill-3`).
 - **Not** center-point coords. Do **not** treat `x,y` as sprite position with origin `(0.5,0.5)`.
-- **Wiring tokens/icons:** place at rect **center** in screen space: `(x + width/2, y + height/2)` after scaling the rect onto the displayed board (Phaser image default origin `0.5,0.5` sits on that point). Text overlays may use top-left of the same rect.
+- **Wiring tokens/icons:** after scaling the rect onto the displayed board, set sprite **origin `(0,0)` at rect `x,y` (top-left)** and **`setDisplaySize(width, height)`** so the art fills the marked box. Leader cards may uniform-scale (contain) from the same top-left. Text overlays also use top-left of the rect.
