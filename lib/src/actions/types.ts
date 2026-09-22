@@ -101,6 +101,12 @@ export type Action =
       clearing: ClearingId
       defender: Seat
     }
+  | {
+      type: 'propagandaBureau'
+      cardId: string
+      clearing: ClearingId
+      pieceId: string
+    }
   | { type: 'discard'; cardIds: string[] }
   | { type: 'addToDecree'; cards: AddToDecreeCard[] }
   | { type: 'newRoost'; clearing: ClearingId }

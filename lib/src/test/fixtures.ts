@@ -140,6 +140,7 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
       swapMeetUsed: false,
       charmOffensiveUsed: false,
       leagueUsed: false,
+      propagandaUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
