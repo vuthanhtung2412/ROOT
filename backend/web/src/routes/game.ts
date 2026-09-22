@@ -6,9 +6,9 @@ import {
   toSvg,
 } from '@root/lib'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { logGameEvent } from '../debug/logGame.js'
-import { gameExists, HttpError, noGame } from '../middleware/errors.js'
-import { errorResponses, ReplaceQuerySchema } from '../schemas/common.js'
+import { logGameEvent } from '#debug/logGame.js'
+import { gameExists, HttpError, noGame } from '#middleware/errors.js'
+import { errorResponses, ReplaceQuerySchema } from '#schemas/common.js'
 import {
   ActionResultSchema,
   ActionSchema,
@@ -20,14 +20,14 @@ import {
   LegalActionsResponseSchema,
   LogResponseSchema,
   UndoResponseSchema,
-} from '../schemas/game.js'
-import { store } from '../store/GameStore.js'
-import { broadcastCurrentGame } from '../ws/GameHub.js'
+} from '#schemas/game.js'
+import { store } from '#store/GameStore.js'
+import { broadcastCurrentGame } from '#ws/GameHub.js'
 import {
   isAction,
   isFactionIdArray,
   isGameSnapshot,
-} from '../typeGuards.js'
+} from '#typeGuards.js'
 
 function requireGame(): Game {
   if (!store.game) noGame()

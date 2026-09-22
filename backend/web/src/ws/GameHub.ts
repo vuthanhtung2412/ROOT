@@ -1,6 +1,6 @@
-import { redactLegalActionsForViewer } from '../view/redactLegalActionsForViewer.js'
-import { redactStateForViewer } from '../view/redactStateForViewer.js'
-import { store } from '../store/GameStore.js'
+import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
+import { redactStateForViewer } from '#view/redactStateForViewer.js'
+import { store } from '#store/GameStore.js'
 
 export type GamePushPayload = {
   state: unknown | null

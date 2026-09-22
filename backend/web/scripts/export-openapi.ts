@@ -7,7 +7,7 @@
 import { writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getOpenApiDocument } from '../src/openapi.ts'
+import { getOpenApiDocument } from '#openapi.ts'
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const outputPath = resolve(scriptDirectory, '../openapi.json')

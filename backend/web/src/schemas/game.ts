@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi'
-import { FactionIdSchema, JsonObjectSchema } from './common.js'
+import { FactionIdSchema, JsonObjectSchema } from '#schemas/common.js'
 
 export const GameStateSchema = JsonObjectSchema.openapi('GameState')
 

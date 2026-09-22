@@ -1,10 +1,10 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { compress } from 'hono/compress'
 import { LIB_NAME, LIB_VERSION } from '@root/lib'
-import { corsMiddleware } from './middleware/cors.js'
-import { onError } from './middleware/errors.js'
-import { gameRoutes } from './routes/game.js'
-import { mapRoutes } from './routes/map.js'
+import { corsMiddleware } from '#middleware/cors.js'
+import { onError } from '#middleware/errors.js'
+import { gameRoutes } from '#routes/game.js'
+import { mapRoutes } from '#routes/map.js'
 
 const openApiInfo = {
   openapi: '3.0.0' as const,

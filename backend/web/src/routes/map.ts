@@ -1,6 +1,6 @@
 import { FALL, FALL_LAYOUT } from '@root/lib'
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
-import { FallLayoutResponseSchema, FallMapResponseSchema } from '../schemas/map.js'
+import { FallLayoutResponseSchema, FallMapResponseSchema } from '#schemas/map.js'
 
 export const mapRoutes = new OpenAPIHono()
 

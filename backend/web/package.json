@@ -1,6 +1,9 @@
 {
   "name": "@root/web",
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",

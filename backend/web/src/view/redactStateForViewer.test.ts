@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GameState, PlayerState } from '@root/lib'
-import { redactStateForViewer } from './redactStateForViewer.js'
+import { redactStateForViewer } from '#view/redactStateForViewer.js'
 
 function marquisePlayer(
   playerId: string,

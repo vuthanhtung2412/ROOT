@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs'
 import { serve } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
-import { app } from './openapi.js'
-import { attachGameWebSocket } from './routes/ws.js'
-import { mountPhaserStatic, phaserPublicDirectory } from './static.js'
+import { app } from '#openapi.js'
+import { attachGameWebSocket } from '#routes/ws.js'
+import { mountPhaserStatic, phaserPublicDirectory } from '#static.js'
 
 attachGameWebSocket(app)
 mountPhaserStatic(app)

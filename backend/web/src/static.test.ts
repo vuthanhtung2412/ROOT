@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cacheControlForStaticPath } from './static.js'
+import { cacheControlForStaticPath } from '#static.js'
 
 describe('cacheControlForStaticPath', () => {
   it('forces revalidation for index.html', () => {

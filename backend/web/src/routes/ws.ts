@@ -5,7 +5,7 @@ import {
   gameHub,
   snapshotGamePushForViewer,
   type GameHubClient,
-} from '../ws/GameHub.js'
+} from '#ws/GameHub.js'
 
 const OPEN_READY_STATE = 1
 
