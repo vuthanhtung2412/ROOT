@@ -40,7 +40,7 @@ describe('craftCard', () => {
       testContext({ onSignal: (signal) => signals.push(signal) }),
     )
     expect(state.players[0]!.vp).toBe(defOf(hammer).vp)
-    expect(state.players[0]!.craftedItems).toContain('hammer')
+    expect(state.players[0]!.craftedItems.map((item) => item.type)).toContain('hammer')
     expect(signals.some((signal) => signal.s === 'craft.item')).toBe(true)
     const vpIndex = signals.findIndex((signal) => signal.s === 'vp')
     const craftIndex = signals.findIndex((signal) => signal.s === 'craft.item')

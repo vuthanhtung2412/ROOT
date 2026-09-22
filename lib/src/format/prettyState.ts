@@ -150,7 +150,7 @@ function playerBlock(p: GameState['players'][number]): string[] {
     `  ${playerRef(p)} VP=${p.vp}`,
     ...cardsBlock('    ', 'hand', p.hand),
     ...cardsBlock('    ', 'crafted', p.playArea, { effect: true }),
-    `    items: ${p.craftedItems.length ? p.craftedItems.join(', ') : '(none)'}`,
+    `    items: ${p.craftedItems.length ? p.craftedItems.map((item) => `${item.type}${item.exhausted ? ' (exhausted)' : ''}`).join(', ') : '(none)'}`,
     ...boardLines(p.board),
   ]
 }
