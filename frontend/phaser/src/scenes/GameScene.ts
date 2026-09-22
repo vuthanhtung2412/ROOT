@@ -525,7 +525,9 @@ export class GameScene extends Phaser.Scene {
     if (this.statusText === null) {
       return
     }
-    this.statusText.setText(extra ?? '')
+    const message = extra ?? ''
+    this.statusText.setText(message)
+    this.statusText.setVisible(message.length > 0)
   }
 }
 
