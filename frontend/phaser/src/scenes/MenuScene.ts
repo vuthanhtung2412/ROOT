@@ -53,42 +53,6 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
 
-    this.add
-      .text(width / 2, height * 0.36, 'API base (empty = Vite proxy)', {
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        color: '#7a7a7a',
-      })
-      .setOrigin(0.5)
-
-    const apiField = this.add
-      .text(width / 2, height * 0.4, '(same-origin proxy)', {
-        fontFamily: 'monospace',
-        fontSize: '14px',
-        color: '#1a1a1a',
-        backgroundColor: '#e8e0d0',
-        padding: { x: 12, y: 8 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-
-    apiField.on('pointerdown', () => {
-      const entered = window.prompt(
-        'API base URL (empty for same-origin proxy)',
-        this.apiBaseUrlInput,
-      )
-      if (entered === null) {
-        return
-      }
-      this.apiBaseUrlInput = entered.trim()
-      apiField.setText(
-        this.apiBaseUrlInput === ''
-          ? '(same-origin proxy)'
-          : this.apiBaseUrlInput,
-      )
-      this.rebindSessionApi()
-    })
-
     this.statusText = this.add
       .text(width / 2, height * 0.88, '', {
         fontFamily: 'monospace',
@@ -99,18 +63,20 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
 
-    this.addMenuButton(width / 2, height * 0.52, 'Play', () => {
+    this.addMenuButton(width / 2, height * 0.48, 'Play', () => {
       void this.handlePlay()
     })
-    this.addMenuButton(
-      width / 2,
-      height * 0.64,
-      'QA: Continue loaded game',
-      () => {
-        void this.handleQaContinue()
-      },
-      '#c8d8f0',
-    )
+    if (import.meta.env.DEV) {
+      this.addMenuButton(
+        width / 2,
+        height * 0.6,
+        'QA: Continue loaded game',
+        () => {
+          void this.handleQaContinue()
+        },
+        '#c8d8f0',
+      )
+    }
   }
 
   shutdown(): void {
