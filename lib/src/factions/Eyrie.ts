@@ -947,6 +947,7 @@ export class Eyrie extends Faction {
       charmOffensiveUsed: false,
       leagueUsed: false,
       propagandaUsed: false,
+      saboteursUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,

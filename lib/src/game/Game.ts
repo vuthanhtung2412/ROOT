@@ -26,6 +26,7 @@ import { tryApplyCharmOffensive } from '../effects/charmOffensive.js'
 import { tryApplyInformants } from '../effects/informants.js'
 import { tryApplyLeague } from '../effects/leagueOfAdventurousMice.js'
 import { tryApplyPropagandaBureau } from '../effects/propagandaBureau.js'
+import { tryApplySaboteurs } from '../effects/saboteurs.js'
 import { tryApplySwapMeet } from '../effects/swapMeet.js'
 import { RESOLVERS } from '../events/resolvers.js'
 import { EFFECTS } from '../triggers/effects.js'
@@ -131,6 +132,7 @@ function initialState(args: {
       charmOffensiveUsed: false,
       leagueUsed: false,
       propagandaUsed: false,
+      saboteursUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
@@ -411,6 +413,13 @@ export class Game {
       if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
       return
     }
+    if (action.type === 'saboteurs') {
+      const ok = legal.some(
+        (spec) => spec.type === 'saboteurs' && spec.actor === this.state.currentSeat,
+      )
+      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
+      return
+    }
     const ok = legal.some(
       (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
     )
@@ -448,6 +457,9 @@ export class Game {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         if (tryApplyPropagandaBureau(this.state, action, ctx)) {
+          return [{ t: 'action', actor: this.state.currentSeat, action }]
+        }
+        if (tryApplySaboteurs(this.state, action, ctx)) {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
@@ -554,6 +566,7 @@ export class Game {
       charmOffensiveUsed: false,
       leagueUsed: false,
       propagandaUsed: false,
+      saboteursUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
@@ -597,6 +610,7 @@ export class Game {
           charmOffensiveUsed: false,
           leagueUsed: false,
           propagandaUsed: false,
+          saboteursUsed: false,
           emergencyOrdersDone: false,
           eveningScoreDone: false,
           decree: null,

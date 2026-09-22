@@ -63,6 +63,7 @@ export type GameState = {
     charmOffensiveUsed: boolean
     leagueUsed: boolean
     propagandaUsed: boolean
+    saboteursUsed: boolean
     emergencyOrdersDone: boolean
     eveningScoreDone: boolean
     /** Decree cursor for current column; null until ensure or after column done. */
