@@ -1,4 +1,5 @@
 import type { CardEffect } from '../triggers/effects.js'
+import type { Card } from '../cards/types.js'
 import type { GameState } from '../state/types.js'
 import type { Seat } from '../pieces/types.js'
 import { playerOf } from '../queries/seat.js'
@@ -6,7 +7,9 @@ import { playerOf } from '../queries/seat.js'
 const COFFIN_MAKERS_DEF_ID = 'ROOT-62'
 const WARRIORS_PER_VICTORY_POINT = 5
 
-function findCoffinMakersCard(state: GameState) {
+function findCoffinMakersCard(
+  state: GameState,
+): { ownerSeat: Seat; playCard: Card } | null {
   for (const player of state.players) {
     for (const playCard of player.playArea) {
       if (playCard.defId === COFFIN_MAKERS_DEF_ID) {
