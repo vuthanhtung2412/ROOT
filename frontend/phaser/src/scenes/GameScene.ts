@@ -31,7 +31,6 @@ import { CardHand } from '../ui/CardHand.ts'
 import { CardDetailOverlay } from '../ui/CardDetailOverlay.ts'
 import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
 import { EventOverlay } from '../ui/EventOverlay.ts'
-import { FactionDrawer } from '../ui/FactionDrawer.ts'
 import { FactionBoardModal } from '../ui/FactionBoardModal.ts'
 import { buildFactionBoardViewModel } from '../ui/factionBoardViewModel.ts'
 import { GameDrawer } from '../ui/GameDrawer.ts'
@@ -58,7 +57,6 @@ export class GameScene extends Phaser.Scene {
   private eyrieDecreePanel: EyrieDecreePanel | null = null
   private eventOverlay: EventOverlay | null = null
   private battleOverlay: BattleOverlay | null = null
-  private factionDrawer: FactionDrawer | null = null
   private factionBoardModal: FactionBoardModal | null = null
   private gameDrawer: GameDrawer | null = null
   private winnerOverlay: WinnerOverlay | null = null
@@ -144,7 +142,6 @@ export class GameScene extends Phaser.Scene {
     this.eyrieDecreePanel = new EyrieDecreePanel(this)
     this.eventOverlay = new EventOverlay(this)
     this.battleOverlay = new BattleOverlay(this)
-    this.factionDrawer = new FactionDrawer(this)
     this.factionBoardModal = new FactionBoardModal(this)
     this.gameDrawer = new GameDrawer(this, {
       onUndo: () => {
@@ -206,8 +203,6 @@ export class GameScene extends Phaser.Scene {
     this.eventOverlay = null
     this.battleOverlay?.destroy()
     this.battleOverlay = null
-    this.factionDrawer?.destroy()
-    this.factionDrawer = null
     this.factionBoardModal?.destroy()
     this.factionBoardModal = null
     this.gameDrawer?.destroy()
@@ -397,7 +392,6 @@ export class GameScene extends Phaser.Scene {
       banner.actorSeat,
     )
     this.eyrieDecreePanel?.sync(snapshot.state)
-    this.factionDrawer?.sync(snapshot.state)
     this.refreshFactionBoardModal(snapshot.state)
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
