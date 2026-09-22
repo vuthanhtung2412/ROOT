@@ -8,6 +8,32 @@ export type BoardLayout = {
   clearings: Record<string, ClearingLayoutPoint>
 }
 
+export type ClearingSuit = 'fox' | 'mouse' | 'rabbit'
+
+/** Autumn clearing suits — same as lib FallMap. */
+export const FALL_CLEARING_SUITS: Readonly<Record<number, ClearingSuit>> = {
+  0: 'fox',
+  1: 'mouse',
+  2: 'rabbit',
+  3: 'rabbit',
+  4: 'rabbit',
+  5: 'fox',
+  6: 'mouse',
+  7: 'fox',
+  8: 'mouse',
+  9: 'rabbit',
+  10: 'mouse',
+  11: 'fox',
+}
+
+export function fallClearingSuit(clearingId: number): ClearingSuit | null {
+  const suit = FALL_CLEARING_SUITS[clearingId]
+  if (suit === undefined) {
+    return null
+  }
+  return suit
+}
+
 /**
  * Fallback Autumn clearing coords (normalized 0–1).
  * Prefer live GET /map/fall/layout when available.

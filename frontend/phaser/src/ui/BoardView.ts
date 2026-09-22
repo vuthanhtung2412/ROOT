@@ -2,9 +2,11 @@ import type Phaser from 'phaser'
 import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
 import {
   FALL_BOARD_LAYOUT,
+  fallClearingSuit,
   layoutToPixelHitTargets,
   type BoardLayout,
   type ClearingPixelHitTarget,
+  type ClearingSuit,
 } from '../game/boardLayout.ts'
 import { gameViewSize } from '../game/hiDpi.ts'
 import { factionColorForSeat } from '../game/theme.ts'
@@ -36,6 +38,17 @@ type ClearingVisual = {
   clearingId: number
   hitArea: Phaser.GameObjects.Arc
   ring: Phaser.GameObjects.Arc
+  suitIcon: Phaser.GameObjects.Image | null
+}
+
+function suitTextureKey(suit: ClearingSuit): string {
+  if (suit === 'fox') {
+    return GAME_ASSET_KEYS.suitFox
+  }
+  if (suit === 'mouse') {
+    return GAME_ASSET_KEYS.suitMouse
+  }
+  return GAME_ASSET_KEYS.suitRabbit
 }
 
 /**
@@ -191,14 +204,41 @@ export class BoardView {
         this.paintOneRing(target.clearingId, ring)
       })
 
+      const suitIcon = this.createSuitIconBelowClearing(target)
+
       this.root.add(ring)
       this.root.add(hitArea)
+      if (suitIcon !== null) {
+        this.root.add(suitIcon)
+      }
       this.clearingVisuals.push({
         clearingId: target.clearingId,
         hitArea,
         ring,
+        suitIcon,
       })
     }
+  }
+
+  private createSuitIconBelowClearing(
+    target: ClearingPixelHitTarget,
+  ): Phaser.GameObjects.Image | null {
+    const suit = fallClearingSuit(target.clearingId)
+    if (suit === null) {
+      return null
+    }
+    const textureKey = suitTextureKey(suit)
+    if (!this.scene.textures.exists(textureKey)) {
+      return null
+    }
+    const image = this.scene.add
+      .image(target.centerX, target.centerY + target.radius + 2, textureKey)
+      .setOrigin(0.5, 0)
+    const source = image.texture.getSourceImage()
+    const maxSide = target.radius * 0.45
+    const scale = Math.min(maxSide / source.width, maxSide / source.height)
+    image.setDisplaySize(source.width * scale, source.height * scale)
+    return image
   }
 
   private paintHighlights(): void {
