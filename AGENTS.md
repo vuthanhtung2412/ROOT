@@ -87,3 +87,5 @@ const EARTH_GRAVITY_ACCELERATION = 9.8
 const velocity = time * EARTH_GRAVITY_ACCELERATION
 
 ```
+
++ Always import with absolute path
