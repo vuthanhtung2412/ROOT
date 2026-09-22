@@ -1,9 +1,9 @@
 import Phaser from 'phaser'
-import { ensureAutumnMapLoaded } from '../assets/autumnMapLoader.ts'
-import { createPhaserApi } from '../api/client.ts'
-import { GameSession } from '../game/GameSession.ts'
-import { applyHiDpiCamera, gameViewSize } from '../game/hiDpi.ts'
-import { loadPlayerIdentity } from '../game/playerIdentity.ts'
+import { ensureAutumnMapLoaded } from '#assets/autumnMapLoader.ts'
+import { createPhaserApi } from '#api/client.ts'
+import { GameSession } from '#game/GameSession.ts'
+import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
+import { loadPlayerIdentity } from '#game/playerIdentity.ts'
 
 export type MenuSceneData = {
   session?: GameSession
@@ -63,19 +63,24 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
 
-    this.addMenuButton(width / 2, height * 0.48, 'Play', () => {
-      void this.handlePlay()
+    this.addMenuButton({
+      x: width / 2,
+      y: height * 0.48,
+      label: 'Play',
+      onClick: () => {
+        void this.handlePlay()
+      },
     })
     if (import.meta.env.DEV) {
-      this.addMenuButton(
-        width / 2,
-        height * 0.6,
-        'QA: Continue loaded game',
-        () => {
+      this.addMenuButton({
+        x: width / 2,
+        y: height * 0.6,
+        label: 'QA: Continue loaded game',
+        onClick: () => {
           void this.handleQaContinue()
         },
-        '#c8d8f0',
-      )
+        backgroundColor: '#c8d8f0',
+      })
     }
   }
 
@@ -83,24 +88,24 @@ export class MenuScene extends Phaser.Scene {
     this.clearLobbyWait()
   }
 
-  private addMenuButton(
-    x: number,
-    y: number,
-    label: string,
-    onClick: () => void,
-    backgroundColor = '#f0e6d3',
-  ): Phaser.GameObjects.Text {
+  private addMenuButton(input: {
+    x: number
+    y: number
+    label: string
+    onClick: () => void
+    backgroundColor?: string
+  }): Phaser.GameObjects.Text {
     const button = this.add
-      .text(x, y, label, {
+      .text(input.x, input.y, input.label, {
         fontFamily: 'Georgia, serif',
         fontSize: '22px',
         color: '#1a1a1a',
-        backgroundColor,
+        backgroundColor: input.backgroundColor ?? '#f0e6d3',
         padding: { x: 18, y: 10 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
-    button.on('pointerdown', onClick)
+    button.on('pointerdown', input.onClick)
     return button
   }
 
