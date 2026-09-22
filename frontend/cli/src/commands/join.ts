@@ -1,6 +1,6 @@
-import { api } from '../api/client.js'
+import { api } from '#api/client.js'
 
-export async function cmdJoin(playerId: string) {
+export async function cmdJoin(playerId: string): Promise<void> {
   const result = await api.join(playerId)
   const { state } = result
   const joined = state.players.at(-1)

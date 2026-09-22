@@ -1,7 +1,19 @@
 import { formatGameView, type GameState } from '@root/lib'
-import { api } from '../api/client.js'
+import { api } from '#api/client.js'
 
-export async function cmdShow() {
+function isLibGameState(value: unknown): value is GameState {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Array.isArray(Reflect.get(value, 'players')) &&
+    Array.isArray(Reflect.get(value, 'clearings'))
+  )
+}
+
+export async function cmdShow(): Promise<void> {
   const { state, historyLength } = await api.get()
-  console.log(formatGameView(state as GameState, { historyLength }))
+  if (!isLibGameState(state)) {
+    throw new Error('unexpected game payload')
+  }
+  console.log(formatGameView(state, { historyLength }))
 }

@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-import { ApiError } from './api/client.js'
-import { cmdAct } from './commands/act.js'
-import { cmdActions } from './commands/actions.js'
-import { cmdAuto } from './commands/auto.js'
-import { cmdJoin } from './commands/join.js'
-import { cmdLoad } from './commands/load.js'
-import { cmdLog } from './commands/log.js'
-import { cmdNew } from './commands/new.js'
-import { cmdShow } from './commands/show.js'
-import { cmdStart } from './commands/start.js'
-import { cmdUndo } from './commands/undo.js'
+import { ApiError } from '#api/client.js'
+import { cmdAct } from '#commands/act.js'
+import { cmdActions } from '#commands/actions.js'
+import { cmdAuto } from '#commands/auto.js'
+import { cmdJoin } from '#commands/join.js'
+import { cmdLoad } from '#commands/load.js'
+import { cmdLog } from '#commands/log.js'
+import { cmdNew } from '#commands/new.js'
+import { cmdShow } from '#commands/show.js'
+import { cmdStart } from '#commands/start.js'
+import { cmdUndo } from '#commands/undo.js'
 
 function flag(args: string[], name: string): string | undefined {
   const i = args.indexOf(name)
@@ -17,7 +17,7 @@ function flag(args: string[], name: string): string | undefined {
   return args[i + 1]
 }
 
-function usage() {
+function usage(): void {
   console.error(`usage: root-cli <command> [options]
 
 commands:
@@ -36,7 +36,7 @@ commands:
 env: ROOT_API (default http://localhost:3000)`)
 }
 
-async function main() {
+async function main(): Promise<void> {
   const argv = process.argv.slice(2)
   const base = argv[0] === '--' ? 1 : 0
   const cmd = argv[base]

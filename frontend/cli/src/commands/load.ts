@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { api } from '../api/client.js'
+import { api } from '#api/client.js'
 
-export async function cmdLoad(path: string) {
+export async function cmdLoad(path: string): Promise<void> {
   const abs = resolve(path)
   const raw = await readFile(abs, 'utf8')
   let body: unknown
