@@ -20,20 +20,20 @@
 | defId | Name | Engine shape | Status |
 |-------|------|--------------|--------|
 | `ROOT-57` | Boat Builders | hook `isAdjacent` (rivers) | done + test |
-| `ROOT-59` | Charm Offensive | listener `phase.start` Evening + choice action | missing |
-| `ROOT-62` | Coffin Makers | listener `warriors.removed` + Birdsong score | missing |
-| `ROOT-64` | Corvid Planners | hook `needsRuleToMove` | missing |
-| `ROOT-71` | Eyrie Émigré | Birdsong-end forced move+battle; discard fail | missing |
-| `ROOT-72` | False Orders | Birdsong discard-self → force enemy move | missing |
-| `ROOT-79` | Informants | Evening draw replace → take ambush from discard | missing |
-| `ROOT-81` | League of Adventurous Mice | Daylight grant: exhaust item → move/battle | missing |
+| `ROOT-59` | Charm Offensive | Evening grant draw + give VP | done + test |
+| `ROOT-62` | Coffin Makers | listener supply removals + Birdsong score | done + test |
+| `ROOT-64` | Corvid Planners | hook `needsRuleToMove` | done + test |
+| `ROOT-71` | Eyrie Émigré | Birdsong grant move+battle; else discard | done + test |
+| `ROOT-72` | False Orders | Birdsong discard-self → force enemy move | done + test |
+| `ROOT-79` | Informants | Evening draw replace → ambush from discard | done + test |
+| `ROOT-81` | League of Adventurous Mice | Daylight grant: exhaust item → move/battle | done + test |
 | `ROOT-82` | Master Engravers | listener `craft.item` +1 VP | done + test |
 | `ROOT-85` | Murine Broker | listener other `craft.item` → draw | done + test |
-| `ROOT-86` | Propaganda Bureau | Daylight grant: spend card → replace warrior | missing |
-| `ROOT-93` | Saboteurs | Birdsong grant: discard self → discard enemy craft | missing |
+| `ROOT-86` | Propaganda Bureau | Daylight grant: spend card → replace warrior | done + test |
+| `ROOT-93` | Saboteurs | Birdsong grant: discard self → discard enemy craft | done + test |
 | `ROOT-97` | Soup Kitchens | hook `ruleWeight` tokens ×2 | done + test |
 | `ROOT-103` | Swap Meet | Birdsong grant swap | done + test |
-| `ROOT-108` | Tunnels | hook `isAdjacent` via crafting pieces | missing |
+| `ROOT-108` | Tunnels | hook `isAdjacent` via crafting pieces | done + test |
 
 Copies note: False Orders ×2, Informants ×2, League ×2, Saboteurs ×3, Swap Meet ×2, Tunnels ×2 — effect keyed by `defId`, copies irrelevant to logic.
 
