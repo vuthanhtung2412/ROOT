@@ -14,7 +14,7 @@ import {
   eyrieLeaderTextureKey,
   lookupEyrieLeader,
 } from '../assets/eyrieLeaderCatalog.ts'
-import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
+import { GAME_ASSET_KEYS, lookupCardCatalog } from '../assets/gameAssets.ts'
 import { gameViewSize } from '../game/hiDpi.ts'
 import {
   formatDecreeSuitCounts,
@@ -456,7 +456,11 @@ export class FactionBoardModal {
 
   private formatCrafted(cardNames: string[], itemTypes: string[]): string {
     const cards =
-      cardNames.length === 0 ? '(none)' : cardNames.join(', ')
+      cardNames.length === 0
+        ? '(none)'
+        : cardNames
+            .map((defId) => lookupCardCatalog(defId)?.name ?? defId)
+            .join(', ')
     const items =
       itemTypes.length === 0 ? '(none)' : itemTypes.join(', ')
     return `Cards ${cards}\nItems ${items}`
