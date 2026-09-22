@@ -34,18 +34,22 @@ export function gameViewSize(): { width: number; height: number } {
   }
 }
 
+type PhaserTextFactory = {
+  // Phaser GameObjects.Text factory signature — keep 5 params to match upstream API.
+  // eslint-disable-next-line max-params -- Phaser upstream signature
+  text: (
+    this: Phaser.GameObjects.GameObjectFactory,
+    x: number,
+    y: number,
+    content: string | string[],
+    style?: Phaser.Types.GameObjects.Text.TextStyle,
+  ) => Phaser.GameObjects.Text
+}
+
 type PhaserWithTextFactory = {
   GameObjects: {
     GameObjectFactory: {
-      prototype: {
-        text: (
-          this: Phaser.GameObjects.GameObjectFactory,
-          x: number,
-          y: number,
-          content: string | string[],
-          style?: Phaser.Types.GameObjects.Text.TextStyle,
-        ) => Phaser.GameObjects.Text
-      }
+      prototype: PhaserTextFactory
     }
   }
 }
@@ -62,16 +66,24 @@ export function installHiDpiTextResolution(
     return
   }
 
-  const originalText = PhaserNamespace.GameObjects.GameObjectFactory.prototype.text
-  PhaserNamespace.GameObjects.GameObjectFactory.prototype.text = function (
-    this: Phaser.GameObjects.GameObjectFactory,
-    x: number,
-    y: number,
-    content: string | string[],
-    style?: Phaser.Types.GameObjects.Text.TextStyle,
-  ): Phaser.GameObjects.Text {
-    const textObject = originalText.call(this, x, y, content, style)
-    textObject.setResolution(ratio)
-    return textObject
-  }
+  const textFactoryPrototype =
+    PhaserNamespace.GameObjects.GameObjectFactory.prototype
+  const originalText = textFactoryPrototype.text
+  // Phaser requires mutating the shared GameObjectFactory prototype.
+  Object.defineProperty(textFactoryPrototype, 'text', {
+    configurable: true,
+    writable: true,
+    // eslint-disable-next-line max-params -- Phaser upstream signature
+    value: function (
+      this: Phaser.GameObjects.GameObjectFactory,
+      x: number,
+      y: number,
+      content: string | string[],
+      style?: Phaser.Types.GameObjects.Text.TextStyle,
+    ): Phaser.GameObjects.Text {
+      const textObject = originalText.call(this, x, y, content, style)
+      textObject.setResolution(ratio)
+      return textObject
+    },
+  })
 }

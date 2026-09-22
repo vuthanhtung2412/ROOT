@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, createPhaserApi } from './client.ts'
-import { makeFetchResponse, makeGameState } from '../test/factories.ts'
+import { ApiError, createPhaserApi } from '#api/client.ts'
+import { makeFetchResponse, makeGameState } from '#test/factories.ts'
 
 describe('createPhaserApi', () => {
   afterEach(() => {
@@ -23,8 +23,13 @@ describe('createPhaserApi', () => {
 
     expect(result.state.status).toBe('waiting')
     expect(fetchMock).toHaveBeenCalled()
-    const firstArg = fetchMock.mock.calls[0]![0] as Request | string
-    const requestUrl = typeof firstArg === 'string' ? firstArg : firstArg.url
+    const firstArg: unknown = fetchMock.mock.calls[0]![0]
+    const requestUrl =
+      typeof firstArg === 'string'
+        ? firstArg
+        : firstArg instanceof Request
+          ? firstArg.url
+          : null
     expect(requestUrl).toContain('/game')
   })
 

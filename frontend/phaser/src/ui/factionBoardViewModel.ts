@@ -8,8 +8,8 @@ import {
   type EyrieAbilityInfo,
   type EyrieLeaderInfo,
   type EyrieRoostTrackColumn,
-} from '../assets/eyrieBoardCatalog.ts'
-import { GAME_ASSET_KEYS, lookupCardCatalog } from '../assets/gameAssets.ts'
+} from '#assets/eyrieBoardCatalog.ts'
+import { GAME_ASSET_KEYS, lookupCardCatalog } from '#assets/gameAssets.ts'
 import {
   MARQUISE_ABILITIES,
   MARQUISE_BUILDING_TRACK,
@@ -17,8 +17,8 @@ import {
   MARQUISE_TURN_CHEAT,
   type MarquiseAbilityInfo,
   type MarquiseTrackColumn,
-} from '../assets/marquiseBoardCatalog.ts'
-import type { GameState } from '../api/client.ts'
+} from '#assets/marquiseBoardCatalog.ts'
+import type { GameState } from '#api/client.ts'
 
 export type CraftedLookup = {
   cardNames: string[]
@@ -216,7 +216,7 @@ function decreeColumnsFromBoard(
 }
 
 function isEyrieDecreeColumnId(value: string): value is EyrieDecreeColumnId {
-  return (EYRIE_DECREE_COLUMNS as readonly string[]).includes(value)
+  return EYRIE_DECREE_COLUMNS.some((columnId) => columnId === value)
 }
 
 function readActiveDecreeColumn(turnScratch: unknown): EyrieDecreeColumnId | null {
