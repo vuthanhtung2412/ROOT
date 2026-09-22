@@ -16,7 +16,10 @@ import {
 } from '../assets/eyrieLeaderCatalog.ts'
 import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
 import { gameViewSize } from '../game/hiDpi.ts'
-import type { FactionBoardViewModel } from './factionBoardViewModel.ts'
+import {
+  formatDecreeSuitCounts,
+  type FactionBoardViewModel,
+} from './factionBoardViewModel.ts'
 
 const MODAL_DEPTH = 360
 
@@ -176,6 +179,36 @@ export class FactionBoardModal {
     }
 
     nodes.push(...this.buildEyrieRoostTokens(view, layout, placement))
+    nodes.push(...this.buildEyrieDecreeColumns(view, layout, placement))
+    return nodes
+  }
+
+  private buildEyrieDecreeColumns(
+    view: Extract<FactionBoardViewModel, { kind: 'eyrie' }>,
+    layout: FactionBoardPixelLayout,
+    placement: BoardImagePlacement,
+  ): Phaser.GameObjects.GameObject[] {
+    const nodes: Phaser.GameObjects.GameObject[] = []
+    for (const column of view.decreeColumns) {
+      const region = findBoardLayoutRegion(layout, column.regionId)
+      if (region === null) {
+        continue
+      }
+      const box = scaleBoardLayoutRegion(region, placement)
+      const active = view.activeDecreeColumn === column.columnId
+      const label = formatDecreeSuitCounts(column.suits)
+      const text = this.scene.add
+        .text(box.x + 8, box.y + box.height / 2, label, {
+          fontFamily: 'monospace',
+          fontSize: `${Math.max(11, Math.round(box.height * 0.38))}px`,
+          color: active ? '#1a1408' : '#f7f0e4',
+          backgroundColor: active ? '#ffe08add' : '#0a0a0acc',
+          padding: { x: 8, y: 4 },
+          wordWrap: { width: Math.max(40, box.width - 16) },
+        })
+        .setOrigin(0, 0.5)
+      nodes.push(text)
+    }
     return nodes
   }
 

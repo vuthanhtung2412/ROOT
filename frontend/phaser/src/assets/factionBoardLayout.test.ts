@@ -31,6 +31,12 @@ describe('factionBoardLayout', () => {
     expect(findBoardLayoutRegion(EYRIE_BOARD_LAYOUT, 'crafted-items')).toEqual(
       expect.objectContaining({ x: 1086, y: 358, width: 395, height: 92 }),
     )
+    expect(findBoardLayoutRegion(EYRIE_BOARD_LAYOUT, 'decree-recruit')).toEqual(
+      expect.objectContaining({ x: 0, y: 0, width: 376, height: 57 }),
+    )
+    expect(findBoardLayoutRegion(EYRIE_BOARD_LAYOUT, 'decree-build')).toEqual(
+      expect.objectContaining({ x: 1230, y: 0, width: 370, height: 57 }),
+    )
     expect(trackCellRegion(EYRIE_BOARD_LAYOUT, 'roost', 6)?.x).toBe(1432)
   })
 

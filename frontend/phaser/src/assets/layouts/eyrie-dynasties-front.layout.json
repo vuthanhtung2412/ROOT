@@ -36,6 +36,34 @@
       "height": 99
     },
     {
+      "id": "decree-recruit",
+      "x": 0,
+      "y": 0,
+      "width": 376,
+      "height": 57
+    },
+    {
+      "id": "decree-move",
+      "x": 403,
+      "y": 0,
+      "width": 381,
+      "height": 56
+    },
+    {
+      "id": "decree-battle",
+      "x": 818,
+      "y": 0,
+      "width": 383,
+      "height": 55
+    },
+    {
+      "id": "decree-build",
+      "x": 1230,
+      "y": 0,
+      "width": 370,
+      "height": 57
+    },
+    {
       "id": "roost-0",
       "x": 754,
       "y": 520,
