@@ -211,6 +211,8 @@ export function describeAction(action: Action, state: GameState): string {
       return `PROPAGANDA spend ${findCard(action.cardId)} → replace ${action.pieceId} @c${action.clearing}`
     case 'saboteurs':
       return `SABOTEURS discard self → discard ${findCard(action.cardId)} from ${playerRefBySeat(state, action.target)}`
+    case 'falseOrders':
+      return `FALSE ORDERS force ${playerRefBySeat(state, action.target)} ${action.from}→${action.to}`
     case 'emergencyOrders':
       return 'EMERGENCY ORDERS draw 1'
     case 'eveningScore':

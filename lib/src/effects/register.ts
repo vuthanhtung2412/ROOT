@@ -3,6 +3,7 @@ import { boatBuildersEffect } from './boatBuilders.js'
 import { charmOffensiveEffect } from './charmOffensive.js'
 import { coffinMakersEffect } from './coffinMakers.js'
 import { corvidPlannersEffect } from './corvidPlanners.js'
+import { falseOrdersEffect } from './falseOrders.js'
 import { foxPartisansEffect } from './partisans.js'
 import { informantsEffect } from './informants.js'
 import { leagueOfAdventurousMiceEffect } from './leagueOfAdventurousMice.js'
@@ -29,6 +30,7 @@ const ALL_EFFECTS = [
   leagueOfAdventurousMiceEffect,
   propagandaBureauEffect,
   saboteursEffect,
+  falseOrdersEffect,
 ]
 
 export function registerEffects(): void {
