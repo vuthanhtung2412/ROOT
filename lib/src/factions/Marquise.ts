@@ -831,6 +831,7 @@ export class Marquise extends Faction {
       propagandaUsed: false,
       saboteursUsed: false,
       falseOrdersUsed: false,
+      eyrieEmigreCompleted: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,

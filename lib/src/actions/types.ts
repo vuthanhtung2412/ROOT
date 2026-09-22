@@ -114,6 +114,13 @@ export type Action =
       from: ClearingId
       to: ClearingId
     }
+  | {
+      type: 'eyrieEmigre'
+      from: ClearingId
+      to: ClearingId
+      count: number
+      defender: Seat
+    }
   | { type: 'discard'; cardIds: string[] }
   | { type: 'addToDecree'; cards: AddToDecreeCard[] }
   | { type: 'newRoost'; clearing: ClearingId }
