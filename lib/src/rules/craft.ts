@@ -98,7 +98,7 @@ export function craftCard(
       throw new RuleError('ITEM_SUPPLY_EMPTY', { item: def.item })
     }
     state.itemSupply[def.item]! -= 1
-    player.craftedItems.push(def.item)
+    player.craftedItems.push({ type: def.item, exhausted: false })
     ctx.emit({ s: 'craft.item', actor: seat, cardId, item: def.item })
     Deck.discard(state.deck, card, {
       onDominance: (c) => state.dominanceAvailable.push(c),

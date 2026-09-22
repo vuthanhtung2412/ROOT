@@ -110,7 +110,7 @@ type PlayerForBoard = {
   vp: number
   hand: Array<{ id: string; defId: string }>
   playArea?: Array<{ id: string; defId: string }>
-  craftedItems?: string[]
+  craftedItems?: Array<string | { type: string; exhausted?: boolean }>
   board?: unknown
 }
 
@@ -153,9 +153,17 @@ function roostsOnMapFromTrack(placedOnTrack: number): number {
 function craftedLookup(player: PlayerForBoard): CraftedLookup {
   const playArea = player.playArea ?? []
   const craftedItems = player.craftedItems ?? []
+  const itemTypes: string[] = []
+  for (const item of craftedItems) {
+    if (typeof item === 'string') {
+      itemTypes.push(item)
+    } else {
+      itemTypes.push(item.type)
+    }
+  }
   return {
     cardNames: playArea.map((card) => card.defId),
-    itemTypes: [...craftedItems],
+    itemTypes,
   }
 }
 

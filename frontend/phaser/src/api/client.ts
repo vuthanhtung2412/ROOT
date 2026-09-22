@@ -73,7 +73,7 @@ export type GameState = {
     vp: number
     hand: Array<{ id: string; defId: string }>
     playArea?: Array<{ id: string; defId: string }>
-    craftedItems?: string[]
+    craftedItems?: Array<string | { type: string; exhausted?: boolean }>
     board?: unknown
   }>
   clearings: Array<{

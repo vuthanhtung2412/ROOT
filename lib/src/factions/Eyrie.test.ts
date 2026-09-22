@@ -300,7 +300,7 @@ describe('Law 7.5 Daylight', () => {
     const specs = EYRIE.legalActions(state, setupCtx())
     expect(specs.some((s) => s.type === 'craft')).toBe(true)
     EYRIE.apply(state, { type: 'craft', cardId: hammer.id }, setupCtx())
-    expect(state.players[1]!.craftedItems).toContain('hammer')
+    expect(state.players[1]!.craftedItems.map((item) => item.type)).toContain('hammer')
   })
 
   it('Rule: 7.5.2 Resolve the Decree — leftmost column first', () => {

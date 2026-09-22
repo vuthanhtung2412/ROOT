@@ -22,8 +22,13 @@ export type PlayerState = {
   vp: number
   hand: Card[]
   playArea: Card[]
-  craftedItems: ItemType[]
+  craftedItems: CraftedItem[]
   board: FactionBoard
+}
+
+export type CraftedItem = {
+  type: ItemType
+  exhausted: boolean
 }
 
 export type DecreeCursor = {
