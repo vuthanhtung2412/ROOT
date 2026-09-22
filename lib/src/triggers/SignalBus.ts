@@ -1,7 +1,7 @@
-import type { Ctx } from '../game/ctx.js'
-import type { GameState } from '../state/types.js'
-import type { Listener } from './effects.js'
-import type { GameSignal } from './signals.js'
+import type { Ctx } from '#game/ctx.js'
+import type { GameState } from '#state/types.js'
+import type { Listener } from '#triggers/effects.js'
+import type { GameSignal } from '#triggers/signals.js'
 
 export class SignalBus {
   private listeners: Listener[] = []

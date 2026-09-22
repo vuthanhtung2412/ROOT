@@ -1,5 +1,5 @@
-import type { CardEffect } from '../triggers/effects.js'
-import { playerOf } from '../queries/seat.js'
+import type { CardEffect } from '#triggers/effects.js'
+import { playerOf } from '#queries/seat.js'
 
 export const soupKitchensEffect: CardEffect = {
   defId: 'ROOT-97',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { Game } from '../game/Game.js'
-import { card } from '../test/fixtures.js'
+import '#effects/register.js'
+import { Game } from '#game/Game.js'
+import { card } from '#test/fixtures.js'
 
 describe('Informants', () => {
   it('Rule: Informants — Evening may take ambush from discard instead of draw', () => {

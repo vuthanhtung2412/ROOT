@@ -1,8 +1,8 @@
-import type { CardEffect } from '../triggers/effects.js'
-import type { GameState } from '../state/types.js'
-import type { ClearingId } from '../map/types.js'
-import type { Piece, Seat } from '../pieces/types.js'
-import { playerOf } from '../queries/seat.js'
+import type { CardEffect } from '#triggers/effects.js'
+import type { GameState } from '#state/types.js'
+import type { ClearingId } from '#map/types.js'
+import type { Piece, Seat } from '#pieces/types.js'
+import { playerOf } from '#queries/seat.js'
 
 const TUNNELS_DEF_ID = 'ROOT-108'
 

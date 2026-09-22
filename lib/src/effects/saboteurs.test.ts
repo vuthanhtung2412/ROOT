@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { Game } from '../game/Game.js'
-import { card } from '../test/fixtures.js'
+import '#effects/register.js'
+import { Game } from '#game/Game.js'
+import { card } from '#test/fixtures.js'
 
 describe('Saboteurs', () => {
   it('Rule: Saboteurs — discard self to discard enemy crafted card', () => {

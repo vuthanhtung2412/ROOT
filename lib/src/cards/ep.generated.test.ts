@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EP_CARD_DEFS } from './ep.generated.js'
+import { EP_CARD_DEFS } from '#cards/ep.generated.js'
 
 describe('EP_CARD_DEFS', () => {
   it('has 54 copies across defs', () => {

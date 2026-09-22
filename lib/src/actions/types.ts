@@ -1,6 +1,6 @@
-import type { ClearingId } from '../map/types.js'
-import type { BuildingType, Seat } from '../pieces/types.js'
-import type { DecreeColumn, EyrieLeader } from '../state/boards.js'
+import type { ClearingId } from '#map/types.js'
+import type { BuildingType, Seat } from '#pieces/types.js'
+import type { DecreeColumn, EyrieLeader } from '#state/boards.js'
 
 export type MarchMove = {
   from: ClearingId
@@ -153,6 +153,6 @@ export type ActionSpec = {
 }
 
 export type ActionResult = {
-  state: import('../state/types.js').GameState
-  log: import('../log/types.js').LogEntry[]
+  state: import('#state/types.js').GameState
+  log: import('#log/types.js').LogEntry[]
 }

@@ -1,42 +1,42 @@
-import type { Action, ActionResult, ActionSpec } from '../actions/types.js'
-import { defOf } from '../cards/Deck.js'
-import { EP_DECK } from '../cards/epDeck.js'
-import type { Card } from '../cards/types.js'
-import { Deck } from '../cards/Deck.js'
-import { FACTIONS } from '../factions/index.js'
-import type { LogEntry } from '../log/types.js'
-import { FALL } from '../map/fall.js'
-import type { ClearingId } from '../map/types.js'
-import { factionOf } from '../queries/seat.js'
-import { resetPlaceIds } from '../rules/place.js'
-import { RuleError } from '../rules/RuleError.js'
-import { SeededRng, randomIndex, type Rng } from '../rules/Rng.js'
+import type { Action, ActionResult, ActionSpec } from '#actions/types.js'
+import { defOf } from '#cards/Deck.js'
+import { EP_DECK } from '#cards/epDeck.js'
+import type { Card } from '#cards/types.js'
+import { Deck } from '#cards/Deck.js'
+import { FACTIONS } from '#factions/index.js'
+import type { LogEntry } from '#log/types.js'
+import { FALL } from '#map/fall.js'
+import type { ClearingId } from '#map/types.js'
+import { factionOf } from '#queries/seat.js'
+import { resetPlaceIds } from '#rules/place.js'
+import { RuleError } from '#rules/RuleError.js'
+import { SeededRng, randomIndex, type Rng } from '#rules/Rng.js'
 import {
   DEFAULT_FACTIONS,
   ITEM_SUPPLY,
   RUIN_ITEMS,
   STARTING_HAND,
-} from '../state/constants.js'
-import { EYRIE_LEADERS, type FactionBoard } from '../state/boards.js'
-import type { GameSnapshot } from '../state/snapshot.js'
-import type { Seat } from '../pieces/types.js'
-import type { GameState, Phase, PlayerState } from '../state/types.js'
-import '../effects/register.js'
-import { tryApplyCharmOffensive } from '../effects/charmOffensive.js'
-import { tryApplyInformants } from '../effects/informants.js'
-import { tryApplyLeague } from '../effects/leagueOfAdventurousMice.js'
-import { tryApplyPropagandaBureau } from '../effects/propagandaBureau.js'
-import { tryApplySaboteurs } from '../effects/saboteurs.js'
-import { tryApplyFalseOrders } from '../effects/falseOrders.js'
-import { tryApplyEyrieEmigre } from '../effects/eyrieEmigre.js'
-import { tryApplySwapMeet } from '../effects/swapMeet.js'
-import { RESOLVERS } from '../events/resolvers.js'
-import { EFFECTS } from '../triggers/effects.js'
-import type { Listener } from '../triggers/effects.js'
-import { buildRuleHooks } from '../triggers/buildHooks.js'
-import { requireSeat } from '../typeGuards.js'
-import type { Ctx } from './ctx.js'
-import { SignalBus } from '../triggers/SignalBus.js'
+} from '#state/constants.js'
+import { EYRIE_LEADERS, type FactionBoard } from '#state/boards.js'
+import type { GameSnapshot } from '#state/snapshot.js'
+import type { Seat } from '#pieces/types.js'
+import type { GameState, Phase, PlayerState } from '#state/types.js'
+import '#effects/register.js'
+import { tryApplyCharmOffensive } from '#effects/charmOffensive.js'
+import { tryApplyInformants } from '#effects/informants.js'
+import { tryApplyLeague } from '#effects/leagueOfAdventurousMice.js'
+import { tryApplyPropagandaBureau } from '#effects/propagandaBureau.js'
+import { tryApplySaboteurs } from '#effects/saboteurs.js'
+import { tryApplyFalseOrders } from '#effects/falseOrders.js'
+import { tryApplyEyrieEmigre } from '#effects/eyrieEmigre.js'
+import { tryApplySwapMeet } from '#effects/swapMeet.js'
+import { RESOLVERS } from '#events/resolvers.js'
+import { EFFECTS } from '#triggers/effects.js'
+import type { Listener } from '#triggers/effects.js'
+import { buildRuleHooks } from '#triggers/buildHooks.js'
+import { requireSeat } from '#typeGuards.js'
+import type { Ctx } from '#game/ctx.js'
+import { SignalBus } from '#triggers/SignalBus.js'
 
 const RUIN_CLEARINGS: ClearingId[] = [5, 9, 10, 11]
 
@@ -325,7 +325,7 @@ export class Game {
     return ctx
   }
 
-  private dispatchSignal(signal: import('../triggers/signals.js').GameSignal, ctx: Ctx): void {
+  private dispatchSignal(signal: import('#triggers/signals.js').GameSignal, ctx: Ctx): void {
     this.signalBus.emit(this.state, signal, ctx)
     const seats = [...this.state.players].sort((a, b) => a.seat - b.seat)
     for (const player of seats) {

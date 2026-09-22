@@ -1,7 +1,7 @@
-import type { CardEffect } from '../triggers/effects.js'
-import type { GameState } from '../state/types.js'
-import type { Seat } from '../pieces/types.js'
-import { playerOf } from '../queries/seat.js'
+import type { CardEffect } from '#triggers/effects.js'
+import type { GameState } from '#state/types.js'
+import type { Seat } from '#pieces/types.js'
+import { playerOf } from '#queries/seat.js'
 
 const CORVID_PLANNERS_DEF_ID = 'ROOT-64'
 

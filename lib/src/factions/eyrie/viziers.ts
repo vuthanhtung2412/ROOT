@@ -1,4 +1,4 @@
-import type { Card, CardDef } from '../../cards/types.js'
+import type { Card, CardDef } from '#cards/types.js'
 
 export const VIZIER_DEF_ID = 'VIZIER' as const
 

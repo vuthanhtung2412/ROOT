@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { FALL } from '../map/fall.js'
-import { defaultRuleHooks } from '../triggers/hooks.js'
-import { minimalState, withPieces } from '../test/fixtures.js'
-import { canMove } from './move.js'
-import { canPlace } from './place.js'
+import { FALL } from '#map/fall.js'
+import { defaultRuleHooks } from '#triggers/hooks.js'
+import { minimalState, withPieces } from '#test/fixtures.js'
+import { canMove } from '#queries/move.js'
+import { canPlace } from '#queries/place.js'
 
 const hooks = defaultRuleHooks(FALL)
 const keepClearing = FALL.corners[0]!

@@ -1,15 +1,15 @@
-import { defOf } from '../cards/Deck.js'
-import { Deck } from '../cards/Deck.js'
-import type { Card } from '../cards/types.js'
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import { FALL } from '../map/fall.js'
-import type { ClearingId } from '../map/types.js'
-import type { Piece, Seat } from '../pieces/types.js'
-import { canCraft } from '../queries/craft.js'
-import { playerOf } from '../queries/seat.js'
-import type { GameState } from '../state/types.js'
-import { RuleError } from './RuleError.js'
+import { defOf } from '#cards/Deck.js'
+import { Deck } from '#cards/Deck.js'
+import type { Card } from '#cards/types.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import { FALL } from '#map/fall.js'
+import type { ClearingId } from '#map/types.js'
+import type { Piece, Seat } from '#pieces/types.js'
+import { canCraft } from '#queries/craft.js'
+import { playerOf } from '#queries/seat.js'
+import type { GameState } from '#state/types.js'
+import { RuleError } from '#rules/RuleError.js'
 
 type CraftSource = { piece: Piece; clearingId: ClearingId }
 
@@ -29,7 +29,7 @@ function craftingSources(state: GameState, seat: Seat): CraftSource[] {
   return out
 }
 
-function assignSources(cost: import('../cards/types.js').CostSuit[], sources: CraftSource[]): CraftSource[] | null {
+function assignSources(cost: import('#cards/types.js').CostSuit[], sources: CraftSource[]): CraftSource[] | null {
   const used = new Set<Piece>()
   const picked: CraftSource[] = []
 

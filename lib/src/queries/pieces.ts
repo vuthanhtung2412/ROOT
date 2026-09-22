@@ -1,7 +1,7 @@
-import type { RuleHooks } from '../triggers/hooks.js'
-import type { ClearingId } from '../map/types.js'
-import type { Piece, Seat } from '../pieces/types.js'
-import type { GameState } from '../state/types.js'
+import type { RuleHooks } from '#triggers/hooks.js'
+import type { ClearingId } from '#map/types.js'
+import type { Piece, Seat } from '#pieces/types.js'
+import type { GameState } from '#state/types.js'
 
 export function piecesIn(state: GameState, clearing: ClearingId): Piece[] {
   return state.clearings[clearing]?.pieces ?? []

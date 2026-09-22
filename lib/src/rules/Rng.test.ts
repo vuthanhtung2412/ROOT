@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { randomIndex, SeededRng } from './Rng.js'
+import { randomIndex, SeededRng } from '#rules/Rng.js'
 
 describe('SeededRng', () => {
   it('roll returns 0..3', () => {

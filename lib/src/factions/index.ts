@@ -1,7 +1,7 @@
-import type { FactionId } from '../pieces/types.js'
-import { Faction } from './Faction.js'
-import { EYRIE } from './Eyrie.js'
-import { MARQUISE } from './Marquise.js'
+import type { FactionId } from '#pieces/types.js'
+import { Faction } from '#factions/Faction.js'
+import { EYRIE } from '#factions/Eyrie.js'
+import { MARQUISE } from '#factions/Marquise.js'
 
 export const FACTIONS: Record<FactionId, Faction> = {
   marquise: MARQUISE,
@@ -10,7 +10,7 @@ export const FACTIONS: Record<FactionId, Faction> = {
   vagabond: MARQUISE, // stub until GP4
 }
 
-export { Faction } from './Faction.js'
+export { Faction } from '#factions/Faction.js'
 export {
   Marquise,
   MARQUISE,
@@ -21,5 +21,5 @@ export {
   fillMarquiseSetupTracks,
   legalStartingBuildingClearings,
   startingBuildingZone,
-} from './Marquise.js'
-export { Eyrie, EYRIE, eyrieStartClearing, tuckViziersFor, placeEyrieRoostSetup, assignEyrieLeader } from './Eyrie.js'
+} from '#factions/Marquise.js'
+export { Eyrie, EYRIE, eyrieStartClearing, tuckViziersFor, placeEyrieRoostSetup, assignEyrieLeader } from '#factions/Eyrie.js'

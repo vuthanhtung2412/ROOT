@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FALL } from './fall.js'
+import { FALL } from '#map/fall.js'
 
 describe('Fall graph', () => {
   it('has 12 clearings', () => {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { Ctx } from '../game/ctx.js'
-import { FALL } from '../map/fall.js'
-import { SeededRng } from '../rules/Rng.js'
-import { minimalState } from '../test/fixtures.js'
-import { defaultRuleHooks } from './hooks.js'
-import { SignalBus } from './SignalBus.js'
+import type { Ctx } from '#game/ctx.js'
+import { FALL } from '#map/fall.js'
+import { SeededRng } from '#rules/Rng.js'
+import { minimalState } from '#test/fixtures.js'
+import { defaultRuleHooks } from '#triggers/hooks.js'
+import { SignalBus } from '#triggers/SignalBus.js'
 
 describe('SignalBus', () => {
   it('sync emit to listeners', () => {

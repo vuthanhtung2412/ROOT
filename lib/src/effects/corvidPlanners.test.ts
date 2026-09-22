@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { FALL } from '../map/fall.js'
-import { canMove } from '../queries/move.js'
-import { buildRuleHooks } from '../triggers/buildHooks.js'
-import { card, minimalState, player, withPieces } from '../test/fixtures.js'
+import '#effects/register.js'
+import { FALL } from '#map/fall.js'
+import { canMove } from '#queries/move.js'
+import { buildRuleHooks } from '#triggers/buildHooks.js'
+import { card, minimalState, player, withPieces } from '#test/fixtures.js'
 
 describe('Corvid Planners', () => {
   it('Rule: Corvid Planners — while moving, ignore rule', () => {

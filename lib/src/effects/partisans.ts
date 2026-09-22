@@ -1,12 +1,12 @@
-import { defOf } from '../cards/Deck.js'
-import { Deck } from '../cards/Deck.js'
-import type { CardEffect } from '../triggers/effects.js'
-import type { Ctx } from '../game/ctx.js'
-import { FALL } from '../map/fall.js'
-import type { Seat } from '../pieces/types.js'
-import { playerOf } from '../queries/seat.js'
-import type { GameState } from '../state/types.js'
-import type { BattleEvent } from '../events/types.js'
+import { defOf } from '#cards/Deck.js'
+import { Deck } from '#cards/Deck.js'
+import type { CardEffect } from '#triggers/effects.js'
+import type { Ctx } from '#game/ctx.js'
+import { FALL } from '#map/fall.js'
+import type { Seat } from '#pieces/types.js'
+import { playerOf } from '#queries/seat.js'
+import type { GameState } from '#state/types.js'
+import type { BattleEvent } from '#events/types.js'
 
 const PARTISAN_DEFS = new Set(['ROOT-77', 'ROOT-84', 'ROOT-88'])
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { minimalState, withPieces, card, player, marquiseBoard } from '../test/fixtures.js'
-import { canCraft } from './craft.js'
+import { minimalState, withPieces, card, player, marquiseBoard } from '#test/fixtures.js'
+import { canCraft } from '#queries/craft.js'
 
 describe('canCraft', () => {
   it('Rule: Craft 1 — activate crafting pieces matching cost suits', () => {

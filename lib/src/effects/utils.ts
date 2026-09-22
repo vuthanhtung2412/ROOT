@@ -1,8 +1,8 @@
-import type { Ctx } from '../game/ctx.js'
-import type { GameState } from '../state/types.js'
-import { testContext } from '../test/fixtures.js'
-import { EFFECTS } from '../triggers/effects.js'
-import type { GameSignal } from '../triggers/signals.js'
+import type { Ctx } from '#game/ctx.js'
+import type { GameState } from '#state/types.js'
+import { testContext } from '#test/fixtures.js'
+import { EFFECTS } from '#triggers/effects.js'
+import type { GameSignal } from '#triggers/signals.js'
 
 /** Test ctx that dispatches craft-related signals to play-area EFFECTS. */
 export function buildCraftContext(state: GameState): Ctx {

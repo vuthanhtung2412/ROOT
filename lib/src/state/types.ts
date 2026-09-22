@@ -1,8 +1,8 @@
-import type { DeckState } from '../cards/Deck.js'
-import type { Card } from '../cards/types.js'
-import type { Event } from '../events/types.js'
-import type { FactionId, ItemType, Piece, Seat } from '../pieces/types.js'
-import type { DecreeColumn, FactionBoard } from './boards.js'
+import type { DeckState } from '#cards/Deck.js'
+import type { Card } from '#cards/types.js'
+import type { Event } from '#events/types.js'
+import type { FactionId, ItemType, Piece, Seat } from '#pieces/types.js'
+import type { DecreeColumn, FactionBoard } from '#state/boards.js'
 
 export type Phase = 'birdsong' | 'daylight' | 'evening'
 

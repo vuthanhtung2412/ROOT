@@ -1,5 +1,5 @@
-import type { FactionId, Seat } from '../pieces/types.js'
-import type { GameState, PlayerState } from '../state/types.js'
+import type { FactionId, Seat } from '#pieces/types.js'
+import type { GameState, PlayerState } from '#state/types.js'
 
 /** Faction assigned to a seat at game start. */
 export function factionOf(state: GameState, seat: Seat): FactionId {

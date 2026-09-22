@@ -1,8 +1,8 @@
-import type { CardEffect } from '../triggers/effects.js'
-import { FALL } from '../map/fall.js'
-import { playerOf } from '../queries/seat.js'
+import type { CardEffect } from '#triggers/effects.js'
+import { FALL } from '#map/fall.js'
+import { playerOf } from '#queries/seat.js'
 
-function hasBoatBuilders(state: import('../state/types.js').GameState, seat: import('../pieces/types.js').Seat): boolean {
+function hasBoatBuilders(state: import('#state/types.js').GameState, seat: import('#pieces/types.js').Seat): boolean {
   return playerOf(state, seat).playArea.some((c) => c.defId === 'ROOT-57')
 }
 

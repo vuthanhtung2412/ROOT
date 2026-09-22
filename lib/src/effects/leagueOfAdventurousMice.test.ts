@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { FALL } from '../map/fall.js'
-import { warriors } from '../queries/pieces.js'
-import { Game } from '../game/Game.js'
-import { card } from '../test/fixtures.js'
+import '#effects/register.js'
+import { FALL } from '#map/fall.js'
+import { warriors } from '#queries/pieces.js'
+import { Game } from '#game/Game.js'
+import { card } from '#test/fixtures.js'
 
 describe('League of Adventurous Mice', () => {
   it('Rule: League — exhaust crafted item to take a move', () => {

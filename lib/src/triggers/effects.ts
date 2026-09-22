@@ -1,8 +1,8 @@
-import type { ActionSpec } from '../actions/types.js'
-import type { GameState } from '../state/types.js'
-import type { Ctx } from '../game/ctx.js'
-import type { GameSignal } from './signals.js'
-import type { RuleHooks } from './hooks.js'
+import type { ActionSpec } from '#actions/types.js'
+import type { GameState } from '#state/types.js'
+import type { Ctx } from '#game/ctx.js'
+import type { GameSignal } from '#triggers/signals.js'
+import type { RuleHooks } from '#triggers/hooks.js'
 
 export type Listener = (state: GameState, signal: GameSignal, ctx: Ctx) => void
 

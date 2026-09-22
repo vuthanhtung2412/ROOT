@@ -1,5 +1,5 @@
-import type { ClearingId } from '../map/types.js'
-import type { Seat } from '../pieces/types.js'
+import type { ClearingId } from '#map/types.js'
+import type { Seat } from '#pieces/types.js'
 
 export type BattleStage =
   | 'ambush'

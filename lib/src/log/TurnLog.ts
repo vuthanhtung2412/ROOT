@@ -1,6 +1,6 @@
-import type { Action } from '../actions/types.js'
-import type { GameState } from '../state/types.js'
-import type { LogEntry } from './types.js'
+import type { Action } from '#actions/types.js'
+import type { GameState } from '#state/types.js'
+import type { LogEntry } from '#log/types.js'
 
 export class TurnLog {
   readonly entries: LogEntry[]

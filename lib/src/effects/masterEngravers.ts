@@ -1,4 +1,4 @@
-import type { CardEffect } from '../triggers/effects.js'
+import type { CardEffect } from '#triggers/effects.js'
 
 export const masterEngraversEffect: CardEffect = {
   defId: 'ROOT-82',

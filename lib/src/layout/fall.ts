@@ -1,4 +1,4 @@
-import type { MapLayout } from './types.js'
+import type { MapLayout } from '#layout/types.js'
 
 /**
  * Normalised coords on resources/reference/map/base/autumn-map.jpg

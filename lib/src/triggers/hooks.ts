@@ -1,11 +1,11 @@
-import { defOf } from '../cards/Deck.js'
-import type { Card } from '../cards/types.js'
-import type { BattleEvent } from '../events/types.js'
-import type { GameMap } from '../map/GameMap.js'
-import type { ClearingId } from '../map/types.js'
-import type { Piece, Seat } from '../pieces/types.js'
-import { playerOf } from '../queries/seat.js'
-import type { GameState } from '../state/types.js'
+import { defOf } from '#cards/Deck.js'
+import type { Card } from '#cards/types.js'
+import type { BattleEvent } from '#events/types.js'
+import type { GameMap } from '#map/GameMap.js'
+import type { ClearingId } from '#map/types.js'
+import type { Piece, Seat } from '#pieces/types.js'
+import { playerOf } from '#queries/seat.js'
+import type { GameState } from '#state/types.js'
 
 export type RuleHooks = {
   isAdjacent: (state: GameState, seat: Seat, a: ClearingId, b: ClearingId) => boolean

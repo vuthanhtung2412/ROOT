@@ -1,5 +1,5 @@
-import type { GameMap } from '../../map/GameMap.js'
-import type { MapLayout } from '../types.js'
+import type { GameMap } from '#map/GameMap.js'
+import type { MapLayout } from '#layout/types.js'
 
 export type AsciiOpts = {
   width?: number

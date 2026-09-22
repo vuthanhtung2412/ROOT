@@ -1,18 +1,18 @@
-import type { Action, ActionSpec, ResolveEventAction } from '../actions/types.js'
-import { placeEyrieRoostSetup } from '../factions/Eyrie.js'
-import { FACTIONS } from '../factions/index.js'
+import type { Action, ActionSpec, ResolveEventAction } from '#actions/types.js'
+import { placeEyrieRoostSetup } from '#factions/Eyrie.js'
+import { FACTIONS } from '#factions/index.js'
 import {
   fillMarquiseSetupTracks,
   legalStartingBuildingClearings,
   placeMarquiseStartingBuilding,
-} from '../factions/Marquise.js'
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import type { Seat } from '../pieces/types.js'
-import { isClearingId } from '../typeGuards.js'
-import { RuleError } from '../rules/RuleError.js'
-import type { GameState } from '../state/types.js'
-import type { PlaceStartingBuildingEvent } from './types.js'
+} from '#factions/Marquise.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import type { Seat } from '#pieces/types.js'
+import { isClearingId } from '#typeGuards.js'
+import { RuleError } from '#rules/RuleError.js'
+import type { GameState } from '#state/types.js'
+import type { PlaceStartingBuildingEvent } from '#events/types.js'
 
 export type PlaceStartingBuildingApply = {
   event: PlaceStartingBuildingEvent

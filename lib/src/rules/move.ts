@@ -1,11 +1,11 @@
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import type { ClearingId } from '../map/types.js'
-import type { Seat } from '../pieces/types.js'
-import { canMove } from '../queries/move.js'
-import { warriors } from '../queries/pieces.js'
-import type { GameState } from '../state/types.js'
-import { RuleError } from './RuleError.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import type { ClearingId } from '#map/types.js'
+import type { Seat } from '#pieces/types.js'
+import { canMove } from '#queries/move.js'
+import { warriors } from '#queries/pieces.js'
+import type { GameState } from '#state/types.js'
+import { RuleError } from '#rules/RuleError.js'
 
 export type WarriorMovement = {
   seat: Seat

@@ -1,5 +1,5 @@
-import type { Suit } from '../map/types.js'
-import type { ItemType } from '../pieces/types.js'
+import type { Suit } from '#map/types.js'
+import type { ItemType } from '#pieces/types.js'
 
 export type CardSuit = Suit | 'bird'
 export type CostSuit = Suit | 'wild'

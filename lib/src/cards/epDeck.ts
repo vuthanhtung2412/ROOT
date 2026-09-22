@@ -1,5 +1,5 @@
-import { EP_CARD_DEFS } from './ep.generated.js'
-import type { Card } from './types.js'
+import { EP_CARD_DEFS } from '#cards/ep.generated.js'
+import type { Card } from '#cards/types.js'
 
 /** Expand defs by `copies` into 54 physical cards. */
 export function expandEpDeck(): Card[] {

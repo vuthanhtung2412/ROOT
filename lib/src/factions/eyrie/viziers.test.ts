@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isVizier, makeViziers, VIZIER_DEF, VIZIER_DEF_ID } from './viziers.js'
+import { isVizier, makeViziers, VIZIER_DEF, VIZIER_DEF_ID } from '#factions/eyrie/viziers.js'
 
 describe('eyrie viziers', () => {
   it('makes two synthetic bird vizier cards', () => {
