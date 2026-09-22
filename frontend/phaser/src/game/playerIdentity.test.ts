@@ -4,7 +4,7 @@ import {
   loadPlayerIdentity,
   savePlayerIdentity,
   type PlayerIdentityStorage,
-} from './playerIdentity.ts'
+} from '#game/playerIdentity.ts'
 
 function createMemoryStorage(): PlayerIdentityStorage {
   const map = new Map<string, string>()

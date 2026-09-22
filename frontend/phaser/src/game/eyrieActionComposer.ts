@@ -1,10 +1,10 @@
-import type { ActionSpec } from '../api/client.ts'
+import type { ActionSpec } from '#api/client.ts'
 import {
   readChoiceParams,
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
-} from './ActionComposer.ts'
+} from '#game/ActionComposer.ts'
 
 type DecreeCardOption = { cardId: string; column: string }
 type MarchMove = { from: number; to: number; count: number }

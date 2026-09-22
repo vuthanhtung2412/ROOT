@@ -1,7 +1,7 @@
 import type Phaser from 'phaser'
-import type { CardCatalogEntry } from '../assets/gameAssets.ts'
-import { cardTextureKey } from '../assets/gameAssets.ts'
-import { gameViewSize } from '../game/hiDpi.ts'
+import type { CardCatalogEntry } from '#assets/gameAssets.ts'
+import { cardTextureKey } from '#assets/gameAssets.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
 
 export type CardDetailContent = {
   defId: string

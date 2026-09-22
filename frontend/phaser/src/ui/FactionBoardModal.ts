@@ -9,17 +9,17 @@ import {
   type BoardImagePlacement,
   type FactionBoardPixelLayout,
   type ScaledBoardRect,
-} from '../assets/factionBoardLayout.ts'
+} from '#assets/factionBoardLayout.ts'
 import {
   eyrieLeaderTextureKey,
   lookupEyrieLeader,
-} from '../assets/eyrieLeaderCatalog.ts'
-import { GAME_ASSET_KEYS, lookupCardCatalog } from '../assets/gameAssets.ts'
-import { gameViewSize } from '../game/hiDpi.ts'
+} from '#assets/eyrieLeaderCatalog.ts'
+import { GAME_ASSET_KEYS, lookupCardCatalog } from '#assets/gameAssets.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
 import {
   formatDecreeSuitCounts,
   type FactionBoardViewModel,
-} from './factionBoardViewModel.ts'
+} from '#ui/factionBoardViewModel.ts'
 
 const MODAL_DEPTH = 360
 

@@ -6,7 +6,7 @@ import {
   placeBoardImage,
   scaleBoardLayoutRegion,
   trackCellRegion,
-} from './factionBoardLayout.ts'
+} from '#assets/factionBoardLayout.ts'
 
 describe('factionBoardLayout', () => {
   it('loads Marquise tracks + supply regions from helper export', () => {

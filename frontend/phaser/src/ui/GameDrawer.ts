@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import { gameViewSize } from '../game/hiDpi.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
 
 export type GameDrawerHandlers = {
   onUndo: () => void

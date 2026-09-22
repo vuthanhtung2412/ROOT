@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { makeActionSpec } from '../test/factories.ts'
-import { ActionComposer } from './ActionComposer.ts'
-import { createEyrieComposerHooks } from './eyrieActionComposer.ts'
+import { makeActionSpec } from '#test/factories.ts'
+import { ActionComposer } from '#game/ActionComposer.ts'
+import { createEyrieComposerHooks } from '#game/eyrieActionComposer.ts'
 
 describe('eyrieActionComposer', () => {
   it('addToDecree forces card×column then confirm', () => {

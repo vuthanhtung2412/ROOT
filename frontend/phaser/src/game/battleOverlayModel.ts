@@ -1,5 +1,5 @@
-import type { GameState } from '../api/client.ts'
-import type { BattleOverlayViewModel } from '../ui/BattleOverlay.ts'
+import type { GameState } from '#api/client.ts'
+import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
 
 type BattlePending = {
   clearing: number

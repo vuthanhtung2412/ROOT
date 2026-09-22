@@ -1,4 +1,4 @@
-import type { ActionSpec, GameState } from '../api/client.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
 
 /** Fixture factories for Phaser unit tests — no live server. */
 

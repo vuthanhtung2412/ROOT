@@ -1,7 +1,7 @@
 import type Phaser from 'phaser'
-import type { GameState } from '../api/client.ts'
-import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
-import { factionColorForSeat } from '../game/theme.ts'
+import type { GameState } from '#api/client.ts'
+import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
+import { factionColorForSeat } from '#game/theme.ts'
 
 export type PlayerRailSeatHandler = (seat: number) => void
 

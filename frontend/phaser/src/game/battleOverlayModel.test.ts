@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { GameState } from '../api/client.ts'
-import { buildBattleOverlayViewModel } from './battleOverlayModel.ts'
+import type { GameState } from '#api/client.ts'
+import { buildBattleOverlayViewModel } from '#game/battleOverlayModel.ts'
 
 function makeState(pending: unknown[]): GameState {
   return {

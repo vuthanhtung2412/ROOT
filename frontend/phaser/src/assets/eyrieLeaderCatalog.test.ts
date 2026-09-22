@@ -4,7 +4,7 @@ import {
   formatEyrieLeaderOptionLabel,
   isEyrieLeaderId,
   lookupEyrieLeader,
-} from './eyrieLeaderCatalog.ts'
+} from '#assets/eyrieLeaderCatalog.ts'
 
 describe('eyrieLeaderCatalog', () => {
   it('covers all four official leaders with card ability text', () => {

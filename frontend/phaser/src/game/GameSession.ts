@@ -2,23 +2,23 @@ import type {
   ActionSpec,
   GameState,
   PhaserApiClient,
-} from '../api/client.ts'
-import { ApiError } from '../api/client.ts'
+} from '#api/client.ts'
+import { ApiError } from '#api/client.ts'
 import {
   connectGameSocket,
   resolveWebSocketUrl,
   type ConnectGameSocketOptions,
   type GameSocketConnection,
   type GameSocketPush,
-} from '../api/gameSocket.ts'
-import { buildTurnBannerViewModel } from '../ui/TurnBanner.ts'
+} from '#api/gameSocket.ts'
+import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 import {
   clearPlayerIdentity,
   loadPlayerIdentity,
   savePlayerIdentity,
   type PlayerIdentityStorage,
   type StoredPlayerIdentity,
-} from './playerIdentity.ts'
+} from '#game/playerIdentity.ts'
 
 export type GameSessionSnapshot = {
   state: GameState | null

@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createPhaserApi } from '../api/client.ts'
-import type { GameSocketPush } from '../api/gameSocket.ts'
+import { createPhaserApi } from '#api/client.ts'
+import type { GameSocketPush } from '#api/gameSocket.ts'
 import {
   makeActionSpec,
   makeFetchResponse,
   makeGameState,
-} from '../test/factories.ts'
-import { GameSession } from './GameSession.ts'
-import type { PlayerIdentityStorage } from './playerIdentity.ts'
+} from '#test/factories.ts'
+import { GameSession } from '#game/GameSession.ts'
+import type { PlayerIdentityStorage } from '#game/playerIdentity.ts'
 
 function stubFetchSequence(
   responses: Array<{ body: unknown; status?: number }>,

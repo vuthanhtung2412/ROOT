@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import { queueMissingCardImages } from './gameAssets.ts'
+import { queueMissingCardImages } from '#assets/gameAssets.ts'
 
 export type CardTexturesReadyHandler = () => void
 

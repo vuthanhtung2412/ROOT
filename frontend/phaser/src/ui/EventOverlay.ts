@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import { gameViewSize } from '../game/hiDpi.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
 
 /** Blocking banner for Field Hospitals / generic pending events. */
 export class EventOverlay {

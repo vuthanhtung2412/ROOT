@@ -1,6 +1,6 @@
 import type Phaser from 'phaser'
-import type { ActionSpec, GameState } from '../api/client.ts'
-import { gameViewSize } from '../game/hiDpi.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
 
 export type TurnBannerViewModel = {
   actorSeat: number

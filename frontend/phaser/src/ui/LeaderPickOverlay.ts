@@ -1,9 +1,9 @@
 import type Phaser from 'phaser'
-import { gameViewSize } from '../game/hiDpi.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
 import {
   eyrieLeaderTextureKey,
   lookupEyrieLeader,
-} from '../assets/eyrieLeaderCatalog.ts'
+} from '#assets/eyrieLeaderCatalog.ts'
 
 export type LeaderPickedHandler = (leaderId: string) => void
 

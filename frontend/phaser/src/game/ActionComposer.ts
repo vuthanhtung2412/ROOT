@@ -1,4 +1,4 @@
-import type { ActionSpec } from '../api/client.ts'
+import type { ActionSpec } from '#api/client.ts'
 
 /** Client action payload submitted to POST /game/actions. */
 export type ClientAction = {

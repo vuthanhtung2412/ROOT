@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import { queueAutumnMapImage } from './gameAssets.ts'
+import { queueAutumnMapImage } from '#assets/gameAssets.ts'
 
 /**
  * Ensure autumn map texture exists (load if missing).

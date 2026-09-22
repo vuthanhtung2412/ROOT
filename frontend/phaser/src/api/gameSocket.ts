@@ -1,4 +1,4 @@
-import type { ActionSpec, GameState } from './client.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
 
 export type GameSocketPush = {
   state: GameState | null

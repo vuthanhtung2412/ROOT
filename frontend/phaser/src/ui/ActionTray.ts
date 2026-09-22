@@ -1,7 +1,7 @@
 import type Phaser from 'phaser'
-import type { ActionSpec } from '../api/client.ts'
-import { readChoiceParams } from '../game/ActionComposer.ts'
-import { gameViewSize } from '../game/hiDpi.ts'
+import type { ActionSpec } from '#api/client.ts'
+import { readChoiceParams } from '#game/ActionComposer.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
 
 export type ActionTrayHandlers = {
   onSelectAction: (spec: ActionSpec) => void

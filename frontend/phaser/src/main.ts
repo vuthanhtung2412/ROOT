@@ -1,7 +1,7 @@
-import './style.css'
+import '#style.css'
 import Phaser from 'phaser'
-import { gameConfig } from './game/config.ts'
-import { installHiDpiTextResolution } from './game/hiDpi.ts'
+import { gameConfig } from '#game/config.ts'
+import { installHiDpiTextResolution } from '#game/hiDpi.ts'
 
 installHiDpiTextResolution(Phaser)
 

@@ -2,8 +2,8 @@ import type Phaser from 'phaser'
 import {
   GAME_ASSET_KEYS,
   pieceTokenTextureKey,
-} from '../assets/gameAssets.ts'
-import { PIECE_DRAW } from '../game/theme.ts'
+} from '#assets/gameAssets.ts'
+import { PIECE_DRAW } from '#game/theme.ts'
 
 export type PieceViewModel = {
   id: string
