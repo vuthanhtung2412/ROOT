@@ -1,0 +1,199 @@
+{
+  "image": "resources/reference/character-boards/marquise-de-cat/marquise-de-cat-front.webp",
+  "unit": "px",
+  "naturalWidth": 1600,
+  "naturalHeight": 1242,
+  "tracks": [
+    {
+      "id": "sawmill",
+      "cells": 6,
+      "cellSize": 101,
+      "gaps": [
+        20,
+        23,
+        22,
+        25,
+        25
+      ],
+      "x": 774,
+      "y": 482
+    },
+    {
+      "id": "workshop",
+      "cells": 6,
+      "cellSize": 101,
+      "gaps": [
+        19,
+        22,
+        22,
+        24,
+        26
+      ],
+      "x": 777,
+      "y": 608
+    },
+    {
+      "id": "recruiter",
+      "cells": 6,
+      "cellSize": 101,
+      "gaps": [
+        16,
+        23,
+        21,
+        26,
+        23
+      ],
+      "x": 778,
+      "y": 739
+    }
+  ],
+  "regions": [
+    {
+      "id": "crafted-items",
+      "x": 1134,
+      "y": 202,
+      "width": 366,
+      "height": 98
+    },
+    {
+      "id": "supply-warriors",
+      "x": 901,
+      "y": 878,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "supply-wood",
+      "x": 779,
+      "y": 876,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "sawmill-0",
+      "x": 774,
+      "y": 482,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "sawmill-1",
+      "x": 895,
+      "y": 482,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "sawmill-2",
+      "x": 1019,
+      "y": 482,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "sawmill-3",
+      "x": 1142,
+      "y": 482,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "sawmill-4",
+      "x": 1268,
+      "y": 482,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "sawmill-5",
+      "x": 1394,
+      "y": 482,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "workshop-0",
+      "x": 777,
+      "y": 608,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "workshop-1",
+      "x": 897,
+      "y": 608,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "workshop-2",
+      "x": 1020,
+      "y": 608,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "workshop-3",
+      "x": 1143,
+      "y": 608,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "workshop-4",
+      "x": 1268,
+      "y": 608,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "workshop-5",
+      "x": 1395,
+      "y": 608,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "recruiter-0",
+      "x": 778,
+      "y": 739,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "recruiter-1",
+      "x": 895,
+      "y": 739,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "recruiter-2",
+      "x": 1019,
+      "y": 739,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "recruiter-3",
+      "x": 1141,
+      "y": 739,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "recruiter-4",
+      "x": 1268,
+      "y": 739,
+      "width": 101,
+      "height": 101
+    },
+    {
+      "id": "recruiter-5",
+      "x": 1392,
+      "y": 739,
+      "width": 101,
+      "height": 101
+    }
+  ]
+}
