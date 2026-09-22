@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { ensureAutumnMapLoaded } from '#assets/autumnMapLoader.ts'
 import { createPhaserApi } from '#api/client.ts'
+import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import { GameSession } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 import { loadPlayerIdentity } from '#game/playerIdentity.ts'
@@ -21,11 +22,13 @@ export class MenuScene extends Phaser.Scene {
   }
 
   init(data: MenuSceneData): void {
+    const defaultApiBaseUrl = resolveDefaultApiBaseUrl()
+    this.apiBaseUrlInput = defaultApiBaseUrl
     this.session =
       data.session ??
       new GameSession({
-        api: createPhaserApi({ baseUrl: '' }),
-        apiBaseUrl: '',
+        api: createPhaserApi({ baseUrl: defaultApiBaseUrl }),
+        apiBaseUrl: defaultApiBaseUrl,
       })
     this.enteredGame = false
   }
@@ -125,8 +128,10 @@ export class MenuScene extends Phaser.Scene {
     }
     this.clearLobbyWait()
     const stored = loadPlayerIdentity()
-    if (stored !== null) {
+    if (stored !== null && stored.apiBaseUrl !== '') {
       this.apiBaseUrlInput = stored.apiBaseUrl
+    } else {
+      this.apiBaseUrlInput = resolveDefaultApiBaseUrl()
     }
     this.rebindSessionApi()
     this.setStatus(stored !== null ? 'Checking seat…' : 'Joining…', '#9a9a9a')

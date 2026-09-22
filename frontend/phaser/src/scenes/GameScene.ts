@@ -3,6 +3,7 @@ import { ensureAutumnMapLoaded } from '#assets/autumnMapLoader.ts'
 import { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { createPhaserApi } from '#api/client.ts'
+import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import {
   ActionComposer,
   type ActionComposerHooks,
@@ -507,7 +508,7 @@ export class GameScene extends Phaser.Scene {
 
   private async loadLayout(): Promise<BoardLayout> {
     try {
-      const api = createPhaserApi({ baseUrl: '' })
+      const api = createPhaserApi({ baseUrl: resolveDefaultApiBaseUrl() })
       const response = await api.fallLayout()
       return boardLayoutFromFallResponse(response)
     } catch {

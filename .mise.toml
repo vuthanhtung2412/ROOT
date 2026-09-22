@@ -4,3 +4,5 @@ pnpm = "10"
 
 [env]
 ROOT_API = "http://localhost:3000"
+# Tailscale Funnel public URL (`pnpm remote`). Native iOS defaults to this.
+ROOT_FUNNEL_URL = "https://mbp14-11.taile5ed55.ts.net:8443"

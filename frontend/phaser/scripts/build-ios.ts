@@ -4,7 +4,7 @@
  * Run: pnpm --filter @root/phaser build:ios
  * Or:  pnpm build:ios (from repo root)
  *
- * Requires macOS + Xcode. Set menu API base to http://<lan-ip>:3000.
+ * Requires macOS + Xcode. Native API default = mise `ROOT_FUNNEL_URL`.
  */
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -30,6 +30,15 @@ function runCommand(command: string, args: string[]): void {
 }
 
 function main(): void {
+  const funnelUrl = process.env.ROOT_FUNNEL_URL
+  if (typeof funnelUrl === 'string' && funnelUrl.length > 0) {
+    console.log(`Native API default (ROOT_FUNNEL_URL): ${funnelUrl}`)
+  } else {
+    console.warn(
+      'ROOT_FUNNEL_URL unset — set it in .mise.toml before build:ios',
+    )
+  }
+
   console.log('Building Phaser web assets…')
   runCommand('pnpm', ['build'])
 

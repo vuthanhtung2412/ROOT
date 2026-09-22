@@ -53,7 +53,7 @@ pnpm --filter @root/web dev
 pnpm build:ios
 ```
 
-In Simulator / device menu, set API base to `http://<host-lan-ip>:3000`, then Join. Cleartext LAN HTTP allowed via ATS + Capacitor `server.cleartext`.
+Native build bakes `ROOT_FUNNEL_URL` from `.mise.toml` as default API base (Tailscale Funnel). Run `pnpm remote` on host so Funnel is up, then Play in Simulator / device. Override still possible via stored identity. Cleartext LAN HTTP still allowed via ATS + Capacitor `server.cleartext` if you point at `http://<lan-ip>:3000`.
 
 ## Architecture
 
