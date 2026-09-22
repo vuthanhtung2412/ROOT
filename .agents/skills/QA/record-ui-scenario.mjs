@@ -159,8 +159,8 @@ async function cliAct(action) {
 }
 
 async function qaContinue(page, canvas) {
-  // MenuScene: "QA: Continue loaded game" at (width/2, height*0.64)
-  await clickGame(page, canvas, 640, 720 * 0.64)
+  // MenuScene: "QA: Continue loaded game" at (width/2, height*0.6)
+  await clickGame(page, canvas, 640, 720 * 0.6)
   await page.waitForTimeout(2500)
 }
 
