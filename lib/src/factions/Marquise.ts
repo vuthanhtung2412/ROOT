@@ -827,6 +827,7 @@ export class Marquise extends Faction {
       eveningDrawDone: false,
       swapMeetUsed: false,
       charmOffensiveUsed: false,
+      leagueUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,

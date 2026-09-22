@@ -203,6 +203,10 @@ export function describeAction(action: Action, state: GameState): string {
       return `CHARM OFFENSIVE draw + 1 VP to ${playerRefBySeat(state, action.target)}`
     case 'informantsTakeAmbush':
       return `INFORMANTS take ${findCard(action.cardId)} from discard`
+    case 'leagueMove':
+      return `LEAGUE MOVE ${action.from}→${action.to} x${action.count} (item ${action.itemIndex})`
+    case 'leagueBattle':
+      return `LEAGUE BATTLE c${action.clearing} vs ${playerRefBySeat(state, action.defender)} (item ${action.itemIndex})`
     case 'emergencyOrders':
       return 'EMERGENCY ORDERS draw 1'
     case 'eveningScore':
