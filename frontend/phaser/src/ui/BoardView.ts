@@ -220,6 +220,9 @@ export class BoardView {
       })
 
       hitArea.on('pointerover', () => {
+        if (!this.highlightedClearingIds.has(target.clearingId)) {
+          return
+        }
         ring.setStrokeStyle(3, 0xffe08a, 0.9)
       })
 
