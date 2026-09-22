@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Board layout helper</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 13px/1.4 ui-monospace, Menlo, monospace;
+      background: #1a1a1a;
+      color: #f0e6d3;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: 100vh;
+    }
+    aside {
+      padding: 12px;
+      border-right: 1px solid #444;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    h1 { font-size: 14px; margin: 0 0 4px; }
+    h2 { font-size: 12px; margin: 0; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.04em; }
+    label { display: block; margin-bottom: 4px; opacity: 0.8; }
+    select, input, button, textarea {
+      width: 100%;
+      font: inherit;
+      color: inherit;
+      background: #111;
+      border: 1px solid #555;
+      padding: 6px 8px;
+      border-radius: 4px;
+    }
+    input[type="number"] { padding: 4px 6px; }
+    button { cursor: pointer; background: #2a2a2a; }
+    button:hover { background: #3a3a3a; }
+    button.primary { background: #5a3a1a; border-color: #a07040; }
+    .row { display: flex; gap: 6px; }
+    .row > * { flex: 1; }
+    .stack-card {
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #141414;
+    }
+    .stack-card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .field-grid label { margin: 0; font-size: 11px; }
+    .stack-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      grid-column: 1 / -1;
+    }
+    .stack-field.half { grid-column: auto; }
+    .stack-field > span { font-size: 11px; opacity: 0.8; }
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .stepper button {
+      width: 32px;
+      flex: 0 0 32px;
+      padding: 6px 0;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .stepper input[type="number"] {
+      flex: 1;
+      text-align: center;
+    }
+    .stack-field input[type="range"] {
+      width: 100%;
+      padding: 0;
+      accent-color: #7ec8ff;
+    }
+    .region .gap-handle {
+      position: absolute;
+      top: 0;
+      right: -7px;
+      width: 14px;
+      height: 100%;
+      cursor: ew-resize;
+      background: rgba(126, 200, 255, 0.35);
+      border-radius: 2px;
+      z-index: 3;
+    }
+    .region .gap-handle:hover,
+    .region .gap-handle.dragging {
+      background: rgba(255, 224, 138, 0.7);
+    }
+    #region-list { list-style: none; margin: 0; padding: 0; max-height: 160px; overflow: auto; }
+    #region-list li {
+      padding: 4px 6px;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    #region-list li.selected { border-color: #c9a227; background: #2a2410; }
+    #region-list li .del { opacity: 0.6; border: none; background: transparent; width: auto; padding: 0 4px; }
+    #export-json {
+      flex: 1;
+      min-height: 100px;
+      resize: vertical;
+      font-size: 11px;
+    }
+    main {
+      overflow: auto;
+      position: relative;
+      background: #0d0d0d;
+    }
+    #stage-wrap {
+      position: relative;
+      display: inline-block;
+      margin: 16px;
+      line-height: 0;
+    }
+    #board {
+      max-width: none;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .region {
+      position: absolute;
+      border: 2px solid #c9a227;
+      background: rgba(201, 162, 39, 0.18);
+      cursor: move;
+      min-width: 16px;
+      min-height: 16px;
+    }
+    .region.track { border-color: #7ec8ff; background: rgba(126, 200, 255, 0.16); }
+    .region.selected { border-color: #ffe08a; background: rgba(255, 224, 138, 0.22); z-index: 2; }
+    .region .label {
+      position: absolute;
+      left: 0;
+      top: -18px;
+      font: 11px/1 ui-monospace, Menlo, monospace;
+      color: #fff;
+      background: #000c;
+      padding: 2px 4px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .region .handle {
+      position: absolute;
+      right: -5px;
+      bottom: -5px;
+      width: 12px;
+      height: 12px;
+      background: #c9a227;
+      cursor: nwse-resize;
+    }
+    .region.track .handle { background: #7ec8ff; }
+    .region.selected .handle { background: #ffe08a; }
+    .hint { opacity: 0.65; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <aside>
+    <h1>Board layout helper</h1>
+    <p class="hint">Work kept per board when you switch. Each gap between cells is separate.</p>
+
+    <div>
+      <label>Preset</label>
+      <select id="preset">
+        <option value="marquise">Marquise de Cat front</option>
+        <option value="eyrie">Eyrie Dynasties front</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Or file</label>
+      <input type="file" id="file" accept="image/*" />
+    </div>
+
+    <div>
+      <h2>Stacks</h2>
+      <p class="hint">Drag blue strip = that gap only. Panel lists every gap.</p>
+      <div id="stack-controls" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
+    </div>
+
+    <div>
+      <label>Extra single ids</label>
+      <textarea id="new-ids" rows="2" placeholder="custom-slot"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button type="button" id="add-region">Add listed</button>
+        <button type="button" id="reset-preset">Reset this board</button>
+      </div>
+    </div>
+
+    <div>
+      <label>Singles</label>
+      <ul id="region-list"></ul>
+    </div>
+
+    <div class="row">
+      <button type="button" id="export" class="primary">Export JSON</button>
+      <button type="button" id="copy">Copy</button>
+    </div>
+    <textarea id="export-json" readonly placeholder="export lands here"></textarea>
+    <p class="hint">Also sets <code>window.__layoutExport</code>. Saved in localStorage.</p>
+  </aside>
+
+  <main>
+    <div id="stage-wrap">
+      <img id="board" alt="board" />
+      <div id="regions"></div>
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "board-layout-helper:v3";
+
+    const PRESETS = {
+      marquise: {
+        image: "/resources/reference/character-boards/marquise-de-cat/marquise-de-cat-front.webp",
+        path: "resources/reference/character-boards/marquise-de-cat/marquise-de-cat-front.webp",
+        singles: ["crafted-items", "supply-warriors", "supply-wood"],
+        tracks: [
+          { id: "sawmill", cells: 6 },
+          { id: "workshop", cells: 6 },
+          { id: "recruiter", cells: 6 },
+        ],
+        /** Supply squares share track cell size. */
+        linkedSquareIds: ["supply-warriors", "supply-wood"],
+      },
+      eyrie: {
+        image: "/resources/reference/character-boards/eyrie-dynasties/eyrie-dynasties-front.webp",
+        path: "resources/reference/character-boards/eyrie-dynasties/eyrie-dynasties-front.webp",
+        singles: ["leader-slot", "crafted-items", "supply-warriors"],
+        tracks: [{ id: "roost", cells: 7 }],
+        linkedSquareIds: ["supply-warriors"],
+      },
+    };
+
+    /** Seed from prior helper session (Eyrie marks). */
+    const SEED_BY_PRESET = {
+      eyrie: {
+        singles: [
+          { id: "leader-slot", x: 1176, y: 687, width: 369, height: 510 },
+          { id: "crafted-items", x: 680, y: 257, width: 395, height: 92 },
+          { id: "supply-warriors", x: 730, y: 1053, width: 99, height: 99 },
+        ],
+        tracks: [
+          {
+            id: "roost",
+            cells: 7,
+            cellSize: 99,
+            gaps: [14, 14, 14, 14, 14, 14],
+            x: 754,
+            y: 520,
+          },
+        ],
+      },
+    };
+
+    const board = document.getElementById("board");
+    const regionsEl = document.getElementById("regions");
+    const regionList = document.getElementById("region-list");
+    const exportJson = document.getElementById("export-json");
+    const newIdsInput = document.getElementById("new-ids");
+    const stackControls = document.getElementById("stack-controls");
+
+    /** @type {Record<string, PresetState>} */
+    let savedByPreset = loadSaved();
+    let currentPresetKey = "marquise";
+    let imagePath = "";
+    let selectedId = null;
+
+    /** @type {{ id: string, x: number, y: number, width: number, height: number, el: HTMLElement, kind: "single"|"track", trackId?: string }[]} */
+    let regions = [];
+
+    /** @type {{ id: string, cells: number, cellSize: number, gaps: number[], x: number, y: number }[]} */
+    let tracks = [];
+
+    /**
+     * @typedef {{
+     *   singles: { id: string, x: number, y: number, width: number, height: number }[],
+     *   tracks: { id: string, cells: number, cellSize: number, gaps: number[], x: number, y: number }[],
+     * }} PresetState
+     */
+
+    function makeGaps(cellCount, fill) {
+      const count = Math.max(0, cellCount - 1);
+      return Array.from({ length: count }, () => Math.max(0, Math.round(fill)));
+    }
+
+    /** Migrate old `{ gap }` → `{ gaps[] }`. */
+    function normalizeTrack(raw) {
+      const cells = Number(raw.cells) || 2;
+      const cellSize = Math.max(16, Number(raw.cellSize) || 48);
+      let gaps;
+      if (Array.isArray(raw.gaps) && raw.gaps.length === cells - 1) {
+        gaps = raw.gaps.map((value) => Math.max(0, Math.round(Number(value) || 0)));
+      } else if (Array.isArray(raw.gaps) && raw.gaps.length > 0) {
+        const fill = Math.max(0, Math.round(Number(raw.gaps[0]) || 0));
+        gaps = makeGaps(cells, fill);
+        for (let index = 0; index < Math.min(gaps.length, raw.gaps.length); index += 1) {
+          gaps[index] = Math.max(0, Math.round(Number(raw.gaps[index]) || 0));
+        }
+      } else {
+        gaps = makeGaps(cells, Number(raw.gap) || 8);
+      }
+      return {
+        id: String(raw.id),
+        cells,
+        cellSize,
+        gaps,
+        x: Math.round(Number(raw.x) || 0),
+        y: Math.round(Number(raw.y) || 0),
+      };
+    }
+
+    function normalizeState(state) {
+      if (!state || typeof state !== "object") return null;
+      const singles = Array.isArray(state.singles)
+        ? state.singles.filter((single) => single && single.id !== "leader-banner")
+        : [];
+      const trackList = Array.isArray(state.tracks)
+        ? state.tracks.map((track) => normalizeTrack(track))
+        : [];
+      return { singles, tracks: trackList };
+    }
+
+    function cellX(track, index) {
+      let x = track.x;
+      for (let cursor = 0; cursor < index; cursor += 1) {
+        x += track.cellSize + (track.gaps[cursor] ?? 0);
+      }
+      return x;
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const fromV2 = localStorage.getItem("board-layout-helper:v2");
+        const source = raw ?? fromV2;
+        if (!source) return normalizeSavedMap({ ...SEED_BY_PRESET });
+        const parsed = JSON.parse(source);
+        return normalizeSavedMap({ ...SEED_BY_PRESET, ...parsed });
+      } catch {
+        return normalizeSavedMap({ ...SEED_BY_PRESET });
+      }
+    }
+
+    function normalizeSavedMap(map) {
+      /** @type {Record<string, PresetState>} */
+      const out = {};
+      for (const [key, value] of Object.entries(map)) {
+        const normalized = normalizeState(value);
+        if (normalized !== null) out[key] = normalized;
+      }
+      return out;
+    }
+
+    function persistAll() {
+      saveCurrentPreset();
+      const serializable = {};
+      for (const [key, value] of Object.entries(savedByPreset)) {
+        serializable[key] = value;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
+    }
+
+    function naturalSize() {
+      return { w: board.naturalWidth || 1, h: board.naturalHeight || 1 };
+    }
+
+    function displayScale() {
+      if (!board.naturalWidth) return 1;
+      return board.clientWidth / board.naturalWidth;
+    }
+
+    function presetDef() {
+      return PRESETS[currentPresetKey];
+    }
+
+    function defaultStateForPreset(key) {
+      const def = PRESETS[key];
+      const { w, h } = naturalSize();
+      const cellSize = Math.round(Math.min(w, h) * 0.055);
+      const gapFill = 8;
+      const singles = [];
+      let singleRow = 0;
+      const singleWidth = Math.round(w * 0.16);
+      const singleHeight = Math.round(h * 0.08);
+      for (const id of def.singles) {
+        const linked = def.linkedSquareIds.includes(id);
+        singles.push({
+          id,
+          x: Math.round(w * 0.06 + (singleRow % 3) * (singleWidth + 16)),
+          y: Math.round(h * 0.06 + Math.floor(singleRow / 3) * (singleHeight + 20)),
+          width: linked ? cellSize : singleWidth,
+          height: linked ? cellSize : singleHeight,
+        });
+        singleRow += 1;
+      }
+      const trackStates = def.tracks.map((track, index) =>
+        normalizeTrack({
+          id: track.id,
+          cells: track.cells,
+          cellSize,
+          gaps: makeGaps(track.cells, gapFill),
+          x: Math.round(w * 0.52),
+          y: Math.round(h * 0.42 + index * (cellSize + 18)),
+        }),
+      );
+      return { singles, tracks: trackStates };
+    }
+
+    function snapshotState() {
+      const singles = regions
+        .filter((region) => region.kind === "single")
+        .map(({ id, x, y, width, height }) => ({ id, x, y, width, height }));
+      return {
+        singles,
+        tracks: tracks.map((track) => ({
+          ...track,
+          gaps: [...track.gaps],
+        })),
+      };
+    }
+
+    function saveCurrentPreset() {
+      if (!PRESETS[currentPresetKey]) return;
+      savedByPreset[currentPresetKey] = snapshotState();
+    }
+
+    function clearRegionDom() {
+      for (const region of regions) region.el.remove();
+      regions = [];
+      selectedId = null;
+      // Drop any orphan overlays left from a prior board.
+      regionsEl.replaceChildren();
+    }
+
+    function syncRegionDom(region) {
+      const s = displayScale();
+      region.el.style.left = region.x * s + "px";
+      region.el.style.top = region.y * s + "px";
+      region.el.style.width = region.width * s + "px";
+      region.el.style.height = region.height * s + "px";
+      region.el.classList.toggle("selected", region.id === selectedId);
+      const label = region.el.querySelector(".label");
+      if (label) label.textContent = region.id;
+    }
+
+    function renderSingleList() {
+      regionList.innerHTML = "";
+      for (const region of regions.filter((entry) => entry.kind === "single")) {
+        const li = document.createElement("li");
+        li.className = region.id === selectedId ? "selected" : "";
+        li.innerHTML = `<span>${region.id}</span>`;
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "del";
+        del.textContent = "×";
+        del.addEventListener("click", (event) => {
+          event.stopPropagation();
+          removeSingle(region.id);
+        });
+        li.appendChild(del);
+        li.addEventListener("click", () => selectRegion(region.id));
+        regionList.appendChild(li);
+      }
+    }
+
+    function selectRegion(id) {
+      selectedId = id;
+      for (const region of regions) syncRegionDom(region);
+      renderSingleList();
+    }
+
+    function removeSingle(id) {
+      const region = regions.find((entry) => entry.id === id && entry.kind === "single");
+      if (!region) return;
+      region.el.remove();
+      regions = regions.filter((entry) => entry.id !== id);
+      if (selectedId === id) selectedId = null;
+      renderSingleList();
+      publishExport();
+      persistAll();
+    }
+
+    function linkedSquareSize() {
+      const track = tracks[0];
+      if (track) return track.cellSize;
+      const linkedId = presetDef().linkedSquareIds[0];
+      const single = regions.find((entry) => entry.id === linkedId);
+      return single ? Math.max(single.width, single.height) : 48;
+    }
+
+    function applySharedSquareSize(size, options = {}) {
+      const side = Math.max(16, Math.round(size));
+      for (const track of tracks) {
+        track.cellSize = side;
+      }
+      rebuildAllTracks();
+      for (const id of presetDef().linkedSquareIds) {
+        const region = regions.find((entry) => entry.id === id && entry.kind === "single");
+        if (!region) continue;
+        region.width = side;
+        region.height = side;
+        syncRegionDom(region);
+      }
+      if (options.skipControlRender !== true) {
+        syncStackControlValues();
+      }
+    }
+
+    function setTrackGapAt(trackId, gapIndex, gap) {
+      const track = tracks.find((entry) => entry.id === trackId);
+      if (!track) return;
+      if (gapIndex < 0 || gapIndex >= track.gaps.length) return;
+      track.gaps[gapIndex] = Math.max(0, Math.round(gap));
+      rebuildTrack(track);
+      syncStackControlValues();
+      publishExport();
+    }
+
+    function setAllTrackGaps(trackId, gap) {
+      const track = tracks.find((entry) => entry.id === trackId);
+      if (!track) return;
+      const next = Math.max(0, Math.round(gap));
+      track.gaps = makeGaps(track.cells, next);
+      rebuildTrack(track);
+      syncStackControlValues();
+      publishExport();
+      persistAll();
+    }
+
+    function setTrackField(trackId, field, value) {
+      const track = tracks.find((entry) => entry.id === trackId);
+      if (!track) return;
+      if (field === "cellSize") {
+        applySharedSquareSize(value);
+        publishExport();
+        persistAll();
+        return;
+      }
+      if (field === "gapAll") {
+        setAllTrackGaps(trackId, value);
+        return;
+      }
+      if (field.startsWith("gap-")) {
+        const gapIndex = Number(field.slice(4));
+        setTrackGapAt(trackId, gapIndex, value);
+        persistAll();
+        return;
+      }
+      if (field === "x") track.x = Math.round(value);
+      if (field === "y") track.y = Math.round(value);
+      rebuildTrack(track);
+      syncStackControlValues();
+      publishExport();
+      persistAll();
+    }
+
+    function removeTrackCells(trackId) {
+      const keep = [];
+      for (const region of regions) {
+        if (region.kind === "track" && region.trackId === trackId) {
+          region.el.remove();
+        } else {
+          keep.push(region);
+        }
+      }
+      regions = keep;
+    }
+
+    function rebuildTrack(track) {
+      removeTrackCells(track.id);
+      for (let index = 0; index < track.cells; index += 1) {
+        const id = `${track.id}-${String(index)}`;
+        addRegionAt(
+          id,
+          {
+            x: cellX(track, index),
+            y: track.y,
+            width: track.cellSize,
+            height: track.cellSize,
+          },
+          "track",
+          track.id,
+        );
+        const cell = regions.find((entry) => entry.id === id);
+        if (cell && index < track.cells - 1) {
+          attachGapHandle(cell.el, track.id, index);
+        }
+      }
+    }
+
+    function rebuildAllTracks() {
+      for (const track of tracks) rebuildTrack(track);
+    }
+
+    function makeRegionEl(id, kind, trackId) {
+      const el = document.createElement("div");
+      el.className = kind === "track" ? "region track" : "region";
+      el.innerHTML = `<span class="label"></span><div class="handle"></div>`;
+
+      el.addEventListener("pointerdown", (event) => {
+        if (
+          event.target.classList.contains("handle") ||
+          event.target.classList.contains("gap-handle")
+        ) {
+          return;
+        }
+        event.preventDefault();
+        selectRegion(id);
+        const region = regions.find((entry) => entry.id === id);
+        if (!region) return;
+        const s = displayScale();
+        const startX = event.clientX;
+        const startY = event.clientY;
+
+        if (kind === "track" && trackId) {
+          const track = tracks.find((entry) => entry.id === trackId);
+          if (!track) return;
+          const originX = track.x;
+          const originY = track.y;
+          const onMove = (moveEvent) => {
+            track.x = Math.max(0, Math.round(originX + (moveEvent.clientX - startX) / s));
+            track.y = Math.max(0, Math.round(originY + (moveEvent.clientY - startY) / s));
+            rebuildTrack(track);
+            syncStackControlValues();
+          };
+          const onUp = () => {
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            publishExport();
+            persistAll();
+          };
+          window.addEventListener("pointermove", onMove);
+          window.addEventListener("pointerup", onUp);
+          return;
+        }
+
+        const originX = region.x;
+        const originY = region.y;
+        const onMove = (moveEvent) => {
+          region.x = Math.max(0, Math.round(originX + (moveEvent.clientX - startX) / s));
+          region.y = Math.max(0, Math.round(originY + (moveEvent.clientY - startY) / s));
+          syncRegionDom(region);
+        };
+        const onUp = () => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          publishExport();
+          persistAll();
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+      });
+
+      const handle = el.querySelector(".handle");
+      handle.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        selectRegion(id);
+        const region = regions.find((entry) => entry.id === id);
+        if (!region) return;
+        const s = displayScale();
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const originW = region.width;
+        const originH = region.height;
+        const originSide = Math.max(originW, originH);
+        const linked =
+          kind === "track" ||
+          presetDef().linkedSquareIds.includes(id);
+
+        const onMove = (moveEvent) => {
+          if (linked) {
+            const delta = Math.max(
+              moveEvent.clientX - startX,
+              moveEvent.clientY - startY,
+            );
+            applySharedSquareSize(originSide + delta / s);
+            publishExport();
+            return;
+          }
+          region.width = Math.max(16, Math.round(originW + (moveEvent.clientX - startX) / s));
+          region.height = Math.max(16, Math.round(originH + (moveEvent.clientY - startY) / s));
+          syncRegionDom(region);
+        };
+        const onUp = () => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          publishExport();
+          persistAll();
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+      });
+      return el;
+    }
+
+    function attachGapHandle(el, trackId, gapIndex) {
+      const gapHandle = document.createElement("div");
+      gapHandle.className = "gap-handle";
+      gapHandle.title = `Drag gap ${String(gapIndex)}↔${String(gapIndex + 1)}`;
+      gapHandle.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const track = tracks.find((entry) => entry.id === trackId);
+        if (!track) return;
+        const s = displayScale();
+        const startX = event.clientX;
+        const originGap = track.gaps[gapIndex] ?? 0;
+        gapHandle.classList.add("dragging");
+        const onMove = (moveEvent) => {
+          const nextGap = Math.max(
+            0,
+            Math.round(originGap + (moveEvent.clientX - startX) / s),
+          );
+          setTrackGapAt(trackId, gapIndex, nextGap);
+        };
+        const onUp = () => {
+          gapHandle.classList.remove("dragging");
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          persistAll();
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+      });
+      el.appendChild(gapHandle);
+    }
+
+    function addRegionAt(id, box, kind, trackId) {
+      if (regions.some((entry) => entry.id === id)) return false;
+      const el = makeRegionEl(id, kind, trackId);
+      regionsEl.appendChild(el);
+      const region = {
+        id,
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        el,
+        kind,
+        trackId,
+      };
+      regions.push(region);
+      syncRegionDom(region);
+      return true;
+    }
+
+    function renderStackControls() {
+      stackControls.innerHTML = "";
+      for (const track of tracks) {
+        const card = document.createElement("div");
+        card.className = "stack-card";
+        card.dataset.trackCard = track.id;
+        const gapRows = track.gaps
+          .map((gap, gapIndex) => {
+            const field = `gap-${String(gapIndex)}`;
+            return `
+            <div class="stack-field">
+              <span>gap ${String(gapIndex)}→${String(gapIndex + 1)}</span>
+              <input type="range" min="0" max="120" step="1" data-field="${field}" data-track="${track.id}" value="${String(gap)}" />
+              <div class="stepper">
+                <button type="button" data-step="-1" data-field="${field}" data-track="${track.id}">−</button>
+                <input type="number" data-field="${field}" data-track="${track.id}" data-commit="change" value="${String(gap)}" min="0" step="1" />
+                <button type="button" data-step="1" data-field="${field}" data-track="${track.id}">+</button>
+                <button type="button" data-step="5" data-field="${field}" data-track="${track.id}">+5</button>
+              </div>
+            </div>`;
+          })
+          .join("");
+        card.innerHTML = `
+          <header><span>${track.id}</span><span class="hint">${String(track.cells)} cells</span></header>
+          <div class="field-grid">
+            <div class="stack-field">
+              <span>size</span>
+              <input type="range" min="16" max="200" step="1" data-field="cellSize" data-track="${track.id}" value="${String(track.cellSize)}" />
+              <div class="stepper">
+                <button type="button" data-step="-1" data-field="cellSize" data-track="${track.id}">−</button>
+                <input type="number" data-field="cellSize" data-track="${track.id}" data-commit="change" value="${String(track.cellSize)}" min="16" step="1" />
+                <button type="button" data-step="1" data-field="cellSize" data-track="${track.id}">+</button>
+              </div>
+            </div>
+            <div class="stack-field half">
+              <span>x</span>
+              <div class="stepper">
+                <button type="button" data-step="-1" data-field="x" data-track="${track.id}">−</button>
+                <input type="number" data-field="x" data-track="${track.id}" data-commit="change" value="${String(track.x)}" step="1" />
+                <button type="button" data-step="1" data-field="x" data-track="${track.id}">+</button>
+              </div>
+            </div>
+            <div class="stack-field half">
+              <span>y</span>
+              <div class="stepper">
+                <button type="button" data-step="-1" data-field="y" data-track="${track.id}">−</button>
+                <input type="number" data-field="y" data-track="${track.id}" data-commit="change" value="${String(track.y)}" step="1" />
+                <button type="button" data-step="1" data-field="y" data-track="${track.id}">+</button>
+              </div>
+            </div>
+            <div class="stack-field">
+              <span>set all gaps</span>
+              <div class="stepper">
+                <button type="button" data-step="-1" data-field="gapAll" data-track="${track.id}">−</button>
+                <input type="number" data-field="gapAll" data-track="${track.id}" data-commit="change" value="${String(track.gaps[0] ?? 0)}" min="0" step="1" />
+                <button type="button" data-step="1" data-field="gapAll" data-track="${track.id}">+</button>
+                <button type="button" data-step="5" data-field="gapAll" data-track="${track.id}">+5</button>
+              </div>
+            </div>
+            ${gapRows}
+          </div>
+        `;
+        stackControls.appendChild(card);
+      }
+
+      for (const input of stackControls.querySelectorAll("input[data-track]")) {
+        const commit = input.getAttribute("data-commit");
+        if (input.type === "range") {
+          input.addEventListener("input", onStackFieldChange);
+        } else if (commit === "change") {
+          input.addEventListener("change", onStackFieldChange);
+          input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.target.blur();
+            }
+          });
+        } else {
+          input.addEventListener("change", onStackFieldChange);
+        }
+      }
+      for (const button of stackControls.querySelectorAll("button[data-step]")) {
+        button.addEventListener("click", onStackStepClick);
+      }
+    }
+
+    function readTrackField(track, field) {
+      if (field === "cellSize" || field === "x" || field === "y") {
+        return track[field];
+      }
+      if (field === "gapAll") {
+        return track.gaps[0] ?? 0;
+      }
+      if (field.startsWith("gap-")) {
+        const gapIndex = Number(field.slice(4));
+        return track.gaps[gapIndex] ?? 0;
+      }
+      return 0;
+    }
+
+    function syncStackControlValues() {
+      for (const track of tracks) {
+        const card = stackControls.querySelector(`[data-track-card="${track.id}"]`);
+        if (!card) continue;
+        for (const input of card.querySelectorAll("input[data-field]")) {
+          const field = input.dataset.field;
+          if (!field) continue;
+          const next = String(readTrackField(track, field));
+          if (document.activeElement === input) continue;
+          if (input.value !== next) input.value = next;
+        }
+      }
+    }
+
+    function onStackStepClick(event) {
+      const button = event.currentTarget;
+      if (!(button instanceof HTMLButtonElement)) return;
+      const trackId = button.dataset.track;
+      const field = button.dataset.field;
+      const step = Number(button.dataset.step);
+      const track = tracks.find((entry) => entry.id === trackId);
+      if (!track || !field || !Number.isFinite(step)) return;
+      setTrackField(trackId, field, readTrackField(track, field) + step);
+    }
+
+    function onStackFieldChange(event) {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement)) return;
+      const trackId = input.dataset.track;
+      const field = input.dataset.field;
+      if (!trackId || !field) return;
+      const value = Number(input.value);
+      if (!Number.isFinite(value)) return;
+      setTrackField(trackId, field, value);
+    }
+
+    function applyState(state) {
+      clearRegionDom();
+      const normalized = normalizeState(state) ?? defaultStateForPreset(currentPresetKey);
+      tracks = normalized.tracks.map((track) => normalizeTrack(track));
+      for (const single of normalized.singles) {
+        addRegionAt(single.id, single, "single");
+      }
+      rebuildAllTracks();
+      renderStackControls();
+      renderSingleList();
+      publishExport();
+    }
+
+    function loadPresetState(key) {
+      const existing = savedByPreset[key];
+      if (existing && existing.tracks && existing.singles) {
+        applyState(existing);
+        return;
+      }
+      const fresh = defaultStateForPreset(key);
+      savedByPreset[key] = fresh;
+      applyState(fresh);
+    }
+
+    function buildExport() {
+      return {
+        image: imagePath,
+        unit: "px",
+        naturalWidth: board.naturalWidth || 0,
+        naturalHeight: board.naturalHeight || 0,
+        tracks: tracks.map((track) => ({
+          ...track,
+          gaps: [...track.gaps],
+        })),
+        regions: regions.map(({ id, x, y, width, height }) => ({
+          id,
+          x,
+          y,
+          width,
+          height,
+        })),
+      };
+    }
+
+    function publishExport() {
+      const payload = buildExport();
+      exportJson.value = JSON.stringify(payload, null, 2);
+      window.__layoutExport = payload;
+    }
+
+    function switchPreset(key) {
+      if (!PRESETS[key]) return;
+      if (key === currentPresetKey && board.complete && board.naturalWidth > 0) {
+        return;
+      }
+      saveCurrentPreset();
+      persistAll();
+      currentPresetKey = key;
+      imagePath = PRESETS[key].path;
+
+      // Strip old board chrome right away — do not wait for image load.
+      clearRegionDom();
+      tracks = [];
+      renderStackControls();
+      renderSingleList();
+      exportJson.value = "";
+      window.__layoutExport = null;
+
+      const src = PRESETS[key].image;
+      let applied = false;
+      const applyOnce = () => {
+        if (applied) return;
+        applied = true;
+        loadPresetState(key);
+      };
+      board.onload = applyOnce;
+      board.onerror = applyOnce;
+      const alreadyShowing =
+        board.getAttribute("src") === src && board.complete && board.naturalWidth > 0;
+      if (alreadyShowing) {
+        applyOnce();
+        return;
+      }
+      board.src = src;
+      // Cached decode can finish before/without a second onload in some browsers.
+      if (board.complete && board.naturalWidth > 0) {
+        applyOnce();
+      }
+    }
+
+    function addListedSingles(ids) {
+      const { w, h } = naturalSize();
+      let lastId = null;
+      for (const raw of ids) {
+        const id = raw.trim();
+        if (!id) continue;
+        const offset = regions.filter((entry) => entry.kind === "single").length * 28;
+        if (
+          addRegionAt(
+            id,
+            {
+              x: Math.round(w * 0.08 + offset),
+              y: Math.round(h * 0.08 + offset),
+              width: Math.round(w * 0.14),
+              height: Math.round(h * 0.08),
+            },
+            "single",
+          )
+        ) {
+          lastId = id;
+        }
+      }
+      if (lastId) selectRegion(lastId);
+      renderSingleList();
+      publishExport();
+      persistAll();
+    }
+
+    document.getElementById("preset").addEventListener("change", (event) => {
+      const key = event.target.value;
+      switchPreset(key);
+    });
+
+    document.getElementById("file").addEventListener("change", (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      saveCurrentPreset();
+      const url = URL.createObjectURL(file);
+      imagePath = file.name;
+      board.onload = () => {
+        // Keep current stacks/singles; only swap art.
+        for (const region of regions) syncRegionDom(region);
+        publishExport();
+      };
+      board.src = url;
+    });
+
+    document.getElementById("add-region").addEventListener("click", () => {
+      const ids = newIdsInput.value
+        .split(/[\n,]+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+      addListedSingles(ids);
+    });
+
+    document.getElementById("reset-preset").addEventListener("click", () => {
+      const fresh = defaultStateForPreset(currentPresetKey);
+      savedByPreset[currentPresetKey] = fresh;
+      applyState(fresh);
+      persistAll();
+    });
+
+    document.getElementById("export").addEventListener("click", () => {
+      publishExport();
+      persistAll();
+    });
+
+    document.getElementById("copy").addEventListener("click", async () => {
+      publishExport();
+      persistAll();
+      try {
+        await navigator.clipboard.writeText(exportJson.value);
+      } catch {
+        exportJson.select();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      for (const region of regions) syncRegionDom(region);
+    });
+
+    window.addEventListener("beforeunload", () => {
+      persistAll();
+    });
+
+    // Boot: prefer last preset with saved work, else marquise
+    const bootKey = savedByPreset.eyrie ? "eyrie" : "marquise";
+    document.getElementById("preset").value = bootKey;
+    currentPresetKey = bootKey;
+    imagePath = PRESETS[bootKey].path;
+    board.onload = () => {
+      loadPresetState(bootKey);
+    };
+    board.src = PRESETS[bootKey].image;
+  </script>
+</body>
+</html>
