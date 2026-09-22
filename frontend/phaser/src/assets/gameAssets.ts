@@ -13,6 +13,9 @@ export const GAME_ASSET_KEYS = {
   factionEyrie: 'faction-eyrie',
   characterBoardMarquise: 'character-board-marquise',
   characterBoardEyrie: 'character-board-eyrie',
+  suitFox: 'suit-fox',
+  suitMouse: 'suit-mouse',
+  suitRabbit: 'suit-rabbit',
   tokenMarquiseSawmill: 'token-marquise-sawmill',
   tokenMarquiseWorkshop: 'token-marquise-workshop',
   tokenMarquiseRecruiter: 'token-marquise-recruiter',
@@ -101,6 +104,18 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.characterBoardEyrie,
     path: 'assets/character-boards/eyrie-dynasties-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.suitFox,
+    path: 'assets/suits/fox.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.suitMouse,
+    path: 'assets/suits/mouse.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.suitRabbit,
+    path: 'assets/suits/rabbit.png',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseSawmill,
