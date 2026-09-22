@@ -1,31 +1,18 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { isVizier } from '../factions/eyrie/viziers.js'
-import { Game } from '../game/Game.js'
-import { FALL } from '../map/fall.js'
-import { resetPlaceIds } from '../rules/place.js'
-import { EYRIE_LEADERS, type DecreeColumn, type EyrieLeader } from '../state/boards.js'
-
-function lobbyAfterKeep(seed = 42): Game {
-  const game = Game.create({ seed })
-  game.join('a')
-  game.join('b')
-  game.start()
-  game.apply({ type: 'resolveEvent', clearing: FALL.corners[0]! })
-  while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-    const clearings = game.legalActions()[0]?.params?.clearing
-    if (clearings === undefined || clearings.length === 0) {
-      throw new Error('no legal starting building clearings')
-    }
-    game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-  }
-  return game
-}
+import { isVizier } from '#factions/eyrie/viziers.js'
+import { resetPlaceIds } from '#rules/place.js'
+import {
+  EYRIE_LEADERS,
+  type DecreeColumn,
+  type EyrieLeader,
+} from '#state/boards.js'
+import { createLobbyAfterKeep } from '#test/fixtures.js'
 
 describe('chooseLeader setup', () => {
   beforeEach(() => resetPlaceIds())
 
   it('Rule: 7.3.3 — after keep, all 4 leaders face-up for choose', () => {
-    const game = lobbyAfterKeep()
+    const game = createLobbyAfterKeep()
     expect(game.state.status).toBe('setup')
     expect(game.state.pending[0]?.type).toBe('chooseLeader')
     const specs = game.legalActions()
@@ -47,7 +34,7 @@ describe('chooseLeader setup', () => {
     for (const leader of EYRIE_LEADERS) {
       const [colA, colB] = expected[leader]
       resetPlaceIds()
-      const game = lobbyAfterKeep(leader.length)
+      const game = createLobbyAfterKeep(leader.length)
       game.apply({ type: 'resolveEvent', leader })
       expect(game.state.status).toBe('playing')
       const board = game.state.players[1]!.board
