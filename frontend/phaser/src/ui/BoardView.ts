@@ -8,6 +8,7 @@ import {
   type ClearingPixelHitTarget,
   type ClearingSuit,
 } from '../game/boardLayout.ts'
+import { clearingRuler } from '../game/clearingRuler.ts'
 import { gameViewSize } from '../game/hiDpi.ts'
 import { factionColorForSeat } from '../game/theme.ts'
 import {
@@ -62,6 +63,8 @@ export class BoardView {
   private readonly clearingVisuals: ClearingVisual[] = []
   private onClearingSelected: ClearingSelectedHandler | null
   private highlightedClearingIds: ReadonlySet<number> = new Set()
+  private rulerByClearing: ReadonlyMap<number, number | null> = new Map()
+  private factions: readonly string[] = []
   private pieceNodes: Phaser.GameObjects.GameObject[] = []
 
   constructor(options: BoardViewOptions) {
@@ -101,6 +104,9 @@ export class BoardView {
     clearings: readonly BoardClearingPieces[],
     factions: readonly string[],
   ): void {
+    this.factions = factions
+    this.rulerByClearing = this.computeRulers(clearings, factions)
+
     for (const node of this.pieceNodes) {
       node.destroy()
     }
@@ -141,6 +147,23 @@ export class BoardView {
         this.pieceNodes.push(glyph)
       }
     }
+    this.paintHighlights()
+  }
+
+  private computeRulers(
+    clearings: readonly BoardClearingPieces[],
+    factions: readonly string[],
+  ): Map<number, number | null> {
+    const rulers = new Map<number, number | null>()
+    for (const visual of this.clearingVisuals) {
+      const clearing = clearings[visual.clearingId]
+      if (clearing === undefined) {
+        rulers.set(visual.clearingId, null)
+        continue
+      }
+      rulers.set(visual.clearingId, clearingRuler(clearing, factions))
+    }
+    return rulers
   }
 
   getHitTargets(): ClearingPixelHitTarget[] {
@@ -253,6 +276,12 @@ export class BoardView {
   ): void {
     if (this.highlightedClearingIds.has(clearingId)) {
       ring.setStrokeStyle(3, 0x7ec8ff, 1)
+      return
+    }
+    const rulerSeat = this.rulerByClearing.get(clearingId) ?? null
+    if (rulerSeat !== null) {
+      const color = factionColorForSeat(rulerSeat, this.factions)
+      ring.setStrokeStyle(3, color, 0.95)
       return
     }
     ring.setStrokeStyle(2, 0xf0e6d3, 0.35)
