@@ -10,6 +10,7 @@ export type GameSignal =
   | { s: 'craft.persistent'; actor: Seat; cardId: string }
   | {
       s: 'warriors.removed'
+      victim: Seat
       faction: FactionId
       clearing: ClearingId
       count: number

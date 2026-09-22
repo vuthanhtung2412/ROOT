@@ -28,4 +28,6 @@ export type CardDef = {
 export type Card = {
   id: string
   defId: string
+  /** Warriors held on Coffin Makers (ROOT-62). */
+  heldWarriors?: number
 }

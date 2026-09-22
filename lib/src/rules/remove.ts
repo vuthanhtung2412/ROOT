@@ -117,15 +117,9 @@ export function removePieces(
   for (const [victim, count] of victims) {
     if (count <= 0) continue
     const faction = playerOf(state, victim).faction
-    ctx?.emit({
-      s: 'warriors.removed',
-      faction,
-      clearing,
-      count,
-      toSupply: !hasKeep(state, victim) || options?.skipFieldHospital === true,
-    })
+    const toSupply = !hasKeep(state, victim) || options?.skipFieldHospital === true
 
-    if (options?.skipFieldHospital || !hasKeep(state, victim)) {
+    if (toSupply) {
       returnWarriorsToSupply(state, victim, count)
     } else {
       state.pending.push({
@@ -135,6 +129,15 @@ export function removePieces(
         count,
       })
     }
+
+    ctx?.emit({
+      s: 'warriors.removed',
+      victim,
+      faction,
+      clearing,
+      count,
+      toSupply,
+    })
   }
 
   if (removed.length > 0) {

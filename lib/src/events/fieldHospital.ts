@@ -58,14 +58,22 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
     return specs
   },
 
-  apply(state, { event, action, actor }, _ctx) {
+  apply(state, { event, action, actor }, ctx) {
     if (actor !== event.victim) throw new RuleError('WRONG_ACTOR', { actor })
 
-    const pendingIndex = state.pending.indexOf(event)
+    const pendingIndex = state.pending.findIndex((pending) => pending === event)
     if (pendingIndex >= 0) state.pending.splice(pendingIndex, 1)
 
     if (action.decline) {
       returnWarriorsToSupply(state, event.victim, event.count)
+      ctx.emit({
+        s: 'warriors.removed',
+        victim: event.victim,
+        faction: playerOf(state, event.victim).faction,
+        clearing: event.clearing,
+        count: event.count,
+        toSupply: true,
+      })
       return [{ t: 'event', event }]
     }
 
@@ -84,6 +92,14 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
     const keep = keepClearingFor(state, event.victim)
     if (keep === null) {
       returnWarriorsToSupply(state, event.victim, event.count)
+      ctx.emit({
+        s: 'warriors.removed',
+        victim: event.victim,
+        faction: player.faction,
+        clearing: event.clearing,
+        count: event.count,
+        toSupply: true,
+      })
     } else {
       // Rule: Marquise > Field Hospitals — warriors already off map; do not pull supply.
       const placed = placeReturning(state, {
@@ -93,7 +109,16 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
         count: event.count,
       })
       if (placed < event.count) {
-        returnWarriorsToSupply(state, event.victim, event.count - placed)
+        const leftover = event.count - placed
+        returnWarriorsToSupply(state, event.victim, leftover)
+        ctx.emit({
+          s: 'warriors.removed',
+          victim: event.victim,
+          faction: player.faction,
+          clearing: event.clearing,
+          count: leftover,
+          toSupply: true,
+        })
       }
     }
 
