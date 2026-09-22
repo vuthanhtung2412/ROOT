@@ -11,6 +11,8 @@ export const GAME_ASSET_KEYS = {
   autumnMap: 'autumn-map',
   factionMarquise: 'faction-marquise',
   factionEyrie: 'faction-eyrie',
+  characterBoardMarquise: 'character-board-marquise',
+  characterBoardEyrie: 'character-board-eyrie',
   tokenMarquiseSawmill: 'token-marquise-sawmill',
   tokenMarquiseWorkshop: 'token-marquise-workshop',
   tokenMarquiseRecruiter: 'token-marquise-recruiter',
@@ -91,6 +93,14 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.factionEyrie,
     path: 'assets/factions/eyrie.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterBoardMarquise,
+    path: 'assets/character-boards/marquise-de-cat-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterBoardEyrie,
+    path: 'assets/character-boards/eyrie-dynasties-front.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseSawmill,
