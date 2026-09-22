@@ -7,6 +7,7 @@
     "start": "tsx src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
     "dev": "tsx watch src/index.ts"
   },
   "keywords": [],
@@ -14,6 +15,9 @@
   "license": "ISC",
   "packageManager": "pnpm@10.18.1",
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
   "bin": {
     "root-cli": "./src/index.ts"
   },

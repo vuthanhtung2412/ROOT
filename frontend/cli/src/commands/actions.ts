@@ -1,6 +1,6 @@
-import { api } from '../api/client.js'
+import { api } from '#api/client.js'
 
-export async function cmdActions() {
+export async function cmdActions(): Promise<void> {
   const { state } = await api.get()
   const { actions } = await api.actions()
   const current = state.players.find((p) => p.seat === state.currentSeat)

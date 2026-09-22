@@ -1,6 +1,6 @@
-import { api } from '../api/client.js'
+import { api } from '#api/client.js'
 
-export async function cmdNew(factions?: string[]) {
+export async function cmdNew(factions?: string[]): Promise<void> {
   const { state } = await api.create(factions)
   console.log(`game ${state.id} factions=${state.factions.join(',')}`)
   console.log(`status=${state.status}`)

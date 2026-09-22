@@ -1,7 +1,23 @@
 import { formatTurnLog, type GameState, type LogEntry } from '@root/lib'
-import { api } from '../api/client.js'
+import { api } from '#api/client.js'
 
-export async function cmdLog() {
+function isLogEntryArray(value: unknown): value is LogEntry[] {
+  return Array.isArray(value)
+}
+
+function isLibGameState(value: unknown): value is GameState {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Array.isArray(Reflect.get(value, 'players')) &&
+    Array.isArray(Reflect.get(value, 'clearings'))
+  )
+}
+
+export async function cmdLog(): Promise<void> {
   const [{ state }, { log }] = await Promise.all([api.get(), api.log()])
-  console.log(formatTurnLog(log as LogEntry[], state as GameState))
+  if (!isLibGameState(state) || !isLogEntryArray(log)) {
+    throw new Error('unexpected game payload')
+  }
+  console.log(formatTurnLog(log, state))
 }
