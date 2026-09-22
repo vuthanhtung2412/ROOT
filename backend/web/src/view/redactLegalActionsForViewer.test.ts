@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ActionSpec, GameState, PlayerState } from '@root/lib'
-import { redactLegalActionsForViewer } from './redactLegalActionsForViewer.js'
+import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
 
 function marquisePlayer(playerId: string): PlayerState {
   return {

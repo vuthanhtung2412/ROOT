@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { GameHub, type GameHubClient, type GamePushPayload } from './GameHub.js'
+import { GameHub, type GameHubClient, type GamePushPayload } from '#ws/GameHub.js'
 
 function makeClient(
   playerId: string,
