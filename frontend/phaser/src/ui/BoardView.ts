@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
+import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import {
   FALL_BOARD_LAYOUT,
   fallClearingSuit,
@@ -7,16 +7,16 @@ import {
   type BoardLayout,
   type ClearingPixelHitTarget,
   type ClearingSuit,
-} from '../game/boardLayout.ts'
-import { clearingRuler } from '../game/clearingRuler.ts'
-import { gameViewSize } from '../game/hiDpi.ts'
-import { factionColorForSeat } from '../game/theme.ts'
+} from '#game/boardLayout.ts'
+import { clearingRuler } from '#game/clearingRuler.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
+import { factionColorForSeat } from '#game/theme.ts'
 import {
   drawPieceStack,
   groupPiecesIntoStacks,
   stackOffsets,
   type PieceViewModel,
-} from './PieceView.ts'
+} from '#ui/PieceView.ts'
 
 export type ClearingSelectedHandler = (clearingId: number) => void
 

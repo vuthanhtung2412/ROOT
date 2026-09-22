@@ -1,13 +1,13 @@
-import type { ActionSpec } from '../api/client.ts'
+import type { ActionSpec } from '#api/client.ts'
 import {
   formatEyrieLeaderOptionLabel,
-} from '../assets/eyrieLeaderCatalog.ts'
+} from '#assets/eyrieLeaderCatalog.ts'
 import {
   readChoiceParams,
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
-} from './ActionComposer.ts'
+} from '#game/ActionComposer.ts'
 
 type EventDraft =
   | { type: 'idle' }

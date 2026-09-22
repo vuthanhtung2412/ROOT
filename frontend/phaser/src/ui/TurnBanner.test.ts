@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ActionSpec, GameState } from '../api/client.ts'
-import { buildTurnBannerViewModel } from './TurnBanner.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
+import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 
 function makeState(overrides: {
   currentSeat?: number

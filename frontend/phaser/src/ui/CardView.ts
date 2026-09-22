@@ -3,7 +3,7 @@ import {
   cardTextureKey,
   lookupCardCatalog,
   type CardCatalogEntry,
-} from '../assets/gameAssets.ts'
+} from '#assets/gameAssets.ts'
 
 export type CardViewModel = {
   id: string

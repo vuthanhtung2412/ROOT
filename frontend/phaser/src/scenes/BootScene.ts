@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
-import { preloadCoreGameAssets } from '../assets/gameAssets.ts'
-import { applyHiDpiCamera, gameViewSize } from '../game/hiDpi.ts'
+import { preloadCoreGameAssets } from '#assets/gameAssets.ts'
+import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 
 export class BootScene extends Phaser.Scene {
   constructor() {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildFactionBoardViewModelFromPlayer,
   formatDecreeSuitCounts,
-} from './factionBoardViewModel.ts'
+} from '#ui/factionBoardViewModel.ts'
 
 describe('formatDecreeSuitCounts', () => {
   it('groups suits as bird xN, fox xN…', () => {

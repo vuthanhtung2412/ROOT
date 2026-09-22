@@ -2,8 +2,8 @@
  * Pixel layouts from board-layout-helper exports.
  * Source twin: resources/reference/character-boards/{faction}/*.layout.json
  */
-import eyrieDynastiesFrontLayoutJson from './layouts/eyrie-dynasties-front.layout.json'
-import marquiseDeCatFrontLayoutJson from './layouts/marquise-de-cat-front.layout.json'
+import eyrieDynastiesFrontLayoutJson from '#assets/layouts/eyrie-dynasties-front.layout.json'
+import marquiseDeCatFrontLayoutJson from '#assets/layouts/marquise-de-cat-front.layout.json'
 
 export type BoardLayoutRegion = {
   id: string

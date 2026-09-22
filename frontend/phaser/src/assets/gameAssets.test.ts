@@ -9,7 +9,7 @@ import {
   queueAutumnMapImage,
   queueMissingCardImages,
   type ImageAssetLoader,
-} from './gameAssets.ts'
+} from '#assets/gameAssets.ts'
 
 function makeLoaderMock(): ImageAssetLoader {
   return {

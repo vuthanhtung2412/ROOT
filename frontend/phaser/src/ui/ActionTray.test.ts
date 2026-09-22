@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatActionLabel } from './ActionTray.ts'
+import { formatActionLabel } from '#ui/ActionTray.ts'
 
 describe('formatActionLabel setup', () => {
   it('labels keep vs starting buildings distinctly', () => {

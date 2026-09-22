@@ -1,12 +1,12 @@
 import type Phaser from 'phaser'
-import type { ActionSpec, GameState } from '../api/client.ts'
-import { gameViewSize } from '../game/hiDpi.ts'
-import { buildTurnBannerViewModel } from './TurnBanner.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
+import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 import {
   CardView,
   type CardHoldHandler,
   type CardSelectedHandler,
-} from './CardView.ts'
+} from '#ui/CardView.ts'
 
 export class CardHand {
   private readonly scene: Phaser.Scene

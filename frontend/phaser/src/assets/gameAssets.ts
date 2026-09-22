@@ -1,4 +1,4 @@
-import cardCatalog from './cardCatalog.json'
+import cardCatalog from '#assets/cardCatalog.json'
 
 /** Minimal loader surface for preload helpers (Phaser LoaderPlugin satisfies). */
 export type ImageAssetLoader = {

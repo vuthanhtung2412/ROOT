@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   EYRIE_ROOST_TRACK,
   EYRIE_ROOST_TRACK_SLOT_COUNT,
-} from './eyrieBoardCatalog.ts'
+} from '#assets/eyrieBoardCatalog.ts'
 import {
   MARQUISE_BUILDING_TRACK,
   MARQUISE_TRACK_SLOT_COUNT,
-} from './marquiseBoardCatalog.ts'
+} from '#assets/marquiseBoardCatalog.ts'
 
 describe('marquiseBoardCatalog', () => {
   it('has six columns matching board costs and VP', () => {

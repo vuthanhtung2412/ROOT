@@ -1,12 +1,12 @@
 import Phaser from 'phaser'
-import { BootScene } from '../scenes/BootScene.ts'
-import { MenuScene } from '../scenes/MenuScene.ts'
-import { GameScene } from '../scenes/GameScene.ts'
+import { BootScene } from '#scenes/BootScene.ts'
+import { MenuScene } from '#scenes/MenuScene.ts'
+import { GameScene } from '#scenes/GameScene.ts'
 import {
   GAME_LOGICAL_HEIGHT,
   GAME_LOGICAL_WIDTH,
   resolveDevicePixelRatio,
-} from './hiDpi.ts'
+} from '#game/hiDpi.ts'
 
 const devicePixelRatio = resolveDevicePixelRatio()
 

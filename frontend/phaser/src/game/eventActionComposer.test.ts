@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { makeActionSpec } from '../test/factories.ts'
-import { ActionComposer } from './ActionComposer.ts'
-import { createEventComposerHooks } from './eventActionComposer.ts'
+import { makeActionSpec } from '#test/factories.ts'
+import { ActionComposer } from '#game/ActionComposer.ts'
+import { createEventComposerHooks } from '#game/eventActionComposer.ts'
 
 describe('eventActionComposer Field Hospitals', () => {
   it('decline resolveEvent submits immediately', () => {

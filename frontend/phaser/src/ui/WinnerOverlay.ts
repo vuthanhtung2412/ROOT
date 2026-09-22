@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import { gameViewSize } from '../game/hiDpi.ts'
+import { gameViewSize } from '#game/hiDpi.ts'
 
 /** Full-screen winner banner when status === finished. */
 export class WinnerOverlay {

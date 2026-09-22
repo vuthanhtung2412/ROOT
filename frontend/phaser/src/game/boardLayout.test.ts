@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FALL_CLEARING_SUITS, fallClearingSuit } from './boardLayout.ts'
+import { FALL_CLEARING_SUITS, fallClearingSuit } from '#game/boardLayout.ts'
 
 describe('fallClearingSuit', () => {
   it('covers all twelve Autumn clearings', () => {

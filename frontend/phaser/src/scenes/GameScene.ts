@@ -1,45 +1,45 @@
 import Phaser from 'phaser'
-import { ensureAutumnMapLoaded } from '../assets/autumnMapLoader.ts'
-import { CardTextureWarmup } from '../assets/cardTextureWarmup.ts'
-import type { ActionSpec, GameState } from '../api/client.ts'
-import { createPhaserApi } from '../api/client.ts'
+import { ensureAutumnMapLoaded } from '#assets/autumnMapLoader.ts'
+import { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
+import { createPhaserApi } from '#api/client.ts'
 import {
   ActionComposer,
   type ActionComposerHooks,
   type ComposerOutcome,
-} from '../game/ActionComposer.ts'
-import { createEventComposerHooks } from '../game/eventActionComposer.ts'
-import { createEyrieComposerHooks } from '../game/eyrieActionComposer.ts'
+} from '#game/ActionComposer.ts'
+import { createEventComposerHooks } from '#game/eventActionComposer.ts'
+import { createEyrieComposerHooks } from '#game/eyrieActionComposer.ts'
 import {
   createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
   createMarquiseMarchComposerHooks,
-} from '../game/marquiseActionComposer.ts'
+} from '#game/marquiseActionComposer.ts'
 import {
   boardLayoutFromFallResponse,
   FALL_BOARD_LAYOUT,
   type BoardLayout,
-} from '../game/boardLayout.ts'
-import { buildBattleOverlayViewModel } from '../game/battleOverlayModel.ts'
-import type { GameSession, GameSessionSnapshot } from '../game/GameSession.ts'
-import { applyHiDpiCamera, gameViewSize } from '../game/hiDpi.ts'
-import { applyMarchMovesToClearings } from '../game/marchClearingsPreview.ts'
-import { ActionTray } from '../ui/ActionTray.ts'
-import { BattleOverlay } from '../ui/BattleOverlay.ts'
-import { BoardView } from '../ui/BoardView.ts'
-import { CardHand } from '../ui/CardHand.ts'
-import { CardDetailOverlay } from '../ui/CardDetailOverlay.ts'
-import { EventOverlay } from '../ui/EventOverlay.ts'
-import { FactionBoardModal } from '../ui/FactionBoardModal.ts'
-import { buildFactionBoardViewModel } from '../ui/factionBoardViewModel.ts'
-import { GameDrawer } from '../ui/GameDrawer.ts'
-import { LeaderPickOverlay } from '../ui/LeaderPickOverlay.ts'
-import { PlayerRail } from '../ui/PlayerRail.ts'
+} from '#game/boardLayout.ts'
+import { buildBattleOverlayViewModel } from '#game/battleOverlayModel.ts'
+import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
+import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
+import { applyMarchMovesToClearings } from '#game/marchClearingsPreview.ts'
+import { ActionTray } from '#ui/ActionTray.ts'
+import { BattleOverlay } from '#ui/BattleOverlay.ts'
+import { BoardView } from '#ui/BoardView.ts'
+import { CardHand } from '#ui/CardHand.ts'
+import { CardDetailOverlay } from '#ui/CardDetailOverlay.ts'
+import { EventOverlay } from '#ui/EventOverlay.ts'
+import { FactionBoardModal } from '#ui/FactionBoardModal.ts'
+import { buildFactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
+import { GameDrawer } from '#ui/GameDrawer.ts'
+import { LeaderPickOverlay } from '#ui/LeaderPickOverlay.ts'
+import { PlayerRail } from '#ui/PlayerRail.ts'
 import {
   buildTurnBannerViewModel,
   TurnBanner,
-} from '../ui/TurnBanner.ts'
-import { WinnerOverlay } from '../ui/WinnerOverlay.ts'
+} from '#ui/TurnBanner.ts'
+import { WinnerOverlay } from '#ui/WinnerOverlay.ts'
 
 export type GameSceneData = {
   session: GameSession

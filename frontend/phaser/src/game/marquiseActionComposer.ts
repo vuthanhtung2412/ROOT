@@ -1,11 +1,11 @@
-import type { ActionSpec } from '../api/client.ts'
+import type { ActionSpec } from '#api/client.ts'
 import {
   readChoiceParams,
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
-} from './ActionComposer.ts'
-import { fallAdjacentClearings } from './fallPaths.ts'
+} from '#game/ActionComposer.ts'
+import { fallAdjacentClearings } from '#game/fallPaths.ts'
 
 type OverworkOption = { cardId: string; clearing: number }
 

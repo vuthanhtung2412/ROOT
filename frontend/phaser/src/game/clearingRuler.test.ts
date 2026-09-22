@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clearingRuler, ruleStrengthForSeat } from './clearingRuler.ts'
+import { clearingRuler, ruleStrengthForSeat } from '#game/clearingRuler.ts'
 
 describe('clearingRuler', () => {
   it('counts warriors and buildings only', () => {

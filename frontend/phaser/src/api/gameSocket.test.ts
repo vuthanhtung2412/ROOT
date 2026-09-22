@@ -4,7 +4,7 @@ import {
   resolveWebSocketUrl,
   type GameSocketPush,
   type SocketLike,
-} from './gameSocket.ts'
+} from '#api/gameSocket.ts'
 
 type ListenerMap = Map<string, Set<(event: Event) => void>>
 
