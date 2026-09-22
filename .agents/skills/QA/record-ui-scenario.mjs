@@ -4,6 +4,8 @@
  * Usage (from repo root):
  *   node .cursor/skills/QA/record-ui-scenario.mjs march
  *   node .cursor/skills/QA/record-ui-scenario.mjs turmoil
+ *   node .cursor/skills/QA/record-ui-scenario.mjs marquise-board
+ *   node .cursor/skills/QA/record-ui-scenario.mjs eyrie-board
  */
 import { chromium } from './node_modules/playwright/index.mjs'
 import { mkdir, readdir, copyFile, rm } from 'node:fs/promises'
@@ -23,15 +25,33 @@ const phaserUrl = process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
 const apiUrl = process.env.ROOT_API ?? 'http://localhost:3000'
 const scenario = process.argv[2]
 
-if (scenario !== 'march' && scenario !== 'turmoil') {
+const SCENARIOS = {
+  march: {
+    snapshotName: 'march-ready.json',
+    videoName: 'qa-marquise-march',
+  },
+  turmoil: {
+    snapshotName: 'turmoil-ready.json',
+    videoName: 'qa-eyrie-turmoil-leader',
+  },
+  'marquise-board': {
+    snapshotName: 'march-ready.json',
+    videoName: 'qa-marquise-character-board',
+  },
+  'eyrie-board': {
+    snapshotName: 'turmoil-ready.json',
+    videoName: 'qa-eyrie-character-board',
+  },
+}
+
+if (!(scenario in SCENARIOS)) {
   console.error(
-    'usage: node .cursor/skills/QA/record-ui-scenario.mjs <march|turmoil>',
+    'usage: node .cursor/skills/QA/record-ui-scenario.mjs <march|turmoil|marquise-board|eyrie-board>',
   )
   process.exit(1)
 }
 
-const snapshotName = scenario === 'march' ? 'march-ready.json' : 'turmoil-ready.json'
-const videoName = scenario === 'march' ? 'qa-marquise-march' : 'qa-eyrie-turmoil-leader'
+const { snapshotName, videoName } = SCENARIOS[scenario]
 
 /** Autumn map hit targets for 1280×720 (matches BoardView.fitMapToBoardArea). */
 function clearingCenters() {
@@ -230,8 +250,12 @@ async function main() {
 
   if (scenario === 'march') {
     await driveMarch(page, canvas, actionsBefore)
-  } else {
+  } else if (scenario === 'turmoil') {
     await driveTurmoil(page, canvas)
+  } else if (scenario === 'marquise-board') {
+    await driveCharacterBoard(page, canvas, 0)
+  } else {
+    await driveCharacterBoard(page, canvas, 1)
   }
 
   await page.waitForTimeout(2000)
@@ -484,6 +508,39 @@ async function driveTurmoil(page, canvas) {
       pending: gameAfter.state?.pending,
     }),
   )
+}
+
+/**
+ * Open faction board modal from PlayerRail seat row.
+ * Rail at (12,56); rows 72px tall, 150×64 — click row center.
+ * @param {import('playwright').Page} page
+ * @param {import('playwright').Locator} canvas
+ * @param {number} seat
+ */
+async function driveCharacterBoard(page, canvas, seat) {
+  const railX = 12 + 75
+  const railY = 56 + 32 + seat * 72
+  await clickGame(page, canvas, railX, railY)
+  await page.waitForTimeout(800)
+
+  const modalOpen = await waitForPhaser(
+    page,
+    () => {
+      const scene = window.__ROOT_PHASER_GAME__?.scene.getScene('GameScene')
+      return scene?.factionBoardModal?.isOpen?.() === true ? true : null
+    },
+    'faction board modal open',
+  )
+  console.log('modal open:', modalOpen)
+
+  await page.screenshot({
+    path: path.join(artifactsDirectory, `${videoName}-03-board-modal.png`),
+  })
+  await page.waitForTimeout(1800)
+
+  // Close button near bottom center
+  await clickGame(page, canvas, 640, 720 - 40)
+  await page.waitForTimeout(600)
 }
 
 main().catch((error) => {
