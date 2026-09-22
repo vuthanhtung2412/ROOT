@@ -57,14 +57,14 @@ const { snapshotName, videoName } = SCENARIOS[scenario]
 function clearingCenters() {
   const viewWidth = 1280
   const viewHeight = 720
-  const boardWidth = viewWidth * 0.62
-  const boardHeight = viewHeight * 0.78
+  const boardWidth = viewWidth * 0.74
+  const boardHeight = viewHeight * 0.82
   const textureWidth = 3479
   const textureHeight = 3189
   const scale = Math.min(boardWidth / textureWidth, boardHeight / textureHeight)
   const displayWidth = textureWidth * scale
   const displayHeight = textureHeight * scale
-  const originX = viewWidth * 0.38 - displayWidth / 2
+  const originX = viewWidth * 0.5 - displayWidth / 2
   const originY = viewHeight * 0.42 - displayHeight / 2
   const layout = {
     0: { x: 0.113, y: 0.119 },

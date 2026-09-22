@@ -180,15 +180,16 @@ export class BoardView {
   }
 
   private fitMapToBoardArea(viewWidth: number, viewHeight: number): void {
-    const boardWidth = viewWidth * 0.62
-    const boardHeight = viewHeight * 0.78
+    // Leave room for PlayerRail (left) + ActionTray (right); center in remaining band.
+    const boardWidth = viewWidth * 0.74
+    const boardHeight = viewHeight * 0.82
     const texture = this.mapImage.texture.getSourceImage()
     const scale = Math.min(
       boardWidth / texture.width,
       boardHeight / texture.height,
     )
     this.mapImage.setScale(scale)
-    this.mapImage.setPosition(viewWidth * 0.38, viewHeight * 0.42)
+    this.mapImage.setPosition(viewWidth * 0.5, viewHeight * 0.44)
   }
 
   private buildClearingTargets(layout: BoardLayout): void {
