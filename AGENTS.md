@@ -72,7 +72,18 @@ function addItem(items: string[], newItem: string) {
 function addItem(items: string[], newItem: string) {
   return [...items, newItem];
 }
-
 ```
 
 + Make as few code modification as possible for a feature
+
++ No magic number or strings create descriptive constant
+```typescript
+// BAD ❌
+
+const velocity = time * 9.8
+
+// GOOD ✅
+const EARTH_GRAVITY_ACCELERATION = 9.8
+const velocity = time * EARTH_GRAVITY_ACCELERATION
+
+```
