@@ -5,6 +5,7 @@ import { coffinMakersEffect } from './coffinMakers.js'
 import { corvidPlannersEffect } from './corvidPlanners.js'
 import { foxPartisansEffect } from './partisans.js'
 import { informantsEffect } from './informants.js'
+import { leagueOfAdventurousMiceEffect } from './leagueOfAdventurousMice.js'
 import { masterEngraversEffect } from './masterEngravers.js'
 import { murineBrokerEffect } from './murineBroker.js'
 import { soupKitchensEffect } from './soupKitchens.js'
@@ -23,6 +24,7 @@ const ALL_EFFECTS = [
   charmOffensiveEffect,
   coffinMakersEffect,
   informantsEffect,
+  leagueOfAdventurousMiceEffect,
 ]
 
 export function registerEffects(): void {

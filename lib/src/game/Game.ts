@@ -24,6 +24,7 @@ import type { GameState, Phase, PlayerState } from '../state/types.js'
 import '../effects/register.js'
 import { tryApplyCharmOffensive } from '../effects/charmOffensive.js'
 import { tryApplyInformants } from '../effects/informants.js'
+import { tryApplyLeague } from '../effects/leagueOfAdventurousMice.js'
 import { tryApplySwapMeet } from '../effects/swapMeet.js'
 import { RESOLVERS } from '../events/resolvers.js'
 import { EFFECTS } from '../triggers/effects.js'
@@ -127,6 +128,7 @@ function initialState(args: {
       eveningDrawDone: false,
       swapMeetUsed: false,
       charmOffensiveUsed: false,
+      leagueUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
@@ -393,6 +395,13 @@ export class Game {
       if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
       return
     }
+    if (action.type === 'leagueMove' || action.type === 'leagueBattle') {
+      const ok = legal.some(
+        (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
+      )
+      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
+      return
+    }
     const ok = legal.some(
       (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
     )
@@ -424,6 +433,9 @@ export class Game {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         if (tryApplyInformants(this.state, action, ctx)) {
+          return [{ t: 'action', actor: this.state.currentSeat, action }]
+        }
+        if (tryApplyLeague(this.state, action, ctx)) {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
@@ -528,6 +540,7 @@ export class Game {
       eveningDrawDone: false,
       swapMeetUsed: false,
       charmOffensiveUsed: false,
+      leagueUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
@@ -569,6 +582,7 @@ export class Game {
           eveningDrawDone: false,
           swapMeetUsed: false,
           charmOffensiveUsed: false,
+          leagueUsed: false,
           emergencyOrdersDone: false,
           eveningScoreDone: false,
           decree: null,
