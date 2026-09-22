@@ -1,21 +1,21 @@
-import type { Action, ActionSpec, ResolveEventAction } from '../actions/types.js'
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import type { Seat } from '../pieces/types.js'
-import type { GameState } from '../state/types.js'
-import { battleResolver } from './battle.js'
-import { chooseKeepResolver } from './chooseKeep.js'
-import { chooseLeaderResolver } from './chooseLeader.js'
-import { fieldHospitalResolver } from './fieldHospital.js'
-import { placeStartingBuildingResolver } from './placeStartingBuilding.js'
-import type { Event } from './types.js'
+import type { Action, ActionSpec, ResolveEventAction } from '#actions/types.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import type { Seat } from '#pieces/types.js'
+import type { GameState } from '#state/types.js'
+import { battleResolver } from '#events/battle.js'
+import { chooseKeepResolver } from '#events/chooseKeep.js'
+import { chooseLeaderResolver } from '#events/chooseLeader.js'
+import { fieldHospitalResolver } from '#events/fieldHospital.js'
+import { placeStartingBuildingResolver } from '#events/placeStartingBuilding.js'
+import type { Event } from '#events/types.js'
 import {
   isBattleEvent,
   isChooseKeepEvent,
   isChooseLeaderEvent,
   isFieldHospitalEvent,
   isPlaceStartingBuildingEvent,
-} from '../typeGuards.js'
+} from '#typeGuards.js'
 
 export type EventApply = {
   event: Event

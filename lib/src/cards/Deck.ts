@@ -1,7 +1,7 @@
-import { EP_CARD_DEFS } from './ep.generated.js'
-import type { Card } from './types.js'
-import type { CardDef } from './types.js'
-import { VIZIER_DEF, VIZIER_DEF_ID } from '../factions/eyrie/viziers.js'
+import { EP_CARD_DEFS } from '#cards/ep.generated.js'
+import type { Card } from '#cards/types.js'
+import type { CardDef } from '#cards/types.js'
+import { VIZIER_DEF, VIZIER_DEF_ID } from '#factions/eyrie/viziers.js'
 
 export type DeckState = {
   draw: Card[]

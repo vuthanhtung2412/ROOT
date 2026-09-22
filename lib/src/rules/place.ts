@@ -1,10 +1,10 @@
-import type { BuildingType, Seat, TokenType } from '../pieces/types.js'
-import type { Building, Piece, Token, Warrior } from '../pieces/types.js'
-import type { ClearingId } from '../map/types.js'
-import { canPlace } from '../queries/place.js'
-import { openSlots } from '../queries/slots.js'
-import type { GameState } from '../state/types.js'
-import { playerOf } from '../queries/seat.js'
+import type { BuildingType, Seat, TokenType } from '#pieces/types.js'
+import type { Building, Piece, Token, Warrior } from '#pieces/types.js'
+import type { ClearingId } from '#map/types.js'
+import { canPlace } from '#queries/place.js'
+import { openSlots } from '#queries/slots.js'
+import type { GameState } from '#state/types.js'
+import { playerOf } from '#queries/seat.js'
 
 export type PlaceSpec =
   | { kind: 'warrior' }

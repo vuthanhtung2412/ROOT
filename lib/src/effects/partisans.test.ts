@@ -1,10 +1,10 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import './register.js'
-import { defOf } from '../cards/Deck.js'
-import { resetPlaceIds } from '../rules/place.js'
-import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
-import { battleResolver } from '../events/battle.js'
-import type { BattleEvent } from '../events/types.js'
+import '#effects/register.js'
+import { defOf } from '#cards/Deck.js'
+import { resetPlaceIds } from '#rules/place.js'
+import { card, minimalState, player, testContext, withPieces } from '#test/fixtures.js'
+import { battleResolver } from '#events/battle.js'
+import type { BattleEvent } from '#events/types.js'
 
 describe('Fox Partisans', () => {
   beforeEach(() => resetPlaceIds())

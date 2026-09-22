@@ -1,8 +1,8 @@
-import type { RuleHooks } from '../triggers/hooks.js'
-import type { ClearingId } from '../map/types.js'
-import type { Seat } from '../pieces/types.js'
-import type { GameState } from '../state/types.js'
-import { rules } from './ruler.js'
+import type { RuleHooks } from '#triggers/hooks.js'
+import type { ClearingId } from '#map/types.js'
+import type { Seat } from '#pieces/types.js'
+import type { GameState } from '#state/types.js'
+import { rules } from '#queries/ruler.js'
 
 /** Clearings connected through a chain of clearings ruled by seat, including from when ruled. */
 export function connectedRuled(

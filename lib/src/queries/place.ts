@@ -1,6 +1,6 @@
-import type { ClearingId } from '../map/types.js'
-import type { Seat } from '../pieces/types.js'
-import type { GameState } from '../state/types.js'
+import type { ClearingId } from '#map/types.js'
+import type { Seat } from '#pieces/types.js'
+import type { GameState } from '#state/types.js'
 
 /** Rule: Marquise > The Keep — only keep owner may place; move-in / battle / rule unaffected. */
 export function canPlace(state: GameState, seat: Seat, clearing: ClearingId): boolean {

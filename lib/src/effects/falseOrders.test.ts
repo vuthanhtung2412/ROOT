@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { FALL } from '../map/fall.js'
-import { warriors } from '../queries/pieces.js'
-import { Game } from '../game/Game.js'
-import { card } from '../test/fixtures.js'
+import '#effects/register.js'
+import { FALL } from '#map/fall.js'
+import { warriors } from '#queries/pieces.js'
+import { Game } from '#game/Game.js'
+import { card } from '#test/fixtures.js'
 
 describe('False Orders', () => {
   it('Rule: False Orders — discard self to force half enemy warriors to move ignoring rule', () => {

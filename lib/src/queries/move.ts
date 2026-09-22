@@ -1,9 +1,9 @@
-import type { RuleHooks } from '../triggers/hooks.js'
-import type { ClearingId } from '../map/types.js'
-import type { Seat } from '../pieces/types.js'
-import type { GameState } from '../state/types.js'
-import { warriors } from './pieces.js'
-import { rules } from './ruler.js'
+import type { RuleHooks } from '#triggers/hooks.js'
+import type { ClearingId } from '#map/types.js'
+import type { Seat } from '#pieces/types.js'
+import type { GameState } from '#state/types.js'
+import { warriors } from '#queries/pieces.js'
+import { rules } from '#queries/ruler.js'
 
 export type MovePath = {
   seat: Seat

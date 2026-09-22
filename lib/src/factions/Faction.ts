@@ -1,8 +1,8 @@
-import type { Action, ActionSpec } from '../actions/types.js'
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import type { FactionId, Seat } from '../pieces/types.js'
-import type { GameState, Phase, Step } from '../state/types.js'
+import type { Action, ActionSpec } from '#actions/types.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import type { FactionId, Seat } from '#pieces/types.js'
+import type { GameState, Phase, Step } from '#state/types.js'
 
 export abstract class Faction {
   abstract readonly id: FactionId

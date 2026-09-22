@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { FALL } from '../map/fall.js'
-import { marquiseBoard, minimalState, withPieces } from '../test/fixtures.js'
-import { placeUpTo, resetPlaceIds } from './place.js'
+import { FALL } from '#map/fall.js'
+import { marquiseBoard, minimalState, withPieces } from '#test/fixtures.js'
+import { placeUpTo, resetPlaceIds } from '#rules/place.js'
 
 describe('placeUpTo', () => {
   beforeEach(() => resetPlaceIds())

@@ -5,24 +5,24 @@ import type {
   BuildChoice,
   MarchMove,
   OverworkChoice,
-} from '../actions/types.js'
-import { defOf } from '../cards/Deck.js'
-import { Deck } from '../cards/Deck.js'
-import { matchesSuit } from '../cards/suit.js'
-import { FALL } from '../map/fall.js'
-import type { ClearingId } from '../map/types.js'
-import { canCraft } from '../queries/craft.js'
-import { canMove } from '../queries/move.js'
-import { canPlace, keepClearingFor } from '../queries/place.js'
-import { warriors } from '../queries/pieces.js'
-import { rules } from '../queries/ruler.js'
-import { playerOf } from '../queries/seat.js'
-import { openSlots } from '../queries/slots.js'
-import { woodReachable } from '../queries/wood.js'
-import { craftCard } from '../rules/craft.js'
-import { moveWarriors } from '../rules/move.js'
-import { placeUpTo } from '../rules/place.js'
-import { RuleError } from '../rules/RuleError.js'
+} from '#actions/types.js'
+import { defOf } from '#cards/Deck.js'
+import { Deck } from '#cards/Deck.js'
+import { matchesSuit } from '#cards/suit.js'
+import { FALL } from '#map/fall.js'
+import type { ClearingId } from '#map/types.js'
+import { canCraft } from '#queries/craft.js'
+import { canMove } from '#queries/move.js'
+import { canPlace, keepClearingFor } from '#queries/place.js'
+import { warriors } from '#queries/pieces.js'
+import { rules } from '#queries/ruler.js'
+import { playerOf } from '#queries/seat.js'
+import { openSlots } from '#queries/slots.js'
+import { woodReachable } from '#queries/wood.js'
+import { craftCard } from '#rules/craft.js'
+import { moveWarriors } from '#rules/move.js'
+import { placeUpTo } from '#rules/place.js'
+import { RuleError } from '#rules/RuleError.js'
 import {
   MARQUISE_BUILD_COST,
   MARQUISE_RECRUITER_DRAW_BONUS_INDICES,
@@ -30,15 +30,15 @@ import {
   MARQUISE_SAWMILL_VP,
   MARQUISE_WORKSHOP_VP,
   type MarquiseBoard,
-} from '../state/boards.js'
-import { HAND_LIMIT } from '../state/constants.js'
-import type { GameState, Phase, Step } from '../state/types.js'
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import type { BuildingType, Seat } from '../pieces/types.js'
-import { connectedRuled } from '../queries/connected.js'
-import { openBattle } from '../events/battle.js'
-import { Faction } from './Faction.js'
+} from '#state/boards.js'
+import { HAND_LIMIT } from '#state/constants.js'
+import type { GameState, Phase, Step } from '#state/types.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import type { BuildingType, Seat } from '#pieces/types.js'
+import { connectedRuled } from '#queries/connected.js'
+import { openBattle } from '#events/battle.js'
+import { Faction } from '#factions/Faction.js'
 
 const STEPS: Record<Phase, Step[]> = {
   birdsong: ['wood'],

@@ -1,8 +1,8 @@
-import type { RuleHooks } from '../triggers/hooks.js'
-import type { ClearingId } from '../map/types.js'
-import type { Seat } from '../pieces/types.js'
-import type { GameState } from '../state/types.js'
-import { connectedRuled } from './connected.js'
+import type { RuleHooks } from '#triggers/hooks.js'
+import type { ClearingId } from '#map/types.js'
+import type { Seat } from '#pieces/types.js'
+import type { GameState } from '#state/types.js'
+import { connectedRuled } from '#queries/connected.js'
 
 /** Rule: Marquise > Build 3 — wood in clearing + ruled connected chain. */
 export function woodReachable(

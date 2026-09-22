@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { removePieces } from '../rules/remove.js'
-import { buildCraftContext } from './utils.js'
-import { card, marquiseBoard, minimalState, player, withPieces } from '../test/fixtures.js'
+import '#effects/register.js'
+import { removePieces } from '#rules/remove.js'
+import { buildCraftContext } from '#effects/utils.js'
+import { card, marquiseBoard, minimalState, player, withPieces } from '#test/fixtures.js'
 
 describe('Coffin Makers', () => {
   it('Rule: Coffin Makers — warriors to supply pile on card', () => {

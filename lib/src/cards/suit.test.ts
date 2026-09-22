@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { matchesSuit } from './suit.js'
+import { matchesSuit } from '#cards/suit.js'
 
 describe('matchesSuit', () => {
   it('birds are wild', () => {

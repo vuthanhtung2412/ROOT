@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { FALL } from '../../map/fall.js'
-import { FALL_LAYOUT } from '../fall.js'
-import { toAscii } from './ascii.js'
+import { FALL } from '#map/fall.js'
+import { FALL_LAYOUT } from '#layout/fall.js'
+import { toAscii } from '#layout/render/ascii.js'
 
 describe('toAscii', () => {
   it('places all clearing ids on the grid', () => {

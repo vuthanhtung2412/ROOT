@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { Deck } from './Deck.js'
-import { EP_DECK } from './epDeck.js'
-import { EP_CARD_DEFS } from './ep.generated.js'
+import { Deck } from '#cards/Deck.js'
+import { EP_DECK } from '#cards/epDeck.js'
+import { EP_CARD_DEFS } from '#cards/ep.generated.js'
 
 describe('Deck', () => {
   it('reshuffles discard when draw empty', () => {

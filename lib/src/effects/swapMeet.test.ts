@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { Game } from '../game/Game.js'
-import { card } from '../test/fixtures.js'
+import '#effects/register.js'
+import { Game } from '#game/Game.js'
+import { card } from '#test/fixtures.js'
 describe('Swap Meet', () => {
   it('Rule: Swap Meet — granted once per Birdsong', () => {
     const game = Game.create({ seed: 5 })

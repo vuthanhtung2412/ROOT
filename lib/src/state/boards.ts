@@ -1,6 +1,6 @@
-import type { Card } from '../cards/types.js'
-import type { Suit } from '../map/types.js'
-import type { FactionId, ItemType } from '../pieces/types.js'
+import type { Card } from '#cards/types.js'
+import type { Suit } from '#map/types.js'
+import type { FactionId, ItemType } from '#pieces/types.js'
 
 /** Rule: Marquise > Buildings tracks — six columns left→right. */
 export const MARQUISE_BUILD_COST = [0, 1, 2, 3, 3, 4] as const

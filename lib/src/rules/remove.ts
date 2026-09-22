@@ -1,10 +1,10 @@
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import type { ClearingId } from '../map/types.js'
-import type { Piece, Seat } from '../pieces/types.js'
-import { hasKeep } from '../queries/place.js'
-import { playerOf } from '../queries/seat.js'
-import type { GameState } from '../state/types.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import type { ClearingId } from '#map/types.js'
+import type { Piece, Seat } from '#pieces/types.js'
+import { hasKeep } from '#queries/place.js'
+import { playerOf } from '#queries/seat.js'
+import type { GameState } from '#state/types.js'
 
 export type PieceRemoval = {
   clearing: ClearingId

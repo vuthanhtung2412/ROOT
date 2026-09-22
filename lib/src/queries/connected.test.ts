@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { FALL } from '../map/fall.js'
-import { defaultRuleHooks } from '../triggers/hooks.js'
-import { minimalState, withPieces } from '../test/fixtures.js'
-import { connectedRuled } from './connected.js'
+import { FALL } from '#map/fall.js'
+import { defaultRuleHooks } from '#triggers/hooks.js'
+import { minimalState, withPieces } from '#test/fixtures.js'
+import { connectedRuled } from '#queries/connected.js'
 
 const hooks = defaultRuleHooks(FALL)
 

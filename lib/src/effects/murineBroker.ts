@@ -1,6 +1,6 @@
-import { Deck } from '../cards/Deck.js'
-import type { CardEffect } from '../triggers/effects.js'
-import { playerOf } from '../queries/seat.js'
+import { Deck } from '#cards/Deck.js'
+import type { CardEffect } from '#triggers/effects.js'
+import { playerOf } from '#queries/seat.js'
 
 export const murineBrokerEffect: CardEffect = {
   defId: 'ROOT-85',

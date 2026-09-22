@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { FALL } from '../../map/fall.js'
-import { FALL_LAYOUT } from '../fall.js'
-import { toSvg } from './svg.js'
+import { FALL } from '#map/fall.js'
+import { FALL_LAYOUT } from '#layout/fall.js'
+import { toSvg } from '#layout/render/svg.js'
 
 describe('toSvg', () => {
   it('renders fall map with 12 clearing labels', () => {

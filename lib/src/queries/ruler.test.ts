@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { FALL } from '../map/fall.js'
-import { defaultRuleHooks } from '../triggers/hooks.js'
-import type { Piece } from '../pieces/types.js'
-import { eyrieBoard, marquiseBoard, minimalState, player, withPieces } from '../test/fixtures.js'
-import { ruler } from './ruler.js'
+import { FALL } from '#map/fall.js'
+import { defaultRuleHooks } from '#triggers/hooks.js'
+import type { Piece } from '#pieces/types.js'
+import { eyrieBoard, marquiseBoard, minimalState, player, withPieces } from '#test/fixtures.js'
+import { ruler } from '#queries/ruler.js'
 
 const hooks = defaultRuleHooks(FALL)
 

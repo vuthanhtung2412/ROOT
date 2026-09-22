@@ -1,5 +1,5 @@
-import { GameMap } from './GameMap.js'
-import type { Clearing, ClearingId, Path } from './types.js'
+import { GameMap } from '#map/GameMap.js'
+import type { Clearing, ClearingId, Path } from '#map/types.js'
 
 /** Fall (Autumn) clearing ids are 0..11. Source: therootdatabase.com/map/autumn + rootgame autumn_map_setup. */
 const SLOTS = [1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 3, 2] as const

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { warriors } from '../queries/pieces.js'
-import { minimalState, testContext, withPieces } from '../test/fixtures.js'
-import { moveWarriors } from './move.js'
+import { warriors } from '#queries/pieces.js'
+import { minimalState, testContext, withPieces } from '#test/fixtures.js'
+import { moveWarriors } from '#rules/move.js'
 
 describe('moveWarriors', () => {
   it('Rule: Move 1–3 — moves warriors between adjacent ruled clearings', () => {

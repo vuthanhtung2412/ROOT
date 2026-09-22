@@ -5,27 +5,27 @@ import type {
   AddToDecreeCard,
   BattleTargetChoice,
   MarchMove,
-} from '../actions/types.js'
-import { defOf } from '../cards/Deck.js'
-import { Deck } from '../cards/Deck.js'
-import type { Card } from '../cards/types.js'
-import { matchesSuit } from '../cards/suit.js'
-import { openBattle } from '../events/battle.js'
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import { FALL } from '../map/fall.js'
-import type { ClearingId } from '../map/types.js'
-import { canCraft } from '../queries/craft.js'
-import { canMove } from '../queries/move.js'
-import { canPlace } from '../queries/place.js'
-import { warriors } from '../queries/pieces.js'
-import { rules } from '../queries/ruler.js'
-import { playerOf } from '../queries/seat.js'
-import { openSlots } from '../queries/slots.js'
-import { craftCard } from '../rules/craft.js'
-import { moveWarriors } from '../rules/move.js'
-import { placeUpTo } from '../rules/place.js'
-import { RuleError } from '../rules/RuleError.js'
+} from '#actions/types.js'
+import { defOf } from '#cards/Deck.js'
+import { Deck } from '#cards/Deck.js'
+import type { Card } from '#cards/types.js'
+import { matchesSuit } from '#cards/suit.js'
+import { openBattle } from '#events/battle.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import { FALL } from '#map/fall.js'
+import type { ClearingId } from '#map/types.js'
+import { canCraft } from '#queries/craft.js'
+import { canMove } from '#queries/move.js'
+import { canPlace } from '#queries/place.js'
+import { warriors } from '#queries/pieces.js'
+import { rules } from '#queries/ruler.js'
+import { playerOf } from '#queries/seat.js'
+import { openSlots } from '#queries/slots.js'
+import { craftCard } from '#rules/craft.js'
+import { moveWarriors } from '#rules/move.js'
+import { placeUpTo } from '#rules/place.js'
+import { RuleError } from '#rules/RuleError.js'
 import {
   DECREE_COLUMNS,
   EYRIE_LEADERS,
@@ -35,12 +35,12 @@ import {
   type DecreeColumn,
   type EyrieBoard,
   type EyrieLeader,
-} from '../state/boards.js'
-import { HAND_LIMIT } from '../state/constants.js'
-import type { DecreeCursor, GameState, Phase, Step } from '../state/types.js'
-import type { Seat } from '../pieces/types.js'
-import { Faction } from './Faction.js'
-import { isVizier, makeViziers } from './eyrie/viziers.js'
+} from '#state/boards.js'
+import { HAND_LIMIT } from '#state/constants.js'
+import type { DecreeCursor, GameState, Phase, Step } from '#state/types.js'
+import type { Seat } from '#pieces/types.js'
+import { Faction } from '#factions/Faction.js'
+import { isVizier, makeViziers } from '#factions/eyrie/viziers.js'
 
 const STEPS: Record<Phase, Step[]> = {
   birdsong: ['emergency', 'decreeAdd', 'newRoost'],

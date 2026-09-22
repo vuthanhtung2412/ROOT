@@ -1,8 +1,8 @@
-import type { CardEffect } from '../triggers/effects.js'
-import type { Card } from '../cards/types.js'
-import type { GameState } from '../state/types.js'
-import type { Seat } from '../pieces/types.js'
-import { playerOf } from '../queries/seat.js'
+import type { CardEffect } from '#triggers/effects.js'
+import type { Card } from '#cards/types.js'
+import type { GameState } from '#state/types.js'
+import type { Seat } from '#pieces/types.js'
+import { playerOf } from '#queries/seat.js'
 
 const COFFIN_MAKERS_DEF_ID = 'ROOT-62'
 const WARRIORS_PER_VICTORY_POINT = 5

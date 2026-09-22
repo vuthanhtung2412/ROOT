@@ -1,10 +1,10 @@
-import type { RuleHooks } from '../triggers/hooks.js'
-import { FALL } from '../map/fall.js'
-import type { ClearingId } from '../map/types.js'
-import type { Seat } from '../pieces/types.js'
-import type { GameState } from '../state/types.js'
-import { ruleStrength } from './pieces.js'
-import { isEyrieSeat } from './seat.js'
+import type { RuleHooks } from '#triggers/hooks.js'
+import { FALL } from '#map/fall.js'
+import type { ClearingId } from '#map/types.js'
+import type { Seat } from '#pieces/types.js'
+import type { GameState } from '#state/types.js'
+import { ruleStrength } from '#queries/pieces.js'
+import { isEyrieSeat } from '#queries/seat.js'
 
 /** Rule: Board > Rule — most warriors + buildings; tie → none; Eyrie wins ties (Lords of the Forest). */
 export function ruler(

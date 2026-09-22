@@ -1,4 +1,4 @@
-import type { Clearing, ClearingId, Path } from './types.js'
+import type { Clearing, ClearingId, Path } from '#map/types.js'
 
 export class GameMap {
   readonly clearings: Clearing[]

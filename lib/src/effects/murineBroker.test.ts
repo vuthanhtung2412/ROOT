@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { craftCard } from '../rules/craft.js'
-import { card, minimalState, player, withPieces } from '../test/fixtures.js'
-import { buildCraftContext } from './utils.js'
+import '#effects/register.js'
+import { craftCard } from '#rules/craft.js'
+import { card, minimalState, player, withPieces } from '#test/fixtures.js'
+import { buildCraftContext } from '#effects/utils.js'
 
 describe('Murine Broker', () => {
   it('Rule: Murine Broker — other player crafts item → draw', () => {

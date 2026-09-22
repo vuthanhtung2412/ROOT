@@ -1,7 +1,7 @@
-import type { BattleEvent } from '../events/types.js'
-import type { ClearingId } from '../map/types.js'
-import type { FactionId, ItemType, Seat } from '../pieces/types.js'
-import type { Phase } from '../state/types.js'
+import type { BattleEvent } from '#events/types.js'
+import type { ClearingId } from '#map/types.js'
+import type { FactionId, ItemType, Seat } from '#pieces/types.js'
+import type { Phase } from '#state/types.js'
 
 export type GameSignal =
   | { s: 'phase.start'; actor: Seat; phase: Phase }

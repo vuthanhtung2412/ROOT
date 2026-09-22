@@ -8,11 +8,11 @@ import {
   formatPieceChunk,
   formatPlayersClearingsDiff,
   formatTurnLog,
-} from './prettyState.js'
-import { eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
-import { makeViziers } from '../factions/eyrie/viziers.js'
-import type { LogEntry } from '../log/types.js'
-import type { Piece } from '../pieces/types.js'
+} from '#format/prettyState.js'
+import { eyrieBoard, minimalState, player, withPieces } from '#test/fixtures.js'
+import { makeViziers } from '#factions/eyrie/viziers.js'
+import type { LogEntry } from '#log/types.js'
+import type { Piece } from '#pieces/types.js'
 
 describe('formatPieceChunk', () => {
   it('keeps warriors as Nw and collapses wood', () => {

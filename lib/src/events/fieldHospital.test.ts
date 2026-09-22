@@ -1,10 +1,10 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { warriors } from '../queries/pieces.js'
-import { FALL } from '../map/fall.js'
-import { resetPlaceIds } from '../rules/place.js'
-import { card, minimalState, player, testContext, withPieces } from '../test/fixtures.js'
-import { fieldHospitalResolver } from './fieldHospital.js'
-import type { FieldHospitalEvent } from './types.js'
+import { warriors } from '#queries/pieces.js'
+import { FALL } from '#map/fall.js'
+import { resetPlaceIds } from '#rules/place.js'
+import { card, minimalState, player, testContext, withPieces } from '#test/fixtures.js'
+import { fieldHospitalResolver } from '#events/fieldHospital.js'
+import type { FieldHospitalEvent } from '#events/types.js'
 
 describe('fieldHospitalResolver', () => {
   beforeEach(() => resetPlaceIds())

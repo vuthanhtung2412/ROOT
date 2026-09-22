@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { minimalState, withPieces } from '../test/fixtures.js'
-import { openSlots } from './slots.js'
+import { minimalState, withPieces } from '#test/fixtures.js'
+import { openSlots } from '#queries/slots.js'
 
 describe('openSlots', () => {
   it('Rule: Board > Slots — no open slot when buildings fill slots', () => {

@@ -1,18 +1,18 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { defOf } from '../cards/Deck.js'
-import { Game } from '../game/Game.js'
-import { FALL } from '../map/fall.js'
-import { warriors } from '../queries/pieces.js'
-import { keepOwner } from '../queries/place.js'
-import { resetPlaceIds } from '../rules/place.js'
-import { HAND_LIMIT } from '../state/constants.js'
-import { card, player, minimalState, testContext, withPieces } from '../test/fixtures.js'
+import { defOf } from '#cards/Deck.js'
+import { Game } from '#game/Game.js'
+import { FALL } from '#map/fall.js'
+import { warriors } from '#queries/pieces.js'
+import { keepOwner } from '#queries/place.js'
+import { resetPlaceIds } from '#rules/place.js'
+import { HAND_LIMIT } from '#state/constants.js'
+import { card, player, minimalState, testContext, withPieces } from '#test/fixtures.js'
 import {
   buildColumn,
   keepCornerFor,
   MARQUISE,
   recruiterDrawBonus,
-} from './Marquise.js'
+} from '#factions/Marquise.js'
 
 function setupContext() {
   return testContext()

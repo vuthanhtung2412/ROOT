@@ -1,13 +1,13 @@
-import type { Action, ActionSpec, ResolveEventAction } from '../actions/types.js'
-import { assignEyrieLeader } from '../factions/Eyrie.js'
-import type { Ctx } from '../game/ctx.js'
-import type { LogEntry } from '../log/types.js'
-import type { Seat } from '../pieces/types.js'
-import { playerOf } from '../queries/seat.js'
-import { RuleError } from '../rules/RuleError.js'
-import type { EyrieLeader } from '../state/boards.js'
-import type { GameState } from '../state/types.js'
-import type { ChooseLeaderEvent } from './types.js'
+import type { Action, ActionSpec, ResolveEventAction } from '#actions/types.js'
+import { assignEyrieLeader } from '#factions/Eyrie.js'
+import type { Ctx } from '#game/ctx.js'
+import type { LogEntry } from '#log/types.js'
+import type { Seat } from '#pieces/types.js'
+import { playerOf } from '#queries/seat.js'
+import { RuleError } from '#rules/RuleError.js'
+import type { EyrieLeader } from '#state/boards.js'
+import type { GameState } from '#state/types.js'
+import type { ChooseLeaderEvent } from '#events/types.js'
 
 export type ChooseLeaderApply = {
   event: ChooseLeaderEvent

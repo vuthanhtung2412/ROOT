@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { defOf } from '../cards/Deck.js'
-import type { GameSignal } from '../triggers/signals.js'
+import { defOf } from '#cards/Deck.js'
+import type { GameSignal } from '#triggers/signals.js'
 import {
   card,
   eyrieBoard,
@@ -8,8 +8,8 @@ import {
   player,
   testContext,
   withPieces,
-} from '../test/fixtures.js'
-import { craftCard } from './craft.js'
+} from '#test/fixtures.js'
+import { craftCard } from '#rules/craft.js'
 
 describe('craftCard', () => {
   it('Rule: Victory — craft item scores printed VP via hooks.craftVp before signal', () => {

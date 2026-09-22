@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { FALL } from '../map/fall.js'
-import { canPlace } from '../queries/place.js'
-import { resetPlaceIds } from './place.js'
-import { eyrieBoard, minimalState, player, withPieces } from '../test/fixtures.js'
-import { removePieces } from './remove.js'
+import { FALL } from '#map/fall.js'
+import { canPlace } from '#queries/place.js'
+import { resetPlaceIds } from '#rules/place.js'
+import { eyrieBoard, minimalState, player, withPieces } from '#test/fixtures.js'
+import { removePieces } from '#rules/remove.js'
 
 describe('removePieces', () => {
   beforeEach(() => resetPlaceIds())

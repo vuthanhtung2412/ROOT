@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import './register.js'
-import { FALL } from '../map/fall.js'
-import { Game } from '../game/Game.js'
-import { card } from '../test/fixtures.js'
+import '#effects/register.js'
+import { FALL } from '#map/fall.js'
+import { Game } from '#game/Game.js'
+import { card } from '#test/fixtures.js'
 
 describe('Eyrie Émigré', () => {
   it('Rule: Eyrie Émigré — discard at end of Birdsong if move+battle not taken', () => {

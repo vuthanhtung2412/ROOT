@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EP_DECK, expandEpDeck } from './epDeck.js'
+import { EP_DECK, expandEpDeck } from '#cards/epDeck.js'
 
 describe('EP_DECK', () => {
   it('expands to 54 cards with unique ids', () => {
