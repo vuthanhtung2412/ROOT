@@ -29,7 +29,6 @@ import { BattleOverlay } from '../ui/BattleOverlay.ts'
 import { BoardView } from '../ui/BoardView.ts'
 import { CardHand } from '../ui/CardHand.ts'
 import { CardDetailOverlay } from '../ui/CardDetailOverlay.ts'
-import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
 import { EventOverlay } from '../ui/EventOverlay.ts'
 import { FactionBoardModal } from '../ui/FactionBoardModal.ts'
 import { buildFactionBoardViewModel } from '../ui/factionBoardViewModel.ts'
@@ -54,7 +53,6 @@ export class GameScene extends Phaser.Scene {
   private cardHand: CardHand | null = null
   private cardDetailOverlay: CardDetailOverlay | null = null
   private actionTray: ActionTray | null = null
-  private eyrieDecreePanel: EyrieDecreePanel | null = null
   private eventOverlay: EventOverlay | null = null
   private battleOverlay: BattleOverlay | null = null
   private factionBoardModal: FactionBoardModal | null = null
@@ -139,7 +137,6 @@ export class GameScene extends Phaser.Scene {
         this.handleSelectAction(spec)
       },
     })
-    this.eyrieDecreePanel = new EyrieDecreePanel(this)
     this.eventOverlay = new EventOverlay(this)
     this.battleOverlay = new BattleOverlay(this)
     this.factionBoardModal = new FactionBoardModal(this)
@@ -197,8 +194,6 @@ export class GameScene extends Phaser.Scene {
     this.cardDetailOverlay = null
     this.actionTray?.destroy()
     this.actionTray = null
-    this.eyrieDecreePanel?.destroy()
-    this.eyrieDecreePanel = null
     this.eventOverlay?.destroy()
     this.eventOverlay = null
     this.battleOverlay?.destroy()
@@ -391,7 +386,6 @@ export class GameScene extends Phaser.Scene {
       localControlsActor ? snapshot.legalActions : [],
       banner.actorSeat,
     )
-    this.eyrieDecreePanel?.sync(snapshot.state)
     this.refreshFactionBoardModal(snapshot.state)
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))

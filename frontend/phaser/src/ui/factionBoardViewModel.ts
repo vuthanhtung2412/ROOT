@@ -9,7 +9,7 @@ import {
   type EyrieLeaderInfo,
   type EyrieRoostTrackColumn,
 } from '../assets/eyrieBoardCatalog.ts'
-import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
+import { GAME_ASSET_KEYS, lookupCardCatalog } from '../assets/gameAssets.ts'
 import {
   MARQUISE_ABILITIES,
   MARQUISE_BUILDING_TRACK,
@@ -23,6 +23,21 @@ import type { GameState } from '../api/client.ts'
 export type CraftedLookup = {
   cardNames: string[]
   itemTypes: string[]
+}
+
+export const EYRIE_DECREE_COLUMNS = [
+  'recruit',
+  'move',
+  'battle',
+  'build',
+] as const
+
+export type EyrieDecreeColumnId = (typeof EYRIE_DECREE_COLUMNS)[number]
+
+export type EyrieDecreeColumnView = {
+  columnId: EyrieDecreeColumnId
+  regionId: string
+  suits: string[]
 }
 
 export type MarquiseBoardViewModel = {
@@ -61,6 +76,9 @@ export type EyrieBoardViewModel = {
   /** Roosts on map = emptied track slots from left. */
   roostsOnMap: number
   leader: EyrieLeaderInfo | null
+  decreeColumns: readonly EyrieDecreeColumnView[]
+  /** Current decree resolve column, if any. */
+  activeDecreeColumn: EyrieDecreeColumnId | null
   boardTextureKey: string
 }
 
@@ -76,11 +94,14 @@ type MarquiseBoardData = {
   }
 }
 
+type EyrieDecreeCard = { id: string; defId: string }
+
 type EyrieBoardData = {
   kind: 'eyrie'
   supply: { warriors: number }
   leader: string | null
   roostTrack: { placed: number }
+  decree?: Partial<Record<EyrieDecreeColumnId, EyrieDecreeCard[]>>
 }
 
 type PlayerForBoard = {
@@ -138,6 +159,73 @@ function craftedLookup(player: PlayerForBoard): CraftedLookup {
   }
 }
 
+function suitForDecreeCard(defId: string): string {
+  if (defId === 'VIZIER') {
+    return 'bird'
+  }
+  return lookupCardCatalog(defId)?.suit ?? '?'
+}
+
+const DECREE_SUIT_ORDER = ['bird', 'fox', 'mouse', 'rabbit'] as const
+
+/** Compact decree label: `bird x2, fox x1` (skips zero counts). */
+export function formatDecreeSuitCounts(suits: readonly string[]): string {
+  if (suits.length === 0) {
+    return '—'
+  }
+  const counts = new Map<string, number>()
+  for (const suit of suits) {
+    counts.set(suit, (counts.get(suit) ?? 0) + 1)
+  }
+  const parts: string[] = []
+  for (const suit of DECREE_SUIT_ORDER) {
+    const count = counts.get(suit)
+    if (count === undefined || count === 0) {
+      continue
+    }
+    parts.push(`${suit} x${String(count)}`)
+    counts.delete(suit)
+  }
+  for (const [suit, count] of [...counts.entries()].sort(([left], [right]) =>
+    left.localeCompare(right),
+  )) {
+    parts.push(`${suit} x${String(count)}`)
+  }
+  return parts.join(', ')
+}
+
+function decreeColumnsFromBoard(
+  decree: EyrieBoardData['decree'],
+): EyrieDecreeColumnView[] {
+  return EYRIE_DECREE_COLUMNS.map((columnId) => {
+    const cards = decree?.[columnId] ?? []
+    return {
+      columnId,
+      regionId: `decree-${columnId}`,
+      suits: cards.map((card) => suitForDecreeCard(card.defId)),
+    }
+  })
+}
+
+function isEyrieDecreeColumnId(value: string): value is EyrieDecreeColumnId {
+  return (EYRIE_DECREE_COLUMNS as readonly string[]).includes(value)
+}
+
+function readActiveDecreeColumn(turnScratch: unknown): EyrieDecreeColumnId | null {
+  if (typeof turnScratch !== 'object' || turnScratch === null) {
+    return null
+  }
+  const decree = Reflect.get(turnScratch, 'decree')
+  if (typeof decree !== 'object' || decree === null) {
+    return null
+  }
+  const column = Reflect.get(decree, 'column')
+  if (typeof column !== 'string' || !isEyrieDecreeColumnId(column)) {
+    return null
+  }
+  return column
+}
+
 export const CHARACTER_BOARD_TEXTURE_KEYS = {
   marquise: GAME_ASSET_KEYS.characterBoardMarquise,
   eyrie: GAME_ASSET_KEYS.characterBoardEyrie,
@@ -151,7 +239,14 @@ export function buildFactionBoardViewModel(
   if (player === undefined) {
     return null
   }
-  return buildFactionBoardViewModelFromPlayer(player)
+  const view = buildFactionBoardViewModelFromPlayer(player)
+  if (view === null || view.kind !== 'eyrie') {
+    return view
+  }
+  return {
+    ...view,
+    activeDecreeColumn: readActiveDecreeColumn(state.turnScratch),
+  }
 }
 
 export function buildFactionBoardViewModelFromPlayer(
@@ -198,6 +293,8 @@ export function buildFactionBoardViewModelFromPlayer(
       roostTrack: EYRIE_ROOST_TRACK,
       roostsOnMap: roostsOnMapFromTrack(board.roostTrack.placed),
       leader,
+      decreeColumns: decreeColumnsFromBoard(board.decree),
+      activeDecreeColumn: null,
       boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.eyrie,
     }
   }

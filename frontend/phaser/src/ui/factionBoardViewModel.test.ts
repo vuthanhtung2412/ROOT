@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { buildFactionBoardViewModelFromPlayer } from './factionBoardViewModel.ts'
+import {
+  buildFactionBoardViewModelFromPlayer,
+  formatDecreeSuitCounts,
+} from './factionBoardViewModel.ts'
+
+describe('formatDecreeSuitCounts', () => {
+  it('groups suits as bird xN, fox xN…', () => {
+    expect(
+      formatDecreeSuitCounts([
+        'fox',
+        'fox',
+        'mouse',
+        'mouse',
+        'rabbit',
+        'rabbit',
+        'bird',
+        'bird',
+      ]),
+    ).toBe('bird x2, fox x2, mouse x2, rabbit x2')
+  })
+
+  it('empty is em dash', () => {
+    expect(formatDecreeSuitCounts([])).toBe('—')
+  })
+})
 
 describe('buildFactionBoardViewModelFromPlayer', () => {
   it('Marquise: supply + emptied columns from placed tracks', () => {
@@ -49,6 +73,12 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
         supply: { warriors: 14 },
         leader: 'despot',
         roostTrack: { placed: 5 },
+        decree: {
+          recruit: [{ id: 'v1', defId: 'VIZIER' }],
+          move: [{ id: 'c1', defId: 'ROOT-1' }],
+          battle: [],
+          build: [],
+        },
       },
     })
 
@@ -60,6 +90,28 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
     expect(view.leader?.id).toBe('despot')
     expect(view.leader?.name).toBe('Despot')
     expect(view.roostTrack).toHaveLength(7)
+    expect(view.decreeColumns).toEqual([
+      {
+        columnId: 'recruit',
+        regionId: 'decree-recruit',
+        suits: ['bird'],
+      },
+      {
+        columnId: 'move',
+        regionId: 'decree-move',
+        suits: [expect.any(String)],
+      },
+      {
+        columnId: 'battle',
+        regionId: 'decree-battle',
+        suits: [],
+      },
+      {
+        columnId: 'build',
+        regionId: 'decree-build',
+        suits: [],
+      },
+    ])
   })
 
   it('returns null for missing board', () => {
