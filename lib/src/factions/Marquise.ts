@@ -552,6 +552,10 @@ export class Marquise extends Faction {
     }
 
     if (state.phase === 'evening' && state.step === 'draw') {
+      if (!state.turnScratch.eveningDrawDone) {
+        specs.push({ type: 'eveningDraw', actor: seat })
+        return specs
+      }
       specs.push({ type: 'endPhase', actor: seat })
       return specs
     }

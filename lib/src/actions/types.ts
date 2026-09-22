@@ -87,6 +87,7 @@ export type Action =
   | { type: 'battle'; clearing: ClearingId; defender: Seat }
   | { type: 'swapMeet'; target: Seat; giveCardId: string }
   | { type: 'charmOffensive'; target: Seat }
+  | { type: 'informantsTakeAmbush'; cardId: string }
   | { type: 'discard'; cardIds: string[] }
   | { type: 'addToDecree'; cards: AddToDecreeCard[] }
   | { type: 'newRoost'; clearing: ClearingId }

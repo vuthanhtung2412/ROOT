@@ -23,6 +23,7 @@ import type { Seat } from '../pieces/types.js'
 import type { GameState, Phase, PlayerState } from '../state/types.js'
 import '../effects/register.js'
 import { tryApplyCharmOffensive } from '../effects/charmOffensive.js'
+import { tryApplyInformants } from '../effects/informants.js'
 import { tryApplySwapMeet } from '../effects/swapMeet.js'
 import { RESOLVERS } from '../events/resolvers.js'
 import { EFFECTS } from '../triggers/effects.js'
@@ -384,6 +385,14 @@ export class Game {
       if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
       return
     }
+    if (action.type === 'informantsTakeAmbush') {
+      const ok = legal.some(
+        (spec) =>
+          spec.type === 'informantsTakeAmbush' && spec.actor === this.state.currentSeat,
+      )
+      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
+      return
+    }
     const ok = legal.some(
       (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
     )
@@ -412,6 +421,9 @@ export class Game {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         if (tryApplyCharmOffensive(this.state, action, ctx)) {
+          return [{ t: 'action', actor: this.state.currentSeat, action }]
+        }
+        if (tryApplyInformants(this.state, action, ctx)) {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
@@ -610,7 +622,9 @@ export class Game {
     let guard = 0
     while (guard++ < 50) {
       const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
-      const autos = faction.autoActions(this.state, this.state.phase, this.state.step)
+      const autos = faction
+        .autoActions(this.state, this.state.phase, this.state.step)
+        .filter((action) => !this.isAutoBlocked(action))
       if (autos.length === 0) break
       for (const action of autos) {
         faction.validate(this.state, action, this.makeCtx())
@@ -618,6 +632,16 @@ export class Game {
       }
     }
     return logs
+  }
+
+  private isAutoBlocked(action: { type: string }): boolean {
+    for (const player of this.state.players) {
+      for (const playCard of player.playArea) {
+        const effect = EFFECTS[playCard.defId]
+        if (effect?.blocksAuto?.(this.state, action)) return true
+      }
+    }
+    return false
   }
 
   private applyResolveEvent(action: Action): LogEntry[] {
