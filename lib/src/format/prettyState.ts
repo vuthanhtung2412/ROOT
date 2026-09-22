@@ -209,6 +209,8 @@ export function describeAction(action: Action, state: GameState): string {
       return `LEAGUE BATTLE c${action.clearing} vs ${playerRefBySeat(state, action.defender)} (item ${action.itemIndex})`
     case 'propagandaBureau':
       return `PROPAGANDA spend ${findCard(action.cardId)} → replace ${action.pieceId} @c${action.clearing}`
+    case 'saboteurs':
+      return `SABOTEURS discard self → discard ${findCard(action.cardId)} from ${playerRefBySeat(state, action.target)}`
     case 'emergencyOrders':
       return 'EMERGENCY ORDERS draw 1'
     case 'eveningScore':

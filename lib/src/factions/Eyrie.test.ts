@@ -41,6 +41,7 @@ function scratch(decree: DecreeCursor | null = null, decreeDone = false) {
       charmOffensiveUsed: false,
       leagueUsed: false,
       propagandaUsed: false,
+      saboteursUsed: false,
     emergencyOrdersDone: false,
     eveningScoreDone: false,
     decree,
