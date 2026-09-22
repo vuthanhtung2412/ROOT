@@ -108,6 +108,12 @@ export type Action =
       pieceId: string
     }
   | { type: 'saboteurs'; target: Seat; cardId: string }
+  | {
+      type: 'falseOrders'
+      target: Seat
+      from: ClearingId
+      to: ClearingId
+    }
   | { type: 'discard'; cardIds: string[] }
   | { type: 'addToDecree'; cards: AddToDecreeCard[] }
   | { type: 'newRoost'; clearing: ClearingId }
