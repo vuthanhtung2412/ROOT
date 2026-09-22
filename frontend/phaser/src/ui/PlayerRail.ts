@@ -3,13 +3,17 @@ import type { GameState } from '../api/client.ts'
 import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
 import { factionColorForSeat } from '../game/theme.ts'
 
+export type PlayerRailSeatHandler = (seat: number) => void
+
 export class PlayerRail {
   private readonly root: Phaser.GameObjects.Container
   private readonly scene: Phaser.Scene
+  private readonly onSeatClick: PlayerRailSeatHandler | null
   private rowNodes: Phaser.GameObjects.GameObject[] = []
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, onSeatClick: PlayerRailSeatHandler | null = null) {
     this.scene = scene
+    this.onSeatClick = onSeatClick
     this.root = scene.add.container(12, 56).setDepth(100)
   }
 
@@ -28,6 +32,13 @@ export class PlayerRail {
         .rectangle(0, y, 150, 64, 0x111111, isActive ? 0.92 : 0.7)
         .setOrigin(0, 0)
         .setStrokeStyle(2, isActive ? 0xffe08a : color, isActive ? 1 : 0.6)
+
+      if (this.onSeatClick !== null) {
+        background.setInteractive({ useHandCursor: true })
+        background.on('pointerdown', () => {
+          this.onSeatClick?.(player.seat)
+        })
+      }
 
       const iconKey =
         player.faction === 'eyrie'

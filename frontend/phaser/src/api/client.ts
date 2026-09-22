@@ -72,6 +72,8 @@ export type GameState = {
     faction: string
     vp: number
     hand: Array<{ id: string; defId: string }>
+    playArea?: Array<{ id: string; defId: string }>
+    craftedItems?: string[]
     board?: unknown
   }>
   clearings: Array<{

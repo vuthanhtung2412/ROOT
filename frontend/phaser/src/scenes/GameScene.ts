@@ -32,6 +32,8 @@ import { CardDetailOverlay } from '../ui/CardDetailOverlay.ts'
 import { EyrieDecreePanel } from '../ui/EyrieDecreePanel.ts'
 import { EventOverlay } from '../ui/EventOverlay.ts'
 import { FactionDrawer } from '../ui/FactionDrawer.ts'
+import { FactionBoardModal } from '../ui/FactionBoardModal.ts'
+import { buildFactionBoardViewModel } from '../ui/factionBoardViewModel.ts'
 import { GameDrawer } from '../ui/GameDrawer.ts'
 import { LeaderPickOverlay } from '../ui/LeaderPickOverlay.ts'
 import { PlayerRail } from '../ui/PlayerRail.ts'
@@ -57,6 +59,7 @@ export class GameScene extends Phaser.Scene {
   private eventOverlay: EventOverlay | null = null
   private battleOverlay: BattleOverlay | null = null
   private factionDrawer: FactionDrawer | null = null
+  private factionBoardModal: FactionBoardModal | null = null
   private gameDrawer: GameDrawer | null = null
   private winnerOverlay: WinnerOverlay | null = null
   private leaderPickOverlay: LeaderPickOverlay | null = null
@@ -112,7 +115,9 @@ export class GameScene extends Phaser.Scene {
         this.applyComposerOutcome(this.composer.chooseColumn(value))
       },
     })
-    this.playerRail = new PlayerRail(this)
+    this.playerRail = new PlayerRail(this, (seat) => {
+      this.openFactionBoardForSeat(seat)
+    })
     this.cardTextureWarmup = new CardTextureWarmup(this)
     this.cardTextureWarmup.setOnReady(() => {
       this.repaintCardHandFromLatestSnapshot()
@@ -140,6 +145,7 @@ export class GameScene extends Phaser.Scene {
     this.eventOverlay = new EventOverlay(this)
     this.battleOverlay = new BattleOverlay(this)
     this.factionDrawer = new FactionDrawer(this)
+    this.factionBoardModal = new FactionBoardModal(this)
     this.gameDrawer = new GameDrawer(this, {
       onUndo: () => {
         void this.session?.undo()
@@ -202,12 +208,47 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlay = null
     this.factionDrawer?.destroy()
     this.factionDrawer = null
+    this.factionBoardModal?.destroy()
+    this.factionBoardModal = null
     this.gameDrawer?.destroy()
     this.gameDrawer = null
     this.winnerOverlay?.destroy()
     this.winnerOverlay = null
     this.leaderPickOverlay?.destroy()
     this.leaderPickOverlay = null
+  }
+
+  private openFactionBoardForSeat(seat: number): void {
+    const state = this.latestSnapshot?.state
+    if (state === null || state === undefined) {
+      return
+    }
+    const openSeat = this.factionBoardModal?.openSeat()
+    if (this.factionBoardModal?.isOpen() === true && openSeat === seat) {
+      this.factionBoardModal.hide()
+      return
+    }
+    const view = buildFactionBoardViewModel(state, seat)
+    if (view === null) {
+      return
+    }
+    this.factionBoardModal?.show(view)
+  }
+
+  private refreshFactionBoardModal(state: GameState): void {
+    if (this.factionBoardModal?.isOpen() !== true) {
+      return
+    }
+    const seat = this.factionBoardModal.openSeat()
+    if (seat === null) {
+      return
+    }
+    const view = buildFactionBoardViewModel(state, seat)
+    if (view === null) {
+      this.factionBoardModal.hide()
+      return
+    }
+    this.factionBoardModal.show(view)
   }
 
   private async handleEndGame(): Promise<void> {
@@ -357,6 +398,7 @@ export class GameScene extends Phaser.Scene {
     )
     this.eyrieDecreePanel?.sync(snapshot.state)
     this.factionDrawer?.sync(snapshot.state)
+    this.refreshFactionBoardModal(snapshot.state)
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
     this.syncWinner(snapshot.state)
