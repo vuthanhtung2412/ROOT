@@ -18,6 +18,8 @@ export type CardEffect = {
   onSignal?: Listener
   hooks?: RuleHookOverrides
   grants?: (state: GameState) => ActionSpec[]
+  /** When true, Game skips this auto action (e.g. Informants replace evening draw). */
+  blocksAuto?: (state: GameState, action: ActionSpec | { type: string }) => boolean
 }
 
 /** Registered persistent/partisan card effects (Phase 7b). */

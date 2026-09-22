@@ -201,6 +201,8 @@ export function describeAction(action: Action, state: GameState): string {
       return `SWAP MEET give ${findCard(action.giveCardId)} ↔ ${playerRefBySeat(state, action.target)}`
     case 'charmOffensive':
       return `CHARM OFFENSIVE draw + 1 VP to ${playerRefBySeat(state, action.target)}`
+    case 'informantsTakeAmbush':
+      return `INFORMANTS take ${findCard(action.cardId)} from discard`
     case 'emergencyOrders':
       return 'EMERGENCY ORDERS draw 1'
     case 'eveningScore':
