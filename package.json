@@ -13,7 +13,7 @@
     "build:ios": "pnpm --filter @root/phaser build:ios",
     "gen:api-client": "pnpm --filter @root/web-client gen",
     "typecheck": "pnpm -r typecheck",
-    "lint": "eslint lib/src lib/scripts backend/web/src backend/web/scripts",
+    "lint": "eslint lib/src lib/scripts backend/web/src backend/web/scripts frontend/cli/src frontend/phaser/src",
     "clean": "pnpm clean:logs && pnpm clean:tmp",
     "clean:logs": "mkdir -p logs && find logs -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + && echo 'cleared logs/'",
     "clean:tmp": "mkdir -p tmp && find tmp -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + && echo 'cleared tmp/'"

@@ -6,7 +6,6 @@ export default tseslint.config(
     ignores: [
       '**/dist/**',
       '**/node_modules/**',
-      'frontend/**',
       'backend/web_client/**',
       'lib/src/cards/ep.generated.ts',
     ],
@@ -19,6 +18,8 @@ export default tseslint.config(
       'lib/scripts/**/*.ts',
       'backend/web/src/**/*.ts',
       'backend/web/scripts/**/*.ts',
+      'frontend/cli/src/**/*.ts',
+      'frontend/phaser/src/**/*.ts',
     ],
     languageOptions: {
       parserOptions: {
@@ -59,6 +60,19 @@ export default tseslint.config(
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
+        },
+      ],
+      'max-params': ['error', { max: 4 }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['.*', '../*', './*'],
+              message:
+                'Use package absolute imports (#path) per AGENTS.md, not relative paths.',
+            },
+          ],
         },
       ],
     },
