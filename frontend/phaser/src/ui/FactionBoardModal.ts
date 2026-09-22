@@ -21,9 +21,9 @@ import type { FactionBoardViewModel } from './factionBoardViewModel.ts'
 const MODAL_DEPTH = 360
 
 /** Board fills most of the viewport; overlays use helper layout px. */
-const BOARD_MAX_WIDTH_RATIO = 0.92
-const BOARD_MAX_HEIGHT_RATIO = 0.82
-const BOARD_TOP_RATIO = 0.04
+const BOARD_MAX_WIDTH_RATIO = 0.96
+const BOARD_MAX_HEIGHT_RATIO = 0.94
+const BOARD_TOP_RATIO = 0.02
 
 /**
  * Steam-inspired faction board: board art + layout-baked tokens/supply/leader.
@@ -79,26 +79,17 @@ export class FactionBoardModal {
 
     const children: Phaser.GameObjects.GameObject[] = [veil]
     children.push(...this.buildBoardArt(view, placement))
-    children.push(
-      this.makeFloatingLabel(
-        width / 2,
-        Math.max(8, placement.top - 6),
-        `${view.factionName}  ·  ${String(view.victoryPoints)} VP`,
-        0.5,
-        1,
-      ),
-    )
     children.push(...this.buildLayoutOverlays(view, layout, placement))
 
     const closeButton = this.scene.add
-      .text(width / 2, height - 16, '✕  Close', {
+      .text(width - 12, 10, '✕', {
         fontFamily: 'Georgia, serif',
-        fontSize: '18px',
+        fontSize: '16px',
         color: '#1a1a1a',
         backgroundColor: '#f0e6d3',
-        padding: { x: 28, y: 10 },
+        padding: { x: 8, y: 4 },
       })
-      .setOrigin(0.5, 1)
+      .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true })
     closeButton.on('pointerdown', () => {
       this.hide()
@@ -251,13 +242,8 @@ export class FactionBoardModal {
     textureKey: string,
   ): Phaser.GameObjects.GameObject[] {
     const nodes: Phaser.GameObjects.GameObject[] = []
-    const centerX = box.x + box.width / 2
-    const centerY = box.y + box.height / 2
     if (this.scene.textures.exists(textureKey)) {
-      const icon = this.scene.add.image(centerX, centerY, textureKey)
-      const side = Math.min(box.width, box.height) * 0.72
-      icon.setDisplaySize(side, side)
-      nodes.push(icon)
+      nodes.push(this.fitTokenInRegion(box, textureKey))
     }
     const badge = this.scene.add
       .text(box.x + box.width - 4, box.y + 2, countLabel, {
@@ -369,18 +355,15 @@ export class FactionBoardModal {
     return nodes
   }
 
+  /** Sprite top-left = region top-left; stretch to region width×height. */
   private fitTokenInRegion(
     box: ScaledBoardRect,
     textureKey: string,
   ): Phaser.GameObjects.Image {
-    const image = this.scene.add.image(
-      box.x + box.width / 2,
-      box.y + box.height / 2,
-      textureKey,
-    )
-    const side = Math.min(box.width, box.height) * 0.88
-    image.setDisplaySize(side, side)
-    return image
+    return this.scene.add
+      .image(box.x, box.y, textureKey)
+      .setOrigin(0, 0)
+      .setDisplaySize(box.width, box.height)
   }
 
   private buildLeaderSlot(
@@ -403,15 +386,12 @@ export class FactionBoardModal {
     return [this.fitImageContain(box, key)]
   }
 
+  /** Top-left anchored; uniform scale to fit inside the region. */
   private fitImageContain(
     box: ScaledBoardRect,
     textureKey: string,
   ): Phaser.GameObjects.Image {
-    const image = this.scene.add.image(
-      box.x + box.width / 2,
-      box.y + box.height / 2,
-      textureKey,
-    )
+    const image = this.scene.add.image(box.x, box.y, textureKey).setOrigin(0, 0)
     const source = image.texture.getSourceImage()
     const scale = Math.min(
       box.width / source.width,
@@ -439,24 +419,6 @@ export class FactionBoardModal {
         this.scene.load.start()
       }
     })
-  }
-
-  private makeFloatingLabel(
-    x: number,
-    y: number,
-    text: string,
-    originX: number,
-    originY: number,
-  ): Phaser.GameObjects.Text {
-    return this.scene.add
-      .text(x, y, text, {
-        fontFamily: 'Georgia, serif',
-        fontSize: '20px',
-        color: '#f7f0e4',
-        backgroundColor: '#0a0a0acc',
-        padding: { x: 14, y: 6 },
-      })
-      .setOrigin(originX, originY)
   }
 
   private formatCrafted(cardNames: string[], itemTypes: string[]): string {
