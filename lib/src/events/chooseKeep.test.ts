@@ -1,24 +1,17 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { Game } from '../game/Game.js'
-import { FALL } from '../map/fall.js'
-import { warriors } from '../queries/pieces.js'
-import { keepOwner } from '../queries/place.js'
-import { resetPlaceIds } from '../rules/place.js'
-import { eyrieStartClearing } from '../factions/Eyrie.js'
-import { keepCornerFor } from '../factions/Marquise.js'
-
-function lobbyTwo(seed = 42): Game {
-  const game = Game.create({ seed })
-  game.join('a')
-  game.join('b')
-  return game
-}
+import { eyrieStartClearing } from '#factions/Eyrie.js'
+import { keepCornerFor } from '#factions/Marquise.js'
+import { FALL } from '#map/fall.js'
+import { warriors } from '#queries/pieces.js'
+import { keepOwner } from '#queries/place.js'
+import { resetPlaceIds } from '#rules/place.js'
+import { createLobbyGame } from '#test/fixtures.js'
 
 describe('chooseKeep', () => {
   beforeEach(() => resetPlaceIds())
 
   it('Rule: Marquise > Setup 2 — start leaves chooseKeep pending', () => {
-    const game = lobbyTwo()
+    const game = createLobbyGame()
     game.start()
     expect(game.state.status).toBe('setup')
     expect(game.state.pending[0]?.type).toBe('chooseKeep')
@@ -30,7 +23,7 @@ describe('chooseKeep', () => {
   it('Rule: Marquise > Setup 2 — each corner places keep + garrison', () => {
     for (const corner of FALL.corners) {
       resetPlaceIds()
-      const game = lobbyTwo(corner + 10)
+      const game = createLobbyGame(corner + 10)
       game.start()
       game.apply({ type: 'resolveEvent', clearing: corner })
       expect(game.state.status).toBe('setup')
@@ -57,7 +50,7 @@ describe('chooseKeep', () => {
   })
 
   it('rejects non-corner keep', () => {
-    const game = lobbyTwo()
+    const game = createLobbyGame()
     game.start()
     expect(() => game.apply({ type: 'resolveEvent', clearing: 4 })).toThrow()
   })

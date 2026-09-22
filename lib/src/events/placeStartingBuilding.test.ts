@@ -1,15 +1,9 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { Game } from '../game/Game.js'
-import { FALL } from '../map/fall.js'
-import { resetPlaceIds } from '../rules/place.js'
-import { keepCornerFor, startingBuildingZone } from '../factions/Marquise.js'
-
-function lobbyTwo(seed = 42): Game {
-  const game = Game.create({ seed })
-  game.join('a')
-  game.join('b')
-  return game
-}
+import { keepCornerFor, startingBuildingZone } from '#factions/Marquise.js'
+import type { Game } from '#game/Game.js'
+import { FALL } from '#map/fall.js'
+import { resetPlaceIds } from '#rules/place.js'
+import { createLobbyGame } from '#test/fixtures.js'
 
 function placeAllStartingBuildings(game: Game): void {
   while (game.state.pending[0]?.type === 'placeStartingBuilding') {
@@ -26,7 +20,7 @@ describe('placeStartingBuilding', () => {
   beforeEach(() => resetPlaceIds())
 
   it('Rule: Marquise > Setup 4 — after keep, pending sawmill in keep∪adjacent', () => {
-    const game = lobbyTwo()
+    const game = createLobbyGame()
     game.start()
     const keep = FALL.corners[0]!
     game.apply({ type: 'resolveEvent', clearing: keep })
@@ -50,7 +44,7 @@ describe('placeStartingBuilding', () => {
   })
 
   it('Rule: Marquise > Setup 4 — place three buildings then chooseLeader', () => {
-    const game = lobbyTwo()
+    const game = createLobbyGame()
     game.start()
     const keep = FALL.corners[0]!
     game.apply({ type: 'resolveEvent', clearing: keep })
@@ -80,7 +74,7 @@ describe('placeStartingBuilding', () => {
   })
 
   it('rejects clearing outside keep∪adjacent', () => {
-    const game = lobbyTwo()
+    const game = createLobbyGame()
     game.start()
     const keep = FALL.corners[0]!
     game.apply({ type: 'resolveEvent', clearing: keep })
