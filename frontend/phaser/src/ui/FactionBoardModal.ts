@@ -1,11 +1,32 @@
 import type Phaser from 'phaser'
+import {
+  EYRIE_BOARD_LAYOUT,
+  MARQUISE_BOARD_LAYOUT,
+  findBoardLayoutRegion,
+  placeBoardImage,
+  scaleBoardLayoutRegion,
+  trackCellRegion,
+  type BoardImagePlacement,
+  type FactionBoardPixelLayout,
+  type ScaledBoardRect,
+} from '../assets/factionBoardLayout.ts'
+import {
+  eyrieLeaderTextureKey,
+  lookupEyrieLeader,
+} from '../assets/eyrieLeaderCatalog.ts'
+import { GAME_ASSET_KEYS } from '../assets/gameAssets.ts'
 import { gameViewSize } from '../game/hiDpi.ts'
 import type { FactionBoardViewModel } from './factionBoardViewModel.ts'
 
 const MODAL_DEPTH = 360
 
+/** Board fills most of the viewport; overlays use helper layout px. */
+const BOARD_MAX_WIDTH_RATIO = 0.92
+const BOARD_MAX_HEIGHT_RATIO = 0.82
+const BOARD_TOP_RATIO = 0.04
+
 /**
- * Steam-inspired faction board lookup: board art + track/supply HUD + Close.
+ * Steam-inspired faction board: board art + layout-baked tokens/supply/leader.
  */
 export class FactionBoardModal {
   private readonly scene: Phaser.Scene
@@ -13,6 +34,7 @@ export class FactionBoardModal {
   private contentNodes: Phaser.GameObjects.GameObject[] = []
   private visible = false
   private currentSeat: number | null = null
+  private showGeneration = 0
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene
@@ -32,6 +54,8 @@ export class FactionBoardModal {
     this.currentSeat = view.seat
     this.visible = true
     this.root.setVisible(true)
+    this.showGeneration += 1
+    const generation = this.showGeneration
 
     const { width, height } = gameViewSize()
     const veil = this.scene.add
@@ -41,80 +65,33 @@ export class FactionBoardModal {
       this.hide()
     })
 
-    const boardMaxWidth = width * 0.72
-    const boardMaxHeight = height * 0.62
-    const boardTop = height * 0.06
+    const layout =
+      view.kind === 'marquise' ? MARQUISE_BOARD_LAYOUT : EYRIE_BOARD_LAYOUT
+    const placement = placeBoardImage({
+      viewWidth: width,
+      viewHeight: height,
+      naturalWidth: layout.naturalWidth,
+      naturalHeight: layout.naturalHeight,
+      maxWidthRatio: BOARD_MAX_WIDTH_RATIO,
+      maxHeightRatio: BOARD_MAX_HEIGHT_RATIO,
+      topRatio: BOARD_TOP_RATIO,
+    })
+
     const children: Phaser.GameObjects.GameObject[] = [veil]
-
-    if (this.scene.textures.exists(view.boardTextureKey)) {
-      const boardImage = this.scene.add
-        .image(width / 2, boardTop, view.boardTextureKey)
-        .setOrigin(0.5, 0)
-      const source = boardImage.texture.getSourceImage()
-      const naturalWidth = source.width
-      const naturalHeight = source.height
-      const scale = Math.min(
-        boardMaxWidth / naturalWidth,
-        boardMaxHeight / naturalHeight,
-      )
-      boardImage.setDisplaySize(naturalWidth * scale, naturalHeight * scale)
-      children.push(boardImage)
-    } else {
-      const fallback = this.scene.add
-        .rectangle(
-          width / 2,
-          boardTop + boardMaxHeight / 2,
-          boardMaxWidth,
-          boardMaxHeight,
-          view.kind === 'marquise' ? 0xb85a1a : 0x1a2a4a,
-          0.95,
-        )
-        .setStrokeStyle(2, 0xf0e6d3, 0.7)
-      children.push(fallback)
-    }
-
-    const headerY = boardTop - 4
-    const header = this.scene.add
-      .text(
+    children.push(...this.buildBoardArt(view, placement))
+    children.push(
+      this.makeFloatingLabel(
         width / 2,
-        headerY,
+        Math.max(8, placement.top - 6),
         `${view.factionName}  ·  ${String(view.victoryPoints)} VP`,
-        {
-          fontFamily: 'Georgia, serif',
-          fontSize: '20px',
-          color: '#f7f0e4',
-          backgroundColor: '#0a0a0acc',
-          padding: { x: 14, y: 6 },
-        },
-      )
-      .setOrigin(0.5, 1)
-    children.push(header)
-
-    if (view.kind === 'eyrie' && view.leader !== null) {
-      const banner = this.scene.add
-        .text(
-          width / 2,
-          boardTop + 8,
-          `${view.leader.name}: ${view.leader.ability}`,
-          {
-            fontFamily: 'Georgia, serif',
-            fontSize: '13px',
-            color: '#1a1408',
-            backgroundColor: '#e8d9a8ee',
-            padding: { x: 12, y: 6 },
-            wordWrap: { width: boardMaxWidth * 0.85 },
-            align: 'center',
-          },
-        )
-        .setOrigin(0.5, 0)
-      children.push(banner)
-    }
-
-    const hudTop = boardTop + boardMaxHeight + 10
-    children.push(...this.buildHud(view, width, hudTop, boardMaxWidth))
+        0.5,
+        1,
+      ),
+    )
+    children.push(...this.buildLayoutOverlays(view, layout, placement))
 
     const closeButton = this.scene.add
-      .text(width / 2, height - 28, '✕  Close', {
+      .text(width / 2, height - 16, '✕  Close', {
         fontFamily: 'Georgia, serif',
         fontSize: '18px',
         color: '#1a1a1a',
@@ -130,11 +107,26 @@ export class FactionBoardModal {
 
     this.root.add(children)
     this.contentNodes = children
+
+    if (view.kind === 'eyrie' && view.leader !== null) {
+      void this.ensureLeaderTexture(view.leader.id).then(() => {
+        if (generation !== this.showGeneration || !this.visible) {
+          return
+        }
+        const leaderNodes = this.buildLeaderSlot(view, layout, placement)
+        if (leaderNodes.length === 0) {
+          return
+        }
+        this.root.add(leaderNodes)
+        this.contentNodes = [...this.contentNodes, ...leaderNodes]
+      })
+    }
   }
 
   hide(): void {
     this.visible = false
     this.currentSeat = null
+    this.showGeneration += 1
     this.clearContent()
     this.root.setVisible(false)
   }
@@ -151,181 +143,320 @@ export class FactionBoardModal {
     this.root.removeAll(false)
   }
 
-  private buildHud(
+  private buildBoardArt(
     view: FactionBoardViewModel,
-    viewWidth: number,
-    hudTop: number,
-    boardMaxWidth: number,
+    placement: BoardImagePlacement,
+  ): Phaser.GameObjects.GameObject[] {
+    const centerX = placement.left + placement.displayWidth / 2
+    if (this.scene.textures.exists(view.boardTextureKey)) {
+      const boardImage = this.scene.add
+        .image(centerX, placement.top, view.boardTextureKey)
+        .setOrigin(0.5, 0)
+      boardImage.setDisplaySize(placement.displayWidth, placement.displayHeight)
+      return [boardImage]
+    }
+    const fallback = this.scene.add
+      .rectangle(
+        centerX,
+        placement.top + placement.displayHeight / 2,
+        placement.displayWidth,
+        placement.displayHeight,
+        view.kind === 'marquise' ? 0xb85a1a : 0x1a2a4a,
+        0.95,
+      )
+      .setStrokeStyle(2, 0xf0e6d3, 0.7)
+    return [fallback]
+  }
+
+  private buildLayoutOverlays(
+    view: FactionBoardViewModel,
+    layout: FactionBoardPixelLayout,
+    placement: BoardImagePlacement,
   ): Phaser.GameObjects.GameObject[] {
     const nodes: Phaser.GameObjects.GameObject[] = []
-    const left = viewWidth / 2 - boardMaxWidth / 2
+    nodes.push(...this.buildCraftedRegion(view, layout, placement))
+    nodes.push(...this.buildSupplyOverlays(view, layout, placement))
 
     if (view.kind === 'marquise') {
       nodes.push(
-        this.makeLabel(
-          left,
-          hudTop,
-          `Warriors ${String(view.warriors)}  ·  Wood ${String(view.wood)}  ·  Hand ${String(view.handSize)}`,
-        ),
-      )
-      nodes.push(
-        this.makeLabel(
-          left,
-          hudTop + 22,
-          this.formatCrafted(view.crafted.cardNames, view.crafted.itemTypes),
-        ),
-      )
-      nodes.push(
-        ...this.buildMarquiseTracks(view, left, hudTop + 48, boardMaxWidth),
+        ...this.buildMarquiseTrackTokens(view, layout, placement),
       )
       return nodes
     }
 
-    nodes.push(
-      this.makeLabel(
-        left,
-        hudTop,
-        `Warriors ${String(view.warriors)}  ·  Hand ${String(view.handSize)}  ·  Roosts ${String(view.roostsOnMap)}`,
-      ),
-    )
-    nodes.push(
-      this.makeLabel(
-        left,
-        hudTop + 22,
-        this.formatCrafted(view.crafted.cardNames, view.crafted.itemTypes),
-      ),
-    )
-    nodes.push(...this.buildEyrieRoostTrack(view, left, hudTop + 48, boardMaxWidth))
+    nodes.push(...this.buildEyrieRoostTokens(view, layout, placement))
     return nodes
   }
 
-  private buildMarquiseTracks(
-    view: Extract<FactionBoardViewModel, { kind: 'marquise' }>,
-    left: number,
-    top: number,
-    boardMaxWidth: number,
+  private buildCraftedRegion(
+    view: FactionBoardViewModel,
+    layout: FactionBoardPixelLayout,
+    placement: BoardImagePlacement,
+  ): Phaser.GameObjects.GameObject[] {
+    const region = findBoardLayoutRegion(layout, 'crafted-items')
+    if (region === null) {
+      return []
+    }
+    const box = scaleBoardLayoutRegion(region, placement)
+    const label = this.formatCrafted(view.crafted.cardNames, view.crafted.itemTypes)
+    const text = this.scene.add
+      .text(box.x + 6, box.y + 4, label, {
+        fontFamily: 'monospace',
+        fontSize: `${Math.max(11, Math.round(box.height * 0.28))}px`,
+        color: '#f7f0e4',
+        backgroundColor: '#0a0a0acc',
+        padding: { x: 6, y: 4 },
+        wordWrap: { width: Math.max(40, box.width - 12) },
+      })
+      .setOrigin(0, 0)
+    return [text]
+  }
+
+  private buildSupplyOverlays(
+    view: FactionBoardViewModel,
+    layout: FactionBoardPixelLayout,
+    placement: BoardImagePlacement,
   ): Phaser.GameObjects.GameObject[] {
     const nodes: Phaser.GameObjects.GameObject[] = []
-    const rows: Array<{
-      label: string
-      emptied: number
-      victoryPoints: number[]
-    }> = [
-      {
-        label: 'Sawmills',
-        emptied: view.emptiedColumnCount.sawmill,
-        victoryPoints: view.trackColumns.map(
-          (column) => column.sawmillVictoryPoints,
-        ),
-      },
-      {
-        label: 'Workshops',
-        emptied: view.emptiedColumnCount.workshop,
-        victoryPoints: view.trackColumns.map(
-          (column) => column.workshopVictoryPoints,
-        ),
-      },
-      {
-        label: 'Recruiters',
-        emptied: view.emptiedColumnCount.recruiter,
-        victoryPoints: view.trackColumns.map(
-          (column) => column.recruiterVictoryPoints,
-        ),
-      },
-    ]
-
-    rows.forEach((row, rowIndex) => {
-      const y = top + rowIndex * 28
-      nodes.push(this.makeLabel(left, y, row.label, '#c8bfb0'))
+    const warriorsRegion = findBoardLayoutRegion(layout, 'supply-warriors')
+    if (warriorsRegion !== null) {
       nodes.push(
-        ...this.buildTrackCells(
-          left + 100,
-          y,
-          boardMaxWidth - 100,
-          row.victoryPoints,
-          row.emptied,
+        ...this.buildSupplyCell(
+          scaleBoardLayoutRegion(warriorsRegion, placement),
+          String(view.warriors),
+          view.kind === 'marquise'
+            ? GAME_ASSET_KEYS.factionMarquise
+            : GAME_ASSET_KEYS.factionEyrie,
         ),
       )
-    })
+    }
+    if (view.kind === 'marquise') {
+      const woodRegion = findBoardLayoutRegion(layout, 'supply-wood')
+      if (woodRegion !== null) {
+        nodes.push(
+          ...this.buildSupplyCell(
+            scaleBoardLayoutRegion(woodRegion, placement),
+            String(view.wood),
+            GAME_ASSET_KEYS.tokenMarquiseWood,
+          ),
+        )
+      }
+    }
     return nodes
   }
 
-  private buildEyrieRoostTrack(
-    view: Extract<FactionBoardViewModel, { kind: 'eyrie' }>,
-    left: number,
-    top: number,
-    boardMaxWidth: number,
-  ): Phaser.GameObjects.GameObject[] {
-    const nodes: Phaser.GameObjects.GameObject[] = [
-      this.makeLabel(left, top, 'Roosts', '#c8bfb0'),
-    ]
-    const victoryPoints = view.roostTrack.map(
-      (column) => column.eveningVictoryPoints,
-    )
-    nodes.push(
-      ...this.buildTrackCells(
-        left + 100,
-        top,
-        boardMaxWidth - 100,
-        victoryPoints,
-        view.roostsOnMap,
-      ),
-    )
-    return nodes
-  }
-
-  private buildTrackCells(
-    left: number,
-    top: number,
-    totalWidth: number,
-    victoryPoints: number[],
-    emptiedCount: number,
+  private buildSupplyCell(
+    box: ScaledBoardRect,
+    countLabel: string,
+    textureKey: string,
   ): Phaser.GameObjects.GameObject[] {
     const nodes: Phaser.GameObjects.GameObject[] = []
-    const gap = 4
-    const cellWidth =
-      (totalWidth - gap * (victoryPoints.length - 1)) / victoryPoints.length
-    const cellHeight = 22
-
-    victoryPoints.forEach((points, index) => {
-      const x = left + index * (cellWidth + gap)
-      const emptied = index < emptiedCount
-      const cell = this.scene.add
-        .rectangle(
-          x,
-          top,
-          cellWidth,
-          cellHeight,
-          emptied ? 0x2a2418 : 0x111111,
-          emptied ? 0.95 : 0.75,
-        )
-        .setOrigin(0, 0)
-        .setStrokeStyle(emptied ? 2 : 1, emptied ? 0xffffff : 0x666666, 1)
-      const label = this.scene.add
-        .text(x + cellWidth / 2, top + cellHeight / 2, String(points), {
-          fontFamily: 'monospace',
-          fontSize: '12px',
-          color: emptied ? '#ffe08a' : '#888888',
-        })
-        .setOrigin(0.5)
-      nodes.push(cell, label)
-    })
+    const centerX = box.x + box.width / 2
+    const centerY = box.y + box.height / 2
+    if (this.scene.textures.exists(textureKey)) {
+      const icon = this.scene.add.image(centerX, centerY, textureKey)
+      const side = Math.min(box.width, box.height) * 0.72
+      icon.setDisplaySize(side, side)
+      nodes.push(icon)
+    }
+    const badge = this.scene.add
+      .text(box.x + box.width - 4, box.y + 2, countLabel, {
+        fontFamily: 'monospace',
+        fontSize: `${Math.max(14, Math.round(box.height * 0.28))}px`,
+        color: '#1a1408',
+        backgroundColor: '#f0e6d3ee',
+        padding: { x: 6, y: 2 },
+      })
+      .setOrigin(1, 0)
+    nodes.push(badge)
     return nodes
   }
 
-  private makeLabel(
+  private buildMarquiseTrackTokens(
+    view: Extract<FactionBoardViewModel, { kind: 'marquise' }>,
+    layout: FactionBoardPixelLayout,
+    placement: BoardImagePlacement,
+  ): Phaser.GameObjects.GameObject[] {
+    const rows: Array<{
+      trackId: string
+      emptied: number
+      textureKey: string
+    }> = [
+      {
+        trackId: 'sawmill',
+        emptied: view.emptiedColumnCount.sawmill,
+        textureKey: GAME_ASSET_KEYS.tokenMarquiseSawmill,
+      },
+      {
+        trackId: 'workshop',
+        emptied: view.emptiedColumnCount.workshop,
+        textureKey: GAME_ASSET_KEYS.tokenMarquiseWorkshop,
+      },
+      {
+        trackId: 'recruiter',
+        emptied: view.emptiedColumnCount.recruiter,
+        textureKey: GAME_ASSET_KEYS.tokenMarquiseRecruiter,
+      },
+    ]
+    const nodes: Phaser.GameObjects.GameObject[] = []
+    for (const row of rows) {
+      nodes.push(
+        ...this.buildRemainingTrackTokens({
+          layout,
+          placement,
+          trackId: row.trackId,
+          emptiedCount: row.emptied,
+          textureKey: row.textureKey,
+        }),
+      )
+    }
+    return nodes
+  }
+
+  private buildEyrieRoostTokens(
+    view: Extract<FactionBoardViewModel, { kind: 'eyrie' }>,
+    layout: FactionBoardPixelLayout,
+    placement: BoardImagePlacement,
+  ): Phaser.GameObjects.GameObject[] {
+    return this.buildRemainingTrackTokens({
+      layout,
+      placement,
+      trackId: 'roost',
+      emptiedCount: view.roostsOnMap,
+      textureKey: GAME_ASSET_KEYS.tokenEyrieRoost,
+    })
+  }
+
+  /**
+   * Left slots emptied (on map); remaining pieces sit on right-hand cells.
+   */
+  private buildRemainingTrackTokens(options: {
+    layout: FactionBoardPixelLayout
+    placement: BoardImagePlacement
+    trackId: string
+    emptiedCount: number
+    textureKey: string
+  }): Phaser.GameObjects.GameObject[] {
+    const track = options.layout.tracks.find(
+      (entry) => entry.id === options.trackId,
+    )
+    if (track === undefined) {
+      return []
+    }
+    if (!this.scene.textures.exists(options.textureKey)) {
+      return []
+    }
+    const nodes: Phaser.GameObjects.GameObject[] = []
+    for (let cellIndex = 0; cellIndex < track.cells; cellIndex += 1) {
+      if (cellIndex < options.emptiedCount) {
+        continue
+      }
+      const region = trackCellRegion(
+        options.layout,
+        options.trackId,
+        cellIndex,
+      )
+      if (region === null) {
+        continue
+      }
+      nodes.push(
+        this.fitTokenInRegion(
+          scaleBoardLayoutRegion(region, options.placement),
+          options.textureKey,
+        ),
+      )
+    }
+    return nodes
+  }
+
+  private fitTokenInRegion(
+    box: ScaledBoardRect,
+    textureKey: string,
+  ): Phaser.GameObjects.Image {
+    const image = this.scene.add.image(
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+      textureKey,
+    )
+    const side = Math.min(box.width, box.height) * 0.88
+    image.setDisplaySize(side, side)
+    return image
+  }
+
+  private buildLeaderSlot(
+    view: Extract<FactionBoardViewModel, { kind: 'eyrie' }>,
+    layout: FactionBoardPixelLayout,
+    placement: BoardImagePlacement,
+  ): Phaser.GameObjects.GameObject[] {
+    if (view.leader === null) {
+      return []
+    }
+    const region = findBoardLayoutRegion(layout, 'leader-slot')
+    if (region === null) {
+      return []
+    }
+    const key = eyrieLeaderTextureKey(view.leader.id)
+    if (!this.scene.textures.exists(key)) {
+      return []
+    }
+    const box = scaleBoardLayoutRegion(region, placement)
+    return [this.fitImageContain(box, key)]
+  }
+
+  private fitImageContain(
+    box: ScaledBoardRect,
+    textureKey: string,
+  ): Phaser.GameObjects.Image {
+    const image = this.scene.add.image(
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+      textureKey,
+    )
+    const source = image.texture.getSourceImage()
+    const scale = Math.min(
+      box.width / source.width,
+      box.height / source.height,
+    )
+    image.setDisplaySize(source.width * scale, source.height * scale)
+    return image
+  }
+
+  private ensureLeaderTexture(leaderId: string): Promise<void> {
+    const info = lookupEyrieLeader(leaderId)
+    if (info === null) {
+      return Promise.resolve()
+    }
+    const key = eyrieLeaderTextureKey(leaderId)
+    if (this.scene.textures.exists(key)) {
+      return Promise.resolve()
+    }
+    this.scene.load.image(key, info.imagePath)
+    return new Promise((resolve) => {
+      this.scene.load.once('complete', () => {
+        resolve()
+      })
+      if (!this.scene.load.isLoading()) {
+        this.scene.load.start()
+      }
+    })
+  }
+
+  private makeFloatingLabel(
     x: number,
     y: number,
     text: string,
-    color = '#f0e6d3',
+    originX: number,
+    originY: number,
   ): Phaser.GameObjects.Text {
-    return this.scene.add.text(x, y, text, {
-      fontFamily: 'monospace',
-      fontSize: '13px',
-      color,
-      backgroundColor: '#0a0a0acc',
-      padding: { x: 8, y: 4 },
-    })
+    return this.scene.add
+      .text(x, y, text, {
+        fontFamily: 'Georgia, serif',
+        fontSize: '20px',
+        color: '#f7f0e4',
+        backgroundColor: '#0a0a0acc',
+        padding: { x: 14, y: 6 },
+      })
+      .setOrigin(originX, originY)
   }
 
   private formatCrafted(cardNames: string[], itemTypes: string[]): string {
@@ -333,6 +464,6 @@ export class FactionBoardModal {
       cardNames.length === 0 ? '(none)' : cardNames.join(', ')
     const items =
       itemTypes.length === 0 ? '(none)' : itemTypes.join(', ')
-    return `Crafted cards ${cards}  ·  Items ${items}`
+    return `Cards ${cards}\nItems ${items}`
   }
 }
