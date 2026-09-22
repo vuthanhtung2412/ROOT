@@ -55,6 +55,7 @@ export type GameState = {
     birdsongWoodDone: boolean
     eveningDrawDone: boolean
     swapMeetUsed: boolean
+    charmOffensiveUsed: boolean
     emergencyOrdersDone: boolean
     eveningScoreDone: boolean
     /** Decree cursor for current column; null until ensure or after column done. */

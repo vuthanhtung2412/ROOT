@@ -38,6 +38,7 @@ function scratch(decree: DecreeCursor | null = null, decreeDone = false) {
     birdsongWoodDone: false,
     eveningDrawDone: false,
     swapMeetUsed: false,
+      charmOffensiveUsed: false,
     emergencyOrdersDone: false,
     eveningScoreDone: false,
     decree,

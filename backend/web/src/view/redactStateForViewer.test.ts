@@ -83,6 +83,7 @@ function makeState(players: PlayerState[]): GameState {
       birdsongWoodDone: false,
       eveningDrawDone: false,
       swapMeetUsed: false,
+      charmOffensiveUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,

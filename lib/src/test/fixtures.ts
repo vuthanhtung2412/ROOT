@@ -138,6 +138,7 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
       birdsongWoodDone: false,
       eveningDrawDone: false,
       swapMeetUsed: false,
+      charmOffensiveUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,

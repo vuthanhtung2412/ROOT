@@ -1,5 +1,6 @@
 import { EFFECTS } from '../triggers/effects.js'
 import { boatBuildersEffect } from './boatBuilders.js'
+import { charmOffensiveEffect } from './charmOffensive.js'
 import { corvidPlannersEffect } from './corvidPlanners.js'
 import { foxPartisansEffect } from './partisans.js'
 import { masterEngraversEffect } from './masterEngravers.js'
@@ -17,6 +18,7 @@ const ALL_EFFECTS = [
   swapMeetEffect,
   corvidPlannersEffect,
   tunnelsEffect,
+  charmOffensiveEffect,
 ]
 
 export function registerEffects(): void {

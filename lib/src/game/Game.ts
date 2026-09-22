@@ -22,6 +22,7 @@ import type { GameSnapshot } from '../state/snapshot.js'
 import type { Seat } from '../pieces/types.js'
 import type { GameState, Phase, PlayerState } from '../state/types.js'
 import '../effects/register.js'
+import { tryApplyCharmOffensive } from '../effects/charmOffensive.js'
 import { tryApplySwapMeet } from '../effects/swapMeet.js'
 import { RESOLVERS } from '../events/resolvers.js'
 import { EFFECTS } from '../triggers/effects.js'
@@ -124,6 +125,7 @@ function initialState(args: {
       birdsongWoodDone: false,
       eveningDrawDone: false,
       swapMeetUsed: false,
+      charmOffensiveUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
@@ -375,6 +377,13 @@ export class Game {
       if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
       return
     }
+    if (action.type === 'charmOffensive') {
+      const ok = legal.some(
+        (spec) => spec.type === 'charmOffensive' && spec.actor === this.state.currentSeat,
+      )
+      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
+      return
+    }
     const ok = legal.some(
       (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
     )
@@ -400,6 +409,9 @@ export class Game {
       default: {
         const ctx = this.makeCtx()
         if (tryApplySwapMeet(this.state, action, ctx)) {
+          return [{ t: 'action', actor: this.state.currentSeat, action }]
+        }
+        if (tryApplyCharmOffensive(this.state, action, ctx)) {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
@@ -503,6 +515,7 @@ export class Game {
       birdsongWoodDone: false,
       eveningDrawDone: false,
       swapMeetUsed: false,
+      charmOffensiveUsed: false,
       emergencyOrdersDone: false,
       eveningScoreDone: false,
       decree: null,
@@ -543,6 +556,7 @@ export class Game {
           birdsongWoodDone: false,
           eveningDrawDone: false,
           swapMeetUsed: false,
+          charmOffensiveUsed: false,
           emergencyOrdersDone: false,
           eveningScoreDone: false,
           decree: null,
