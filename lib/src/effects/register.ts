@@ -8,6 +8,7 @@ import { informantsEffect } from './informants.js'
 import { leagueOfAdventurousMiceEffect } from './leagueOfAdventurousMice.js'
 import { masterEngraversEffect } from './masterEngravers.js'
 import { murineBrokerEffect } from './murineBroker.js'
+import { propagandaBureauEffect } from './propagandaBureau.js'
 import { soupKitchensEffect } from './soupKitchens.js'
 import { swapMeetEffect } from './swapMeet.js'
 import { tunnelsEffect } from './tunnels.js'
@@ -25,6 +26,7 @@ const ALL_EFFECTS = [
   coffinMakersEffect,
   informantsEffect,
   leagueOfAdventurousMiceEffect,
+  propagandaBureauEffect,
 ]
 
 export function registerEffects(): void {
