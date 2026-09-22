@@ -60,18 +60,6 @@ If helper **missing**: create **one** minimal `index.html` (+ tiny inline JS/CSS
 - On export (and whenever regions change after export click): set `window.__layoutExport` to the same JSON object string/object so chrome-devtools `evaluate_script` can read it.
 - No build, no deps, no login, no design system.
 
-## Output contract
-
-```json
-{
-  "image": "resources/reference/character-boards/marquise-de-cat/marquise-de-cat-front.webp",
-  "unit": "px",
-  "regions": [
-    { "id": "buildings-track", "x": 0, "y": 0, "width": 0, "height": 0 }
-  ]
-}
-```
-
 ## Agent behavior
 
 - Caveman-OK short ask; JSON contract exact.
@@ -80,3 +68,28 @@ If helper **missing**: create **one** minimal `index.html` (+ tiny inline JS/CSS
 - Consume regions in one commit-sized change — no unrelated refactors.
 - Never claim “I see the board” unless the image was actually read this turn.
 - **Never git-add `tmp/`.**
+
+## Sample output contract
+
+```json
+{
+  "image": "resources/reference/character-boards/marquise-de-cat/marquise-de-cat-front.webp",
+  "unit": "px",
+  "naturalWidth": 1600,
+  "naturalHeight": 1242,
+  "tracks": [
+    { "id": "sawmill", "cells": 6, "cellSize": 101, "gaps": [20, 23, 22, 25, 25], "x": 774, "y": 482 }
+  ],
+  "regions": [
+    { "id": "buildings-track", "x": 0, "y": 0, "width": 0, "height": 0 }
+  ]
+}
+```
+
+### Coordinate system (precise)
+
+- **Origin:** top-left of the **natural** image (`0,0` = image top-left). Not center. Not display CSS pixels after scale.
+- **Region / cell rect:** `{ x, y, width, height }` where **`x,y` = top-left corner** of the box, `width`/`height` extend right/down. Same as CSS `left`/`top`/`width`/`height` in the helper (`syncRegionDom`).
+- **Track stack:** `tracks[].x,y` = top-left of cell `0`; later cells use `cellSize` + `gaps[]` (or exported `regions` like `sawmill-3`).
+- **Not** center-point coords. Do **not** treat `x,y` as sprite position with origin `(0.5,0.5)`.
+- **Wiring tokens/icons:** place at rect **center** in screen space: `(x + width/2, y + height/2)` after scaling the rect onto the displayed board (Phaser image default origin `0.5,0.5` sits on that point). Text overlays may use top-left of the same rect.
