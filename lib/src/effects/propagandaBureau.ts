@@ -1,4 +1,4 @@
-import type { Action, ActionSpec } from '../actions/types.js'
+import type { Action } from '../actions/types.js'
 import { Deck } from '../cards/Deck.js'
 import { matchesSuit } from '../cards/suit.js'
 import type { CardEffect } from '../triggers/effects.js'

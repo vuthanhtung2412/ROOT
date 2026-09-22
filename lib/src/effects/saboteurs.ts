@@ -1,4 +1,4 @@
-import type { Action, ActionSpec } from '../actions/types.js'
+import type { Action } from '../actions/types.js'
 import { Deck } from '../cards/Deck.js'
 import type { CardEffect } from '../triggers/effects.js'
 import type { Ctx } from '../game/ctx.js'
@@ -18,7 +18,10 @@ function saboteursOwner(state: GameState): Seat | null {
   return null
 }
 
-function enemyCraftedCards(state: GameState, ownerSeat: Seat) {
+function enemyCraftedCards(
+  state: GameState,
+  ownerSeat: Seat,
+): Array<{ target: Seat; cardId: string }> {
   const out: Array<{ target: Seat; cardId: string }> = []
   for (const player of state.players) {
     if (player.seat === ownerSeat) continue
