@@ -207,7 +207,7 @@ export class TurnBanner {
     const bannerWidth = Math.min(640, width - 24)
 
     this.panel = scene.add
-      .rectangle(0, 0, bannerWidth, 36, 0x0a0a0a, 0.9)
+      .rectangle(0, 0, bannerWidth, 36, 0x0a0a0a, 0.45)
       .setStrokeStyle(1, 0xf0e6d3, 0.25)
 
     this.statusText = scene.add
