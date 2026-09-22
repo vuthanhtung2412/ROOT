@@ -2,6 +2,8 @@
 
 Faction board front/back scans + faction leader/character cards + official Vagabond cards. Pulled from Root Database.
 
+Layout: one subdirectory per faction id (`marquise-de-cat/`, `eyrie-dynasties/`, …) plus `vagabond/`. Catalog root keeps `boards.json` + `SOURCES.md`.
+
 | Source | URL | Used for |
 |--------|-----|----------|
 | Root Database | https://www.therootdatabase.com | boards + cards |
@@ -24,6 +26,6 @@ Faction board front/back scans + faction leader/character cards + official Vagab
 
 **Not on Root Database** (no deck upload): Keepers retainers, Twilight edicts, Corvid/Marquise/Alliance/Riverfolk/Lizard faction cards. Lilypad frog shared-deck cards omitted (not character/leader cards).
 
-See `boards.json` for LLM-friendly catalog (`factions`, `vagabonds`, `factionCards`).
+See `boards.json` for LLM-friendly catalog (`factions`, `vagabonds`, `factionCards`). Image paths are `{faction-id}/{filename}.webp`.
 
 © Leder Games. Reference only — not for redistribution beyond fair personal/dev use.

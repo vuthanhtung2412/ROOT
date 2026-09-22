@@ -1,10 +1,11 @@
 {
   "notes": {
-    "boards": "Faction board front (rules/tracks) + back (setup/components). Filenames: {faction-id}-{front|back}.webp",
-    "vagabonds": "Official Vagabond character cards only (not fan). Filenames: vagabond-{id}-front.webp",
+    "boards": "Faction board front/back under {faction-id}/. Paths: {faction-id}/{faction-id}-{front|back}.webp",
+    "vagabonds": "Official Vagabond character cards under vagabond/. Paths: vagabond/vagabond-{id}-front.webp",
     "expansions": "base | riverfolk | underworld | marauder | homeland | vagabond-pack",
-    "factionCards": "Faction-specific cards: Eyrie leaders+loyal viziers, Duchy ministers, Hundreds moods, Knaves captains (+ vagabond character deck). Filenames: {prefix}-{name}.webp",
-    "excluded": "Lilypad frog shared-deck cards omitted. Keepers/Twilight/Corvid/Marquise/Alliance/Riverfolk/Lizard have no card decks on Root Database."
+    "factionCards": "Faction-specific cards live under that faction id dir (eyrie leaders, duchy ministers, hundreds moods, knaves captains).",
+    "excluded": "Lilypad frog shared-deck cards omitted. Keepers/Twilight/Corvid/Marquise/Alliance/Riverfolk/Lizard have no card decks on Root Database.",
+    "layout": "One subdirectory per faction id (+ vagabond). boards.json + SOURCES.md stay at catalog root."
   },
   "sources": [
     {
@@ -15,7 +16,7 @@
     {
       "name": "Leder Games",
       "url": "https://ledergames.com",
-      "provides": "Publisher / \u00a9 of Root art and boards"
+      "provides": "Publisher / © of Root art and boards"
     },
     {
       "name": "Root Database faction decks",
@@ -32,12 +33,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "marquise-de-cat-front.webp",
+          "image": "marquise-de-cat/marquise-de-cat-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/8620e5b39b6344e49af5392feef34f97.webp"
         },
         {
           "side": "back",
-          "image": "marquise-de-cat-back.webp",
+          "image": "marquise-de-cat/marquise-de-cat-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/ec0c4a46ffd24e959e0e791eca771c47.webp"
         }
       ]
@@ -50,12 +51,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "eyrie-dynasties-front.webp",
+          "image": "eyrie-dynasties/eyrie-dynasties-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/1cc41b0c683642dbae8224116a77b1e7.webp"
         },
         {
           "side": "back",
-          "image": "eyrie-dynasties-back.webp",
+          "image": "eyrie-dynasties/eyrie-dynasties-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/7b0dbd88607d4df9b0c8acb62150726a.webp"
         }
       ]
@@ -68,12 +69,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "woodland-alliance-front.webp",
+          "image": "woodland-alliance/woodland-alliance-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/47678b6c510746f59a5dd293e8498427.webp"
         },
         {
           "side": "back",
-          "image": "woodland-alliance-back.webp",
+          "image": "woodland-alliance/woodland-alliance-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/b8d0dfbc6fae4041b9067eb780b5d269.webp"
         }
       ]
@@ -86,12 +87,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "vagabond-front.webp",
+          "image": "vagabond/vagabond-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/c91f9284765348b58a681fa96cd70f45.webp"
         },
         {
           "side": "back",
-          "image": "vagabond-back.webp",
+          "image": "vagabond/vagabond-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/67453d71cac2419a94529084e6fe2c2a.webp"
         }
       ]
@@ -104,12 +105,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "riverfolk-company-front.webp",
+          "image": "riverfolk-company/riverfolk-company-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/riverfolkboard.webp"
         },
         {
           "side": "back",
-          "image": "riverfolk-company-back.webp",
+          "image": "riverfolk-company/riverfolk-company-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/3f4ff59c59e94961bebf52d3ef26e41f.webp"
         }
       ]
@@ -122,12 +123,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "lizard-cult-front.webp",
+          "image": "lizard-cult/lizard-cult-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/lizardcultboard.webp"
         },
         {
           "side": "back",
-          "image": "lizard-cult-back.webp",
+          "image": "lizard-cult/lizard-cult-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/IMG_2965.webp"
         }
       ]
@@ -140,12 +141,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "underground-duchy-front.webp",
+          "image": "underground-duchy/underground-duchy-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/377019aecd884f029bde0c37f4b29e5e.webp"
         },
         {
           "side": "back",
-          "image": "underground-duchy-back.webp",
+          "image": "underground-duchy/underground-duchy-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/a337fdd47e8e4ebc942b3557488369db.webp"
         }
       ]
@@ -158,12 +159,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "corvid-conspiracy-front.webp",
+          "image": "corvid-conspiracy/corvid-conspiracy-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/corvidboard.webp"
         },
         {
           "side": "back",
-          "image": "corvid-conspiracy-back.webp",
+          "image": "corvid-conspiracy/corvid-conspiracy-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/15ebd5eabd424389ba901637d260b70b.webp"
         }
       ]
@@ -176,12 +177,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "lord-of-the-hundreds-front.webp",
+          "image": "lord-of-the-hundreds/lord-of-the-hundreds-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/lordofhundredsboard.webp"
         },
         {
           "side": "back",
-          "image": "lord-of-the-hundreds-back.webp",
+          "image": "lord-of-the-hundreds/lord-of-the-hundreds-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/e139ebc9f6a74503879d4b0e3833759c.webp"
         }
       ]
@@ -194,12 +195,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "keepers-in-iron-front.webp",
+          "image": "keepers-in-iron/keepers-in-iron-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/keepersboard.webp"
         },
         {
           "side": "back",
-          "image": "keepers-in-iron-back.webp",
+          "image": "keepers-in-iron/keepers-in-iron-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/64927cd23c2e4985a76e301d493d6f2b.webp"
         }
       ]
@@ -212,12 +213,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "lilypad-diaspora-front.webp",
+          "image": "lilypad-diaspora/lilypad-diaspora-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lilypad-diaspora/en/board/front.webp"
         },
         {
           "side": "back",
-          "image": "lilypad-diaspora-back.webp",
+          "image": "lilypad-diaspora/lilypad-diaspora-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lilypad-diaspora/en/board/back.webp"
         }
       ]
@@ -230,12 +231,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "twilight-council-front.webp",
+          "image": "twilight-council/twilight-council-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/twilight-council/en/board/front.webp"
         },
         {
           "side": "back",
-          "image": "twilight-council-back.webp",
+          "image": "twilight-council/twilight-council-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/twilight-council/en/board/back.webp"
         }
       ]
@@ -248,12 +249,12 @@
       "boards": [
         {
           "side": "front",
-          "image": "knaves-of-the-deepwood-front.webp",
+          "image": "knaves-of-the-deepwood/knaves-of-the-deepwood-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/board/front.webp"
         },
         {
           "side": "back",
-          "image": "knaves-of-the-deepwood-back.webp",
+          "image": "knaves-of-the-deepwood/knaves-of-the-deepwood-back.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/board/back.webp"
         }
       ]
@@ -268,7 +269,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-thief-front.webp",
+          "image": "vagabond/vagabond-thief-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/4f87c77d633d43e793ffc73647c03d43.webp"
         }
       ]
@@ -281,7 +282,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-tinker-front.webp",
+          "image": "vagabond/vagabond-tinker-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/4bbb264580264e7fab8a10e42690e9f8.webp"
         }
       ]
@@ -294,7 +295,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-ranger-front.webp",
+          "image": "vagabond/vagabond-ranger-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/b142a52608f144eb87e11d055fc8d510.webp"
         }
       ]
@@ -307,7 +308,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-arbiter-front.webp",
+          "image": "vagabond/vagabond-arbiter-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/arbiter/en/card/front.webp"
         }
       ]
@@ -320,7 +321,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-scoundrel-front.webp",
+          "image": "vagabond/vagabond-scoundrel-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/b20bea23095748a6b7a8c0df629a6eee.webp"
         }
       ]
@@ -333,7 +334,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-vagrant-front.webp",
+          "image": "vagabond/vagabond-vagrant-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagrant/en/card/front.webp"
         }
       ]
@@ -346,7 +347,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-adventurer-front.webp",
+          "image": "vagabond/vagabond-adventurer-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/2fb6b7a20e9a410c9262d04903f8ffee.webp"
         }
       ]
@@ -359,7 +360,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-harrier-front.webp",
+          "image": "vagabond/vagabond-harrier-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/harrier/en/card/front.webp"
         }
       ]
@@ -372,7 +373,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-ronin-front.webp",
+          "image": "vagabond/vagabond-ronin-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/d6fe72c2d3ce41ada732ecdc1ce2dead.webp"
         }
       ]
@@ -385,7 +386,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-cheat-front.webp",
+          "image": "vagabond/vagabond-cheat-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/6a292dfe5eec4c4995a73957ac91502e.webp"
         }
       ]
@@ -398,7 +399,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-gladiator-front.webp",
+          "image": "vagabond/vagabond-gladiator-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/2e4668416fe843a68dd3cd44b253b8e9.webp"
         }
       ]
@@ -411,7 +412,7 @@
       "cards": [
         {
           "side": "front",
-          "image": "vagabond-jailor-front.webp",
+          "image": "vagabond/vagabond-jailor-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/cards/38eb056ae4f04444bb30ee47b1d3d017.webp"
         }
       ]
@@ -423,7 +424,7 @@
       "deck": "leaders",
       "type": "back",
       "name": "Card Back",
-      "image": "eyrie-leader-back.webp",
+      "image": "eyrie-dynasties/eyrie-leader-back.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/back.webp"
     },
     {
@@ -431,7 +432,7 @@
       "deck": "leaders",
       "type": "card",
       "name": "Charismatic",
-      "image": "eyrie-leader-charismatic.webp",
+      "image": "eyrie-dynasties/eyrie-leader-charismatic.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/cards/ca477f211f2943e1b654de54a42b3de5.webp"
     },
     {
@@ -439,7 +440,7 @@
       "deck": "leaders",
       "type": "card",
       "name": "Builder",
-      "image": "eyrie-leader-builder.webp",
+      "image": "eyrie-dynasties/eyrie-leader-builder.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/cards/2e5c243dd55842a7888963018bde7ef2.webp"
     },
     {
@@ -447,7 +448,7 @@
       "deck": "leaders",
       "type": "card",
       "name": "Despot",
-      "image": "eyrie-leader-despot.webp",
+      "image": "eyrie-dynasties/eyrie-leader-despot.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/cards/5e405067cee14604aeddcf69135effef.webp"
     },
     {
@@ -455,7 +456,7 @@
       "deck": "leaders",
       "type": "card",
       "name": "Commander",
-      "image": "eyrie-leader-commander.webp",
+      "image": "eyrie-dynasties/eyrie-leader-commander.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/leaders/cards/b3cc57416705448abd5791da3f46b25f.webp"
     },
     {
@@ -463,7 +464,7 @@
       "deck": "loyal-viziers",
       "type": "back",
       "name": "Card Back",
-      "image": "eyrie-loyal-vizier-back.webp",
+      "image": "eyrie-dynasties/eyrie-loyal-vizier-back.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/loyal-viziers/back.webp"
     },
     {
@@ -471,7 +472,7 @@
       "deck": "loyal-viziers",
       "type": "card",
       "name": "Loyal Vizier",
-      "image": "eyrie-loyal-vizier-1.webp",
+      "image": "eyrie-dynasties/eyrie-loyal-vizier-1.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/loyal-viziers/cards/6246bfcd0a9143ba913bd51377f9b0b5.webp"
     },
     {
@@ -479,7 +480,7 @@
       "deck": "loyal-viziers",
       "type": "card",
       "name": "Loyal Vizier",
-      "image": "eyrie-loyal-vizier-2.webp",
+      "image": "eyrie-dynasties/eyrie-loyal-vizier-2.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/eyrie-dynasties/en/decks/loyal-viziers/cards/9abb4bfe870748b980ba59b2873d7bb9.webp"
     },
     {
@@ -487,7 +488,7 @@
       "deck": "minister-cards",
       "type": "back",
       "name": "Card Back",
-      "image": "duchy-minister-back.webp",
+      "image": "underground-duchy/duchy-minister-back.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/back.webp"
     },
     {
@@ -495,7 +496,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Captain",
-      "image": "duchy-minister-captain.webp",
+      "image": "underground-duchy/duchy-minister-captain.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/2cb86fce4c9040b781b56543a8e0bde4.webp"
     },
     {
@@ -503,7 +504,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Foremole",
-      "image": "duchy-minister-foremole.webp",
+      "image": "underground-duchy/duchy-minister-foremole.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/ddf1a6e32e1d4d92b421fa60a9cd156a.webp"
     },
     {
@@ -511,7 +512,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Marshal",
-      "image": "duchy-minister-marshal.webp",
+      "image": "underground-duchy/duchy-minister-marshal.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/53f29d692fac4387acc7a26ee178bfdb.webp"
     },
     {
@@ -519,7 +520,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Banker",
-      "image": "duchy-minister-banker.webp",
+      "image": "underground-duchy/duchy-minister-banker.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/0ee3e9060b0246a59bc0e2fa49f65eaf.webp"
     },
     {
@@ -527,7 +528,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Brigadier",
-      "image": "duchy-minister-brigadier.webp",
+      "image": "underground-duchy/duchy-minister-brigadier.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/96f83da170234b45b56afa928d950878.webp"
     },
     {
@@ -535,7 +536,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Mayor",
-      "image": "duchy-minister-mayor.webp",
+      "image": "underground-duchy/duchy-minister-mayor.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/364ef61a0d1943aa8c6cbb2f3def89bf.webp"
     },
     {
@@ -543,7 +544,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Baron of Dirt",
-      "image": "duchy-minister-baron-of-dirt.webp",
+      "image": "underground-duchy/duchy-minister-baron-of-dirt.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/6c755b50f3484a90a788c8689fcec93a.webp"
     },
     {
@@ -551,7 +552,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Duchess of Mud",
-      "image": "duchy-minister-duchess-of-mud.webp",
+      "image": "underground-duchy/duchy-minister-duchess-of-mud.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/da7a1a6e45fe49e79a952f4dd9ceabb0.webp"
     },
     {
@@ -559,7 +560,7 @@
       "deck": "minister-cards",
       "type": "card",
       "name": "Earl of Stone",
-      "image": "duchy-minister-earl-of-stone.webp",
+      "image": "underground-duchy/duchy-minister-earl-of-stone.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/underground-duchy/en/decks/minister-cards/cards/d342709cd14442c784ea963cb42dae30.webp"
     },
     {
@@ -567,7 +568,7 @@
       "deck": "mood-cards",
       "type": "back",
       "name": "Card Back",
-      "image": "hundreds-mood-back.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-back.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/back.webp"
     },
     {
@@ -575,7 +576,7 @@
       "deck": "mood-cards",
       "type": "card",
       "name": "Bitter",
-      "image": "hundreds-mood-bitter.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-bitter.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/8f25c0d1e9ea49cca5059686e83a69d1.webp"
     },
     {
@@ -583,7 +584,7 @@
       "deck": "mood-cards",
       "type": "card",
       "name": "Stubborn",
-      "image": "hundreds-mood-stubborn.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-stubborn.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/e7bcac61b8f84c21aa857e407b8ca269.webp"
     },
     {
@@ -591,7 +592,7 @@
       "deck": "mood-cards",
       "type": "card",
       "name": "Rowdy",
-      "image": "hundreds-mood-rowdy.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-rowdy.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/7d52d50aa8e74ce1a73b7401efb2ddde.webp"
     },
     {
@@ -599,7 +600,7 @@
       "deck": "mood-cards",
       "type": "card",
       "name": "Lavish",
-      "image": "hundreds-mood-lavish.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-lavish.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/b089e57bb0874a4b92f5cf6df453aede.webp"
     },
     {
@@ -607,7 +608,7 @@
       "deck": "mood-cards",
       "type": "card",
       "name": "Relentless",
-      "image": "hundreds-mood-relentless.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-relentless.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/a57415fb9d4c4811afe1073510e81004.webp"
     },
     {
@@ -615,7 +616,7 @@
       "deck": "mood-cards",
       "type": "card",
       "name": "Grandiose",
-      "image": "hundreds-mood-grandiose.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-grandiose.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/eba5058c6c6f4b6ba3611815ea9218a6.webp"
     },
     {
@@ -623,7 +624,7 @@
       "deck": "mood-cards",
       "type": "card",
       "name": "Jubilant",
-      "image": "hundreds-mood-jubilant.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-jubilant.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/133449f2cd794abcb86b27f2746d3661.webp"
     },
     {
@@ -631,7 +632,7 @@
       "deck": "mood-cards",
       "type": "card",
       "name": "Wrathful",
-      "image": "hundreds-mood-wrathful.webp",
+      "image": "lord-of-the-hundreds/hundreds-mood-wrathful.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/lord-of-the-hundreds/en/decks/mood-cards/cards/819fe1ef112d45a3ad6bab84f2d667dc.webp"
     },
     {
@@ -639,7 +640,7 @@
       "deck": "captain-cards",
       "type": "back",
       "name": "Card Back",
-      "image": "knaves-captain-back.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-back.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/back.webp"
     },
     {
@@ -647,7 +648,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Harrier",
-      "image": "knaves-captain-harrier.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-harrier.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/ba56d77674ba43edaeb24_yvQC2W3.webp"
     },
     {
@@ -655,7 +656,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Tinker",
-      "image": "knaves-captain-tinker.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-tinker.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/1b8e1208cada4d7492f7d_ASofGAO.webp"
     },
     {
@@ -663,7 +664,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Vagrant",
-      "image": "knaves-captain-vagrant.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-vagrant.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/8c96432deff64566836ab_nXNCHRD.webp"
     },
     {
@@ -671,7 +672,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Thief",
-      "image": "knaves-captain-thief.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-thief.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/9b4460085d394388bde23_bNfgPX1.webp"
     },
     {
@@ -679,7 +680,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Scoundrel",
-      "image": "knaves-captain-scoundrel.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-scoundrel.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/b8feb3a18ed147279cc3b_H5xeNJk.webp"
     },
     {
@@ -687,7 +688,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Ronin",
-      "image": "knaves-captain-ronin.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-ronin.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/b36121ff51ec4eca9574a_FQcpD0c.webp"
     },
     {
@@ -695,7 +696,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Jailor",
-      "image": "knaves-captain-jailor.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-jailor.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/5e652dd7d69348f298895_DuEOFiX.webp"
     },
     {
@@ -703,7 +704,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Ranger",
-      "image": "knaves-captain-ranger.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-ranger.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/f4ad3fd34d1b4705b6f84_VtPHvCM.webp"
     },
     {
@@ -711,7 +712,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Arbiter",
-      "image": "knaves-captain-arbiter.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-arbiter.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/5ca84ee36d44416191713_nn9wCpv.webp"
     },
     {
@@ -719,7 +720,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Cheat",
-      "image": "knaves-captain-cheat.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-cheat.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/45af81208897428bad3a6_7Rzcnkq.webp"
     },
     {
@@ -727,7 +728,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Gladiator",
-      "image": "knaves-captain-gladiator.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-gladiator.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/7f92a079a0ec490dae313_GHGs7nG.webp"
     },
     {
@@ -735,7 +736,7 @@
       "deck": "captain-cards",
       "type": "card",
       "name": "Adventurer",
-      "image": "knaves-captain-adventurer.webp",
+      "image": "knaves-of-the-deepwood/knaves-captain-adventurer.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/decks/captain-cards/cards/37ba6a85de2c4fcc8d72f_1AONoGG.webp"
     },
     {
@@ -743,7 +744,7 @@
       "deck": "character-card",
       "type": "back",
       "name": "Card Back",
-      "image": "vagabond-back.webp",
+      "image": "vagabond/vagabond-back.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/back.webp"
     },
     {
@@ -751,7 +752,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Adventurer",
-      "image": "vagabond-adventurer-front.webp",
+      "image": "vagabond/vagabond-adventurer-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/8ad85e65286a4e63934a2e11c29c7e22.webp"
     },
     {
@@ -759,7 +760,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Arbiter",
-      "image": "vagabond-arbiter-front.webp",
+      "image": "vagabond/vagabond-arbiter-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/31f5421f2df9434592db762962b8bd60.webp"
     },
     {
@@ -767,7 +768,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Harrier",
-      "image": "vagabond-harrier-front.webp",
+      "image": "vagabond/vagabond-harrier-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/bc44fc22691742f88a0e5181fc35f95c.webp"
     },
     {
@@ -775,7 +776,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Ranger",
-      "image": "vagabond-ranger-front.webp",
+      "image": "vagabond/vagabond-ranger-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/d11b01dd43d249bfb6d4d256ec6486a4.webp"
     },
     {
@@ -783,7 +784,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Ronin",
-      "image": "vagabond-ronin-front.webp",
+      "image": "vagabond/vagabond-ronin-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/418d9ad78bcf49079d51491c956dc990.webp"
     },
     {
@@ -791,7 +792,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Scoundrel",
-      "image": "vagabond-scoundrel-front.webp",
+      "image": "vagabond/vagabond-scoundrel-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/dbfc544771244a40aa23072b0575d4ef.webp"
     },
     {
@@ -799,7 +800,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Thief",
-      "image": "vagabond-thief-front.webp",
+      "image": "vagabond/vagabond-thief-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/b820f87e5f464e29aa1d8ec21347ac4e.webp"
     },
     {
@@ -807,7 +808,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Tinker",
-      "image": "vagabond-tinker-front.webp",
+      "image": "vagabond/vagabond-tinker-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/63f1f55f76fa451fb1703d51e01c180c.webp"
     },
     {
@@ -815,7 +816,7 @@
       "deck": "character-card",
       "type": "card",
       "name": "Vagrant",
-      "image": "vagabond-vagrant-front.webp",
+      "image": "vagabond/vagabond-vagrant-front.webp",
       "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/vagabond/en/decks/character-card/cards/73aacb8f9b934437b90d04ef4ee10835.webp"
     }
   ]

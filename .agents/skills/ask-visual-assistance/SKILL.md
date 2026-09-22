@@ -64,7 +64,7 @@ If helper **missing**: create **one** minimal `index.html` (+ tiny inline JS/CSS
 
 ```json
 {
-  "image": "resources/reference/character-boards/marquise-de-cat-front.webp",
+  "image": "resources/reference/character-boards/marquise-de-cat/marquise-de-cat-front.webp",
   "unit": "px",
   "regions": [
     { "id": "buildings-track", "x": 0, "y": 0, "width": 0, "height": 0 }
