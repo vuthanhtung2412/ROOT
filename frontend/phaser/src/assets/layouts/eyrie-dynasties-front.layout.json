@@ -1,0 +1,88 @@
+{
+  "image": "resources/reference/character-boards/eyrie-dynasties/eyrie-dynasties-front.webp",
+  "unit": "px",
+  "naturalWidth": 1600,
+  "naturalHeight": 1242,
+  "tracks": [
+    {
+      "id": "roost",
+      "cells": 7,
+      "cellSize": 99,
+      "gaps": [14, 14, 14, 14, 14, 14],
+      "x": 754,
+      "y": 520
+    }
+  ],
+  "regions": [
+    {
+      "id": "leader-slot",
+      "x": 1176,
+      "y": 687,
+      "width": 369,
+      "height": 510
+    },
+    {
+      "id": "crafted-items",
+      "x": 1086,
+      "y": 358,
+      "width": 395,
+      "height": 92
+    },
+    {
+      "id": "supply-warriors",
+      "x": 730,
+      "y": 1053,
+      "width": 99,
+      "height": 99
+    },
+    {
+      "id": "roost-0",
+      "x": 754,
+      "y": 520,
+      "width": 99,
+      "height": 99
+    },
+    {
+      "id": "roost-1",
+      "x": 867,
+      "y": 520,
+      "width": 99,
+      "height": 99
+    },
+    {
+      "id": "roost-2",
+      "x": 980,
+      "y": 520,
+      "width": 99,
+      "height": 99
+    },
+    {
+      "id": "roost-3",
+      "x": 1093,
+      "y": 520,
+      "width": 99,
+      "height": 99
+    },
+    {
+      "id": "roost-4",
+      "x": 1206,
+      "y": 520,
+      "width": 99,
+      "height": 99
+    },
+    {
+      "id": "roost-5",
+      "x": 1319,
+      "y": 520,
+      "width": 99,
+      "height": 99
+    },
+    {
+      "id": "roost-6",
+      "x": 1432,
+      "y": 520,
+      "width": 99,
+      "height": 99
+    }
+  ]
+}
