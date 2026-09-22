@@ -199,6 +199,8 @@ export function describeAction(action: Action, state: GameState): string {
       return `DISCARD ${action.cardIds.map(findCard).join('; ')}`
     case 'swapMeet':
       return `SWAP MEET give ${findCard(action.giveCardId)} ↔ ${playerRefBySeat(state, action.target)}`
+    case 'charmOffensive':
+      return `CHARM OFFENSIVE draw + 1 VP to ${playerRefBySeat(state, action.target)}`
     case 'emergencyOrders':
       return 'EMERGENCY ORDERS draw 1'
     case 'eveningScore':
