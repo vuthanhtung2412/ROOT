@@ -257,7 +257,7 @@ describe('battleResolver', () => {
   it('Rule: Battle 4 — victim removes warriors before buildings', () => {
     const state = withPieces(minimalState(), 4, [
       { id: 'w1', kind: 'warrior', owner: 1 },
-      { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
+      { id: 'b1', kind: 'building', owner: 1, type: 'sawmill' },
     ])
     expect(isValidRemoval(state, { clearing: 4, victim: 1, pieceIds: ['b1'], maxHits: 1 })).toBe(false)
     expect(isValidRemoval(state, { clearing: 4, victim: 1, pieceIds: ['w1'], maxHits: 1 })).toBe(true)
@@ -268,7 +268,7 @@ describe('battleResolver', () => {
       { id: 'w1', kind: 'warrior', owner: 1 },
       { id: 'w2', kind: 'warrior', owner: 1 },
       { id: 'w3', kind: 'warrior', owner: 1 },
-      { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
+      { id: 'b1', kind: 'building', owner: 1, type: 'sawmill' },
     ])
     // Under-remove rejected when enough pieces remain
     expect(
@@ -316,7 +316,7 @@ describe('battleResolver', () => {
       [
         { id: 'd1', kind: 'warrior', owner: 1 },
         { id: 'd2', kind: 'warrior', owner: 1 },
-        { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
+        { id: 'b1', kind: 'building', owner: 1, type: 'sawmill' },
       ],
     )
     const context = battleContext()

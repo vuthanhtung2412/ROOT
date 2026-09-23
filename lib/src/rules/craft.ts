@@ -79,7 +79,12 @@ export function craftCard(
   if (!sources) throw new RuleError('CANNOT_CRAFT', { cardId, reason: 'no sources' })
 
   for (const src of sources) {
-    if (src.piece.kind === 'building') src.piece.used = true
+    if (
+      src.piece.kind === 'building' &&
+      (src.piece.type === 'workshop' || src.piece.type === 'roost')
+    ) {
+      src.piece.used = true
+    }
   }
 
   const logs: LogEntry[] = []

@@ -803,9 +803,14 @@ export class Marquise extends Faction {
   }
 
   endTurn(state: GameState): void {
+    // Rule: Craft — each crafting piece activates once per turn; reset at endTurn.
     for (const clearing of state.clearings) {
       for (const piece of clearing.pieces) {
-        if (piece.kind === 'building' && piece.owner === state.currentSeat) {
+        if (
+          piece.owner === state.currentSeat &&
+          piece.kind === 'building' &&
+          (piece.type === 'workshop' || piece.type === 'roost')
+        ) {
           piece.used = false
         }
       }

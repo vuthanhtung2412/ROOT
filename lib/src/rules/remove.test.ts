@@ -15,7 +15,6 @@ describe('removePieces', () => {
         kind: 'building',
         owner: 1,
         type: 'sawmill',
-        used: false,
       },
     ])
     const logs = removePieces(state, { clearing: 4, pieceIds: ['b1'], scorer: 0 })
@@ -71,7 +70,7 @@ describe('removePieces', () => {
         ],
       }),
       4,
-      [{ id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false }],
+      [{ id: 'b1', kind: 'building', owner: 1, type: 'sawmill' }],
     )
     removePieces(state, { clearing: 4, pieceIds: ['b1'], scorer: 0 })
     if (state.players[1]!.board.kind === 'marquise') {
@@ -81,7 +80,7 @@ describe('removePieces', () => {
 
   it('Rule: Victory — no VP for removing own pieces', () => {
     const state = withPieces(minimalState(), 4, [
-      { id: 'b0', kind: 'building', owner: 0, type: 'sawmill', used: false },
+      { id: 'b0', kind: 'building', owner: 0, type: 'sawmill' },
     ])
     removePieces(state, { clearing: 4, pieceIds: ['b0'], scorer: 0 })
     expect(state.players[0]!.vp).toBe(0)
@@ -142,7 +141,6 @@ describe('removePieces', () => {
           kind: 'building',
           owner: 1,
           type: 'sawmill',
-          used: false,
         },
       ],
     )
@@ -169,7 +167,6 @@ describe('removePieces', () => {
           kind: 'building',
           owner: 1,
           type: 'sawmill',
-          used: false,
         },
       ],
     )
