@@ -19,6 +19,7 @@ import { canCraft } from '#queries/craft.js'
 import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { canMove } from '#queries/move.js'
 import { canPlace } from '#queries/place.js'
+import { isCraftingBuilding } from '#pieces/types.js'
 import { warriors } from '#queries/pieces.js'
 import { rules } from '#queries/ruler.js'
 import { playerOf } from '#queries/seat.js'
@@ -924,11 +925,7 @@ export class Eyrie extends Faction {
     // Rule: Craft — each crafting piece activates once per turn; reset at endTurn.
     for (const clearing of state.clearings) {
       for (const piece of clearing.pieces) {
-        if (
-          piece.owner === state.currentSeat &&
-          piece.kind === 'building' &&
-          (piece.type === 'workshop' || piece.type === 'roost')
-        ) {
+        if (piece.owner === state.currentSeat && isCraftingBuilding(piece)) {
           piece.used = false
         }
       }

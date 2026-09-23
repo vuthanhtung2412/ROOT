@@ -4,7 +4,7 @@ import type { CostSuit } from '#cards/types.js'
 import type { Suit } from '#map/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
-import type { Piece, Seat } from '#pieces/types.js'
+import { isCraftingBuilding, type Piece, type Seat } from '#pieces/types.js'
 import type { GameState } from '#state/types.js'
 
 type CraftSource = { piece: Piece; suit: Suit; clearingId: ClearingId }
@@ -40,8 +40,8 @@ function craftingSources(state: GameState, seat: Seat): CraftSource[] {
     const suit = FALL.clearings[clearingId]!.suit
     for (const piece of state.clearings[clearingId]!.pieces) {
       if (piece.owner !== seat) continue
-      if (piece.kind === 'building' && (piece.type === 'workshop' || piece.type === 'roost')) {
-        if (!piece.used) out.push({ piece, suit, clearingId })
+      if (isCraftingBuilding(piece) && !piece.used) {
+        out.push({ piece, suit, clearingId })
       }
       if (piece.kind === 'token' && piece.type === 'sympathy') {
         out.push({ piece, suit, clearingId })
