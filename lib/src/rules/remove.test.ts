@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { FALL } from '#map/fall.js'
 import { canPlace } from '#queries/place.js'
 import { resetPlaceIds } from '#rules/place.js'
-import { eyrieBoard, minimalState, player, withPieces } from '#test/fixtures.js'
+import { eyrieBoard, card, minimalState, player, withPieces } from '#test/fixtures.js'
 import { removePieces } from '#rules/remove.js'
 
 describe('removePieces', () => {
@@ -86,10 +86,11 @@ describe('removePieces', () => {
     expect(state.players[0]!.vp).toBe(0)
   })
 
-  it('Rule: Marquise > Field Hospitals — removePieces enqueues when victim has keep', () => {
+  it('Rule: Marquise > Field Hospitals — removePieces enqueues when victim has keep and card', () => {
     const base = minimalState({
       players: [
         player(0, 'marquise', {
+          hand: [card('ROOT-200')],
           board: {
             kind: 'marquise',
             supply: { warriors: 20, wood: 8 },
@@ -114,6 +115,36 @@ describe('removePieces', () => {
     expect(state.pending[0]!.type).toBe('fieldHospital')
     if (state.players[0]!.board.kind === 'marquise') {
       expect(state.players[0]!.board.supply.warriors).toBe(20)
+    }
+  })
+
+  it('Rule: Marquise > Field Hospitals — no card auto-declines to supply', () => {
+    const base = minimalState({
+      players: [
+        player(0, 'marquise', {
+          board: {
+            kind: 'marquise',
+            supply: { warriors: 20, wood: 8 },
+            tracks: {
+              sawmill: { placed: 5 },
+              workshop: { placed: 5 },
+              recruiter: { placed: 5 },
+            },
+          },
+        }),
+        player(1, 'marquise'),
+      ],
+    })
+    const keep = FALL.corners[0]!
+    const state = withPieces(
+      withPieces(base, keep, [{ id: 'keep', kind: 'token', owner: 0, type: 'keep' }]),
+      4,
+      [{ id: 'w1', kind: 'warrior', owner: 0 }],
+    )
+    removePieces(state, { clearing: 4, pieceIds: ['w1'], scorer: 1 })
+    expect(state.pending).toHaveLength(0)
+    if (state.players[0]!.board.kind === 'marquise') {
+      expect(state.players[0]!.board.supply.warriors).toBe(21)
     }
   })
 
