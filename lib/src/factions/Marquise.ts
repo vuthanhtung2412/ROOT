@@ -15,13 +15,12 @@ import { canCraft } from '#queries/craft.js'
 import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { canMove } from '#queries/move.js'
 import { canPlace, keepClearingFor } from '#queries/place.js'
-import { isCraftingBuilding } from '#pieces/types.js'
 import { warriors } from '#queries/pieces.js'
 import { rules } from '#queries/ruler.js'
 import { playerOf } from '#queries/seat.js'
 import { openSlots } from '#queries/slots.js'
 import { woodReachable } from '#queries/wood.js'
-import { craftCard } from '#rules/craft.js'
+import { craftCard, resetCraftingBuildingUsed } from '#rules/craft.js'
 import { moveWarriors } from '#rules/move.js'
 import { placeUpTo } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
@@ -804,14 +803,7 @@ export class Marquise extends Faction {
   }
 
   endTurn(state: GameState): void {
-    // Rule: Craft — each crafting piece activates once per turn; reset at endTurn.
-    for (const clearing of state.clearings) {
-      for (const piece of clearing.pieces) {
-        if (piece.owner === state.currentSeat && isCraftingBuilding(piece)) {
-          piece.used = false
-        }
-      }
-    }
+    resetCraftingBuildingUsed(state, state.currentSeat)
     state.turnScratch = {
       actionsLeft: 3,
       extraActions: 0,
