@@ -74,6 +74,7 @@ export class GameScene extends Phaser.Scene {
   private readonly composer = new ActionComposer()
   private marquiseMarch = createMarquiseMarchComposerHooks()
   private marquiseBoard = createMarquiseBoardComposerHooks()
+  private marquiseCards = createMarquiseCardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
   private eventComposer = createEventComposerHooks()
   private unsubscribe: (() => void) | null = null
@@ -96,7 +97,7 @@ export class GameScene extends Phaser.Scene {
     applyHiDpiCamera(this)
     const { width, height } = gameViewSize()
 
-    const marquiseCards = createMarquiseCardComposerHooks()
+    this.marquiseCards = createMarquiseCardComposerHooks()
     this.marquiseMarch = createMarquiseMarchComposerHooks({
       warriorCountsForCurrentSeat: () => this.readCurrentSeatWarriorCounts(),
     })
@@ -105,7 +106,7 @@ export class GameScene extends Phaser.Scene {
     this.eventComposer = createEventComposerHooks()
     this.composer.setHooks(
       mergeHooks(
-        marquiseCards.hooks,
+        this.marquiseCards.hooks,
         this.marquiseMarch.hooks,
         this.marquiseBoard.hooks,
         this.eyrieComposer.hooks,
@@ -405,6 +406,10 @@ export class GameScene extends Phaser.Scene {
       })
       this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
       this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)
+      const discardDraft = this.marquiseCards.getDraft()
+      this.cardHand?.setSelection(
+        discardDraft.type === 'discardMany' ? discardDraft.selected : [],
+      )
       this.eventOverlay?.sync(
         this.eventComposer.getOverlayKind() === 'fieldHospital',
         outcome.prompt.message,
