@@ -8,7 +8,8 @@ export type ClearingIndicatorSource = {
   ruin?: { items: string[] }
 }
 
-export const RUIN_MARKER_LABEL = 'R'
+/** Phaser texture key for remaining-ruin marker (see public/assets/markers/). */
+export const RUIN_MARKER_TEXTURE_KEY = 'marker-ruin'
 
 /** Open building slots: map slots minus buildings minus ruin occupancy. */
 export function clearingOpenSlotCount(
