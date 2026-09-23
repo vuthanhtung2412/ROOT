@@ -74,22 +74,10 @@ Collapse tray: do not list every `resolveEvent`+`pieceIds` combo; one removal co
 - Manual: March stepper; multi-hit warrior-only; overflow into buildings/tokens via `< N x {type} >` (no tray spam).
 
 ### Commit plan
-- ~~`chore(phaser): copy item icons into public assets`~~ **done** (`2f1456b`)
-- `fix(lib): require exact hit count on battle removal` **← do first (eng)**
-  - `lib/src/events/battle.ts`
-  - `lib/src/events/battle.test.ts`
-- `feat(phaser): register item texture keys`
-  - `frontend/phaser/src/assets/gameAssets.ts`
-  - `frontend/phaser/src/assets/gameAssets.test.ts`
-- `feat(phaser): show items on crafted track`
-  - `frontend/phaser/src/ui/factionBoardViewModel.ts`
-  - `frontend/phaser/src/ui/FactionBoardModal.ts`
-- `feat(phaser): shared count stepper control`
-  - `frontend/phaser/src/ui/CountStepper.ts` / `TurnBanner.ts`
-  - tests
-- `feat(phaser): move uses count stepper`
-  - marquise / eyrie march composers + tests
-- `feat(phaser): battle removal via stepper`
-  - `eventActionComposer.ts` (+ tray/scene)
-  - warriors **and** buildings/tokens; cases A/B/C
-  - tests
+- ~~`chore(phaser): copy item icons into public assets`~~ **done**
+- ~~`fix(lib): require exact hit count on battle removal`~~ **done**
+- ~~`feat(phaser): register item texture keys`~~ **done**
+- ~~`feat(phaser): show items on crafted track`~~ **done**
+- ~~`feat(phaser): shared count stepper control`~~ **done**
+- ~~`feat(phaser): move uses count stepper`~~ **done**
+- ~~`feat(phaser): battle removal via stepper`~~ **done**
