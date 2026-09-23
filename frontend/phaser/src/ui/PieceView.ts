@@ -101,10 +101,6 @@ export function drawPieceStack(
     .setDisplaySize(size, size)
     .setOrigin(0.5)
 
-  const ring = scene.add
-    .circle(0, 0, size / 2 + 2, 0x000000, 0)
-    .setStrokeStyle(2, stack.color, 0.95)
-
   const countText = scene.add
     .text(0, 0, String(stack.count), {
       fontFamily: 'Georgia, serif',
@@ -116,7 +112,7 @@ export function drawPieceStack(
     })
     .setOrigin(0.5)
 
-  return scene.add.container(position.x, position.y, [icon, ring, countText])
+  return scene.add.container(position.x, position.y, [icon, countText])
 }
 
 export function stackOffsets(count: number): PieceDrawPosition[] {
