@@ -4,26 +4,29 @@
 
 ### Approach
 - **P0 — correctness/blocking**
-  - Allow battle against an enemy with buildings/tokens but no warriors. The attacker still needs a warrior/pawn; only the defender is defenseless.
-  - Prevent stale battle controls from submitting Ambush or other event actions after the event resolves.
-  - Auto-open Field Hospitals with explicit pay/decline choices. The engine already queues the event; the current UI hides it behind generic Resolve controls.
-  - Verify Eyrie crafting power from live, unused roosts at craft time. Current code already recalculates from board state and correctly refreshes roosts each new turn, so add regression coverage before changing behavior.
+  - Allow battle against an enemy with buildings/tokens but no warriors from every battle source. The attacker still needs a warrior/pawn; only the defender is defenseless.
+  - Add a winner action that clears the finished slot and returns to the menu; the full-screen overlay currently traps the player.
 - **P1 — action integrity and required information**
-  - Keep the action tray locked while a compound March is staged. The engine already submits both moves atomically.
-  - Auto-submit warrior-only hit removal; still prompt when buildings/tokens require a choice.
+  - Auto-open Field Hospitals with explicit pay/decline choices. The engine already queues the event; the current UI hides and mislabels it.
   - Remove the unsafe multiplayer Undo control. Keep backend undo for QA/replay tooling.
   - Make the discard pile searchable, as required public information.
-  - Explain zero-hit battles, highlight the active battle clearing, show decree card suit, and raise selected discard cards.
+  - Raise selected discard cards so multi-card selection is visible.
 - **P2 — flow and board readability**
+  - Auto-open the Ambush/foil prompt at battle start. The engine already rejects Ambush after this window.
   - Auto-advance when `endPhase` is the only legal action.
-  - Replace generic banner text with event/action-specific prompts.
-  - Show free building slots, remaining ruins, a winner-to-menu action, and grouped crafted-item counts.
+  - Auto-submit warrior-only hit removal; still prompt when buildings/tokens require a choice.
+  - Explain zero-hit battles, highlight the active battle clearing, and replace generic banner text with event/action-specific prompts.
+  - Show remaining ruins and grouped crafted-item counts.
 - **P3 — cosmetic**
+  - Lock the action tray while a compound March is staged. The engine already submits both moves atomically.
+  - Show decree card suit and free building slots.
+  - Verify Eyrie crafting power from live, unused roosts. Reusing a roost next turn is lawful; same-turn reuse and removed roosts are not.
   - Remove colored rings around piece icons; retain clearing rule/highlight rings.
 
 ### Files to change
-- `lib/src/factions/Marquise.ts`, `lib/src/factions/Eyrie.ts`: defenseless defender targeting.
+- `lib/src/queries/**`, faction/card-effect callers: defenseless defender targeting.
 - `lib/src/events/battle.ts`, `lib/src/log/types.ts`: battle completion/result data.
+- `frontend/phaser/src/api/client.ts`: expose discard and ruin state already sent by the backend.
 - `frontend/phaser/src/game/**`: pending-event, March, forced-action, and selection composers.
 - `frontend/phaser/src/ui/**`: prompts, pile modal, board indicators, winner action, item grouping, piece styling.
 - `frontend/phaser/src/scenes/GameScene.ts`: orchestration and automatic UI actions.
@@ -31,7 +34,7 @@
 ### Test plan
 - Rule tests: attacker requirement remains; warriorless defenders with buildings/tokens are legal; defenseless hit applies.
 - Craft tests: used roost blocked in the same turn, refreshed next turn, removed roost unavailable immediately.
-- Phaser units: stale actions disabled while loading; Field Hospitals pay/decline; March tray lock; forced warrior removal; sole `endPhase`; decree suit; discard selection; item grouping.
+- Phaser units: Ambush/Field Hospitals auto-open; March tray lock; forced warrior removal; sole `endPhase`; decree suit; discard selection; item grouping.
 - UI model tests: active battle clearing, zero-hit result, free slots, ruins, winner callback, piece rings removed.
 - Manual replay: use `logs/23-09-2026-18h41m/game.json` to inspect battles, Field Hospitals, discard, and Eyrie craft transitions.
 - Per commit: targeted tests plus `pnpm -r typecheck`.
@@ -39,78 +42,94 @@
 
 ### Commit plan
 - **P0** `fix(lib): allow defenseless battle targets`
+  - `lib/src/queries/enemySeats.ts`
   - `lib/src/factions/Marquise.ts`
   - `lib/src/factions/Marquise.test.ts`
   - `lib/src/factions/Eyrie.ts`
   - `lib/src/factions/Eyrie.test.ts`
-- **P0** `fix(phaser): block stale pending actions`
+  - `lib/src/effects/leagueOfAdventurousMice.ts`
+  - `lib/src/effects/leagueOfAdventurousMice.test.ts`
+  - `lib/src/effects/eyrieEmigre.ts`
+  - `lib/src/effects/eyrieEmigre.test.ts`
+- **P0** `feat(phaser): add winner menu action`
+  - `frontend/phaser/src/ui/WinnerOverlay.ts`
   - `frontend/phaser/src/game/GameSession.ts`
-  - `frontend/phaser/src/game/GameSession.test.ts`
   - `frontend/phaser/src/scenes/GameScene.ts`
-- **P0** `fix(phaser): auto-open Field Hospitals`
+- **P1** `fix(phaser): auto-open Field Hospitals`
   - `frontend/phaser/src/game/eventActionComposer.ts`
   - `frontend/phaser/src/game/eventActionComposer.test.ts`
-  - `frontend/phaser/src/scenes/GameScene.ts`
-- **P0** `test(lib): cover live Eyrie craft power`
-  - `lib/src/queries/craft.test.ts`
-  - `lib/src/factions/Eyrie.test.ts`
-- **P1** `fix(phaser): lock staged March actions`
-  - `frontend/phaser/src/scenes/GameScene.ts`
   - `frontend/phaser/src/ui/ActionTray.ts`
-  - `frontend/phaser/src/ui/ActionTray.test.ts`
-- **P1** `fix(phaser): auto-remove forced warriors`
-  - `frontend/phaser/src/game/battleRemovalStepper.ts`
-  - `frontend/phaser/src/game/battleRemovalStepper.test.ts`
+  - `frontend/phaser/src/ui/EventOverlay.ts`
+  - `frontend/phaser/src/ui/TurnBanner.ts`
   - `frontend/phaser/src/scenes/GameScene.ts`
 - **P1** `fix(phaser): remove unsafe undo control`
   - `frontend/phaser/src/ui/GameDrawer.ts`
   - `frontend/phaser/src/scenes/GameScene.ts`
 - **P1** `feat(phaser): add discard pile viewer`
+  - `frontend/phaser/src/api/client.ts`
   - `frontend/phaser/src/ui/GameDrawer.ts`
   - `frontend/phaser/src/ui/CardPileModal.ts`
-  - `frontend/phaser/src/scenes/GameScene.ts`
-- **P1** `fix(phaser): explain zero-hit battles`
-  - `lib/src/events/battle.ts`
-  - `lib/src/events/battle.test.ts`
-  - `lib/src/log/types.ts`
-  - `frontend/phaser/src/game/battleOverlayModel.ts`
-  - `frontend/phaser/src/game/battleOverlayModel.test.ts`
-  - `frontend/phaser/src/ui/BattleOverlay.ts`
-- **P1** `feat(phaser): highlight battle clearing`
-  - `frontend/phaser/src/game/battleOverlayModel.ts`
-  - `frontend/phaser/src/scenes/GameScene.ts`
-  - `frontend/phaser/src/ui/BoardView.ts`
-- **P1** `fix(phaser): show decree card suit`
-  - `frontend/phaser/src/ui/ActionTray.ts`
-  - `frontend/phaser/src/ui/ActionTray.test.ts`
   - `frontend/phaser/src/scenes/GameScene.ts`
 - **P1** `fix(phaser): raise selected discard cards`
   - `frontend/phaser/src/game/marquiseActionComposer.ts`
   - `frontend/phaser/src/game/marquiseActionComposer.test.ts`
+  - `frontend/phaser/src/ui/CardHand.ts`
+  - `frontend/phaser/src/ui/CardView.ts`
+  - `frontend/phaser/src/scenes/GameScene.ts`
+- **P2** `fix(phaser): auto-open ambush window`
+  - `frontend/phaser/src/game/eventActionComposer.ts`
+  - `frontend/phaser/src/game/eventActionComposer.test.ts`
+  - `frontend/phaser/src/ui/ActionTray.ts`
   - `frontend/phaser/src/ui/CardHand.ts`
   - `frontend/phaser/src/scenes/GameScene.ts`
 - **P2** `feat(phaser): auto-advance forced steps`
   - `frontend/phaser/src/game/forcedAction.ts`
   - `frontend/phaser/src/game/forcedAction.test.ts`
   - `frontend/phaser/src/scenes/GameScene.ts`
+- **P2** `fix(phaser): auto-remove forced warriors`
+  - `frontend/phaser/src/game/battleRemovalStepper.ts`
+  - `frontend/phaser/src/game/battleRemovalStepper.test.ts`
+  - `frontend/phaser/src/game/eventActionComposer.ts`
+  - `frontend/phaser/src/game/eventActionComposer.test.ts`
+  - `frontend/phaser/src/scenes/GameScene.ts`
+- **P2** `fix(phaser): explain zero-hit battles`
+  - `lib/src/events/battle.ts`
+  - `lib/src/events/battle.test.ts`
+  - `lib/src/log/types.ts`
+  - `frontend/phaser/src/game/battleOverlayModel.ts`
+  - `frontend/phaser/src/game/battleOverlayModel.test.ts`
+  - `frontend/phaser/src/ui/BattleOverlay.ts`
+- **P2** `feat(phaser): highlight battle clearing`
+  - `frontend/phaser/src/game/battleOverlayModel.ts`
+  - `frontend/phaser/src/scenes/GameScene.ts`
+  - `frontend/phaser/src/ui/BoardView.ts`
 - **P2** `fix(phaser): clarify turn banner prompts`
   - `frontend/phaser/src/ui/TurnBanner.ts`
   - `frontend/phaser/src/ui/TurnBanner.test.ts`
-- **P2** `feat(phaser): show clearing slot counts`
-  - `frontend/phaser/src/game/clearingIndicators.ts`
-  - `frontend/phaser/src/game/clearingIndicators.test.ts`
-  - `frontend/phaser/src/ui/BoardView.ts`
-  - `frontend/phaser/src/scenes/GameScene.ts`
 - **P2** `feat(phaser): mark remaining ruins`
+  - `frontend/phaser/src/api/client.ts`
   - `frontend/phaser/src/game/clearingIndicators.ts`
   - `frontend/phaser/src/game/clearingIndicators.test.ts`
   - `frontend/phaser/src/ui/BoardView.ts`
-- **P2** `feat(phaser): add winner menu action`
-  - `frontend/phaser/src/ui/WinnerOverlay.ts`
-  - `frontend/phaser/src/scenes/GameScene.ts`
 - **P2** `feat(phaser): group crafted item counts`
   - `frontend/phaser/src/ui/factionBoardViewModel.ts`
   - `frontend/phaser/src/ui/factionBoardViewModel.test.ts`
   - `frontend/phaser/src/ui/FactionBoardModal.ts`
+- **P3** `fix(phaser): lock staged March actions`
+  - `frontend/phaser/src/scenes/GameScene.ts`
+  - `frontend/phaser/src/ui/ActionTray.ts`
+  - `frontend/phaser/src/ui/ActionTray.test.ts`
+- **P3** `fix(phaser): show decree card suit`
+  - `frontend/phaser/src/ui/ActionTray.ts`
+  - `frontend/phaser/src/ui/ActionTray.test.ts`
+  - `frontend/phaser/src/scenes/GameScene.ts`
+- **P3** `feat(phaser): show clearing slot counts`
+  - `frontend/phaser/src/game/clearingIndicators.ts`
+  - `frontend/phaser/src/game/clearingIndicators.test.ts`
+  - `frontend/phaser/src/ui/BoardView.ts`
+  - `frontend/phaser/src/scenes/GameScene.ts`
+- **P3** `test(lib): cover live Eyrie craft power`
+  - `lib/src/queries/craft.test.ts`
+  - `lib/src/factions/Eyrie.test.ts`
 - **P3** `style(phaser): remove piece icon rings`
   - `frontend/phaser/src/ui/PieceView.ts`
