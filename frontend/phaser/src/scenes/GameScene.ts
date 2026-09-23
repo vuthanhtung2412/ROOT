@@ -30,6 +30,7 @@ import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
 import { CardDetailOverlay } from '#ui/CardDetailOverlay.ts'
+import { CraftedCardsModal } from '#ui/CraftedCardsModal.ts'
 import { EventOverlay } from '#ui/EventOverlay.ts'
 import { FactionBoardModal } from '#ui/FactionBoardModal.ts'
 import { buildFactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
@@ -57,6 +58,7 @@ export class GameScene extends Phaser.Scene {
   private eventOverlay: EventOverlay | null = null
   private battleOverlay: BattleOverlay | null = null
   private factionBoardModal: FactionBoardModal | null = null
+  private craftedCardsModal: CraftedCardsModal | null = null
   private gameDrawer: GameDrawer | null = null
   private winnerOverlay: WinnerOverlay | null = null
   private leaderPickOverlay: LeaderPickOverlay | null = null
@@ -112,12 +114,19 @@ export class GameScene extends Phaser.Scene {
         this.applyComposerOutcome(this.composer.chooseColumn(value))
       },
     })
-    this.playerRail = new PlayerRail(this, (seat) => {
-      this.openFactionBoardForSeat(seat)
-    })
+    this.playerRail = new PlayerRail(
+      this,
+      (seat) => {
+        this.openFactionBoardForSeat(seat)
+      },
+      (seat) => {
+        this.openCraftedCardsForSeat(seat)
+      },
+    )
     this.cardTextureWarmup = new CardTextureWarmup(this)
     this.cardTextureWarmup.setOnReady(() => {
       this.repaintCardHandFromLatestSnapshot()
+      this.refreshCraftedCardsModal()
     })
     this.cardHand = new CardHand(
       this,
@@ -141,6 +150,7 @@ export class GameScene extends Phaser.Scene {
     this.eventOverlay = new EventOverlay(this)
     this.battleOverlay = new BattleOverlay(this)
     this.factionBoardModal = new FactionBoardModal(this)
+    this.craftedCardsModal = new CraftedCardsModal(this)
     this.gameDrawer = new GameDrawer(this, {
       onUndo: () => {
         void this.session?.undo()
@@ -201,6 +211,8 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlay = null
     this.factionBoardModal?.destroy()
     this.factionBoardModal = null
+    this.craftedCardsModal?.destroy()
+    this.craftedCardsModal = null
     this.gameDrawer?.destroy()
     this.gameDrawer = null
     this.winnerOverlay?.destroy()
@@ -226,6 +238,29 @@ export class GameScene extends Phaser.Scene {
     this.factionBoardModal?.show(view)
   }
 
+  private openCraftedCardsForSeat(seat: number): void {
+    const state = this.latestSnapshot?.state
+    if (state === null || state === undefined) {
+      return
+    }
+    const openSeat = this.craftedCardsModal?.openSeat()
+    if (this.craftedCardsModal?.isOpen() === true && openSeat === seat) {
+      this.craftedCardsModal.hide()
+      return
+    }
+    const player = state.players.find((entry) => entry.seat === seat)
+    if (player === undefined) {
+      return
+    }
+    const cards = player.playArea ?? []
+    this.cardTextureWarmup?.ensure(cards.map((card) => card.defId))
+    this.craftedCardsModal?.show({
+      seat: player.seat,
+      faction: player.faction,
+      cards,
+    })
+  }
+
   private refreshFactionBoardModal(state: GameState): void {
     if (this.factionBoardModal?.isOpen() !== true) {
       return
@@ -240,6 +275,33 @@ export class GameScene extends Phaser.Scene {
       return
     }
     this.factionBoardModal.show(view)
+  }
+
+  private refreshCraftedCardsModal(): void {
+    if (this.craftedCardsModal?.isOpen() !== true) {
+      return
+    }
+    const seat = this.craftedCardsModal.openSeat()
+    if (seat === null) {
+      return
+    }
+    const state = this.latestSnapshot?.state
+    if (state === null || state === undefined) {
+      this.craftedCardsModal.hide()
+      return
+    }
+    const player = state.players.find((entry) => entry.seat === seat)
+    if (player === undefined) {
+      this.craftedCardsModal.hide()
+      return
+    }
+    const cards = player.playArea ?? []
+    this.cardTextureWarmup?.ensure(cards.map((card) => card.defId))
+    this.craftedCardsModal.show({
+      seat: player.seat,
+      faction: player.faction,
+      cards,
+    })
   }
 
   private async handleEndGame(): Promise<void> {
