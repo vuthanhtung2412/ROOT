@@ -54,6 +54,10 @@ export function shouldPresentAsCountStepper(
 
 /** Center label: prefer `N x noun` when value is an integer and label names a noun. */
 export function formatCountStepperLabel(option: CountStepperOption): string {
+  // Already in target form (incl. multi-part battle labels)
+  if (/\d+\s+x\s+/i.test(option.label)) {
+    return option.label.trim()
+  }
   const count = Number(option.value)
   if (!Number.isInteger(count)) {
     return option.label
@@ -61,13 +65,6 @@ export function formatCountStepperLabel(option: CountStepperOption): string {
   const warriorMatch = /^(\d+)\s+warriors?$/i.exec(option.label.trim())
   if (warriorMatch !== null) {
     return `${String(count)} x warriors`
-  }
-  const typedMatch = /^(\d+)\s+x\s+(.+)$/i.exec(option.label.trim())
-  if (typedMatch !== null) {
-    const noun = typedMatch[2]
-    if (noun !== undefined && noun.length > 0) {
-      return `${String(count)} x ${noun}`
-    }
   }
   const nounMatch = /^(\d+)\s+(.+)$/i.exec(option.label.trim())
   if (nounMatch !== null) {

@@ -78,19 +78,24 @@ describe('eventActionComposer battle', () => {
     })
   })
 
-  it('pieceIds combo submits whole list', () => {
+  it('pieceIds removal uses battle stepper choices', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(events.hooks)
 
-    expect(
-      composer.begin(
-        makeActionSpec({
-          type: 'resolveEvent',
-          params: { pieceIds: ['w1', 'w2'] },
-        }),
-      ),
-    ).toEqual({
+    const mid = events.beginBattleRemoval([
+      {
+        label: '2 x warriors',
+        value: '0',
+        pieceIds: ['w1', 'w2'],
+      },
+    ])
+    expect(mid.kind).toBe('incomplete')
+    expect(events.getOptionPresentation()).toBe('stepper')
+    expect(events.getPromptOptions()).toEqual([
+      { label: '2 x warriors', value: '0' },
+    ])
+    expect(composer.chooseColumn('0')).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', pieceIds: ['w1', 'w2'] },
     })

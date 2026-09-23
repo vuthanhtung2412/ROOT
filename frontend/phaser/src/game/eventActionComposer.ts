@@ -8,6 +8,7 @@ import {
   type ClientAction,
   type ComposerOutcome,
 } from '#game/ActionComposer.ts'
+import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
 
 type EventDraft =
   | { type: 'idle' }
@@ -21,6 +22,7 @@ type EventDraft =
       building: string
     }
   | { type: 'pickLeader'; leaders: string[] }
+  | { type: 'pickRemoval'; choices: BattleRemovalStepperChoice[] }
 
 /**
  * Pending resolveEvent composers (Field Hospitals + battle + setup picks).
@@ -29,16 +31,48 @@ export function createEventComposerHooks(): {
   hooks: ActionComposerHooks
   getDraft: () => EventDraft
   getPromptOptions: () => Array<{ label: string; value: string }>
+  getOptionPresentation: () => 'stepper' | 'buttons' | undefined
   getOverlayKind: () => 'fieldHospital' | 'battle' | null
+  beginBattleRemoval: (
+    choices: BattleRemovalStepperChoice[],
+  ) => ComposerOutcome
 } {
   let draft: EventDraft = { type: 'idle' }
   let promptOptions: Array<{ label: string; value: string }> = []
+  let optionPresentation: 'stepper' | 'buttons' | undefined
   let overlayKind: 'fieldHospital' | 'battle' | null = null
 
   const clear = (): void => {
     draft = { type: 'idle' }
     promptOptions = []
+    optionPresentation = undefined
     overlayKind = null
+  }
+
+  const beginBattleRemoval = (
+    choices: BattleRemovalStepperChoice[],
+  ): ComposerOutcome => {
+    if (choices.length === 0) {
+      clear()
+      return { kind: 'idle' }
+    }
+    overlayKind = 'battle'
+    draft = { type: 'pickRemoval', choices }
+    optionPresentation = 'stepper'
+    promptOptions = choices.map((choice) => ({
+      label: choice.label,
+      value: choice.value,
+    }))
+    return {
+      kind: 'incomplete',
+      prompt: {
+        message: 'Remove hits — choose pieces',
+        highlightClearings: [],
+        enabledCardIds: null,
+        canConfirm: false,
+        canCancel: true,
+      },
+    }
   }
 
   const hooks: ActionComposerHooks = {
@@ -194,13 +228,9 @@ export function createEventComposerHooks(): {
         }
       }
 
+      // pieceIds: GameScene batches legal combos via beginBattleRemoval
       if (params.pieceIds !== undefined) {
-        overlayKind = 'battle'
-        clear()
-        return {
-          kind: 'ready',
-          action: { type: 'resolveEvent', pieceIds: params.pieceIds },
-        }
+        return null
       }
 
       return null
@@ -259,6 +289,17 @@ export function createEventComposerHooks(): {
         clear()
         return { kind: 'ready', action: { type: 'resolveEvent', order } }
       }
+      if (draft.type === 'pickRemoval') {
+        const choice = draft.choices.find((entry) => entry.value === value)
+        if (choice === undefined) {
+          return null
+        }
+        clear()
+        return {
+          kind: 'ready',
+          action: { type: 'resolveEvent', pieceIds: choice.pieceIds },
+        }
+      }
       return null
     },
 
@@ -282,6 +323,8 @@ export function createEventComposerHooks(): {
     hooks,
     getDraft: () => draft,
     getPromptOptions: () => promptOptions,
+    getOptionPresentation: () => optionPresentation,
     getOverlayKind: () => overlayKind,
+    beginBattleRemoval,
   }
 }
