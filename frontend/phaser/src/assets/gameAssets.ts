@@ -22,7 +22,49 @@ export const GAME_ASSET_KEYS = {
   tokenMarquiseWood: 'token-marquise-wood',
   tokenMarquiseKeep: 'token-marquise-keep',
   tokenEyrieRoost: 'token-eyrie-roost',
+  itemBoot: 'item-boot',
+  itemBag: 'item-bag',
+  itemCrossbow: 'item-crossbow',
+  itemHammer: 'item-hammer',
+  itemSword: 'item-sword',
+  itemTea: 'item-tea',
+  itemCoin: 'item-coin',
 } as const
+
+/** Crafted / supply item types with a board icon (torch has no icon — supply 0). */
+export const CRAFTED_ITEM_TEXTURE_TYPES = [
+  'boot',
+  'bag',
+  'crossbow',
+  'hammer',
+  'sword',
+  'tea',
+  'coin',
+] as const
+
+export type CraftedItemTextureType = (typeof CRAFTED_ITEM_TEXTURE_TYPES)[number]
+
+const CRAFTED_ITEM_TEXTURE_BY_TYPE: Record<CraftedItemTextureType, string> = {
+  boot: GAME_ASSET_KEYS.itemBoot,
+  bag: GAME_ASSET_KEYS.itemBag,
+  crossbow: GAME_ASSET_KEYS.itemCrossbow,
+  hammer: GAME_ASSET_KEYS.itemHammer,
+  sword: GAME_ASSET_KEYS.itemSword,
+  tea: GAME_ASSET_KEYS.itemTea,
+  coin: GAME_ASSET_KEYS.itemCoin,
+}
+
+function isCraftedItemTextureType(value: string): value is CraftedItemTextureType {
+  return CRAFTED_ITEM_TEXTURE_TYPES.some((itemType) => itemType === value)
+}
+
+/** Map crafted item type → texture key; null when no icon (e.g. torch). */
+export function itemTextureKey(itemType: string): string | null {
+  if (!isCraftedItemTextureType(itemType)) {
+    return null
+  }
+  return CRAFTED_ITEM_TEXTURE_BY_TYPE[itemType]
+}
 
 export type GameAssetKey = (typeof GAME_ASSET_KEYS)[keyof typeof GAME_ASSET_KEYS]
 
@@ -140,6 +182,34 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.tokenEyrieRoost,
     path: 'assets/tokens/eyrie/roost.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.itemBoot,
+    path: 'assets/items/boot.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.itemBag,
+    path: 'assets/items/bag.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.itemCrossbow,
+    path: 'assets/items/crossbow.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.itemHammer,
+    path: 'assets/items/hammer.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.itemSword,
+    path: 'assets/items/sword.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.itemTea,
+    path: 'assets/items/tea.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.itemCoin,
+    path: 'assets/items/coin.png',
   },
 ]
 

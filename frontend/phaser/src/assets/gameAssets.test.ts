@@ -3,8 +3,10 @@ import {
   AUTUMN_MAP_ASSET,
   CARD_CATALOG,
   CORE_IMAGE_ASSETS,
+  CRAFTED_ITEM_TEXTURE_TYPES,
   cardImageAssetForDefId,
   cardImageAssets,
+  itemTextureKey,
   preloadCoreGameAssets,
   queueAutumnMapImage,
   queueMissingCardImages,
@@ -26,6 +28,19 @@ function firstCatalogDefId(): string {
   }
   return defId
 }
+
+describe('itemTextureKey', () => {
+  it('maps all supply item types with icons', () => {
+    for (const itemType of CRAFTED_ITEM_TEXTURE_TYPES) {
+      expect(itemTextureKey(itemType)).toBe(`item-${itemType}`)
+    }
+  })
+
+  it('returns null for torch and unknown types', () => {
+    expect(itemTextureKey('torch')).toBeNull()
+    expect(itemTextureKey('not-an-item')).toBeNull()
+  })
+})
 
 describe('preloadCoreGameAssets', () => {
   it('loads tokens only, not autumn map or card faces', () => {
