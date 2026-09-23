@@ -258,7 +258,7 @@ export function createMarquiseMarchComposerHooks(
   const setCountOptions = (moves: MarchMove[]): void => {
     const counts = unique(moves.map((move) => move.count)).sort((a, b) => a - b)
     promptOptions = counts.map((count) => ({
-      label: `${String(count)} warrior${count === 1 ? '' : 's'}`,
+      label: `${String(count)} x warriors`,
       value: String(count),
     }))
   }

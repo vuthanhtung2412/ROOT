@@ -88,8 +88,8 @@ describe('marquiseActionComposer march', () => {
       expect(afterTo.prompt.canConfirm).toBe(false)
     }
     expect(march.getPromptOptions()).toEqual([
-      { label: '1 warrior', value: '1' },
-      { label: '2 warriors', value: '2' },
+      { label: '1 x warriors', value: '1' },
+      { label: '2 x warriors', value: '2' },
     ])
 
     const afterCount = composer.chooseColumn('1')
@@ -166,8 +166,8 @@ describe('marquiseActionComposer march', () => {
     composer.chooseClearing(5)
     composer.chooseClearing(10)
     expect(march.getPromptOptions()).toEqual([
-      { label: '1 warrior', value: '1' },
-      { label: '2 warriors', value: '2' },
+      { label: '1 x warriors', value: '1' },
+      { label: '2 x warriors', value: '2' },
     ])
     expect(composer.chooseColumn('2')).toEqual({
       kind: 'ready',
