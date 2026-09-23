@@ -479,6 +479,13 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlay?.sync(buildBattleOverlayViewModel(state, prompt))
   }
 
+  private marchActionTrayOptions(): { lockToActionTypes: readonly string[] } | undefined {
+    if (this.marquiseMarch.getDraft().type !== 'march') {
+      return undefined
+    }
+    return { lockToActionTypes: ['march'] }
+  }
+
   private isComposerStaging(): boolean {
     return (
       this.marquiseMarch.getDraft().type !== 'idle' ||
@@ -579,6 +586,7 @@ export class GameScene extends Phaser.Scene {
         : [],
       banner.actorSeat,
       snapshot.state.pending[0],
+      this.marchActionTrayOptions(),
     )
     this.refreshFactionBoardModal(snapshot.state)
     this.gameDrawer?.sync(snapshot.state.deck?.discard.length ?? 0)

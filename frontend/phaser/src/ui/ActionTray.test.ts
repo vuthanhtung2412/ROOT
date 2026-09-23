@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatActionLabel } from '#ui/ActionTray.ts'
+import { filterTrayActions, formatActionLabel } from '#ui/ActionTray.ts'
 
 describe('formatActionLabel setup', () => {
   it('labels keep vs starting buildings distinctly', () => {
@@ -31,6 +31,20 @@ describe('formatActionLabel setup', () => {
         params: { clearing: [0, 1], building: ['recruiter'] },
       }),
     ).toBe('place recruiter')
+  })
+})
+
+describe('filterTrayActions march lock', () => {
+  it('keeps only locked action types while march staged', () => {
+    const actions = [
+      { type: 'march', actor: 0, params: { moves: [] } },
+      { type: 'build', actor: 0, params: {} },
+      { type: 'recruit', actor: 0, params: {} },
+    ]
+    expect(
+      filterTrayActions(actions, 0, { lockToActionTypes: ['march'] }),
+    ).toEqual([{ type: 'march', actor: 0, params: { moves: [] } }])
+    expect(filterTrayActions(actions, 0)).toHaveLength(3)
   })
 })
 

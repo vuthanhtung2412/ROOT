@@ -35,13 +35,18 @@ export class ActionTray {
     this.handlers = handlers
   }
 
-  sync(actions: readonly ActionSpec[], actorSeat: number, pending?: unknown): void {
+  sync(
+    actions: readonly ActionSpec[],
+    actorSeat: number,
+    pending?: unknown,
+    options?: { lockToActionTypes?: readonly string[] },
+  ): void {
     for (const node of this.buttonNodes) {
       node.destroy()
     }
     this.buttonNodes = []
 
-    const forActor = actions.filter((spec) => spec.actor === actorSeat)
+    const forActor = filterTrayActions(actions, actorSeat, options)
     this.title.setText(`Actions (${String(forActor.length)})`)
 
     forActor.forEach((spec, index) => {
@@ -123,6 +128,23 @@ function formatActionLabel(spec: ActionSpec, pending?: unknown): string {
     return 'resolveEvent'
   }
   return spec.type
+}
+
+export function filterTrayActions(
+  actions: readonly ActionSpec[],
+  actorSeat: number,
+  options?: { lockToActionTypes?: readonly string[] },
+): ActionSpec[] {
+  const lockTypes = options?.lockToActionTypes
+  return actions.filter((spec) => {
+    if (spec.actor !== actorSeat) {
+      return false
+    }
+    if (lockTypes !== undefined && !lockTypes.includes(spec.type)) {
+      return false
+    }
+    return true
+  })
 }
 
 /** Exported for unit tests. */
