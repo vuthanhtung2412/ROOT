@@ -563,7 +563,7 @@ describe('Marquise legalActions board choices', () => {
       4,
       [
         { id: 'a1', kind: 'warrior', owner: 0 },
-        { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
+        { id: 'b1', kind: 'building', owner: 1, type: 'roost', used: false },
       ],
     )
     const battleSpec = MARQUISE.legalActions(state, setupContext()).find(
