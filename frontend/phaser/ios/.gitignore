@@ -4,6 +4,7 @@ App/output
 App/App/public
 DerivedData
 xcuserdata
+*.xcuserstate
 
 # Cordova plugins for Capacitor
 capacitor-cordova-ios-plugins
@@ -11,3 +12,7 @@ capacitor-cordova-ios-plugins
 # Generated Config files
 App/App/capacitor.config.json
 App/App/config.xml
+
+# Local SwiftPM / Xcode state
+**/xcshareddata/swiftpm/configuration/
+App/CapApp-SPM/.build
