@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { GameState } from '#api/client.ts'
 import {
+  BATTLE_OVER_MESSAGE,
   buildBattleOverlayViewModel,
+  buildFinishedBattleOverlayViewModel,
   readBattleClearingId,
   updateBattleTracker,
   ZERO_HIT_BATTLE_MESSAGE,
@@ -99,7 +101,7 @@ describe('buildBattleOverlayViewModel', () => {
 })
 
 describe('updateBattleTracker', () => {
-  it('detects zero-hit battle when pending clears after rolls', () => {
+  it('flashes zero-hit battle when pending clears after rolls', () => {
     const battlePending = makeState([
       {
         type: 'battle',
@@ -113,19 +115,20 @@ describe('updateBattleTracker', () => {
     ])
     const tracked = updateBattleTracker(null, battlePending)
     expect(tracked.tracker?.rolls).toEqual([1, 0])
-    expect(tracked.zeroHitOutcome).toBeNull()
+    expect(tracked.finishedOutcome).toBeNull()
 
     const resolved = updateBattleTracker(tracked.tracker, makeState([]))
     expect(resolved.tracker).toBeNull()
-    expect(resolved.zeroHitOutcome).toEqual({
+    expect(resolved.finishedOutcome).toEqual({
       clearing: 4,
       attacker: 1,
       defender: 0,
       rolls: [1, 0],
+      hits: { attacker: 0, defender: 0 },
     })
   })
 
-  it('does not flash when battle had hits before clearing', () => {
+  it('flashes battle with hits when pending clears after rolls', () => {
     const battlePending = makeState([
       {
         type: 'battle',
@@ -139,7 +142,13 @@ describe('updateBattleTracker', () => {
     ])
     const tracked = updateBattleTracker(null, battlePending)
     const resolved = updateBattleTracker(tracked.tracker, makeState([]))
-    expect(resolved.zeroHitOutcome).toBeNull()
+    expect(resolved.finishedOutcome).toEqual({
+      clearing: 2,
+      attacker: 1,
+      defender: 0,
+      rolls: [3, 1],
+      hits: { attacker: 2, defender: 0 },
+    })
   })
 
   it('does not flash ambush stage without rolls', () => {
@@ -155,7 +164,34 @@ describe('updateBattleTracker', () => {
     ])
     const tracked = updateBattleTracker(null, battlePending)
     const resolved = updateBattleTracker(tracked.tracker, makeState([]))
-    expect(resolved.zeroHitOutcome).toBeNull()
+    expect(resolved.finishedOutcome).toBeNull()
+  })
+})
+
+describe('buildFinishedBattleOverlayViewModel', () => {
+  it('uses zero-hit copy when no hits', () => {
+    const view = buildFinishedBattleOverlayViewModel(makeState([]), {
+      clearing: 4,
+      attacker: 1,
+      defender: 0,
+      rolls: [1, 0],
+      hits: { attacker: 0, defender: 0 },
+    })
+    expect(view.outcomeMessage).toBe(ZERO_HIT_BATTLE_MESSAGE)
+    expect(view.hits).toEqual({ attacker: 0, defender: 0 })
+  })
+
+  it('uses battle-over copy when hits landed', () => {
+    const view = buildFinishedBattleOverlayViewModel(makeState([]), {
+      clearing: 2,
+      attacker: 1,
+      defender: 0,
+      rolls: [3, 1],
+      hits: { attacker: 2, defender: 1 },
+    })
+    expect(view.outcomeMessage).toBe(BATTLE_OVER_MESSAGE)
+    expect(view.rolls).toEqual([3, 1])
+    expect(view.hits).toEqual({ attacker: 2, defender: 1 })
   })
 })
 

@@ -1,11 +1,11 @@
 import type { GameState } from '#api/client.ts'
 import {
+  battleResultFlashDurationMs,
   buildBattleOverlayViewModel,
-  buildZeroHitBattleOverlayViewModel,
+  buildFinishedBattleOverlayViewModel,
   updateBattleTracker,
-  zeroHitFlashDurationMs,
   type BattleTrackerState,
-  type ZeroHitBattleOutcome,
+  type FinishedBattleOutcome,
 } from '#game/battleOverlayModel.ts'
 import type { BattleOverlay } from '#ui/BattleOverlay.ts'
 
@@ -17,12 +17,12 @@ export type BattleOverlaySyncClock = {
 }
 
 /**
- * Keeps battle overlay + zero-hit flash in sync with snapshot pending.
+ * Keeps battle overlay + post-battle result flash in sync with snapshot.
  */
 export class BattleOverlayController {
   private battleTracker: BattleTrackerState | null = null
-  private zeroHitFlashOutcome: ZeroHitBattleOutcome | null = null
-  private zeroHitFlashTimer: { remove: (dispatchCallback?: boolean) => void } | null =
+  private resultFlashOutcome: FinishedBattleOutcome | null = null
+  private resultFlashTimer: { remove: (dispatchCallback?: boolean) => void } | null =
     null
 
   constructor(
@@ -40,12 +40,12 @@ export class BattleOverlayController {
     }
     const trackerUpdate = updateBattleTracker(this.battleTracker, state)
     this.battleTracker = trackerUpdate.tracker
-    if (trackerUpdate.zeroHitOutcome !== null) {
-      this.beginZeroHitFlash(trackerUpdate.zeroHitOutcome)
+    if (trackerUpdate.finishedOutcome !== null) {
+      this.beginResultFlash(trackerUpdate.finishedOutcome)
     }
-    if (this.zeroHitFlashOutcome !== null) {
+    if (this.resultFlashOutcome !== null) {
       overlay?.sync(
-        buildZeroHitBattleOverlayViewModel(state, this.zeroHitFlashOutcome),
+        buildFinishedBattleOverlayViewModel(state, this.resultFlashOutcome),
       )
       return
     }
@@ -53,20 +53,20 @@ export class BattleOverlayController {
   }
 
   destroy(): void {
-    this.zeroHitFlashTimer?.remove(false)
-    this.zeroHitFlashTimer = null
-    this.zeroHitFlashOutcome = null
+    this.resultFlashTimer?.remove(false)
+    this.resultFlashTimer = null
+    this.resultFlashOutcome = null
     this.battleTracker = null
   }
 
-  private beginZeroHitFlash(outcome: ZeroHitBattleOutcome): void {
-    this.zeroHitFlashOutcome = outcome
-    this.zeroHitFlashTimer?.remove(false)
-    this.zeroHitFlashTimer = this.clock.delayedCall(
-      zeroHitFlashDurationMs(),
+  private beginResultFlash(outcome: FinishedBattleOutcome): void {
+    this.resultFlashOutcome = outcome
+    this.resultFlashTimer?.remove(false)
+    this.resultFlashTimer = this.clock.delayedCall(
+      battleResultFlashDurationMs(),
       () => {
-        this.zeroHitFlashOutcome = null
-        this.zeroHitFlashTimer = null
+        this.resultFlashOutcome = null
+        this.resultFlashTimer = null
         this.sync()
       },
     )

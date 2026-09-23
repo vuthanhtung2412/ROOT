@@ -2,8 +2,9 @@ import type { GameState } from '#api/client.ts'
 import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
 
 export const ZERO_HIT_BATTLE_MESSAGE = 'Battle over — no hits'
+export const BATTLE_OVER_MESSAGE = 'Battle over'
 
-const ZERO_HIT_FLASH_MS = 2400
+const BATTLE_RESULT_FLASH_MS = 5000
 
 type BattlePending = {
   clearing: number
@@ -22,16 +23,18 @@ export type BattleTrackerState = {
   peakHits: { attacker: number; defender: number }
 }
 
-export type ZeroHitBattleOutcome = {
+/** Final dice/hits held on overlay after battle pending clears. */
+export type FinishedBattleOutcome = {
   clearing: number
   attacker: number
   defender: number
   rolls: readonly [number, number]
+  hits: { attacker: number; defender: number }
 }
 
 export type BattleTrackerUpdate = {
   tracker: BattleTrackerState | null
-  zeroHitOutcome: ZeroHitBattleOutcome | null
+  finishedOutcome: FinishedBattleOutcome | null
 }
 
 /**
@@ -57,19 +60,21 @@ export function buildBattleOverlayViewModel(
   }
 }
 
-export function buildZeroHitBattleOverlayViewModel(
+export function buildFinishedBattleOverlayViewModel(
   state: GameState,
-  outcome: ZeroHitBattleOutcome,
+  outcome: FinishedBattleOutcome,
 ): BattleOverlayViewModel {
+  const zeroHits =
+    outcome.hits.attacker === 0 && outcome.hits.defender === 0
   return {
     clearing: outcome.clearing,
     stage: 'finished',
     attackerFaction: factionLabel(state, outcome.attacker),
     defenderFaction: factionLabel(state, outcome.defender),
     rolls: outcome.rolls,
-    hits: { attacker: 0, defender: 0 },
+    hits: outcome.hits,
     prompt: null,
-    outcomeMessage: ZERO_HIT_BATTLE_MESSAGE,
+    outcomeMessage: zeroHits ? ZERO_HIT_BATTLE_MESSAGE : BATTLE_OVER_MESSAGE,
   }
 }
 
@@ -78,12 +83,12 @@ export function readBattleClearingId(state: GameState): number | null {
   return battle?.clearing ?? null
 }
 
-export function zeroHitFlashDurationMs(): number {
-  return ZERO_HIT_FLASH_MS
+export function battleResultFlashDurationMs(): number {
+  return BATTLE_RESULT_FLASH_MS
 }
 
 /**
- * Track pending battle peaks; when battle clears with rolls but no hits dealt, signal UI flash.
+ * Track pending battle peaks; when battle clears after rolls, signal result flash.
  */
 export function updateBattleTracker(
   tracker: BattleTrackerState | null,
@@ -93,11 +98,11 @@ export function updateBattleTracker(
   if (pending !== null) {
     return {
       tracker: mergeBattleTracker(tracker, pending),
-      zeroHitOutcome: null,
+      finishedOutcome: null,
     }
   }
-  const zeroHitOutcome = detectZeroHitBattleOutcome(tracker)
-  return { tracker: null, zeroHitOutcome }
+  const finishedOutcome = detectFinishedBattleOutcome(tracker)
+  return { tracker: null, finishedOutcome }
 }
 
 function mergeBattleTracker(
@@ -125,13 +130,10 @@ function mergeBattleTracker(
   }
 }
 
-function detectZeroHitBattleOutcome(
+function detectFinishedBattleOutcome(
   tracker: BattleTrackerState | null,
-): ZeroHitBattleOutcome | null {
+): FinishedBattleOutcome | null {
   if (tracker === null || tracker.rolls === null) {
-    return null
-  }
-  if (tracker.peakHits.attacker > 0 || tracker.peakHits.defender > 0) {
     return null
   }
   return {
@@ -139,6 +141,7 @@ function detectZeroHitBattleOutcome(
     attacker: tracker.attacker,
     defender: tracker.defender,
     rolls: tracker.rolls,
+    hits: { ...tracker.peakHits },
   }
 }
 
@@ -213,4 +216,3 @@ export function mergeBattleClearingHighlight(
   merged.add(battleClearing)
   return [...merged]
 }
-
