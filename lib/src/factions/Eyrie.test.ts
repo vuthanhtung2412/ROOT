@@ -523,6 +523,8 @@ describe('Law 7.5 Daylight', () => {
         { id: 'w0', kind: 'warrior', owner: 0 },
       ],
     )
+    // Keep ambush pending (bird) so battle does not auto-drain without dice.
+    state.players[0]!.hand.push(card('ROOT-200'))
     EYRIE.apply(
       state,
       { type: 'decree', column: 'battle', cardId: fox.id, clearing: 0, defender: 0 },
@@ -549,6 +551,7 @@ describe('Law 7.5 Daylight', () => {
         { id: 'saw', kind: 'building', type: 'sawmill', owner: 0 },
       ],
     )
+    state.players[0]!.hand.push(card('ROOT-200'))
     const decreeSpec = EYRIE.legalActions(state, setupCtx()).find(
       (spec) => spec.type === 'decree',
     )

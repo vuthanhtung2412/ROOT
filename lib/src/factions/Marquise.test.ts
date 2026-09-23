@@ -364,7 +364,14 @@ describe('Marquise turn', () => {
 
   it('Rule: Marquise > Battle — action opens pending battle event', () => {
     const state = withPieces(
-      minimalState({ phase: 'daylight', step: 'actions' }),
+      minimalState({
+        phase: 'daylight',
+        step: 'actions',
+        players: [
+          player(0, 'marquise'),
+          player(1, 'marquise', { hand: [card('ROOT-200')], playerId: 'p1' }),
+        ],
+      }),
       4,
       [
         { id: 'a1', kind: 'warrior', owner: 0 },
@@ -562,7 +569,14 @@ describe('Marquise legalActions board choices', () => {
 
   it('Rule: Battle 4.3.3.II — battle legal vs building-only defenseless defender', () => {
     const state = withPieces(
-      minimalState({ phase: 'daylight', step: 'actions' }),
+      minimalState({
+        phase: 'daylight',
+        step: 'actions',
+        players: [
+          player(0, 'marquise'),
+          player(1, 'marquise', { hand: [card('ROOT-200')], playerId: 'p1' }),
+        ],
+      }),
       4,
       [
         { id: 'a1', kind: 'warrior', owner: 0 },

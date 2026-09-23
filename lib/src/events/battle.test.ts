@@ -11,7 +11,7 @@ import {
   type DieFace,
   withPieces,
 } from '#test/fixtures.js'
-import { isBattleEvent, isSeat } from '#typeGuards.js'
+import { isBattleEvent } from '#typeGuards.js'
 import type { BattleEvent, Event } from '#events/types.js'
 import { applyDefenseless, battleResolver, isValidRemoval, openBattle } from '#events/battle.js'
 import type { Ctx } from '#game/ctx.js'
@@ -88,7 +88,7 @@ describe('battleResolver', () => {
     const state = withPieces(
       minimalState({
         players: [
-          player(0, 'marquise'),
+          player(0, 'marquise', { hand: [card('ROOT-200', 2)] }),
           player(1, 'marquise', { hand: [card('ROOT-202', 2)] }),
         ],
       }),
@@ -107,10 +107,8 @@ describe('battleResolver', () => {
     apply({ state, event, action: { type: 'resolveEvent', cardId: 'ROOT-202#2' }, actor: 1, context })
     event = requireBattleEvent(state.pending[0])
     expect(event.stage).toBe('foil')
+    // Decline foil (attacker has ambush but skips); sole warrior removal forced after.
     apply({ state, event, action: { type: 'resolveEvent', decline: true }, actor: 0, context })
-    event = requireBattleEvent(state.pending[0])
-    expect(event.stage).toBe('removeAttacker')
-    apply({ state, event, action: { type: 'resolveEvent', pieceIds: ['a1'] }, actor: 0, context })
     expect(state.pending).toHaveLength(0)
     expect(signals.some((signal) => signal.s === 'battle.end')).toBe(true)
     expect(warriors(state, 0, 0)).toBe(0)
@@ -145,18 +143,22 @@ describe('battleResolver', () => {
       [
         { id: 'a1', kind: 'warrior', owner: 0 },
         { id: 'a2', kind: 'warrior', owner: 0 },
+        { id: 'a3', kind: 'warrior', owner: 0 },
         { id: 'd1', kind: 'warrior', owner: 1 },
         { id: 'd2', kind: 'warrior', owner: 1 },
+        { id: 'd3', kind: 'warrior', owner: 1 },
       ],
     )
-    const context = battleContext({ dice: [3, 3] })
+    const context = battleContext({ dice: [2, 2] })
     let event = battleEvent({ clearing: 0 })
     state.pending = [event]
     apply({ state, event, action: { type: 'resolveEvent', decline: true }, actor: 1, context })
+    // 2 hits among 3 warriors → multiple removal combos; stays pending.
     event = requireBattleEvent(state.pending[0])
-    expect(event.rolls).toEqual([3, 3])
+    expect(event.rolls).toEqual([2, 2])
     expect(event.hits.attacker).toBe(2)
     expect(event.hits.defender).toBe(2)
+    expect(event.stage).toBe('removeDefender')
   })
 
   it('Rule: Battle 2 — attacker gets higher die', () => {
@@ -167,9 +169,11 @@ describe('battleResolver', () => {
         { id: 'a1', kind: 'warrior', owner: 0 },
         { id: 'a2', kind: 'warrior', owner: 0 },
         { id: 'a3', kind: 'warrior', owner: 0 },
+        { id: 'a4', kind: 'warrior', owner: 0 },
         { id: 'd1', kind: 'warrior', owner: 1 },
         { id: 'd2', kind: 'warrior', owner: 1 },
         { id: 'd3', kind: 'warrior', owner: 1 },
+        { id: 'd4', kind: 'warrior', owner: 1 },
       ],
     )
     // raw [1, 3] → attacker high 3, defender low 1
@@ -181,6 +185,69 @@ describe('battleResolver', () => {
     expect(event.rolls).toEqual([3, 1])
     expect(event.hits.attacker).toBe(3)
     expect(event.hits.defender).toBe(1)
+    expect(event.stage).toBe('removeDefender')
+  })
+
+  it('forced: openBattle skips ambush and sole removals in one apply', () => {
+    const state = withPieces(
+      minimalState(),
+      0,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    const signals: GameSignal[] = []
+    const context = battleContext({
+      dice: [2, 0],
+      onSignal: (signal) => signals.push(signal),
+    })
+    openBattle(state, { clearing: 0, attacker: 0, defender: 1 }, context)
+    expect(state.pending).toHaveLength(0)
+    expect(signals.some((signal) => signal.s === 'battle.start')).toBe(true)
+    expect(signals.some((signal) => signal.s === 'battle.hits')).toBe(true)
+    expect(signals.some((signal) => signal.s === 'battle.end')).toBe(true)
+    expect(warriors(state, 0, 1)).toBe(0)
+  })
+
+  it('forced: openBattle leaves ambush when defender has matching card', () => {
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'marquise'),
+          player(1, 'marquise', { hand: [card('ROOT-200')] }),
+        ],
+      }),
+      0,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    openBattle(state, { clearing: 0, attacker: 0, defender: 1 }, battleContext())
+    const event = requireBattleEvent(state.pending[0])
+    expect(event.stage).toBe('ambush')
+  })
+
+  it('battle emits battle.start/hits/end signals', () => {
+    const state = withPieces(
+      minimalState(),
+      4,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    const signals: GameSignal[] = []
+    const context = battleContext({
+      dice: [3, 1],
+      onSignal: (signal) => signals.push(signal),
+    })
+    openBattle(state, { clearing: 4, attacker: 0, defender: 1 }, context)
+    expect(signals.some((signal) => signal.s === 'battle.start')).toBe(true)
+    expect(signals.some((signal) => signal.s === 'battle.hits')).toBe(true)
+    expect(signals.some((signal) => signal.s === 'battle.end')).toBe(true)
+    expect(state.pending).toHaveLength(0)
   })
 
   it('Rule: Battle 3 — defenseless +1 attacker hit', () => {
@@ -341,44 +408,6 @@ describe('battleResolver', () => {
       ]),
     )
     expect(pieceIdLists.some((ids) => ids.includes('b1'))).toBe(false)
-  })
-
-  it('battle emits battle.start/hits/end signals', () => {
-    const state = withPieces(
-      minimalState(),
-      4,
-      [
-        { id: 'a1', kind: 'warrior', owner: 0 },
-        { id: 'd1', kind: 'warrior', owner: 1 },
-      ],
-    )
-    const signals: GameSignal[] = []
-    const context = battleContext({
-      dice: [3, 1],
-      onSignal: (signal) => signals.push(signal),
-    })
-    openBattle(state, { clearing: 4, attacker: 0, defender: 1 }, context)
-    expect(signals.some((signal) => signal.s === 'battle.start')).toBe(true)
-
-    let event = requireBattleEvent(state.pending[0])
-    apply({ state, event, action: { type: 'resolveEvent', decline: true }, actor: 1, context })
-    while (state.pending[0]?.type === 'battle') {
-      event = requireBattleEvent(state.pending[0])
-      if (event.stage === 'effects') {
-        const seat = event.effectsOrder?.find((effectSeat) => {
-          const side = effectSeat === event.attacker ? 'attacker' : 'defender'
-          return !(event.effectsUsed && side in event.effectsUsed)
-        })
-        if (seat === undefined || !isSeat(seat)) break
-        apply({ state, event, action: { type: 'resolveEvent', useEffect: false }, actor: seat, context })
-      } else if (event.stage === 'removeDefender') {
-        apply({ state, event, action: { type: 'resolveEvent', pieceIds: ['d1'] }, actor: 1, context })
-      } else if (event.stage === 'removeAttacker') {
-        apply({ state, event, action: { type: 'resolveEvent', pieceIds: ['a1'] }, actor: 0, context })
-      } else break
-    }
-    expect(signals.some((signal) => signal.s === 'battle.hits')).toBe(true)
-    expect(signals.some((signal) => signal.s === 'battle.end')).toBe(true)
   })
 
   it('matchesAction accepts flat pieceIds combo from legalRemovalSpecs', () => {
