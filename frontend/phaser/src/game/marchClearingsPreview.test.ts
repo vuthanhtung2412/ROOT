@@ -73,4 +73,37 @@ describe('applyMarchMovesToClearings', () => {
     expect(after[0]?.pieces.map((piece) => piece.id)).toEqual(['w1'])
     expect(after[1]?.pieces).toHaveLength(0)
   })
+
+  it('copies used only for crafting buildings', () => {
+    const before: ClearingPiecesSnapshot[] = [
+      {
+        pieces: [
+          {
+            id: 'saw',
+            kind: 'building',
+            owner: 0,
+            type: 'sawmill',
+            used: true,
+          },
+          {
+            id: 'shop',
+            kind: 'building',
+            owner: 0,
+            type: 'workshop',
+            used: true,
+          },
+          { id: 'w1', kind: 'warrior', owner: 0 },
+        ],
+      },
+      { pieces: [] },
+    ]
+    const after = applyMarchMovesToClearings(before, 0, [
+      { from: 0, to: 1, count: 1 },
+    ])
+    const remaining = after[0]?.pieces ?? []
+    const sawmill = remaining.find((piece) => piece.id === 'saw')
+    const workshop = remaining.find((piece) => piece.id === 'shop')
+    expect(sawmill?.used).toBeUndefined()
+    expect(workshop?.used).toBe(true)
+  })
 })

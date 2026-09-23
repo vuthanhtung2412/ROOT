@@ -9,11 +9,22 @@ export type ClearingPieceSnapshot = {
   kind: string
   owner: number
   type?: string
+  /** Only crafting buildings (workshop/roost) carry used. */
   used?: boolean
 }
 
 export type ClearingPiecesSnapshot = {
   pieces: ClearingPieceSnapshot[]
+}
+
+const CRAFTING_BUILDING_TYPES = new Set(['workshop', 'roost'])
+
+function isCraftingBuildingSnapshot(piece: ClearingPieceSnapshot): boolean {
+  return (
+    piece.kind === 'building' &&
+    piece.type !== undefined &&
+    CRAFTING_BUILDING_TYPES.has(piece.type)
+  )
 }
 
 function copyClearings(
@@ -29,7 +40,7 @@ function copyClearings(
       if (piece.type !== undefined) {
         copy.type = piece.type
       }
-      if (piece.used !== undefined) {
+      if (isCraftingBuildingSnapshot(piece) && piece.used !== undefined) {
         copy.used = piece.used
       }
       return copy
