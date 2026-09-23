@@ -15,6 +15,7 @@ export class ActionTray {
   private readonly title: Phaser.GameObjects.Text
   private buttonNodes: Phaser.GameObjects.GameObject[] = []
   private handlers: ActionTrayHandlers
+  private lastSyncKey: string | null = null
 
   constructor(scene: Phaser.Scene, handlers: ActionTrayHandlers) {
     this.scene = scene
@@ -43,12 +44,25 @@ export class ActionTray {
     options?: { lockToActionTypes?: readonly string[] },
     state?: GameState,
   ): void {
+    const forActor = filterTrayActions(actions, actorSeat, options)
+    const syncKey = JSON.stringify(
+      forActor.map((spec) => ({
+        type: spec.type,
+        actor: spec.actor,
+        params: spec.params,
+        label: formatActionLabel(spec, pending, state),
+      })),
+    )
+    if (syncKey === this.lastSyncKey) {
+      return
+    }
+    this.lastSyncKey = syncKey
+
     for (const node of this.buttonNodes) {
       node.destroy()
     }
     this.buttonNodes = []
 
-    const forActor = filterTrayActions(actions, actorSeat, options)
     this.title.setText(`Actions (${String(forActor.length)})`)
 
     forActor.forEach((spec, index) => {
