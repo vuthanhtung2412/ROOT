@@ -446,7 +446,7 @@ export function createEyrieComposerHooks(): {
           (left, right) => left - right,
         )
         promptOptions = counts.map((count) => ({
-          label: `${String(count)} warrior${count === 1 ? '' : 's'}`,
+          label: `${String(count)} x warriors`,
           value: String(count),
         }))
         draft = {
