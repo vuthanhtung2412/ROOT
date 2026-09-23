@@ -99,4 +99,31 @@ describe('canCraft', () => {
     ])
     expect(canCraft(state, 0, card('ROOT-211'))).toBe(false)
   })
+
+  it('Rule: Craft 3 — used roost cannot craft again same turn', () => {
+    const state = withPieces(minimalState(), 0, [
+      { id: 'r', kind: 'building', owner: 0, type: 'roost', used: true },
+    ])
+    expect(canCraft(state, 0, card('ROOT-204'))).toBe(false)
+  })
+
+  it('Rule: Craft 3 — refreshed roost can craft next turn', () => {
+    const state = withPieces(minimalState(), 0, [
+      { id: 'r', kind: 'building', owner: 0, type: 'roost', used: true },
+    ])
+    const roost = state.clearings[0]!.pieces[0]
+    expect(roost?.kind).toBe('building')
+    if (roost?.kind === 'building') {
+      roost.used = false
+    }
+    expect(canCraft(state, 0, card('ROOT-204'))).toBe(true)
+  })
+
+  it('Rule: Craft — removed roost is unavailable immediately', () => {
+    const state = withPieces(minimalState(), 0, [
+      { id: 'r', kind: 'building', owner: 0, type: 'roost', used: false },
+    ])
+    state.clearings[0]!.pieces = []
+    expect(canCraft(state, 0, card('ROOT-204'))).toBe(false)
+  })
 })
