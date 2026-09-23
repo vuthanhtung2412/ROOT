@@ -115,3 +115,14 @@ export function craftCard(
   logs.push({ t: 'action', actor: seat, action: { type: 'craft', cardId } })
   return logs
 }
+
+/** Rule: Craft — each crafting piece activates once per turn; reset at endTurn. */
+export function resetCraftingBuildingUsed(state: GameState, seat: Seat): void {
+  for (const clearing of state.clearings) {
+    for (const piece of clearing.pieces) {
+      if (piece.owner === seat && isCraftingBuilding(piece)) {
+        piece.used = false
+      }
+    }
+  }
+}
