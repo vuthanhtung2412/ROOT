@@ -103,7 +103,7 @@ describe('Law 7.2 Faction Rules and Abilities', () => {
       (piece) => piece.kind === 'building' && piece.type === 'roost',
     )
     expect(roostAfterCraft?.kind).toBe('building')
-    if (roostAfterCraft?.kind === 'building') {
+    if (roostAfterCraft?.kind === 'building' && roostAfterCraft.type === 'roost') {
       expect(roostAfterCraft.used).toBe(true)
     }
 
@@ -113,7 +113,7 @@ describe('Law 7.2 Faction Rules and Abilities', () => {
       (piece) => piece.kind === 'building' && piece.type === 'roost',
     )
     expect(roostAfterTurn?.kind).toBe('building')
-    if (roostAfterTurn?.kind === 'building') {
+    if (roostAfterTurn?.kind === 'building' && roostAfterTurn.type === 'roost') {
       expect(roostAfterTurn.used).toBe(false)
     }
     expect(canCraft(state, 1, secondHammer)).toBe(true)
@@ -149,9 +149,12 @@ describe('Law 7.2 Faction Rules and Abilities', () => {
     )
     expect(canCraft(state, 1, hammer)).toBe(true)
     craftCard(state, 1, hammer.id, setupCtx())
-    expect(state.clearings[0]!.pieces[0]!.kind).toBe('building')
-    if (state.clearings[0]!.pieces[0]!.kind === 'building') {
-      expect(state.clearings[0]!.pieces[0]!.used).toBe(true)
+    const roost = state.clearings[0]!.pieces[0]
+    expect(roost?.kind).toBe('building')
+    if (roost?.kind === 'building' && roost.type === 'roost') {
+      expect(roost.used).toBe(true)
+    } else {
+      throw new Error('expected roost')
     }
   })
 
@@ -543,7 +546,7 @@ describe('Law 7.5 Daylight', () => {
       [
         { id: 'r', kind: 'building', type: 'roost', owner: 1, used: false },
         { id: 'w1', kind: 'warrior', owner: 1 },
-        { id: 'saw', kind: 'building', type: 'sawmill', owner: 0, used: false },
+        { id: 'saw', kind: 'building', type: 'sawmill', owner: 0 },
       ],
     )
     const decreeSpec = EYRIE.legalActions(state, setupCtx()).find(

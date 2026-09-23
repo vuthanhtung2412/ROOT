@@ -1,5 +1,11 @@
 import type { BuildingType, Seat, TokenType } from '#pieces/types.js'
-import type { Building, Piece, Token, Warrior } from '#pieces/types.js'
+import type {
+  CraftingBuilding,
+  NonCraftingBuilding,
+  Piece,
+  Token,
+  Warrior,
+} from '#pieces/types.js'
 import type { ClearingId } from '#map/types.js'
 import { canPlace } from '#queries/place.js'
 import { openSlots } from '#queries/slots.js'
@@ -110,13 +116,23 @@ function makePiece(seat: Seat, spec: PlaceSpec): Piece {
         owner: seat,
         type: spec.type,
       } satisfies Token
-    case 'building':
+    case 'building': {
+      // Rule: Craft — only workshop/roost activate; others have no `used`.
+      if (spec.type === 'workshop' || spec.type === 'roost') {
+        return {
+          id: newPieceId('b'),
+          kind: 'building',
+          owner: seat,
+          type: spec.type,
+          used: false,
+        } satisfies CraftingBuilding
+      }
       return {
         id: newPieceId('b'),
         kind: 'building',
         owner: seat,
         type: spec.type,
-        used: false,
-      } satisfies Building
+      } satisfies NonCraftingBuilding
+    }
   }
 }

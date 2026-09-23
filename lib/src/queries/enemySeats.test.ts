@@ -15,7 +15,7 @@ describe('enemySeatsInClearing', () => {
   it('Rule: Battle 4.3.3.II — includes building-only and token-only enemies', () => {
     const state = withPieces(minimalState(), 4, [
       { id: 'w0', kind: 'warrior', owner: 0 },
-      { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
+      { id: 'b1', kind: 'building', owner: 1, type: 'sawmill' },
       { id: 't1', kind: 'token', owner: 1, type: 'wood' },
     ])
     expect(enemySeatsInClearing(state, 4, 0).sort()).toEqual([1])

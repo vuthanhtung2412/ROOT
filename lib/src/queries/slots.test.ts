@@ -10,7 +10,6 @@ describe('openSlots', () => {
         kind: 'building',
         owner: 0,
         type: 'sawmill',
-        used: false,
       },
     ])
     expect(openSlots(state, 0)).toBe(0)

@@ -404,9 +404,12 @@ describe('Marquise turn', () => {
       decreeDone: true,
     }
     MARQUISE.endTurn(state)
-    expect(state.clearings[0]!.pieces[0]!.kind).toBe('building')
-    if (state.clearings[0]!.pieces[0]!.kind === 'building') {
-      expect(state.clearings[0]!.pieces[0]!.used).toBe(false)
+    const workshop = state.clearings[0]!.pieces[0]
+    expect(workshop?.kind).toBe('building')
+    if (workshop?.kind === 'building' && workshop.type === 'workshop') {
+      expect(workshop.used).toBe(false)
+    } else {
+      throw new Error('expected workshop')
     }
     expect(state.turnScratch).toEqual({
       actionsLeft: 3,

@@ -12,7 +12,13 @@ export type ItemType =
   | 'coin'
   | 'torch'
 
-export type BuildingType = 'sawmill' | 'workshop' | 'recruiter' | 'roost' | 'base'
+/** Buildings that can craft cards (activate once per turn). */
+export type CraftingBuildingType = 'workshop' | 'roost'
+
+/** Buildings that never craft. */
+export type NonCraftingBuildingType = 'sawmill' | 'recruiter' | 'base'
+
+export type BuildingType = CraftingBuildingType | NonCraftingBuildingType
 
 export type TokenType = 'wood' | 'keep' | 'sympathy'
 
@@ -23,14 +29,34 @@ type PieceBase = {
 
 export type Warrior = PieceBase & { kind: 'warrior' }
 export type Pawn = PieceBase & { kind: 'pawn' }
-export type Building = PieceBase & {
+
+/**
+ * Rule: Craft — each crafting piece activates once per turn.
+ * Only workshop (Marquise) / roost (Eyrie) carry `used`; reset on endTurn.
+ */
+export type CraftingBuilding = PieceBase & {
   kind: 'building'
-  type: BuildingType
+  type: CraftingBuildingType
   used: boolean
 }
+
+export type NonCraftingBuilding = PieceBase & {
+  kind: 'building'
+  type: NonCraftingBuildingType
+}
+
+export type Building = CraftingBuilding | NonCraftingBuilding
+
 export type Token = PieceBase & {
   kind: 'token'
   type: TokenType
 }
 
 export type Piece = Warrior | Pawn | Building | Token
+
+export function isCraftingBuilding(piece: Piece): piece is CraftingBuilding {
+  return (
+    piece.kind === 'building' &&
+    (piece.type === 'workshop' || piece.type === 'roost')
+  )
+}

@@ -113,8 +113,10 @@ describe('canCraft', () => {
     ])
     const roost = state.clearings[0]!.pieces[0]
     expect(roost?.kind).toBe('building')
-    if (roost?.kind === 'building') {
+    if (roost?.kind === 'building' && roost.type === 'roost') {
       roost.used = false
+    } else {
+      throw new Error('expected roost')
     }
     expect(canCraft(state, 0, card('ROOT-204'))).toBe(true)
   })

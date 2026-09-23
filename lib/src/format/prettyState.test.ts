@@ -152,7 +152,7 @@ describe('formatGameView', () => {
       { id: 'w1', kind: 'warrior', owner: 0 },
       { id: 'w2', kind: 'warrior', owner: 0 },
       { id: 'k', kind: 'token', type: 'keep', owner: 0 },
-      { id: 's', kind: 'building', type: 'sawmill', owner: 0, used: false },
+      { id: 's', kind: 'building', type: 'sawmill', owner: 0 },
       ...Array.from({ length: 8 }, (_, i) => {
         const woodToken: Piece = {
           id: `wood-${i}`,
