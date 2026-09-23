@@ -6,23 +6,29 @@ export type GameDrawerHandlers = {
   onOpenDiscardPile: () => void
 }
 
-/** Discard pile browse + End game. */
+const DRAWER_BOTTOM_MARGIN = 90
+const DRAWER_SIDE_MARGIN = 12
+
+/** Discard pile browse (right) + End game (left). */
 export class GameDrawer {
-  private readonly root: Phaser.GameObjects.Container
   private readonly discardButton: Phaser.GameObjects.Text
   private readonly endGameButton: Phaser.GameObjects.Text
   private endGameArmed = false
 
   constructor(scene: Phaser.Scene, handlers: GameDrawerHandlers) {
-    const { height } = gameViewSize()
+    const { width, height } = gameViewSize()
+    const buttonY = height - DRAWER_BOTTOM_MARGIN
+
     this.discardButton = scene.add
-      .text(0, 0, 'Discard', {
+      .text(width - DRAWER_SIDE_MARGIN, buttonY, 'Discard', {
         fontFamily: 'monospace',
         fontSize: '14px',
         color: '#1a1a1a',
         backgroundColor: '#c8d0e0',
         padding: { x: 10, y: 6 },
       })
+      .setOrigin(1, 0)
+      .setDepth(112)
       .setInteractive({ useHandCursor: true })
 
     this.discardButton.on('pointerdown', () => {
@@ -30,13 +36,14 @@ export class GameDrawer {
     })
 
     this.endGameButton = scene.add
-      .text(100, 0, 'End game', {
+      .text(DRAWER_SIDE_MARGIN, buttonY, 'End game', {
         fontFamily: 'monospace',
         fontSize: '14px',
         color: '#1a1a1a',
         backgroundColor: '#c8a8a8',
         padding: { x: 10, y: 6 },
       })
+      .setDepth(112)
       .setInteractive({ useHandCursor: true })
 
     this.endGameButton.on('pointerdown', () => {
@@ -51,10 +58,6 @@ export class GameDrawer {
       this.endGameButton.setBackgroundColor('#c8a8a8')
       handlers.onEndGame()
     })
-
-    this.root = scene.add
-      .container(12, height - 90, [this.discardButton, this.endGameButton])
-      .setDepth(112)
   }
 
   sync(discardCount: number): void {
@@ -62,6 +65,7 @@ export class GameDrawer {
   }
 
   destroy(): void {
-    this.root.destroy(true)
+    this.discardButton.destroy()
+    this.endGameButton.destroy()
   }
 }
