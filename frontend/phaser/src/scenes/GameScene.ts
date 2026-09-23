@@ -44,9 +44,7 @@ import { FactionBoardModal } from '#ui/FactionBoardModal.ts'
 import { GameDrawer } from '#ui/GameDrawer.ts'
 import { LeaderPickOverlay } from '#ui/LeaderPickOverlay.ts'
 import { PlayerRail } from '#ui/PlayerRail.ts'
-import {
-  TurnBanner,
-} from '#ui/TurnBanner.ts'
+import { TurnBanner } from '#ui/TurnBanner.ts'
 import { WinnerOverlay } from '#ui/WinnerOverlay.ts'
 
 export type GameSceneData = {
@@ -108,6 +106,8 @@ export class GameScene extends Phaser.Scene {
       submitEndPhase: () => {
         void this.session?.submitAction({ type: 'endPhase' })
       },
+      isBattleResultFlashActive: () =>
+        this.battleOverlayController?.isResultFlashActive() === true,
     })
     this.battleOverlayController = new BattleOverlayController(
       {
@@ -117,6 +117,18 @@ export class GameScene extends Phaser.Scene {
       () => this.battleOverlay,
       () => this.latestSnapshot?.state,
     )
+    this.battleOverlayController.setOnResultFlashEnded(() => {
+      const snapshot = this.latestSnapshot
+      if (snapshot === null || snapshot.state === null) {
+        return
+      }
+      const actorSeat = snapshot.state.currentSeat
+      this.autoPrompts?.runAfterHudPaint(
+        snapshot,
+        actorSeat,
+        this.localPlayerControlsSeat(actorSeat),
+      )
+    })
     this.modals = new GameSceneModals({
       getFactionBoardModal: () => this.factionBoardModal,
       getCraftedCardsModal: () => this.craftedCardsModal,

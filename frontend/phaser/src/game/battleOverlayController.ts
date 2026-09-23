@@ -24,12 +24,21 @@ export class BattleOverlayController {
   private resultFlashOutcome: FinishedBattleOutcome | null = null
   private resultFlashTimer: { remove: (dispatchCallback?: boolean) => void } | null =
     null
+  private onResultFlashEnded: (() => void) | null = null
 
   constructor(
     private readonly clock: BattleOverlaySyncClock,
     private readonly getOverlay: () => BattleOverlay | null,
     private readonly getState: () => GameState | null | undefined,
   ) {}
+
+  setOnResultFlashEnded(callback: (() => void) | null): void {
+    this.onResultFlashEnded = callback
+  }
+
+  isResultFlashActive(): boolean {
+    return this.resultFlashOutcome !== null
+  }
 
   sync(prompt: string | null = null): void {
     const overlay = this.getOverlay()
@@ -57,6 +66,7 @@ export class BattleOverlayController {
     this.resultFlashTimer = null
     this.resultFlashOutcome = null
     this.battleTracker = null
+    this.onResultFlashEnded = null
   }
 
   private beginResultFlash(outcome: FinishedBattleOutcome): void {
@@ -68,6 +78,7 @@ export class BattleOverlayController {
         this.resultFlashOutcome = null
         this.resultFlashTimer = null
         this.sync()
+        this.onResultFlashEnded?.()
       },
     )
   }
