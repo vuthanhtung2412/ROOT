@@ -37,6 +37,7 @@ import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
 import { CardDetailOverlay } from '#ui/CardDetailOverlay.ts'
+import { CardPileModal } from '#ui/CardPileModal.ts'
 import { CraftedCardsModal } from '#ui/CraftedCardsModal.ts'
 import { EventOverlay } from '#ui/EventOverlay.ts'
 import { FactionBoardModal } from '#ui/FactionBoardModal.ts'
@@ -66,6 +67,7 @@ export class GameScene extends Phaser.Scene {
   private battleOverlay: BattleOverlay | null = null
   private factionBoardModal: FactionBoardModal | null = null
   private craftedCardsModal: CraftedCardsModal | null = null
+  private cardPileModal: CardPileModal | null = null
   private gameDrawer: GameDrawer | null = null
   private winnerOverlay: WinnerOverlay | null = null
   private leaderPickOverlay: LeaderPickOverlay | null = null
@@ -159,9 +161,13 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlay = new BattleOverlay(this)
     this.factionBoardModal = new FactionBoardModal(this)
     this.craftedCardsModal = new CraftedCardsModal(this)
+    this.cardPileModal = new CardPileModal(this)
     this.gameDrawer = new GameDrawer(this, {
       onEndGame: () => {
         void this.handleEndGame()
+      },
+      onOpenDiscardPile: () => {
+        this.openDiscardPile()
       },
     })
     this.winnerOverlay = new WinnerOverlay(this, {
@@ -222,6 +228,8 @@ export class GameScene extends Phaser.Scene {
     this.factionBoardModal = null
     this.craftedCardsModal?.destroy()
     this.craftedCardsModal = null
+    this.cardPileModal?.destroy()
+    this.cardPileModal = null
     this.gameDrawer?.destroy()
     this.gameDrawer = null
     this.winnerOverlay?.destroy()
@@ -267,6 +275,24 @@ export class GameScene extends Phaser.Scene {
       seat: player.seat,
       faction: player.faction,
       cards,
+    })
+  }
+
+  private openDiscardPile(): void {
+    const state = this.latestSnapshot?.state
+    if (state === null || state === undefined) {
+      return
+    }
+    if (this.cardPileModal?.isOpen() === true) {
+      this.cardPileModal.hide()
+      return
+    }
+    const cards = state.deck?.discard ?? []
+    this.cardTextureWarmup?.ensure(cards.map((card) => card.defId))
+    this.cardPileModal?.show({
+      title: `Discard pile (${String(cards.length)})`,
+      cards,
+      emptyMessage: 'Discard pile empty',
     })
   }
 
@@ -480,6 +506,7 @@ export class GameScene extends Phaser.Scene {
       snapshot.state.pending[0],
     )
     this.refreshFactionBoardModal(snapshot.state)
+    this.gameDrawer?.sync(snapshot.state.deck?.discard.length ?? 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
     this.syncWinner(snapshot.state)
     this.maybeAutoBeginSetupPrompt(
