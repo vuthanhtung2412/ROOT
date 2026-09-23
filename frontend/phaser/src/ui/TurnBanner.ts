@@ -2,6 +2,14 @@ import type Phaser from 'phaser'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { gameViewSize } from '#game/hiDpi.ts'
 import {
+  isChooseKeepPendingEvent,
+  isChooseLeaderPendingEvent,
+  isPlaceStartingBuildingPendingEvent,
+  parseKnownPendingEvent,
+  type BattlePendingEvent,
+  type BattleStage,
+} from '#game/pendingEventGuards.ts'
+import {
   formatCountStepperLabel,
   selectedCountStepperOption,
   shouldPresentAsCountStepper,
@@ -56,66 +64,45 @@ function readPendingActor(
 }
 
 function readPendingActorFromEvent(event: unknown): number | null {
-  if (typeof event !== 'object' || event === null) {
+  const pending = parseKnownPendingEvent(event)
+  if (pending === null) {
     return null
   }
-  const type = Reflect.get(event, 'type')
-  if (type === 'fieldHospital') {
-    const victim = Reflect.get(event, 'victim')
-    return typeof victim === 'number' ? victim : null
+  if (pending.type === 'fieldHospital') {
+    return pending.victim
   }
   if (
-    type === 'chooseKeep' ||
-    type === 'chooseLeader' ||
-    type === 'placeStartingBuilding'
+    pending.type === 'chooseKeep' ||
+    pending.type === 'chooseLeader' ||
+    pending.type === 'placeStartingBuilding'
   ) {
-    const seat = Reflect.get(event, 'seat')
-    return typeof seat === 'number' ? seat : null
+    return pending.seat
   }
-  if (type !== 'battle') {
+  if (pending.type !== 'battle') {
     return null
   }
-  const stage = Reflect.get(event, 'stage')
-  const attacker = Reflect.get(event, 'attacker')
-  const defender = Reflect.get(event, 'defender')
-  if (typeof attacker !== 'number' || typeof defender !== 'number') {
-    return null
-  }
-  if (stage === 'ambush' || stage === 'removeDefender') {
-    return defender
+  if (pending.stage === 'ambush' || pending.stage === 'removeDefender') {
+    return pending.defender
   }
   if (
-    stage === 'foil' ||
-    stage === 'effectsOrder' ||
-    stage === 'removeAttacker'
+    pending.stage === 'foil' ||
+    pending.stage === 'effectsOrder' ||
+    pending.stage === 'removeAttacker'
   ) {
-    return attacker
+    return pending.attacker
   }
-  if (stage === 'effects') {
-    return nextBattleEffectSeat(event, attacker, defender)
+  if (pending.stage === 'effects') {
+    return nextBattleEffectSeat(pending)
   }
   return null
 }
 
-function nextBattleEffectSeat(
-  event: object,
-  attacker: number,
-  defender: number,
-): number | null {
-  const orderRaw = Reflect.get(event, 'effectsOrder')
-  const order =
-    Array.isArray(orderRaw) &&
-    orderRaw.every((seat) => typeof seat === 'number')
-      ? orderRaw
-      : [attacker, defender]
-  const effectsUsed = Reflect.get(event, 'effectsUsed')
-  const used =
-    typeof effectsUsed === 'object' && effectsUsed !== null
-      ? effectsUsed
-      : {}
+function nextBattleEffectSeat(event: BattlePendingEvent): number | null {
+  const order = event.effectsOrder ?? [event.attacker, event.defender]
+  const used = event.effectsUsed ?? {}
   for (const seat of order) {
-    const side = seat === attacker ? 'attacker' : 'defender'
-    if (Reflect.get(used, side) === undefined) {
+    const side = seat === event.attacker ? 'attacker' : 'defender'
+    if (used[side] === undefined) {
       return seat
     }
   }
@@ -157,7 +144,7 @@ function buildPrompt(
   return 'Daylight actions'
 }
 
-const BATTLE_STAGE_PROMPTS: Record<string, string> = {
+const BATTLE_STAGE_PROMPTS: Record<BattleStage, string> = {
   ambush: 'Battle — play Ambush or skip',
   foil: 'Battle — foil Ambush or skip',
   roll: 'Battle — rolling dice',
@@ -168,52 +155,36 @@ const BATTLE_STAGE_PROMPTS: Record<string, string> = {
 }
 
 function pendingEventPrompt(pending: unknown, actorSeat: number): string | null {
-  if (typeof pending !== 'object' || pending === null) {
+  const event = parseKnownPendingEvent(pending)
+  if (event === null) {
     return `Pending choice · seat ${String(actorSeat)}`
   }
-  const pendingType = Reflect.get(pending, 'type')
-  if (pendingType === 'fieldHospital') {
+  if (event.type === 'fieldHospital') {
     return 'Field Hospitals — spend matching card or decline'
   }
-  if (pendingType === 'battle') {
-    const stage = Reflect.get(pending, 'stage')
-    if (typeof stage === 'string') {
-      return BATTLE_STAGE_PROMPTS[stage] ?? `Battle — ${stage}`
-    }
-    return 'Battle in progress'
+  if (event.type === 'battle') {
+    return BATTLE_STAGE_PROMPTS[event.stage]
   }
-  if (pendingType === 'chooseKeep') {
+  if (event.type === 'chooseKeep') {
     return 'Choose keep corner'
   }
-  if (pendingType === 'placeStartingBuilding') {
-    const building = Reflect.get(pending, 'building')
-    if (typeof building === 'string') {
-      return `Place ${building}`
-    }
-    return 'Place starting building'
+  if (event.type === 'placeStartingBuilding') {
+    return `Place ${event.building}`
   }
-  if (pendingType === 'chooseLeader') {
+  if (event.type === 'chooseLeader') {
     return 'Choose Eyrie leader'
   }
   return `Pending choice · seat ${String(actorSeat)}`
 }
 
 function setupPrompt(pending: unknown): string | null {
-  if (typeof pending !== 'object' || pending === null) {
-    return null
-  }
-  const type = Reflect.get(pending, 'type')
-  if (type === 'chooseKeep') {
+  if (isChooseKeepPendingEvent(pending)) {
     return 'Choose keep corner'
   }
-  if (type === 'placeStartingBuilding') {
-    const building = Reflect.get(pending, 'building')
-    if (typeof building === 'string') {
-      return `Place ${building}`
-    }
-    return 'Place starting building'
+  if (isPlaceStartingBuildingPendingEvent(pending)) {
+    return `Place ${pending.building}`
   }
-  if (type === 'chooseLeader') {
+  if (isChooseLeaderPendingEvent(pending)) {
     return 'Choose Eyrie leader'
   }
   return null
