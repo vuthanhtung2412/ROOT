@@ -587,6 +587,7 @@ export class GameScene extends Phaser.Scene {
       banner.actorSeat,
       snapshot.state.pending[0],
       this.marchActionTrayOptions(),
+      snapshot.state,
     )
     this.refreshFactionBoardModal(snapshot.state)
     this.gameDrawer?.sync(snapshot.state.deck?.discard.length ?? 0)

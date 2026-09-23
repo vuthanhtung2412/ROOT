@@ -48,6 +48,52 @@ describe('filterTrayActions march lock', () => {
   })
 })
 
+describe('formatActionLabel decree suit', () => {
+  it('includes card suit from cardIds', () => {
+    expect(
+      formatActionLabel(
+        {
+          type: 'decree',
+          actor: 1,
+          params: { column: ['recruit'], cardIds: ['ROOT-204#1'] },
+        },
+        undefined,
+        {
+          id: 'g',
+          seed: 1,
+          status: 'playing',
+          turn: 1,
+          currentSeat: 1,
+          phase: 'daylight',
+          step: 'decree',
+          factions: ['marquise', 'eyrie'],
+          players: [
+            {
+              playerId: 'e',
+              seat: 1,
+              faction: 'eyrie',
+              vp: 0,
+              hand: [],
+            },
+          ],
+          clearings: [],
+          pending: [],
+        },
+      ),
+    ).toBe('decree:recruit (fox)')
+  })
+
+  it('vizier resolves as bird suit', () => {
+    expect(
+      formatActionLabel({
+        type: 'decree',
+        actor: 1,
+        params: { column: ['move'], cardIds: ['VIZIER#1'] },
+      }),
+    ).toBe('decree:move (bird)')
+  })
+})
+
 describe('formatActionLabel Field Hospitals', () => {
   it('labels pay and decline when pending is fieldHospital', () => {
     const pending = { type: 'fieldHospital', victim: 0, clearing: 4, count: 1 }

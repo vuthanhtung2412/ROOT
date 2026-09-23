@@ -1,5 +1,6 @@
 import type Phaser from 'phaser'
-import type { ActionSpec } from '#api/client.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
+import { lookupCardCatalog } from '#assets/gameAssets.ts'
 import { readChoiceParams } from '#game/ActionComposer.ts'
 import { gameViewSize } from '#game/hiDpi.ts'
 
@@ -40,6 +41,7 @@ export class ActionTray {
     actorSeat: number,
     pending?: unknown,
     options?: { lockToActionTypes?: readonly string[] },
+    state?: GameState,
   ): void {
     for (const node of this.buttonNodes) {
       node.destroy()
@@ -51,7 +53,7 @@ export class ActionTray {
 
     forActor.forEach((spec, index) => {
       const button = this.scene.add
-        .text(0, 28 + index * 34, formatActionLabel(spec, pending), {
+        .text(0, 28 + index * 34, formatActionLabel(spec, pending, state), {
           fontFamily: 'monospace',
           fontSize: '14px',
           color: '#1a1a1a',
@@ -74,7 +76,13 @@ export class ActionTray {
   }
 }
 
-function formatActionLabel(spec: ActionSpec, pending?: unknown): string {
+const VIZIER_DEF_ID = 'VIZIER'
+
+function formatActionLabel(
+  spec: ActionSpec,
+  pending?: unknown,
+  state?: GameState,
+): string {
   const params = readChoiceParams(spec)
   const pendingType =
     typeof pending === 'object' && pending !== null
@@ -82,6 +90,11 @@ function formatActionLabel(spec: ActionSpec, pending?: unknown): string {
       : undefined
   if (spec.type === 'decree') {
     const column = params.column?.[0]
+    const cardId = params.cardIds?.[0]
+    const suit = cardId !== undefined ? decreeCardSuit(cardId, state) : null
+    if (column !== undefined && suit !== null) {
+      return `decree:${column} (${suit})`
+    }
     return column !== undefined ? `decree:${column}` : 'decree'
   }
   if (spec.type === 'resolveEvent') {
@@ -128,6 +141,73 @@ function formatActionLabel(spec: ActionSpec, pending?: unknown): string {
     return 'resolveEvent'
   }
   return spec.type
+}
+
+function decreeCardSuit(cardId: string, state?: GameState): string | null {
+  const fromState = findCardDefIdInState(cardId, state)
+  const defId = fromState ?? parseDefIdFromCardId(cardId)
+  if (defId === null) {
+    return null
+  }
+  if (defId === VIZIER_DEF_ID) {
+    return 'bird'
+  }
+  return lookupCardCatalog(defId)?.suit ?? null
+}
+
+function parseDefIdFromCardId(cardId: string): string | null {
+  const hashIndex = cardId.indexOf('#')
+  if (hashIndex <= 0) {
+    return null
+  }
+  return cardId.slice(0, hashIndex)
+}
+
+function findCardDefIdInState(cardId: string, state?: GameState): string | null {
+  if (state === undefined) {
+    return null
+  }
+  for (const player of state.players) {
+    for (const card of player.hand) {
+      if (card.id === cardId) {
+        return card.defId
+      }
+    }
+    const defIdFromBoard = findCardDefIdOnEyrieDecree(player.board, cardId)
+    if (defIdFromBoard !== null) {
+      return defIdFromBoard
+    }
+  }
+  return null
+}
+
+function findCardDefIdOnEyrieDecree(board: unknown, cardId: string): string | null {
+  if (typeof board !== 'object' || board === null) {
+    return null
+  }
+  if (Reflect.get(board, 'kind') !== 'eyrie') {
+    return null
+  }
+  const decree = Reflect.get(board, 'decree')
+  if (typeof decree !== 'object' || decree === null) {
+    return null
+  }
+  for (const columnCards of Object.values(decree)) {
+    if (!Array.isArray(columnCards)) {
+      continue
+    }
+    for (const entry of columnCards) {
+      if (typeof entry !== 'object' || entry === null) {
+        continue
+      }
+      const id = Reflect.get(entry, 'id')
+      const defId = Reflect.get(entry, 'defId')
+      if (id === cardId && typeof defId === 'string') {
+        return defId
+      }
+    }
+  }
+  return null
 }
 
 export function filterTrayActions(
