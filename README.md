@@ -65,7 +65,7 @@ Errors: `400` RuleError `{ code, detail }`, `404` no game, `409` slot occupied.
 # terminal 1
 pnpm --filter @root/web dev
 
-# terminal 2 (ROOT_DEV_API set via .mise.toml when mise trust/enter)
+# terminal 2 (ROOT_DEV_API from .env via mise _.file)
 pnpm --filter @root/cli start -- new
 pnpm --filter @root/cli start -- join alice
 pnpm --filter @root/cli start -- join bob

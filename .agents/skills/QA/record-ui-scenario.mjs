@@ -22,7 +22,7 @@ const rootDirectory = path.resolve(skillDirectory, '../../..')
 const artifactsDirectory = path.join(rootDirectory, 'tmp/artifacts')
 const snapshotsDirectory = path.join(rootDirectory, 'tmp/qa/snapshots')
 const phaserUrl = process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
-/** Keep in sync with `@root/web-client` DEFAULT_ROOT_DEV_API_BASE_URL / `.mise.toml` ROOT_DEV_API. */
+/** Keep in sync with `@root/web-client` DEFAULT_ROOT_DEV_API_BASE_URL / `.env` ROOT_DEV_API. */
 const DEFAULT_ROOT_DEV_API_BASE_URL = 'http://localhost:3000'
 const apiUrl = process.env.ROOT_DEV_API ?? DEFAULT_ROOT_DEV_API_BASE_URL
 const scenario = process.argv[2]

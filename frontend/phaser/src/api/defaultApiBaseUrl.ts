@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core'
 
 /**
  * Browser: empty = same-origin (Vite proxy / served from @root/web).
- * Native Capacitor: prod API from mise `ROOT_PROD_API`.
+ * Native Capacitor: prod API from `.env` `ROOT_PROD_API` (mise `_.file`).
  */
 export function resolveDefaultApiBaseUrl(): string {
   if (!Capacitor.isNativePlatform()) {

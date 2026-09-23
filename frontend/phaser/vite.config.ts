@@ -8,7 +8,7 @@ const packageRoot = path.dirname(fileURLToPath(import.meta.url))
 
 /** Vite + Vitest config for @root/phaser — proxies game/map/ws API to @root/web. */
 export default defineConfig({
-  /** Expose mise `ROOT_*` to `import.meta.env` (native default API base). */
+  /** Expose `ROOT_*` from env / `.env` (via mise) to `import.meta.env`. */
   envPrefix: ['VITE_', 'ROOT_'],
   resolve: {
     alias: [

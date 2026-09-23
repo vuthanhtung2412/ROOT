@@ -34,7 +34,7 @@ commands:
   auto [--turns 50] [--players 2] [--factions marquise,eyrie]
     (creates game, joins as faction names, starts — no manual lobby)
 
-env: ROOT_DEV_API (default ${DEFAULT_ROOT_DEV_API_BASE_URL}; set in .mise.toml)`)
+env: ROOT_DEV_API (default ${DEFAULT_ROOT_DEV_API_BASE_URL}; set in .env)`)
 }
 
 async function main(): Promise<void> {
