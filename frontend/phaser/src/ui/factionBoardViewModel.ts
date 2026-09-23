@@ -21,7 +21,6 @@ import {
 import type { GameState } from '#api/client.ts'
 
 export type CraftedLookup = {
-  cardNames: string[]
   itemTypes: string[]
 }
 
@@ -109,7 +108,6 @@ type PlayerForBoard = {
   faction: string
   vp: number
   hand: Array<{ id: string; defId: string }>
-  playArea?: Array<{ id: string; defId: string }>
   craftedItems?: Array<string | { type: string; exhausted?: boolean }>
   board?: unknown
 }
@@ -151,7 +149,6 @@ function roostsOnMapFromTrack(placedOnTrack: number): number {
 }
 
 function craftedLookup(player: PlayerForBoard): CraftedLookup {
-  const playArea = player.playArea ?? []
   const craftedItems = player.craftedItems ?? []
   const itemTypes: string[] = []
   for (const item of craftedItems) {
@@ -161,10 +158,7 @@ function craftedLookup(player: PlayerForBoard): CraftedLookup {
       itemTypes.push(item.type)
     }
   }
-  return {
-    cardNames: playArea.map((card) => card.defId),
-    itemTypes,
-  }
+  return { itemTypes }
 }
 
 function suitForDecreeCard(defId: string): string {

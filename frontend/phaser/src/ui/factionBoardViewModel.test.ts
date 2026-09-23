@@ -32,7 +32,6 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       faction: 'marquise',
       vp: 4,
       hand: [{ id: 'a', defId: 'ROOT-1' }],
-      playArea: [{ id: 'p1', defId: 'ROOT-57' }],
       craftedItems: ['boot'],
       board: {
         kind: 'marquise',
@@ -57,7 +56,6 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       workshop: 1,
       recruiter: 3,
     })
-    expect(view.crafted.cardNames).toEqual(['ROOT-57'])
     expect(view.crafted.itemTypes).toEqual(['boot'])
     expect(view.trackColumns).toHaveLength(6)
   })
