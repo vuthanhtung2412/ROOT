@@ -263,26 +263,42 @@ export class FactionBoardModal {
     iconSize: number,
   ): Phaser.GameObjects.GameObject | null {
     const textureKey = itemTextureKey(item.type)
+    const container = this.scene.add.container(left + iconSize / 2, centerY)
     if (textureKey !== null && this.scene.textures.exists(textureKey)) {
       const image = this.scene.add
-        .image(left + iconSize / 2, centerY, textureKey)
+        .image(0, 0, textureKey)
         .setDisplaySize(iconSize, iconSize)
         .setOrigin(0.5)
       if (item.exhausted) {
         image.setAlpha(0.4)
       }
-      return image
+      container.add(image)
+    } else {
+      const fallback = this.scene.add
+        .text(-iconSize / 2, 0, item.type, {
+          fontFamily: 'monospace',
+          fontSize: `${Math.max(10, Math.round(iconSize * 0.4))}px`,
+          color: item.exhausted ? '#9a9080' : '#f7f0e4',
+          backgroundColor: '#0a0a0acc',
+          padding: { x: 4, y: 2 },
+        })
+        .setOrigin(0, 0.5)
+      container.add(fallback)
     }
-    const fallback = this.scene.add
-      .text(left, centerY, item.type, {
-        fontFamily: 'monospace',
-        fontSize: `${Math.max(10, Math.round(iconSize * 0.4))}px`,
-        color: item.exhausted ? '#9a9080' : '#f7f0e4',
-        backgroundColor: '#0a0a0acc',
-        padding: { x: 4, y: 2 },
-      })
-      .setOrigin(0, 0.5)
-    return fallback
+    if (item.count > 1) {
+      const badge = this.scene.add
+        .text(iconSize * 0.34, -iconSize * 0.34, String(item.count), {
+          fontFamily: 'monospace',
+          fontSize: `${Math.max(9, Math.round(iconSize * 0.32))}px`,
+          color: '#1a1a1a',
+          backgroundColor: '#f0e6d3',
+          padding: { x: 3, y: 1 },
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5)
+      container.add(badge)
+    }
+    return container
   }
 
   private buildSupplyOverlays(

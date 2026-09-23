@@ -23,6 +23,7 @@ import type { GameState } from '#api/client.ts'
 export type CraftedItemView = {
   type: string
   exhausted: boolean
+  count: number
 }
 
 export type CraftedLookup = {
@@ -153,20 +154,31 @@ function roostsOnMapFromTrack(placedOnTrack: number): number {
   return roostsOnMap
 }
 
-function craftedLookup(player: PlayerForBoard): CraftedLookup {
-  const craftedItems = player.craftedItems ?? []
-  const items: CraftedItemView[] = []
+function craftedItemKey(type: string, exhausted: boolean): string {
+  return `${type}:${String(exhausted)}`
+}
+
+/** Group identical crafted items by type + exhausted flag. */
+export function groupCraftedItems(
+  craftedItems: Array<string | { type: string; exhausted?: boolean }>,
+): CraftedItemView[] {
+  const counts = new Map<string, CraftedItemView>()
   for (const item of craftedItems) {
-    if (typeof item === 'string') {
-      items.push({ type: item, exhausted: false })
-    } else {
-      items.push({
-        type: item.type,
-        exhausted: item.exhausted === true,
-      })
+    const type = typeof item === 'string' ? item : item.type
+    const exhausted = typeof item === 'string' ? false : item.exhausted === true
+    const key = craftedItemKey(type, exhausted)
+    const existing = counts.get(key)
+    if (existing !== undefined) {
+      counts.set(key, { ...existing, count: existing.count + 1 })
+      continue
     }
+    counts.set(key, { type, exhausted, count: 1 })
   }
-  return { items }
+  return [...counts.values()]
+}
+
+function craftedLookup(player: PlayerForBoard): CraftedLookup {
+  return { items: groupCraftedItems(player.craftedItems ?? []) }
 }
 
 function suitForDecreeCard(defId: string): string {
