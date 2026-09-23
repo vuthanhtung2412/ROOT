@@ -1,0 +1,24 @@
+import { describe, expect, it } from 'vitest'
+import { isAllowedCorsOrigin } from '#middleware/cors.js'
+
+describe('isAllowedCorsOrigin', () => {
+  it('allows Capacitor and Ionic WebView origins', () => {
+    expect(isAllowedCorsOrigin('capacitor://localhost')).toBe(true)
+    expect(isAllowedCorsOrigin('ionic://localhost')).toBe(true)
+    expect(isAllowedCorsOrigin('http://localhost')).toBe(true)
+    expect(isAllowedCorsOrigin('https://localhost')).toBe(true)
+  })
+
+  it('allows Vite localhost and LAN HTTP origins', () => {
+    expect(isAllowedCorsOrigin('http://localhost:5173')).toBe(true)
+    expect(isAllowedCorsOrigin('http://127.0.0.1:3000')).toBe(true)
+    expect(isAllowedCorsOrigin('http://192.168.1.5:5173')).toBe(true)
+    expect(isAllowedCorsOrigin('http://10.0.0.2:3000')).toBe(true)
+  })
+
+  it('rejects unrelated origins', () => {
+    expect(isAllowedCorsOrigin('https://evil.example')).toBe(false)
+    expect(isAllowedCorsOrigin('capacitor://evil')).toBe(false)
+    expect(isAllowedCorsOrigin('http://172.16.0.1:3000')).toBe(false)
+  })
+})
