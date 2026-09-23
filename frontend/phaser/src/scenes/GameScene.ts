@@ -32,6 +32,7 @@ import {
 import {
   buildBattleOverlayViewModel,
   buildZeroHitBattleOverlayViewModel,
+  readBattleClearingId,
   updateBattleTracker,
   zeroHitFlashDurationMs,
   type BattleTrackerState,
@@ -382,7 +383,11 @@ export class GameScene extends Phaser.Scene {
     if (outcome.kind === 'ready') {
       this.turnBanner?.syncComposer(null)
       this.leaderPickOverlay?.sync(null)
-      this.boardView?.setHighlightedClearings([])
+      if (this.latestSnapshot?.state !== null && this.latestSnapshot?.state !== undefined) {
+        this.syncBattleClearingHighlight(this.latestSnapshot.state)
+      } else {
+        this.boardView?.setHighlightedClearings([])
+      }
       this.cardHand?.setEnabledCards(null)
       this.cardHand?.setSelection([])
       this.composer.reset()
@@ -416,7 +421,12 @@ export class GameScene extends Phaser.Scene {
           ? { optionPresentation }
           : {}),
       })
-      this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
+      this.boardView?.setHighlightedClearings(
+        mergeBattleClearingHighlight(
+          outcome.prompt.highlightClearings,
+          this.latestSnapshot?.state ?? null,
+        ),
+      )
       this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)
       const discardDraft = this.marquiseCards.getDraft()
       this.cardHand?.setSelection(
@@ -435,11 +445,15 @@ export class GameScene extends Phaser.Scene {
 
     this.turnBanner?.syncComposer(null)
     this.leaderPickOverlay?.sync(null)
-    this.boardView?.setHighlightedClearings([])
     this.cardHand?.setEnabledCards(null)
     this.cardHand?.setSelection([])
     this.eventOverlay?.sync(false, '')
     this.syncBattleOverlay(null)
+    if (this.latestSnapshot?.state !== null && this.latestSnapshot?.state !== undefined) {
+      this.syncBattleClearingHighlight(this.latestSnapshot.state)
+    } else {
+      this.boardView?.setHighlightedClearings([])
+    }
     if (this.latestSnapshot !== null) {
       this.syncBoardPieces(this.latestSnapshot)
     }
@@ -463,6 +477,26 @@ export class GameScene extends Phaser.Scene {
       return
     }
     this.battleOverlay?.sync(buildBattleOverlayViewModel(state, prompt))
+  }
+
+  private isComposerStaging(): boolean {
+    return (
+      this.marquiseMarch.getDraft().type !== 'idle' ||
+      this.marquiseBoard.getDraft().type !== 'idle' ||
+      this.marquiseCards.getDraft().type !== 'idle' ||
+      this.eyrieComposer.getDraft().type !== 'idle' ||
+      this.eventComposer.getDraft().type !== 'idle'
+    )
+  }
+
+  private syncBattleClearingHighlight(state: GameState): void {
+    if (this.isComposerStaging()) {
+      return
+    }
+    const battleClearing = readBattleClearingId(state)
+    this.boardView?.setHighlightedClearings(
+      battleClearing !== null ? [battleClearing] : [],
+    )
   }
 
   private beginZeroHitFlash(outcome: ZeroHitBattleOutcome): void {
@@ -549,6 +583,7 @@ export class GameScene extends Phaser.Scene {
     this.refreshFactionBoardModal(snapshot.state)
     this.gameDrawer?.sync(snapshot.state.deck?.discard.length ?? 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
+    this.syncBattleClearingHighlight(snapshot.state)
     this.syncWinner(snapshot.state)
     this.maybeAutoBeginSetupPrompt(
       snapshot,
@@ -830,6 +865,22 @@ export class GameScene extends Phaser.Scene {
     this.statusText.setText(message)
     this.statusText.setVisible(message.length > 0)
   }
+}
+
+function mergeBattleClearingHighlight(
+  clearingIds: readonly number[],
+  state: GameState | null,
+): number[] {
+  if (state === null) {
+    return [...clearingIds]
+  }
+  const battleClearing = readBattleClearingId(state)
+  if (battleClearing === null) {
+    return [...clearingIds]
+  }
+  const merged = new Set(clearingIds)
+  merged.add(battleClearing)
+  return [...merged]
 }
 
 function mergeHooks(...hookSets: ActionComposerHooks[]): ActionComposerHooks {
