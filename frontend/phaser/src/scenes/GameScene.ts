@@ -166,7 +166,11 @@ export class GameScene extends Phaser.Scene {
         void this.handleEndGame()
       },
     })
-    this.winnerOverlay = new WinnerOverlay(this)
+    this.winnerOverlay = new WinnerOverlay(this, {
+      onReturnToMenu: () => {
+        void this.handleEndGame()
+      },
+    })
     this.leaderPickOverlay = new LeaderPickOverlay(this)
     this.leaderPickOverlay.setOnPicked((leaderId) => {
       this.applyComposerOutcome(this.composer.chooseColumn(leaderId))
