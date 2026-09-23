@@ -9,7 +9,7 @@ import {
   type ActionComposerHooks,
   type ComposerOutcome,
 } from '#game/ActionComposer.ts'
-import { createEventComposerHooks } from '#game/eventActionComposer.ts'
+import { createEventComposerHooks, fieldHospitalCardIdsFromSpecs, isFieldHospitalPending } from '#game/eventActionComposer.ts'
 import {
   buildBattleRemovalStepperChoices,
   buildPiecesByIdFromClearings,
@@ -77,7 +77,8 @@ export class GameScene extends Phaser.Scene {
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
-  /** Avoid re-opening the same setup pick every HUD paint. */
+  /** Avoid re-opening the same pending prompt every HUD paint. */
+  private autoPendingPromptKey: string | null = null
   private autoSetupPromptKey: string | null = null
   private cardTextureWarmup: CardTextureWarmup | null = null
 
@@ -479,12 +480,18 @@ export class GameScene extends Phaser.Scene {
         ? collapsePieceIdsRemovalSpecs(snapshot.legalActions)
         : [],
       banner.actorSeat,
+      snapshot.state.pending[0],
     )
     this.refreshFactionBoardModal(snapshot.state)
     this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
     this.syncWinner(snapshot.state)
     this.maybeAutoBeginSetupPrompt(
+      snapshot,
+      banner.actorSeat,
+      localControlsActor,
+    )
+    this.maybeAutoBeginFieldHospitalPrompt(
       snapshot,
       banner.actorSeat,
       localControlsActor,
@@ -519,6 +526,39 @@ export class GameScene extends Phaser.Scene {
       snapshot.legalActions,
       this.session?.getLocalSeat() ?? null,
     )
+  }
+
+  /**
+   * Field Hospitals: open pay/decline composer without tray click.
+   */
+  private maybeAutoBeginFieldHospitalPrompt(
+    snapshot: GameSessionSnapshot,
+    actorSeat: number,
+    localControlsActor: boolean,
+  ): void {
+    if (!localControlsActor || snapshot.state === null) {
+      this.autoPendingPromptKey = null
+      return
+    }
+    const pending = snapshot.state.pending[0]
+    if (!isFieldHospitalPending(pending)) {
+      this.autoPendingPromptKey = null
+      return
+    }
+    const forActor = snapshot.legalActions.filter(
+      (spec) => spec.type === 'resolveEvent' && spec.actor === actorSeat,
+    )
+    if (forActor.length === 0) {
+      this.autoPendingPromptKey = null
+      return
+    }
+    const key = JSON.stringify({ pending, actions: forActor })
+    if (key === this.autoPendingPromptKey) {
+      return
+    }
+    this.autoPendingPromptKey = key
+    const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
+    this.applyComposerOutcome(this.eventComposer.beginFieldHospital(cardIds))
   }
 
   /**
