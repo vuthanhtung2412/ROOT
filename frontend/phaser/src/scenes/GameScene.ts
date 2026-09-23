@@ -9,6 +9,7 @@ import {
   type ActionComposerHooks,
   type ComposerOutcome,
 } from '#game/ActionComposer.ts'
+import { soleEndPhaseAction } from '#game/forcedAction.ts'
 import { createEventComposerHooks, fieldHospitalCardIdsFromSpecs, isFieldHospitalPending, battleAmbushRole } from '#game/eventActionComposer.ts'
 import {
   buildBattleRemovalStepperChoices,
@@ -83,6 +84,7 @@ export class GameScene extends Phaser.Scene {
   /** Avoid re-opening the same pending prompt every HUD paint. */
   private autoPendingPromptKey: string | null = null
   private autoSetupPromptKey: string | null = null
+  private autoEndPhaseKey: string | null = null
   private cardTextureWarmup: CardTextureWarmup | null = null
 
   constructor() {
@@ -529,6 +531,7 @@ export class GameScene extends Phaser.Scene {
       banner.actorSeat,
       localControlsActor,
     )
+    this.maybeAutoEndPhase(snapshot, banner.actorSeat, localControlsActor)
     this.paintStatus(
       localControlsActor
         ? snapshot.error
@@ -623,6 +626,38 @@ export class GameScene extends Phaser.Scene {
     this.autoPendingPromptKey = key
     const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
     this.applyComposerOutcome(this.eventComposer.beginAmbush(cardIds, role))
+  }
+
+  /** Auto-submit when endPhase is the only legal action for the actor. */
+  private maybeAutoEndPhase(
+    snapshot: GameSessionSnapshot,
+    actorSeat: number,
+    localControlsActor: boolean,
+  ): void {
+    if (!localControlsActor || snapshot.state === null) {
+      this.autoEndPhaseKey = null
+      return
+    }
+    if (snapshot.state.pending.length > 0) {
+      this.autoEndPhaseKey = null
+      return
+    }
+    const sole = soleEndPhaseAction(snapshot.legalActions, actorSeat)
+    if (sole === null) {
+      this.autoEndPhaseKey = null
+      return
+    }
+    const key = JSON.stringify({
+      turn: snapshot.state.turn,
+      phase: snapshot.state.phase,
+      step: snapshot.state.step,
+      seat: actorSeat,
+    })
+    if (key === this.autoEndPhaseKey) {
+      return
+    }
+    this.autoEndPhaseKey = key
+    void this.session?.submitAction({ type: 'endPhase' })
   }
 
   /**
