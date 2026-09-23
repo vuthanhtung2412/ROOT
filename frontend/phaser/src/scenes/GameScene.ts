@@ -160,9 +160,6 @@ export class GameScene extends Phaser.Scene {
     this.factionBoardModal = new FactionBoardModal(this)
     this.craftedCardsModal = new CraftedCardsModal(this)
     this.gameDrawer = new GameDrawer(this, {
-      onUndo: () => {
-        void this.session?.undo()
-      },
       onEndGame: () => {
         void this.handleEndGame()
       },
@@ -483,7 +480,6 @@ export class GameScene extends Phaser.Scene {
       snapshot.state.pending[0],
     )
     this.refreshFactionBoardModal(snapshot.state)
-    this.gameDrawer?.sync(snapshot.log, snapshot.historyLength > 0)
     this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
     this.syncWinner(snapshot.state)
     this.maybeAutoBeginSetupPrompt(
