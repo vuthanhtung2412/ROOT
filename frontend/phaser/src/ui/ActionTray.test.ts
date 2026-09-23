@@ -33,3 +33,29 @@ describe('formatActionLabel setup', () => {
     ).toBe('place recruiter')
   })
 })
+
+describe('formatActionLabel Field Hospitals', () => {
+  it('labels pay and decline when pending is fieldHospital', () => {
+    const pending = { type: 'fieldHospital', victim: 0, clearing: 4, count: 1 }
+    expect(
+      formatActionLabel(
+        {
+          type: 'resolveEvent',
+          actor: 0,
+          params: { decline: [true] },
+        },
+        pending,
+      ),
+    ).toBe('Decline Field Hospitals')
+    expect(
+      formatActionLabel(
+        {
+          type: 'resolveEvent',
+          actor: 0,
+          params: { cardIds: ['ROOT-72#1'] },
+        },
+        pending,
+      ),
+    ).toBe('Field Hospitals: pay')
+  })
+})

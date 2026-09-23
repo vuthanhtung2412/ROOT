@@ -134,6 +134,13 @@ function buildPrompt(
     return setupPrompt(state.pending[0]) ?? 'Setup'
   }
   if (fromPending) {
+    const pending = state.pending[0]
+    if (typeof pending === 'object' && pending !== null) {
+      const pendingType = Reflect.get(pending, 'type')
+      if (pendingType === 'fieldHospital') {
+        return 'Field Hospitals — spend matching card or decline'
+      }
+    }
     return `Pending choice · seat ${String(actorSeat)}`
   }
   if (state.step === 'craft') {

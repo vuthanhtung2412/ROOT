@@ -10,9 +10,12 @@ import {
 } from '#game/ActionComposer.ts'
 import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
 
+const FIELD_HOSPITAL_DECLINE_VALUE = 'decline'
+
 type EventDraft =
   | { type: 'idle' }
   | { type: 'pickCard'; cardIds: string[]; kind: 'fieldHospital' | 'battle' }
+  | { type: 'pickFieldHospital'; cardIds: string[] }
   | { type: 'pickOrder'; orders: number[][] }
   | { type: 'pickEffect' }
   | { type: 'pickKeep'; clearings: number[] }
@@ -36,6 +39,7 @@ export function createEventComposerHooks(): {
   beginBattleRemoval: (
     choices: BattleRemovalStepperChoice[],
   ) => ComposerOutcome
+  beginFieldHospital: (cardIds: readonly string[]) => ComposerOutcome
 } {
   let draft: EventDraft = { type: 'idle' }
   let promptOptions: Array<{ label: string; value: string }> = []
@@ -69,6 +73,35 @@ export function createEventComposerHooks(): {
         message: 'Remove hits — choose pieces',
         highlightClearings: [],
         enabledCardIds: null,
+        canConfirm: false,
+        canCancel: true,
+      },
+    }
+  }
+
+  const beginFieldHospital = (
+    cardIds: readonly string[],
+  ): ComposerOutcome => {
+    overlayKind = 'fieldHospital'
+    if (cardIds.length === 0) {
+      clear()
+      return {
+        kind: 'ready',
+        action: { type: 'resolveEvent', decline: true },
+      }
+    }
+    const uniqueCardIds = [...new Set(cardIds)]
+    draft = { type: 'pickFieldHospital', cardIds: uniqueCardIds }
+    optionPresentation = 'buttons'
+    promptOptions = [
+      { label: 'Decline', value: FIELD_HOSPITAL_DECLINE_VALUE },
+    ]
+    return {
+      kind: 'incomplete',
+      prompt: {
+        message: 'Field Hospitals — spend matching card or Decline',
+        highlightClearings: [],
+        enabledCardIds: uniqueCardIds,
         canConfirm: false,
         canCancel: true,
       },
@@ -139,19 +172,16 @@ export function createEventComposerHooks(): {
         }
       }
 
+      // Ambush/foil skip: decline alone auto-submits.
       if (params.decline !== undefined && params.cardIds === undefined) {
-        overlayKind = 'fieldHospital'
+        overlayKind = 'battle'
         const action: ClientAction = { type: 'resolveEvent', decline: true }
         clear()
         return { kind: 'ready', action }
       }
 
       if (params.cardIds !== undefined) {
-        const kind =
-          params.cardIds.length === 1 && params.decline === undefined
-            ? 'battle'
-            : 'fieldHospital'
-        overlayKind = kind
+        overlayKind = 'battle'
         if (params.cardIds.length === 1) {
           const cardId = params.cardIds[0]
           if (cardId === undefined) {
@@ -163,14 +193,11 @@ export function createEventComposerHooks(): {
             action: { type: 'resolveEvent', cardId },
           }
         }
-        draft = { type: 'pickCard', cardIds: params.cardIds, kind }
+        draft = { type: 'pickCard', cardIds: params.cardIds, kind: 'battle' }
         return {
           kind: 'incomplete',
           prompt: {
-            message:
-              kind === 'fieldHospital'
-                ? 'Field Hospitals — pick matching card'
-                : 'Pick ambush card',
+            message: 'Pick ambush card',
             highlightClearings: [],
             enabledCardIds: params.cardIds,
             canConfirm: false,
@@ -237,6 +264,13 @@ export function createEventComposerHooks(): {
     },
 
     chooseCard: (cardId: string): ComposerOutcome | null => {
+      if (
+        draft.type === 'pickFieldHospital' &&
+        draft.cardIds.includes(cardId)
+      ) {
+        clear()
+        return { kind: 'ready', action: { type: 'resolveEvent', cardId } }
+      }
       if (draft.type !== 'pickCard' || !draft.cardIds.includes(cardId)) {
         return null
       }
@@ -266,6 +300,13 @@ export function createEventComposerHooks(): {
     },
 
     chooseColumn: (value: string): ComposerOutcome | null => {
+      if (draft.type === 'pickFieldHospital') {
+        if (value !== FIELD_HOSPITAL_DECLINE_VALUE) {
+          return null
+        }
+        clear()
+        return { kind: 'ready', action: { type: 'resolveEvent', decline: true } }
+      }
       if (draft.type === 'pickLeader') {
         if (!draft.leaders.includes(value)) {
           return null
@@ -314,6 +355,14 @@ export function createEventComposerHooks(): {
       ) {
         return null
       }
+      // Field Hospitals must resolve — cancel = decline.
+      if (draft.type === 'pickFieldHospital') {
+        clear()
+        return {
+          kind: 'ready',
+          action: { type: 'resolveEvent', decline: true },
+        }
+      }
       clear()
       return { kind: 'idle' }
     },
@@ -326,5 +375,33 @@ export function createEventComposerHooks(): {
     getOptionPresentation: () => optionPresentation,
     getOverlayKind: () => overlayKind,
     beginBattleRemoval,
+    beginFieldHospital,
   }
+}
+
+/** Collect pay-card ids from Field Hospital legal resolveEvent specs. */
+export function fieldHospitalCardIdsFromSpecs(
+  specs: readonly ActionSpec[],
+): string[] {
+  const cardIds: string[] = []
+  for (const spec of specs) {
+    if (spec.type !== 'resolveEvent') {
+      continue
+    }
+    const params = readChoiceParams(spec)
+    if (params.cardIds === undefined) {
+      continue
+    }
+    for (const cardId of params.cardIds) {
+      cardIds.push(cardId)
+    }
+  }
+  return cardIds
+}
+
+export function isFieldHospitalPending(pending: unknown): boolean {
+  if (typeof pending !== 'object' || pending === null) {
+    return false
+  }
+  return Reflect.get(pending, 'type') === 'fieldHospital'
 }

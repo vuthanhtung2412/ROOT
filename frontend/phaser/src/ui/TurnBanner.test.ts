@@ -58,6 +58,19 @@ describe('buildTurnBannerViewModel pending actor', () => {
     expect(view.actorFaction).toBe('marquise')
   })
 
+  it('prompts Field Hospitals for victim', () => {
+    const view = buildTurnBannerViewModel(
+      makeState({
+        currentSeat: 1,
+        pending: [
+          { type: 'fieldHospital', victim: 0, clearing: 10, count: 2 },
+        ],
+      }),
+    )
+    expect(view.actorSeat).toBe(0)
+    expect(view.prompt).toContain('Field Hospitals')
+  })
+
   it('setup prompts keep → building → leader in order', () => {
     expect(
       buildTurnBannerViewModel(

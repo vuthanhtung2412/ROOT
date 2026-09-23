@@ -4,7 +4,61 @@ import { ActionComposer } from '#game/ActionComposer.ts'
 import { createEventComposerHooks } from '#game/eventActionComposer.ts'
 
 describe('eventActionComposer Field Hospitals', () => {
-  it('decline resolveEvent submits immediately', () => {
+  it('beginFieldHospital with no cards auto-declines', () => {
+    const events = createEventComposerHooks()
+    expect(events.beginFieldHospital([])).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', decline: true },
+    })
+  })
+
+  it('beginFieldHospital prompts pay or decline', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const mid = events.beginFieldHospital(['ROOT-205#1', 'ROOT-72#1'])
+    expect(mid.kind).toBe('incomplete')
+    if (mid.kind !== 'incomplete') {
+      throw new Error('expected incomplete')
+    }
+    expect(mid.prompt.message).toContain('Field Hospitals')
+    expect(mid.prompt.enabledCardIds).toEqual(['ROOT-205#1', 'ROOT-72#1'])
+    expect(events.getOverlayKind()).toBe('fieldHospital')
+    expect(events.getPromptOptions()).toEqual([
+      { label: 'Decline', value: 'decline' },
+    ])
+    expect(composer.chooseCard('ROOT-72#1')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', cardId: 'ROOT-72#1' },
+    })
+  })
+
+  it('Field Hospitals cancel declines', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    events.beginFieldHospital(['ROOT-205#1'])
+    expect(composer.cancel()).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', decline: true },
+    })
+  })
+
+  it('Field Hospitals Decline option declines', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    events.beginFieldHospital(['ROOT-205#1'])
+    expect(composer.chooseColumn('decline')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', decline: true },
+    })
+  })
+
+  it('decline resolveEvent submits immediately (ambush skip)', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(events.hooks)
@@ -22,7 +76,7 @@ describe('eventActionComposer Field Hospitals', () => {
     })
   })
 
-  it('single cardId resolveEvent submits immediately', () => {
+  it('single cardId resolveEvent submits immediately (ambush)', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(events.hooks)

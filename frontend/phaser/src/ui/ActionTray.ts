@@ -35,7 +35,7 @@ export class ActionTray {
     this.handlers = handlers
   }
 
-  sync(actions: readonly ActionSpec[], actorSeat: number): void {
+  sync(actions: readonly ActionSpec[], actorSeat: number, pending?: unknown): void {
     for (const node of this.buttonNodes) {
       node.destroy()
     }
@@ -46,7 +46,7 @@ export class ActionTray {
 
     forActor.forEach((spec, index) => {
       const button = this.scene.add
-        .text(0, 28 + index * 34, formatActionLabel(spec), {
+        .text(0, 28 + index * 34, formatActionLabel(spec, pending), {
           fontFamily: 'monospace',
           fontSize: '14px',
           color: '#1a1a1a',
@@ -69,8 +69,12 @@ export class ActionTray {
   }
 }
 
-function formatActionLabel(spec: ActionSpec): string {
+function formatActionLabel(spec: ActionSpec, pending?: unknown): string {
   const params = readChoiceParams(spec)
+  const pendingType =
+    typeof pending === 'object' && pending !== null
+      ? Reflect.get(pending, 'type')
+      : undefined
   if (spec.type === 'decree') {
     const column = params.column?.[0]
     return column !== undefined ? `decree:${column}` : 'decree'
@@ -85,6 +89,14 @@ function formatActionLabel(spec: ActionSpec): string {
     }
     if (params.leaders !== undefined) {
       return 'choose leader'
+    }
+    if (pendingType === 'fieldHospital') {
+      if (params.decline !== undefined) {
+        return 'Decline Field Hospitals'
+      }
+      if (params.cardIds !== undefined) {
+        return 'Field Hospitals: pay'
+      }
     }
     if (params.decline !== undefined) {
       return 'skip ambush'
