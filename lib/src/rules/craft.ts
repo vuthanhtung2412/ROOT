@@ -5,7 +5,7 @@ import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
-import type { Piece, Seat } from '#pieces/types.js'
+import { isCraftingBuilding, type Piece, type Seat } from '#pieces/types.js'
 import { canCraft } from '#queries/craft.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
@@ -18,8 +18,8 @@ function craftingSources(state: GameState, seat: Seat): CraftSource[] {
   for (let clearingId = 0; clearingId < state.clearings.length; clearingId++) {
     for (const piece of state.clearings[clearingId]!.pieces) {
       if (piece.owner !== seat) continue
-      if (piece.kind === 'building' && (piece.type === 'workshop' || piece.type === 'roost')) {
-        if (!piece.used) out.push({ piece, clearingId })
+      if (isCraftingBuilding(piece) && !piece.used) {
+        out.push({ piece, clearingId })
       }
       if (piece.kind === 'token' && piece.type === 'sympathy') {
         out.push({ piece, clearingId })
@@ -79,10 +79,7 @@ export function craftCard(
   if (!sources) throw new RuleError('CANNOT_CRAFT', { cardId, reason: 'no sources' })
 
   for (const src of sources) {
-    if (
-      src.piece.kind === 'building' &&
-      (src.piece.type === 'workshop' || src.piece.type === 'roost')
-    ) {
+    if (isCraftingBuilding(src.piece)) {
       src.piece.used = true
     }
   }

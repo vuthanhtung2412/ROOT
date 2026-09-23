@@ -54,9 +54,12 @@ export type Token = PieceBase & {
 
 export type Piece = Warrior | Pawn | Building | Token
 
+export function isCraftingBuildingType(
+  type: BuildingType,
+): type is CraftingBuildingType {
+  return type === 'workshop' || type === 'roost'
+}
+
 export function isCraftingBuilding(piece: Piece): piece is CraftingBuilding {
-  return (
-    piece.kind === 'building' &&
-    (piece.type === 'workshop' || piece.type === 'roost')
-  )
+  return piece.kind === 'building' && isCraftingBuildingType(piece.type)
 }

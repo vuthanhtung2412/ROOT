@@ -19,7 +19,7 @@ export type {
   AddToDecreeCard,
 } from '#actions/types.js'
 export type { FactionId, Seat, Building, BuildingType, CraftingBuilding, CraftingBuildingType } from '#pieces/types.js'
-export { isCraftingBuilding } from '#pieces/types.js'
+export { isCraftingBuilding, isCraftingBuildingType } from '#pieces/types.js'
 export type { GameState, GameStatus, Phase, Step, PlayerState } from '#state/types.js'
 export type { GameSnapshot } from '#state/snapshot.js'
 export {

@@ -1,7 +1,7 @@
 import type { CardEffect } from '#triggers/effects.js'
 import type { GameState } from '#state/types.js'
 import type { ClearingId } from '#map/types.js'
-import type { Piece, Seat } from '#pieces/types.js'
+import { isCraftingBuilding, type Piece, type Seat } from '#pieces/types.js'
 import { playerOf } from '#queries/seat.js'
 
 const TUNNELS_DEF_ID = 'ROOT-108'
@@ -11,7 +11,7 @@ function hasTunnels(state: GameState, seat: Seat): boolean {
 }
 
 function isCraftingPiece(piece: Piece): boolean {
-  if (piece.kind === 'building' && (piece.type === 'workshop' || piece.type === 'roost')) {
+  if (isCraftingBuilding(piece)) {
     return true
   }
   if (piece.kind === 'token' && piece.type === 'sympathy') return true
