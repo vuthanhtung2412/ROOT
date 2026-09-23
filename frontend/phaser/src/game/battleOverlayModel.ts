@@ -196,3 +196,21 @@ function readRolls(value: unknown): readonly [number, number] | null {
   }
   return [high, low]
 }
+
+/** Composer highlights plus ongoing battle clearing. */
+export function mergeBattleClearingHighlight(
+  clearingIds: readonly number[],
+  state: GameState | null,
+): number[] {
+  if (state === null) {
+    return [...clearingIds]
+  }
+  const battleClearing = readBattleClearingId(state)
+  if (battleClearing === null) {
+    return [...clearingIds]
+  }
+  const merged = new Set(clearingIds)
+  merged.add(battleClearing)
+  return [...merged]
+}
+
