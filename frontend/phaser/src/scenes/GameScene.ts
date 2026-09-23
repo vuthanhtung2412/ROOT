@@ -29,7 +29,14 @@ import {
   FALL_BOARD_LAYOUT,
   type BoardLayout,
 } from '#game/boardLayout.ts'
-import { buildBattleOverlayViewModel } from '#game/battleOverlayModel.ts'
+import {
+  buildBattleOverlayViewModel,
+  buildZeroHitBattleOverlayViewModel,
+  updateBattleTracker,
+  zeroHitFlashDurationMs,
+  type BattleTrackerState,
+  type ZeroHitBattleOutcome,
+} from '#game/battleOverlayModel.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 import { applyMarchMovesToClearings } from '#game/marchClearingsPreview.ts'
@@ -86,6 +93,9 @@ export class GameScene extends Phaser.Scene {
   private autoSetupPromptKey: string | null = null
   private autoEndPhaseKey: string | null = null
   private cardTextureWarmup: CardTextureWarmup | null = null
+  private battleTracker: BattleTrackerState | null = null
+  private zeroHitFlashOutcome: ZeroHitBattleOutcome | null = null
+  private zeroHitFlashTimer: Phaser.Time.TimerEvent | null = null
 
   constructor() {
     super({ key: 'GameScene' })
@@ -435,13 +445,37 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private syncBattleOverlay(prompt: string | null): void {
+  private syncBattleOverlay(prompt: string | null = null): void {
     const state = this.latestSnapshot?.state
     if (state === null || state === undefined) {
       this.battleOverlay?.sync(null)
       return
     }
+    const trackerUpdate = updateBattleTracker(this.battleTracker, state)
+    this.battleTracker = trackerUpdate.tracker
+    if (trackerUpdate.zeroHitOutcome !== null) {
+      this.beginZeroHitFlash(trackerUpdate.zeroHitOutcome)
+    }
+    if (this.zeroHitFlashOutcome !== null) {
+      this.battleOverlay?.sync(
+        buildZeroHitBattleOverlayViewModel(state, this.zeroHitFlashOutcome),
+      )
+      return
+    }
     this.battleOverlay?.sync(buildBattleOverlayViewModel(state, prompt))
+  }
+
+  private beginZeroHitFlash(outcome: ZeroHitBattleOutcome): void {
+    this.zeroHitFlashOutcome = outcome
+    this.zeroHitFlashTimer?.remove(false)
+    this.zeroHitFlashTimer = this.time.delayedCall(
+      zeroHitFlashDurationMs(),
+      () => {
+        this.zeroHitFlashOutcome = null
+        this.zeroHitFlashTimer = null
+        this.syncBattleOverlay()
+      },
+    )
   }
 
   private readCurrentSeatWarriorCounts(): Map<number, number> {
