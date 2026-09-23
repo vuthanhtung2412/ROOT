@@ -89,8 +89,10 @@ export class GameScene extends Phaser.Scene {
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
-  /** Avoid re-opening the same pending prompt every HUD paint. */
-  private autoPendingPromptKey: string | null = null
+  /** Avoid re-opening the same pending prompt every HUD paint (one key per kind). */
+  private autoFieldHospitalKey: string | null = null
+  private autoAmbushKey: string | null = null
+  private autoBattleRemovalKey: string | null = null
   private autoSetupPromptKey: string | null = null
   private autoEndPhaseKey: string | null = null
   private cardTextureWarmup: CardTextureWarmup | null = null
@@ -656,26 +658,26 @@ export class GameScene extends Phaser.Scene {
     localControlsActor: boolean,
   ): void {
     if (!localControlsActor || snapshot.state === null) {
-      this.autoPendingPromptKey = null
+      this.autoFieldHospitalKey = null
       return
     }
     const pending = snapshot.state.pending[0]
     if (!isFieldHospitalPending(pending)) {
-      this.autoPendingPromptKey = null
+      this.autoFieldHospitalKey = null
       return
     }
     const forActor = snapshot.legalActions.filter(
       (spec) => spec.type === 'resolveEvent' && spec.actor === actorSeat,
     )
     if (forActor.length === 0) {
-      this.autoPendingPromptKey = null
+      this.autoFieldHospitalKey = null
       return
     }
     const key = JSON.stringify({ pending, actions: forActor })
-    if (key === this.autoPendingPromptKey) {
+    if (key === this.autoFieldHospitalKey) {
       return
     }
-    this.autoPendingPromptKey = key
+    this.autoFieldHospitalKey = key
     const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
     this.applyComposerOutcome(this.eventComposer.beginFieldHospital(cardIds))
   }
@@ -689,24 +691,27 @@ export class GameScene extends Phaser.Scene {
     localControlsActor: boolean,
   ): void {
     if (!localControlsActor || snapshot.state === null) {
+      this.autoAmbushKey = null
       return
     }
     const pending = snapshot.state.pending[0]
     const role = battleAmbushRole(pending)
     if (role === null) {
+      this.autoAmbushKey = null
       return
     }
     const forActor = snapshot.legalActions.filter(
       (spec) => spec.type === 'resolveEvent' && spec.actor === actorSeat,
     )
     if (forActor.length === 0) {
+      this.autoAmbushKey = null
       return
     }
     const key = JSON.stringify({ pending, actions: forActor, kind: 'ambush' })
-    if (key === this.autoPendingPromptKey) {
+    if (key === this.autoAmbushKey) {
       return
     }
-    this.autoPendingPromptKey = key
+    this.autoAmbushKey = key
     const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
     this.applyComposerOutcome(this.eventComposer.beginAmbush(cardIds, role))
   }
@@ -718,10 +723,12 @@ export class GameScene extends Phaser.Scene {
     localControlsActor: boolean,
   ): void {
     if (!localControlsActor || snapshot.state === null) {
+      this.autoBattleRemovalKey = null
       return
     }
     const pending = snapshot.state.pending[0]
     if (!isBattleRemovalPending(pending)) {
+      this.autoBattleRemovalKey = null
       return
     }
     const removalSpecs = snapshot.legalActions.filter(
@@ -729,6 +736,7 @@ export class GameScene extends Phaser.Scene {
         isPieceIdsRemovalSpec(action) && action.actor === actorSeat,
     )
     if (removalSpecs.length === 0) {
+      this.autoBattleRemovalKey = null
       return
     }
     const key = JSON.stringify({
@@ -736,10 +744,10 @@ export class GameScene extends Phaser.Scene {
       actions: removalSpecs,
       kind: 'removal',
     })
-    if (key === this.autoPendingPromptKey) {
+    if (key === this.autoBattleRemovalKey) {
       return
     }
-    this.autoPendingPromptKey = key
+    this.autoBattleRemovalKey = key
     const combos = collectPieceIdsCombosFromSpecs(removalSpecs)
     const piecesById = buildPiecesByIdFromClearings(snapshot.state.clearings)
     const choices = buildBattleRemovalStepperChoices(combos, piecesById)
