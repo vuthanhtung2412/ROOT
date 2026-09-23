@@ -93,7 +93,7 @@ function formatActionLabel(spec: ActionSpec): string {
       return 'play ambush'
     }
     if (params.pieceIds !== undefined) {
-      return `remove ×${String(params.pieceIds.length)}`
+      return `remove hits`
     }
     if (params.useEffect !== undefined) {
       const only = params.useEffect[0]

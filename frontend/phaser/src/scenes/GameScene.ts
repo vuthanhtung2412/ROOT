@@ -10,6 +10,13 @@ import {
   type ComposerOutcome,
 } from '#game/ActionComposer.ts'
 import { createEventComposerHooks } from '#game/eventActionComposer.ts'
+import {
+  buildBattleRemovalStepperChoices,
+  buildPiecesByIdFromClearings,
+  collapsePieceIdsRemovalSpecs,
+  collectPieceIdsCombosFromSpecs,
+  isPieceIdsRemovalSpec,
+} from '#game/battleRemovalStepper.ts'
 import { createEyrieComposerHooks } from '#game/eyrieActionComposer.ts'
 import {
   createMarquiseBoardComposerHooks,
@@ -313,6 +320,20 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleSelectAction(spec: ActionSpec): void {
+    if (isPieceIdsRemovalSpec(spec)) {
+      const snapshot = this.latestSnapshot
+      if (snapshot === null || snapshot.state === null) {
+        return
+      }
+      const removalSpecs = snapshot.legalActions.filter((action) =>
+        isPieceIdsRemovalSpec(action),
+      )
+      const combos = collectPieceIdsCombosFromSpecs(removalSpecs)
+      const piecesById = buildPiecesByIdFromClearings(snapshot.state.clearings)
+      const choices = buildBattleRemovalStepperChoices(combos, piecesById)
+      this.applyComposerOutcome(this.eventComposer.beginBattleRemoval(choices))
+      return
+    }
     this.applyComposerOutcome(this.composer.begin(spec))
   }
 
@@ -340,6 +361,7 @@ export class GameScene extends Phaser.Scene {
         message: outcome.prompt.message,
         canConfirm: outcome.prompt.canConfirm,
         canCancel: outcome.prompt.canCancel,
+        optionPresentation: this.eventComposer.getOptionPresentation(),
         options:
           pickingLeader !== null
             ? []
@@ -446,7 +468,9 @@ export class GameScene extends Phaser.Scene {
       this.session?.getLocalSeat() ?? null,
     )
     this.actionTray?.sync(
-      localControlsActor ? snapshot.legalActions : [],
+      localControlsActor
+        ? collapsePieceIdsRemovalSpecs(snapshot.legalActions)
+        : [],
       banner.actorSeat,
     )
     this.refreshFactionBoardModal(snapshot.state)
