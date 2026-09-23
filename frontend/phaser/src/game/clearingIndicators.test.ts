@@ -40,6 +40,12 @@ describe('clearingOpenSlotCount', () => {
       }),
     ).toBe(1)
     expect(
+      clearingOpenSlotCount(5, {
+        pieces: [],
+        ruin: { items: [] },
+      }),
+    ).toBe(1)
+    expect(
       clearingOpenSlotCount(10, {
         pieces: [],
       }),
