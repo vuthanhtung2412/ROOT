@@ -43,15 +43,25 @@ pnpm remote   # Funnel URL — leave API base empty
 Needs Tailscale.app + Funnel enabled. Ctrl+C stops.
 ## Build iOS (Capacitor)
 
-Requires macOS + Xcode. App is a WebView shell; game server still `@root/web`.
+Requires macOS, [Xcode](https://developer.apple.com/xcode/), and a physical iPhone or Simulator. App is a WebView shell; game server still `@root/web`.
 
 ```bash
-# Terminal A — host API (or use serve:game)
+# Terminal A — host API (or use serve:game / remote)
 pnpm --filter @root/web dev
 
 # Terminal B — build + sync + open Xcode
 pnpm build:ios
 ```
+
+Or open the project yourself: `frontend/phaser/ios/App/App.xcodeproj`.
+
+### Install on device / Simulator
+
+1. Run `pnpm build:ios` (opens Xcode).
+2. In Xcode, select your Apple ID team under **Signing & Capabilities**.
+3. **Enable Developer Mode on the iPhone** (required on iOS 16+ for sideloaded apps): **Settings → Privacy & Security → Developer Mode → On**, then restart when prompted.
+4. Plug in the device (or pick a Simulator), select it as the run destination, and press **▶ Run**.
+5. On first install, trust the developer certificate: **Settings → General → VPN & Device Management**.
 
 Native build bakes `ROOT_FUNNEL_URL` from `.mise.toml` as default API base (Tailscale Funnel). Run `pnpm remote` on host so Funnel is up, then Play in Simulator / device. Override still possible via stored identity. Cleartext LAN HTTP still allowed via ATS + Capacitor `server.cleartext` if you point at `http://<lan-ip>:3000`.
 
