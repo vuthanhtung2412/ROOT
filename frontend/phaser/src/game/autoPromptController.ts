@@ -32,6 +32,8 @@ export type AutoPromptControllerDeps = {
   composer: ActionComposer
   eventComposer: EventComposerAutoPromptHooks
   submitEndPhase: () => void
+  /** While battle result strip is showing, defer auto endPhase. */
+  isBattleResultFlashActive: () => boolean
 }
 
 /**
@@ -174,6 +176,10 @@ export class AutoPromptController {
     }
     if (snapshot.state.pending.length > 0) {
       this.endPhaseKey = null
+      return
+    }
+    if (this.deps.isBattleResultFlashActive()) {
+      // Leave endPhaseKey unset so flash-end can retry.
       return
     }
     const sole = soleEndPhaseAction(snapshot.legalActions, actorSeat)
