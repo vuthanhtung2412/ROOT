@@ -104,7 +104,11 @@ export type GameState = {
       type?: string
       used?: boolean
     }>
+    ruin?: { items: string[] }
   }>
+  deck?: {
+    discard: Array<{ id: string; defId: string }>
+  }
   pending: unknown[]
   winner?: number
   turnScratch?: unknown
