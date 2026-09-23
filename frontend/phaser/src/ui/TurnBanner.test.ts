@@ -60,7 +60,7 @@ describe('buildTurnBannerViewModel pending actor', () => {
     expect(view.actorFaction).toBe('marquise')
   })
 
-  it('prompts Field Hospitals for victim', () => {
+  it('Field Hospitals uses victim actor but no banner prompt', () => {
     const view = buildTurnBannerViewModel(
       makeState({
         currentSeat: 1,
@@ -70,7 +70,8 @@ describe('buildTurnBannerViewModel pending actor', () => {
       }),
     )
     expect(view.actorSeat).toBe(0)
-    expect(view.prompt).toContain('Field Hospitals')
+    expect(view.prompt).not.toContain('Field Hospitals')
+    expect(view.prompt).toBe('Resolve decree columns')
   })
 
   it('setup prompts keep → building → leader in order', () => {

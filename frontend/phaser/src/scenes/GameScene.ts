@@ -354,6 +354,7 @@ export class GameScene extends Phaser.Scene {
         const discardDraft = this.marquiseCards.getDraft()
         return discardDraft.type === 'discardMany' ? discardDraft.selected : []
       },
+      getOverlayKind: () => this.eventComposer.getOverlayKind(),
     })
   }
 
