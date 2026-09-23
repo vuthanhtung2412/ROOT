@@ -1,8 +1,8 @@
 import { GameMap } from '#map/GameMap.js'
 import type { Clearing, ClearingId, Path } from '#map/types.js'
+import { FALL_CLEARING_SLOT_COUNTS } from '#map/fallSlots.js'
 
 /** Fall (Autumn) clearing ids are 0..11. Source: therootdatabase.com/map/autumn + rootgame autumn_map_setup. */
-const SLOTS = [1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 3, 2] as const
 const RUIN_CLEARINGS = new Set([5, 9, 10, 11])
 
 const FOX = new Set([0, 5, 7, 11])
@@ -19,7 +19,7 @@ function suitOf(id: number): Clearing['suit'] {
 const clearings: Clearing[] = Array.from({ length: 12 }, (_, id) => ({
   id,
   suit: suitOf(id),
-  slots: SLOTS[id]!,
+  slots: FALL_CLEARING_SLOT_COUNTS[id]!,
   ruinSlot: RUIN_CLEARINGS.has(id),
 }))
 

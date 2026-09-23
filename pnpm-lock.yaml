@@ -101,6 +101,9 @@ importers:
       '@capacitor/core':
         specifier: ^8.5.2
         version: 8.5.2
+      '@root/lib':
+        specifier: workspace:*
+        version: link:../../lib
       '@root/web-client':
         specifier: workspace:*
         version: link:../../backend/web_client

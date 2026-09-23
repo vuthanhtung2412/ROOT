@@ -1,7 +1,6 @@
-/** Fall map building slots per clearing (Autumn). Mirrors lib/src/map/fall.ts. */
-export const FALL_CLEARING_SLOT_COUNTS = [
-  1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 3, 2,
-] as const
+import { FALL_CLEARING_SLOT_COUNTS } from '@root/lib/map/fallSlots'
+
+export { FALL_CLEARING_SLOT_COUNTS }
 
 export type ClearingIndicatorSource = {
   pieces?: Array<{ kind: string }>
@@ -22,7 +21,8 @@ export function clearingOpenSlotCount(
   }
   const pieces = clearing?.pieces ?? []
   const buildingCount = pieces.filter((piece) => piece.kind === 'building').length
-  const ruinOccupies = clearingHasRuin(clearing) ? 1 : 0
+  // Rule: Board > Slots — ruins occupy one slot (match lib openSlots).
+  const ruinOccupies = clearing?.ruin !== undefined ? 1 : 0
   const openSlots = slotCapacity - buildingCount - ruinOccupies
   return openSlots > 0 ? openSlots : 0
 }

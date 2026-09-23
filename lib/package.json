@@ -31,6 +31,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./map/fallSlots": {
+      "types": "./src/map/fallSlots.ts",
+      "default": "./src/map/fallSlots.ts"
     }
   }
 }
