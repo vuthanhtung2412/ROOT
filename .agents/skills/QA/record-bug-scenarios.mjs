@@ -320,12 +320,45 @@ async function driveDefenselessBattle(ctx) {
 
 /** @param {DriveContext} ctx */
 async function driveWinnerMenu(ctx) {
+  const gameBefore = await fetchGame()
+  if (
+    gameBefore.state.status !== 'playing' ||
+    gameBefore.state.players?.[0]?.vp !== 29
+  ) {
+    throw new Error(
+      `expected playing at 29 VP, got status=${String(gameBefore.state.status)} vp=${String(gameBefore.state.players?.[0]?.vp)}`,
+    )
+  }
   await ctx.page.waitForTimeout(1500)
-  await ctx.shot('03-winner-overlay')
-  // Back to menu at center +36
+  await ctx.shot('03-before-win')
+
+  const battle = ctx.actionsBefore.find((action) => action.type === 'battle')
+  if (battle === undefined) {
+    throw new Error('battle missing')
+  }
+  const actionTypes = ctx.actionsBefore
+    .filter((action) => action.actor === 0)
+    .map((action) => action.type)
+  const battleIndex = actionTypes.indexOf('battle')
+  const trayX = 1280 - 160
+  const trayY = 56 + 28 + battleIndex * 34 + 10
+  await clickGame(ctx.page, ctx.canvas, trayX, trayY)
+  await ctx.page.waitForTimeout(800)
+  const centers = clearingCenters()
+  const point = centers[4]
+  await clickGame(ctx.page, ctx.canvas, point.x, point.y)
+
+  await waitForGame(
+    (game) => game.state.status === 'finished' && game.state.winner === 0,
+    'marquise wins at 30 VP',
+    15_000,
+  )
+  await ctx.page.waitForTimeout(1800)
+  await ctx.shot('04-winner-overlay')
+  // Back to menu deletes the slot (expected 404 after).
   await clickGame(ctx.page, ctx.canvas, 640, 360 + 36)
   await ctx.page.waitForTimeout(2000)
-  await ctx.shot('04-menu')
+  await ctx.shot('05-menu')
 }
 
 /** @param {DriveContext} ctx */
@@ -537,7 +570,21 @@ async function recordScenario(scenario) {
   await page.waitForTimeout(1200)
   await shot('99-end')
 
-  const gameAfter = await fetchGame()
+  let gameAfter
+  try {
+    gameAfter = await fetchGame()
+  } catch (error) {
+    // Winner "Back to menu" deletes the slot (404) — still a successful scenario.
+    gameAfter = {
+      state: {
+        phase: 'n/a',
+        step: 'n/a',
+        status: 'deleted',
+        currentSeat: null,
+      },
+    }
+    console.log(`post-drive GET /game skipped: ${String(error)}`)
+  }
   await context.close()
   await browser.close()
 
@@ -571,13 +618,16 @@ async function recordScenario(scenario) {
     console.error(ffmpeg.stderr)
   }
 
+  const relevantConsoleErrors = consoleErrors.filter(
+    (message) => !message.includes('404 (Not Found)'),
+  )
   const summary = {
     id: scenario.id,
-    ok: consoleErrors.length === 0,
+    ok: relevantConsoleErrors.length === 0,
     videoMp4: mp4Path,
     phaseAfter: `${gameAfter.state.phase}/${gameAfter.state.step}`,
     statusAfter: gameAfter.state.status,
-    consoleErrors,
+    consoleErrors: relevantConsoleErrors,
   }
   console.log(JSON.stringify(summary, null, 2))
   return summary
