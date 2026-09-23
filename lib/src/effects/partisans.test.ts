@@ -24,6 +24,8 @@ describe('Fox Partisans', () => {
       [
         { id: 'a1', kind: 'warrior', owner: 0 },
         { id: 'd1', kind: 'warrior', owner: 1 },
+        { id: 'd2', kind: 'warrior', owner: 1 },
+        { id: 'd3', kind: 'warrior', owner: 1 },
       ],
     )
     const event: BattleEvent = {

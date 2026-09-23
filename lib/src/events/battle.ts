@@ -405,144 +405,228 @@ export const battleResolver: EventResolver = {
     }
   },
 
-  apply(state, { event, action, actor }, ctx) {
-    const logs: LogEntry[] = []
+  apply(state, applyInput, ctx) {
+    const logs = applyBattleStage(state, applyInput, ctx)
+    logs.push(...drainForcedBattleSteps(state, applyInput.event, ctx))
+    return logs
+  },
+}
 
-    switch (event.stage) {
-      case 'ambush': {
-        if (actor !== event.defender) throw new RuleError('WRONG_ACTOR', { actor })
-        if (action.decline) {
-          logs.push(...rollStage(state, event, ctx))
-          return logs
-        }
-        if (!action.cardId) throw new RuleError('MISSING_AMBUSH_CARD')
-        const card = playerOf(state, event.defender).hand.find((c) => c.id === action.cardId)
-        if (!card || defOf(card).type !== 'ambush') {
-          throw new RuleError('INVALID_AMBUSH', { cardId: action.cardId })
-        }
-        if (!matchesSuit(card, clearingSuit(event.clearing))) {
-          throw new RuleError('AMBUSH_SUIT_MISMATCH', { cardId: action.cardId })
-        }
-        event.ambushCardId = action.cardId
-        event.stage = 'foil'
-        return logs
-      }
+const MAX_FORCED_BATTLE_STEPS = 32
 
-      case 'foil': {
-        if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
-        if (action.decline) {
-          const idx = playerOf(state, event.defender).hand.findIndex((c) => c.id === event.ambushCardId)
-          const ambush = playerOf(state, event.defender).hand.splice(idx, 1)[0]!
-          Deck.discard(state.deck, ambush, {
-            onDominance: (c) => state.dominanceAvailable.push(c),
-          })
-          event.hits.defender = 2
-          event.stage = 'removeAttacker'
-          return logs
-        }
-        if (!action.cardId) throw new RuleError('MISSING_FOIL_CARD')
-        const foil = playerOf(state, event.attacker).hand.find((c) => c.id === action.cardId)
-        if (!foil || defOf(foil).type !== 'ambush') {
-          throw new RuleError('INVALID_FOIL', { cardId: action.cardId })
-        }
-        if (!matchesSuit(foil, clearingSuit(event.clearing))) {
-          throw new RuleError('FOIL_SUIT_MISMATCH', { cardId: action.cardId })
-        }
-        const defIdx = playerOf(state, event.defender).hand.findIndex((c) => c.id === event.ambushCardId)
-        const defAmbush = playerOf(state, event.defender).hand.splice(defIdx, 1)[0]!
-        Deck.discard(state.deck, defAmbush, {
-          onDominance: (c) => state.dominanceAvailable.push(c),
-        })
-        const atkIdx = playerOf(state, event.attacker).hand.findIndex((c) => c.id === action.cardId)
-        const atkAmbush = playerOf(state, event.attacker).hand.splice(atkIdx, 1)[0]!
-        Deck.discard(state.deck, atkAmbush, {
-          onDominance: (c) => state.dominanceAvailable.push(c),
-        })
-        delete event.ambushCardId
+/**
+ * No-choice battle steps (solo decline / sole removal combo) resolve in the
+ * same apply so clients get one snapshot instead of auto-skip blink chains.
+ */
+function soleForcedBattleResolve(
+  state: GameState,
+  event: BattleEvent,
+  ctx: Ctx,
+): BattleEventApply | null {
+  const specs = battleResolver.legalActions(state, event, ctx)
+  if (specs.length !== 1) {
+    return null
+  }
+  const spec = specs[0]
+  if (spec === undefined || spec.type !== 'resolveEvent') {
+    return null
+  }
+  const actor = spec.actor
+  if (actor === undefined) {
+    return null
+  }
+
+  if (event.stage === 'ambush' || event.stage === 'foil') {
+    if (spec.params?.decline?.includes(true) !== true) {
+      return null
+    }
+    return {
+      event,
+      actor,
+      action: { type: 'resolveEvent', decline: true },
+    }
+  }
+
+  if (event.stage === 'removeDefender' || event.stage === 'removeAttacker') {
+    const pieceIds = spec.params?.pieceIds
+    if (!isStringIdList(pieceIds)) {
+      return null
+    }
+    return {
+      event,
+      actor,
+      action: { type: 'resolveEvent', pieceIds },
+    }
+  }
+
+  return null
+}
+
+function isStringIdList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+}
+
+function drainForcedBattleSteps(
+  state: GameState,
+  event: BattleEvent,
+  ctx: Ctx,
+): LogEntry[] {
+  const logs: LogEntry[] = []
+  for (let step = 0; step < MAX_FORCED_BATTLE_STEPS; step += 1) {
+    if (!state.pending.includes(event)) {
+      break
+    }
+    const forced = soleForcedBattleResolve(state, event, ctx)
+    if (forced === null) {
+      break
+    }
+    logs.push(...applyBattleStage(state, forced, ctx))
+  }
+  return logs
+}
+
+function applyBattleStage(
+  state: GameState,
+  applyInput: BattleEventApply,
+  ctx: Ctx,
+): LogEntry[] {
+  const { event, action, actor } = applyInput
+  const logs: LogEntry[] = []
+
+  switch (event.stage) {
+    case 'ambush': {
+      if (actor !== event.defender) throw new RuleError('WRONG_ACTOR', { actor })
+      if (action.decline) {
         logs.push(...rollStage(state, event, ctx))
         return logs
       }
-
-      case 'effectsOrder': {
-        if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
-        if (!action.order || action.order.length !== 2) {
-          throw new RuleError('INVALID_EFFECTS_ORDER', { order: action.order })
-        }
-        event.effectsOrder = action.order
-        logs.push(...startEffectsStage(state, event, ctx))
-        return logs
+      if (!action.cardId) throw new RuleError('MISSING_AMBUSH_CARD')
+      const card = playerOf(state, event.defender).hand.find((c) => c.id === action.cardId)
+      if (!card || defOf(card).type !== 'ambush') {
+        throw new RuleError('INVALID_AMBUSH', { cardId: action.cardId })
       }
-
-      case 'effects': {
-        const seat = nextEffectSeat(event)
-        if (seat === null || actor !== seat) throw new RuleError('WRONG_ACTOR', { actor })
-        const side = sideOf(seat, event)!
-        if (action.useEffect) {
-          const extra = ctx.hooks.extraHits(state, event, side)
-          if (extra > 0) {
-            event.hits[side] += extra
-          }
-          applyBattleEffect(state, event, seat, ctx)
-          event.effectsUsed![side] = true
-        } else {
-          event.effectsUsed![side] = false
-        }
-        logs.push(...processEffectsQueue(state, event, ctx))
-        return logs
+      if (!matchesSuit(card, clearingSuit(event.clearing))) {
+        throw new RuleError('AMBUSH_SUIT_MISMATCH', { cardId: action.cardId })
       }
-
-      case 'removeDefender': {
-        if (actor !== event.defender) throw new RuleError('WRONG_ACTOR', { actor })
-        logs.push(
-          ...applyRemovalStage(
-            state,
-            {
-              event,
-              action,
-              victim: event.defender,
-              maxHits: event.hits.attacker,
-              scorer: event.attacker,
-            },
-            ctx,
-          ),
-        )
-        event.hits.attacker = 0
-        if (event.hits.defender > 0 && attackerPresent(state, event)) {
-          event.stage = 'removeAttacker'
-        } else {
-          logs.push(...finishBattle(state, event, ctx))
-        }
-        return logs
-      }
-
-      case 'removeAttacker': {
-        if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
-        logs.push(
-          ...applyRemovalStage(
-            state,
-            {
-              event,
-              action,
-              victim: event.attacker,
-              maxHits: event.hits.defender,
-              scorer: event.defender,
-            },
-            ctx,
-          ),
-        )
-        event.hits.defender = 0
-        if (!event.rolls) {
-          logs.push(...advanceAfterAmbushRemoval(state, event, ctx))
-          return logs
-        }
-        logs.push(...finishBattle(state, event, ctx))
-        return logs
-      }
-
-      default:
-        throw new RuleError('INVALID_BATTLE_STAGE', { stage: event.stage })
+      event.ambushCardId = action.cardId
+      event.stage = 'foil'
+      return logs
     }
-  },
+
+    case 'foil': {
+      if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
+      if (action.decline) {
+        const idx = playerOf(state, event.defender).hand.findIndex((c) => c.id === event.ambushCardId)
+        const ambush = playerOf(state, event.defender).hand.splice(idx, 1)[0]!
+        Deck.discard(state.deck, ambush, {
+          onDominance: (c) => state.dominanceAvailable.push(c),
+        })
+        event.hits.defender = 2
+        event.stage = 'removeAttacker'
+        return logs
+      }
+      if (!action.cardId) throw new RuleError('MISSING_FOIL_CARD')
+      const foil = playerOf(state, event.attacker).hand.find((c) => c.id === action.cardId)
+      if (!foil || defOf(foil).type !== 'ambush') {
+        throw new RuleError('INVALID_FOIL', { cardId: action.cardId })
+      }
+      if (!matchesSuit(foil, clearingSuit(event.clearing))) {
+        throw new RuleError('FOIL_SUIT_MISMATCH', { cardId: action.cardId })
+      }
+      const defIdx = playerOf(state, event.defender).hand.findIndex((c) => c.id === event.ambushCardId)
+      const defAmbush = playerOf(state, event.defender).hand.splice(defIdx, 1)[0]!
+      Deck.discard(state.deck, defAmbush, {
+        onDominance: (c) => state.dominanceAvailable.push(c),
+      })
+      const atkIdx = playerOf(state, event.attacker).hand.findIndex((c) => c.id === action.cardId)
+      const atkAmbush = playerOf(state, event.attacker).hand.splice(atkIdx, 1)[0]!
+      Deck.discard(state.deck, atkAmbush, {
+        onDominance: (c) => state.dominanceAvailable.push(c),
+      })
+      delete event.ambushCardId
+      logs.push(...rollStage(state, event, ctx))
+      return logs
+    }
+
+    case 'effectsOrder': {
+      if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
+      if (!action.order || action.order.length !== 2) {
+        throw new RuleError('INVALID_EFFECTS_ORDER', { order: action.order })
+      }
+      event.effectsOrder = action.order
+      logs.push(...startEffectsStage(state, event, ctx))
+      return logs
+    }
+
+    case 'effects': {
+      const seat = nextEffectSeat(event)
+      if (seat === null || actor !== seat) throw new RuleError('WRONG_ACTOR', { actor })
+      const side = sideOf(seat, event)!
+      if (action.useEffect) {
+        const extra = ctx.hooks.extraHits(state, event, side)
+        if (extra > 0) {
+          event.hits[side] += extra
+        }
+        applyBattleEffect(state, event, seat, ctx)
+        event.effectsUsed![side] = true
+      } else {
+        event.effectsUsed![side] = false
+      }
+      logs.push(...processEffectsQueue(state, event, ctx))
+      return logs
+    }
+
+    case 'removeDefender': {
+      if (actor !== event.defender) throw new RuleError('WRONG_ACTOR', { actor })
+      logs.push(
+        ...applyRemovalStage(
+          state,
+          {
+            event,
+            action,
+            victim: event.defender,
+            maxHits: event.hits.attacker,
+            scorer: event.attacker,
+          },
+          ctx,
+        ),
+      )
+      event.hits.attacker = 0
+      if (event.hits.defender > 0 && attackerPresent(state, event)) {
+        event.stage = 'removeAttacker'
+      } else {
+        logs.push(...finishBattle(state, event, ctx))
+      }
+      return logs
+    }
+
+    case 'removeAttacker': {
+      if (actor !== event.attacker) throw new RuleError('WRONG_ACTOR', { actor })
+      logs.push(
+        ...applyRemovalStage(
+          state,
+          {
+            event,
+            action,
+            victim: event.attacker,
+            maxHits: event.hits.defender,
+            scorer: event.defender,
+          },
+          ctx,
+        ),
+      )
+      event.hits.defender = 0
+      if (!event.rolls) {
+        logs.push(...advanceAfterAmbushRemoval(state, event, ctx))
+        return logs
+      }
+      logs.push(...finishBattle(state, event, ctx))
+      return logs
+    }
+
+    default:
+      throw new RuleError('INVALID_BATTLE_STAGE', { stage: event.stage })
+  }
 }
 
 export function openBattle(
@@ -561,5 +645,7 @@ export function openBattle(
   }
   state.pending.push(event)
   ctx.emit({ s: 'battle.start', ev: event })
-  return [{ t: 'event', event }]
+  const logs: LogEntry[] = [{ t: 'event', event }]
+  logs.push(...drainForcedBattleSteps(state, event, ctx))
+  return logs
 }
