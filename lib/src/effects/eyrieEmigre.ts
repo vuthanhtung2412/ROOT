@@ -5,6 +5,7 @@ import type { Ctx } from '#game/ctx.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
+import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { canMove } from '#queries/move.js'
 import { warriors } from '#queries/pieces.js'
 import { playerOf } from '#queries/seat.js'
@@ -23,16 +24,6 @@ function emigreOwner(state: GameState): Seat | null {
     }
   }
   return null
-}
-
-function enemySeatsInClearing(state: GameState, clearing: ClearingId, seat: Seat): Seat[] {
-  const enemies = new Set<Seat>()
-  for (const piece of state.clearings[clearing]!.pieces) {
-    if (piece.owner !== seat && (piece.kind === 'warrior' || piece.kind === 'pawn')) {
-      enemies.add(piece.owner)
-    }
-  }
-  return [...enemies]
 }
 
 function discardEmigre(state: GameState, ownerSeat: Seat): void {
