@@ -2,7 +2,26 @@ import { describe, expect, it } from 'vitest'
 import {
   buildFactionBoardViewModelFromPlayer,
   formatDecreeSuitCounts,
+  groupCraftedItems,
 } from '#ui/factionBoardViewModel.ts'
+
+describe('groupCraftedItems', () => {
+  it('groups by type and exhausted with counts', () => {
+    expect(
+      groupCraftedItems([
+        'boot',
+        'boot',
+        { type: 'tea', exhausted: true },
+        { type: 'tea', exhausted: true },
+        { type: 'tea', exhausted: false },
+      ]),
+    ).toEqual([
+      { type: 'boot', exhausted: false, count: 2 },
+      { type: 'tea', exhausted: true, count: 2 },
+      { type: 'tea', exhausted: false, count: 1 },
+    ])
+  })
+})
 
 describe('formatDecreeSuitCounts', () => {
   it('groups suits as bird xN, fox xN…', () => {
@@ -56,7 +75,9 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       workshop: 1,
       recruiter: 3,
     })
-    expect(view.crafted.items).toEqual([{ type: 'boot', exhausted: false }])
+    expect(view.crafted.items).toEqual([
+      { type: 'boot', exhausted: false, count: 1 },
+    ])
     expect(view.trackColumns).toHaveLength(6)
   })
 
@@ -85,8 +106,8 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       throw new Error('expected view')
     }
     expect(view.crafted.items).toEqual([
-      { type: 'tea', exhausted: true },
-      { type: 'sword', exhausted: false },
+      { type: 'tea', exhausted: true, count: 1 },
+      { type: 'sword', exhausted: false, count: 1 },
     ])
   })
 
