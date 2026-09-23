@@ -8,6 +8,10 @@ import {
   type ClearingPixelHitTarget,
   type ClearingSuit,
 } from '#game/boardLayout.ts'
+import {
+  clearingHasRuin,
+  RUIN_MARKER_LABEL,
+} from '#game/clearingIndicators.ts'
 import { clearingRuler } from '#game/clearingRuler.ts'
 import { gameViewSize } from '#game/hiDpi.ts'
 import { factionColorForSeat } from '#game/theme.ts'
@@ -27,6 +31,7 @@ export type BoardClearingPieces = {
     owner: number
     type?: string
   }>
+  ruin?: { items: string[] }
 }
 
 export type BoardViewOptions = {
@@ -66,6 +71,7 @@ export class BoardView {
   private rulerByClearing: ReadonlyMap<number, number | null> = new Map()
   private factions: readonly string[] = []
   private pieceNodes: Phaser.GameObjects.GameObject[] = []
+  private indicatorNodes: Phaser.GameObjects.GameObject[] = []
 
   constructor(options: BoardViewOptions) {
     this.scene = options.scene
@@ -111,6 +117,8 @@ export class BoardView {
       node.destroy()
     }
     this.pieceNodes = []
+
+    this.syncClearingIndicators(clearings)
 
     for (const visual of this.clearingVisuals) {
       const clearing = clearings[visual.clearingId]
@@ -266,6 +274,37 @@ export class BoardView {
     const scale = Math.min(maxSide / source.width, maxSide / source.height)
     image.setDisplaySize(source.width * scale, source.height * scale)
     return image
+  }
+
+  private syncClearingIndicators(clearings: readonly BoardClearingPieces[]): void {
+    for (const node of this.indicatorNodes) {
+      node.destroy()
+    }
+    this.indicatorNodes = []
+
+    for (const visual of this.clearingVisuals) {
+      const clearing = clearings[visual.clearingId]
+      if (!clearingHasRuin(clearing)) {
+        continue
+      }
+      const badge = this.scene.add
+        .text(
+          visual.hitArea.x - visual.hitArea.radius * 0.55,
+          visual.hitArea.y - visual.hitArea.radius * 0.75,
+          RUIN_MARKER_LABEL,
+          {
+            fontFamily: 'Georgia, serif',
+            fontSize: '13px',
+            color: '#1a1a1a',
+            backgroundColor: '#c8a45c',
+            padding: { x: 4, y: 2 },
+            fontStyle: 'bold',
+          },
+        )
+        .setOrigin(0.5)
+      this.pieceLayer.add(badge)
+      this.indicatorNodes.push(badge)
+    }
   }
 
   private paintHighlights(): void {
