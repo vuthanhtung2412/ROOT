@@ -141,7 +141,9 @@ export class BattleOverlay {
     }
 
     this.promptText.setText(
-      isOutcomeFlash ? 'No pieces removed' : (viewModel.prompt ?? ''),
+      isOutcomeFlash
+        ? battleResultFlashPrompt(viewModel.hits)
+        : (viewModel.prompt ?? ''),
     )
     this.root.setVisible(true)
   }
@@ -149,6 +151,16 @@ export class BattleOverlay {
   destroy(): void {
     this.root.destroy(true)
   }
+}
+
+function battleResultFlashPrompt(hits: {
+  attacker: number
+  defender: number
+}): string {
+  if (hits.attacker === 0 && hits.defender === 0) {
+    return 'No pieces removed'
+  }
+  return ''
 }
 
 class DieFace {
