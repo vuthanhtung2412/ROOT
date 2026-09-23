@@ -14,10 +14,11 @@ import {
   eyrieLeaderTextureKey,
   lookupEyrieLeader,
 } from '#assets/eyrieLeaderCatalog.ts'
-import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
+import { GAME_ASSET_KEYS, itemTextureKey } from '#assets/gameAssets.ts'
 import { gameViewSize } from '#game/hiDpi.ts'
 import {
   formatDecreeSuitCounts,
+  type CraftedItemView,
   type FactionBoardViewModel,
 } from '#ui/factionBoardViewModel.ts'
 
@@ -222,18 +223,66 @@ export class FactionBoardModal {
       return []
     }
     const box = scaleBoardLayoutRegion(region, placement)
-    const label = this.formatCraftedItems(view.crafted.itemTypes)
-    const text = this.scene.add
-      .text(box.x + 6, box.y + 4, label, {
+    if (view.crafted.items.length === 0) {
+      const emptyLabel = this.scene.add
+        .text(box.x + 6, box.y + 4, 'Items (none)', {
+          fontFamily: 'monospace',
+          fontSize: `${Math.max(11, Math.round(box.height * 0.28))}px`,
+          color: '#f7f0e4',
+          backgroundColor: '#0a0a0acc',
+          padding: { x: 6, y: 4 },
+        })
+        .setOrigin(0, 0)
+      return [emptyLabel]
+    }
+
+    const nodes: Phaser.GameObjects.GameObject[] = []
+    const iconSize = Math.max(18, Math.min(36, Math.round(box.height * 0.72)))
+    const gap = Math.max(4, Math.round(iconSize * 0.15))
+    let cursorX = box.x + 6
+    const iconY = box.y + box.height / 2
+
+    for (const item of view.crafted.items) {
+      const icon = this.buildCraftedItemIcon(item, cursorX, iconY, iconSize)
+      if (icon === null) {
+        continue
+      }
+      nodes.push(icon)
+      cursorX += iconSize + gap
+      if (cursorX + iconSize > box.x + box.width - 4) {
+        break
+      }
+    }
+    return nodes
+  }
+
+  private buildCraftedItemIcon(
+    item: CraftedItemView,
+    left: number,
+    centerY: number,
+    iconSize: number,
+  ): Phaser.GameObjects.GameObject | null {
+    const textureKey = itemTextureKey(item.type)
+    if (textureKey !== null && this.scene.textures.exists(textureKey)) {
+      const image = this.scene.add
+        .image(left + iconSize / 2, centerY, textureKey)
+        .setDisplaySize(iconSize, iconSize)
+        .setOrigin(0.5)
+      if (item.exhausted) {
+        image.setAlpha(0.4)
+      }
+      return image
+    }
+    const fallback = this.scene.add
+      .text(left, centerY, item.type, {
         fontFamily: 'monospace',
-        fontSize: `${Math.max(11, Math.round(box.height * 0.28))}px`,
-        color: '#f7f0e4',
+        fontSize: `${Math.max(10, Math.round(iconSize * 0.4))}px`,
+        color: item.exhausted ? '#9a9080' : '#f7f0e4',
         backgroundColor: '#0a0a0acc',
-        padding: { x: 6, y: 4 },
-        wordWrap: { width: Math.max(40, box.width - 12) },
+        padding: { x: 4, y: 2 },
       })
-      .setOrigin(0, 0)
-    return [text]
+      .setOrigin(0, 0.5)
+    return fallback
   }
 
   private buildSupplyOverlays(
@@ -452,12 +501,5 @@ export class FactionBoardModal {
         this.scene.load.start()
       }
     })
-  }
-
-  private formatCraftedItems(itemTypes: string[]): string {
-    if (itemTypes.length === 0) {
-      return 'Items (none)'
-    }
-    return `Items ${itemTypes.join(', ')}`
   }
 }

@@ -56,8 +56,38 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       workshop: 1,
       recruiter: 3,
     })
-    expect(view.crafted.itemTypes).toEqual(['boot'])
+    expect(view.crafted.items).toEqual([{ type: 'boot', exhausted: false }])
     expect(view.trackColumns).toHaveLength(6)
+  })
+
+  it('preserves crafted item exhausted flag', () => {
+    const view = buildFactionBoardViewModelFromPlayer({
+      seat: 0,
+      faction: 'marquise',
+      vp: 0,
+      hand: [],
+      craftedItems: [
+        { type: 'tea', exhausted: true },
+        { type: 'sword', exhausted: false },
+      ],
+      board: {
+        kind: 'marquise',
+        supply: { warriors: 20, wood: 0 },
+        tracks: {
+          sawmill: { placed: 6 },
+          workshop: { placed: 6 },
+          recruiter: { placed: 6 },
+        },
+      },
+    })
+    expect(view).not.toBeNull()
+    if (view === null) {
+      throw new Error('expected view')
+    }
+    expect(view.crafted.items).toEqual([
+      { type: 'tea', exhausted: true },
+      { type: 'sword', exhausted: false },
+    ])
   })
 
   it('Eyrie: roosts on map + leader lookup', () => {

@@ -20,8 +20,13 @@ import {
 } from '#assets/marquiseBoardCatalog.ts'
 import type { GameState } from '#api/client.ts'
 
+export type CraftedItemView = {
+  type: string
+  exhausted: boolean
+}
+
 export type CraftedLookup = {
-  itemTypes: string[]
+  items: CraftedItemView[]
 }
 
 export const EYRIE_DECREE_COLUMNS = [
@@ -150,15 +155,18 @@ function roostsOnMapFromTrack(placedOnTrack: number): number {
 
 function craftedLookup(player: PlayerForBoard): CraftedLookup {
   const craftedItems = player.craftedItems ?? []
-  const itemTypes: string[] = []
+  const items: CraftedItemView[] = []
   for (const item of craftedItems) {
     if (typeof item === 'string') {
-      itemTypes.push(item)
+      items.push({ type: item, exhausted: false })
     } else {
-      itemTypes.push(item.type)
+      items.push({
+        type: item.type,
+        exhausted: item.exhausted === true,
+      })
     }
   }
-  return { itemTypes }
+  return { items }
 }
 
 function suitForDecreeCard(defId: string): string {
