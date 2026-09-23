@@ -263,6 +263,86 @@ describe('battleResolver', () => {
     expect(isValidRemoval(state, { clearing: 4, victim: 1, pieceIds: ['w1'], maxHits: 1 })).toBe(true)
   })
 
+  it('Rule: 1.4 + Battle 4.3.4 — exact hit count required', () => {
+    const state = withPieces(minimalState(), 4, [
+      { id: 'w1', kind: 'warrior', owner: 1 },
+      { id: 'w2', kind: 'warrior', owner: 1 },
+      { id: 'w3', kind: 'warrior', owner: 1 },
+      { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
+    ])
+    // Under-remove rejected when enough pieces remain
+    expect(
+      isValidRemoval(state, {
+        clearing: 4,
+        victim: 1,
+        pieceIds: ['w1'],
+        maxHits: 2,
+      }),
+    ).toBe(false)
+    expect(
+      isValidRemoval(state, {
+        clearing: 4,
+        victim: 1,
+        pieceIds: ['w1', 'w2'],
+        maxHits: 2,
+      }),
+    ).toBe(true)
+    // Overflow: all warriors then building
+    expect(
+      isValidRemoval(state, {
+        clearing: 4,
+        victim: 1,
+        pieceIds: ['w1', 'w2', 'w3', 'b1'],
+        maxHits: 4,
+      }),
+    ).toBe(true)
+    expect(
+      isValidRemoval(state, {
+        clearing: 4,
+        victim: 1,
+        pieceIds: ['w1', 'w2', 'b1'],
+        maxHits: 4,
+      }),
+    ).toBe(false)
+  })
+
+  it('legalActions emit only exact-size warrior-first combos', () => {
+    const state = withPieces(
+      minimalState({
+        players: [player(0, 'marquise'), player(1, 'marquise', { playerId: 'p1' })],
+        status: 'playing',
+      }),
+      0,
+      [
+        { id: 'd1', kind: 'warrior', owner: 1 },
+        { id: 'd2', kind: 'warrior', owner: 1 },
+        { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
+      ],
+    )
+    const context = battleContext()
+    const event = battleEvent({
+      stage: 'removeDefender',
+      hits: { attacker: 2, defender: 0 },
+    })
+    state.pending = [event]
+    const actionSpecs = battleResolver.legalActions(state, event, context)
+    const pieceIdLists = actionSpecs.map((spec) => {
+      const params = spec.params
+      if (params === undefined || typeof params !== 'object') {
+        return []
+      }
+      const pieceIds = Reflect.get(params, 'pieceIds')
+      return Array.isArray(pieceIds) ? pieceIds : []
+    })
+    expect(pieceIdLists.every((ids) => ids.length === 2)).toBe(true)
+    expect(pieceIdLists).toEqual(
+      expect.arrayContaining([
+        ['d1', 'd2'],
+      ]),
+    )
+    expect(pieceIdLists.some((ids) => ids.includes('b1'))).toBe(false)
+  })
+
   it('battle emits battle.start/hits/end signals', () => {
     const state = withPieces(
       minimalState(),
