@@ -17,16 +17,16 @@ describe('resolveDefaultApiBaseUrl', () => {
 
   it('returns empty string in browser', async () => {
     isNativePlatform.mockReturnValue(false)
-    vi.stubEnv('ROOT_FUNNEL_URL', 'https://funnel.example.ts.net:8443')
+    vi.stubEnv('ROOT_PROD_API', 'https://funnel.example.ts.net:8443')
     const { resolveDefaultApiBaseUrl } = await import(
       '#api/defaultApiBaseUrl.ts'
     )
     expect(resolveDefaultApiBaseUrl()).toBe('')
   })
 
-  it('returns funnel URL on native when env set', async () => {
+  it('returns prod API URL on native when env set', async () => {
     isNativePlatform.mockReturnValue(true)
-    vi.stubEnv('ROOT_FUNNEL_URL', 'https://funnel.example.ts.net:8443/')
+    vi.stubEnv('ROOT_PROD_API', 'https://funnel.example.ts.net:8443/')
     vi.resetModules()
     const { resolveDefaultApiBaseUrl } = await import(
       '#api/defaultApiBaseUrl.ts'
@@ -36,9 +36,9 @@ describe('resolveDefaultApiBaseUrl', () => {
     )
   })
 
-  it('returns empty on native when funnel env missing', async () => {
+  it('returns empty on native when prod API env missing', async () => {
     isNativePlatform.mockReturnValue(true)
-    vi.stubEnv('ROOT_FUNNEL_URL', '')
+    vi.stubEnv('ROOT_PROD_API', '')
     vi.resetModules()
     const { resolveDefaultApiBaseUrl } = await import(
       '#api/defaultApiBaseUrl.ts'
