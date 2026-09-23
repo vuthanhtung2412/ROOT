@@ -14,7 +14,7 @@ import {
   eyrieLeaderTextureKey,
   lookupEyrieLeader,
 } from '#assets/eyrieLeaderCatalog.ts'
-import { GAME_ASSET_KEYS, lookupCardCatalog } from '#assets/gameAssets.ts'
+import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import { gameViewSize } from '#game/hiDpi.ts'
 import {
   formatDecreeSuitCounts,
@@ -222,7 +222,7 @@ export class FactionBoardModal {
       return []
     }
     const box = scaleBoardLayoutRegion(region, placement)
-    const label = this.formatCrafted(view.crafted.cardNames, view.crafted.itemTypes)
+    const label = this.formatCraftedItems(view.crafted.itemTypes)
     const text = this.scene.add
       .text(box.x + 6, box.y + 4, label, {
         fontFamily: 'monospace',
@@ -454,15 +454,10 @@ export class FactionBoardModal {
     })
   }
 
-  private formatCrafted(cardNames: string[], itemTypes: string[]): string {
-    const cards =
-      cardNames.length === 0
-        ? '(none)'
-        : cardNames
-            .map((defId) => lookupCardCatalog(defId)?.name ?? defId)
-            .join(', ')
-    const items =
-      itemTypes.length === 0 ? '(none)' : itemTypes.join(', ')
-    return `Cards ${cards}\nItems ${items}`
+  private formatCraftedItems(itemTypes: string[]): string {
+    if (itemTypes.length === 0) {
+      return 'Items (none)'
+    }
+    return `Items ${itemTypes.join(', ')}`
   }
 }
