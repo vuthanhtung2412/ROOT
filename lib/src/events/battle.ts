@@ -129,34 +129,48 @@ function legalRemovalSpecs(
   const otherIds = pieces.filter((piece) => piece.kind !== 'warrior').map((piece) => piece.id)
   const exactRemoveCount = Math.min(maxHits, pieces.length)
 
-  function addCombos(
-    ids: string[],
-    chooseCount: number,
-    startIndex: number,
-    current: string[],
-    prefix: string[],
-  ): void {
-    if (current.length === chooseCount) {
+  interface RemovalComboBuild {
+    ids: string[]
+    chooseCount: number
+    startIndex: number
+    current: string[]
+    prefix: string[]
+  }
+
+  function addCombos(build: RemovalComboBuild): void {
+    if (build.current.length === build.chooseCount) {
       specs.push({
         type: 'resolveEvent',
         actor: victim,
-        params: { pieceIds: [...prefix, ...current] },
+        params: { pieceIds: [...build.prefix, ...build.current] },
       })
       return
     }
-    for (let index = startIndex; index < ids.length; index += 1) {
-      const pieceId = ids[index]
+    for (let index = build.startIndex; index < build.ids.length; index += 1) {
+      const pieceId = build.ids[index]
       if (pieceId === undefined) {
         continue
       }
-      current.push(pieceId)
-      addCombos(ids, chooseCount, index + 1, current, prefix)
-      current.pop()
+      build.current.push(pieceId)
+      addCombos({
+        ids: build.ids,
+        chooseCount: build.chooseCount,
+        startIndex: index + 1,
+        current: build.current,
+        prefix: build.prefix,
+      })
+      build.current.pop()
     }
   }
 
   if (exactRemoveCount <= warriorIds.length) {
-    addCombos(warriorIds, exactRemoveCount, 0, [], [])
+    addCombos({
+      ids: warriorIds,
+      chooseCount: exactRemoveCount,
+      startIndex: 0,
+      current: [],
+      prefix: [],
+    })
     return specs
   }
 
@@ -164,7 +178,13 @@ function legalRemovalSpecs(
   if (otherChooseCount > otherIds.length) {
     return []
   }
-  addCombos(otherIds, otherChooseCount, 0, [], warriorIds)
+  addCombos({
+    ids: otherIds,
+    chooseCount: otherChooseCount,
+    startIndex: 0,
+    current: [],
+    prefix: warriorIds,
+  })
   return specs
 }
 

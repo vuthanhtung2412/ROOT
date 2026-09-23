@@ -147,11 +147,14 @@ export function buildPiecesByIdFromClearings(
   const piecesById = new Map<string, BattleRemovalPieceView>()
   for (const clearing of clearings) {
     for (const piece of clearing.pieces) {
-      piecesById.set(piece.id, {
+      const view: BattleRemovalPieceView = {
         id: piece.id,
         kind: piece.kind,
-        type: piece.type,
-      })
+      }
+      if (piece.type !== undefined) {
+        view.type = piece.type
+      }
+      piecesById.set(piece.id, view)
     }
   }
   return piecesById
