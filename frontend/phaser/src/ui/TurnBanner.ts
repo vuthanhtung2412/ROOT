@@ -134,14 +134,10 @@ function buildPrompt(
     return setupPrompt(state.pending[0]) ?? 'Setup'
   }
   if (fromPending) {
-    const pending = state.pending[0]
-    if (typeof pending === 'object' && pending !== null) {
-      const pendingType = Reflect.get(pending, 'type')
-      if (pendingType === 'fieldHospital') {
-        return 'Field Hospitals — spend matching card or decline'
-      }
+    const pendingPrompt = pendingEventPrompt(state.pending[0], actorSeat)
+    if (pendingPrompt !== null) {
+      return pendingPrompt
     }
-    return `Pending choice · seat ${String(actorSeat)}`
   }
   if (state.step === 'craft') {
     return 'Craft step — craft or end craft'
@@ -159,6 +155,47 @@ function buildPrompt(
     return 'Evening'
   }
   return 'Daylight actions'
+}
+
+const BATTLE_STAGE_PROMPTS: Record<string, string> = {
+  ambush: 'Battle — play Ambush or skip',
+  foil: 'Battle — foil Ambush or skip',
+  roll: 'Battle — rolling dice',
+  effectsOrder: 'Battle — choose card effects order',
+  effects: 'Battle — use card effect or skip',
+  removeDefender: 'Battle — remove defender pieces',
+  removeAttacker: 'Battle — remove attacker pieces',
+}
+
+function pendingEventPrompt(pending: unknown, actorSeat: number): string | null {
+  if (typeof pending !== 'object' || pending === null) {
+    return `Pending choice · seat ${String(actorSeat)}`
+  }
+  const pendingType = Reflect.get(pending, 'type')
+  if (pendingType === 'fieldHospital') {
+    return 'Field Hospitals — spend matching card or decline'
+  }
+  if (pendingType === 'battle') {
+    const stage = Reflect.get(pending, 'stage')
+    if (typeof stage === 'string') {
+      return BATTLE_STAGE_PROMPTS[stage] ?? `Battle — ${stage}`
+    }
+    return 'Battle in progress'
+  }
+  if (pendingType === 'chooseKeep') {
+    return 'Choose keep corner'
+  }
+  if (pendingType === 'placeStartingBuilding') {
+    const building = Reflect.get(pending, 'building')
+    if (typeof building === 'string') {
+      return `Place ${building}`
+    }
+    return 'Place starting building'
+  }
+  if (pendingType === 'chooseLeader') {
+    return 'Choose Eyrie leader'
+  }
+  return `Pending choice · seat ${String(actorSeat)}`
 }
 
 function setupPrompt(pending: unknown): string | null {
