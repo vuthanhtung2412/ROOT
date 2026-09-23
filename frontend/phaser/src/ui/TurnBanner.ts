@@ -1,6 +1,14 @@
 import type Phaser from 'phaser'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { gameViewSize } from '#game/hiDpi.ts'
+import {
+  formatCountStepperLabel,
+  selectedCountStepperOption,
+  shouldPresentAsCountStepper,
+  stepCountStepper,
+  type CountStepperOption,
+  type CountStepperState,
+} from '#ui/countStepper.ts'
 
 export type TurnBannerViewModel = {
   actorSeat: number
@@ -183,6 +191,8 @@ export type TurnBannerComposerView = {
   canConfirm: boolean
   canCancel: boolean
   options: readonly TurnBannerOption[]
+  /** Force stepper chrome; default auto for contiguous numeric counts. */
+  optionPresentation?: 'stepper' | 'buttons'
 }
 
 /**
@@ -199,6 +209,7 @@ export class TurnBanner {
   private handlers: TurnBannerHandlers
   private lastView: TurnBannerViewModel | null = null
   private lastComposer: TurnBannerComposerView | null = null
+  private countStepper: CountStepperState | null = null
 
   constructor(scene: Phaser.Scene, handlers: TurnBannerHandlers) {
     this.scene = scene
@@ -245,7 +256,7 @@ export class TurnBanner {
       .setVisible(false)
 
     this.confirmButton.on('pointerdown', () => {
-      this.handlers.onConfirm()
+      this.handleConfirm()
     })
     this.cancelButton.on('pointerdown', () => {
       this.handlers.onCancel()
@@ -272,7 +283,50 @@ export class TurnBanner {
 
   syncComposer(composer: TurnBannerComposerView | null): void {
     this.lastComposer = composer
+    this.syncCountStepperFromComposer(composer)
     this.repaint()
+  }
+
+  private syncCountStepperFromComposer(
+    composer: TurnBannerComposerView | null,
+  ): void {
+    if (composer === null) {
+      this.countStepper = null
+      return
+    }
+    const options: CountStepperOption[] = composer.options.map((option) => ({
+      label: option.label,
+      value: option.value,
+    }))
+    if (
+      !shouldPresentAsCountStepper(options, composer.optionPresentation)
+    ) {
+      this.countStepper = null
+      return
+    }
+    const previousValue =
+      this.countStepper !== null
+        ? selectedCountStepperOption(this.countStepper)?.value
+        : undefined
+    const previousIndex =
+      previousValue === undefined
+        ? 0
+        : options.findIndex((option) => option.value === previousValue)
+    this.countStepper = {
+      options,
+      selectedIndex: previousIndex >= 0 ? previousIndex : 0,
+    }
+  }
+
+  private handleConfirm(): void {
+    if (this.countStepper !== null) {
+      const selected = selectedCountStepperOption(this.countStepper)
+      if (selected !== null) {
+        this.handlers.onPickOption?.(selected.value)
+        return
+      }
+    }
+    this.handlers.onConfirm()
   }
 
   private repaint(): void {
@@ -300,19 +354,29 @@ export class TurnBanner {
       return
     }
 
+    const useStepper = this.countStepper !== null
     this.statusText.setText(`${view.actorFaction} · ${composer.message}`)
-    this.statusText.setPosition(0, composer.options.length > 0 ? -14 : 0)
+    this.statusText.setPosition(
+      0,
+      useStepper || composer.options.length > 0 ? -14 : 0,
+    )
 
-    this.confirmButton.setVisible(composer.canConfirm)
+    this.confirmButton.setVisible(composer.canConfirm || useStepper)
     this.cancelButton.setVisible(composer.canCancel)
     this.confirmButton.setPosition(
       halfWidth - 52,
-      composer.options.length > 0 ? -14 : 0,
+      useStepper || composer.options.length > 0 ? -14 : 0,
     )
     this.cancelButton.setPosition(
       halfWidth - 18,
-      composer.options.length > 0 ? -14 : 0,
+      useStepper || composer.options.length > 0 ? -14 : 0,
     )
+
+    if (useStepper && this.countStepper !== null) {
+      this.paintCountStepper(this.countStepper)
+      this.panel.setSize(this.panel.width, 56)
+      return
+    }
 
     composer.options.forEach((option, index) => {
       const button = this.scene.add
@@ -341,6 +405,70 @@ export class TurnBanner {
       this.panel.width,
       composer.options.length > 0 ? 56 : 36,
     )
+  }
+
+  private paintCountStepper(state: CountStepperState): void {
+    const selected = selectedCountStepperOption(state)
+    if (selected === null) {
+      return
+    }
+    const atMin = state.selectedIndex <= 0
+    const atMax = state.selectedIndex >= state.options.length - 1
+
+    const previousButton = this.scene.add
+      .text(-90, 14, '<', {
+        fontFamily: 'monospace',
+        fontSize: '16px',
+        color: atMin ? '#6a6a6a' : '#1a1a1a',
+        backgroundColor: atMin ? '#9a9a9a' : '#c8d8f0',
+        padding: { x: 10, y: 4 },
+      })
+      .setOrigin(0.5)
+    if (!atMin) {
+      previousButton.setInteractive({ useHandCursor: true })
+      previousButton.on('pointerdown', () => {
+        if (this.countStepper === null) {
+          return
+        }
+        this.countStepper = stepCountStepper(this.countStepper, -1)
+        this.repaint()
+      })
+    }
+
+    const center = this.scene.add
+      .text(0, 14, formatCountStepperLabel(selected), {
+        fontFamily: 'monospace',
+        fontSize: '13px',
+        color: '#f0e6d3',
+        backgroundColor: '#1a1408cc',
+        padding: { x: 12, y: 5 },
+      })
+      .setOrigin(0.5)
+
+    const nextButton = this.scene.add
+      .text(90, 14, '>', {
+        fontFamily: 'monospace',
+        fontSize: '16px',
+        color: atMax ? '#6a6a6a' : '#1a1a1a',
+        backgroundColor: atMax ? '#9a9a9a' : '#c8d8f0',
+        padding: { x: 10, y: 4 },
+      })
+      .setOrigin(0.5)
+    if (!atMax) {
+      nextButton.setInteractive({ useHandCursor: true })
+      nextButton.on('pointerdown', () => {
+        if (this.countStepper === null) {
+          return
+        }
+        this.countStepper = stepCountStepper(this.countStepper, 1)
+        this.repaint()
+      })
+    }
+
+    this.root.add(previousButton)
+    this.root.add(center)
+    this.root.add(nextButton)
+    this.optionNodes.push(previousButton, center, nextButton)
   }
 
   destroy(): void {
