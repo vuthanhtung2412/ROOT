@@ -9,7 +9,7 @@ import {
   type ActionComposerHooks,
   type ComposerOutcome,
 } from '#game/ActionComposer.ts'
-import { createEventComposerHooks, fieldHospitalCardIdsFromSpecs, isFieldHospitalPending } from '#game/eventActionComposer.ts'
+import { createEventComposerHooks, fieldHospitalCardIdsFromSpecs, isFieldHospitalPending, battleAmbushRole } from '#game/eventActionComposer.ts'
 import {
   buildBattleRemovalStepperChoices,
   buildPiecesByIdFromClearings,
@@ -524,6 +524,11 @@ export class GameScene extends Phaser.Scene {
       banner.actorSeat,
       localControlsActor,
     )
+    this.maybeAutoBeginAmbushPrompt(
+      snapshot,
+      banner.actorSeat,
+      localControlsActor,
+    )
     this.paintStatus(
       localControlsActor
         ? snapshot.error
@@ -587,6 +592,37 @@ export class GameScene extends Phaser.Scene {
     this.autoPendingPromptKey = key
     const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
     this.applyComposerOutcome(this.eventComposer.beginFieldHospital(cardIds))
+  }
+
+  /**
+   * Ambush / foil: open play-or-skip prompt without tray click.
+   */
+  private maybeAutoBeginAmbushPrompt(
+    snapshot: GameSessionSnapshot,
+    actorSeat: number,
+    localControlsActor: boolean,
+  ): void {
+    if (!localControlsActor || snapshot.state === null) {
+      return
+    }
+    const pending = snapshot.state.pending[0]
+    const role = battleAmbushRole(pending)
+    if (role === null) {
+      return
+    }
+    const forActor = snapshot.legalActions.filter(
+      (spec) => spec.type === 'resolveEvent' && spec.actor === actorSeat,
+    )
+    if (forActor.length === 0) {
+      return
+    }
+    const key = JSON.stringify({ pending, actions: forActor, kind: 'ambush' })
+    if (key === this.autoPendingPromptKey) {
+      return
+    }
+    this.autoPendingPromptKey = key
+    const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
+    this.applyComposerOutcome(this.eventComposer.beginAmbush(cardIds, role))
   }
 
   /**

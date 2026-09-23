@@ -58,6 +58,31 @@ describe('eventActionComposer Field Hospitals', () => {
     })
   })
 
+  it('beginAmbush prompts play or skip', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const mid = events.beginAmbush(['ROOT-200#1'], 'ambush')
+    expect(mid.kind).toBe('incomplete')
+    if (mid.kind !== 'incomplete') {
+      throw new Error('expected incomplete')
+    }
+    expect(mid.prompt.message).toContain('Ambush')
+    expect(composer.chooseCard('ROOT-200#1')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', cardId: 'ROOT-200#1' },
+    })
+  })
+
+  it('beginAmbush with no cards auto-skips', () => {
+    const events = createEventComposerHooks()
+    expect(events.beginAmbush([], 'foil')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', decline: true },
+    })
+  })
+
   it('decline resolveEvent submits immediately (ambush skip)', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()
