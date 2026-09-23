@@ -357,11 +357,11 @@ export class GameScene extends Phaser.Scene {
       const pickingLeader =
         leaderDraft.type === 'pickLeader' ? leaderDraft.leaders : null
       this.leaderPickOverlay?.sync(pickingLeader)
+      const optionPresentation = this.eventComposer.getOptionPresentation()
       this.turnBanner?.syncComposer({
         message: outcome.prompt.message,
         canConfirm: outcome.prompt.canConfirm,
         canCancel: outcome.prompt.canCancel,
-        optionPresentation: this.eventComposer.getOptionPresentation(),
         options:
           pickingLeader !== null
             ? []
@@ -371,6 +371,9 @@ export class GameScene extends Phaser.Scene {
                 ...this.eyrieComposer.getPromptOptions(),
                 ...this.eventComposer.getPromptOptions(),
               ],
+        ...(optionPresentation !== undefined
+          ? { optionPresentation }
+          : {}),
       })
       this.boardView?.setHighlightedClearings(outcome.prompt.highlightClearings)
       this.cardHand?.setEnabledCards(outcome.prompt.enabledCardIds)
