@@ -1,7 +1,10 @@
 /**
  * Build GameSnapshots for BUG.md frontend QA videos.
  * Run from repo root:
- *   cd lib && npx tsx ../.cursor/skills/QA/make-bug-snapshots.ts
+ *   cd lib && npx tsx ../.agents/skills/QA/make-bug-snapshots.ts
+ *
+ * Snapshots start *before* the featured action so videos can play:
+ * setup → action → dice/resolve → result (not mid-pending).
  */
 import { writeFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
@@ -55,6 +58,17 @@ function advanceToActions(game: Game): void {
   }
 }
 
+/** Next two battle dice rolls = [first, second]. */
+function findDiceSeed(first: number, second: number): number {
+  for (let seed = 0; seed < 50_000; seed++) {
+    const probe = new SeededRng({ seed, cursor: 0 })
+    if (probe.roll() === first && probe.roll() === second) {
+      return seed
+    }
+  }
+  throw new Error(`no seed with rolls ${String(first)},${String(second)}`)
+}
+
 async function writeSnapshot(name: string, game: Game): Promise<void> {
   const snapshot = game.toJSON()
   const filePath = path.join(outDirectory, name)
@@ -66,13 +80,11 @@ async function writeSnapshot(name: string, game: Game): Promise<void> {
   )
 }
 
-/** Marquise daylight actions with building-only enemy in clearing 4. */
+/** Marquise daylight — roost-only enemy in C4 (defenseless target). */
 async function makeDefenselessBattle(): Promise<void> {
   const game = lobbyTwoPlaying(11)
   advanceToActions(game)
   const snap = game.toJSON()
-  // Clearing 4: marquise warriors + eyrie roost only (no eyrie warriors = defenseless).
-  // Must use roost (not sawmill) — sawmill art is Marquise-only and looks like own building.
   snap.state.clearings[4]!.pieces = [
     { id: 'w-atk', kind: 'warrior', owner: 0 },
     { id: 'w-atk2', kind: 'warrior', owner: 0 },
@@ -84,6 +96,10 @@ async function makeDefenselessBattle(): Promise<void> {
       used: false,
     },
   ]
+  snap.state.players[0]!.hand = []
+  snap.state.players[1]!.hand = []
+  // 1 attacker hit + defenseless → roost dies.
+  snap.rng = { seed: findDiceSeed(1, 0), cursor: 0 }
   const restored = Game.fromJSON(snap)
   const battle = restored.legalActions().find((spec) => spec.type === 'battle')
   const targets = battle?.params?.targets ?? []
@@ -97,7 +113,6 @@ async function makeDefenselessBattle(): Promise<void> {
 
 /**
  * Marquise at 29 VP; roost-only enemy in C4. Battle then remove roost → +1 VP → win.
- * Starts unfinished so the QA video can play into the winner overlay.
  */
 async function makeWinnerMenu(): Promise<void> {
   const game = lobbyTwoPlaying(13)
@@ -120,57 +135,48 @@ async function makeWinnerMenu(): Promise<void> {
   ]
   snap.state.players[0]!.hand = []
   snap.state.players[1]!.hand = []
-  // Next two battle dice = 1, 0 → one attacker hit on the roost.
-  let foundSeed: number | null = null
-  for (let seed = 0; seed < 50_000; seed++) {
-    const probe = new SeededRng({ seed, cursor: 0 })
-    if (probe.roll() === 1 && probe.roll() === 0) {
-      foundSeed = seed
-      break
-    }
-  }
-  if (foundSeed === null) {
-    throw new Error('no seed with rolls 1 then 0')
-  }
-  snap.rng = { seed: foundSeed, cursor: 0 }
+  snap.rng = { seed: findDiceSeed(1, 0), cursor: 0 }
 
   const restored = Game.fromJSON(snap)
   if (restored.state.status !== 'playing' || restored.state.winner !== undefined) {
     throw new Error('winner snapshot must start unfinished')
   }
-  if (restored.state.players[0]!.vp !== 29) {
-    throw new Error('expected marquise at 29 VP')
-  }
-  const battle = restored.legalActions().find((spec) => spec.type === 'battle')
-  const targets = battle?.params?.targets ?? []
-  if (!targets.some((target) => target.clearing === 4 && target.defender === 1)) {
-    throw new Error(
-      `expected battle vs roost at C4, got ${JSON.stringify(targets)}`,
-    )
-  }
   await writeSnapshot('02-winner-menu.json', restored)
 }
 
-/** Field Hospitals pending for Marquise (victim 0). */
+/**
+ * Field Hospitals: Marquise daylight, 2v2 at rabbit C4, rabbit card in hand.
+ * Dice [2,2] → both take 2 hits → FH → pay → warriors return to keep (C0).
+ */
 async function makeFieldHospital(): Promise<void> {
   const game = lobbyTwoPlaying(17)
   advanceToActions(game)
   const snap = game.toJSON()
-  snap.state.pending = [
-    { type: 'fieldHospital', victim: 0, clearing: 10, count: 2 },
+  snap.state.clearings[4]!.pieces = [
+    { id: 'w-m1', kind: 'warrior', owner: 0 },
+    { id: 'w-m2', kind: 'warrior', owner: 0 },
+    { id: 'w-e1', kind: 'warrior', owner: 1 },
+    { id: 'w-e2', kind: 'warrior', owner: 1 },
   ]
-  // Matching fox card in hand for pay option (clearing 10 = mouse though — use mouse card).
-  // C10 is mouse. Put mouse card in hand.
-  snap.state.players[0]!.hand = [
-    { id: 'ROOT-205#fh', defId: 'ROOT-205' }, // mouse ambush? check suits
-    { id: 'ROOT-72#fh', defId: 'ROOT-72' }, // fox
-  ]
-  // Use clearing suit: FALL.clearings[10] = mouse. Need mouse-matching card.
-  // ROOT-203 is mouse ambush typically. Put several suits.
+  // Rabbit card matches C4 suit for Field Hospitals pay.
+  snap.state.players[0]!.hand = [{ id: 'ROOT-212#fh', defId: 'ROOT-212' }]
+  snap.state.players[1]!.hand = []
+  snap.state.pending = []
+  snap.rng = { seed: findDiceSeed(2, 2), cursor: 0 }
+
   const restored = Game.fromJSON(snap)
-  const legal = restored.legalActions()
-  if (!legal.some((spec) => spec.type === 'resolveEvent')) {
-    throw new Error('expected fieldHospital resolveEvent legal')
+  const battle = restored.legalActions().find((spec) => spec.type === 'battle')
+  const targets = battle?.params?.targets ?? []
+  if (!targets.some((target) => target.clearing === 4 && target.defender === 1)) {
+    throw new Error(`expected battle at C4, got ${JSON.stringify(targets)}`)
+  }
+  const keepClearing = restored.state.clearings.findIndex((clearing) =>
+    clearing.pieces.some(
+      (piece) => piece.kind === 'token' && piece.type === 'keep' && piece.owner === 0,
+    ),
+  )
+  if (keepClearing < 0) {
+    throw new Error('expected Marquise keep on map')
   }
   await writeSnapshot('03-field-hospital.json', restored)
 }
@@ -197,7 +203,7 @@ async function makeDiscardPile(): Promise<void> {
   await writeSnapshot('05-discard-pile.json', Game.fromJSON(snap))
 }
 
-/** Evening discard with hand > 5. */
+/** Evening discard with hand > 5 — raise cards then confirm. */
 async function makeDiscardRaise(): Promise<void> {
   const game = lobbyTwoPlaying(29)
   const snap = game.toJSON()
@@ -221,32 +227,29 @@ async function makeDiscardRaise(): Promise<void> {
   await writeSnapshot('06-discard-raise.json', restored)
 }
 
-/** Battle ambush pending — defender has matching ambush. */
+/**
+ * Ambush window: Marquise daylight battle into fox C0; Eyrie holds fox Ambush.
+ * Video: battle → auto-open ambush → play → 2 hits on attacker.
+ */
 async function makeAmbushWindow(): Promise<void> {
   const game = lobbyTwoPlaying(31)
   advanceToActions(game)
   const snap = game.toJSON()
-  // C0 fox — put fox ambush in marquise hand (defender).
   snap.state.clearings[0]!.pieces = [
+    { id: 'w-m1', kind: 'warrior', owner: 0 },
+    { id: 'w-m2', kind: 'warrior', owner: 0 },
+    { id: 'w-m3', kind: 'warrior', owner: 0 },
     { id: 'w-e', kind: 'warrior', owner: 1 },
-    { id: 'w-m', kind: 'warrior', owner: 0 },
   ]
-  snap.state.players[0]!.hand = [{ id: 'ROOT-202#amb', defId: 'ROOT-202' }] // fox ambush
-  snap.state.currentSeat = 1
-  snap.state.pending = [
-    {
-      type: 'battle',
-      clearing: 0,
-      attacker: 1,
-      defender: 0,
-      stage: 'ambush',
-      hits: { attacker: 0, defender: 0 },
-    },
-  ]
+  snap.state.players[0]!.hand = []
+  snap.state.players[1]!.hand = [{ id: 'ROOT-202#amb', defId: 'ROOT-202' }]
+  snap.state.pending = []
+  snap.rng = { seed: findDiceSeed(1, 0), cursor: 0 }
   const restored = Game.fromJSON(snap)
-  const legal = restored.legalActions()
-  if (legal[0]?.actor !== 0) {
-    throw new Error(`expected defender actor, got ${JSON.stringify(legal)}`)
+  const battle = restored.legalActions().find((spec) => spec.type === 'battle')
+  const targets = battle?.params?.targets ?? []
+  if (!targets.some((target) => target.clearing === 0 && target.defender === 1)) {
+    throw new Error(`expected battle at C0, got ${JSON.stringify(targets)}`)
   }
   await writeSnapshot('07-ambush-window.json', restored)
 }
@@ -271,120 +274,87 @@ async function makeAutoEndPhase(): Promise<void> {
   await writeSnapshot('08-auto-end-phase.json', restored)
 }
 
-/** Battle removeDefender — warrior-only hits (single combo → auto-remove). */
+/**
+ * Auto-remove warriors: daylight battle, dice [2,0], warrior-only (single combo).
+ * Video: battle → dice → auto-remove (no chooser) → clear.
+ */
 async function makeAutoRemoveWarriors(): Promise<void> {
   const game = lobbyTwoPlaying(41)
   advanceToActions(game)
   const snap = game.toJSON()
   snap.state.clearings[4]!.pieces = [
-    { id: 'w-atk', kind: 'warrior', owner: 1 },
-    { id: 'w-d1', kind: 'warrior', owner: 0 },
-    { id: 'w-d2', kind: 'warrior', owner: 0 },
+    { id: 'w-atk1', kind: 'warrior', owner: 0 },
+    { id: 'w-atk2', kind: 'warrior', owner: 0 },
+    { id: 'w-d1', kind: 'warrior', owner: 1 },
+    { id: 'w-d2', kind: 'warrior', owner: 1 },
   ]
-  snap.state.pending = [
-    {
-      type: 'battle',
-      clearing: 4,
-      attacker: 1,
-      defender: 0,
-      stage: 'removeDefender',
-      rolls: [2, 0],
-      hits: { attacker: 2, defender: 0 },
-      effectsOrder: [1, 0],
-      effectsUsed: { attacker: false, defender: false },
-    },
-  ]
+  snap.state.players[0]!.hand = []
+  snap.state.players[1]!.hand = []
+  snap.state.pending = []
+  snap.rng = { seed: findDiceSeed(2, 0), cursor: 0 }
   const restored = Game.fromJSON(snap)
-  if (
-    !restored
-      .legalActions()
-      .some((spec) => spec.type === 'resolveEvent' && spec.params?.pieceIds)
-  ) {
-    throw new Error('expected removal specs')
+  if (!restored.legalActions().some((spec) => spec.type === 'battle')) {
+    throw new Error('expected battle')
   }
   await writeSnapshot('09-auto-remove-warriors.json', restored)
 }
 
-/** Battle about to resolve with forced 0–0 dice → zero-hit flash. */
+/** Zero-hit: daylight battle, forced 0–0 dice → flash. */
 async function makeZeroHitBattle(): Promise<void> {
   const game = lobbyTwoPlaying(43)
   advanceToActions(game)
   const snap = game.toJSON()
   snap.state.clearings[9]!.pieces = [
-    { id: 'w-a', kind: 'warrior', owner: 1 },
-    { id: 'w-d', kind: 'warrior', owner: 0 },
-  ]
-  snap.state.pending = [
-    {
-      type: 'battle',
-      clearing: 9,
-      attacker: 1,
-      defender: 0,
-      stage: 'ambush',
-      hits: { attacker: 0, defender: 0 },
-    },
+    { id: 'w-a', kind: 'warrior', owner: 0 },
+    { id: 'w-d', kind: 'warrior', owner: 1 },
   ]
   snap.state.players[0]!.hand = []
   snap.state.players[1]!.hand = []
-  // Find seed whose next two rolls are 0,0 (attacker then defender die).
-  let foundSeed: number | null = null
-  for (let seed = 0; seed < 50_000; seed++) {
-    const probe = new SeededRng({ seed, cursor: 0 })
-    if (probe.roll() === 0 && probe.roll() === 0) {
-      foundSeed = seed
-      break
-    }
-  }
-  if (foundSeed === null) {
-    throw new Error('no seed with consecutive 0,0 rolls')
-  }
-  snap.rng = { seed: foundSeed, cursor: 0 }
+  snap.state.pending = []
+  snap.rng = { seed: findDiceSeed(0, 0), cursor: 0 }
   const restored = Game.fromJSON(snap)
-  if (
-    !restored.legalActions().some(
-      (spec) =>
-        spec.type === 'resolveEvent' &&
-        Array.isArray(spec.params?.decline) &&
-        spec.params.decline.includes(true),
-    )
-  ) {
-    throw new Error('expected ambush decline')
+  const battle = restored.legalActions().find((spec) => spec.type === 'battle')
+  const targets = battle?.params?.targets ?? []
+  if (!targets.some((target) => target.clearing === 9 && target.defender === 1)) {
+    throw new Error(`expected battle at C9, got ${JSON.stringify(targets)}`)
   }
   await writeSnapshot('10-zero-hit-battle.json', restored)
 }
 
-/** Battle pending for clearing highlight. */
+/** Battle clearing highlight — start from daylight, battle into C10. */
 async function makeBattleHighlight(): Promise<void> {
   const game = lobbyTwoPlaying(47)
   advanceToActions(game)
   const snap = game.toJSON()
   snap.state.clearings[10]!.pieces = [
-    { id: 'w-a', kind: 'warrior', owner: 1 },
-    { id: 'w-d', kind: 'warrior', owner: 0 },
+    { id: 'w-a', kind: 'warrior', owner: 0 },
+    { id: 'w-d', kind: 'warrior', owner: 1 },
   ]
-  snap.state.pending = [
-    {
-      type: 'battle',
-      clearing: 10,
-      attacker: 1,
-      defender: 0,
-      stage: 'ambush',
-      hits: { attacker: 0, defender: 0 },
-    },
-  ]
-  // No ambush cards → only decline
   snap.state.players[0]!.hand = []
+  snap.state.players[1]!.hand = []
+  snap.state.pending = []
+  snap.rng = { seed: findDiceSeed(1, 1), cursor: 0 }
   await writeSnapshot('11-battle-highlight.json', Game.fromJSON(snap))
 }
 
-/** Field hospital / battle for banner copy. Reuse FH. */
+/**
+ * Banner prompts — same setup as Field Hospitals so video shows banner copy
+ * through combat → FH prompt (specific event text, not generic).
+ */
 async function makeBannerPrompt(): Promise<void> {
   const game = lobbyTwoPlaying(53)
+  advanceToActions(game)
   const snap = game.toJSON()
-  snap.state.pending = [
-    { type: 'fieldHospital', victim: 0, clearing: 5, count: 1 },
+  snap.state.clearings[4]!.pieces = [
+    { id: 'w-m1', kind: 'warrior', owner: 0 },
+    { id: 'w-m2', kind: 'warrior', owner: 0 },
+    { id: 'w-e1', kind: 'warrior', owner: 1 },
+    { id: 'w-e2', kind: 'warrior', owner: 1 },
   ]
-  snap.state.players[0]!.hand = []
+  snap.state.players[0]!.hand = [{ id: 'ROOT-212#banner', defId: 'ROOT-212' }]
+  snap.state.players[1]!.hand = []
+  snap.state.pending = []
+  snap.rng = { seed: findDiceSeed(2, 2), cursor: 0 }
   await writeSnapshot('12-banner-prompt.json', Game.fromJSON(snap))
 }
 
@@ -399,7 +369,7 @@ async function makeRuins(): Promise<void> {
   await writeSnapshot('13-ruins.json', game)
 }
 
-/** Duplicate crafted items for grouping. */
+/** Duplicate crafted items for grouping on faction board (bags×2, boots×2 exhausted). */
 async function makeCraftedCounts(): Promise<void> {
   const game = lobbyTwoPlaying(61)
   advanceToActions(game)
@@ -424,7 +394,7 @@ async function makeMarchLock(): Promise<void> {
   await writeSnapshot('15-march-lock.json', game)
 }
 
-/** Eyrie decree with battle card — show suit in tray. */
+/** Eyrie decree with battle card — show suit in tray, then resolve. */
 async function makeDecreeSuit(): Promise<void> {
   const game = lobbyTwoPlaying(71)
   const snap = game.toJSON()
@@ -454,12 +424,14 @@ async function makeDecreeSuit(): Promise<void> {
     },
     roostTrack: { placed: 5 },
   }
-  // Ensure battle possible: warriors + enemy in fox clearing 0
+  snap.state.players[0]!.hand = []
+  snap.state.players[1]!.hand = []
   snap.state.clearings[0]!.pieces = [
     { id: 'r', kind: 'building', owner: 1, type: 'roost', used: false },
     { id: 'w1', kind: 'warrior', owner: 1 },
     { id: 'w0', kind: 'warrior', owner: 0 },
   ]
+  snap.rng = { seed: findDiceSeed(1, 0), cursor: 0 }
   const restored = Game.fromJSON(snap)
   if (!restored.legalActions().some((spec) => spec.type === 'decree')) {
     throw new Error(
@@ -476,7 +448,7 @@ async function makeSlotCounts(): Promise<void> {
   await writeSnapshot('17-slot-counts.json', game)
 }
 
-/** Eyrie craft step with roosts (visual craft power). */
+/** Eyrie craft step with roosts — craft the card. */
 async function makeEyrieCraft(): Promise<void> {
   const game = lobbyTwoPlaying(79)
   const snap = game.toJSON()
@@ -484,13 +456,18 @@ async function makeEyrieCraft(): Promise<void> {
   snap.state.phase = 'daylight'
   snap.state.step = 'craft'
   snap.state.pending = []
-  snap.state.players[1]!.hand = [{ id: 'ROOT-204#craft', defId: 'ROOT-204' }] // hammer fox
-  // Roost on fox clearing 0
+  snap.state.players[1]!.hand = [{ id: 'ROOT-204#craft', defId: 'ROOT-204' }]
   snap.state.clearings[0]!.pieces = [
     { id: 'r', kind: 'building', owner: 1, type: 'roost', used: false },
     { id: 'w', kind: 'warrior', owner: 1 },
   ]
-  await writeSnapshot('18-eyrie-craft.json', Game.fromJSON(snap))
+  const restored = Game.fromJSON(snap)
+  if (!restored.legalActions().some((spec) => spec.type === 'craft')) {
+    throw new Error(
+      `expected craft, got ${restored.legalActions().map((spec) => spec.type).join(',')}`,
+    )
+  }
+  await writeSnapshot('18-eyrie-craft.json', restored)
 }
 
 /** Board with mixed pieces — no rings on icons. */
