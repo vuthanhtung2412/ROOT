@@ -11,7 +11,7 @@ pnpm --filter @root/web gen:openapi
 pnpm gen:api-client
 ```
 
-Writes `src/schema.d.ts` from `backend/web/openapi.json` (or live `ROOT_API/doc`).
+Writes `src/schema.d.ts` from `backend/web/openapi.json` (or live `ROOT_DEV_API/doc`).
 
 ## Use from a frontend
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { DEFAULT_ROOT_DEV_API_BASE_URL } from '@root/web-client'
 import { ApiError } from '#api/client.js'
 import { cmdAct } from '#commands/act.js'
 import { cmdActions } from '#commands/actions.js'
@@ -33,7 +34,7 @@ commands:
   auto [--turns 50] [--players 2] [--factions marquise,eyrie]
     (creates game, joins as faction names, starts — no manual lobby)
 
-env: ROOT_API (default http://localhost:3000)`)
+env: ROOT_DEV_API (default ${DEFAULT_ROOT_DEV_API_BASE_URL}; set in .mise.toml)`)
 }
 
 async function main(): Promise<void> {

@@ -22,7 +22,9 @@ const rootDirectory = path.resolve(skillDirectory, '../../..')
 const artifactsDirectory = path.join(rootDirectory, 'tmp/artifacts')
 const snapshotsDirectory = path.join(rootDirectory, 'tmp/qa/snapshots')
 const phaserUrl = process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
-const apiUrl = process.env.ROOT_API ?? 'http://localhost:3000'
+/** Keep in sync with `@root/web-client` DEFAULT_ROOT_DEV_API_BASE_URL / `.mise.toml` ROOT_DEV_API. */
+const DEFAULT_ROOT_DEV_API_BASE_URL = 'http://localhost:3000'
+const apiUrl = process.env.ROOT_DEV_API ?? DEFAULT_ROOT_DEV_API_BASE_URL
 const scenario = process.argv[2]
 
 const SCENARIOS = {
@@ -99,7 +101,7 @@ async function loadSnapshot() {
     ['--filter', '@root/cli', 'start', '--', 'load', snapshotPath],
     {
       cwd: rootDirectory,
-      env: { ...process.env, ROOT_API: apiUrl },
+      env: { ...process.env, ROOT_DEV_API: apiUrl },
       encoding: 'utf8',
     },
   )
@@ -148,7 +150,7 @@ async function cliAct(action) {
     ['--filter', '@root/cli', 'start', '--', 'act', JSON.stringify(action)],
     {
       cwd: rootDirectory,
-      env: { ...process.env, ROOT_API: apiUrl },
+      env: { ...process.env, ROOT_DEV_API: apiUrl },
       encoding: 'utf8',
     },
   )

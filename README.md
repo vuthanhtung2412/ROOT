@@ -65,7 +65,7 @@ Errors: `400` RuleError `{ code, detail }`, `404` no game, `409` slot occupied.
 # terminal 1
 pnpm --filter @root/web dev
 
-# terminal 2 (ROOT_API set via .mise.toml when mise trust/enter)
+# terminal 2 (ROOT_DEV_API set via .mise.toml when mise trust/enter)
 pnpm --filter @root/cli start -- new
 pnpm --filter @root/cli start -- join alice
 pnpm --filter @root/cli start -- join bob
@@ -76,7 +76,7 @@ pnpm --filter @root/cli start -- act '{"type":"endPhase"}'
 pnpm --filter @root/cli start -- log
 pnpm --filter @root/cli start -- undo
 # dump → edit → reload GameSnapshot
-curl -s "$ROOT_API/game/snapshot" -o snap.json
+curl -s "$ROOT_DEV_API/game/snapshot" -o snap.json
 pnpm --filter @root/cli start -- load snap.json
 
 # GP1 smoke: random agent

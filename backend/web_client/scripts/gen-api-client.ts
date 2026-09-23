@@ -8,7 +8,7 @@
  * Sources (first hit wins):
  *   1. OPENAPI_PATH — path to an OpenAPI JSON file
  *   2. backend/web/openapi.json — dumped by `pnpm --filter @root/web gen:openapi`
- *   3. ROOT_API/doc (default http://localhost:3000/doc) — live Hono OpenAPI route
+ *   3. ROOT_DEV_API/doc (default from resolveRootDevApiBaseUrl) — live Hono OpenAPI route
  *
  * Output: backend/web_client/src/schema.d.ts
  */
@@ -16,6 +16,7 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import openapiTypescript from 'openapi-typescript'
+import { resolveRootDevApiBaseUrl } from '../src/index.js'
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const packageRoot = resolve(scriptDirectory, '..')
@@ -23,7 +24,7 @@ const repositoryRoot = resolve(packageRoot, '../..')
 const defaultOpenApiDumpPath = resolve(repositoryRoot, 'backend/web/openapi.json')
 const outputDirectory = resolve(packageRoot, 'src')
 const outputPath = resolve(outputDirectory, 'schema.d.ts')
-const defaultDocumentationUrl = `${process.env.ROOT_API ?? 'http://localhost:3000'}/doc`
+const defaultDocumentationUrl = `${resolveRootDevApiBaseUrl()}/doc`
 
 async function resolveOpenApiSource(): Promise<{ label: string; absolutePath: string }> {
   const explicitPath = process.env.OPENAPI_PATH

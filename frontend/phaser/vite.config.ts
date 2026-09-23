@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { DEFAULT_ROOT_DEV_API_BASE_URL } from '@root/web-client'
 import { defineConfig } from 'vitest/config'
 
-const webApiTarget = process.env.ROOT_API ?? 'http://localhost:3000'
+const webApiTarget = process.env.ROOT_DEV_API ?? DEFAULT_ROOT_DEV_API_BASE_URL
 const packageRoot = path.dirname(fileURLToPath(import.meta.url))
 
 /** Vite + Vitest config for @root/phaser — proxies game/map/ws API to @root/web. */
