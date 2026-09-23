@@ -225,6 +225,7 @@ export class TurnBanner {
   private lastView: TurnBannerViewModel | null = null
   private lastComposer: TurnBannerComposerView | null = null
   private countStepper: CountStepperState | null = null
+  private lastPaintKey: string | null = null
 
   constructor(scene: Phaser.Scene, handlers: TurnBannerHandlers) {
     this.scene = scene
@@ -345,6 +346,16 @@ export class TurnBanner {
   }
 
   private repaint(): void {
+    const paintKey = JSON.stringify({
+      view: this.lastView,
+      composer: this.lastComposer,
+      stepperIndex: this.countStepper?.selectedIndex ?? null,
+    })
+    if (paintKey === this.lastPaintKey) {
+      return
+    }
+    this.lastPaintKey = paintKey
+
     for (const node of this.optionNodes) {
       node.destroy()
     }
