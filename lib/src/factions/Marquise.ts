@@ -12,6 +12,7 @@ import { matchesSuit } from '#cards/suit.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import { canCraft } from '#queries/craft.js'
+import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { canMove } from '#queries/move.js'
 import { canPlace, keepClearingFor } from '#queries/place.js'
 import { warriors } from '#queries/pieces.js'
@@ -411,16 +412,6 @@ function legalBattleTargets(state: GameState, seat: Seat): BattleTargetChoice[] 
     }
   }
   return targets
-}
-
-function enemySeatsInClearing(state: GameState, clearing: ClearingId, seat: Seat): Seat[] {
-  const enemies = new Set<Seat>()
-  for (const p of state.clearings[clearing]!.pieces) {
-    if (p.owner !== seat && (p.kind === 'warrior' || p.kind === 'pawn')) {
-      enemies.add(p.owner)
-    }
-  }
-  return [...enemies]
 }
 
 function canBattle(

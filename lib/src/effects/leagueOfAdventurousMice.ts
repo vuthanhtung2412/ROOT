@@ -2,6 +2,7 @@ import type { Action, ActionSpec, MarchMove } from '#actions/types.js'
 import type { CardEffect } from '#triggers/effects.js'
 import type { Ctx } from '#game/ctx.js'
 import { FALL } from '#map/fall.js'
+import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { canMove } from '#queries/move.js'
 import { warriors } from '#queries/pieces.js'
 import { playerOf } from '#queries/seat.js'
@@ -54,16 +55,6 @@ function legalLeagueMoves(state: GameState, seat: Seat): MarchMove[] {
     }
   }
   return moves
-}
-
-function enemySeatsInClearing(state: GameState, clearing: ClearingId, seat: Seat): Seat[] {
-  const enemies = new Set<Seat>()
-  for (const piece of state.clearings[clearing]!.pieces) {
-    if (piece.owner !== seat && (piece.kind === 'warrior' || piece.kind === 'pawn')) {
-      enemies.add(piece.owner)
-    }
-  }
-  return [...enemies]
 }
 
 function legalLeagueBattles(

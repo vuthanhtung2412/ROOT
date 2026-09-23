@@ -477,6 +477,36 @@ describe('Law 7.5 Daylight', () => {
     expect(state.pending.some((e) => e.type === 'battle')).toBe(true)
   })
 
+  it('Rule: Battle 4.3.3.II — decree battle vs building-only defenseless defender', () => {
+    const fox = FOX()
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'decree',
+        board: eyrieBoard({
+          decree: { recruit: [], move: [], battle: [fox], build: [] },
+        }),
+        turnScratch: scratch({ column: 'battle', remaining: [fox.id] }),
+      }),
+      0,
+      [
+        { id: 'r', kind: 'building', type: 'roost', owner: 1, used: false },
+        { id: 'w1', kind: 'warrior', owner: 1 },
+        { id: 'saw', kind: 'building', type: 'sawmill', owner: 0, used: false },
+      ],
+    )
+    const decreeSpec = EYRIE.legalActions(state, setupCtx()).find(
+      (spec) => spec.type === 'decree',
+    )
+    expect(decreeSpec?.params?.targets).toEqual([{ clearing: 0, defender: 0 }])
+    EYRIE.apply(
+      state,
+      { type: 'decree', column: 'battle', cardId: fox.id, clearing: 0, defender: 0 },
+      setupCtx(),
+    )
+    expect(state.pending.some((event) => event.type === 'battle')).toBe(true)
+  })
+
   it('Rule: 7.5.2.IV Build — roost in ruled matching-suit clearing with no roost', () => {
     const fox = FOX()
     // Rule clearing 5 (fox) with warriors, no roost; track has roosts

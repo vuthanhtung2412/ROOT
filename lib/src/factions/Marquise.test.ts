@@ -557,6 +557,42 @@ describe('Marquise legalActions board choices', () => {
     expect(battleSpec?.params?.targets).toEqual([{ clearing: 4, defender: 1 }])
   })
 
+  it('Rule: Battle 4.3.3.II — battle legal vs building-only defenseless defender', () => {
+    const state = withPieces(
+      minimalState({ phase: 'daylight', step: 'actions' }),
+      4,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'b1', kind: 'building', owner: 1, type: 'sawmill', used: false },
+      ],
+    )
+    const battleSpec = MARQUISE.legalActions(state, setupContext()).find(
+      (spec) => spec.type === 'battle',
+    )
+    expect(battleSpec?.params?.targets).toEqual([{ clearing: 4, defender: 1 }])
+    MARQUISE.apply(
+      state,
+      { type: 'battle', clearing: 4, defender: 1 },
+      setupContext(),
+    )
+    expect(state.pending[0]?.type).toBe('battle')
+  })
+
+  it('Rule: Battle 4.3.3.II — battle legal vs token-only defenseless defender', () => {
+    const state = withPieces(
+      minimalState({ phase: 'daylight', step: 'actions' }),
+      4,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 't1', kind: 'token', owner: 1, type: 'wood' },
+      ],
+    )
+    const battleSpec = MARQUISE.legalActions(state, setupContext()).find(
+      (spec) => spec.type === 'battle',
+    )
+    expect(battleSpec?.params?.targets).toEqual([{ clearing: 4, defender: 1 }])
+  })
+
   it('exposes recruit as flag-only (no params)', () => {
     const game = lobbyTwo(3)
     advanceToActions(game)
