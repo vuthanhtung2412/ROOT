@@ -1,7 +1,9 @@
 import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
+import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import type { Piece, Seat } from '#pieces/types.js'
+import { matchesSuit } from '#cards/suit.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
@@ -117,9 +119,13 @@ export function removePieces(
   for (const [victim, count] of victims) {
     if (count <= 0) continue
     const faction = playerOf(state, victim).faction
-    const toSupply = !hasKeep(state, victim) || options?.skipFieldHospital === true
+    const skipHospital =
+      !hasKeep(state, victim) || options?.skipFieldHospital === true
+    const canOfferHospital =
+      !skipHospital && victimHasFieldHospitalCard(state, victim, clearing)
+    const sentToSupply = !canOfferHospital
 
-    if (toSupply) {
+    if (sentToSupply) {
       returnWarriorsToSupply(state, victim, count)
     } else {
       state.pending.push({
@@ -136,7 +142,7 @@ export function removePieces(
       faction,
       clearing,
       count,
-      toSupply,
+      toSupply: sentToSupply,
     })
   }
 
@@ -145,4 +151,17 @@ export function removePieces(
   }
 
   return logs
+}
+
+/** True when victim holds a card matching the clearing suit (or bird). */
+function victimHasFieldHospitalCard(
+  state: GameState,
+  victim: Seat,
+  clearing: ClearingId,
+): boolean {
+  const suit = FALL.clearings[clearing]?.suit
+  if (suit === undefined) {
+    return false
+  }
+  return playerOf(state, victim).hand.some((card) => matchesSuit(card, suit))
 }
