@@ -39,9 +39,9 @@ describe('marquiseActionComposer cards', () => {
   })
 
   it('discard accumulates cards then confirms', () => {
-    const { hooks } = createMarquiseCardComposerHooks()
+    const cards = createMarquiseCardComposerHooks()
     const composer = new ActionComposer()
-    composer.setHooks(hooks)
+    composer.setHooks(cards.hooks)
 
     composer.begin(
       makeActionSpec({
@@ -54,6 +54,11 @@ describe('marquiseActionComposer cards', () => {
     expect(afterSecond.kind).toBe('incomplete')
     if (afterSecond.kind === 'incomplete') {
       expect(afterSecond.prompt.canConfirm).toBe(true)
+    }
+    const draft = cards.getDraft()
+    expect(draft.type).toBe('discardMany')
+    if (draft.type === 'discardMany') {
+      expect(draft.selected).toEqual(['a', 'c'])
     }
     expect(composer.confirm()).toEqual({
       kind: 'ready',

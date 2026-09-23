@@ -23,6 +23,7 @@ export type CardHoldHandler = (card: {
 const CARD_WIDTH = 78
 const CARD_HEIGHT = 110
 const HOLD_MS = 350
+const SELECTED_RAISE_OFFSET = -18
 
 export class CardView {
   readonly container: Phaser.GameObjects.Container
@@ -32,6 +33,9 @@ export class CardView {
   private readonly face: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle
   private holdTimer: Phaser.Time.TimerEvent | null = null
   private holdFired = false
+  private baseX = 0
+  private baseY = 0
+  private selected = false
 
   constructor(
     scene: Phaser.Scene,
@@ -59,6 +63,8 @@ export class CardView {
     this.container = scene.add.container(0, 0, [this.frame, this.face])
     this.container.setSize(CARD_WIDTH + 6, CARD_HEIGHT + 6)
     this.container.setAlpha(viewModel.dimmed ? 0.45 : 1)
+    this.selected = viewModel.selected
+    this.applySelectedOffset()
 
     this.face.setInteractive({ useHandCursor: true })
 
@@ -93,7 +99,9 @@ export class CardView {
   }
 
   setPosition(x: number, y: number): void {
-    this.container.setPosition(x, y)
+    this.baseX = x
+    this.baseY = y
+    this.applySelectedOffset()
   }
 
   sync(viewModel: CardViewModel): void {
@@ -103,11 +111,20 @@ export class CardView {
       1,
     )
     this.container.setAlpha(viewModel.dimmed ? 0.45 : 1)
+    this.selected = viewModel.selected
+    this.applySelectedOffset()
   }
 
   destroy(): void {
     this.clearHoldTimer()
     this.container.destroy(true)
+  }
+
+  private applySelectedOffset(): void {
+    this.container.setPosition(
+      this.baseX,
+      this.baseY + (this.selected ? SELECTED_RAISE_OFFSET : 0),
+    )
   }
 
   private clearHoldTimer(): void {
