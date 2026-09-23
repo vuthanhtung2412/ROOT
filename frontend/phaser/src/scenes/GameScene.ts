@@ -10,7 +10,7 @@ import {
   type ComposerOutcome,
 } from '#game/ActionComposer.ts'
 import { soleEndPhaseAction } from '#game/forcedAction.ts'
-import { createEventComposerHooks, fieldHospitalCardIdsFromSpecs, isFieldHospitalPending, battleAmbushRole } from '#game/eventActionComposer.ts'
+import { createEventComposerHooks, fieldHospitalCardIdsFromSpecs, isFieldHospitalPending, battleAmbushRole, isBattleRemovalPending } from '#game/eventActionComposer.ts'
 import {
   buildBattleRemovalStepperChoices,
   buildPiecesByIdFromClearings,
@@ -531,6 +531,11 @@ export class GameScene extends Phaser.Scene {
       banner.actorSeat,
       localControlsActor,
     )
+    this.maybeAutoBeginBattleRemoval(
+      snapshot,
+      banner.actorSeat,
+      localControlsActor,
+    )
     this.maybeAutoEndPhase(snapshot, banner.actorSeat, localControlsActor)
     this.paintStatus(
       localControlsActor
@@ -626,6 +631,41 @@ export class GameScene extends Phaser.Scene {
     this.autoPendingPromptKey = key
     const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
     this.applyComposerOutcome(this.eventComposer.beginAmbush(cardIds, role))
+  }
+
+  /** Auto-open (or auto-submit single) battle hit removal. */
+  private maybeAutoBeginBattleRemoval(
+    snapshot: GameSessionSnapshot,
+    actorSeat: number,
+    localControlsActor: boolean,
+  ): void {
+    if (!localControlsActor || snapshot.state === null) {
+      return
+    }
+    const pending = snapshot.state.pending[0]
+    if (!isBattleRemovalPending(pending)) {
+      return
+    }
+    const removalSpecs = snapshot.legalActions.filter(
+      (action) =>
+        isPieceIdsRemovalSpec(action) && action.actor === actorSeat,
+    )
+    if (removalSpecs.length === 0) {
+      return
+    }
+    const key = JSON.stringify({
+      pending,
+      actions: removalSpecs,
+      kind: 'removal',
+    })
+    if (key === this.autoPendingPromptKey) {
+      return
+    }
+    this.autoPendingPromptKey = key
+    const combos = collectPieceIdsCombosFromSpecs(removalSpecs)
+    const piecesById = buildPiecesByIdFromClearings(snapshot.state.clearings)
+    const choices = buildBattleRemovalStepperChoices(combos, piecesById)
+    this.applyComposerOutcome(this.eventComposer.beginBattleRemoval(choices))
   }
 
   /** Auto-submit when endPhase is the only legal action for the actor. */

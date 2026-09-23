@@ -65,6 +65,19 @@ export function createEventComposerHooks(): {
       clear()
       return { kind: 'idle' }
     }
+    // Single legal combo (typical warrior-only): submit without prompt.
+    if (choices.length === 1) {
+      const only = choices[0]
+      if (only === undefined) {
+        clear()
+        return { kind: 'idle' }
+      }
+      clear()
+      return {
+        kind: 'ready',
+        action: { type: 'resolveEvent', pieceIds: only.pieceIds },
+      }
+    }
     overlayKind = 'battle'
     draft = { type: 'pickRemoval', choices }
     optionPresentation = 'stepper'
@@ -481,4 +494,15 @@ export function battleAmbushRole(
     return stage
   }
   return null
+}
+
+export function isBattleRemovalPending(pending: unknown): boolean {
+  if (typeof pending !== 'object' || pending === null) {
+    return false
+  }
+  if (Reflect.get(pending, 'type') !== 'battle') {
+    return false
+  }
+  const stage = Reflect.get(pending, 'stage')
+  return stage === 'removeDefender' || stage === 'removeAttacker'
 }
