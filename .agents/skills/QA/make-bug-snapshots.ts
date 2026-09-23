@@ -95,15 +95,59 @@ async function makeDefenselessBattle(): Promise<void> {
   await writeSnapshot('01-defenseless-battle.json', restored)
 }
 
-/** Finished game with winner seat 1. */
+/**
+ * Marquise at 29 VP; roost-only enemy in C4. Battle then remove roost → +1 VP → win.
+ * Starts unfinished so the QA video can play into the winner overlay.
+ */
 async function makeWinnerMenu(): Promise<void> {
   const game = lobbyTwoPlaying(13)
+  advanceToActions(game)
   const snap = game.toJSON()
-  snap.state.status = 'finished'
-  snap.state.winner = 1
-  snap.state.players[1]!.vp = 32
+  snap.state.status = 'playing'
+  delete snap.state.winner
+  snap.state.players[0]!.vp = 29
+  snap.state.players[1]!.vp = 0
   snap.state.pending = []
+  snap.state.clearings[4]!.pieces = [
+    { id: 'w-atk', kind: 'warrior', owner: 0 },
+    {
+      id: 'b-def',
+      kind: 'building',
+      owner: 1,
+      type: 'roost',
+      used: false,
+    },
+  ]
+  snap.state.players[0]!.hand = []
+  snap.state.players[1]!.hand = []
+  // Next two battle dice = 1, 0 → one attacker hit on the roost.
+  let foundSeed: number | null = null
+  for (let seed = 0; seed < 50_000; seed++) {
+    const probe = new SeededRng({ seed, cursor: 0 })
+    if (probe.roll() === 1 && probe.roll() === 0) {
+      foundSeed = seed
+      break
+    }
+  }
+  if (foundSeed === null) {
+    throw new Error('no seed with rolls 1 then 0')
+  }
+  snap.rng = { seed: foundSeed, cursor: 0 }
+
   const restored = Game.fromJSON(snap)
+  if (restored.state.status !== 'playing' || restored.state.winner !== undefined) {
+    throw new Error('winner snapshot must start unfinished')
+  }
+  if (restored.state.players[0]!.vp !== 29) {
+    throw new Error('expected marquise at 29 VP')
+  }
+  const battle = restored.legalActions().find((spec) => spec.type === 'battle')
+  const targets = battle?.params?.targets ?? []
+  if (!targets.some((target) => target.clearing === 4 && target.defender === 1)) {
+    throw new Error(
+      `expected battle vs roost at C4, got ${JSON.stringify(targets)}`,
+    )
+  }
   await writeSnapshot('02-winner-menu.json', restored)
 }
 
