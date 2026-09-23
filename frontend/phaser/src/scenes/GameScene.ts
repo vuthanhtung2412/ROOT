@@ -583,7 +583,7 @@ export class GameScene extends Phaser.Scene {
     )
     this.refreshFactionBoardModal(snapshot.state)
     this.gameDrawer?.sync(snapshot.state.deck?.discard.length ?? 0)
-    this.battleOverlay?.sync(buildBattleOverlayViewModel(snapshot.state))
+    this.syncBattleOverlay()
     this.syncBattleClearingHighlight(snapshot.state)
     this.syncWinner(snapshot.state)
     this.maybeAutoBeginSetupPrompt(
