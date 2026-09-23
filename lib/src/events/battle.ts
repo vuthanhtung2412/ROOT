@@ -84,14 +84,20 @@ function victimPieces(state: GameState, clearing: ClearingId, victim: Seat): Pie
   return state.clearings[clearing]!.pieces.filter((p) => p.owner === victim)
 }
 
-/** Rule: Battle 4 — warriors removed before buildings/tokens. */
+/**
+ * Rule: 1.4 + Battle 4.3.4 — remove exactly min(hits, pieces);
+ * warriors before buildings/tokens.
+ */
 export function isValidRemoval(state: GameState, selection: RemovalSelection): boolean {
   const { clearing, victim, pieceIds, maxHits } = selection
-  if (pieceIds.length === 0 || pieceIds.length > maxHits) return false
+  if (pieceIds.length === 0) return false
   const ids = new Set(pieceIds)
   if (ids.size !== pieceIds.length) return false
 
   const onBoard = victimPieces(state, clearing, victim)
+  const exactRemoveCount = Math.min(maxHits, onBoard.length)
+  if (pieceIds.length !== exactRemoveCount) return false
+
   const byId = new Map(onBoard.map((piece) => [piece.id, piece]))
   for (const id of pieceIds) {
     if (!byId.has(id)) return false
@@ -107,6 +113,7 @@ export function isValidRemoval(state: GameState, selection: RemovalSelection): b
   return true
 }
 
+/** Exact-size removal combos only (Rule: 1.4 + Battle 4.3.4). */
 function legalRemovalSpecs(
   state: GameState,
   event: BattleEvent,
@@ -118,43 +125,46 @@ function legalRemovalSpecs(
   if (pieces.length === 0) return []
 
   const specs: ActionSpec[] = []
-  const warriorIds = pieces.filter((p) => p.kind === 'warrior').map((p) => p.id)
-  const otherIds = pieces.filter((p) => p.kind !== 'warrior').map((p) => p.id)
+  const warriorIds = pieces.filter((piece) => piece.kind === 'warrior').map((piece) => piece.id)
+  const otherIds = pieces.filter((piece) => piece.kind !== 'warrior').map((piece) => piece.id)
+  const exactRemoveCount = Math.min(maxHits, pieces.length)
 
-  const maxRemove = Math.min(maxHits, pieces.length)
-
-  function addCombos(ids: string[], k: number, start: number, cur: string[]): void {
-    if (cur.length === k) {
+  function addCombos(
+    ids: string[],
+    chooseCount: number,
+    startIndex: number,
+    current: string[],
+    prefix: string[],
+  ): void {
+    if (current.length === chooseCount) {
       specs.push({
         type: 'resolveEvent',
         actor: victim,
-        params: { pieceIds: [...cur] },
+        params: { pieceIds: [...prefix, ...current] },
       })
       return
     }
-    for (let i = start; i < ids.length; i++) {
-      cur.push(ids[i]!)
-      addCombos(ids, k, i + 1, cur)
-      cur.pop()
+    for (let index = startIndex; index < ids.length; index += 1) {
+      const pieceId = ids[index]
+      if (pieceId === undefined) {
+        continue
+      }
+      current.push(pieceId)
+      addCombos(ids, chooseCount, index + 1, current, prefix)
+      current.pop()
     }
   }
 
-  for (let k = 1; k <= Math.min(maxRemove, warriorIds.length); k++) {
-    addCombos(warriorIds, k, 0, [])
-  }
-  if (warriorIds.length <= maxRemove) {
-    for (let k = 1; k <= Math.min(maxRemove - warriorIds.length, otherIds.length); k++) {
-      addCombos(otherIds, k, 0, [])
-    }
-    if (warriorIds.length + otherIds.length <= maxRemove && otherIds.length > 0) {
-      specs.push({
-        type: 'resolveEvent',
-        actor: victim,
-        params: { pieceIds: [...warriorIds, ...otherIds] },
-      })
-    }
+  if (exactRemoveCount <= warriorIds.length) {
+    addCombos(warriorIds, exactRemoveCount, 0, [], [])
+    return specs
   }
 
+  const otherChooseCount = exactRemoveCount - warriorIds.length
+  if (otherChooseCount > otherIds.length) {
+    return []
+  }
+  addCombos(otherIds, otherChooseCount, 0, [], warriorIds)
   return specs
 }
 
