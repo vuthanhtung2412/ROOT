@@ -342,6 +342,12 @@ export class BoardView {
       ring.setStrokeStyle(3, 0x7ec8ff, 1)
       return
     }
+    // While a prompt highlights legal clearings, hide rule rings so only
+    // targets read as selectable (battle needs enemy warrior/token/building).
+    if (this.highlightedClearingIds.size > 0) {
+      ring.setStrokeStyle(2, 0xf0e6d3, 0.2)
+      return
+    }
     const rulerSeat = this.rulerByClearing.get(clearingId) ?? null
     if (rulerSeat !== null) {
       const color = factionColorForSeat(rulerSeat, this.factions)
