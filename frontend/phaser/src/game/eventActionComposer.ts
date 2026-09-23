@@ -16,6 +16,7 @@ type EventDraft =
   | { type: 'idle' }
   | { type: 'pickCard'; cardIds: string[]; kind: 'fieldHospital' | 'battle' }
   | { type: 'pickFieldHospital'; cardIds: string[] }
+  | { type: 'pickAmbush'; cardIds: string[]; role: 'ambush' | 'foil' }
   | { type: 'pickOrder'; orders: number[][] }
   | { type: 'pickEffect' }
   | { type: 'pickKeep'; clearings: number[] }
@@ -40,6 +41,10 @@ export function createEventComposerHooks(): {
     choices: BattleRemovalStepperChoice[],
   ) => ComposerOutcome
   beginFieldHospital: (cardIds: readonly string[]) => ComposerOutcome
+  beginAmbush: (
+    cardIds: readonly string[],
+    role: 'ambush' | 'foil',
+  ) => ComposerOutcome
 } {
   let draft: EventDraft = { type: 'idle' }
   let promptOptions: Array<{ label: string; value: string }> = []
@@ -100,6 +105,42 @@ export function createEventComposerHooks(): {
       kind: 'incomplete',
       prompt: {
         message: 'Field Hospitals — spend matching card or Decline',
+        highlightClearings: [],
+        enabledCardIds: uniqueCardIds,
+        canConfirm: false,
+        canCancel: true,
+      },
+    }
+  }
+
+  const beginAmbush = (
+    cardIds: readonly string[],
+    role: 'ambush' | 'foil',
+  ): ComposerOutcome => {
+    overlayKind = 'battle'
+    if (cardIds.length === 0) {
+      clear()
+      return {
+        kind: 'ready',
+        action: { type: 'resolveEvent', decline: true },
+      }
+    }
+    const uniqueCardIds = [...new Set(cardIds)]
+    draft = { type: 'pickAmbush', cardIds: uniqueCardIds, role }
+    optionPresentation = 'buttons'
+    promptOptions = [
+      {
+        label: role === 'foil' ? 'Skip foil' : 'Skip ambush',
+        value: FIELD_HOSPITAL_DECLINE_VALUE,
+      },
+    ]
+    return {
+      kind: 'incomplete',
+      prompt: {
+        message:
+          role === 'foil'
+            ? 'Foil ambush — play matching Ambush or Skip'
+            : 'Ambush? — play matching Ambush or Skip',
         highlightClearings: [],
         enabledCardIds: uniqueCardIds,
         canConfirm: false,
@@ -264,6 +305,10 @@ export function createEventComposerHooks(): {
     },
 
     chooseCard: (cardId: string): ComposerOutcome | null => {
+      if (draft.type === 'pickAmbush' && draft.cardIds.includes(cardId)) {
+        clear()
+        return { kind: 'ready', action: { type: 'resolveEvent', cardId } }
+      }
       if (
         draft.type === 'pickFieldHospital' &&
         draft.cardIds.includes(cardId)
@@ -300,6 +345,13 @@ export function createEventComposerHooks(): {
     },
 
     chooseColumn: (value: string): ComposerOutcome | null => {
+      if (draft.type === 'pickAmbush') {
+        if (value !== FIELD_HOSPITAL_DECLINE_VALUE) {
+          return null
+        }
+        clear()
+        return { kind: 'ready', action: { type: 'resolveEvent', decline: true } }
+      }
       if (draft.type === 'pickFieldHospital') {
         if (value !== FIELD_HOSPITAL_DECLINE_VALUE) {
           return null
@@ -355,6 +407,14 @@ export function createEventComposerHooks(): {
       ) {
         return null
       }
+      // Ambush/foil must resolve — cancel = skip.
+      if (draft.type === 'pickAmbush') {
+        clear()
+        return {
+          kind: 'ready',
+          action: { type: 'resolveEvent', decline: true },
+        }
+      }
       // Field Hospitals must resolve — cancel = decline.
       if (draft.type === 'pickFieldHospital') {
         clear()
@@ -376,6 +436,7 @@ export function createEventComposerHooks(): {
     getOverlayKind: () => overlayKind,
     beginBattleRemoval,
     beginFieldHospital,
+    beginAmbush,
   }
 }
 
@@ -404,4 +465,20 @@ export function isFieldHospitalPending(pending: unknown): boolean {
     return false
   }
   return Reflect.get(pending, 'type') === 'fieldHospital'
+}
+
+export function battleAmbushRole(
+  pending: unknown,
+): 'ambush' | 'foil' | null {
+  if (typeof pending !== 'object' || pending === null) {
+    return null
+  }
+  if (Reflect.get(pending, 'type') !== 'battle') {
+    return null
+  }
+  const stage = Reflect.get(pending, 'stage')
+  if (stage === 'ambush' || stage === 'foil') {
+    return stage
+  }
+  return null
 }
