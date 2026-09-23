@@ -131,8 +131,8 @@ describe('eyrieActionComposer', () => {
       expect(afterTo.prompt.message).toContain('how many')
     }
     expect(eyrie.getPromptOptions()).toEqual([
-      { label: '1 warrior', value: '1' },
-      { label: '2 warriors', value: '2' },
+      { label: '1 x warriors', value: '1' },
+      { label: '2 x warriors', value: '2' },
     ])
     expect(composer.chooseColumn('2')).toEqual({
       kind: 'ready',
