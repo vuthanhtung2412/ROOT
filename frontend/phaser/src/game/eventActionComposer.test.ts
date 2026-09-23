@@ -164,17 +164,35 @@ describe('eventActionComposer battle', () => {
 
     const mid = events.beginBattleRemoval([
       {
-        label: '2 x warriors',
+        label: '1 x sawmill',
         value: '0',
-        pieceIds: ['w1', 'w2'],
+        pieceIds: ['b1'],
+      },
+      {
+        label: '1 x wood',
+        value: '1',
+        pieceIds: ['t1'],
       },
     ])
     expect(mid.kind).toBe('incomplete')
     expect(events.getOptionPresentation()).toBe('stepper')
-    expect(events.getPromptOptions()).toEqual([
-      { label: '2 x warriors', value: '0' },
-    ])
-    expect(composer.chooseColumn('0')).toEqual({
+    expect(composer.chooseColumn('1')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', pieceIds: ['t1'] },
+    })
+  })
+
+  it('single removal combo auto-submits', () => {
+    const events = createEventComposerHooks()
+    expect(
+      events.beginBattleRemoval([
+        {
+          label: '2 x warriors',
+          value: '0',
+          pieceIds: ['w1', 'w2'],
+        },
+      ]),
+    ).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', pieceIds: ['w1', 'w2'] },
     })
