@@ -83,6 +83,57 @@ function eyrieState(
 describe('Law 7.2 Faction Rules and Abilities', () => {
   beforeEach(() => resetPlaceIds())
 
+  it('Rule: 7.5.1 Craft — live roost blocked same turn, refreshed next turn', () => {
+    const firstHammer = HAMMER()
+    const secondHammer = card('ROOT-204', 2)
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'craft',
+        hand: [firstHammer, secondHammer],
+        board: eyrieBoard({ supply: { warriors: 14 } }),
+      }),
+      0,
+      [{ id: 'r', kind: 'building', type: 'roost', owner: 1, used: false }],
+    )
+    expect(canCraft(state, 1, firstHammer)).toBe(true)
+    craftCard(state, 1, firstHammer.id, setupCtx())
+    expect(canCraft(state, 1, secondHammer)).toBe(false)
+    const roostAfterCraft = state.clearings[0]!.pieces.find(
+      (piece) => piece.kind === 'building' && piece.type === 'roost',
+    )
+    expect(roostAfterCraft?.kind).toBe('building')
+    if (roostAfterCraft?.kind === 'building') {
+      expect(roostAfterCraft.used).toBe(true)
+    }
+
+    state.itemSupply.hammer = 1
+    EYRIE.endTurn(state)
+    const roostAfterTurn = state.clearings[0]!.pieces.find(
+      (piece) => piece.kind === 'building' && piece.type === 'roost',
+    )
+    expect(roostAfterTurn?.kind).toBe('building')
+    if (roostAfterTurn?.kind === 'building') {
+      expect(roostAfterTurn.used).toBe(false)
+    }
+    expect(canCraft(state, 1, secondHammer)).toBe(true)
+  })
+
+  it('Rule: 7.5.1 Craft — removed roost cannot craft', () => {
+    const hammer = HAMMER()
+    const state = withPieces(
+      eyrieState({
+        phase: 'daylight',
+        step: 'craft',
+        hand: [hammer],
+      }),
+      0,
+      [{ id: 'r', kind: 'building', type: 'roost', owner: 1, used: false }],
+    )
+    removePieces(state, { clearing: 0, pieceIds: ['r'] })
+    expect(canCraft(state, 1, hammer)).toBe(false)
+  })
+
   it('Rule: 7.2.1 Crafting — daylight craft step before decree; roosts craft', () => {
     expect(EYRIE.steps.daylight).toEqual(['craft', 'decree'])
     const hammer = HAMMER()
