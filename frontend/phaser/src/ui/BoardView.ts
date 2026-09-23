@@ -10,6 +10,7 @@ import {
 } from '#game/boardLayout.ts'
 import {
   clearingHasRuin,
+  clearingOpenSlotCount,
   RUIN_MARKER_LABEL,
 } from '#game/clearingIndicators.ts'
 import { clearingRuler } from '#game/clearingRuler.ts'
@@ -284,26 +285,46 @@ export class BoardView {
 
     for (const visual of this.clearingVisuals) {
       const clearing = clearings[visual.clearingId]
-      if (!clearingHasRuin(clearing)) {
-        continue
+      if (clearingHasRuin(clearing)) {
+        const ruinBadge = this.scene.add
+          .text(
+            visual.hitArea.x - visual.hitArea.radius * 0.55,
+            visual.hitArea.y - visual.hitArea.radius * 0.75,
+            RUIN_MARKER_LABEL,
+            {
+              fontFamily: 'Georgia, serif',
+              fontSize: '13px',
+              color: '#1a1a1a',
+              backgroundColor: '#c8a45c',
+              padding: { x: 4, y: 2 },
+              fontStyle: 'bold',
+            },
+          )
+          .setOrigin(0.5)
+        this.pieceLayer.add(ruinBadge)
+        this.indicatorNodes.push(ruinBadge)
       }
-      const badge = this.scene.add
-        .text(
-          visual.hitArea.x - visual.hitArea.radius * 0.55,
-          visual.hitArea.y - visual.hitArea.radius * 0.75,
-          RUIN_MARKER_LABEL,
-          {
-            fontFamily: 'Georgia, serif',
-            fontSize: '13px',
-            color: '#1a1a1a',
-            backgroundColor: '#c8a45c',
-            padding: { x: 4, y: 2 },
-            fontStyle: 'bold',
-          },
-        )
-        .setOrigin(0.5)
-      this.pieceLayer.add(badge)
-      this.indicatorNodes.push(badge)
+
+      const openSlots = clearingOpenSlotCount(visual.clearingId, clearing)
+      if (openSlots > 0) {
+        const slotBadge = this.scene.add
+          .text(
+            visual.hitArea.x + visual.hitArea.radius * 0.55,
+            visual.hitArea.y - visual.hitArea.radius * 0.75,
+            String(openSlots),
+            {
+              fontFamily: 'monospace',
+              fontSize: '11px',
+              color: '#f0e6d3',
+              backgroundColor: '#1a2438cc',
+              padding: { x: 4, y: 2 },
+              fontStyle: 'bold',
+            },
+          )
+          .setOrigin(0.5)
+        this.pieceLayer.add(slotBadge)
+        this.indicatorNodes.push(slotBadge)
+      }
     }
   }
 
