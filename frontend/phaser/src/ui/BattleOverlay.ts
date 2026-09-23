@@ -10,6 +10,8 @@ export type BattleOverlayViewModel = {
   rolls: readonly [number, number] | null
   hits: { attacker: number; defender: number }
   prompt: string | null
+  /** Brief post-battle message (e.g. zero hits). */
+  outcomeMessage: string | null
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -102,10 +104,16 @@ export class BattleOverlay {
       return
     }
 
-    const stageLabel = STAGE_LABELS[viewModel.stage] ?? viewModel.stage
+    const isOutcomeFlash = viewModel.outcomeMessage !== null
+    const stageLabel = isOutcomeFlash
+      ? viewModel.outcomeMessage
+      : (STAGE_LABELS[viewModel.stage] ?? viewModel.stage)
     this.headline.setText(
-      `Battle · C${String(viewModel.clearing)} · ${stageLabel}`,
+      isOutcomeFlash
+        ? `${viewModel.outcomeMessage} · C${String(viewModel.clearing)}`
+        : `Battle · C${String(viewModel.clearing)} · ${stageLabel}`,
     )
+    this.headline.setColor(isOutcomeFlash ? '#ffe08a' : '#f0e6d3')
 
     if (viewModel.rolls !== null) {
       const [attackerRoll, defenderRoll] = viewModel.rolls
@@ -132,7 +140,9 @@ export class BattleOverlay {
       this.defenderMeta.setText(`DEF ${viewModel.defenderFaction}\n(waiting roll)`)
     }
 
-    this.promptText.setText(viewModel.prompt ?? '')
+    this.promptText.setText(
+      isOutcomeFlash ? 'No pieces removed' : (viewModel.prompt ?? ''),
+    )
     this.root.setVisible(true)
   }
 
