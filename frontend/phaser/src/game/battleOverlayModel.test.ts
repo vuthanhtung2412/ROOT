@@ -76,6 +76,10 @@ describe('buildBattleOverlayViewModel', () => {
     expect(view?.outcomeMessage).toBeNull()
   })
 
+  it('returns null clearing when no battle pending', () => {
+    expect(readBattleClearingId(makeState([]))).toBeNull()
+  })
+
   it('reads battle clearing id from pending', () => {
     expect(
       readBattleClearingId(
