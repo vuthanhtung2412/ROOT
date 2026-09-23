@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import {
   clearingHasRuin,
   clearingOpenSlotCount,
   FALL_CLEARING_SLOT_COUNTS,
-  RUIN_MARKER_LABEL,
+  RUIN_MARKER_TEXTURE_KEY,
 } from '#game/clearingIndicators.ts'
 
 describe('clearingHasRuin', () => {
@@ -46,8 +47,8 @@ describe('clearingOpenSlotCount', () => {
   })
 })
 
-describe('RUIN_MARKER_LABEL', () => {
-  it('is single R badge', () => {
-    expect(RUIN_MARKER_LABEL).toBe('R')
+describe('RUIN_MARKER_TEXTURE_KEY', () => {
+  it('matches gameAssets markerRuin key', () => {
+    expect(RUIN_MARKER_TEXTURE_KEY).toBe(GAME_ASSET_KEYS.markerRuin)
   })
 })

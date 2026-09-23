@@ -22,6 +22,7 @@ export const GAME_ASSET_KEYS = {
   tokenMarquiseWood: 'token-marquise-wood',
   tokenMarquiseKeep: 'token-marquise-keep',
   tokenEyrieRoost: 'token-eyrie-roost',
+  markerRuin: 'marker-ruin',
   itemBoot: 'item-boot',
   itemBag: 'item-bag',
   itemCrossbow: 'item-crossbow',
@@ -182,6 +183,10 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.tokenEyrieRoost,
     path: 'assets/tokens/eyrie/roost.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.markerRuin,
+    path: 'assets/markers/ruin.png',
   },
   {
     key: GAME_ASSET_KEYS.itemBoot,

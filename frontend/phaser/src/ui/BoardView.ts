@@ -11,7 +11,6 @@ import {
 import {
   clearingHasRuin,
   clearingOpenSlotCount,
-  RUIN_MARKER_LABEL,
 } from '#game/clearingIndicators.ts'
 import { clearingRuler } from '#game/clearingRuler.ts'
 import { gameViewSize } from '#game/hiDpi.ts'
@@ -286,31 +285,20 @@ export class BoardView {
     for (const visual of this.clearingVisuals) {
       const clearing = clearings[visual.clearingId]
       if (clearingHasRuin(clearing)) {
-        const ruinBadge = this.scene.add
-          .text(
-            visual.hitArea.x - visual.hitArea.radius * 0.55,
-            visual.hitArea.y - visual.hitArea.radius * 0.75,
-            RUIN_MARKER_LABEL,
-            {
-              fontFamily: 'Georgia, serif',
-              fontSize: '13px',
-              color: '#1a1a1a',
-              backgroundColor: '#c8a45c',
-              padding: { x: 4, y: 2 },
-              fontStyle: 'bold',
-            },
-          )
-          .setOrigin(0.5)
-        this.pieceLayer.add(ruinBadge)
-        this.indicatorNodes.push(ruinBadge)
+        const ruinIcon = this.createRuinIcon(visual)
+        if (ruinIcon !== null) {
+          this.pieceLayer.add(ruinIcon)
+          this.indicatorNodes.push(ruinIcon)
+        }
       }
 
       const openSlots = clearingOpenSlotCount(visual.clearingId, clearing)
       if (openSlots > 0) {
+        // Bottom of clearing ring, centered, just above the suit icon.
         const slotBadge = this.scene.add
           .text(
-            visual.hitArea.x + visual.hitArea.radius * 0.55,
-            visual.hitArea.y - visual.hitArea.radius * 0.75,
+            visual.hitArea.x,
+            visual.hitArea.y + visual.hitArea.radius - 2,
             String(openSlots),
             {
               fontFamily: 'monospace',
@@ -321,11 +309,31 @@ export class BoardView {
               fontStyle: 'bold',
             },
           )
-          .setOrigin(0.5)
+          .setOrigin(0.5, 1)
         this.pieceLayer.add(slotBadge)
         this.indicatorNodes.push(slotBadge)
       }
     }
+  }
+
+  private createRuinIcon(
+    visual: ClearingVisual,
+  ): Phaser.GameObjects.Image | null {
+    if (!this.scene.textures.exists(GAME_ASSET_KEYS.markerRuin)) {
+      return null
+    }
+    const image = this.scene.add
+      .image(
+        visual.hitArea.x - visual.hitArea.radius * 0.55,
+        visual.hitArea.y - visual.hitArea.radius * 0.55,
+        GAME_ASSET_KEYS.markerRuin,
+      )
+      .setOrigin(0.5)
+    const source = image.texture.getSourceImage()
+    const maxSide = visual.hitArea.radius * 0.5
+    const scale = Math.min(maxSide / source.width, maxSide / source.height)
+    image.setDisplaySize(source.width * scale, source.height * scale)
+    return image
   }
 
   private paintHighlights(): void {
