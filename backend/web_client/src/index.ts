@@ -5,8 +5,8 @@ export type { paths }
 export type { components, operations } from './schema.js'
 
 /**
- * Fallback when `ROOT_DEV_API` unset. Keep in sync with `.mise.toml` `[env] ROOT_DEV_API`.
- * Prod / Funnel URL lives only in `.mise.toml` as `ROOT_PROD_API`.
+ * Fallback when `ROOT_DEV_API` unset. Keep in sync with `.env` / `env.template`.
+ * Prod / Funnel URL lives in `.env` as `ROOT_PROD_API` (mise loads via `_.file`).
  */
 export const DEFAULT_ROOT_DEV_API_BASE_URL = 'http://localhost:3000' as const
 

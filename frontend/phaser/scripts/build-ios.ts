@@ -4,7 +4,8 @@
  * Run: pnpm --filter @root/phaser build:ios
  * Or:  pnpm build:ios (from repo root)
  *
- * Native API default always comes from repo-root `.mise.toml` → `ROOT_PROD_API`.
+ * Native API default always comes from repo-root `.env` → `ROOT_PROD_API`
+ * (mise also loads `.env` via `[env] _.file`).
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -12,25 +13,29 @@ import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 
 const ROOT_PROD_API_ENV_KEY = 'ROOT_PROD_API'
+const DOTENV_FILE_NAME = '.env'
 const MISE_TOML_FILE_NAME = '.mise.toml'
 const ROOT_PROD_API_LINE_PATTERN =
-  /^ROOT_PROD_API\s*=\s*["']([^"']+)["']\s*$/m
+  /^ROOT_PROD_API\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s#]+))\s*$/m
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const phaserPackageDirectory = resolve(scriptDirectory, '..')
 const distDirectory = join(phaserPackageDirectory, 'dist')
 const iosDirectory = join(phaserPackageDirectory, 'ios')
 
-function findRepoRootWithMiseToml(startDirectory: string): string {
+function findRepoRoot(startDirectory: string): string {
   let currentDirectory = startDirectory
   for (;;) {
-    if (existsSync(join(currentDirectory, MISE_TOML_FILE_NAME))) {
+    if (
+      existsSync(join(currentDirectory, DOTENV_FILE_NAME)) ||
+      existsSync(join(currentDirectory, MISE_TOML_FILE_NAME))
+    ) {
       return currentDirectory
     }
     const parentDirectory = dirname(currentDirectory)
     if (parentDirectory === currentDirectory) {
       throw new Error(
-        `Could not find ${MISE_TOML_FILE_NAME} walking up from ${startDirectory}`,
+        `Could not find ${DOTENV_FILE_NAME} or ${MISE_TOML_FILE_NAME} walking up from ${startDirectory}`,
       )
     }
     currentDirectory = parentDirectory
@@ -38,15 +43,20 @@ function findRepoRootWithMiseToml(startDirectory: string): string {
 }
 
 /**
- * Read `ROOT_PROD_API` from `.mise.toml` (SoT for native iOS API base).
+ * Read `ROOT_PROD_API` from `.env` (SoT for native iOS API base).
  */
-function readRootProdApiFromMiseToml(miseTomlPath: string): string {
-  const contents = readFileSync(miseTomlPath, 'utf8')
+function readRootProdApiFromDotenv(dotenvPath: string): string {
+  if (!existsSync(dotenvPath)) {
+    throw new Error(
+      `${dotenvPath} missing — copy env.template to .env and set ${ROOT_PROD_API_ENV_KEY}`,
+    )
+  }
+  const contents = readFileSync(dotenvPath, 'utf8')
   const match = ROOT_PROD_API_LINE_PATTERN.exec(contents)
-  const prodApiUrl = match?.[1]
+  const prodApiUrl = match?.[1] ?? match?.[2] ?? match?.[3]
   if (prodApiUrl === undefined || prodApiUrl.length === 0) {
     throw new Error(
-      `${ROOT_PROD_API_ENV_KEY} missing in ${miseTomlPath} — set [env] ${ROOT_PROD_API_ENV_KEY} = "https://…"`,
+      `${ROOT_PROD_API_ENV_KEY} missing in ${dotenvPath} — set ${ROOT_PROD_API_ENV_KEY}=https://…`,
     )
   }
   return prodApiUrl
@@ -70,16 +80,16 @@ function runCommand(
 }
 
 function main(): void {
-  const repoRoot = findRepoRootWithMiseToml(phaserPackageDirectory)
-  const miseTomlPath = join(repoRoot, MISE_TOML_FILE_NAME)
-  const prodApiUrl = readRootProdApiFromMiseToml(miseTomlPath)
+  const repoRoot = findRepoRoot(phaserPackageDirectory)
+  const dotenvPath = join(repoRoot, DOTENV_FILE_NAME)
+  const prodApiUrl = readRootProdApiFromDotenv(dotenvPath)
   const buildEnvironment: NodeJS.ProcessEnv = {
     ...process.env,
     [ROOT_PROD_API_ENV_KEY]: prodApiUrl,
   }
 
   console.log(
-    `Native API default (${ROOT_PROD_API_ENV_KEY} from ${MISE_TOML_FILE_NAME}): ${prodApiUrl}`,
+    `Native API default (${ROOT_PROD_API_ENV_KEY} from ${DOTENV_FILE_NAME}): ${prodApiUrl}`,
   )
 
   console.log('Building Phaser web assets…')

@@ -63,7 +63,7 @@ Or open the project yourself: `frontend/phaser/ios/App/App.xcodeproj`.
 4. Plug in the device (or pick a Simulator), select it as the run destination, and press **▶ Run**.
 5. On first install, trust the developer certificate: **Settings → General → VPN & Device Management**.
 
-`pnpm build:ios` always reads `ROOT_PROD_API` from repo-root `.mise.toml` and bakes it as the native API default (even if shell env unset). Run `pnpm remote` on host so Funnel is up, then Play in Simulator / device. Override still possible via stored identity. Cleartext LAN HTTP still allowed via ATS + Capacitor `server.cleartext` if you point at `http://<lan-ip>:3000`.
+`pnpm build:ios` always reads `ROOT_PROD_API` from repo-root `.env` and bakes it as the native API default (even if shell env unset). Mise auto-loads `.env` via `.mise.toml` `[env] _.file`. Run `pnpm remote` on host so Funnel is up, then Play in Simulator / device. Override still possible via stored identity. Cleartext LAN HTTP still allowed via ATS + Capacitor `server.cleartext` if you point at `http://<lan-ip>:3000`.
 
 ## Architecture
 

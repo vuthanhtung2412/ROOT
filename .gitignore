@@ -8,7 +8,6 @@ dist/
 # env
 .env
 .env.*
-!.env.example
 
 # logs / coverage
 logs/
