@@ -1,22 +1,12 @@
 import type { Action, ActionResult, ActionSpec } from '#actions/types.js'
-import { defOf } from '#cards/Deck.js'
-import { EP_DECK } from '#cards/epDeck.js'
-import type { Card } from '#cards/types.js'
-import { Deck } from '#cards/Deck.js'
 import { factionFor } from '#factions/index.js'
+import { createInitialState, runSharedSetup } from '#game/setup.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
-import type { ClearingId } from '#map/types.js'
 import { factionOf } from '#queries/seat.js'
-import { resetPlaceIds } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
-import { SeededRng, randomIndex, type Rng } from '#rules/Rng.js'
-import {
-  DEFAULT_FACTIONS,
-  ITEM_SUPPLY,
-  RUIN_ITEMS,
-  STARTING_HAND,
-} from '#state/constants.js'
+import { SeededRng } from '#rules/Rng.js'
+import { DEFAULT_FACTIONS } from '#state/constants.js'
 import { createFactionBoard } from '#state/boards.js'
 import type { GameSnapshot } from '#state/snapshot.js'
 import type { Seat } from '#pieces/types.js'
@@ -31,47 +21,7 @@ import { requireSeat } from '#typeGuards.js'
 import type { Ctx } from '#game/ctx.js'
 import { SignalBus } from '#triggers/SignalBus.js'
 
-const RUIN_CLEARINGS: ClearingId[] = [5, 9, 10, 11]
-
 const PHASES: Phase[] = ['birdsong', 'daylight', 'evening']
-
-function shuffleWithRng<T>(items: T[], rng: Rng): T[] {
-  const out = [...items]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = randomIndex(rng, i + 1)
-    ;[out[i], out[j]] = [out[j]!, out[i]!]
-  }
-  return out
-}
-
-function emptyClearings(): GameState['clearings'] {
-  return Array.from({ length: 12 }, () => ({ pieces: [] }))
-}
-
-function initialState(args: {
-  id: string
-  seed: number
-  factions: GameState['factions']
-}): GameState {
-  return {
-    id: args.id,
-    seed: args.seed,
-    map: 'fall',
-    status: 'waiting',
-    turn: 1,
-    currentSeat: 0,
-    phase: 'birdsong',
-    step: 'wood',
-    factions: args.factions,
-    players: [],
-    clearings: emptyClearings(),
-    deck: { draw: [], discard: [] },
-    dominanceAvailable: [],
-    itemSupply: { ...ITEM_SUPPLY },
-    pending: [],
-    turnScratch: createTurnScratch(),
-  }
-}
 
 export class Game {
   state: GameState
@@ -100,7 +50,7 @@ export class Game {
       factionFor(faction)
     }
     return new Game({
-      state: initialState({
+      state: createInitialState({
         id: args.id ?? `game-${args.seed}`,
         seed: args.seed,
         factions,
@@ -362,7 +312,7 @@ export class Game {
     if (state.players.length <= 1) {
       throw new RuleError('NOT_ENOUGH_PLAYERS', { count: state.players.length })
     }
-    this.runSharedSetup()
+    runSharedSetup(state, this.rng)
     state.status = 'setup'
 
     const marquise = state.players.find((player) => player.faction === 'marquise')
@@ -370,49 +320,6 @@ export class Game {
     state.pending.push({ type: 'chooseKeep', seat: marquise.seat })
 
     return [{ t: 'start' }]
-  }
-
-  /** Shared deck/hands/ruins; faction placement waits on chooseKeep (and later chooseLeader). */
-  private runSharedSetup(): void {
-    const { state } = this
-    resetPlaceIds()
-
-    for (const player of state.players) {
-      player.vp = 0
-      player.hand = []
-      player.playArea = []
-      player.craftedItems = []
-    }
-
-    let deckCards: Card[] = [...EP_DECK]
-    if (state.players.length === 2) {
-      // Rule: Setup 3 — 2p removes all dominance before shuffle.
-      deckCards = deckCards.filter((c) => defOf(c).type !== 'dominance')
-    }
-
-    state.deck = {
-      draw: shuffleWithRng(deckCards, this.rng),
-      discard: [],
-    }
-    state.dominanceAvailable = []
-
-    for (const player of state.players) {
-      player.hand = Deck.draw(state.deck, STARTING_HAND, {
-        shuffle: (cards) => shuffleWithRng(cards, this.rng),
-        onDominance: (card) => state.dominanceAvailable.push(card),
-      })
-    }
-
-    state.itemSupply = { ...ITEM_SUPPLY }
-
-    const ruinItems = shuffleWithRng([...RUIN_ITEMS], this.rng)
-    for (let i = 0; i < RUIN_CLEARINGS.length; i++) {
-      const clearing = RUIN_CLEARINGS[i]!
-      state.clearings[clearing] = {
-        pieces: [],
-        ruin: { items: [ruinItems[i]!] },
-      }
-    }
   }
 
   private beginPlaying(): LogEntry[] {
