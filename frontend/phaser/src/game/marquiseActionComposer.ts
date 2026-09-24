@@ -5,7 +5,12 @@ import {
   type ClientAction,
   type ComposerOutcome,
 } from '#game/ActionComposer.ts'
+import { clearingRuler } from '#game/clearingRuler.ts'
 import { fallAdjacentClearings } from '#game/fallPaths.ts'
+import {
+  applyMarchMovesToClearings,
+  type ClearingPiecesSnapshot,
+} from '#game/marchClearingsPreview.ts'
 
 type OverworkOption = { cardId: string; clearing: number }
 
@@ -174,6 +179,12 @@ type MarchPicking =
   | 'secondTo'
   | 'secondCount'
 
+type MarchBoardSnapshot = {
+  clearings: ClearingPiecesSnapshot[]
+  factions: readonly string[]
+  seat: number
+}
+
 type MarchDraft =
   | { type: 'idle' }
   | {
@@ -181,6 +192,8 @@ type MarchDraft =
       legalMoves: MarchMove[]
       /** Warrior counts before any march move (current seat). */
       initialCounts: Map<number, number>
+      /** Board at march begin — used to rule-check second leg (4.2.1). */
+      boardSnapshot: MarchBoardSnapshot | null
       picking: MarchPicking
       firstMove: MarchMove | null
       from: number | null
@@ -189,6 +202,8 @@ type MarchDraft =
 
 export type MarchBoardSource = {
   warriorCountsForCurrentSeat: () => Map<number, number>
+  /** Live board pieces for sequential march rule checks. */
+  boardForMarch?: () => MarchBoardSnapshot | null
 }
 
 function unique(values: number[]): number[] {
@@ -214,7 +229,7 @@ export function warriorCountsAfterMove(
   return next
 }
 
-/** Adjacent march legs from current warrior counts (paths only; server checks rule). */
+/** Adjacent march legs from warrior counts only (no rule check). */
 export function legalMarchLegsFromCounts(
   counts: ReadonlyMap<number, number>,
 ): MarchMove[] {
@@ -232,12 +247,50 @@ export function legalMarchLegsFromCounts(
   return moves
 }
 
+/** Rule: 4.2.1 — must rule origin and/or destination. */
+function marchLegRulesOriginOrDestination(
+  clearings: readonly ClearingPiecesSnapshot[],
+  factions: readonly string[],
+  seat: number,
+  move: MarchMove,
+): boolean {
+  const fromClearing = clearings[move.from]
+  const toClearing = clearings[move.to]
+  if (fromClearing === undefined || toClearing === undefined) {
+    return false
+  }
+  return (
+    clearingRuler(fromClearing, factions) === seat ||
+    clearingRuler(toClearing, factions) === seat
+  )
+}
+
 function activeLegs(draft: Extract<MarchDraft, { type: 'march' }>): MarchMove[] {
   if (draft.firstMove === null) {
     return draft.legalMoves
   }
-  const afterFirst = warriorCountsAfterMove(draft.initialCounts, draft.firstMove)
-  return legalMarchLegsFromCounts(afterFirst)
+  const afterFirstCounts = warriorCountsAfterMove(
+    draft.initialCounts,
+    draft.firstMove,
+  )
+  const adjacencyLegs = legalMarchLegsFromCounts(afterFirstCounts)
+  const board = draft.boardSnapshot
+  if (board === null) {
+    return adjacencyLegs
+  }
+  const clearingsAfterFirst = applyMarchMovesToClearings(
+    board.clearings,
+    board.seat,
+    [draft.firstMove],
+  )
+  return adjacencyLegs.filter((move) =>
+    marchLegRulesOriginOrDestination(
+      clearingsAfterFirst,
+      board.factions,
+      board.seat,
+      move,
+    ),
+  )
 }
 
 /**
@@ -279,11 +332,13 @@ export function createMarquiseMarchComposerHooks(
         fromBoard !== undefined && fromBoard.size > 0
           ? fromBoard
           : countsFromLegalMoves(legalMoves)
+      const boardSnapshot = board?.boardForMarch?.() ?? null
       clearCountOptions()
       draft = {
         type: 'march',
         legalMoves,
         initialCounts,
+        boardSnapshot,
         picking: 'firstFrom',
         firstMove: null,
         from: null,

@@ -98,6 +98,7 @@ export class GameScene extends Phaser.Scene {
     this.marquiseCards = createMarquiseCardComposerHooks()
     this.marquiseMarch = createMarquiseMarchComposerHooks({
       warriorCountsForCurrentSeat: () => this.readCurrentSeatWarriorCounts(),
+      boardForMarch: () => this.readMarchBoardSnapshot(),
     })
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
@@ -412,6 +413,22 @@ export class GameScene extends Phaser.Scene {
       }
     })
     return counts
+  }
+
+  private readMarchBoardSnapshot(): {
+    clearings: GameState['clearings']
+    factions: readonly string[]
+    seat: number
+  } | null {
+    const state = this.latestSnapshot?.state
+    if (state === null || state === undefined) {
+      return null
+    }
+    return {
+      clearings: state.clearings,
+      factions: state.factions,
+      seat: state.currentSeat,
+    }
   }
 
   private async bootstrapBoard(): Promise<void> {
