@@ -44,7 +44,7 @@ export class MenuScene extends Phaser.Scene {
     void ensureAutumnMapLoaded(this)
 
     this.add
-      .text(width / 2, height * 0.18, 'Root', {
+      .text(width / 2, height * 0.18, 'ROOT', {
         fontFamily: 'Georgia, serif',
         fontSize: '56px',
         color: '#f0e6d3',
