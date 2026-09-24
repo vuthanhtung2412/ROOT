@@ -14,6 +14,14 @@ export type ActionTraySyncOptions = {
   disabled?: boolean
 }
 
+export interface ActionTrayState {
+  actions: readonly ActionSpec[]
+  actorSeat: number
+  pending?: unknown
+  options?: ActionTraySyncOptions | undefined
+  state?: GameState
+}
+
 const ACTION_TRAY_TITLE_FONT_SIZE_PIXELS = 20
 const ACTION_TRAY_BUTTON_FONT_SIZE_PIXELS = 18
 const ACTION_TRAY_ROOT_X_FROM_RIGHT_PIXELS = 260
@@ -55,13 +63,8 @@ export class ActionTray {
     this.handlers = handlers
   }
 
-  sync(
-    actions: readonly ActionSpec[],
-    actorSeat: number,
-    pending?: unknown,
-    options?: ActionTraySyncOptions,
-    state?: GameState,
-  ): void {
+  sync(actionTrayState: ActionTrayState): void {
+    const { actions, actorSeat, pending, options, state } = actionTrayState
     if (options?.disabled === true) {
       if (this.lastSyncKey === ACTION_TRAY_DISABLED_SYNC_KEY) {
         return
