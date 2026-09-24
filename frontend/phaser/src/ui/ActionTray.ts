@@ -8,12 +8,19 @@ export type ActionTrayHandlers = {
   onSelectAction: (spec: ActionSpec) => void
 }
 
+export type ActionTraySyncOptions = {
+  lockToActionTypes?: readonly string[]
+  /** Hide tray and clear buttons (e.g. while march is staged). */
+  disabled?: boolean
+}
+
 const ACTION_TRAY_TITLE_FONT_SIZE_PIXELS = 20
 const ACTION_TRAY_BUTTON_FONT_SIZE_PIXELS = 18
 const ACTION_TRAY_ROOT_X_FROM_RIGHT_PIXELS = 260
 const ACTION_TRAY_ROOT_Y_PIXELS = 64
 const ACTION_TRAY_FIRST_BUTTON_Y_PIXELS = 36
 const ACTION_TRAY_BUTTON_ROW_HEIGHT_PIXELS = 42
+const ACTION_TRAY_DISABLED_SYNC_KEY = '__disabled__'
 
 /** Lists legal ActionSpecs for the current prompt actor. */
 export class ActionTray {
@@ -52,9 +59,23 @@ export class ActionTray {
     actions: readonly ActionSpec[],
     actorSeat: number,
     pending?: unknown,
-    options?: { lockToActionTypes?: readonly string[] },
+    options?: ActionTraySyncOptions,
     state?: GameState,
   ): void {
+    if (options?.disabled === true) {
+      if (this.lastSyncKey === ACTION_TRAY_DISABLED_SYNC_KEY) {
+        return
+      }
+      this.lastSyncKey = ACTION_TRAY_DISABLED_SYNC_KEY
+      for (const node of this.buttonNodes) {
+        node.destroy()
+      }
+      this.buttonNodes = []
+      this.root.setVisible(false)
+      return
+    }
+    this.root.setVisible(true)
+
     const forActor = filterTrayActions(actions, actorSeat, options)
     const syncKey = JSON.stringify(
       forActor.map((spec) => ({
@@ -244,8 +265,11 @@ function findCardDefIdOnEyrieDecree(board: unknown, cardId: string): string | nu
 export function filterTrayActions(
   actions: readonly ActionSpec[],
   actorSeat: number,
-  options?: { lockToActionTypes?: readonly string[] },
+  options?: ActionTraySyncOptions,
 ): ActionSpec[] {
+  if (options?.disabled === true) {
+    return []
+  }
   const lockTypes = options?.lockToActionTypes
   return actions.filter((spec) => {
     if (spec.actor !== actorSeat) {

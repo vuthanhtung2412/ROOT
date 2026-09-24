@@ -46,6 +46,14 @@ describe('filterTrayActions march lock', () => {
     ).toEqual([{ type: 'march', actor: 0, params: { moves: [] } }])
     expect(filterTrayActions(actions, 0)).toHaveLength(3)
   })
+
+  it('returns no actions when disabled during march', () => {
+    const actions = [
+      { type: 'march', actor: 0, params: { moves: [] } },
+      { type: 'build', actor: 0, params: {} },
+    ]
+    expect(filterTrayActions(actions, 0, { disabled: true })).toEqual([])
+  })
 })
 
 describe('formatActionLabel decree suit', () => {

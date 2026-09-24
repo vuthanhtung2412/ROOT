@@ -5,7 +5,7 @@ import type { AutoPromptController } from '#game/autoPromptController.ts'
 import type { GameSceneModals } from '#game/gameSceneModals.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { collapsePieceIdsRemovalSpecs } from '#game/battleRemovalStepper.ts'
-import type { ActionTray } from '#ui/ActionTray.ts'
+import type { ActionTray, ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { CardHand } from '#ui/CardHand.ts'
 import type { GameDrawer } from '#ui/GameDrawer.ts'
 import type { PlayerRail } from '#ui/PlayerRail.ts'
@@ -28,9 +28,7 @@ export type GameSceneHudPaintDeps = {
   getAutoPrompts: () => AutoPromptController | null
   getStatusText: () => Phaser.GameObjects.Text | null
   localPlayerControlsSeat: (actorSeat: number) => boolean
-  marchActionTrayOptions: () =>
-    | { lockToActionTypes: readonly string[] }
-    | undefined
+  marchActionTrayOptions: () => ActionTraySyncOptions | undefined
   syncBattleOverlay: () => void
   syncBattleClearingHighlight: (state: GameState) => void
   goToMenu: () => void
