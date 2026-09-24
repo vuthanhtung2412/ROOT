@@ -14,7 +14,7 @@ import { ITEM_SUPPLY } from '#state/constants.js'
 import type { ClearingState, GameState, PlayerState } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import { buildRuleHooks } from '#triggers/buildHooks.js'
-import { EFFECTS } from '#triggers/effects.js'
+import { SignalBus } from '#triggers/SignalBus.js'
 import type { GameSignal } from '#triggers/signals.js'
 
 /** Root battle die face: 0–3 (physical Root dice). */
@@ -65,12 +65,9 @@ export function testContext(options?: {
 /** Test context that dispatches signals to active crafted-card effects. */
 export function buildCraftContext(state: GameState): Ctx {
   const context = testContext({ state })
+  const signalBus = new SignalBus()
   context.emit = (signal: GameSignal): void => {
-    for (const playerState of state.players) {
-      for (const playCard of playerState.playArea) {
-        EFFECTS[playCard.defId]?.onSignal?.(state, signal, context)
-      }
-    }
+    signalBus.emit(state, signal, context)
   }
   return context
 }

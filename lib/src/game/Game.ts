@@ -246,22 +246,11 @@ export class Game {
       rng: this.rng,
       hooks,
       emit: (signal) => {
-        this.dispatchSignal(signal, ctx)
+        this.signalBus.emit(this.state, signal, ctx)
       },
       grantedActions: () => this.grantedActions(),
     }
     return ctx
-  }
-
-  private dispatchSignal(signal: import('#triggers/signals.js').GameSignal, ctx: Ctx): void {
-    this.signalBus.emit(this.state, signal, ctx)
-    const seats = [...this.state.players].sort((a, b) => a.seat - b.seat)
-    for (const player of seats) {
-      for (const card of player.playArea) {
-        const effect = EFFECTS[card.defId]
-        effect?.onSignal?.(this.state, signal, ctx)
-      }
-    }
   }
 
   private grantedActions(): ActionSpec[] {
