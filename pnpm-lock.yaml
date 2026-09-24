@@ -79,9 +79,6 @@ importers:
 
   frontend/cli:
     dependencies:
-      '@root/lib':
-        specifier: workspace:*
-        version: link:../../lib
       '@root/web-client':
         specifier: workspace:*
         version: link:../../backend/web_client

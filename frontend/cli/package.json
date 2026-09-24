@@ -22,7 +22,6 @@
     "root-cli": "./src/index.ts"
   },
   "dependencies": {
-    "@root/lib": "workspace:*",
     "@root/web-client": "workspace:*"
   },
   "devDependencies": {

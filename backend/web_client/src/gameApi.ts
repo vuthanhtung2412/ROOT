@@ -97,11 +97,13 @@ export type GameApi = {
   join: (playerId: string) => Promise<ActionResult>
   start: () => Promise<ActionResult>
   getGame: () => Promise<{ state: GameState; historyLength: number }>
+  gameView: () => Promise<string>
   getSnapshot: () => Promise<GameSnapshot>
   loadSnapshot: (snapshot: unknown, replace?: boolean) => Promise<{ state: GameState }>
   legalActions: () => Promise<LegalActionsResponse>
   submitAction: (action: unknown) => Promise<ActionResult>
   gameLog: () => Promise<{ log: unknown[] }>
+  formattedGameLog: () => Promise<string>
   undo: () => Promise<{ state: GameState }>
   fallLayout: () => Promise<FallLayout>
   deleteGame: () => Promise<void>
@@ -291,6 +293,10 @@ export function createGameApi(
       }
     },
 
+    async gameView(): Promise<string> {
+      return requireData(await client.GET('/game/view'))
+    },
+
     async getSnapshot(): Promise<GameSnapshot> {
       return requireData(await client.GET('/game/snapshot'))
     },
@@ -325,6 +331,10 @@ export function createGameApi(
 
     async gameLog(): Promise<{ log: unknown[] }> {
       return requireData(await client.GET('/game/log'))
+    },
+
+    async formattedGameLog(): Promise<string> {
+      return requireData(await client.GET('/game/log/view'))
     },
 
     async undo(): Promise<{ state: GameState }> {
