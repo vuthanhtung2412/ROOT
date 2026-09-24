@@ -33,6 +33,13 @@ const FACTION_ID_MARQUISE: FactionId = 'marquise'
 const FACTION_ID_EYRIE: FactionId = 'eyrie'
 const FACTION_ID_ALLIANCE: FactionId = 'alliance'
 const FACTION_ID_VAGABOND: FactionId = 'vagabond'
+const API_REQUEST_TIMEOUT_MILLISECONDS = 10_000
+
+async function fetchApiRequest(request: Request): Promise<Response> {
+  const timeoutSignal = AbortSignal.timeout(API_REQUEST_TIMEOUT_MILLISECONDS)
+  const signal = AbortSignal.any([request.signal, timeoutSignal])
+  return globalThis.fetch(new Request(request, { signal }))
+}
 
 function readErrorBody(value: unknown): Partial<ErrorBody> {
   if (typeof value !== 'object' || value === null) {
@@ -230,6 +237,7 @@ export function createPhaserApi(options: CreatePhaserApiOptions = {}) {
     options.client ??
     createRootWebClient({
       baseUrl: options.baseUrl ?? '',
+      request: fetchApiRequest,
     })
 
   return {

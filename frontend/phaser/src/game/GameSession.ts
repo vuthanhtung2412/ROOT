@@ -121,6 +121,15 @@ export class GameSession {
   }
 
   applySocketPush(payload: GameSocketPush): void {
+    if (payload.state === null) {
+      this.disconnectSocket()
+      clearPlayerIdentity(
+        this.identityStorage === undefined
+          ? undefined
+          : this.identityStorage,
+      )
+      this.localPlayerId = null
+    }
     if (
       this.localPlayerId !== null &&
       payload.state !== null &&
