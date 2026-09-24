@@ -36,6 +36,25 @@ export type DecreeCursor = {
   remaining: string[]
 }
 
+export type TurnScratch = {
+  actionsLeft: number
+  extraActions: number
+  recruited: boolean
+  birdsongWoodDone: boolean
+  eveningDrawDone: boolean
+  swapMeetUsed: boolean
+  charmOffensiveUsed: boolean
+  leagueUsed: boolean
+  propagandaUsed: boolean
+  saboteursUsed: boolean
+  falseOrdersUsed: boolean
+  eyrieEmigreCompleted: boolean
+  emergencyOrdersDone: boolean
+  eveningScoreDone: boolean
+  decree: DecreeCursor | null
+  decreeDone: boolean
+}
+
 export type GameState = {
   id: string
   seed: number
@@ -53,27 +72,5 @@ export type GameState = {
   itemSupply: Record<ItemType, number>
   pending: Event[]
   winner?: Seat
-  turnScratch: {
-    actionsLeft: number
-    extraActions: number
-    recruited: boolean
-    birdsongWoodDone: boolean
-    eveningDrawDone: boolean
-    swapMeetUsed: boolean
-    charmOffensiveUsed: boolean
-    leagueUsed: boolean
-    propagandaUsed: boolean
-    saboteursUsed: boolean
-    falseOrdersUsed: boolean
-    eyrieEmigreCompleted: boolean
-    emergencyOrdersDone: boolean
-    eveningScoreDone: boolean
-    /** Decree cursor for current column; null until ensure or after column done. */
-    decree: DecreeCursor | null
-    /**
-     * True after all decree columns resolved once this turn (cards stay on board
-     * until Purge, so we must not re-open leftmost column). Rule: 7.5.2 / 7.7.2.
-     */
-    decreeDone: boolean
-  }
+  turnScratch: TurnScratch
 }

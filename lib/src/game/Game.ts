@@ -17,10 +17,11 @@ import {
   RUIN_ITEMS,
   STARTING_HAND,
 } from '#state/constants.js'
-import { EYRIE_LEADERS, type FactionBoard } from '#state/boards.js'
+import { createFactionBoard } from '#state/boards.js'
 import type { GameSnapshot } from '#state/snapshot.js'
 import type { Seat } from '#pieces/types.js'
-import type { GameState, Phase, PlayerState } from '#state/types.js'
+import type { GameState, Phase } from '#state/types.js'
+import { createTurnScratch } from '#state/turnScratch.js'
 import '#effects/register.js'
 import { tryApplyCharmOffensive } from '#effects/charmOffensive.js'
 import { tryApplyInformants } from '#effects/informants.js'
@@ -55,54 +56,6 @@ function emptyClearings(): GameState['clearings'] {
   return Array.from({ length: 12 }, () => ({ pieces: [] }))
 }
 
-function createBoard(faction: PlayerState['faction']): FactionBoard {
-  switch (faction) {
-    case 'marquise':
-      return {
-        kind: 'marquise',
-        supply: { warriors: 25, wood: 8 },
-        tracks: {
-          sawmill: { placed: 0 },
-          workshop: { placed: 0 },
-          recruiter: { placed: 0 },
-        },
-      }
-    case 'eyrie': {
-      return {
-        kind: 'eyrie',
-        supply: { warriors: 20 },
-        leader: null,
-        leadersFaceUp: [...EYRIE_LEADERS],
-        leadersFaceDown: [],
-        decree: { recruit: [], move: [], battle: [], build: [] },
-        roostTrack: { placed: 0 },
-      }
-    }
-    case 'alliance':
-      return {
-        kind: 'alliance',
-        supply: { warriors: 10 },
-        supporters: [],
-        officers: 0,
-        bases: [],
-        sympathyTrack: { placed: 0 },
-      }
-    case 'vagabond':
-      return {
-        kind: 'vagabond',
-        satchel: [],
-        tracks: { tea: [], coin: [], bag: [] },
-        damaged: [],
-        relationships: {
-          marquise: 0,
-          eyrie: 0,
-          alliance: 0,
-          vagabond: 0,
-        },
-      }
-  }
-}
-
 function initialState(args: {
   id: string
   seed: number
@@ -124,24 +77,7 @@ function initialState(args: {
     dominanceAvailable: [],
     itemSupply: { ...ITEM_SUPPLY },
     pending: [],
-    turnScratch: {
-      actionsLeft: 0,
-      extraActions: 0,
-      recruited: false,
-      birdsongWoodDone: false,
-      eveningDrawDone: false,
-      swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-      emergencyOrdersDone: false,
-      eveningScoreDone: false,
-      decree: null,
-      decreeDone: false,
-    },
+    turnScratch: createTurnScratch(),
   }
 }
 
@@ -509,7 +445,7 @@ export class Game {
       hand: [],
       playArea: [],
       craftedItems: [],
-      board: createBoard(faction),
+      board: createFactionBoard(faction),
     })
     return [{ t: 'join', playerId, faction }]
   }
@@ -580,24 +516,7 @@ export class Game {
     const first = FACTIONS[factionOf(state, 0)]
     state.phase = 'birdsong'
     state.step = first.steps.birdsong[0]!
-    state.turnScratch = {
-      actionsLeft: 0,
-      extraActions: 0,
-      recruited: false,
-      birdsongWoodDone: false,
-      eveningDrawDone: false,
-      swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-      emergencyOrdersDone: false,
-      eveningScoreDone: false,
-      decree: null,
-      decreeDone: false,
-    }
+    state.turnScratch = createTurnScratch()
 
     const ctx = this.makeCtx()
     ctx.emit({ s: 'phase.start', actor: 0, phase: 'birdsong' })
@@ -626,24 +545,7 @@ export class Game {
     if (idx < steps.length - 1) {
       state.step = steps[idx + 1]!
       if (state.phase === 'daylight' && state.step === 'actions') {
-        state.turnScratch = {
-          actionsLeft: 3,
-          extraActions: 0,
-          recruited: false,
-          birdsongWoodDone: false,
-          eveningDrawDone: false,
-          swapMeetUsed: false,
-          charmOffensiveUsed: false,
-          leagueUsed: false,
-          propagandaUsed: false,
-          saboteursUsed: false,
-          falseOrdersUsed: false,
-          eyrieEmigreCompleted: false,
-          emergencyOrdersDone: false,
-          eveningScoreDone: false,
-          decree: null,
-          decreeDone: false,
-        }
+        state.turnScratch = createTurnScratch({ actionsLeft: 3 })
       }
       if (state.phase === 'daylight' && state.step === 'decree') {
         state.turnScratch.decree = null

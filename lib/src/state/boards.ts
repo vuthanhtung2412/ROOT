@@ -89,3 +89,50 @@ export type VagabondBoard = {
 }
 
 export type FactionBoard = MarquiseBoard | EyrieBoard | AllianceBoard | VagabondBoard
+
+export function createFactionBoard(faction: FactionId): FactionBoard {
+  switch (faction) {
+    case 'marquise':
+      return {
+        kind: 'marquise',
+        supply: { warriors: 25, wood: 8 },
+        tracks: {
+          sawmill: { placed: 0 },
+          workshop: { placed: 0 },
+          recruiter: { placed: 0 },
+        },
+      }
+    case 'eyrie':
+      return {
+        kind: 'eyrie',
+        supply: { warriors: 20 },
+        leader: null,
+        leadersFaceUp: [...EYRIE_LEADERS],
+        leadersFaceDown: [],
+        decree: { recruit: [], move: [], battle: [], build: [] },
+        roostTrack: { placed: 0 },
+      }
+    case 'alliance':
+      return {
+        kind: 'alliance',
+        supply: { warriors: 10 },
+        supporters: [],
+        officers: 0,
+        bases: [],
+        sympathyTrack: { placed: 0 },
+      }
+    case 'vagabond':
+      return {
+        kind: 'vagabond',
+        satchel: [],
+        tracks: { tea: [], coin: [], bag: [] },
+        damaged: [],
+        relationships: {
+          marquise: 0,
+          eyrie: 0,
+          alliance: 0,
+          vagabond: 0,
+        },
+      }
+  }
+}

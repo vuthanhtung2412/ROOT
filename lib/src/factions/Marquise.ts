@@ -34,6 +34,7 @@ import {
 } from '#state/boards.js'
 import { HAND_LIMIT } from '#state/constants.js'
 import type { GameState, Phase, Step } from '#state/types.js'
+import { createTurnScratch } from '#state/turnScratch.js'
 import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import type { BuildingType, Seat } from '#pieces/types.js'
@@ -804,24 +805,7 @@ export class Marquise extends Faction {
 
   endTurn(state: GameState): void {
     resetCraftingBuildingUsed(state, state.currentSeat)
-    state.turnScratch = {
-      actionsLeft: 3,
-      extraActions: 0,
-      recruited: false,
-      birdsongWoodDone: false,
-      eveningDrawDone: false,
-      swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-      emergencyOrdersDone: false,
-      eveningScoreDone: false,
-      decree: null,
-      decreeDone: false,
-    }
+    state.turnScratch = createTurnScratch({ actionsLeft: 3 })
   }
 }
 

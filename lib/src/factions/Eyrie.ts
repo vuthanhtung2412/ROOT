@@ -39,6 +39,7 @@ import {
 } from '#state/boards.js'
 import { HAND_LIMIT } from '#state/constants.js'
 import type { DecreeCursor, GameState, Phase, Step } from '#state/types.js'
+import { createTurnScratch } from '#state/turnScratch.js'
 import type { Seat } from '#pieces/types.js'
 import { Faction } from '#factions/Faction.js'
 import { isVizier, makeViziers } from '#factions/eyrie/viziers.js'
@@ -922,24 +923,7 @@ export class Eyrie extends Faction {
 
   endTurn(state: GameState): void {
     resetCraftingBuildingUsed(state, state.currentSeat)
-    state.turnScratch = {
-      actionsLeft: 0,
-      extraActions: 0,
-      recruited: false,
-      birdsongWoodDone: false,
-      eveningDrawDone: false,
-      swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-      emergencyOrdersDone: false,
-      eveningScoreDone: false,
-      decree: null,
-      decreeDone: false,
-    }
+    state.turnScratch = createTurnScratch()
   }
 }
 
