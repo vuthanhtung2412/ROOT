@@ -17,6 +17,7 @@ export type RootWebClient = ReturnType<typeof createRootWebClient>
 export type CreateRootWebClientOptions = {
   /** Base URL of @root/web (default: `ROOT_DEV_API` env, else {@link DEFAULT_ROOT_DEV_API_BASE_URL}). */
   baseUrl?: string
+  request?: (request: Request) => Promise<Response>
 }
 
 function readRootDevApiFromEnvironment(): string | undefined {
@@ -41,5 +42,6 @@ export function resolveRootDevApiBaseUrl(baseUrl?: string): string {
 export function createRootWebClient(options: CreateRootWebClientOptions = {}) {
   return createClient<paths>({
     baseUrl: resolveRootDevApiBaseUrl(options.baseUrl),
+    ...(options.request === undefined ? {} : { fetch: options.request }),
   })
 }

@@ -237,6 +237,28 @@ describe('GameSession', () => {
     expect(storage.getItem('root.phaser.playerIdentity')).toBeNull()
   })
 
+  it('clears identity when another player ends the game', async () => {
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.phaser.playerIdentity',
+      JSON.stringify({ playerId: 'marquise', apiBaseUrl: '' }),
+    )
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ storage, socket })
+    await session.continueWithStoredIdentity()
+
+    socket.push({
+      state: null,
+      historyLength: 0,
+      legalActions: [],
+      log: [],
+    })
+
+    expect(session.getSnapshot().state).toBeNull()
+    expect(session.getLocalPlayerId()).toBeNull()
+    expect(storage.getItem('root.phaser.playerIdentity')).toBeNull()
+  })
+
   it('continueQaLoadedGame binds actor, opens socket, skips identity save', async () => {
     const state = makeGameState({ currentSeat: 1 })
     const storage = createMemoryStorage()
@@ -380,6 +402,28 @@ describe('GameSession', () => {
 
     expect(result).toBe('waiting')
     expect(session.getLocalPlayerId()).toBe('marquise')
+  })
+
+  it('play joins a new game after restart', async () => {
+    const waiting = makeGameState({ status: 'waiting' })
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.phaser.playerIdentity',
+      JSON.stringify({ playerId: 'marquise', apiBaseUrl: '' }),
+    )
+    stubFetchSequence([
+      { body: null, status: 204 },
+      { body: { state: waiting }, status: 201 },
+      { body: { state: waiting, log: [] } },
+    ])
+    const session = createSession({ storage })
+
+    await session.restart()
+    const result = await session.play()
+
+    expect(result).toBe('waiting')
+    expect(session.getLocalPlayerId()).toBe('marquise')
+    expect(storage.getItem('root.phaser.playerIdentity')).toContain('marquise')
   })
 
   it('play clears stale identity and joins when seat missing', async () => {

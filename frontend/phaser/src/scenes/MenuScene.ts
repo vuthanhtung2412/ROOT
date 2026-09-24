@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { ensureAutumnMapLoaded } from '#assets/autumnMapLoader.ts'
 import { createPhaserApi } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
-import { GameSession } from '#game/GameSession.ts'
+import { GameSession, type PlayResult } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 import { loadPlayerIdentity } from '#game/playerIdentity.ts'
 
@@ -16,6 +16,7 @@ export class MenuScene extends Phaser.Scene {
   private apiBaseUrlInput: string = ''
   private unsubscribe: (() => void) | null = null
   private enteredGame = false
+  private playRequestPending = false
 
   constructor() {
     super({ key: 'MenuScene' })
@@ -31,9 +32,11 @@ export class MenuScene extends Phaser.Scene {
         apiBaseUrl: defaultApiBaseUrl,
       })
     this.enteredGame = false
+    this.playRequestPending = false
   }
 
   create(): void {
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this)
     applyHiDpiCamera(this)
     const { width, height } = gameViewSize()
 
@@ -123,9 +126,10 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private async handlePlay(): Promise<void> {
-    if (this.session === null) {
+    if (this.session === null || this.playRequestPending) {
       return
     }
+    this.playRequestPending = true
     this.clearLobbyWait()
     const stored = loadPlayerIdentity()
     if (stored !== null && stored.apiBaseUrl !== '') {
@@ -136,7 +140,17 @@ export class MenuScene extends Phaser.Scene {
     this.rebindSessionApi()
     this.setStatus(stored !== null ? 'Checking seat…' : 'Joining…', '#9a9a9a')
 
-    const result = await this.session.play()
+    let result: PlayResult | null
+    try {
+      result = await this.session.play()
+    } catch (error: unknown) {
+      const message: string =
+        error instanceof Error ? error.message : 'Play failed'
+      this.setStatus(message, '#c44')
+      return
+    } finally {
+      this.playRequestPending = false
+    }
     if (result === null) {
       this.setStatus(this.session.getSnapshot().error ?? 'Play failed', '#c44')
       return

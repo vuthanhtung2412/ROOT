@@ -79,6 +79,7 @@ export class GameScene extends Phaser.Scene {
   private autoPrompts: AutoPromptController | null = null
   private battleOverlayController: BattleOverlayController | null = null
   private modals: GameSceneModals | null = null
+  private endingGame = false
 
   constructor() {
     super({ key: 'GameScene' })
@@ -86,9 +87,11 @@ export class GameScene extends Phaser.Scene {
 
   init(data: GameSceneData): void {
     this.session = data.session
+    this.endingGame = false
   }
 
   create(): void {
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this)
     applyHiDpiCamera(this)
     const { width, height } = gameViewSize()
 
@@ -281,10 +284,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private async handleEndGame(): Promise<void> {
-    if (this.session === null) {
+    if (this.session === null || this.endingGame) {
       return
     }
+    this.endingGame = true
     await this.session.restart()
+    if (this.session.getSnapshot().error !== null) {
+      this.endingGame = false
+      return
+    }
     this.scene.start('MenuScene', { session: this.session })
   }
 
@@ -445,7 +453,7 @@ export class GameScene extends Phaser.Scene {
         this.syncBattleClearingHighlight(state)
       },
       goToMenu: () => {
-        if (this.session !== null) {
+        if (this.session !== null && !this.endingGame) {
           this.scene.start('MenuScene', { session: this.session })
         }
       },
