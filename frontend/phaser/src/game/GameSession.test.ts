@@ -319,7 +319,7 @@ describe('GameSession', () => {
     expect(session.getSnapshot().legalActions[0]?.type).toBe('resolveEvent')
   })
 
-  it('qaMode restart leaves Play identity storage intact', async () => {
+  it('qaMode restart clears stale Play identity', async () => {
     const state = makeGameState({ currentSeat: 1 })
     const storage = createMemoryStorage()
     storage.setItem(
@@ -341,7 +341,7 @@ describe('GameSession', () => {
 
     expect(session.getSnapshot().state).toBeNull()
     expect(session.getLocalPlayerId()).toBeNull()
-    expect(storage.getItem('root.phaser.playerIdentity')).toContain('marquise')
+    expect(storage.getItem('root.phaser.playerIdentity')).toBeNull()
   })
 
   it('play resumes when stored seat still in slot', async () => {

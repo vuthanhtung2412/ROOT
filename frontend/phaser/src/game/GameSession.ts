@@ -310,19 +310,17 @@ export class GameSession {
     }
   }
 
-  /** End game: delete server slot, clear identity (Play only), close socket. */
+  /** End game: delete server slot, clear identity, close socket. */
   async restart(): Promise<void> {
     this.setLoading(true)
     try {
       await this.api.deleteGame()
       this.disconnectSocket()
-      if (!this.qaMode) {
-        clearPlayerIdentity(
-          this.identityStorage === undefined
-            ? undefined
-            : this.identityStorage,
-        )
-      }
+      clearPlayerIdentity(
+        this.identityStorage === undefined
+          ? undefined
+          : this.identityStorage,
+      )
       this.qaMode = false
       this.localPlayerId = null
       this.publish({
