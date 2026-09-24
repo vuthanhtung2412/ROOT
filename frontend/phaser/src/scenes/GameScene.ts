@@ -2,8 +2,6 @@ import Phaser from 'phaser'
 import { ensureAutumnMapLoaded } from '#assets/autumnMapLoader.ts'
 import { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
 import type { ActionSpec, GameState } from '#api/client.ts'
-import { createPhaserApi } from '#api/client.ts'
-import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import { ActionComposer, type ComposerOutcome } from '#game/resolution/ActionComposer.ts'
 import { AutoPromptController } from '#game/resolution/autoPromptController.ts'
 import { BattleOverlayController } from '#game/battleOverlayController.ts'
@@ -27,15 +25,14 @@ import {
   createMarquiseCardComposerHooks,
 } from '#game/resolution/marquiseActionComposer.ts'
 import { createMarchWorkflowHooks } from '#game/resolution/marchWorkflowHooks.ts'
-import {
-  boardLayoutFromFallResponse,
-  FALL_BOARD_LAYOUT,
-  type BoardLayout,
-} from '#game/boardLayout.ts'
 import { readBattleClearingId } from '#game/battleOverlayModel.ts'
+import {
+  applyMarchPreview,
+  buildCurrentSeatWarriorCounts,
+  loadGameSceneBoardLayout,
+} from '#game/gameSceneBoardState.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
-import { applyMarchMovesToClearings } from '#game/resolution/marchClearingsPreview.ts'
 import { ActionTray, type ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
@@ -461,24 +458,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private readCurrentSeatWarriorCounts(): Map<number, number> {
-    const counts = new Map<number, number>()
-    const state = this.latestSnapshot?.state
-    if (state === null || state === undefined) {
-      return counts
-    }
-    const seat = state.currentSeat
-    state.clearings.forEach((clearing, clearingId) => {
-      let warriors = 0
-      for (const piece of clearing.pieces) {
-        if (piece.kind === 'warrior' && piece.owner === seat) {
-          warriors += 1
-        }
-      }
-      if (warriors > 0) {
-        counts.set(clearingId, warriors)
-      }
-    })
-    return counts
+    const state: GameState | null = this.latestSnapshot?.state ?? null
+    return buildCurrentSeatWarriorCounts(state)
   }
 
   private readMarchBoardSnapshot(): {
@@ -499,7 +480,7 @@ export class GameScene extends Phaser.Scene {
 
   private async bootstrapBoard(): Promise<void> {
     await ensureAutumnMapLoaded(this)
-    const layout = await this.loadLayout()
+    const layout = await loadGameSceneBoardLayout()
     this.boardView = new BoardView({
       scene: this,
       layout,
@@ -588,31 +569,11 @@ export class GameScene extends Phaser.Scene {
     if (this.boardView === null || snapshot.state === null) {
       return
     }
-    const clearings = this.clearingsWithMarchPreview(
+    const clearings = applyMarchPreview(
       snapshot.state.clearings,
       snapshot.state.currentSeat,
+      this.marquiseMarch.getMarchPreviewMove(),
     )
     this.boardView.syncPieces(clearings, snapshot.state.factions)
-  }
-
-  private clearingsWithMarchPreview(
-    clearings: GameState['clearings'],
-    warriorOwnerSeat: number,
-  ): GameState['clearings'] {
-    const firstMove = this.marquiseMarch.getMarchPreviewMove()
-    if (firstMove === null) {
-      return clearings
-    }
-    return applyMarchMovesToClearings(clearings, warriorOwnerSeat, [firstMove])
-  }
-
-  private async loadLayout(): Promise<BoardLayout> {
-    try {
-      const api = createPhaserApi({ baseUrl: resolveDefaultApiBaseUrl() })
-      const response = await api.fallLayout()
-      return boardLayoutFromFallResponse(response)
-    } catch {
-      return FALL_BOARD_LAYOUT
-    }
   }
 }
