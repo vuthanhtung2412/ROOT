@@ -37,6 +37,27 @@ export function resetPlaceIds(): void {
   nextPieceId = 0
 }
 
+const GENERATED_PIECE_ID_PATTERN = /^(?:w|t|b)-(\d+)$/
+
+/**
+ * Advance the place-id counter past any `w-N` / `t-N` / `b-N` already on the map.
+ * Prevents collisions after Game.fromJSON / snapshot load (Field Hospitals, recruit, …).
+ */
+export function syncPlaceIdsFromState(state: GameState): void {
+  let highestGeneratedId = nextPieceId
+  for (const clearing of state.clearings) {
+    for (const piece of clearing.pieces) {
+      const match = GENERATED_PIECE_ID_PATTERN.exec(piece.id)
+      if (match === null) continue
+      const numericId = Number(match[1])
+      if (numericId > highestGeneratedId) {
+        highestGeneratedId = numericId
+      }
+    }
+  }
+  nextPieceId = highestGeneratedId
+}
+
 /** Rule: Pieces — place max possible; capped by supply and open slots. */
 export function placeUpTo(state: GameState, request: PlaceRequest): number {
   return placeInternal(state, request, true)
