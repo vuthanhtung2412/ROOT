@@ -24,6 +24,10 @@ import {
 
 export type ClearingSelectedHandler = (clearingId: number) => void
 
+/** White matte frame around the autumn map image. */
+const MAP_BORDER_WIDTH_PIXELS = 4
+const MAP_BORDER_COLOR = 0xffffff
+
 export type BoardClearingPieces = {
   pieces: Array<{
     id: string
@@ -65,6 +69,7 @@ export class BoardView {
   private readonly root: Phaser.GameObjects.Container
   private readonly pieceLayer: Phaser.GameObjects.Container
   private readonly mapImage: Phaser.GameObjects.Image
+  private readonly mapBorder: Phaser.GameObjects.Rectangle
   private readonly clearingVisuals: ClearingVisual[] = []
   private onClearingSelected: ClearingSelectedHandler | null
   private highlightedClearingIds: ReadonlySet<number> = new Set()
@@ -86,6 +91,16 @@ export class BoardView {
       .setOrigin(0.5)
 
     this.fitMapToBoardArea(width, height)
+    this.mapBorder = this.scene.add
+      .rectangle(
+        this.mapImage.x,
+        this.mapImage.y,
+        this.mapImage.displayWidth + MAP_BORDER_WIDTH_PIXELS * 2,
+        this.mapImage.displayHeight + MAP_BORDER_WIDTH_PIXELS * 2,
+        MAP_BORDER_COLOR,
+      )
+      .setOrigin(0.5)
+    this.root.add(this.mapBorder)
     this.root.add(this.mapImage)
 
     const layout = options.layout ?? FALL_BOARD_LAYOUT
