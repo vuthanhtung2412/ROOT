@@ -1,23 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import '#effects/register.js'
-import { Game } from '#game/Game.js'
-import { card } from '#test/fixtures.js'
+import { card, createPlayingGame } from '#test/fixtures.js'
 
 describe('Charm Offensive', () => {
   it('Rule: Charm Offensive — Evening may draw and give another player one VP', () => {
-    const game = Game.create({ seed: 11 })
-    game.join('a')
-    game.join('b')
-    game.start()
-    game.apply({ type: 'resolveEvent', clearing: 0 })
-    while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-      const clearings = game.legalActions()[0]?.params?.clearing
-      if (clearings === undefined || clearings.length === 0) {
-        throw new Error('no legal starting building clearings')
-      }
-      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-    }
-    game.apply({ type: 'resolveEvent', leader: 'builder' })
+    const game = createPlayingGame({ seed: 11 })
 
     // Advance seat 0 to Evening draw.
     game.apply({ type: 'endPhase' }) // birdsong → daylight craft

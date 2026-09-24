@@ -6,46 +6,19 @@ import { warriors } from '#queries/pieces.js'
 import { keepCornerFor } from '#factions/Marquise.js'
 import { RuleError } from '#rules/RuleError.js'
 import { SeededRng } from '#rules/Rng.js'
-import { card } from '#test/fixtures.js'
+import {
+  card,
+  createLobbyGame as lobbyTwo,
+  createPlayingGame,
+  finishSetup,
+} from '#test/fixtures.js'
 import { DEFAULT_FACTIONS, HAND_LIMIT, STARTING_HAND } from '#state/constants.js'
 import type { GameSignal } from '#triggers/signals.js'
 import { EFFECTS } from '#triggers/effects.js'
 import { Game } from '#game/Game.js'
 
-function lobbyTwo(seed = 42): Game {
-  const game = Game.create({ seed })
-  game.join('a')
-  game.join('b')
-  return game
-}
-
-/** Resolve Marquise keep + starting buildings + Eyrie leader so tests reach `playing`. */
-function finishSetup(
-  game: Game,
-  keep: number = FALL.corners[0]!,
-  leader: 'builder' | 'charismatic' | 'commander' | 'despot' = 'builder',
-): void {
-  if (game.state.status !== 'setup') return
-  if (game.state.pending[0]?.type === 'chooseKeep') {
-    game.apply({ type: 'resolveEvent', clearing: keep })
-  }
-  while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-    const clearings = game.legalActions()[0]?.params?.clearing
-    if (clearings === undefined || clearings.length === 0) {
-      throw new Error('no legal starting building clearings')
-    }
-    game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-  }
-  if (game.state.pending[0]?.type === 'chooseLeader') {
-    game.apply({ type: 'resolveEvent', leader })
-  }
-}
-
 function startPlaying(seed = 42): Game {
-  const game = lobbyTwo(seed)
-  game.start()
-  finishSetup(game)
-  return game
+  return createPlayingGame({ seed })
 }
 
 describe('Game lobby', () => {

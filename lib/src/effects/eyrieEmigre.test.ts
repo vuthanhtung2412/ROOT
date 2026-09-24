@@ -1,24 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import '#effects/register.js'
 import { FALL } from '#map/fall.js'
-import { Game } from '#game/Game.js'
-import { card } from '#test/fixtures.js'
+import { card, createPlayingGame } from '#test/fixtures.js'
 
 describe('Eyrie Émigré', () => {
   it('Rule: Eyrie Émigré — discard at end of Birdsong if move+battle not taken', () => {
-    const game = Game.create({ seed: 37 })
-    game.join('a')
-    game.join('b')
-    game.start()
-    game.apply({ type: 'resolveEvent', clearing: 0 })
-    while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-      const clearings = game.legalActions()[0]?.params?.clearing
-      if (clearings === undefined || clearings.length === 0) {
-        throw new Error('no legal starting building clearings')
-      }
-      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-    }
-    game.apply({ type: 'resolveEvent', leader: 'builder' })
+    const game = createPlayingGame({ seed: 37 })
 
     const emigre = card('ROOT-71')
     game.state.players[0]!.playArea.push(emigre)
@@ -35,19 +22,7 @@ describe('Eyrie Émigré', () => {
   })
 
   it('Rule: Eyrie Émigré — move then battle keeps card', () => {
-    const game = Game.create({ seed: 41 })
-    game.join('a')
-    game.join('b')
-    game.start()
-    game.apply({ type: 'resolveEvent', clearing: 0 })
-    while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-      const clearings = game.legalActions()[0]?.params?.clearing
-      if (clearings === undefined || clearings.length === 0) {
-        throw new Error('no legal starting building clearings')
-      }
-      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-    }
-    game.apply({ type: 'resolveEvent', leader: 'builder' })
+    const game = createPlayingGame({ seed: 41 })
 
     const emigre = card('ROOT-71')
     game.state.players[0]!.playArea.push(emigre)
