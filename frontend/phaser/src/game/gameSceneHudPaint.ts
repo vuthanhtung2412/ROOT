@@ -63,15 +63,15 @@ export function paintGameSceneHud(
     snapshot.legalActions,
     deps.getSession()?.getLocalSeat() ?? null,
   )
-  deps.getActionTray()?.sync(
-    localControlsActor
+  deps.getActionTray()?.sync({
+    actions: localControlsActor
       ? collapsePieceIdsRemovalSpecs(snapshot.legalActions)
       : [],
-    banner.actorSeat,
-    snapshot.state.pending[0],
-    deps.actionTraySyncOptions(),
-    snapshot.state,
-  )
+    actorSeat: banner.actorSeat,
+    pending: snapshot.state.pending[0],
+    options: deps.actionTraySyncOptions(),
+    state: snapshot.state,
+  })
   deps.getModals()?.refreshFactionBoard(snapshot.state)
   deps.getGameDrawer()?.sync(snapshot.state.deck?.discard.length ?? 0)
   deps.syncBattleOverlay()

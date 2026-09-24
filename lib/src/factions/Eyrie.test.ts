@@ -1,6 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { defOf } from '#cards/Deck.js'
-import { Game } from '#game/Game.js'
 import { FALL } from '#map/fall.js'
 import { canCraft } from '#queries/craft.js'
 import { warriors } from '#queries/pieces.js'

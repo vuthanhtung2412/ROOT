@@ -24,7 +24,6 @@ import { Faction } from '#factions/Faction.js'
 import {
   applyDiscard,
   craftStepLegalActions,
-  drawCards,
   handLimitLegalAction,
   validateDiscard,
   validateHandLimit,

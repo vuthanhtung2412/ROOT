@@ -410,15 +410,15 @@ export class GameScene extends Phaser.Scene {
       snapshot.legalActions,
     )
     const localControlsActor = this.localPlayerControlsSeat(banner.actorSeat)
-    this.actionTray?.sync(
-      localControlsActor
+    this.actionTray?.sync({
+      actions: localControlsActor
         ? collapsePieceIdsRemovalSpecs(snapshot.legalActions)
         : [],
-      banner.actorSeat,
-      snapshot.state.pending[0],
-      this.actionTraySyncOptions(localControlsActor, snapshot.state),
-      snapshot.state,
-    )
+      actorSeat: banner.actorSeat,
+      pending: snapshot.state.pending[0],
+      options: this.actionTraySyncOptions(localControlsActor, snapshot.state),
+      state: snapshot.state,
+    })
   }
 
   private isActionUnderResolution(): boolean {
