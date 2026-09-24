@@ -108,6 +108,10 @@ export function tryApplyPropagandaBureau(
 
 export const propagandaBureauEffect: CardEffect = {
   defId: PROPAGANDA_DEF_ID,
+  action: {
+    types: ['propagandaBureau'],
+    apply: tryApplyPropagandaBureau,
+  },
   grants(state) {
     if (!propagandaAvailable(state)) return []
     const ownerSeat = propagandaOwner(state)

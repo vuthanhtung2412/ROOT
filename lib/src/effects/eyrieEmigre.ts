@@ -68,6 +68,10 @@ export function tryApplyEyrieEmigre(state: GameState, action: Action, ctx: Ctx):
 
 export const eyrieEmigreEffect: CardEffect = {
   defId: EYRIE_EMIGRE_DEF_ID,
+  action: {
+    types: ['eyrieEmigre'],
+    apply: tryApplyEyrieEmigre,
+  },
   onSignal(state, signal) {
     if (signal.s !== 'phase.end' || signal.phase !== 'birdsong') return
     const ownerSeat = emigreOwner(state)

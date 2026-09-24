@@ -48,6 +48,10 @@ export function tryApplySwapMeet(
 
 export const swapMeetEffect: CardEffect = {
   defId: DEF_ID,
+  action: {
+    types: ['swapMeet'],
+    apply: tryApplySwapMeet,
+  },
   grants(state) {
     if (state.phase !== 'birdsong') return []
     if (state.turnScratch.swapMeetUsed) return []

@@ -1,4 +1,4 @@
-import type { ActionSpec } from '#actions/types.js'
+import type { Action, ActionSpec } from '#actions/types.js'
 import type { GameState } from '#state/types.js'
 import type { Ctx } from '#game/ctx.js'
 import type { GameSignal } from '#triggers/signals.js'
@@ -18,9 +18,19 @@ export type CardEffect = {
   onSignal?: Listener
   hooks?: RuleHookOverrides
   grants?: (state: GameState) => ActionSpec[]
+  action?: {
+    types: Action['type'][]
+    apply: (state: GameState, action: Action, ctx: Ctx) => boolean
+  }
   /** When true, Game skips this auto action (e.g. Informants replace evening draw). */
   blocksAuto?: (state: GameState, action: ActionSpec | { type: string }) => boolean
 }
 
 /** Registered persistent/partisan card effects (Phase 7b). */
 export const EFFECTS: Record<string, CardEffect> = {}
+
+export function effectForAction(action: Action): CardEffect | undefined {
+  return Object.values(EFFECTS).find((effect: CardEffect): boolean =>
+    effect.action?.types.includes(action.type) ?? false,
+  )
+}

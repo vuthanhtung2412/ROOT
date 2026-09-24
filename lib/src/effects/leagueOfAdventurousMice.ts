@@ -120,6 +120,10 @@ export function tryApplyLeague(state: GameState, action: Action, ctx: Ctx): bool
 
 export const leagueOfAdventurousMiceEffect: CardEffect = {
   defId: LEAGUE_DEF_ID,
+  action: {
+    types: ['leagueMove', 'leagueBattle'],
+    apply: tryApplyLeague,
+  },
   grants(state) {
     if (!leagueAvailable(state)) return []
     const ownerSeat = leagueOwner(state)

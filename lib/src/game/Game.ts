@@ -23,16 +23,8 @@ import type { Seat } from '#pieces/types.js'
 import type { GameState, Phase } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import '#effects/register.js'
-import { tryApplyCharmOffensive } from '#effects/charmOffensive.js'
-import { tryApplyInformants } from '#effects/informants.js'
-import { tryApplyLeague } from '#effects/leagueOfAdventurousMice.js'
-import { tryApplyPropagandaBureau } from '#effects/propagandaBureau.js'
-import { tryApplySaboteurs } from '#effects/saboteurs.js'
-import { tryApplyFalseOrders } from '#effects/falseOrders.js'
-import { tryApplyEyrieEmigre } from '#effects/eyrieEmigre.js'
-import { tryApplySwapMeet } from '#effects/swapMeet.js'
 import { RESOLVERS } from '#events/resolvers.js'
-import { EFFECTS } from '#triggers/effects.js'
+import { EFFECTS, effectForAction } from '#triggers/effects.js'
 import type { Listener } from '#triggers/effects.js'
 import { buildRuleHooks } from '#triggers/buildHooks.js'
 import { requireSeat } from '#typeGuards.js'
@@ -317,73 +309,16 @@ export class Game {
       }
       return
     }
-    if (action.type === 'swapMeet') {
-      const ok = legal.some(
-        (spec) => spec.type === 'swapMeet' && spec.actor === this.state.currentSeat,
-      )
-      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
-      return
-    }
-    if (action.type === 'charmOffensive') {
-      const ok = legal.some(
-        (spec) => spec.type === 'charmOffensive' && spec.actor === this.state.currentSeat,
-      )
-      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
-      return
-    }
-    if (action.type === 'informantsTakeAmbush') {
-      const ok = legal.some(
-        (spec) =>
-          spec.type === 'informantsTakeAmbush' && spec.actor === this.state.currentSeat,
-      )
-      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
-      return
-    }
-    if (action.type === 'leagueMove' || action.type === 'leagueBattle') {
-      const ok = legal.some(
-        (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
-      )
-      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
-      return
-    }
-    if (action.type === 'propagandaBureau') {
-      const ok = legal.some(
-        (spec) => spec.type === 'propagandaBureau' && spec.actor === this.state.currentSeat,
-      )
-      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
-      return
-    }
-    if (action.type === 'saboteurs') {
-      const ok = legal.some(
-        (spec) => spec.type === 'saboteurs' && spec.actor === this.state.currentSeat,
-      )
-      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
-      return
-    }
-    if (action.type === 'falseOrders') {
-      const ok = legal.some(
-        (spec) => spec.type === 'falseOrders' && spec.actor === this.state.currentSeat,
-      )
-      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
-      return
-    }
-    if (action.type === 'eyrieEmigre') {
-      const ok = legal.some(
-        (spec) => spec.type === 'eyrieEmigre' && spec.actor === this.state.currentSeat,
-      )
-      if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
-      return
-    }
     const ok = legal.some(
       (spec) => spec.type === action.type && spec.actor === this.state.currentSeat,
     )
     if (!ok) throw new RuleError('ILLEGAL_ACTION', { action })
 
-    {
-      const ctx = this.makeCtx()
-      const faction = factionFor(factionOf(this.state, this.state.currentSeat))
-      faction.validate(this.state, action, ctx)
-    }
+    if (effectForAction(action) !== undefined) return
+
+    const ctx = this.makeCtx()
+    const faction = factionFor(factionOf(this.state, this.state.currentSeat))
+    faction.validate(this.state, action, ctx)
   }
 
   private execute(action: Action): LogEntry[] {
@@ -398,32 +333,14 @@ export class Game {
         return this.applyResolveEvent(action)
       default: {
         const ctx = this.makeCtx()
-        if (tryApplySwapMeet(this.state, action, ctx)) {
-          return [{ t: 'action', actor: this.state.currentSeat, action }]
-        }
-        if (tryApplyCharmOffensive(this.state, action, ctx)) {
-          return [{ t: 'action', actor: this.state.currentSeat, action }]
-        }
-        if (tryApplyInformants(this.state, action, ctx)) {
-          return [{ t: 'action', actor: this.state.currentSeat, action }]
-        }
-        if (tryApplyLeague(this.state, action, ctx)) {
-          return [{ t: 'action', actor: this.state.currentSeat, action }]
-        }
-        if (tryApplyPropagandaBureau(this.state, action, ctx)) {
-          return [{ t: 'action', actor: this.state.currentSeat, action }]
-        }
-        if (tryApplySaboteurs(this.state, action, ctx)) {
-          return [{ t: 'action', actor: this.state.currentSeat, action }]
-        }
-        if (tryApplyFalseOrders(this.state, action, ctx)) {
-          return [{ t: 'action', actor: this.state.currentSeat, action }]
-        }
-        if (tryApplyEyrieEmigre(this.state, action, ctx)) {
+        const effect = effectForAction(action)
+        if (effect?.action !== undefined) {
+          if (!effect.action.apply(this.state, action, ctx)) {
+            throw new RuleError('ILLEGAL_ACTION', { action })
+          }
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
         const faction = factionFor(factionOf(this.state, this.state.currentSeat))
-        faction.validate(this.state, action, ctx)
         return faction.apply(this.state, action, ctx)
       }
     }

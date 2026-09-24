@@ -53,6 +53,10 @@ export function tryApplyCharmOffensive(
 
 export const charmOffensiveEffect: CardEffect = {
   defId: CHARM_OFFENSIVE_DEF_ID,
+  action: {
+    types: ['charmOffensive'],
+    apply: tryApplyCharmOffensive,
+  },
   grants(state) {
     if (state.phase !== 'evening') return []
     if (state.turnScratch.charmOffensiveUsed) return []
