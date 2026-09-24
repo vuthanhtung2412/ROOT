@@ -12,6 +12,7 @@ import {
 } from '#state/boards.js'
 import { ITEM_SUPPLY } from '#state/constants.js'
 import type { ClearingState, GameState, PlayerState } from '#state/types.js'
+import { createTurnScratch } from '#state/turnScratch.js'
 import { buildRuleHooks } from '#triggers/buildHooks.js'
 import { EFFECTS } from '#triggers/effects.js'
 import type { GameSignal } from '#triggers/signals.js'
@@ -146,24 +147,7 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
     dominanceAvailable: [],
     itemSupply: { ...ITEM_SUPPLY },
     pending: [],
-    turnScratch: {
-      actionsLeft: 3,
-      extraActions: 0,
-      recruited: false,
-      birdsongWoodDone: false,
-      eveningDrawDone: false,
-      swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-      emergencyOrdersDone: false,
-      eveningScoreDone: false,
-      decree: null,
-      decreeDone: false,
-    },
+    turnScratch: createTurnScratch({ actionsLeft: 3 }),
     ...overrides,
   }
 }
