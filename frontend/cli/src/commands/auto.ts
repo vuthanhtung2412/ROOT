@@ -177,19 +177,19 @@ async function tryAct(
   let state = initialState
   // Pending events may require a non-current seat (ambush, field hospital, etc.).
   if (specs.some((spec) => spec.type === 'discard')) {
-    state = (await api.get()).state
+    state = (await api.getGame()).state
     const discardSpec = specs.find((spec) => spec.type === 'discard')
     if (discardSpec) {
       const action = buildActionFor(state, discardSpec)
       if (action) {
-        const result = await api.act(action)
+        const result = await api.submitAction(action)
         return result.state
       }
     }
   }
   if (specs.some((spec) => spec.type === 'turmoil')) {
     try {
-      const result = await api.act({ type: 'turmoil' })
+      const result = await api.submitAction({ type: 'turmoil' })
       return result.state
     } catch (err) {
       if (!(err instanceof ApiError && err.status === 400)) throw err
@@ -206,7 +206,7 @@ async function tryAct(
     const action = buildActionFor(state, spec)
     if (!action) continue
     try {
-      const result = await api.act(action)
+      const result = await api.submitAction(action)
       return result.state
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) continue
@@ -216,7 +216,7 @@ async function tryAct(
   const end = candidates.find((spec) => spec.type === 'endPhase')
   if (end) {
     try {
-      const result = await api.act({ type: 'endPhase' })
+      const result = await api.submitAction({ type: 'endPhase' })
       return result.state
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
@@ -563,8 +563,11 @@ export async function cmdAuto(
   players: number,
   factions?: string[],
 ): Promise<void> {
-  await api.delete().catch(() => {})
-  const created = await api.create(factions)
+  await api.deleteGame().catch(() => {})
+  const created = await api.createGame({
+    ...(factions === undefined ? {} : { factions }),
+    replace: true,
+  })
   const roster = created.state.factions.slice(0, players)
   if (roster.length < 2) {
     throw new Error(`need ≥2 factions to auto-play, got ${roster.length}`)
@@ -588,7 +591,7 @@ export async function cmdAuto(
     state.turn <= turns &&
     steps < turns * MAX_STEPS_PER_TURN
   ) {
-    const { actions } = await api.actions()
+    const { actions } = await api.legalActions()
     state = await tryAct(state, actions)
     steps++
     if (state.status === 'finished') break

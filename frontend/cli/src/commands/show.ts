@@ -11,7 +11,7 @@ function isLibGameState(value: unknown): value is GameState {
 }
 
 export async function cmdShow(): Promise<void> {
-  const { state, historyLength } = await api.get()
+  const { state, historyLength } = await api.getGame()
   if (!isLibGameState(state)) {
     throw new Error('unexpected game payload')
   }

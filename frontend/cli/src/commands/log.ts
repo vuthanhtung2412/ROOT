@@ -15,7 +15,10 @@ function isLibGameState(value: unknown): value is GameState {
 }
 
 export async function cmdLog(): Promise<void> {
-  const [{ state }, { log }] = await Promise.all([api.get(), api.log()])
+  const [{ state }, { log }] = await Promise.all([
+    api.getGame(),
+    api.gameLog(),
+  ])
   if (!isLibGameState(state) || !isLogEntryArray(log)) {
     throw new Error('unexpected game payload')
   }

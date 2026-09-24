@@ -1,8 +1,10 @@
-import type { components } from './schema.js'
 import {
   createRootWebClient,
+  type components,
   type RootWebClient,
-} from './rootClient.js'
+} from '@root/web-client'
+
+export type { RootWebClient } from '@root/web-client'
 
 type ErrorBody = components['schemas']['ErrorBody']
 export type FactionId = components['schemas']['FactionId']

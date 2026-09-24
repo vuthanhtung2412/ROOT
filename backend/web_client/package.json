@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./game-api": {
+      "types": "./src/gameApi.ts",
+      "default": "./src/gameApi.ts"
+    },
     "./schema": {
       "types": "./src/schema.d.ts",
       "default": "./src/schema.d.ts"
