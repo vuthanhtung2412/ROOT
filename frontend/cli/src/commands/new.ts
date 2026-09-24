@@ -1,7 +1,10 @@
 import { api } from '#api/client.js'
 
 export async function cmdNew(factions?: string[]): Promise<void> {
-  const { state } = await api.create(factions)
+  const { state } = await api.createGame({
+    ...(factions === undefined ? {} : { factions }),
+    replace: true,
+  })
   console.log(`game ${state.id} factions=${state.factions.join(',')}`)
   console.log(`status=${state.status}`)
 }
