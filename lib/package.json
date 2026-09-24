@@ -35,6 +35,10 @@
     "./map/fallSlots": {
       "types": "./src/map/fallSlots.ts",
       "default": "./src/map/fallSlots.ts"
+    },
+    "./fall-metadata": {
+      "types": "./src/public/fallMetadata.ts",
+      "default": "./src/public/fallMetadata.ts"
     }
   }
 }

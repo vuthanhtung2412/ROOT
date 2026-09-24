@@ -4,7 +4,7 @@ import {
   type ClientAction,
 } from '#game/resolution/ActionComposer.ts'
 import { clearingRuler } from '#game/clearingRuler.ts'
-import { fallAdjacentClearings } from '#game/fallPaths.ts'
+import { fallAdjacentClearings } from '@root/lib/fall-metadata'
 import {
   applyMarchMovesToClearings,
   type ClearingPiecesSnapshot,
