@@ -1,38 +1,9 @@
 import { ApiError, api, type ActionSpec, type GameState } from '#api/client.js'
 
-const BUILDINGS = ['sawmill', 'workshop', 'recruiter'] as const
-const FALL_PATHS: [number, number][] = [
-  [0, 4],
-  [0, 8],
-  [0, 9],
-  [1, 4],
-  [1, 5],
-  [1, 9],
-  [2, 5],
-  [2, 6],
-  [2, 10],
-  [3, 7],
-  [3, 8],
-  [3, 11],
-  [5, 10],
-  [6, 7],
-  [6, 11],
-  [8, 11],
-  [9, 11],
-  [10, 11],
-]
-
-const ALL_CLEARING_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const
 const MAX_AUTO_ATTEMPTS = 40
 const ATTEMPT_MULTIPLIER = 3
 const HAND_SIZE_LIMIT = 5
 const MAX_STEPS_PER_TURN = 30
-
-const ADJ = new Map<number, number[]>()
-for (const [a, b] of FALL_PATHS) {
-  ADJ.set(a, [...(ADJ.get(a) ?? []), b])
-  ADJ.set(b, [...(ADJ.get(b) ?? []), a])
-}
 
 type BuildOption = { clearing: number; building: string }
 type OverworkOption = { cardId: string; clearing: number }
@@ -43,14 +14,6 @@ type DecreeCardOption = { cardId: string; column: string }
 function pick<T>(items: T[]): T | undefined {
   if (items.length === 0) return undefined
   return items[Math.floor(Math.random() * items.length)]
-}
-
-function warriorsAt(state: GameState, seat: number, clearing: number): number {
-  const clearingState = state.clearings?.[clearing]
-  if (!clearingState) return 0
-  return clearingState.pieces.filter(
-    (piece) => piece.owner === seat && piece.kind === 'warrior',
-  ).length
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -244,137 +207,52 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
     case 'eveningDraw':
       return { type: 'eveningDraw' }
     case 'spendBird': {
-      const hand = state.players[seat]?.hand ?? []
-      const bird = hand.find((card) => {
-        // bird suit cards — defId alone insufficient; try known bird ambush/dominance roots via params later
-        return (
-          card.defId.startsWith('ROOT-20') ||
-          card.defId === 'ROOT-200' ||
-          card.defId === 'ROOT-94' ||
-          card.defId === 'ROOT-95'
-        )
-      })
-      // Prefer params if server listed cardIds
       const listed = readStringList(paramList(spec.params, 'cardIds'))
-      const cardId = pick(listed) ?? bird?.id
-      if (!cardId) {
-        // fallback: scan hand when bird suit unknown from defId alone
-        const fallbackCard = pick(hand)
-        if (!fallbackCard) return null
-        return { type: 'spendBird', cardId: fallbackCard.id }
-      }
+      const cardId = pick(listed)
+      if (!cardId) return null
       return { type: 'spendBird', cardId }
     }
     case 'craft': {
       const listed = readStringList(paramList(spec.params, 'cardIds'))
-      const hand = state.players[seat]?.hand ?? []
-      const cardId = pick(listed) ?? pick(hand)?.id
+      const cardId = pick(listed)
       if (!cardId) return null
       return { type: 'craft', cardId }
     }
     case 'build': {
       const paired = readBuildOptions(paramList(spec.params, 'options'))
-      if (paired.length > 0) {
-        const choice = pick(paired)
-        if (!choice) return null
-        return {
-          type: 'build',
-          clearing: choice.clearing,
-          building: choice.building,
-        }
+      const choice = pick(paired)
+      if (!choice) return null
+      return {
+        type: 'build',
+        clearing: choice.clearing,
+        building: choice.building,
       }
-      const clearings =
-        readNumberList(paramList(spec.params, 'clearings')).length > 0
-          ? readNumberList(paramList(spec.params, 'clearings'))
-          : readNumberList(paramList(spec.params, 'clearing')).length > 0
-            ? readNumberList(paramList(spec.params, 'clearing'))
-            : [...ALL_CLEARING_IDS]
-      const buildings =
-        readStringList(paramList(spec.params, 'building')).length > 0
-          ? readStringList(paramList(spec.params, 'building'))
-          : [...BUILDINGS]
-      for (const clearing of shuffle(clearings)) {
-        for (const building of shuffle(buildings)) {
-          return { type: 'build', clearing, building }
-        }
-      }
-      return null
     }
     case 'overwork': {
       const paired = readOverworkOptions(paramList(spec.params, 'options'))
-      if (paired.length > 0) {
-        const choice = pick(paired)
-        if (!choice) return null
-        return {
-          type: 'overwork',
-          clearing: choice.clearing,
-          cardId: choice.cardId,
-        }
+      const choice = pick(paired)
+      if (!choice) return null
+      return {
+        type: 'overwork',
+        clearing: choice.clearing,
+        cardId: choice.cardId,
       }
-      const hand = state.players[seat]?.hand ?? []
-      const clearings =
-        readNumberList(paramList(spec.params, 'clearings')).length > 0
-          ? readNumberList(paramList(spec.params, 'clearings'))
-          : readNumberList(paramList(spec.params, 'clearing')).length > 0
-            ? readNumberList(paramList(spec.params, 'clearing'))
-            : [...ALL_CLEARING_IDS]
-      const cardIdsFromParams = readStringList(paramList(spec.params, 'cardIds'))
-      const cardIds =
-        cardIdsFromParams.length > 0
-          ? cardIdsFromParams
-          : hand.map((card) => card.id)
-      for (const clearing of shuffle(clearings)) {
-        for (const cardId of shuffle(cardIds)) {
-          return { type: 'overwork', clearing, cardId }
-        }
-      }
-      return null
     }
     case 'battle': {
       const targets = readBattleTargets(paramList(spec.params, 'targets'))
-      if (targets.length > 0) {
-        const choice = pick(targets)
-        if (!choice) return null
-        return {
-          type: 'battle',
-          clearing: choice.clearing,
-          defender: choice.defender,
-        }
+      const choice = pick(targets)
+      if (!choice) return null
+      return {
+        type: 'battle',
+        clearing: choice.clearing,
+        defender: choice.defender,
       }
-      const clearings =
-        readNumberList(paramList(spec.params, 'clearings')).length > 0
-          ? readNumberList(paramList(spec.params, 'clearings'))
-          : readNumberList(paramList(spec.params, 'clearing')).length > 0
-            ? readNumberList(paramList(spec.params, 'clearing'))
-            : [...ALL_CLEARING_IDS]
-      const defendersFromParams = readNumberList(paramList(spec.params, 'defender'))
-      const defenders =
-        defendersFromParams.length > 0
-          ? defendersFromParams
-          : state.players.map((player) => player.seat).filter((seatId) => seatId !== seat)
-      for (const clearing of shuffle(clearings)) {
-        for (const defender of shuffle(defenders)) {
-          return { type: 'battle', clearing, defender }
-        }
-      }
-      return null
     }
     case 'march': {
       const listed = readMarchMoves(paramList(spec.params, 'moves'))
-      if (listed.length > 0) {
-        const move = pick(listed)
-        if (!move) return null
-        return { type: 'march', moves: [move] }
-      }
-      const froms = ALL_CLEARING_IDS.filter(
-        (clearingId) => warriorsAt(state, seat, clearingId) > 0,
-      )
-      const from = pick([...froms])
-      if (from === undefined) return null
-      const neighbors = ADJ.get(from) ?? []
-      const to = pick(neighbors)
-      if (to === undefined) return null
-      return { type: 'march', moves: [{ from, to, count: 1 }] }
+      const move = pick(listed)
+      if (!move) return null
+      return { type: 'march', moves: [move] }
     }
     case 'discard': {
       const actor = state.currentSeat
@@ -421,28 +299,7 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
         if (picked.length === 0) return null
         return { type: 'addToDecree', cards: picked }
       }
-      const cardIds = shuffle(readStringList(paramList(spec.params, 'cardIds')))
-      const columns = (() => {
-        const listed = readStringList(paramList(spec.params, 'columns'))
-        return listed.length > 0
-          ? listed
-          : ['recruit', 'move', 'battle', 'build']
-      })()
-      if (cardIds.length === 0) return null
-      const cardCount = Math.min(cardIds.length, Math.random() < 0.5 ? 1 : 2)
-      const picked: DecreeCardOption[] = []
-      let birds = 0
-      for (const cardId of cardIds) {
-        if (picked.length >= cardCount) break
-        const isBird = birdIds.has(cardId)
-        if (isBird && birds >= 1) continue
-        const column = pick(columns)
-        if (!column) break
-        picked.push({ cardId, column })
-        if (isBird) birds += 1
-      }
-      if (picked.length === 0) return null
-      return { type: 'addToDecree', cards: picked }
+      return null
     }
     case 'newRoost': {
       const clearings =
@@ -468,48 +325,21 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       }
       if (column === 'battle') {
         const targets = readBattleTargets(paramList(spec.params, 'targets'))
-        if (targets.length > 0) {
-          const choice = pick(targets)
-          if (!choice) return null
-          return {
-            type: 'decree',
-            column,
-            cardId,
-            clearing: choice.clearing,
-            defender: choice.defender,
-          }
-        }
-        const clearings = readNumberList(paramList(spec.params, 'clearing'))
-        const defenders = readNumberList(paramList(spec.params, 'defender'))
-        if (clearings.length === 0 || defenders.length === 0) return null
-        const index = Math.floor(
-          Math.random() * Math.min(clearings.length, defenders.length),
-        )
+        const choice = pick(targets)
+        if (!choice) return null
         return {
           type: 'decree',
           column,
           cardId,
-          clearing: clearings[index],
-          defender: defenders[index],
+          clearing: choice.clearing,
+          defender: choice.defender,
         }
       }
       if (column === 'move') {
         const moves = readMarchMoves(paramList(spec.params, 'moves'))
-        if (moves.length > 0) {
-          const move = pick(moves)
-          if (!move) return null
-          return { type: 'decree', column, cardId, moves: [move] }
-        }
-        const froms = readNumberList(paramList(spec.params, 'from'))
-        const tos = readNumberList(paramList(spec.params, 'to'))
-        if (froms.length === 0 || tos.length === 0) return null
-        const index = Math.floor(Math.random() * Math.min(froms.length, tos.length))
-        return {
-          type: 'decree',
-          column,
-          cardId,
-          moves: [{ from: froms[index], to: tos[index], count: 1 }],
-        }
+        const move = pick(moves)
+        if (!move) return null
+        return { type: 'decree', column, cardId, moves: [move] }
       }
       return null
     }
