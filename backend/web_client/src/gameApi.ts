@@ -1,0 +1,341 @@
+import type { components } from './schema.js'
+import {
+  createRootWebClient,
+  type RootWebClient,
+} from './rootClient.js'
+
+type ErrorBody = components['schemas']['ErrorBody']
+export type FactionId = components['schemas']['FactionId']
+export type ApiAction = components['schemas']['Action']
+export type ActionSpec = components['schemas']['ActionSpec']
+export type GameSnapshot = components['schemas']['GameSnapshot']
+export type FallLayout = components['schemas']['FallLayoutResponse']
+type OpenApiActionResult = components['schemas']['ActionResult']
+
+type ClientResult<T> = {
+  data?: T
+  error?: unknown
+  response: Response
+}
+
+export class ApiError extends Error {
+  readonly status: number
+  readonly code: string
+  readonly detail: unknown
+
+  constructor(status: number, body: { code: string; detail?: unknown }) {
+    super(body.code)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = body.code
+    this.detail = body.detail
+  }
+}
+
+export type GameState = {
+  id: string
+  seed: number
+  status: 'waiting' | 'setup' | 'playing' | 'finished'
+  turn: number
+  currentSeat: number
+  phase: string
+  step: string
+  factions: string[]
+  players: Array<{
+    playerId: string
+    seat: number
+    faction: string
+    vp: number
+    hand: Array<{ id: string; defId: string }>
+    playArea?: Array<{ id: string; defId: string }>
+    craftedItems?: Array<string | { type: string; exhausted?: boolean }>
+    board?: unknown
+  }>
+  clearings: Array<{
+    pieces: Array<{
+      id: string
+      kind: string
+      owner: number
+      type?: string
+      used?: boolean
+    }>
+    ruin?: { items: string[] }
+  }>
+  deck?: {
+    discard: Array<{ id: string; defId: string }>
+  }
+  pending: unknown[]
+  winner?: number
+  turnScratch?: unknown
+}
+
+export type ActionResult = {
+  state: GameState
+  log: unknown[]
+}
+
+export type LegalActionsResponse = {
+  actions: ActionSpec[]
+}
+
+export type CreateGameInput = {
+  factions?: string[]
+  replace?: boolean
+}
+
+export type CreateGameApiOptions = {
+  baseUrl?: string
+  client?: RootWebClient
+  request?: (request: Request) => Promise<Response>
+  requestTimeoutMilliseconds?: number
+}
+
+export type GameApi = {
+  createGame: (input?: CreateGameInput) => Promise<{ state: GameState }>
+  join: (playerId: string) => Promise<ActionResult>
+  start: () => Promise<ActionResult>
+  getGame: () => Promise<{ state: GameState; historyLength: number }>
+  getSnapshot: () => Promise<GameSnapshot>
+  loadSnapshot: (snapshot: unknown, replace?: boolean) => Promise<{ state: GameState }>
+  legalActions: () => Promise<LegalActionsResponse>
+  submitAction: (action: unknown) => Promise<ActionResult>
+  gameLog: () => Promise<{ log: unknown[] }>
+  undo: () => Promise<{ state: GameState }>
+  fallLayout: () => Promise<FallLayout>
+  deleteGame: () => Promise<void>
+}
+
+function readErrorBody(value: unknown): Partial<ErrorBody> {
+  if (typeof value !== 'object' || value === null) {
+    return {}
+  }
+  const code = Reflect.get(value, 'code')
+  const detail = Reflect.get(value, 'detail')
+  return {
+    ...(typeof code === 'string' ? { code } : {}),
+    ...(detail !== undefined ? { detail } : {}),
+  }
+}
+
+function requireData<T>(result: ClientResult<T>): T {
+  if (!result.response.ok) {
+    const body = readErrorBody(result.error ?? {})
+    throw new ApiError(result.response.status, {
+      code: body.code ?? 'HTTP_ERROR',
+      detail: body.detail ?? null,
+    })
+  }
+  if (result.data === undefined) {
+    throw new ApiError(result.response.status, {
+      code: 'EMPTY_RESPONSE',
+      detail: null,
+    })
+  }
+  return result.data
+}
+
+function requireSuccess(result: ClientResult<unknown>): void {
+  if (!result.response.ok) {
+    const body = readErrorBody(result.error ?? {})
+    throw new ApiError(result.response.status, {
+      code: body.code ?? 'HTTP_ERROR',
+      detail: body.detail ?? null,
+    })
+  }
+}
+
+function isGameStatus(value: unknown): value is GameState['status'] {
+  return (
+    value === 'waiting' ||
+    value === 'setup' ||
+    value === 'playing' ||
+    value === 'finished'
+  )
+}
+
+export function isGameState(value: unknown): value is GameState {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  return (
+    typeof Reflect.get(value, 'id') === 'string' &&
+    typeof Reflect.get(value, 'seed') === 'number' &&
+    isGameStatus(Reflect.get(value, 'status')) &&
+    typeof Reflect.get(value, 'turn') === 'number' &&
+    typeof Reflect.get(value, 'currentSeat') === 'number' &&
+    typeof Reflect.get(value, 'phase') === 'string' &&
+    typeof Reflect.get(value, 'step') === 'string' &&
+    Array.isArray(Reflect.get(value, 'factions')) &&
+    Array.isArray(Reflect.get(value, 'players')) &&
+    Array.isArray(Reflect.get(value, 'clearings')) &&
+    Array.isArray(Reflect.get(value, 'pending'))
+  )
+}
+
+export function parseGameState(value: unknown): GameState {
+  if (!isGameState(value)) {
+    throw new Error('invalid game state payload')
+  }
+  return value
+}
+
+function parseActionResult(value: OpenApiActionResult): ActionResult {
+  return {
+    state: parseGameState(value.state),
+    log: Array.isArray(value.log) ? value.log : [],
+  }
+}
+
+function isFactionId(value: string): value is FactionId {
+  return (
+    value === 'marquise' ||
+    value === 'eyrie' ||
+    value === 'alliance' ||
+    value === 'vagabond'
+  )
+}
+
+function parseFactionIds(values: string[]): FactionId[] {
+  const factionIds: FactionId[] = []
+  for (const value of values) {
+    if (!isFactionId(value)) {
+      throw new Error(`invalid faction id: ${value}`)
+    }
+    factionIds.push(value)
+  }
+  return factionIds
+}
+
+function isApiAction(value: unknown): value is ApiAction {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof Reflect.get(value, 'type') === 'string'
+  )
+}
+
+export function isGameSnapshot(value: unknown): value is GameSnapshot {
+  if (typeof value !== 'object' || value === null) return false
+  if (!isGameState(Reflect.get(value, 'state'))) return false
+  if (!Array.isArray(Reflect.get(value, 'history'))) return false
+  if (!Array.isArray(Reflect.get(value, 'log'))) return false
+  const rng = Reflect.get(value, 'rng')
+  if (typeof rng !== 'object' || rng === null) return false
+  return (
+    typeof Reflect.get(rng, 'seed') === 'number' &&
+    typeof Reflect.get(rng, 'cursor') === 'number'
+  )
+}
+
+function timeoutRequest(
+  timeoutMilliseconds: number,
+): (request: Request) => Promise<Response> {
+  return async (request: Request): Promise<Response> => {
+    const timeoutSignal = AbortSignal.timeout(timeoutMilliseconds)
+    const signal = AbortSignal.any([request.signal, timeoutSignal])
+    return globalThis.fetch(new Request(request, { signal }))
+  }
+}
+
+function createClient(options: CreateGameApiOptions): RootWebClient {
+  if (options.client !== undefined) return options.client
+  const request =
+    options.request ??
+    (options.requestTimeoutMilliseconds === undefined
+      ? undefined
+      : timeoutRequest(options.requestTimeoutMilliseconds))
+  return createRootWebClient({
+    ...(options.baseUrl === undefined ? {} : { baseUrl: options.baseUrl }),
+    ...(request === undefined ? {} : { request }),
+  })
+}
+
+export function createGameApi(
+  options: CreateGameApiOptions = {},
+): GameApi {
+  const client = createClient(options)
+
+  return {
+    async createGame(input: CreateGameInput = {}): Promise<{ state: GameState }> {
+      const result = await client.POST('/game', {
+        params: {
+          query: input.replace === true ? { replace: '1' } : {},
+        },
+        body:
+          input.factions === undefined
+            ? {}
+            : { factions: parseFactionIds(input.factions) },
+      })
+      const data = requireData(result)
+      return { state: parseGameState(data.state) }
+    },
+
+    async join(playerId: string): Promise<ActionResult> {
+      const result = await client.POST('/game/join', {
+        body: { playerId },
+      })
+      return parseActionResult(requireData(result))
+    },
+
+    async start(): Promise<ActionResult> {
+      return parseActionResult(requireData(await client.POST('/game/start')))
+    },
+
+    async getGame(): Promise<{ state: GameState; historyLength: number }> {
+      const data = requireData(await client.GET('/game'))
+      return {
+        state: parseGameState(data.state),
+        historyLength: data.historyLength,
+      }
+    },
+
+    async getSnapshot(): Promise<GameSnapshot> {
+      return requireData(await client.GET('/game/snapshot'))
+    },
+
+    async loadSnapshot(
+      snapshot: unknown,
+      replace = true,
+    ): Promise<{ state: GameState }> {
+      if (!isGameSnapshot(snapshot)) {
+        throw new Error('invalid game snapshot payload')
+      }
+      const data = requireData(
+        await client.PUT('/game/snapshot', {
+          params: { query: replace ? { replace: '1' } : {} },
+          body: snapshot,
+        }),
+      )
+      return { state: parseGameState(data.state) }
+    },
+
+    async legalActions(): Promise<LegalActionsResponse> {
+      return requireData(await client.GET('/game/actions'))
+    },
+
+    async submitAction(action: unknown): Promise<ActionResult> {
+      if (!isApiAction(action)) {
+        throw new Error('invalid action payload')
+      }
+      const result = await client.POST('/game/actions', { body: action })
+      return parseActionResult(requireData(result))
+    },
+
+    async gameLog(): Promise<{ log: unknown[] }> {
+      return requireData(await client.GET('/game/log'))
+    },
+
+    async undo(): Promise<{ state: GameState }> {
+      const data = requireData(await client.POST('/game/undo'))
+      return { state: parseGameState(data.state) }
+    },
+
+    async fallLayout(): Promise<FallLayout> {
+      return requireData(await client.GET('/map/fall/layout'))
+    },
+
+    async deleteGame(): Promise<void> {
+      requireSuccess(await client.DELETE('/game'))
+    },
+  }
+}
