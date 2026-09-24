@@ -1,379 +1,68 @@
-import type {
-  Action,
-  ActionChoiceParams,
-  ActionSpec,
-  AddToDecreeCard,
-  BattleTargetChoice,
-  MarchMove,
-} from '#actions/types.js'
+import type { Action, ActionSpec } from '#actions/types.js'
 import { defOf } from '#cards/Deck.js'
 import { Deck } from '#cards/Deck.js'
 import type { Card } from '#cards/types.js'
-import { matchesSuit } from '#cards/suit.js'
 import { openBattle } from '#events/battle.js'
+import {
+  advanceDecreeCursor,
+  battleLegal,
+  buildLegal,
+  cardResolvable,
+  ensureDecreeCursor,
+  findDecreeCard,
+  moveLegal,
+  recruitLegal,
+  recruitWarriorCount,
+  removeDecreeCard,
+} from '#factions/eyrie/decree.js'
+import { eyrieLegalActions } from '#factions/eyrie/legalActions.js'
+import {
+  boardOf,
+  eveningDrawBonus,
+  fewestWarriorClearings,
+  roostsOnMap,
+} from '#factions/eyrie/rules.js'
+import {
+  placeEyrieRoostSetup,
+  tuckViziersFor,
+} from '#factions/eyrie/setup.js'
+import { isVizier } from '#factions/eyrie/viziers.js'
+import { Faction } from '#factions/Faction.js'
 import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
-import { FALL } from '#map/fall.js'
-import type { ClearingId } from '#map/types.js'
 import { canCraft } from '#queries/craft.js'
-import { canBattle } from '#queries/battle.js'
-import { enemySeatsInClearing } from '#queries/enemySeats.js'
-import { canMove } from '#queries/move.js'
-import { canPlace } from '#queries/place.js'
-import { warriors } from '#queries/pieces.js'
-import { rules } from '#queries/ruler.js'
 import { playerOf } from '#queries/seat.js'
-import { openSlots } from '#queries/slots.js'
 import { craftCard, resetCraftingBuildingUsed } from '#rules/craft.js'
 import { moveWarriors } from '#rules/move.js'
 import { placeUpTo } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
 import {
   DECREE_COLUMNS,
-  EYRIE_LEADERS,
-  EYRIE_ROOST_DRAW_BONUS_THRESHOLDS,
   EYRIE_ROOST_VP,
   eyrieLeaderPools,
-  type DecreeColumn,
-  type EyrieBoard,
-  type EyrieLeader,
 } from '#state/boards.js'
-import type { DecreeCursor, GameState, Phase, Step } from '#state/types.js'
+import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import type { Seat } from '#pieces/types.js'
-import { Faction } from '#factions/Faction.js'
 import {
   applyDiscard,
-  craftStepLegalActions,
   drawCards,
-  handLimitLegalAction,
   validateDiscard,
   validateHandLimit,
 } from '#factions/sharedTurn.js'
-import { isVizier, makeViziers } from '#factions/eyrie/viziers.js'
+
+export {
+  assignEyrieLeader,
+  eyrieStartClearing,
+  LEADER_VIZIER_COLUMNS,
+  placeEyrieRoostSetup,
+  tuckViziersFor,
+} from '#factions/eyrie/setup.js'
 
 const STEPS: Record<Phase, Step[]> = {
   birdsong: ['emergency', 'decreeAdd', 'newRoost'],
   daylight: ['craft', 'decree'],
   evening: ['score', 'draw', 'discard'],
-}
-
-function boardOf(state: GameState, seat: Seat): EyrieBoard {
-  const board = playerOf(state, seat).board
-  if (board.kind !== 'eyrie') throw new RuleError('NOT_EYRIE', { seat })
-  return board
-}
-
-/** Rule: Eyrie > Setup 2 — free corner, prefer diagonally opposite Marquise keep. */
-export function eyrieStartClearing(state: GameState): ClearingId {
-  const taken = new Set<ClearingId>()
-  let marquiseKeep: ClearingId | null = null
-  for (const p of state.players) {
-    if (p.faction !== 'marquise') continue
-    for (const corner of FALL.corners) {
-      const hasKeep = state.clearings[corner]!.pieces.some(
-        (x) => x.kind === 'token' && x.type === 'keep' && x.owner === p.seat,
-      )
-      if (hasKeep) {
-        taken.add(corner)
-        marquiseKeep = corner
-      }
-    }
-  }
-  const preferred =
-    marquiseKeep !== null ? FALL.opposite(marquiseKeep) : FALL.opposite(FALL.corners[0])
-  if (!taken.has(preferred)) return preferred
-  for (const corner of FALL.corners) {
-    if (!taken.has(corner)) return corner
-  }
-  return preferred
-}
-
-function roostClearings(state: GameState, seat: Seat): ClearingId[] {
-  const out: ClearingId[] = []
-  for (let id = 0; id < state.clearings.length; id++) {
-    if (
-      state.clearings[id]!.pieces.some(
-        (p) => p.kind === 'building' && p.type === 'roost' && p.owner === seat,
-      )
-    ) {
-      out.push(id)
-    }
-  }
-  return out
-}
-
-function roostsOnMap(state: GameState, seat: Seat): number {
-  let n = 0
-  for (const clearing of state.clearings) {
-    for (const p of clearing.pieces) {
-      if (p.kind === 'building' && p.type === 'roost' && p.owner === seat) n += 1
-    }
-  }
-  return n
-}
-
-function cardMatchesClearing(card: Card, clearing: ClearingId): boolean {
-  return matchesSuit(card, FALL.clearings[clearing]!.suit)
-}
-
-/** Check recruit — supply + roost + suit + canPlace. Rule: 7.8.2 Charismatic places 2. */
-function recruitWarriorCount(state: GameState, seat: Seat): number {
-  return boardOf(state, seat).leader === 'charismatic' ? 2 : 1
-}
-
-function recruitLegal(
-  state: GameState,
-  seat: Seat,
-  card: Card,
-  clearing: ClearingId,
-): boolean {
-  if (!cardMatchesClearing(card, clearing)) return false
-  if (!roostClearings(state, seat).includes(clearing)) return false
-  const needed = recruitWarriorCount(state, seat)
-  if (boardOf(state, seat).supply.warriors < needed) return false
-  return canPlace(state, seat, clearing)
-}
-
-type DecreeMoveCheck = {
-  seat: Seat
-  card: Card
-  moves: MarchMove[]
-}
-
-function moveLegal(state: GameState, check: DecreeMoveCheck, ctx: Ctx): boolean {
-  const { seat, card, moves } = check
-  if (moves.length < 1) return false
-  const from = moves[0]!.from
-  if (!cardMatchesClearing(card, from)) return false
-  if (warriors(state, from, seat) < 1) return false
-  for (const move of moves) {
-    if (move.count < 1) return false
-    if (!canMove(state, { seat, from: move.from, to: move.to }, ctx.hooks)) return false
-    if (move.count > warriors(state, move.from, seat)) return false
-  }
-  return true
-}
-
-function hasAnyDecreeMove(
-  state: GameState,
-  seat: Seat,
-  card: Card,
-  ctx: Ctx,
-): boolean {
-  for (let from = 0; from < 12; from++) {
-    if (!cardMatchesClearing(card, from)) continue
-    if (warriors(state, from, seat) < 1) continue
-    for (let to = 0; to < 12; to++) {
-      if (canMove(state, { seat, from: from, to: to }, ctx.hooks)) return true
-    }
-  }
-  return false
-}
-
-type DecreeBattleCheck = {
-  seat: Seat
-  card: Card
-  clearing: ClearingId
-  defender: Seat
-}
-
-function battleLegal(state: GameState, check: DecreeBattleCheck): boolean {
-  const { seat, card, clearing, defender } = check
-  if (!cardMatchesClearing(card, clearing)) return false
-  return canBattle(state, seat, clearing, defender)
-}
-
-function hasAnyDecreeBattle(state: GameState, seat: Seat, card: Card): boolean {
-  for (let clearing = 0; clearing < 12; clearing++) {
-    if (!cardMatchesClearing(card, clearing)) continue
-    for (const defender of enemySeatsInClearing(state, clearing, seat)) {
-      if (canBattle(state, seat, clearing, defender)) return true
-    }
-  }
-  return false
-}
-
-type DecreeBuildCheck = {
-  seat: Seat
-  card: Card
-  clearing: ClearingId
-}
-
-function buildLegal(state: GameState, check: DecreeBuildCheck, ctx: Ctx): boolean {
-  const { seat, card, clearing } = check
-  if (!cardMatchesClearing(card, clearing)) return false
-  if (!rules(state, clearing, seat, ctx.hooks)) return false
-  if (roostClearings(state, seat).includes(clearing)) return false
-  if (boardOf(state, seat).roostTrack.placed < 1) return false
-  if (!canPlace(state, seat, clearing)) return false
-  if (openSlots(state, clearing) < 1) return false
-  return true
-}
-
-function hasAnyDecreeBuild(
-  state: GameState,
-  seat: Seat,
-  card: Card,
-  ctx: Ctx,
-): boolean {
-  for (let clearing = 0; clearing < 12; clearing++) {
-    if (buildLegal(state, { seat, card, clearing: clearing }, ctx)) return true
-  }
-  return false
-}
-
-type DecreeCardCheck = {
-  seat: Seat
-  column: DecreeColumn
-  card: Card
-}
-
-function cardResolvable(state: GameState, check: DecreeCardCheck, ctx: Ctx): boolean {
-  const { seat, column, card } = check
-  switch (column) {
-    case 'recruit':
-      for (let c = 0; c < 12; c++) {
-        if (recruitLegal(state, seat, card, c)) return true
-      }
-      return false
-    case 'move':
-      return hasAnyDecreeMove(state, seat, card, ctx)
-    case 'battle':
-      return hasAnyDecreeBattle(state, seat, card)
-    case 'build':
-      return hasAnyDecreeBuild(state, seat, card, ctx)
-  }
-}
-
-function findDecreeCard(board: EyrieBoard, column: DecreeColumn, cardId: string): Card | undefined {
-  return board.decree[column].find((c) => c.id === cardId)
-}
-
-function ensureDecreeCursor(state: GameState, seat: Seat): DecreeCursor | null {
-  // Rule: 7.5.2 — resolve each column once L→R; cards stay on decree until Purge.
-  if (state.turnScratch.decreeDone) return null
-  if (state.turnScratch.decree) return state.turnScratch.decree
-  const board = boardOf(state, seat)
-  for (const column of DECREE_COLUMNS) {
-    if (board.decree[column].length === 0) continue
-    const cursor: DecreeCursor = {
-      column,
-      remaining: board.decree[column].map((c) => c.id),
-    }
-    state.turnScratch.decree = cursor
-    return cursor
-  }
-  state.turnScratch.decreeDone = true
-  return null
-}
-
-function advanceDecreeCursor(state: GameState, seat: Seat): void {
-  const board = boardOf(state, seat)
-  const cursor = state.turnScratch.decree
-  if (!cursor) return
-  if (cursor.remaining.length > 0) return
-  const idx = DECREE_COLUMNS.indexOf(cursor.column)
-  for (let i = idx + 1; i < DECREE_COLUMNS.length; i++) {
-    const column = DECREE_COLUMNS[i]!
-    if (board.decree[column].length === 0) continue
-    state.turnScratch.decree = {
-      column,
-      remaining: board.decree[column].map((c) => c.id),
-    }
-    return
-  }
-  state.turnScratch.decree = null
-  state.turnScratch.decreeDone = true
-}
-
-function removeDecreeCard(board: EyrieBoard, column: DecreeColumn, cardId: string): Card {
-  const idx = board.decree[column].findIndex((c) => c.id === cardId)
-  if (idx < 0) throw new RuleError('DECREE_CARD_MISSING', { column, cardId })
-  return board.decree[column].splice(idx, 1)[0]!
-}
-
-/** Rule: 7.8 — Loyal Viziers begin on these Decree columns per leader. */
-export const LEADER_VIZIER_COLUMNS: Record<
-  EyrieLeader,
-  readonly [DecreeColumn, DecreeColumn]
-> = {
-  builder: ['recruit', 'move'],
-  charismatic: ['recruit', 'battle'],
-  commander: ['move', 'battle'],
-  despot: ['move', 'build'],
-}
-
-export function tuckViziersFor(
-  board: EyrieBoard,
-  leader: EyrieLeader,
-  viziers?: Card[],
-): void {
-  const [firstColumn, secondColumn] = LEADER_VIZIER_COLUMNS[leader]
-  const pair = viziers ?? makeViziers()
-  board.decree = { recruit: [], move: [], battle: [], build: [] }
-  if (pair[0]) board.decree[firstColumn].push(pair[0])
-  if (pair[1]) board.decree[secondColumn].push(pair[1])
-}
-
-function warriorCount(state: GameState, clearing: ClearingId): number {
-  return state.clearings[clearing]!.pieces.filter((p) => p.kind === 'warrior').length
-}
-
-function fewestWarriorClearings(state: GameState, seat: Seat): ClearingId[] {
-  const candidates: ClearingId[] = []
-  for (let id = 0; id < 12; id++) {
-    if (!canPlace(state, seat, id)) continue
-    if (openSlots(state, id) < 1) continue
-    if (boardOf(state, seat).roostTrack.placed < 1) continue
-    candidates.push(id)
-  }
-  if (candidates.length === 0) return []
-  let min = Infinity
-  for (const c of candidates) {
-    min = Math.min(min, warriorCount(state, c))
-  }
-  return candidates.filter((c) => warriorCount(state, c) === min)
-}
-
-function eveningDrawBonus(roostCount: number): number {
-  let bonus = 0
-  for (const t of EYRIE_ROOST_DRAW_BONUS_THRESHOLDS) {
-    if (roostCount >= t) bonus += 1
-  }
-  return bonus
-}
-
-/** Rule: Eyrie > Setup 2 + 5 — roost + warriors; leader chosen later (7.3.3). */
-export function placeEyrieRoostSetup(state: GameState, seat: Seat): void {
-  const board = boardOf(state, seat)
-  board.supply.warriors = 20
-  board.leader = null
-  board.leadersFaceUp = [...EYRIE_LEADERS]
-  board.leadersFaceDown = []
-  board.roostTrack.placed = 6
-  board.decree = { recruit: [], move: [], battle: [], build: [] }
-
-  const start = eyrieStartClearing(state)
-  placeUpTo(state, { seat, clearing: start, spec: { kind: 'building', type: 'roost' }, count: 1 })
-  placeUpTo(state, { seat, clearing: start, spec: { kind: 'warrior' }, count: 6 })
-}
-
-/** Rule: 7.3.3 / 7.7.3 — put chosen leader in slot; retuck viziers (existing or new). */
-export function assignEyrieLeader(board: EyrieBoard, leader: EyrieLeader): void {
-  if (!board.leadersFaceUp.includes(leader)) {
-    throw new RuleError('LEADER_NOT_FACE_UP', { leader })
-  }
-  const existingViziers = DECREE_COLUMNS.flatMap((column) =>
-    board.decree[column].filter(isVizier),
-  )
-  board.leader = leader
-  board.leadersFaceUp = board.leadersFaceUp.filter((candidate) => candidate !== leader)
-  tuckViziersFor(
-    board,
-    leader,
-    existingViziers.length > 0 ? existingViziers : undefined,
-  )
 }
 
 export class Eyrie extends Faction {
@@ -409,135 +98,7 @@ export class Eyrie extends Faction {
   }
 
   legalActions(state: GameState, ctx: Ctx): ActionSpec[] {
-    const seat = state.currentSeat
-    const specs: ActionSpec[] = [...ctx.grantedActions()]
-
-    if (state.phase === 'birdsong' && state.step === 'emergency') {
-      specs.push({ type: 'endPhase', actor: seat })
-      return specs
-    }
-
-    if (state.phase === 'birdsong' && state.step === 'decreeAdd') {
-      const hand = playerOf(state, seat).hand
-      if (hand.length > 0) {
-        const options: AddToDecreeCard[] = []
-        for (const handCard of hand) {
-          for (const column of DECREE_COLUMNS) {
-            options.push({ cardId: handCard.id, column })
-          }
-        }
-        specs.push({
-          type: 'addToDecree',
-          actor: seat,
-          params: {
-            options,
-            birdCardIds: hand.filter((handCard) => defOf(handCard).suit === 'bird').map((handCard) => handCard.id),
-          },
-        })
-      } else {
-        specs.push({ type: 'endPhase', actor: seat })
-      }
-      return specs
-    }
-
-    if (state.phase === 'birdsong' && state.step === 'newRoost') {
-      if (roostsOnMap(state, seat) === 0 && boardOf(state, seat).roostTrack.placed > 0) {
-        specs.push({
-          type: 'newRoost',
-          actor: seat,
-          params: { clearings: fewestWarriorClearings(state, seat) },
-        })
-        return specs
-      }
-      specs.push({ type: 'endPhase', actor: seat })
-      return specs
-    }
-
-    if (state.phase === 'daylight' && state.step === 'craft') {
-      specs.push(...craftStepLegalActions(state, seat))
-      return specs
-    }
-
-    if (state.phase === 'daylight' && state.step === 'decree') {
-      const cursor = ensureDecreeCursor(state, seat)
-      if (!cursor) {
-        specs.push({ type: 'endPhase', actor: seat })
-        return specs
-      }
-      const board = boardOf(state, seat)
-      let any = false
-      for (const cardId of cursor.remaining) {
-        const card = findDecreeCard(board, cursor.column, cardId)
-        if (!card) continue
-        if (!cardResolvable(state, { seat, column: cursor.column, card }, ctx)) continue
-        any = true
-        const params: ActionChoiceParams = {
-          column: [cursor.column],
-          cardIds: [cardId],
-        }
-        if (cursor.column === 'recruit') {
-          params.clearings = Array.from({ length: 12 }, (_, clearingId) => clearingId).filter(
-            (clearingId) => recruitLegal(state, seat, card, clearingId),
-          )
-        } else if (cursor.column === 'build') {
-          params.clearings = Array.from({ length: 12 }, (_, clearingId) => clearingId).filter(
-            (clearingId) => buildLegal(state, { seat, card, clearing: clearingId }, ctx),
-          )
-        } else if (cursor.column === 'battle') {
-          const targets: BattleTargetChoice[] = []
-          for (let clearing = 0; clearing < 12; clearing++) {
-            for (const defender of enemySeatsInClearing(state, clearing, seat)) {
-              if (battleLegal(state, { seat, card, clearing, defender })) {
-                targets.push({ clearing, defender })
-              }
-            }
-          }
-          params.targets = targets
-        } else if (cursor.column === 'move') {
-          const moves: MarchMove[] = []
-          for (let from = 0; from < 12; from++) {
-            if (!cardMatchesClearing(card, from)) continue
-            const available = warriors(state, from, seat)
-            if (available < 1) continue
-            for (let to = 0; to < 12; to++) {
-              if (!canMove(state, { seat, from: from, to: to }, ctx.hooks)) continue
-              for (let count = 1; count <= available; count++) {
-                moves.push({ from, to, count })
-              }
-            }
-          }
-          params.moves = moves
-        }
-        specs.push({ type: 'decree', actor: seat, params })
-      }
-      if (!any) {
-        specs.push({ type: 'turmoil', actor: seat })
-        return specs
-      }
-      return specs
-    }
-
-    if (state.phase === 'evening' && state.step === 'score') {
-      specs.push({ type: 'endPhase', actor: seat })
-      return specs
-    }
-
-    if (state.phase === 'evening' && state.step === 'draw') {
-      if (!state.turnScratch.eveningDrawDone) {
-        specs.push({ type: 'eveningDraw', actor: seat })
-        return specs
-      }
-      specs.push({ type: 'endPhase', actor: seat })
-      return specs
-    }
-
-    if (state.phase === 'evening' && state.step === 'discard') {
-      specs.push(handLimitLegalAction(state, seat))
-      return specs
-    }
-
-    specs.push({ type: 'endPhase', actor: seat })
-    return specs
+    return eyrieLegalActions(state, ctx)
   }
 
   validate(state: GameState, action: Action, ctx: Ctx): void {
