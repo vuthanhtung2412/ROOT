@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { makeActionSpec } from '#test/factories.ts'
 import { ActionComposer } from '#game/ActionComposer.ts'
+import { mergeComposerHooks } from '#game/mergeComposerHooks.ts'
 import {
   createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
@@ -64,6 +65,11 @@ describe('marquiseActionComposer cards', () => {
       kind: 'ready',
       action: { type: 'discard', cardIds: ['a', 'c'] },
     })
+  })
+
+  it('cancel when idle returns null so merge reaches other hooks', () => {
+    const { hooks } = createMarquiseCardComposerHooks()
+    expect(hooks.cancel?.()).toBeNull()
   })
 })
 
@@ -242,6 +248,36 @@ describe('marquiseActionComposer march', () => {
       expect(ignored.prompt.message).toContain('Confirm, or pick 2nd origin')
       expect(ignored.prompt.highlightClearings).not.toContain(6)
     }
+  })
+
+  it('cancel after 1st move clears march draft even if card hooks merge first', () => {
+    const cards = createMarquiseCardComposerHooks()
+    const march = createMarquiseMarchComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(mergeComposerHooks(cards.hooks, march.hooks))
+
+    composer.begin(
+      makeActionSpec({
+        type: 'march',
+        params: {
+          moves: [
+            { from: 0, to: 4, count: 1 },
+            { from: 0, to: 4, count: 2 },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(0)
+    composer.chooseClearing(4)
+    composer.chooseColumn('1')
+    const afterFirst = march.getDraft()
+    expect(afterFirst.type).toBe('march')
+    if (afterFirst.type === 'march') {
+      expect(afterFirst.firstMove).toEqual({ from: 0, to: 4, count: 1 })
+    }
+
+    expect(composer.cancel()).toEqual({ kind: 'idle' })
+    expect(march.getDraft().type).toBe('idle')
   })
 })
 
