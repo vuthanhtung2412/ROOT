@@ -1,6 +1,6 @@
 import type { Action, ActionSpec, ResolveEventAction } from '#actions/types.js'
 import { placeEyrieRoostSetup } from '#factions/Eyrie.js'
-import { FACTIONS } from '#factions/index.js'
+import { factionFor } from '#factions/index.js'
 import {
   fillMarquiseSetupTracks,
   legalStartingBuildingClearings,
@@ -64,7 +64,7 @@ function finishMarquiseSetupAfterBuildings(
     if (player.faction === 'eyrie') {
       placeEyrieRoostSetup(state, player.seat)
     } else {
-      FACTIONS[player.faction].setup(state, player.seat, ctx)
+      factionFor(player.faction).setup(state, player.seat, ctx)
     }
   }
 
