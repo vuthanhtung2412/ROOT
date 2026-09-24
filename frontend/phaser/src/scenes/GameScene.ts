@@ -15,6 +15,7 @@ import { mergeComposerHooks } from '#game/mergeComposerHooks.ts'
 import {
   buildBattleRemovalStepperChoices,
   buildPiecesByIdFromClearings,
+  collapsePieceIdsRemovalSpecs,
   collectPieceIdsCombosFromSpecs,
   isPieceIdsRemovalSpec,
 } from '#game/battleRemovalStepper.ts'
@@ -33,7 +34,7 @@ import { readBattleClearingId } from '#game/battleOverlayModel.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 import { applyMarchMovesToClearings } from '#game/marchClearingsPreview.ts'
-import { ActionTray } from '#ui/ActionTray.ts'
+import { ActionTray, type ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
@@ -44,7 +45,10 @@ import { FactionBoardModal } from '#ui/FactionBoardModal.ts'
 import { GameDrawer } from '#ui/GameDrawer.ts'
 import { LeaderPickOverlay } from '#ui/LeaderPickOverlay.ts'
 import { PlayerRail } from '#ui/PlayerRail.ts'
-import { TurnBanner } from '#ui/TurnBanner.ts'
+import {
+  buildTurnBannerViewModel,
+  TurnBanner,
+} from '#ui/TurnBanner.ts'
 import { WinnerOverlay } from '#ui/WinnerOverlay.ts'
 
 export type GameSceneData = {
@@ -365,13 +369,35 @@ export class GameScene extends Phaser.Scene {
       },
       getOverlayKind: () => this.eventComposer.getOverlayKind(),
     })
+    this.syncActionTrayFromLatestSnapshot()
   }
 
-  private marchActionTrayOptions(): { lockToActionTypes: readonly string[] } | undefined {
+  private marchActionTrayOptions(): ActionTraySyncOptions | undefined {
     if (this.marquiseMarch.getDraft().type !== 'march') {
       return undefined
     }
-    return { lockToActionTypes: ['march'] }
+    return { disabled: true }
+  }
+
+  private syncActionTrayFromLatestSnapshot(): void {
+    const snapshot = this.latestSnapshot
+    if (snapshot === null || snapshot.state === null) {
+      return
+    }
+    const banner = buildTurnBannerViewModel(
+      snapshot.state,
+      snapshot.legalActions,
+    )
+    const localControlsActor = this.localPlayerControlsSeat(banner.actorSeat)
+    this.actionTray?.sync(
+      localControlsActor
+        ? collapsePieceIdsRemovalSpecs(snapshot.legalActions)
+        : [],
+      banner.actorSeat,
+      snapshot.state.pending[0],
+      this.marchActionTrayOptions(),
+      snapshot.state,
+    )
   }
 
   private isComposerStaging(): boolean {
