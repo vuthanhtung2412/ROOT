@@ -3,54 +3,11 @@ import { Deck } from '#cards/Deck.js'
 import type { Card } from '#cards/types.js'
 import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
-import { FALL } from '#map/fall.js'
-import type { ClearingId } from '#map/types.js'
-import { isCraftingBuilding, type Piece, type Seat } from '#pieces/types.js'
-import { canCraft } from '#queries/craft.js'
+import { isCraftingBuilding, type Seat } from '#pieces/types.js'
+import { assignCraftSources, canCraft } from '#queries/craft.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
 import { RuleError } from '#rules/RuleError.js'
-
-type CraftSource = { piece: Piece; clearingId: ClearingId }
-
-function craftingSources(state: GameState, seat: Seat): CraftSource[] {
-  const out: CraftSource[] = []
-  for (let clearingId = 0; clearingId < state.clearings.length; clearingId++) {
-    for (const piece of state.clearings[clearingId]!.pieces) {
-      if (piece.owner !== seat) continue
-      if (isCraftingBuilding(piece) && !piece.used) {
-        out.push({ piece, clearingId })
-      }
-      if (piece.kind === 'token' && piece.type === 'sympathy') {
-        out.push({ piece, clearingId })
-      }
-    }
-  }
-  return out
-}
-
-function assignSources(cost: import('#cards/types.js').CostSuit[], sources: CraftSource[]): CraftSource[] | null {
-  const used = new Set<Piece>()
-  const picked: CraftSource[] = []
-
-  function rec(need: typeof cost): boolean {
-    if (need.length === 0) return true
-    const [suit, ...rest] = need
-    for (const src of sources) {
-      if (used.has(src.piece)) continue
-      const clearingSuit = FALL.clearings[src.clearingId]!.suit
-      if (suit !== 'wild' && suit !== clearingSuit) continue
-      used.add(src.piece)
-      picked.push(src)
-      if (rec(rest)) return true
-      picked.pop()
-      used.delete(src.piece)
-    }
-    return false
-  }
-
-  return rec(cost) ? picked : null
-}
 
 function removeFromHand(player: ReturnType<typeof playerOf>, cardId: string): Card {
   const idx = player.hand.findIndex((c) => c.id === cardId)
@@ -75,7 +32,7 @@ export function craftCard(
   }
   if (!canCraft(state, seat, card)) throw new RuleError('CANNOT_CRAFT', { cardId })
 
-  const sources = assignSources(def.cost, craftingSources(state, seat))
+  const sources = assignCraftSources(state, seat, def.cost)
   if (!sources) throw new RuleError('CANNOT_CRAFT', { cardId, reason: 'no sources' })
 
   for (const src of sources) {

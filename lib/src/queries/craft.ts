@@ -7,7 +7,11 @@ import type { ClearingId } from '#map/types.js'
 import { isCraftingBuilding, type Piece, type Seat } from '#pieces/types.js'
 import type { GameState } from '#state/types.js'
 
-type CraftSource = { piece: Piece; suit: Suit; clearingId: ClearingId }
+export type CraftSource = {
+  piece: Piece
+  suit: Suit
+  clearingId: ClearingId
+}
 
 const CRAFTABLE_TYPES = new Set(['item', 'persistent', 'partisan'])
 
@@ -17,8 +21,7 @@ export function canCraft(state: GameState, seat: Seat, card: Card): boolean {
   // Ambush/dominance have empty cost; must not pass as craftable.
   if (!CRAFTABLE_TYPES.has(def.type)) return false
 
-  const sources = craftingSources(state, seat)
-  if (!matchCost(def.cost, sources)) return false
+  if (assignCraftSources(state, seat, def.cost) === null) return false
 
   if (def.type === 'item') {
     if (!def.item) return false
@@ -51,26 +54,37 @@ function craftingSources(state: GameState, seat: Seat): CraftSource[] {
   return out
 }
 
-function matchCost(cost: CostSuit[], sources: CraftSource[]): boolean {
-  if (cost.length === 0) return true
-  return matchCostRec(cost, sources, new Set())
-}
-
-function matchCostRec(
+function assignCostSources(
   cost: CostSuit[],
   sources: CraftSource[],
-  used: Set<Piece>,
-): boolean {
-  if (cost.length === 0) return true
-  const [need, ...rest] = cost
-  for (const src of sources) {
-    if (used.has(src.piece)) continue
-    if (!suitMatches(need!, src.suit)) continue
-    used.add(src.piece)
-    if (matchCostRec(rest, sources, used)) return true
-    used.delete(src.piece)
+): CraftSource[] | null {
+  const used = new Set<Piece>()
+  const assigned: CraftSource[] = []
+
+  function visit(remainingCost: CostSuit[]): boolean {
+    if (remainingCost.length === 0) return true
+    const [need, ...rest] = remainingCost
+    for (const source of sources) {
+      if (used.has(source.piece)) continue
+      if (!suitMatches(need!, source.suit)) continue
+      used.add(source.piece)
+      assigned.push(source)
+      if (visit(rest)) return true
+      assigned.pop()
+      used.delete(source.piece)
+    }
+    return false
   }
-  return false
+
+  return visit(cost) ? assigned : null
+}
+
+export function assignCraftSources(
+  state: GameState,
+  seat: Seat,
+  cost: CostSuit[],
+): CraftSource[] | null {
+  return assignCostSources(cost, craftingSources(state, seat))
 }
 
 function suitMatches(need: CostSuit, have: Suit): boolean {
