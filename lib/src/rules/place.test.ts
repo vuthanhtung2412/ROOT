@@ -1,7 +1,12 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { FALL } from '#map/fall.js'
 import { marquiseBoard, minimalState, withPieces } from '#test/fixtures.js'
-import { placeUpTo, resetPlaceIds } from '#rules/place.js'
+import {
+  placeReturning,
+  placeUpTo,
+  resetPlaceIds,
+  syncPlaceIdsFromState,
+} from '#rules/place.js'
 
 describe('placeUpTo', () => {
   beforeEach(() => resetPlaceIds())
@@ -59,5 +64,30 @@ describe('placeUpTo', () => {
     expect(
       placeUpTo(state, { seat: 1, clearing: keep, spec: { kind: 'warrior' }, count: 1 }),
     ).toBe(0)
+  })
+})
+
+describe('syncPlaceIdsFromState', () => {
+  beforeEach(() => resetPlaceIds())
+
+  it('avoids colliding with loaded w-N / t-N / b-N ids on placeReturning', () => {
+    const keep = FALL.corners[0]!
+    const state = withPieces(minimalState(), keep, [
+      { id: 't-1', kind: 'token', owner: 0, type: 'keep' },
+      { id: 'w-2', kind: 'warrior', owner: 0 },
+      { id: 'b-13', kind: 'building', owner: 0, type: 'sawmill', used: false },
+    ])
+    syncPlaceIdsFromState(state)
+    placeReturning(state, {
+      seat: 0,
+      clearing: keep,
+      spec: { kind: 'warrior' },
+      count: 2,
+    })
+    const warriorIds = state.clearings[keep]!.pieces
+      .filter((piece) => piece.kind === 'warrior')
+      .map((piece) => piece.id)
+    expect(warriorIds).toEqual(['w-2', 'w-14', 'w-15'])
+    expect(new Set(warriorIds).size).toBe(warriorIds.length)
   })
 })

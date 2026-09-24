@@ -4,6 +4,7 @@ import type { ActionSpec } from '#actions/types.js'
 import { FALL } from '#map/fall.js'
 import { warriors } from '#queries/pieces.js'
 import { keepCornerFor } from '#factions/Marquise.js'
+import { placeReturning } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
 import { SeededRng } from '#rules/Rng.js'
 import {
@@ -306,5 +307,34 @@ describe('Game snapshot', () => {
     const restored = Game.fromJSON(snap)
     expect(restored.state.turnScratch.eveningScoreDone).toBe(true)
     expect(restored.state.players[1]!.vp).toBe(2)
+  })
+
+  it('fromJSON syncs place ids — no duplicate w-N after placeReturning', () => {
+    const game = startPlaying(17)
+    const snap = game.toJSON()
+    const keep = snap.state.clearings.findIndex((clearing) =>
+      clearing.pieces.some(
+        (piece) => piece.kind === 'token' && piece.type === 'keep',
+      ),
+    )
+    expect(keep).toBeGreaterThanOrEqual(0)
+    snap.state.clearings[keep]!.pieces.push({
+      id: 'w-99',
+      kind: 'warrior',
+      owner: 0,
+    })
+    const restored = Game.fromJSON(snap)
+    placeReturning(restored.state, {
+      seat: 0,
+      clearing: keep,
+      spec: { kind: 'warrior' },
+      count: 1,
+    })
+    const warriorIds = restored.state.clearings[keep]!.pieces
+      .filter((piece) => piece.kind === 'warrior' && piece.owner === 0)
+      .map((piece) => piece.id)
+    expect(warriorIds).toContain('w-99')
+    expect(warriorIds).toContain('w-100')
+    expect(new Set(warriorIds).size).toBe(warriorIds.length)
   })
 })

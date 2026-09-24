@@ -4,6 +4,7 @@ import { createInitialState, runSharedSetup } from '#game/setup.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import { factionOf } from '#queries/seat.js'
+import { syncPlaceIdsFromState } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
 import { SeededRng } from '#rules/Rng.js'
 import { DEFAULT_FACTIONS } from '#state/constants.js'
@@ -76,6 +77,7 @@ export class Game {
       log: [...snapshot.log],
       rng: SeededRng.fromJSON(snapshot.rng),
     })
+    syncPlaceIdsFromState(game.state)
     // Snapshot may land mid-step (evening score, birdsong wood) — fire pending autos.
     if (game.state.status === 'playing' && game.state.pending.length === 0) {
       const autoLogs = game.runAutoActions()
