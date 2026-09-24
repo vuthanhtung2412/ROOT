@@ -40,7 +40,7 @@ export class BattleOverlay {
   constructor(scene: Phaser.Scene) {
     const { width } = gameViewSize()
     const centerX = width / 2
-    // Sit under TurnBanner (~y 18–46)
+    // Sit under TurnBanner (~y 10–66)
     const panelY = 118
 
     const panel = scene.add

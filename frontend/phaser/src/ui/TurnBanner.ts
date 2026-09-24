@@ -211,6 +211,17 @@ export type TurnBannerComposerView = {
   optionPresentation?: 'stepper' | 'buttons'
 }
 
+const BANNER_STATUS_FONT_SIZE_PIXELS = 20
+const BANNER_CONTROL_FONT_SIZE_PIXELS = 15
+const BANNER_OPTION_FONT_SIZE_PIXELS = 14
+const BANNER_STEPPER_ARROW_FONT_SIZE_PIXELS = 18
+const BANNER_STEPPER_VALUE_FONT_SIZE_PIXELS = 16
+const BANNER_PANEL_HEIGHT_STATUS_PIXELS = 44
+const BANNER_PANEL_HEIGHT_COMPOSER_PIXELS = 68
+const BANNER_ROOT_Y_PIXELS = 32
+const BANNER_COMPOSER_STATUS_OFFSET_Y_PIXELS = -16
+const BANNER_OPTION_ROW_Y_PIXELS = 16
+
 /**
  * Single top strip: turn status, or composer prompt + controls when staging.
  */
@@ -235,13 +246,13 @@ export class TurnBanner {
     const bannerWidth = Math.min(640, width - 24)
 
     this.panel = scene.add
-      .rectangle(0, 0, bannerWidth, 36, 0x0a0a0a, 0.45)
+      .rectangle(0, 0, bannerWidth, BANNER_PANEL_HEIGHT_STATUS_PIXELS, 0x0a0a0a, 0.45)
       .setStrokeStyle(1, 0xf0e6d3, 0.25)
 
     this.statusText = scene.add
       .text(0, 0, '', {
         fontFamily: 'Georgia, serif',
-        fontSize: '15px',
+        fontSize: `${String(BANNER_STATUS_FONT_SIZE_PIXELS)}px`,
         color: '#f0e6d3',
         align: 'center',
         wordWrap: { width: bannerWidth - 160 },
@@ -251,10 +262,10 @@ export class TurnBanner {
     this.confirmButton = scene.add
       .text(0, 0, 'OK', {
         fontFamily: 'monospace',
-        fontSize: '12px',
+        fontSize: `${String(BANNER_CONTROL_FONT_SIZE_PIXELS)}px`,
         color: '#1a1a1a',
         backgroundColor: '#a8d8a8',
-        padding: { x: 8, y: 4 },
+        padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
@@ -263,10 +274,10 @@ export class TurnBanner {
     this.cancelButton = scene.add
       .text(0, 0, 'X', {
         fontFamily: 'monospace',
-        fontSize: '12px',
+        fontSize: `${String(BANNER_CONTROL_FONT_SIZE_PIXELS)}px`,
         color: '#1a1a1a',
         backgroundColor: '#d8a8a8',
-        padding: { x: 8, y: 4 },
+        padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
@@ -280,7 +291,7 @@ export class TurnBanner {
     })
 
     this.root = scene.add
-      .container(width / 2, 28, [
+      .container(width / 2, BANNER_ROOT_Y_PIXELS, [
         this.panel,
         this.statusText,
         this.confirmButton,
@@ -377,46 +388,39 @@ export class TurnBanner {
       this.statusText.setPosition(0, 0)
       this.confirmButton.setVisible(false)
       this.cancelButton.setVisible(false)
-      this.panel.setSize(this.panel.width, 36)
+      this.panel.setSize(this.panel.width, BANNER_PANEL_HEIGHT_STATUS_PIXELS)
       return
     }
 
     const useStepper = this.countStepper !== null
+    const hasOptionRow = useStepper || composer.options.length > 0
+    const statusOffsetY = hasOptionRow ? BANNER_COMPOSER_STATUS_OFFSET_Y_PIXELS : 0
     this.statusText.setText(`${view.actorFaction} · ${composer.message}`)
-    this.statusText.setPosition(
-      0,
-      useStepper || composer.options.length > 0 ? -14 : 0,
-    )
+    this.statusText.setPosition(0, statusOffsetY)
 
     this.confirmButton.setVisible(composer.canConfirm || useStepper)
     this.cancelButton.setVisible(composer.canCancel)
-    this.confirmButton.setPosition(
-      halfWidth - 52,
-      useStepper || composer.options.length > 0 ? -14 : 0,
-    )
-    this.cancelButton.setPosition(
-      halfWidth - 18,
-      useStepper || composer.options.length > 0 ? -14 : 0,
-    )
+    this.confirmButton.setPosition(halfWidth - 56, statusOffsetY)
+    this.cancelButton.setPosition(halfWidth - 18, statusOffsetY)
 
     if (useStepper && this.countStepper !== null) {
       this.paintCountStepper(this.countStepper)
-      this.panel.setSize(this.panel.width, 56)
+      this.panel.setSize(this.panel.width, BANNER_PANEL_HEIGHT_COMPOSER_PIXELS)
       return
     }
 
     composer.options.forEach((option, index) => {
       const button = this.scene.add
         .text(
-          (index - (composer.options.length - 1) / 2) * 88,
-          14,
+          (index - (composer.options.length - 1) / 2) * 100,
+          BANNER_OPTION_ROW_Y_PIXELS,
           option.label,
           {
             fontFamily: 'monospace',
-            fontSize: '11px',
+            fontSize: `${String(BANNER_OPTION_FONT_SIZE_PIXELS)}px`,
             color: '#1a1a1a',
             backgroundColor: '#c8d8f0',
-            padding: { x: 6, y: 3 },
+            padding: { x: 8, y: 4 },
           },
         )
         .setOrigin(0.5)
@@ -430,7 +434,9 @@ export class TurnBanner {
 
     this.panel.setSize(
       this.panel.width,
-      composer.options.length > 0 ? 56 : 36,
+      hasOptionRow
+        ? BANNER_PANEL_HEIGHT_COMPOSER_PIXELS
+        : BANNER_PANEL_HEIGHT_STATUS_PIXELS,
     )
   }
 
@@ -443,12 +449,12 @@ export class TurnBanner {
     const atMax = state.selectedIndex >= state.options.length - 1
 
     const previousButton = this.scene.add
-      .text(-90, 14, '<', {
+      .text(-96, BANNER_OPTION_ROW_Y_PIXELS, '<', {
         fontFamily: 'monospace',
-        fontSize: '16px',
+        fontSize: `${String(BANNER_STEPPER_ARROW_FONT_SIZE_PIXELS)}px`,
         color: atMin ? '#6a6a6a' : '#1a1a1a',
         backgroundColor: atMin ? '#9a9a9a' : '#c8d8f0',
-        padding: { x: 10, y: 4 },
+        padding: { x: 12, y: 5 },
       })
       .setOrigin(0.5)
     if (!atMin) {
@@ -463,22 +469,22 @@ export class TurnBanner {
     }
 
     const center = this.scene.add
-      .text(0, 14, formatCountStepperLabel(selected), {
+      .text(0, BANNER_OPTION_ROW_Y_PIXELS, formatCountStepperLabel(selected), {
         fontFamily: 'monospace',
-        fontSize: '13px',
+        fontSize: `${String(BANNER_STEPPER_VALUE_FONT_SIZE_PIXELS)}px`,
         color: '#f0e6d3',
         backgroundColor: '#1a1408cc',
-        padding: { x: 12, y: 5 },
+        padding: { x: 14, y: 6 },
       })
       .setOrigin(0.5)
 
     const nextButton = this.scene.add
-      .text(90, 14, '>', {
+      .text(96, BANNER_OPTION_ROW_Y_PIXELS, '>', {
         fontFamily: 'monospace',
-        fontSize: '16px',
+        fontSize: `${String(BANNER_STEPPER_ARROW_FONT_SIZE_PIXELS)}px`,
         color: atMax ? '#6a6a6a' : '#1a1a1a',
         backgroundColor: atMax ? '#9a9a9a' : '#c8d8f0',
-        padding: { x: 10, y: 4 },
+        padding: { x: 12, y: 5 },
       })
       .setOrigin(0.5)
     if (!atMax) {

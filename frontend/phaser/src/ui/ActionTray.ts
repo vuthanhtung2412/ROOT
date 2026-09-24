@@ -8,6 +8,13 @@ export type ActionTrayHandlers = {
   onSelectAction: (spec: ActionSpec) => void
 }
 
+const ACTION_TRAY_TITLE_FONT_SIZE_PIXELS = 20
+const ACTION_TRAY_BUTTON_FONT_SIZE_PIXELS = 18
+const ACTION_TRAY_ROOT_X_FROM_RIGHT_PIXELS = 260
+const ACTION_TRAY_ROOT_Y_PIXELS = 64
+const ACTION_TRAY_FIRST_BUTTON_Y_PIXELS = 36
+const ACTION_TRAY_BUTTON_ROW_HEIGHT_PIXELS = 42
+
 /** Lists legal ActionSpecs for the current prompt actor. */
 export class ActionTray {
   private readonly scene: Phaser.Scene
@@ -23,13 +30,17 @@ export class ActionTray {
     const { width } = gameViewSize()
     this.title = scene.add.text(0, 0, 'Actions', {
       fontFamily: 'Georgia, serif',
-      fontSize: '16px',
+      fontSize: `${String(ACTION_TRAY_TITLE_FONT_SIZE_PIXELS)}px`,
       color: '#f0e6d3',
       backgroundColor: '#0a0a0add',
-      padding: { x: 8, y: 4 },
+      padding: { x: 10, y: 5 },
     })
     this.root = scene.add
-      .container(width - 210, 56, [this.title])
+      .container(
+        width - ACTION_TRAY_ROOT_X_FROM_RIGHT_PIXELS,
+        ACTION_TRAY_ROOT_Y_PIXELS,
+        [this.title],
+      )
       .setDepth(110)
   }
 
@@ -67,13 +78,19 @@ export class ActionTray {
 
     forActor.forEach((spec, index) => {
       const button = this.scene.add
-        .text(0, 28 + index * 34, formatActionLabel(spec, pending, state), {
-          fontFamily: 'monospace',
-          fontSize: '14px',
-          color: '#1a1a1a',
-          backgroundColor: '#f0e6d3',
-          padding: { x: 10, y: 6 },
-        })
+        .text(
+          0,
+          ACTION_TRAY_FIRST_BUTTON_Y_PIXELS +
+            index * ACTION_TRAY_BUTTON_ROW_HEIGHT_PIXELS,
+          formatActionLabel(spec, pending, state),
+          {
+            fontFamily: 'monospace',
+            fontSize: `${String(ACTION_TRAY_BUTTON_FONT_SIZE_PIXELS)}px`,
+            color: '#1a1a1a',
+            backgroundColor: '#f0e6d3',
+            padding: { x: 12, y: 8 },
+          },
+        )
         .setInteractive({ useHandCursor: true })
 
       button.on('pointerdown', () => {
