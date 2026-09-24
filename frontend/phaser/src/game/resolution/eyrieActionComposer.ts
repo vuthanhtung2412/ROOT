@@ -5,51 +5,12 @@ import {
   type ClientAction,
   type ComposerOutcome,
 } from '#game/resolution/ActionComposer.ts'
-
-type DecreeCardOption = { cardId: string; column: string }
-type MarchMove = { from: number; to: number; count: number }
-type BattleTarget = { clearing: number; defender: number }
-
-type EyrieDraft =
-  | { type: 'idle' }
-  | {
-      type: 'addToDecree'
-      options: DecreeCardOption[]
-      birdCardIds: Set<string>
-      selected: DecreeCardOption[]
-      pendingCardId: string | null
-    }
-  | { type: 'newRoost'; clearings: number[] }
-  | {
-      type: 'decree'
-      column: string
-      cardId: string
-      clearings: number[]
-      targets: BattleTarget[]
-      moves: MarchMove[]
-      from: number | null
-      to: number | null
-      picking:
-        | 'clearing'
-        | 'defender'
-        | 'moveFrom'
-        | 'moveTo'
-        | 'moveCount'
-        | 'done'
-    }
-
-function isDecreeCardOption(value: unknown): value is DecreeCardOption {
-  if (typeof value !== 'object' || value === null) {
-    return false
-  }
-  const cardId = Reflect.get(value, 'cardId')
-  const column = Reflect.get(value, 'column')
-  return typeof cardId === 'string' && typeof column === 'string'
-}
-
-function unique(values: number[]): number[] {
-  return [...new Set(values)]
-}
+import {
+  isDecreeCardOption,
+  type EyrieDraft,
+  uniqueCardIds,
+  uniqueNumbers,
+} from '#game/eyrieActionComposerModels.ts'
 
 /**
  * Eyrie birdsong + decree: forced addToDecree, newRoost, decree L→R, turmoil.
@@ -154,7 +115,9 @@ export function createEyrieComposerHooks(): {
             kind: 'incomplete',
             prompt: {
               message: 'Decree battle — pick clearing',
-              highlightClearings: unique(targets.map((target) => target.clearing)),
+              highlightClearings: uniqueNumbers(
+                targets.map((target) => target.clearing),
+              ),
               enabledCardIds: null,
               canConfirm: false,
               canCancel: true,
@@ -178,7 +141,9 @@ export function createEyrieComposerHooks(): {
             kind: 'incomplete',
             prompt: {
               message: 'Decree move — pick origin',
-              highlightClearings: unique(moves.map((move) => move.from)),
+              highlightClearings: uniqueNumbers(
+                moves.map((move) => move.from),
+              ),
               enabledCardIds: null,
               canConfirm: false,
               canCancel: true,
@@ -422,7 +387,9 @@ export function createEyrieComposerHooks(): {
           kind: 'incomplete',
           prompt: {
             message: 'Decree move — pick destination',
-            highlightClearings: unique(fromMoves.map((move) => move.to)),
+            highlightClearings: uniqueNumbers(
+              fromMoves.map((move) => move.to),
+            ),
             enabledCardIds: null,
             canConfirm: false,
             canCancel: true,
@@ -442,7 +409,7 @@ export function createEyrieComposerHooks(): {
         if (candidates.length === 0) {
           return null
         }
-        const counts = unique(candidates.map((move) => move.count)).sort(
+        const counts = uniqueNumbers(candidates.map((move) => move.count)).sort(
           (left, right) => left - right,
         )
         promptOptions = counts.map((count) => ({
@@ -515,8 +482,4 @@ export function createEyrieComposerHooks(): {
     getDraft: () => draft,
     getPromptOptions: () => promptOptions,
   }
-}
-
-function uniqueCardIds(options: DecreeCardOption[]): string[] {
-  return [...new Set(options.map((option) => option.cardId))]
 }
