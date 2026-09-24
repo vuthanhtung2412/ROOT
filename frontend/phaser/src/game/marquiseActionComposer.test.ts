@@ -185,6 +185,64 @@ describe('marquiseActionComposer march', () => {
       },
     })
   })
+
+  it('Rule: 4.2.1 — after move into contested clearing, dest not 2nd origin', () => {
+    // C2:2 Marquise, C6:2 Eyrie → march C2→C6 (2); Eyrie rules C6 (Lords).
+    const clearings = Array.from({ length: 12 }, () => ({ pieces: [] as Array<{
+      id: string
+      kind: string
+      owner: number
+    }> }))
+    clearings[2] = {
+      pieces: [
+        { id: 'm1', kind: 'warrior', owner: 0 },
+        { id: 'm2', kind: 'warrior', owner: 0 },
+      ],
+    }
+    clearings[6] = {
+      pieces: [
+        { id: 'e1', kind: 'warrior', owner: 1 },
+        { id: 'e2', kind: 'warrior', owner: 1 },
+      ],
+    }
+    const march = createMarquiseMarchComposerHooks({
+      warriorCountsForCurrentSeat: () => new Map([[2, 2]]),
+      boardForMarch: () => ({
+        clearings,
+        factions: ['marquise', 'eyrie'],
+        seat: 0,
+      }),
+    })
+    const composer = new ActionComposer()
+    composer.setHooks(march.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'march',
+        params: {
+          moves: [
+            { from: 2, to: 6, count: 1 },
+            { from: 2, to: 6, count: 2 },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(2)
+    composer.chooseClearing(6)
+    const afterFirst = composer.chooseColumn('2')
+    expect(afterFirst.kind).toBe('incomplete')
+    if (afterFirst.kind === 'incomplete') {
+      expect(afterFirst.prompt.highlightClearings).not.toContain(6)
+      expect(afterFirst.prompt.canConfirm).toBe(true)
+    }
+    // Ignored click: ActionComposer keeps prior incomplete outcome
+    const ignored = composer.chooseClearing(6)
+    expect(ignored.kind).toBe('incomplete')
+    if (ignored.kind === 'incomplete') {
+      expect(ignored.prompt.message).toContain('Confirm, or pick 2nd origin')
+      expect(ignored.prompt.highlightClearings).not.toContain(6)
+    }
+  })
 })
 
 describe('marquiseActionComposer board', () => {
