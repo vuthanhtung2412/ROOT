@@ -51,10 +51,7 @@ import {
 } from '#ui/TurnBanner.ts'
 import { WinnerOverlay } from '#ui/WinnerOverlay.ts'
 import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
-import {
-  WOODLAND_BOTTOM,
-  drawCoverWallpaper,
-} from '#ui/sceneBackdrop.ts'
+import { drawCoverWallpaper } from '#ui/sceneBackdrop.ts'
 
 export type GameSceneData = {
   session: GameSession
@@ -103,7 +100,6 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this)
     applyHiDpiCamera(this)
     const { width, height } = gameViewSize()
-    this.cameras.main.setBackgroundColor(WOODLAND_BOTTOM)
     drawCoverWallpaper(this, width, height, GAME_ASSET_KEYS.gameWallpaper)
 
     this.marquiseCards = createMarquiseCardComposerHooks()

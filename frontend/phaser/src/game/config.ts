@@ -7,7 +7,7 @@ import {
   GAME_LOGICAL_WIDTH,
   resolveDevicePixelRatio,
 } from '#game/hiDpi.ts'
-import { WOODLAND_CANVAS_FALLBACK_HEX } from '#ui/sceneBackdrop.ts'
+import { CANVAS_FALLBACK_HEX } from '#ui/sceneBackdrop.ts'
 
 const devicePixelRatio = resolveDevicePixelRatio()
 
@@ -15,7 +15,7 @@ const devicePixelRatio = resolveDevicePixelRatio()
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game',
-  backgroundColor: WOODLAND_CANVAS_FALLBACK_HEX,
+  backgroundColor: CANVAS_FALLBACK_HEX,
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

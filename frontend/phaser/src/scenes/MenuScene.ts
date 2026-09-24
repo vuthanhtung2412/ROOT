@@ -6,10 +6,7 @@ import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import { GameSession, type PlayResult } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 import { loadPlayerIdentity } from '#game/playerIdentity.ts'
-import {
-  PARCHMENT_BOTTOM,
-  drawCoverWallpaper,
-} from '#ui/sceneBackdrop.ts'
+import { drawCoverWallpaper } from '#ui/sceneBackdrop.ts'
 
 const MENU_BANNER_MAX_WIDTH_RATIO = 0.42
 const MENU_GAP_BANNER_TO_BUTTON = 40
@@ -53,7 +50,6 @@ export class MenuScene extends Phaser.Scene {
     // Warm map while player uses menu (GameScene skips wait if ready).
     void ensureAutumnMapLoaded(this)
 
-    this.cameras.main.setBackgroundColor(PARCHMENT_BOTTOM)
     drawCoverWallpaper(this, width, height, GAME_ASSET_KEYS.menuWallpaper)
 
     const centerX = width / 2

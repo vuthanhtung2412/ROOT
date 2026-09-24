@@ -1,11 +1,10 @@
 import type Phaser from 'phaser'
 
-/** Menu camera flash before wallpaper paints. */
-export const PARCHMENT_BOTTOM = 0x7a6548
-
-/** Game letterbox / canvas fallback. */
-export const WOODLAND_CANVAS_FALLBACK_HEX = '#121810'
-export const WOODLAND_BOTTOM = 0x121810
+/**
+ * Boot / letterbox / page chrome behind wallpapers.
+ * Keep in sync with `style.css` html/body/#game background.
+ */
+export const CANVAS_FALLBACK_HEX = '#121810'
 
 const WALLPAPER_DEPTH = -100
 
