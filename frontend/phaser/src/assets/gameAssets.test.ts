@@ -51,6 +51,10 @@ describe('preloadCoreGameAssets', () => {
     for (const asset of CORE_IMAGE_ASSETS) {
       expect(loader.image).toHaveBeenCalledWith(asset.key, asset.path)
     }
+    expect(loader.image).toHaveBeenCalledWith(
+      'root-banner',
+      'assets/branding/root-banner.jpg',
+    )
     expect(loader.image).not.toHaveBeenCalledWith(
       AUTUMN_MAP_ASSET.key,
       AUTUMN_MAP_ASSET.path,

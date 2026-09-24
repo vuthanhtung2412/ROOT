@@ -50,6 +50,11 @@ import {
   TurnBanner,
 } from '#ui/TurnBanner.ts'
 import { WinnerOverlay } from '#ui/WinnerOverlay.ts'
+import {
+  WOODLAND_BOTTOM,
+  WOODLAND_TOP,
+  drawVerticalGradient,
+} from '#ui/sceneBackdrop.ts'
 
 export type GameSceneData = {
   session: GameSession
@@ -98,6 +103,7 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this)
     applyHiDpiCamera(this)
     const { width, height } = gameViewSize()
+    drawVerticalGradient(this, width, height, WOODLAND_TOP, WOODLAND_BOTTOM)
 
     this.marquiseCards = createMarquiseCardComposerHooks()
     this.marquiseMarch = createMarquiseMarchComposerHooks({

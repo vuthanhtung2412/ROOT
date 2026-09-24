@@ -1,10 +1,21 @@
 import Phaser from 'phaser'
 import { ensureAutumnMapLoaded } from '#assets/autumnMapLoader.ts'
+import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import { createPhaserApi } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import { GameSession, type PlayResult } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 import { loadPlayerIdentity } from '#game/playerIdentity.ts'
+import {
+  PARCHMENT_BOTTOM,
+  PARCHMENT_TOP,
+  drawVerticalGradient,
+} from '#ui/sceneBackdrop.ts'
+
+const MENU_BANNER_MAX_WIDTH_RATIO = 0.42
+const MENU_GAP_BANNER_TO_BUTTON = 40
+const MENU_GAP_BETWEEN_BUTTONS = 18
+const MENU_GAP_BUTTON_TO_STATUS = 28
 
 export type MenuSceneData = {
   session?: GameSession
@@ -43,24 +54,40 @@ export class MenuScene extends Phaser.Scene {
     // Warm map while player uses menu (GameScene skips wait if ready).
     void ensureAutumnMapLoaded(this)
 
-    this.add
-      .text(width / 2, height * 0.18, 'ROOT', {
-        fontFamily: 'Georgia, serif',
-        fontSize: '56px',
-        color: '#f0e6d3',
-      })
-      .setOrigin(0.5)
+    this.cameras.main.setBackgroundColor(PARCHMENT_BOTTOM)
+    drawVerticalGradient(this, width, height, PARCHMENT_TOP, PARCHMENT_BOTTOM)
 
-    this.add
-      .text(width / 2, height * 0.28, 'Marquise vs Eyrie', {
-        fontFamily: 'monospace',
-        fontSize: '16px',
-        color: '#9a9a9a',
-      })
-      .setOrigin(0.5)
+    const centerX = width / 2
+    const banner = this.add.image(0, 0, GAME_ASSET_KEYS.rootBanner).setOrigin(0.5)
+    const bannerSource = banner.texture.getSourceImage()
+    const bannerScale = Math.min(
+      1,
+      (width * MENU_BANNER_MAX_WIDTH_RATIO) / bannerSource.width,
+    )
+    banner.setScale(bannerScale)
+
+    const playButton = this.addMenuButton({
+      x: 0,
+      y: 0,
+      label: 'Play',
+      onClick: () => {
+        void this.handlePlay()
+      },
+    })
+    const qaButton = import.meta.env.DEV
+      ? this.addMenuButton({
+          x: 0,
+          y: 0,
+          label: 'QA: Continue loaded game',
+          onClick: () => {
+            void this.handleQaContinue()
+          },
+          backgroundColor: '#c8d8f0',
+        })
+      : null
 
     this.statusText = this.add
-      .text(width / 2, height * 0.88, '', {
+      .text(0, 0, '', {
         fontFamily: 'monospace',
         fontSize: '14px',
         color: '#c44',
@@ -69,25 +96,26 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
 
-    this.addMenuButton({
-      x: width / 2,
-      y: height * 0.48,
-      label: 'Play',
-      onClick: () => {
-        void this.handlePlay()
-      },
-    })
-    if (import.meta.env.DEV) {
-      this.addMenuButton({
-        x: width / 2,
-        y: height * 0.6,
-        label: 'QA: Continue loaded game',
-        onClick: () => {
-          void this.handleQaContinue()
-        },
-        backgroundColor: '#c8d8f0',
-      })
+    let stackHeight =
+      banner.displayHeight + MENU_GAP_BANNER_TO_BUTTON + playButton.height
+    if (qaButton !== null) {
+      stackHeight += MENU_GAP_BETWEEN_BUTTONS + qaButton.height
     }
+
+    let cursorY = (height - stackHeight) / 2
+    banner.setPosition(centerX, cursorY + banner.displayHeight / 2)
+    cursorY += banner.displayHeight + MENU_GAP_BANNER_TO_BUTTON
+    playButton.setPosition(centerX, cursorY + playButton.height / 2)
+    cursorY += playButton.height
+    if (qaButton !== null) {
+      cursorY += MENU_GAP_BETWEEN_BUTTONS
+      qaButton.setPosition(centerX, cursorY + qaButton.height / 2)
+      cursorY += qaButton.height
+    }
+    this.statusText.setPosition(
+      centerX,
+      cursorY + MENU_GAP_BUTTON_TO_STATUS + this.statusText.height / 2,
+    )
   }
 
   shutdown(): void {

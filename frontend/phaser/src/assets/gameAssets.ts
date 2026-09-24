@@ -9,6 +9,7 @@ export type ImageAssetLoader = {
 
 export const GAME_ASSET_KEYS = {
   autumnMap: 'autumn-map',
+  rootBanner: 'root-banner',
   factionMarquise: 'faction-marquise',
   factionEyrie: 'faction-eyrie',
   characterBoardMarquise: 'character-board-marquise',
@@ -132,6 +133,10 @@ export const AUTUMN_MAP_ASSET: GameImageAsset = {
 
 /** Boot tokens/factions only — autumn map loads later (Menu warm / GameScene). */
 export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
+  {
+    key: GAME_ASSET_KEYS.rootBanner,
+    path: 'assets/branding/root-banner.jpg',
+  },
   {
     key: GAME_ASSET_KEYS.factionMarquise,
     path: 'assets/factions/marquise.png',
