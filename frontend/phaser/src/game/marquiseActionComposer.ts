@@ -158,6 +158,9 @@ export function createMarquiseCardComposerHooks(): {
     },
 
     cancel: (): ComposerOutcome | null => {
+      if (draft.type === 'idle') {
+        return null
+      }
       draft = { type: 'idle' }
       return { kind: 'idle' }
     },
