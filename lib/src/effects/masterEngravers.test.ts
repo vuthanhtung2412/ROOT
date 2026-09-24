@@ -2,8 +2,13 @@ import { describe, expect, it } from 'vitest'
 import '#effects/register.js'
 import { defOf } from '#cards/Deck.js'
 import { craftCard } from '#rules/craft.js'
-import { card, minimalState, player, withPieces } from '#test/fixtures.js'
-import { buildCraftContext } from '#effects/utils.js'
+import {
+  buildCraftContext,
+  card,
+  minimalState,
+  player,
+  withPieces,
+} from '#test/fixtures.js'
 
 describe('Master Engravers', () => {
   it('Rule: Master Engravers — +1 VP on craft.item', () => {
