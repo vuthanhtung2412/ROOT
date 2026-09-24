@@ -106,6 +106,6 @@ pnpm gen:api-client
 
 ## Resources
 
-- `resources/rules/` — Law of Root (SoT: PDF + markdown)
+- `resources/rules/` — Law of Root (SoT: PDF + markdown); Law of Rootbotics for Clockwork/electric bots (PDF + markdown + Electric Eyrie errata)
 - `resources/notes/` — plans + simplified implementable base rules (non-SoT)
 - `resources/reference/` — cards, map assets (not imported at runtime by CLI)
