@@ -294,7 +294,7 @@ export function createGameApi(
     },
 
     async gameView(): Promise<string> {
-      return requireData(await client.GET('/game/view'))
+      return requireData(await client.GET('/game/view', { parseAs: 'text' }))
     },
 
     async getSnapshot(): Promise<GameSnapshot> {
@@ -334,7 +334,9 @@ export function createGameApi(
     },
 
     async formattedGameLog(): Promise<string> {
-      return requireData(await client.GET('/game/log/view'))
+      return requireData(
+        await client.GET('/game/log/view', { parseAs: 'text' }),
+      )
     },
 
     async undo(): Promise<{ state: GameState }> {
