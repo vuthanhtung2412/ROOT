@@ -2,12 +2,19 @@ import type { FactionId } from '#pieces/types.js'
 import { Faction } from '#factions/Faction.js'
 import { EYRIE } from '#factions/Eyrie.js'
 import { MARQUISE } from '#factions/Marquise.js'
+import { RuleError } from '#rules/RuleError.js'
 
-export const FACTIONS: Record<FactionId, Faction> = {
+export const FACTIONS: Partial<Record<FactionId, Faction>> = {
   marquise: MARQUISE,
   eyrie: EYRIE,
-  alliance: MARQUISE, // stub until GP3
-  vagabond: MARQUISE, // stub until GP4
+}
+
+export function factionFor(faction: FactionId): Faction {
+  const implementation = FACTIONS[faction]
+  if (implementation === undefined) {
+    throw new RuleError('UNSUPPORTED_FACTION', { faction })
+  }
+  return implementation
 }
 
 export { Faction } from '#factions/Faction.js'

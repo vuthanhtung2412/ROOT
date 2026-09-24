@@ -3,7 +3,7 @@ import { defOf } from '#cards/Deck.js'
 import { EP_DECK } from '#cards/epDeck.js'
 import type { Card } from '#cards/types.js'
 import { Deck } from '#cards/Deck.js'
-import { FACTIONS } from '#factions/index.js'
+import { factionFor } from '#factions/index.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -104,8 +104,8 @@ export class Game {
 
   static create(args: { seed: number; factions?: GameState['factions']; id?: string }): Game {
     const factions = args.factions ?? [...DEFAULT_FACTIONS]
-    for (const f of factions) {
-      if (!FACTIONS[f]) throw new RuleError('UNKNOWN_FACTION', { faction: f })
+    for (const faction of factions) {
+      factionFor(faction)
     }
     return new Game({
       state: initialState({
@@ -180,7 +180,7 @@ export class Game {
     }
 
     const ctx = this.makeCtx()
-    return FACTIONS[factionOf(state, state.currentSeat)].legalActions(state, ctx)
+    return factionFor(factionOf(state, state.currentSeat)).legalActions(state, ctx)
   }
 
   apply(action: Action): ActionResult {
@@ -381,7 +381,7 @@ export class Game {
 
     {
       const ctx = this.makeCtx()
-      const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
+      const faction = factionFor(factionOf(this.state, this.state.currentSeat))
       faction.validate(this.state, action, ctx)
     }
   }
@@ -422,7 +422,7 @@ export class Game {
         if (tryApplyEyrieEmigre(this.state, action, ctx)) {
           return [{ t: 'action', actor: this.state.currentSeat, action }]
         }
-        const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
+        const faction = factionFor(factionOf(this.state, this.state.currentSeat))
         faction.validate(this.state, action, ctx)
         return faction.apply(this.state, action, ctx)
       }
@@ -513,7 +513,7 @@ export class Game {
     const { state } = this
     state.status = 'playing'
     state.currentSeat = 0
-    const first = FACTIONS[factionOf(state, 0)]
+    const first = factionFor(factionOf(state, 0))
     state.phase = 'birdsong'
     state.step = first.steps.birdsong[0]!
     state.turnScratch = createTurnScratch()
@@ -527,7 +527,7 @@ export class Game {
 
   private applyEndPhase(): LogEntry[] {
     const ctx = this.makeCtx()
-    const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
+    const faction = factionFor(factionOf(this.state, this.state.currentSeat))
     faction.validate(this.state, { type: 'endPhase' }, ctx)
     return faction.apply(this.state, { type: 'endPhase' }, ctx)
   }
@@ -535,7 +535,7 @@ export class Game {
   private advanceStepOrPhase(): LogEntry[] {
     const { state } = this
     const ctx = this.makeCtx()
-    const faction = FACTIONS[factionOf(state, state.currentSeat)]
+    const faction = factionFor(factionOf(state, state.currentSeat))
     const steps = faction.steps[state.phase]
     const idx = steps.indexOf(state.step)
     if (idx < 0) throw new RuleError('INVALID_STEP', { step: state.step })
@@ -579,7 +579,7 @@ export class Game {
     state.currentSeat = nextSeat
     state.turn += 1
 
-    const nextFaction = FACTIONS[factionOf(state, nextSeat)]
+    const nextFaction = factionFor(factionOf(state, nextSeat))
     state.phase = 'birdsong'
     state.step = nextFaction.steps.birdsong[0]!
 
@@ -593,7 +593,7 @@ export class Game {
     const logs: LogEntry[] = []
     let guard = 0
     while (guard++ < 50) {
-      const faction = FACTIONS[factionOf(this.state, this.state.currentSeat)]
+      const faction = factionFor(factionOf(this.state, this.state.currentSeat))
       const autos = faction
         .autoActions(this.state, this.state.phase, this.state.step)
         .filter((action) => !this.isAutoBlocked(action))
