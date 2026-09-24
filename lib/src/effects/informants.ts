@@ -65,6 +65,10 @@ export function tryApplyInformants(
 
 export const informantsEffect: CardEffect = {
   defId: INFORMANTS_DEF_ID,
+  action: {
+    types: ['informantsTakeAmbush'],
+    apply: tryApplyInformants,
+  },
   blocksAuto(state, action) {
     if (action.type !== 'eveningDraw') return false
     return informantsCanReplaceDraw(state)

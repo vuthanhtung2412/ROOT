@@ -78,6 +78,10 @@ export function tryApplySaboteurs(state: GameState, action: Action, _ctx: Ctx): 
 
 export const saboteursEffect: CardEffect = {
   defId: SABOTEURS_DEF_ID,
+  action: {
+    types: ['saboteurs'],
+    apply: tryApplySaboteurs,
+  },
   grants(state) {
     if (!saboteursAvailable(state)) return []
     const ownerSeat = saboteursOwner(state)

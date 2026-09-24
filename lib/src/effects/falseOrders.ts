@@ -79,6 +79,10 @@ export function tryApplyFalseOrders(state: GameState, action: Action, ctx: Ctx):
 
 export const falseOrdersEffect: CardEffect = {
   defId: FALSE_ORDERS_DEF_ID,
+  action: {
+    types: ['falseOrders'],
+    apply: tryApplyFalseOrders,
+  },
   grants(state) {
     if (!falseOrdersAvailable(state)) return []
     const ownerSeat = falseOrdersOwner(state)
