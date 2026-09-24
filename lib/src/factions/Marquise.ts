@@ -1,7 +1,6 @@
 import type {
   Action,
   ActionSpec,
-  BattleTargetChoice,
   BuildChoice,
   MarchMove,
   OverworkChoice,
@@ -12,7 +11,7 @@ import { matchesSuit } from '#cards/suit.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import { canCraft } from '#queries/craft.js'
-import { enemySeatsInClearing } from '#queries/enemySeats.js'
+import { canBattle, legalBattleTargets } from '#queries/battle.js'
 import { canMove } from '#queries/move.js'
 import { canPlace, keepClearingFor } from '#queries/place.js'
 import { warriors } from '#queries/pieces.js'
@@ -32,7 +31,6 @@ import {
   MARQUISE_WORKSHOP_VP,
   type MarquiseBoard,
 } from '#state/boards.js'
-import { HAND_LIMIT } from '#state/constants.js'
 import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import type { Ctx } from '#game/ctx.js'
@@ -41,6 +39,14 @@ import type { BuildingType, Seat } from '#pieces/types.js'
 import { connectedRuled } from '#queries/connected.js'
 import { openBattle } from '#events/battle.js'
 import { Faction } from '#factions/Faction.js'
+import {
+  applyDiscard,
+  craftStepLegalActions,
+  drawCards,
+  handLimitLegalAction,
+  validateDiscard,
+  validateHandLimit,
+} from '#factions/sharedTurn.js'
 
 const STEPS: Record<Phase, Step[]> = {
   birdsong: ['wood'],
@@ -403,29 +409,6 @@ function legalBuildChoices(state: GameState, seat: Seat, ctx: Ctx): BuildChoice[
   return choices
 }
 
-function legalBattleTargets(state: GameState, seat: Seat): BattleTargetChoice[] {
-  const targets: BattleTargetChoice[] = []
-  for (let clearing = 0; clearing < 12; clearing++) {
-    for (const defender of enemySeatsInClearing(state, clearing, seat)) {
-      if (canBattle(state, seat, clearing, defender)) {
-        targets.push({ clearing, defender })
-      }
-    }
-  }
-  return targets
-}
-
-function canBattle(
-  state: GameState,
-  seat: Seat,
-  clearing: ClearingId,
-  defender: Seat,
-): boolean {
-  if (defender === seat) return false
-  if (warriors(state, clearing, seat) < 1) return false
-  return enemySeatsInClearing(state, clearing, seat).includes(defender)
-}
-
 function placeBirdsongWood(state: GameState, seat: Seat): LogEntry[] {
   const board = boardOf(state, seat)
   const logs: LogEntry[] = []
@@ -447,12 +430,7 @@ function eveningDrawCards(state: GameState, seat: Seat, ctx: Ctx): LogEntry[] {
   const board = boardOf(state, seat)
   const bonus = recruiterDrawBonus(board)
   const count = Math.min(3, 1 + bonus)
-  const drawn = Deck.draw(state.deck, count, {
-    shuffle: (cards) => cards,
-    onDominance: (card) => state.dominanceAvailable.push(card),
-  })
-  playerOf(state, seat).hand.push(...drawn)
-  ctx.emit({ s: 'draw', actor: seat, count: drawn.length })
+  drawCards(state, { seat, count }, ctx)
   return [{ t: 'action', actor: seat, action: { type: 'eveningDraw' } }]
 }
 
@@ -490,13 +468,7 @@ export class Marquise extends Faction {
     }
 
     if (state.phase === 'daylight' && state.step === 'craft') {
-      const craftableIds = playerOf(state, seat).hand
-        .filter((handCard) => canCraft(state, seat, handCard))
-        .map((handCard) => handCard.id)
-      if (craftableIds.length > 0) {
-        specs.push({ type: 'craft', actor: seat, params: { cardIds: craftableIds } })
-      }
-      specs.push({ type: 'endPhase', actor: seat })
+      specs.push(...craftStepLegalActions(state, seat))
       return specs
     }
 
@@ -553,16 +525,7 @@ export class Marquise extends Faction {
     }
 
     if (state.phase === 'evening' && state.step === 'discard') {
-      const hand = playerOf(state, seat).hand
-      if (hand.length > HAND_LIMIT) {
-        specs.push({
-          type: 'discard',
-          actor: seat,
-          params: { cardIds: hand.map((handCard) => handCard.id) },
-        })
-        return specs
-      }
-      specs.push({ type: 'endPhase', actor: seat })
+      specs.push(handLimitLegalAction(state, seat))
       return specs
     }
 
@@ -575,14 +538,8 @@ export class Marquise extends Faction {
 
     switch (action.type) {
       case 'endPhase': {
-        if (
-          state.phase === 'evening' &&
-          state.step === 'discard' &&
-          playerOf(state, seat).hand.length > HAND_LIMIT
-        ) {
-          throw new RuleError('HAND_OVER_LIMIT', {
-            hand: playerOf(state, seat).hand.length,
-          })
+        if (state.phase === 'evening' && state.step === 'discard') {
+          validateHandLimit(state, seat)
         }
         return
       }
@@ -675,21 +632,7 @@ export class Marquise extends Faction {
         if (state.phase !== 'evening' || state.step !== 'discard') {
           throw new RuleError('WRONG_STEP', { phase: state.phase, step: state.step })
         }
-        const hand = playerOf(state, seat).hand
-        if (hand.length <= HAND_LIMIT) throw new RuleError('HAND_NOT_OVER_LIMIT')
-        const ids = new Set(action.cardIds)
-        if (ids.size !== action.cardIds.length) {
-          throw new RuleError('DUPLICATE_DISCARD', { cardIds: action.cardIds })
-        }
-        for (const id of action.cardIds) {
-          if (!hand.some((c) => c.id === id)) throw new RuleError('CARD_NOT_IN_HAND', { cardId: id })
-        }
-        if (hand.length - action.cardIds.length > HAND_LIMIT) {
-          throw new RuleError('DISCARD_TOO_FEW', {
-            hand: hand.length,
-            discarded: action.cardIds.length,
-          })
-        }
+        validateDiscard(state, seat, action.cardIds)
         return
       }
       default:
@@ -787,14 +730,7 @@ export class Marquise extends Faction {
         return logs
       }
       case 'discard': {
-        const player = playerOf(state, seat)
-        for (const id of action.cardIds) {
-          const idx = player.hand.findIndex((c) => c.id === id)
-          const card = player.hand.splice(idx, 1)[0]!
-          Deck.discard(state.deck, card, {
-            onDominance: (c) => state.dominanceAvailable.push(c),
-          })
-        }
+        applyDiscard(state, seat, action.cardIds)
         logs.push({ t: 'action', actor: seat, action })
         return logs
       }

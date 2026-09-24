@@ -16,6 +16,7 @@ import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import { canCraft } from '#queries/craft.js'
+import { canBattle } from '#queries/battle.js'
 import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { canMove } from '#queries/move.js'
 import { canPlace } from '#queries/place.js'
@@ -37,11 +38,18 @@ import {
   type EyrieBoard,
   type EyrieLeader,
 } from '#state/boards.js'
-import { HAND_LIMIT } from '#state/constants.js'
 import type { DecreeCursor, GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import type { Seat } from '#pieces/types.js'
 import { Faction } from '#factions/Faction.js'
+import {
+  applyDiscard,
+  craftStepLegalActions,
+  drawCards,
+  handLimitLegalAction,
+  validateDiscard,
+  validateHandLimit,
+} from '#factions/sharedTurn.js'
 import { isVizier, makeViziers } from '#factions/eyrie/viziers.js'
 
 const STEPS: Record<Phase, Step[]> = {
@@ -109,17 +117,6 @@ function cardMatchesClearing(card: Card, clearing: ClearingId): boolean {
   return matchesSuit(card, FALL.clearings[clearing]!.suit)
 }
 
-function canBattleHere(
-  state: GameState,
-  seat: Seat,
-  clearing: ClearingId,
-  defender: Seat,
-): boolean {
-  if (defender === seat) return false
-  if (warriors(state, clearing, seat) < 1) return false
-  return enemySeatsInClearing(state, clearing, seat).includes(defender)
-}
-
 /** Check recruit — supply + roost + suit + canPlace. Rule: 7.8.2 Charismatic places 2. */
 function recruitWarriorCount(state: GameState, seat: Seat): number {
   return boardOf(state, seat).leader === 'charismatic' ? 2 : 1
@@ -184,14 +181,14 @@ type DecreeBattleCheck = {
 function battleLegal(state: GameState, check: DecreeBattleCheck): boolean {
   const { seat, card, clearing, defender } = check
   if (!cardMatchesClearing(card, clearing)) return false
-  return canBattleHere(state, seat, clearing, defender)
+  return canBattle(state, seat, clearing, defender)
 }
 
 function hasAnyDecreeBattle(state: GameState, seat: Seat, card: Card): boolean {
   for (let clearing = 0; clearing < 12; clearing++) {
     if (!cardMatchesClearing(card, clearing)) continue
     for (const defender of enemySeatsInClearing(state, clearing, seat)) {
-      if (canBattleHere(state, seat, clearing, defender)) return true
+      if (canBattle(state, seat, clearing, defender)) return true
     }
   }
   return false
@@ -457,15 +454,7 @@ export class Eyrie extends Faction {
     }
 
     if (state.phase === 'daylight' && state.step === 'craft') {
-      const craftable = playerOf(state, seat).hand.filter((handCard) => canCraft(state, seat, handCard))
-      if (craftable.length > 0) {
-        specs.push({
-          type: 'craft',
-          actor: seat,
-          params: { cardIds: craftable.map((handCard) => handCard.id) },
-        })
-      }
-      specs.push({ type: 'endPhase', actor: seat })
+      specs.push(...craftStepLegalActions(state, seat))
       return specs
     }
 
@@ -543,16 +532,7 @@ export class Eyrie extends Faction {
     }
 
     if (state.phase === 'evening' && state.step === 'discard') {
-      const hand = playerOf(state, seat).hand
-      if (hand.length > HAND_LIMIT) {
-        specs.push({
-          type: 'discard',
-          actor: seat,
-          params: { cardIds: hand.map((handCard) => handCard.id) },
-        })
-        return specs
-      }
-      specs.push({ type: 'endPhase', actor: seat })
+      specs.push(handLimitLegalAction(state, seat))
       return specs
     }
 
@@ -580,14 +560,8 @@ export class Eyrie extends Faction {
         ) {
           throw new RuleError('MUST_NEW_ROOST')
         }
-        if (
-          state.phase === 'evening' &&
-          state.step === 'discard' &&
-          playerOf(state, seat).hand.length > HAND_LIMIT
-        ) {
-          throw new RuleError('HAND_OVER_LIMIT', {
-            hand: playerOf(state, seat).hand.length,
-          })
+        if (state.phase === 'evening' && state.step === 'discard') {
+          validateHandLimit(state, seat)
         }
         if (state.phase === 'daylight' && state.step === 'decree') {
           const cursor = ensureDecreeCursor(state, seat)
@@ -721,21 +695,7 @@ export class Eyrie extends Faction {
         if (state.phase !== 'evening' || state.step !== 'discard') {
           throw new RuleError('WRONG_STEP', { phase: state.phase, step: state.step })
         }
-        const hand = playerOf(state, seat).hand
-        if (hand.length <= HAND_LIMIT) throw new RuleError('HAND_NOT_OVER_LIMIT')
-        const ids = new Set(action.cardIds)
-        if (ids.size !== action.cardIds.length) {
-          throw new RuleError('DUPLICATE_DISCARD', { cardIds: action.cardIds })
-        }
-        for (const id of action.cardIds) {
-          if (!hand.some((c) => c.id === id)) throw new RuleError('CARD_NOT_IN_HAND', { cardId: id })
-        }
-        if (hand.length - action.cardIds.length > HAND_LIMIT) {
-          throw new RuleError('DISCARD_TOO_FEW', {
-            hand: hand.length,
-            discarded: action.cardIds.length,
-          })
-        }
+        validateDiscard(state, seat, action.cardIds)
         return
       }
       default:
@@ -752,13 +712,8 @@ export class Eyrie extends Faction {
         return [{ t: 'action', actor: seat, action }]
       case 'emergencyOrders': {
         // Rule: Eyrie > Birdsong 1 — empty hand → draw 1.
-        const drawn = Deck.draw(state.deck, 1, {
-          shuffle: (cards) => cards,
-          onDominance: (card) => state.dominanceAvailable.push(card),
-        })
-        playerOf(state, seat).hand.push(...drawn)
+        drawCards(state, { seat, count: 1 }, ctx)
         state.turnScratch.emergencyOrdersDone = true
-        ctx.emit({ s: 'draw', actor: seat, count: drawn.length })
         logs.push({ t: 'action', actor: seat, action })
         return logs
       }
@@ -894,25 +849,13 @@ export class Eyrie extends Faction {
       case 'eveningDraw': {
         const n = roostsOnMap(state, seat)
         const count = 1 + eveningDrawBonus(n)
-        const drawn = Deck.draw(state.deck, count, {
-          shuffle: (cards) => cards,
-          onDominance: (card) => state.dominanceAvailable.push(card),
-        })
-        playerOf(state, seat).hand.push(...drawn)
+        drawCards(state, { seat, count }, ctx)
         state.turnScratch.eveningDrawDone = true
-        ctx.emit({ s: 'draw', actor: seat, count: drawn.length })
         logs.push({ t: 'action', actor: seat, action })
         return logs
       }
       case 'discard': {
-        const player = playerOf(state, seat)
-        for (const id of action.cardIds) {
-          const idx = player.hand.findIndex((c) => c.id === id)
-          const card = player.hand.splice(idx, 1)[0]!
-          Deck.discard(state.deck, card, {
-            onDominance: (c) => state.dominanceAvailable.push(c),
-          })
-        }
+        applyDiscard(state, seat, action.cardIds)
         logs.push({ t: 'action', actor: seat, action })
         return logs
       }
