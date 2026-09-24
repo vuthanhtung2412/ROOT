@@ -1,22 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import '#effects/register.js'
-import { Game } from '#game/Game.js'
-import { card } from '#test/fixtures.js'
+import { card, createPlayingGame } from '#test/fixtures.js'
 describe('Swap Meet', () => {
   it('Rule: Swap Meet — granted once per Birdsong', () => {
-    const game = Game.create({ seed: 5 })
-    game.join('a')
-    game.join('b')
-    game.start()
-    game.apply({ type: 'resolveEvent', clearing: 0 })
-    while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-      const clearings = game.legalActions()[0]?.params?.clearing
-      if (clearings === undefined || clearings.length === 0) {
-        throw new Error('no legal starting building clearings')
-      }
-      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-    }
-    game.apply({ type: 'resolveEvent', leader: 'builder' })
+    const game = createPlayingGame({ seed: 5 })
     game.state.players[0]!.playArea.push(card('ROOT-103'))
     game.state.players[0]!.hand.push(card('ROOT-209'))
     game.state.players[1]!.hand = [card('ROOT-211', 2)]

@@ -1,23 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import '#effects/register.js'
-import { Game } from '#game/Game.js'
-import { card } from '#test/fixtures.js'
+import { card, createPlayingGame } from '#test/fixtures.js'
 
 describe('Informants', () => {
   it('Rule: Informants — Evening may take ambush from discard instead of draw', () => {
-    const game = Game.create({ seed: 17 })
-    game.join('a')
-    game.join('b')
-    game.start()
-    game.apply({ type: 'resolveEvent', clearing: 0 })
-    while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-      const clearings = game.legalActions()[0]?.params?.clearing
-      if (clearings === undefined || clearings.length === 0) {
-        throw new Error('no legal starting building clearings')
-      }
-      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-    }
-    game.apply({ type: 'resolveEvent', leader: 'builder' })
+    const game = createPlayingGame({ seed: 17 })
 
     game.state.players[0]!.playArea.push(card('ROOT-79'))
     const ambush = card('ROOT-200')

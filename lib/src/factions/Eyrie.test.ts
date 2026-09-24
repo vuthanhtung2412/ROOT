@@ -12,7 +12,14 @@ import { HAND_LIMIT } from '#state/constants.js'
 import { DECREE_COLUMNS, EYRIE_LEADERS, type DecreeColumn, type EyrieLeader } from '#state/boards.js'
 import type { DecreeCursor } from '#state/types.js'
 import { defaultRuleHooks } from '#triggers/hooks.js'
-import { card, eyrieBoard, minimalState, player, withPieces } from '#test/fixtures.js'
+import {
+  card,
+  createPlayingGame,
+  eyrieBoard,
+  minimalState,
+  player,
+  withPieces,
+} from '#test/fixtures.js'
 import { isVizier, makeViziers } from '#factions/eyrie/viziers.js'
 import { EYRIE, eyrieStartClearing, tuckViziersFor } from '#factions/Eyrie.js'
 import { MARQUISE } from '#factions/Marquise.js'
@@ -933,19 +940,7 @@ describe('Law 7 extras / integration', () => {
   })
 
   it('Game lobby marquise+eyrie starts on birdsong', () => {
-    const game = Game.create({ seed: 1, factions: ['marquise', 'eyrie'] })
-    game.apply({ type: 'join', playerId: 'a' })
-    game.apply({ type: 'join', playerId: 'b' })
-    game.apply({ type: 'start' })
-    game.apply({ type: 'resolveEvent', clearing: 0 })
-    while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-      const clearings = game.legalActions()[0]?.params?.clearing
-      if (clearings === undefined || clearings.length === 0) {
-        throw new Error('no legal starting building clearings')
-      }
-      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-    }
-    game.apply({ type: 'resolveEvent', leader: 'builder' })
+    const game = createPlayingGame({ seed: 1 })
     expect(game.state.players[1]!.faction).toBe('eyrie')
     expect(game.state.phase).toBe('birdsong')
   })

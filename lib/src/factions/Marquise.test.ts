@@ -6,7 +6,14 @@ import { warriors } from '#queries/pieces.js'
 import { keepOwner } from '#queries/place.js'
 import { resetPlaceIds } from '#rules/place.js'
 import { HAND_LIMIT } from '#state/constants.js'
-import { card, player, minimalState, testContext, withPieces } from '#test/fixtures.js'
+import {
+  card,
+  createPlayingGame,
+  player,
+  minimalState,
+  testContext,
+  withPieces,
+} from '#test/fixtures.js'
 import {
   buildColumn,
   keepCornerFor,
@@ -96,20 +103,7 @@ describe('Marquise setup', () => {
 })
 
 function lobbyTwo(seed = 42): Game {
-  const game = Game.create({ seed })
-  game.join('a')
-  game.join('b')
-  game.start()
-  game.apply({ type: 'resolveEvent', clearing: 0 })
-  while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-    const clearings = game.legalActions()[0]?.params?.clearing
-    if (clearings === undefined || clearings.length === 0) {
-      throw new Error('no legal starting building clearings')
-    }
-    game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-  }
-  game.apply({ type: 'resolveEvent', leader: 'builder' })
-  return game
+  return createPlayingGame({ seed })
 }
 
 function advanceToActions(game: Game): void {

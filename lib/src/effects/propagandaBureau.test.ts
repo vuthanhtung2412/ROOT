@@ -2,24 +2,11 @@ import { describe, expect, it } from 'vitest'
 import '#effects/register.js'
 import { FALL } from '#map/fall.js'
 import { warriors } from '#queries/pieces.js'
-import { Game } from '#game/Game.js'
-import { card } from '#test/fixtures.js'
+import { card, createPlayingGame } from '#test/fixtures.js'
 
 describe('Propaganda Bureau', () => {
   it('Rule: Propaganda Bureau — spend matching card to replace enemy warrior', () => {
-    const game = Game.create({ seed: 23 })
-    game.join('a')
-    game.join('b')
-    game.start()
-    game.apply({ type: 'resolveEvent', clearing: 0 })
-    while (game.state.pending[0]?.type === 'placeStartingBuilding') {
-      const clearings = game.legalActions()[0]?.params?.clearing
-      if (clearings === undefined || clearings.length === 0) {
-        throw new Error('no legal starting building clearings')
-      }
-      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
-    }
-    game.apply({ type: 'resolveEvent', leader: 'builder' })
+    const game = createPlayingGame({ seed: 23 })
 
     game.apply({ type: 'endPhase' })
     game.apply({ type: 'endPhase' })

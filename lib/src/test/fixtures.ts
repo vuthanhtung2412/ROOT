@@ -2,12 +2,14 @@ import type { Card } from '#cards/types.js'
 import { Game } from '#game/Game.js'
 import type { Ctx } from '#game/ctx.js'
 import { FALL } from '#map/fall.js'
+import type { ClearingId } from '#map/types.js'
 import type { FactionId, Piece, Seat } from '#pieces/types.js'
 import type { Rng } from '#rules/Rng.js'
 import {
   EYRIE_LEADERS,
   eyrieLeaderPools,
   type EyrieBoard,
+  type EyrieLeader,
   type MarquiseBoard,
 } from '#state/boards.js'
 import { ITEM_SUPPLY } from '#state/constants.js'
@@ -177,6 +179,11 @@ export function createLobbyAfterKeep(seed = 42): Game {
   const game = createLobbyGame(seed)
   game.start()
   game.apply({ type: 'resolveEvent', clearing: FALL.corners[0]! })
+  resolveStartingBuildings(game)
+  return game
+}
+
+export function resolveStartingBuildings(game: Game): void {
   while (game.state.pending[0]?.type === 'placeStartingBuilding') {
     const clearings = game.legalActions()[0]?.params?.clearing
     if (clearings === undefined || clearings.length === 0) {
@@ -184,7 +191,46 @@ export function createLobbyAfterKeep(seed = 42): Game {
     }
     game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
   }
-  return game
 }
 
+export type FinishSetupOptions = {
+  keep?: ClearingId
+  leader?: EyrieLeader
+}
+
+export function finishSetup(
+  game: Game,
+  options: FinishSetupOptions = {},
+): void {
+  if (game.state.pending[0]?.type === 'chooseKeep') {
+    game.apply({
+      type: 'resolveEvent',
+      clearing: options.keep ?? FALL.corners[0]!,
+    })
+  }
+  resolveStartingBuildings(game)
+  if (game.state.pending[0]?.type === 'chooseLeader') {
+    game.apply({
+      type: 'resolveEvent',
+      leader: options.leader ?? 'builder',
+    })
+  }
+}
+
+export type CreatePlayingGameOptions = FinishSetupOptions & {
+  seed?: number
+  playerIds?: [string, string]
+}
+
+export function createPlayingGame(
+  options: CreatePlayingGameOptions = {},
+): Game {
+  const game = Game.create({ seed: options.seed ?? 42 })
+  const playerIds = options.playerIds ?? ['a', 'b']
+  game.join(playerIds[0])
+  game.join(playerIds[1])
+  game.start()
+  finishSetup(game, options)
+  return game
+}
 
