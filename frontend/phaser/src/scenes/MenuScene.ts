@@ -8,8 +8,7 @@ import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 import { loadPlayerIdentity } from '#game/playerIdentity.ts'
 import {
   PARCHMENT_BOTTOM,
-  PARCHMENT_TOP,
-  drawVerticalGradient,
+  drawCoverWallpaper,
 } from '#ui/sceneBackdrop.ts'
 
 const MENU_BANNER_MAX_WIDTH_RATIO = 0.42
@@ -55,7 +54,7 @@ export class MenuScene extends Phaser.Scene {
     void ensureAutumnMapLoaded(this)
 
     this.cameras.main.setBackgroundColor(PARCHMENT_BOTTOM)
-    drawVerticalGradient(this, width, height, PARCHMENT_TOP, PARCHMENT_BOTTOM)
+    drawCoverWallpaper(this, width, height, GAME_ASSET_KEYS.menuWallpaper)
 
     const centerX = width / 2
     const banner = this.add.image(0, 0, GAME_ASSET_KEYS.rootBanner).setOrigin(0.5)

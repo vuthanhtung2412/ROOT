@@ -55,6 +55,14 @@ describe('preloadCoreGameAssets', () => {
       'root-banner',
       'assets/branding/root-banner.jpg',
     )
+    expect(loader.image).toHaveBeenCalledWith(
+      'menu-wallpaper',
+      'assets/branding/therootdatabase-hero.webp',
+    )
+    expect(loader.image).toHaveBeenCalledWith(
+      'game-wallpaper',
+      'assets/branding/ks-pooneac-root.jpg',
+    )
     expect(loader.image).not.toHaveBeenCalledWith(
       AUTUMN_MAP_ASSET.key,
       AUTUMN_MAP_ASSET.path,

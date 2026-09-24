@@ -10,6 +10,8 @@ export type ImageAssetLoader = {
 export const GAME_ASSET_KEYS = {
   autumnMap: 'autumn-map',
   rootBanner: 'root-banner',
+  menuWallpaper: 'menu-wallpaper',
+  gameWallpaper: 'game-wallpaper',
   factionMarquise: 'faction-marquise',
   factionEyrie: 'faction-eyrie',
   characterBoardMarquise: 'character-board-marquise',
@@ -136,6 +138,14 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.rootBanner,
     path: 'assets/branding/root-banner.jpg',
+  },
+  {
+    key: GAME_ASSET_KEYS.menuWallpaper,
+    path: 'assets/branding/therootdatabase-hero.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.gameWallpaper,
+    path: 'assets/branding/ks-pooneac-root.jpg',
   },
   {
     key: GAME_ASSET_KEYS.factionMarquise,
