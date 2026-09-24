@@ -2,6 +2,8 @@ import {
   FALL,
   FALL_LAYOUT,
   Game,
+  formatGameView,
+  formatTurnLog,
   toAscii,
   toSvg,
 } from '@root/lib'
@@ -153,6 +155,28 @@ gameRoutes.openapi(getGameRoute, (context) => {
   )
 })
 
+const getGameViewRoute = createRoute({
+  method: 'get',
+  path: '/view',
+  tags: ['game'],
+  summary: 'Get formatted current game',
+  responses: {
+    200: {
+      description: 'Formatted game state',
+      content: { 'text/plain': { schema: z.string() } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(getGameViewRoute, (context) => {
+  const game = requireGame()
+  return context.text(
+    formatGameView(game.state, { historyLength: game.history.length }),
+    200,
+  )
+})
+
 const getSnapshotRoute = createRoute({
   method: 'get',
   path: '/snapshot',
@@ -282,6 +306,25 @@ const getLogRoute = createRoute({
 gameRoutes.openapi(getLogRoute, (context) => {
   const game = requireGame()
   return context.json({ log: game.log }, 200)
+})
+
+const getFormattedLogRoute = createRoute({
+  method: 'get',
+  path: '/log/view',
+  tags: ['game'],
+  summary: 'Get formatted game log',
+  responses: {
+    200: {
+      description: 'Formatted game log',
+      content: { 'text/plain': { schema: z.string() } },
+    },
+    ...errorResponses,
+  },
+})
+
+gameRoutes.openapi(getFormattedLogRoute, (context) => {
+  const game = requireGame()
+  return context.text(formatTurnLog(game.log, game.state), 200)
 })
 
 const undoRoute = createRoute({

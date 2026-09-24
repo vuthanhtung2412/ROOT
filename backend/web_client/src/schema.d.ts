@@ -7,7 +7,7 @@
 
 
 export interface paths {
-  "/": {
+  "/health": {
     /** Service info */
     get: {
       responses: {
@@ -144,6 +144,37 @@ export interface paths {
         200: {
           content: {
             "application/json": components["schemas"]["ActionResult"];
+          };
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/view": {
+    /** Get formatted current game */
+    get: {
+      responses: {
+        /** @description Formatted game state */
+        200: {
+          content: {
+            "text/plain": string;
           };
         };
         /** @description Rule or request error */
@@ -311,6 +342,37 @@ export interface paths {
         200: {
           content: {
             "application/json": components["schemas"]["LogResponse"];
+          };
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/log/view": {
+    /** Get formatted game log */
+    get: {
+      responses: {
+        /** @description Formatted game log */
+        200: {
+          content: {
+            "text/plain": string;
           };
         };
         /** @description Rule or request error */
