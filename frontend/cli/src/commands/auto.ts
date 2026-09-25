@@ -396,6 +396,62 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       }
       return null
     }
+    case 'refresh':
+      return { type: 'refresh' }
+    case 'rest':
+      return { type: 'rest' }
+    case 'explore':
+      return { type: 'explore' }
+    case 'slip': {
+      const forests = readNumberList(paramList(spec.params, 'forests'))
+      const clearings = readNumberList(paramList(spec.params, 'clearings'))
+      if (forests.length > 0 && Math.random() < 0.5) {
+        const forest = pick(forests)
+        if (forest === undefined) return null
+        return { type: 'slip', to: `forest:${forest}` }
+      }
+      const clearing = pick(clearings)
+      if (clearing !== undefined) return { type: 'slip', to: clearing }
+      const forest = pick(forests)
+      if (forest === undefined) return null
+      return { type: 'slip', to: `forest:${forest}` }
+    }
+    case 'vbMove': {
+      const to = pick(readNumberList(paramList(spec.params, 'clearings')))
+      if (to === undefined) return null
+      return { type: 'vbMove', to }
+    }
+    case 'vbBattle': {
+      const choice = pick(readBattleTargets(paramList(spec.params, 'targets')))
+      if (!choice) return null
+      return { type: 'vbBattle', defender: choice.defender }
+    }
+    case 'aid': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      const target = pick(readNumberList(paramList(spec.params, 'defender')))
+      if (!cardId || target === undefined) return null
+      return { type: 'aid', cardId, target }
+    }
+    case 'strike': {
+      const choice = pick(readBattleTargets(paramList(spec.params, 'targets')))
+      if (!choice) return null
+      return { type: 'strike', defender: choice.defender }
+    }
+    case 'repair': {
+      const itemIndex = pick(readNumberList(paramList(spec.params, 'clearings')))
+      if (itemIndex === undefined) return null
+      return { type: 'repair', itemIndex }
+    }
+    case 'vbCraft': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      if (!cardId) return null
+      return { type: 'vbCraft', cardId }
+    }
+    case 'steal': {
+      const target = pick(readNumberList(paramList(spec.params, 'defender')))
+      if (target === undefined) return null
+      return { type: 'steal', target }
+    }
     case 'resolveEvent': {
       const params = spec.params
       const clearingList = paramList(params, 'clearing')
