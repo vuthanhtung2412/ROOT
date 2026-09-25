@@ -1,5 +1,5 @@
 import type { ActionSpec } from '#api/client.ts'
-import { readChoiceParams } from '#game/ActionComposer.ts'
+import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 
 /** Collect pay-card ids from Field Hospital legal resolveEvent specs. */
 export function fieldHospitalCardIdsFromSpecs(
