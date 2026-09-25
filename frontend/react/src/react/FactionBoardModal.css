@@ -80,6 +80,11 @@
   -webkit-user-drag: none;
 }
 
+.faction-board-modal__token--round {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .faction-board-modal__crafted {
   position: absolute;
   display: flex;

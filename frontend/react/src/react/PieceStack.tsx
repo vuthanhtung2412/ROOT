@@ -84,7 +84,11 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
     >
       {imagePath !== null ? (
         <img
-          className="block object-fill select-none"
+          className={
+            props.stack.type === 'sympathy'
+              ? 'block rounded-full object-cover select-none'
+              : 'block object-fill select-none'
+          }
           src={imagePath}
           alt=""
           draggable={false}

@@ -20,6 +20,7 @@ export const GAME_ASSET_KEYS = {
   characterBoardEyrie: 'character-board-eyrie',
   characterBoardAlliance: 'character-board-alliance',
   characterBoardVagabond: 'character-board-vagabond',
+  characterCardVagabondThief: 'character-card-vagabond-thief',
   suitFox: 'suit-fox',
   suitMouse: 'suit-mouse',
   suitRabbit: 'suit-rabbit',
@@ -222,6 +223,10 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.characterBoardVagabond,
     path: 'assets/character-boards/vagabond-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterCardVagabondThief,
+    path: 'assets/character-boards/vagabond-thief-front.webp',
   },
   {
     key: GAME_ASSET_KEYS.suitFox,

@@ -6,6 +6,7 @@ import {
   type FactionBoardPixelLayout,
 } from '#assets/factionBoardLayout.ts'
 import {
+  allianceBaseTextureKey,
   factionTextureKey,
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
@@ -44,10 +45,14 @@ function FitToken(props: {
   layout: FactionBoardPixelLayout
   imagePath: string
   alt: string
+  round?: boolean
 }): JSX.Element {
+  const className = props.round
+    ? 'faction-board-modal__token faction-board-modal__token--round'
+    : 'faction-board-modal__token'
   return (
     <img
-      className="faction-board-modal__token"
+      className={className}
       style={layoutRegionStyle(props.region, props.layout)}
       src={props.imagePath}
       alt={props.alt}
@@ -174,6 +179,7 @@ function RemainingTrackTokens(props: {
   emptiedCount: number
   textureKey: string
   alt: string
+  round?: boolean
 }): JSX.Element | null {
   const imagePath = imagePathForAssetKey(props.textureKey)
   if (imagePath === null) {
@@ -195,6 +201,7 @@ function RemainingTrackTokens(props: {
         layout={props.layout}
         imagePath={imagePath}
         alt={props.alt}
+        round={props.round}
       />,
     )
   }
@@ -309,6 +316,11 @@ function AllianceSupplyExtras(props: {
 }): JSX.Element {
   const officersRegion = findBoardLayoutRegion(props.layout, 'officers')
   const supportersRegion = findBoardLayoutRegion(props.layout, 'supporters')
+  const baseSuitRegionIds: ReadonlyArray<{ suit: string; regionId: string }> = [
+    { suit: 'fox', regionId: 'base-fox' },
+    { suit: 'rabbit', regionId: 'base-rabbit' },
+    { suit: 'mouse', regionId: 'base-mouse' },
+  ]
   return (
     <>
       {officersRegion !== null ? (
@@ -330,7 +342,94 @@ function AllianceSupplyExtras(props: {
           </span>
         </div>
       ) : null}
+      {baseSuitRegionIds.map((slot) => {
+        if (!props.view.basesInSupply.includes(slot.suit)) {
+          return null
+        }
+        const region = findBoardLayoutRegion(props.layout, slot.regionId)
+        if (region === null) {
+          return null
+        }
+        const imagePath = imagePathForAssetKey(allianceBaseTextureKey(slot.suit))
+        if (imagePath === null) {
+          return null
+        }
+        return (
+          <FitToken
+            key={slot.regionId}
+            region={region}
+            layout={props.layout}
+            imagePath={imagePath}
+            alt={`${slot.suit} base`}
+          />
+        )
+      })}
     </>
+  )
+}
+
+function VagabondTrackItemOverlays(props: {
+  view: Extract<FactionBoardViewModel, { kind: 'vagabond' }>
+  layout: FactionBoardPixelLayout
+}): JSX.Element {
+  const trackRows: Array<{
+    trackId: 'tea' | 'coin' | 'bag'
+    items: Array<{ type: string; exhausted: boolean }>
+  }> = [
+    { trackId: 'tea', items: props.view.tracks.tea },
+    { trackId: 'coin', items: props.view.tracks.coin },
+    { trackId: 'bag', items: props.view.tracks.bag },
+  ]
+  return (
+    <>
+      {trackRows.map((row) =>
+        row.items.map((item, cellIndex) => {
+          const region = trackCellRegion(
+            props.layout,
+            row.trackId,
+            cellIndex,
+          )
+          if (region === null) {
+            return null
+          }
+          return (
+            <div
+              key={`${row.trackId}-${item.type}-${String(cellIndex)}`}
+              className="faction-board-modal__crafted"
+              style={layoutRegionStyle(region, props.layout)}
+            >
+              <CraftedItemIcon
+                item={{ type: item.type, exhausted: item.exhausted, count: 1 }}
+              />
+            </div>
+          )
+        }),
+      )}
+    </>
+  )
+}
+
+function VagabondCharacterOverlay(props: {
+  layout: FactionBoardPixelLayout
+}): JSX.Element | null {
+  const region = findBoardLayoutRegion(props.layout, 'character-slot')
+  if (region === null) {
+    return null
+  }
+  const imagePath = imagePathForAssetKey(
+    GAME_ASSET_KEYS.characterCardVagabondThief,
+  )
+  if (imagePath === null) {
+    return null
+  }
+  return (
+    <img
+      className="faction-board-modal__leader"
+      style={layoutRegionStyle(region, props.layout)}
+      src={imagePath}
+      alt="Thief"
+      draggable={false}
+    />
   )
 }
 
@@ -342,6 +441,8 @@ function VagabondItemOverlays(props: {
   const damagedRegion = findBoardLayoutRegion(props.layout, 'damaged')
   return (
     <>
+      <VagabondCharacterOverlay layout={props.layout} />
+      <VagabondTrackItemOverlays view={props.view} layout={props.layout} />
       {satchelRegion !== null ? (
         <div
           className="faction-board-modal__crafted"
@@ -405,6 +506,7 @@ export function FactionBoardOverlays(props: OverlayBaseProps): JSX.Element {
           }
           textureKey={GAME_ASSET_KEYS.tokenAllianceSympathy}
           alt="Sympathy"
+          round
         />
       ) : null}
       {props.view.kind === 'vagabond' ? (
