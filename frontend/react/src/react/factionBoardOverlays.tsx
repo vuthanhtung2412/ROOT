@@ -8,6 +8,7 @@ import {
 import { getHudCallbacks } from '#game/hudStore.ts'
 import {
   allianceBaseTextureKey,
+  cardImagePublicPath,
   factionTextureKey,
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
@@ -315,6 +316,42 @@ function EyrieLeaderOverlay(props: {
   )
 }
 
+function SupportersPileOverlay(props: {
+  view: Extract<FactionBoardViewModel, { kind: 'alliance' }>
+  region: BoardLayoutRegion
+  layout: FactionBoardPixelLayout
+}): JSX.Element {
+  const topDefId = props.view.topSupporterDefId
+  const topCardImagePath =
+    topDefId === null ? null : cardImagePublicPath(topDefId)
+  return (
+    <button
+      type="button"
+      className="faction-board-modal__supporters-hit"
+      style={layoutRegionStyle(props.region, props.layout)}
+      aria-label={`Observe supporters (${String(props.view.supporters)})`}
+      onClick={() => {
+        getHudCallbacks().onSupportersClick(props.view.seat)
+      }}
+    >
+      {topCardImagePath !== null ? (
+        <img
+          className="faction-board-modal__supporters-top-card"
+          src={topCardImagePath}
+          alt=""
+          draggable={false}
+        />
+      ) : null}
+      <span className="faction-board-modal__supporters-suits">
+        {formatDecreeSuitCounts(props.view.supporterSuits)}
+      </span>
+      <span className="faction-board-modal__supply-badge">
+        {String(props.view.supporters)}
+      </span>
+    </button>
+  )
+}
+
 function AllianceSupplyExtras(props: {
   view: Extract<FactionBoardViewModel, { kind: 'alliance' }>
   layout: FactionBoardPixelLayout
@@ -338,19 +375,11 @@ function AllianceSupplyExtras(props: {
         />
       ) : null}
       {supportersRegion !== null ? (
-        <button
-          type="button"
-          className="faction-board-modal__supporters-hit"
-          style={layoutRegionStyle(supportersRegion, props.layout)}
-          aria-label={`Observe supporters (${String(props.view.supporters)})`}
-          onClick={() => {
-            getHudCallbacks().onSupportersClick(props.view.seat)
-          }}
-        >
-          <span className="faction-board-modal__supply-badge">
-            {String(props.view.supporters)}
-          </span>
-        </button>
+        <SupportersPileOverlay
+          view={props.view}
+          region={supportersRegion}
+          layout={props.layout}
+        />
       ) : null}
       {baseSuitRegionIds.map((slot) => {
         if (!props.view.basesInSupply.includes(slot.suit)) {

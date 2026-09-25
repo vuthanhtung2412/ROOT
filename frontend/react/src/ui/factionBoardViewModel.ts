@@ -109,6 +109,10 @@ export type AllianceBoardViewModel = {
   warriors: number
   officers: number
   supporters: number
+  /** Top of supporters pile (last card); null if empty. */
+  topSupporterDefId: string | null
+  /** Suit of each supporter card (for decree-style summary). */
+  supporterSuits: readonly string[]
   handSize: number
   crafted: CraftedLookup
   abilities: readonly AllianceAbilityInfo[]
@@ -168,10 +172,15 @@ type EyrieBoardData = {
   decree?: Partial<Record<EyrieDecreeColumnId, EyrieDecreeCard[]>>
 }
 
+type AllianceSupporterCard = {
+  id: string
+  defId: string
+}
+
 type AllianceBoardData = {
   kind: 'alliance'
   supply: { warriors: number }
-  supporters: unknown[]
+  supporters: unknown
   officers: number
   bases: string[]
   sympathyTrack: { placed: number }
@@ -212,6 +221,30 @@ function isEyrieBoardData(value: unknown): value is EyrieBoardData {
     return false
   }
   return Reflect.get(value, 'kind') === 'eyrie'
+}
+
+function isAllianceSupporterCard(value: unknown): value is AllianceSupporterCard {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const id = Reflect.get(value, 'id')
+  const defId = Reflect.get(value, 'defId')
+  return typeof id === 'string' && typeof defId === 'string'
+}
+
+function allianceSupportersFromBoard(
+  supporters: unknown,
+): AllianceSupporterCard[] {
+  if (!Array.isArray(supporters)) {
+    return []
+  }
+  const cards: AllianceSupporterCard[] = []
+  for (const entry of supporters) {
+    if (isAllianceSupporterCard(entry)) {
+      cards.push(entry)
+    }
+  }
+  return cards
 }
 
 function isAllianceBoardData(value: unknown): value is AllianceBoardData {
@@ -421,6 +454,8 @@ export function buildFactionBoardViewModelFromPlayer(
 
   if (player.faction === 'alliance' && isAllianceBoardData(player.board)) {
     const board = player.board
+    const supporterCards = allianceSupportersFromBoard(board.supporters)
+    const topSupporter = supporterCards[supporterCards.length - 1]
     return {
       kind: 'alliance',
       seat: player.seat,
@@ -428,7 +463,10 @@ export function buildFactionBoardViewModelFromPlayer(
       victoryPoints: player.vp,
       warriors: board.supply.warriors,
       officers: board.officers,
-      supporters: board.supporters.length,
+      supporters: supporterCards.length,
+      topSupporterDefId:
+        topSupporter === undefined ? null : topSupporter.defId,
+      supporterSuits: supporterCards.map((card) => suitForDecreeCard(card.defId)),
       handSize: player.hand.length,
       crafted: craftedLookup(player),
       abilities: ALLIANCE_ABILITIES,

@@ -172,7 +172,10 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       board: {
         kind: 'alliance',
         supply: { warriors: 8 },
-        supporters: [{ id: 's1' }, { id: 's2' }],
+        supporters: [
+          { id: 's1', defId: 'ROOT-200' },
+          { id: 's2', defId: 'ROOT-205' },
+        ],
         officers: 2,
         bases: ['fox', 'mouse'],
         sympathyTrack: { placed: 7 },
@@ -185,6 +188,8 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
     expect(view.warriors).toBe(8)
     expect(view.officers).toBe(2)
     expect(view.supporters).toBe(2)
+    expect(view.topSupporterDefId).toBe('ROOT-205')
+    expect(view.supporterSuits.length).toBe(2)
     expect(view.basesInSupply).toEqual(['fox', 'mouse'])
     expect(view.sympathyTokensOnTrack).toBe(7)
     expect(view.sympathyTrack).toHaveLength(10)
