@@ -1,0 +1,32 @@
+.boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #121810;
+  pointer-events: none;
+}
+
+.boot-overlay__label {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 22px;
+  color: #f0e6d3;
+}
+
+.boot-overlay__track {
+  box-sizing: border-box;
+  width: 320px;
+  height: 32px;
+  padding: 8px;
+  background: rgba(34, 34, 34, 0.8);
+}
+
+.boot-overlay__fill {
+  height: 16px;
+  background: #f0e6d3;
+}

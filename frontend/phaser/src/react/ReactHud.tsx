@@ -1,6 +1,7 @@
 import type { JSX } from 'react'
 import { ActionTray } from '#react/ActionTray.tsx'
 import { BattleOverlay } from '#react/BattleOverlay.tsx'
+import { BootOverlay } from '#react/BootOverlay.tsx'
 import { CardDetailOverlay } from '#react/CardDetailOverlay.tsx'
 import {
   CardPileModal,
@@ -21,6 +22,7 @@ import { TurnBanner } from '#react/TurnBanner.tsx'
 export function ReactHud(): JSX.Element {
   return (
     <>
+      <BootOverlay />
       <TurnBanner />
       <BattleOverlay />
       <PlayerRail />

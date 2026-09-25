@@ -59,6 +59,13 @@ export type StatusMessageHudState = {
   text: string
 } | null
 
+/** Which full-screen React shell is active (map still Phaser when game). */
+export type HudShell = 'boot' | 'menu' | 'game'
+
+export type BootLoadingHudState = {
+  progress: number
+} | null
+
 export type HudCallbacks = {
   onEndGame: () => void
   onOpenDiscardPile: () => void
@@ -93,6 +100,8 @@ export type HudState = {
   battleOverlay: BattleOverlayViewModel | null
   cardHand: CardHandHudState
   statusMessage: StatusMessageHudState
+  shell: HudShell
+  bootLoading: BootLoadingHudState
 }
 
 const INITIAL_HUD_STATE: HudState = {
@@ -112,6 +121,15 @@ const INITIAL_HUD_STATE: HudState = {
   battleOverlay: null,
   cardHand: null,
   statusMessage: null,
+  shell: 'boot',
+  bootLoading: { progress: 0 },
+}
+
+/** After leaving GameScene — menu shell, no boot flash. */
+const CLEARED_GAME_HUD_STATE: HudState = {
+  ...INITIAL_HUD_STATE,
+  shell: 'menu',
+  bootLoading: null,
 }
 
 const NOOP_CALLBACKS: HudCallbacks = {
@@ -160,7 +178,7 @@ export function patchHud(partial: Partial<HudState>): void {
 }
 
 export function resetHud(): void {
-  hudState = INITIAL_HUD_STATE
+  hudState = CLEARED_GAME_HUD_STATE
   hudCallbacks = NOOP_CALLBACKS
   notifyHudListeners()
 }

@@ -88,6 +88,7 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this)
     applyHiDpiCamera(this)
+    patchHud({ shell: 'game', bootLoading: null })
     const { width, height } = gameViewSize()
     drawCoverWallpaper(this, width, height, GAME_ASSET_KEYS.gameWallpaper)
 
