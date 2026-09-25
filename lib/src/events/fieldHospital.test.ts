@@ -37,6 +37,14 @@ describe('fieldHospitalResolver', () => {
     }
     state.pending = [event]
     const context = testContext()
+    const legal = fieldHospitalResolver.legalActions(state, event, context)
+    const payCardIds = legal.flatMap((spec) =>
+      spec.type === 'resolveEvent' && Array.isArray(spec.params?.cardIds)
+        ? spec.params.cardIds
+        : [],
+    )
+    // Rule: 2.1.1 Birds are wild — bird ambush spends for any clearing suit.
+    expect(payCardIds).toContain('ROOT-200#1')
     fieldHospitalResolver.apply(
       state,
       {
@@ -53,6 +61,46 @@ describe('fieldHospitalResolver', () => {
       // Must not drain supply — warriors were already off the map.
       expect(state.players[0]!.board.supply.warriors).toBe(20)
     }
+  })
+
+  it('Rule: 2.1.1 Field Hospitals legalActions include bird item card', () => {
+    const clearing = 4
+    const clearingSuit = FALL.clearings[clearing]!.suit
+    expect(clearingSuit).not.toBe('bird')
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'marquise', {
+            hand: [card('ROOT-205')],
+            board: {
+              kind: 'marquise',
+              supply: { warriors: 20, wood: 8 },
+              tracks: {
+                sawmill: { placed: 5 },
+                workshop: { placed: 5 },
+                recruiter: { placed: 5 },
+              },
+            },
+          }),
+          player(1, 'eyrie'),
+        ],
+      }),
+      0,
+      [{ id: 'keep', kind: 'token', owner: 0, type: 'keep' }],
+    )
+    const event: FieldHospitalEvent = {
+      type: 'fieldHospital',
+      victim: 0,
+      clearing,
+      count: 1,
+    }
+    const legal = fieldHospitalResolver.legalActions(state, event, testContext())
+    const payCardIds = legal.flatMap((spec) =>
+      spec.type === 'resolveEvent' && Array.isArray(spec.params?.cardIds)
+        ? spec.params.cardIds
+        : [],
+    )
+    expect(payCardIds).toEqual(['ROOT-205#1'])
   })
 
   it('Rule: Marquise > Field Hospitals — decline sends warriors to supply', () => {
