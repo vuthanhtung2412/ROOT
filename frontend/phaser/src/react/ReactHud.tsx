@@ -10,6 +10,7 @@ import {
   LeaderPickOverlay,
   WinnerOverlay,
 } from '#react/HudChrome.tsx'
+import { PlayerRail } from '#react/PlayerRail.tsx'
 
 /**
  * React HUD layer above the Phaser canvas.
@@ -18,6 +19,7 @@ import {
 export function ReactHud(): JSX.Element {
   return (
     <>
+      <PlayerRail />
       <FactionBoardModal />
       <CraftedCardsModal />
       <CardPileModal />

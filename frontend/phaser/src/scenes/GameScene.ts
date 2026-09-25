@@ -44,7 +44,6 @@ import { ActionTray, type ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
-import { PlayerRail } from '#ui/PlayerRail.ts'
 import {
   buildTurnBannerViewModel,
   TurnBanner,
@@ -60,7 +59,6 @@ export class GameScene extends Phaser.Scene {
   private session: GameSession | null = null
   private boardView: BoardView | null = null
   private turnBanner: TurnBanner | null = null
-  private playerRail: PlayerRail | null = null
   private cardHand: CardHand | null = null
   private actionTray: ActionTray | null = null
   private battleOverlay: BattleOverlay | null = null
@@ -147,6 +145,63 @@ export class GameScene extends Phaser.Scene {
       ),
     )
 
+    setHudCallbacks({
+      onEndGame: () => {
+        void this.handleEndGame()
+      },
+      onOpenDiscardPile: () => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openDiscardPile(state)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
+      onReturnToMenu: () => {
+        void this.handleEndGame()
+      },
+      onLeaderPicked: (leaderId) => {
+        this.applyComposerOutcome(this.composer.chooseColumn(leaderId))
+      },
+      onSeatClick: (seat) => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openFactionBoard(state, seat)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
+      onCraftedCardsClick: (seat) => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openCraftedCards(state, seat)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
+      onSelectAction: (spec) => {
+        this.handleSelectAction(spec)
+      },
+      onBannerConfirm: () => {
+        this.applyComposerOutcome(this.composer.confirm())
+      },
+      onBannerCancel: () => {
+        void this.cancelActionUnderResolution()
+      },
+      onBannerPickOption: (value) => {
+        this.applyComposerOutcome(this.composer.chooseColumn(value))
+      },
+      onBattleOutsideClick: () => {
+        this.battleOverlayController?.dismissResultFlash()
+      },
+      onCardSelected: (cardId) => {
+        this.applyComposerOutcome(this.composer.chooseCard(cardId))
+      },
+      onCardHold: (held) => {
+        showCardDetail({
+          defId: held.defId,
+          catalog: held.catalog,
+        })
+      },
+    })
+
     this.turnBanner = new TurnBanner(this, {
       onConfirm: () => {
         this.applyComposerOutcome(this.composer.confirm())
@@ -158,23 +213,6 @@ export class GameScene extends Phaser.Scene {
         this.applyComposerOutcome(this.composer.chooseColumn(value))
       },
     })
-    this.playerRail = new PlayerRail(
-      this,
-      (seat) => {
-        const state = this.latestSnapshot?.state
-        if (state !== null && state !== undefined) {
-          this.modals?.openFactionBoard(state, seat)
-          this.syncActionTrayFromLatestSnapshot()
-        }
-      },
-      (seat) => {
-        const state = this.latestSnapshot?.state
-        if (state !== null && state !== undefined) {
-          this.modals?.openCraftedCards(state, seat)
-          this.syncActionTrayFromLatestSnapshot()
-        }
-      },
-    )
     this.cardTextureWarmup = new CardTextureWarmup(this)
     this.cardTextureWarmup.setOnReady(() => {
       this.repaintCardHandFromLatestSnapshot()
@@ -201,24 +239,6 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlay = new BattleOverlay(this)
     this.battleOverlay.setOnOutsideClick(() => {
       this.battleOverlayController?.dismissResultFlash()
-    })
-    setHudCallbacks({
-      onEndGame: () => {
-        void this.handleEndGame()
-      },
-      onOpenDiscardPile: () => {
-        const state = this.latestSnapshot?.state
-        if (state !== null && state !== undefined) {
-          this.modals?.openDiscardPile(state)
-          this.syncActionTrayFromLatestSnapshot()
-        }
-      },
-      onReturnToMenu: () => {
-        void this.handleEndGame()
-      },
-      onLeaderPicked: (leaderId) => {
-        this.applyComposerOutcome(this.composer.chooseColumn(leaderId))
-      },
     })
 
     this.statusText = this.add
@@ -257,8 +277,6 @@ export class GameScene extends Phaser.Scene {
     this.boardView = null
     this.turnBanner?.destroy()
     this.turnBanner = null
-    this.playerRail?.destroy()
-    this.playerRail = null
     this.cardHand?.destroy()
     this.cardHand = null
     this.cardTextureWarmup = null
@@ -270,6 +288,8 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlayController = null
     this.autoPrompts = null
     this.modals = null
+    this.statusText?.destroy()
+    this.statusText = null
   }
 
   private async handleEndGame(): Promise<void> {
@@ -478,7 +498,6 @@ export class GameScene extends Phaser.Scene {
     paintGameSceneHud(snapshot, {
       getSession: () => this.session,
       getTurnBanner: () => this.turnBanner,
-      getPlayerRail: () => this.playerRail,
       getCardHand: () => this.cardHand,
       getActionTray: () => this.actionTray,
       getCardTextureWarmup: () => this.cardTextureWarmup,

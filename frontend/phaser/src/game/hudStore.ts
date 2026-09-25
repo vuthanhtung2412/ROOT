@@ -1,9 +1,13 @@
+import type { ActionSpec, GameState } from '#api/client.ts'
 import type { CardCatalogEntry } from '#assets/gameAssets.ts'
 import type {
   CardPileModalContent,
   CraftedCardsModalContent,
 } from '#ui/cardGalleryTypes.ts'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
+import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
+import type { TurnBannerComposerView, TurnBannerViewModel } from '#ui/TurnBanner.ts'
+import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
 
 export type HudListener = () => void
 
@@ -25,11 +29,46 @@ export type GameDrawerHudState = {
   endGameArmed: boolean
 }
 
+export type PlayerRailHudState = {
+  state: GameState
+  activeSeat: number
+} | null
+
+export type ActionTrayHudState = {
+  actions: readonly ActionSpec[]
+  actorSeat: number
+  pending?: unknown
+  options?: ActionTraySyncOptions | undefined
+  state?: GameState
+} | null
+
+export type TurnBannerHudState = {
+  turn: TurnBannerViewModel | null
+  composer: TurnBannerComposerView | null
+}
+
+export type CardHandHudState = {
+  state: GameState
+  legalActions: readonly ActionSpec[]
+  localSeat: number | null
+  selectedCardIds: readonly string[]
+  enabledCardIds: readonly string[] | null
+} | null
+
 export type HudCallbacks = {
   onEndGame: () => void
   onOpenDiscardPile: () => void
   onReturnToMenu: () => void
   onLeaderPicked: (leaderId: string) => void
+  onSeatClick: (seat: number) => void
+  onCraftedCardsClick: (seat: number) => void
+  onSelectAction: (spec: ActionSpec) => void
+  onBannerConfirm: () => void
+  onBannerCancel: () => void
+  onBannerPickOption: (value: string) => void
+  onBattleOutsideClick: () => void
+  onCardSelected: (cardId: string) => void
+  onCardHold: (held: { defId: string; catalog: CardCatalogEntry }) => void
 }
 
 /**
@@ -44,6 +83,11 @@ export type HudState = {
   winner: WinnerHudState
   leaderPick: LeaderPickHudState
   gameDrawer: GameDrawerHudState
+  playerRail: PlayerRailHudState
+  actionTray: ActionTrayHudState
+  turnBanner: TurnBannerHudState
+  battleOverlay: BattleOverlayViewModel | null
+  cardHand: CardHandHudState
 }
 
 const INITIAL_HUD_STATE: HudState = {
@@ -57,15 +101,34 @@ const INITIAL_HUD_STATE: HudState = {
     discardCount: 0,
     endGameArmed: false,
   },
+  playerRail: null,
+  actionTray: null,
+  turnBanner: {
+    turn: null,
+    composer: null,
+  },
+  battleOverlay: null,
+  cardHand: null,
 }
 
-let hudState: HudState = INITIAL_HUD_STATE
-let hudCallbacks: HudCallbacks = {
+const NOOP_CALLBACKS: HudCallbacks = {
   onEndGame: () => undefined,
   onOpenDiscardPile: () => undefined,
   onReturnToMenu: () => undefined,
   onLeaderPicked: () => undefined,
+  onSeatClick: () => undefined,
+  onCraftedCardsClick: () => undefined,
+  onSelectAction: () => undefined,
+  onBannerConfirm: () => undefined,
+  onBannerCancel: () => undefined,
+  onBannerPickOption: () => undefined,
+  onBattleOutsideClick: () => undefined,
+  onCardSelected: () => undefined,
+  onCardHold: () => undefined,
 }
+
+let hudState: HudState = INITIAL_HUD_STATE
+let hudCallbacks: HudCallbacks = NOOP_CALLBACKS
 const listeners = new Set<HudListener>()
 
 function notifyHudListeners(): void {

@@ -9,9 +9,9 @@ import {
   syncGameDrawerDiscardCount,
   syncWinnerOverlay,
 } from '#react/HudChrome.tsx'
+import { syncPlayerRail } from '#react/PlayerRail.tsx'
 import type { ActionTray, ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { CardHand } from '#ui/CardHand.ts'
-import type { PlayerRail } from '#ui/PlayerRail.ts'
 import {
   buildTurnBannerViewModel,
   type TurnBanner,
@@ -20,7 +20,6 @@ import {
 export type GameSceneHudPaintDeps = {
   getSession: () => GameSession | null
   getTurnBanner: () => TurnBanner | null
-  getPlayerRail: () => PlayerRail | null
   getCardHand: () => CardHand | null
   getActionTray: () => ActionTray | null
   getCardTextureWarmup: () => CardTextureWarmup | null
@@ -51,7 +50,7 @@ export function paintGameSceneHud(
   )
   const localControlsActor = deps.localPlayerControlsSeat(banner.actorSeat)
   deps.getTurnBanner()?.syncTurn(banner)
-  deps.getPlayerRail()?.sync(snapshot.state, banner.actorSeat)
+  syncPlayerRail(snapshot.state, banner.actorSeat)
   warmCardTexturesForHand(
     snapshot.state,
     snapshot.legalActions,
