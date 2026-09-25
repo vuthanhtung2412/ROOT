@@ -23,7 +23,9 @@ describe('eventActionComposer Field Hospitals', () => {
       throw new Error('expected incomplete')
     }
     expect(mid.prompt.message).toContain('Field Hospitals')
+    expect(mid.prompt.message).toContain('bird OK')
     expect(mid.prompt.enabledCardIds).toEqual(['ROOT-205#1', 'ROOT-72#1'])
+    expect(mid.prompt.canCancel).toBe(false)
     expect(events.getOverlayKind()).toBe('fieldHospital')
     expect(events.getPromptOptions()).toEqual([
       { label: 'Decline Field Hospitals', value: 'decline' },
@@ -32,6 +34,23 @@ describe('eventActionComposer Field Hospitals', () => {
     expect(composer.chooseCard('ROOT-72#1')).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', cardId: 'ROOT-72#1' },
+    })
+  })
+
+  it('Field Hospitals enables bird card spend', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const mid = events.beginFieldHospital(['ROOT-200#1', 'ROOT-205#1'])
+    expect(mid.kind).toBe('incomplete')
+    if (mid.kind !== 'incomplete') {
+      throw new Error('expected incomplete')
+    }
+    expect(mid.prompt.enabledCardIds).toEqual(['ROOT-200#1', 'ROOT-205#1'])
+    expect(composer.chooseCard('ROOT-205#1')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', cardId: 'ROOT-205#1' },
     })
   })
 
@@ -47,16 +66,19 @@ describe('eventActionComposer Field Hospitals', () => {
     })
   })
 
-  it('Field Hospitals cancel declines', () => {
+  it('Field Hospitals cancel keeps prompt (no auto-decline)', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(events.hooks)
 
     events.beginFieldHospital(['ROOT-205#1'])
-    expect(composer.cancel()).toEqual({
-      kind: 'ready',
-      action: { type: 'resolveEvent', decline: true },
-    })
+    const afterCancel = composer.cancel()
+    expect(afterCancel.kind).toBe('incomplete')
+    if (afterCancel.kind !== 'incomplete') {
+      throw new Error('expected incomplete')
+    }
+    expect(afterCancel.prompt.canCancel).toBe(false)
+    expect(events.getDraft().type).toBe('pickFieldHospital')
   })
 
   it('beginAmbush prompts play or skip', () => {
@@ -70,10 +92,22 @@ describe('eventActionComposer Field Hospitals', () => {
       throw new Error('expected incomplete')
     }
     expect(mid.prompt.message).toContain('Ambush')
+    expect(mid.prompt.canCancel).toBe(false)
     expect(composer.chooseCard('ROOT-200#1')).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', cardId: 'ROOT-200#1' },
     })
+  })
+
+  it('beginAmbush cancel keeps prompt (no auto-skip)', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    events.beginAmbush(['ROOT-200#1'], 'ambush')
+    const afterCancel = composer.cancel()
+    expect(afterCancel.kind).toBe('incomplete')
+    expect(events.getDraft().type).toBe('pickAmbush')
   })
 
   it('beginAmbush with no cards auto-skips', () => {
