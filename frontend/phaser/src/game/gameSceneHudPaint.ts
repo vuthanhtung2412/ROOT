@@ -10,6 +10,7 @@ import {
 import { syncActionTray } from '#react/ActionTray.tsx'
 import { syncCardHand } from '#react/CardHand.tsx'
 import { syncPlayerRail } from '#react/PlayerRail.tsx'
+import { syncStatusMessage } from '#react/StatusMessage.tsx'
 import { syncTurnBannerTurn } from '#react/TurnBanner.tsx'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
@@ -18,7 +19,6 @@ export type GameSceneHudPaintDeps = {
   getSession: () => GameSession | null
   getModals: () => GameSceneModals | null
   getAutoPrompts: () => AutoPromptController | null
-  getStatusText: () => Phaser.GameObjects.Text | null
   localPlayerControlsSeat: (actorSeat: number) => boolean
   actionTraySyncOptions: () => ActionTraySyncOptions | undefined
   syncBattleOverlay: () => void
@@ -69,8 +69,7 @@ export function paintGameSceneHud(
     banner.actorSeat,
     localControlsActor,
   )
-  paintStatus(
-    deps.getStatusText(),
+  syncStatusMessage(
     localControlsActor
       ? snapshot.error
       : (snapshot.error ?? 'Waiting for other player…'),
@@ -87,16 +86,4 @@ function syncWinner(state: GameState): void {
     (player) => player.seat === winnerSeat,
   )
   syncWinnerOverlay(winnerPlayer?.faction ?? `seat ${String(winnerSeat)}`)
-}
-
-function paintStatus(
-  statusText: Phaser.GameObjects.Text | null,
-  extra: string | null | undefined,
-): void {
-  if (statusText === null) {
-    return
-  }
-  const message = extra ?? ''
-  statusText.setText(message)
-  statusText.setVisible(message.length > 0)
 }

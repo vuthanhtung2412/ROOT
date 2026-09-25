@@ -55,6 +55,10 @@ export type CardHandHudState = {
   enabledCardIds: readonly string[] | null
 } | null
 
+export type StatusMessageHudState = {
+  text: string
+} | null
+
 export type HudCallbacks = {
   onEndGame: () => void
   onOpenDiscardPile: () => void
@@ -88,6 +92,7 @@ export type HudState = {
   turnBanner: TurnBannerHudState
   battleOverlay: BattleOverlayViewModel | null
   cardHand: CardHandHudState
+  statusMessage: StatusMessageHudState
 }
 
 const INITIAL_HUD_STATE: HudState = {
@@ -106,6 +111,7 @@ const INITIAL_HUD_STATE: HudState = {
   },
   battleOverlay: null,
   cardHand: null,
+  statusMessage: null,
 }
 
 const NOOP_CALLBACKS: HudCallbacks = {

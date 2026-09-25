@@ -14,6 +14,7 @@ import {
   WinnerOverlay,
 } from '#react/HudChrome.tsx'
 import { PlayerRail } from '#react/PlayerRail.tsx'
+import { StatusMessage } from '#react/StatusMessage.tsx'
 import { TurnBanner } from '#react/TurnBanner.tsx'
 
 /** React HUD layer above the Phaser canvas (map stays in Phaser). */
@@ -25,6 +26,7 @@ export function ReactHud(): JSX.Element {
       <PlayerRail />
       <ActionTray />
       <CardHand />
+      <StatusMessage />
       <FactionBoardModal />
       <CraftedCardsModal />
       <CardPileModal />

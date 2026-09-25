@@ -70,7 +70,6 @@ export class GameScene extends Phaser.Scene {
   private eyrieComposer = createEyrieComposerHooks()
   private eventComposer = createEventComposerHooks()
   private unsubscribe: (() => void) | null = null
-  private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
   private autoPrompts: AutoPromptController | null = null
   private battleOverlayController: BattleOverlayController | null = null
@@ -202,17 +201,6 @@ export class GameScene extends Phaser.Scene {
       },
     })
 
-    this.statusText = this.add
-      .text(width * 0.38, height * 0.92, '', {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        color: '#f0e6d3',
-        backgroundColor: '#0a0a0add',
-        padding: { x: 10, y: 6 },
-      })
-      .setOrigin(0.5)
-      .setDepth(120)
-
     void this.bootstrapBoard()
 
     if (this.session !== null) {
@@ -236,8 +224,6 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlayController = null
     this.autoPrompts = null
     this.modals = null
-    this.statusText?.destroy()
-    this.statusText = null
   }
 
   private async handleEndGame(): Promise<void> {
@@ -449,7 +435,6 @@ export class GameScene extends Phaser.Scene {
       getSession: () => this.session,
       getModals: () => this.modals,
       getAutoPrompts: () => this.autoPrompts,
-      getStatusText: () => this.statusText,
       localPlayerControlsSeat: (actorSeat) =>
         this.localPlayerControlsSeat(actorSeat),
       actionTraySyncOptions: () => {
