@@ -4,6 +4,8 @@
  */
 import eyrieDynastiesFrontLayoutJson from '#assets/layouts/eyrie-dynasties-front.layout.json'
 import marquiseDeCatFrontLayoutJson from '#assets/layouts/marquise-de-cat-front.layout.json'
+import woodlandAllianceFrontLayoutJson from '#assets/layouts/woodland-alliance-front.layout.json'
+import vagabondFrontLayoutJson from '#assets/layouts/vagabond-front.layout.json'
 
 export type BoardLayoutRegion = {
   id: string
@@ -157,13 +159,35 @@ export const EYRIE_BOARD_LAYOUT: FactionBoardPixelLayout = requireLayout(
   'eyrie',
 )
 
+export const ALLIANCE_BOARD_LAYOUT: FactionBoardPixelLayout = requireLayout(
+  woodlandAllianceFrontLayoutJson,
+  'alliance',
+)
+
+export const VAGABOND_BOARD_LAYOUT: FactionBoardPixelLayout = requireLayout(
+  vagabondFrontLayoutJson,
+  'vagabond',
+)
+
+export type FactionBoardLayoutKind =
+  | 'marquise'
+  | 'eyrie'
+  | 'alliance'
+  | 'vagabond'
+
 export function factionBoardLayoutForKind(
-  kind: 'marquise' | 'eyrie',
+  kind: FactionBoardLayoutKind,
 ): FactionBoardPixelLayout {
   if (kind === 'marquise') {
     return MARQUISE_BOARD_LAYOUT
   }
-  return EYRIE_BOARD_LAYOUT
+  if (kind === 'eyrie') {
+    return EYRIE_BOARD_LAYOUT
+  }
+  if (kind === 'alliance') {
+    return ALLIANCE_BOARD_LAYOUT
+  }
+  return VAGABOND_BOARD_LAYOUT
 }
 
 export function findBoardLayoutRegion(

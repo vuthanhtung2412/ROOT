@@ -1,0 +1,44 @@
+{
+  "image": "resources/reference/character-boards/woodland-alliance/woodland-alliance-front.webp",
+  "unit": "px",
+  "naturalWidth": 1600,
+  "naturalHeight": 1242,
+  "tracks": [],
+  "regions": [
+    {
+      "id": "crafted-items",
+      "x": 1180,
+      "y": 90,
+      "width": 360,
+      "height": 110
+    },
+    {
+      "id": "supply-warriors",
+      "x": 1180,
+      "y": 880,
+      "width": 160,
+      "height": 140
+    },
+    {
+      "id": "officers",
+      "x": 1180,
+      "y": 880,
+      "width": 360,
+      "height": 200
+    },
+    {
+      "id": "bases",
+      "x": 520,
+      "y": 820,
+      "width": 420,
+      "height": 160
+    },
+    {
+      "id": "supporters",
+      "x": 40,
+      "y": 780,
+      "width": 280,
+      "height": 360
+    }
+  ]
+}

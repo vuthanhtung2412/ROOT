@@ -1,0 +1,69 @@
+{
+  "image": "resources/reference/character-boards/vagabond/vagabond-front.webp",
+  "unit": "px",
+  "naturalWidth": 1600,
+  "naturalHeight": 1242,
+  "tracks": [
+    {
+      "id": "tea",
+      "cells": 3,
+      "cellSize": 70,
+      "gaps": [12, 12],
+      "x": 120,
+      "y": 220
+    },
+    {
+      "id": "coin",
+      "cells": 3,
+      "cellSize": 70,
+      "gaps": [12, 12],
+      "x": 120,
+      "y": 900
+    },
+    {
+      "id": "bag",
+      "cells": 3,
+      "cellSize": 70,
+      "gaps": [12, 12],
+      "x": 420,
+      "y": 1050
+    }
+  ],
+  "regions": [
+    {
+      "id": "crafted-items",
+      "x": 900,
+      "y": 420,
+      "width": 620,
+      "height": 280
+    },
+    {
+      "id": "satchel",
+      "x": 900,
+      "y": 420,
+      "width": 620,
+      "height": 280
+    },
+    {
+      "id": "damaged",
+      "x": 900,
+      "y": 720,
+      "width": 620,
+      "height": 100
+    },
+    {
+      "id": "character-slot",
+      "x": 980,
+      "y": 860,
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": "relationships",
+      "x": 900,
+      "y": 120,
+      "width": 620,
+      "height": 220
+    }
+  ]
+}
