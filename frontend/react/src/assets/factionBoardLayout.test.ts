@@ -48,17 +48,28 @@ describe('factionBoardLayout', () => {
     ])
     expect(ALLIANCE_BOARD_LAYOUT.tracks[0]?.cells).toBe(10)
     expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'base-fox')).toEqual(
-      expect.objectContaining({ width: 102, height: 102 }),
+      expect.objectContaining({ x: 656, y: 690, width: 102, height: 102 }),
     )
     expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'base-rabbit')).toEqual(
-      expect.objectContaining({ width: 102, height: 102 }),
+      expect.objectContaining({ x: 767, y: 690, width: 102, height: 102 }),
     )
     expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'base-mouse')).toEqual(
-      expect.objectContaining({ width: 102, height: 102 }),
+      expect.objectContaining({ x: 877, y: 690, width: 102, height: 102 }),
     )
-    expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'officers')).not.toBeNull()
-    expect(trackCellRegion(ALLIANCE_BOARD_LAYOUT, 'sympathy', 0)).not.toBeNull()
-    expect(trackCellRegion(ALLIANCE_BOARD_LAYOUT, 'sympathy', 9)).not.toBeNull()
+    expect(
+      findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'supply-warriors'),
+    ).toEqual(
+      expect.objectContaining({ x: 522, y: 690, width: 102, height: 102 }),
+    )
+    expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'officers')).toEqual(
+      expect.objectContaining({ x: 1141, y: 679, width: 357, height: 177 }),
+    )
+    expect(trackCellRegion(ALLIANCE_BOARD_LAYOUT, 'sympathy', 0)).toEqual(
+      expect.objectContaining({ x: 320, y: 1000, width: 90, height: 90 }),
+    )
+    expect(trackCellRegion(ALLIANCE_BOARD_LAYOUT, 'sympathy', 9)).toEqual(
+      expect.objectContaining({ x: 1308, y: 1000, width: 90, height: 90 }),
+    )
   })
 
   it('loads Vagabond satchel + relationship + item tracks', () => {
