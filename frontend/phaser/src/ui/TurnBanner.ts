@@ -159,9 +159,9 @@ function pendingEventPrompt(pending: unknown, actorSeat: number): string | null 
   if (event === null) {
     return `Pending choice · seat ${String(actorSeat)}`
   }
-  // Field Hospitals: ActionTray labels pay/decline — no top-banner prompt.
+  // Field Hospitals: forced prompt — banner + hand (like Ambush).
   if (event.type === 'fieldHospital') {
-    return null
+    return 'Field Hospitals — pay matching suit or Decline'
   }
   if (event.type === 'battle') {
     return BATTLE_STAGE_PROMPTS[event.stage]

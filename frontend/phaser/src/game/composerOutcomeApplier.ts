@@ -25,7 +25,7 @@ export type ComposerOutcomeApplierDeps = {
   getOptionPresentation: () => 'stepper' | 'buttons' | undefined
   getPromptOptions: () => Array<{ label: string; value: string }>
   getDiscardSelection: () => string[]
-  /** When fieldHospital, keep status banner — pay/decline live in ActionTray. */
+  /** Skip battle overlay when Field Hospitals owns the prompt. */
   getOverlayKind: () => 'fieldHospital' | 'battle' | null
 }
 
@@ -59,25 +59,20 @@ export function applyComposerOutcomeToHud(
     const pickingLeader = deps.getLeaderPickLeaders()
     deps.syncLeaderPick(pickingLeader)
     const overlayKind = deps.getOverlayKind()
-    const fieldHospitalInTrayOnly = overlayKind === 'fieldHospital'
-    if (fieldHospitalInTrayOnly) {
-      deps.syncComposerBanner(null)
-    } else {
-      const optionPresentation = deps.getOptionPresentation()
-      deps.syncComposerBanner({
-        message: outcome.prompt.message,
-        canConfirm: outcome.prompt.canConfirm,
-        canCancel: outcome.prompt.canCancel,
-        options: pickingLeader !== null ? [] : deps.getPromptOptions(),
-        ...(optionPresentation !== undefined ? { optionPresentation } : {}),
-      })
-    }
+    const optionPresentation = deps.getOptionPresentation()
+    deps.syncComposerBanner({
+      message: outcome.prompt.message,
+      canConfirm: outcome.prompt.canConfirm,
+      canCancel: outcome.prompt.canCancel,
+      options: pickingLeader !== null ? [] : deps.getPromptOptions(),
+      ...(optionPresentation !== undefined ? { optionPresentation } : {}),
+    })
     deps.setHighlightedClearings(
       mergeBattleClearingHighlight(outcome.prompt.highlightClearings, state),
     )
     deps.setEnabledCards(outcome.prompt.enabledCardIds)
     deps.setCardSelection(deps.getDiscardSelection())
-    if (!fieldHospitalInTrayOnly) {
+    if (overlayKind !== 'fieldHospital') {
       deps.syncBattleOverlay(outcome.prompt.message)
     }
     if (snapshot !== null) {

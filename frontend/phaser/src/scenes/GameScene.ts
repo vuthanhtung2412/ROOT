@@ -384,8 +384,6 @@ export class GameScene extends Phaser.Scene {
     state: GameState,
   ): ActionTraySyncOptions | undefined {
     const disabled = shouldDisableActionTray({
-      isFieldHospitalStaging:
-        this.eventComposer.getOverlayKind() === 'fieldHospital',
       isComposerStaging: this.isComposerStaging(),
       isAnyModalOpen: this.modals?.isAnyOpen() === true,
       isLocalActor: localControlsActor,
