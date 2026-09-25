@@ -59,6 +59,7 @@ export function paintGameSceneHud(
     state: snapshot.state,
   })
   deps.getModals()?.refreshFactionBoard(snapshot.state)
+  deps.getModals()?.refreshCraftedCards(snapshot.state)
   syncGameDrawerDiscardCount(snapshot.state.deck?.discard.length ?? 0)
   deps.syncBattleOverlay()
   deps.syncBattleClearingHighlight(snapshot.state)

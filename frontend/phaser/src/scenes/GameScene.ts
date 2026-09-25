@@ -330,7 +330,9 @@ export class GameScene extends Phaser.Scene {
   ): ActionTraySyncOptions | undefined {
     const disabled = shouldDisableActionTray({
       isActionUnderResolution: this.isActionUnderResolution(),
-      isAnyModalOpen: this.modals?.isAnyOpen() === true,
+      // React ActionTray gates modals live from hudStore; baking modal
+      // into options.disabled leaves tray stuck after veil/X close.
+      isAnyModalOpen: false,
       isLocalActor: localControlsActor,
       isGameFinished: state.status === 'finished',
     })

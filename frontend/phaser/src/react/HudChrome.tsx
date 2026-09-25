@@ -144,13 +144,22 @@ export function LeaderPickOverlay(): JSX.Element | null {
 
 export function syncGameDrawerDiscardCount(discardCount: number): void {
   const current = getHudSnapshot().gameDrawer
-  if (current !== null && current.discardCount === discardCount) {
+  if (current !== null) {
+    if (current.discardCount === discardCount) {
+      return
+    }
+    patchHud({
+      gameDrawer: {
+        discardCount,
+        endGameArmed: current.endGameArmed,
+      },
+    })
     return
   }
   patchHud({
     gameDrawer: {
       discardCount,
-      endGameArmed: current?.endGameArmed ?? false,
+      endGameArmed: false,
     },
   })
 }
