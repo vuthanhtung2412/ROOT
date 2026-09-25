@@ -64,6 +64,12 @@ export class ReactGameController {
   private boardFactions: readonly string[] | null = null
   private highlightedClearingIds: readonly number[] = []
   private boardReady = false
+  private boardSnapshot: ReactGameBoardSnapshot = {
+    layout: null,
+    clearings: null,
+    factions: null,
+    highlightedClearingIds: [],
+  }
   private readonly boardListeners = new Set<BoardListener>()
 
   private readonly battleOverlayTarget: BattleOverlaySyncTarget = {
@@ -93,15 +99,16 @@ export class ReactGameController {
   }
 
   getBoardSnapshot(): ReactGameBoardSnapshot {
-    return {
+    return this.boardSnapshot
+  }
+
+  private notifyBoard(): void {
+    this.boardSnapshot = {
       layout: this.layout,
       clearings: this.boardClearings,
       factions: this.boardFactions,
       highlightedClearingIds: this.highlightedClearingIds,
     }
-  }
-
-  private notifyBoard(): void {
     for (const listener of this.boardListeners) {
       listener()
     }
