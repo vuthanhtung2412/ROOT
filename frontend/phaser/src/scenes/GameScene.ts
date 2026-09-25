@@ -42,7 +42,8 @@ import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { syncActionTray } from '#react/ActionTray.tsx'
-import { BattleOverlay } from '#ui/BattleOverlay.ts'
+import { syncBattleOverlayView } from '#react/BattleOverlay.tsx'
+import type { BattleOverlaySyncTarget } from '#game/battleOverlayController.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
@@ -58,7 +59,11 @@ export class GameScene extends Phaser.Scene {
   private session: GameSession | null = null
   private boardView: BoardView | null = null
   private cardHand: CardHand | null = null
-  private battleOverlay: BattleOverlay | null = null
+  private readonly battleOverlayTarget: BattleOverlaySyncTarget = {
+    sync: (viewModel) => {
+      syncBattleOverlayView(viewModel)
+    },
+  }
   private readonly composer = new ActionComposer()
   private marquiseMarch = createMarchWorkflowHooks()
   private marquiseBoard = createMarquiseBoardComposerHooks()
@@ -116,7 +121,7 @@ export class GameScene extends Phaser.Scene {
         delayedCall: (delayMs, callback) =>
           this.time.delayedCall(delayMs, callback),
       },
-      () => this.battleOverlay,
+      () => this.battleOverlayTarget,
       () => this.latestSnapshot?.state,
     )
     this.battleOverlayController.setOnResultFlashEnded(() => {
@@ -217,10 +222,6 @@ export class GameScene extends Phaser.Scene {
         })
       },
     )
-    this.battleOverlay = new BattleOverlay(this)
-    this.battleOverlay.setOnOutsideClick(() => {
-      this.battleOverlayController?.dismissResultFlash()
-    })
 
     this.statusText = this.add
       .text(width * 0.38, height * 0.92, '', {
@@ -259,8 +260,6 @@ export class GameScene extends Phaser.Scene {
     this.cardHand?.destroy()
     this.cardHand = null
     this.cardTextureWarmup = null
-    this.battleOverlay?.destroy()
-    this.battleOverlay = null
     this.battleOverlayController?.destroy()
     this.battleOverlayController = null
     this.autoPrompts = null

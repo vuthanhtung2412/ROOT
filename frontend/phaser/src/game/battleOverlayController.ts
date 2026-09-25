@@ -7,7 +7,11 @@ import {
   type BattleTrackerState,
   type FinishedBattleOutcome,
 } from '#game/battleOverlayModel.ts'
-import type { BattleOverlay } from '#ui/BattleOverlay.ts'
+import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
+
+export type BattleOverlaySyncTarget = {
+  sync: (viewModel: BattleOverlayViewModel | null) => void
+}
 
 export type BattleOverlaySyncClock = {
   delayedCall: (
@@ -28,7 +32,7 @@ export class BattleOverlayController {
 
   constructor(
     private readonly clock: BattleOverlaySyncClock,
-    private readonly getOverlay: () => BattleOverlay | null,
+    private readonly getOverlay: () => BattleOverlaySyncTarget | null,
     private readonly getState: () => GameState | null | undefined,
   ) {}
 
