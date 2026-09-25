@@ -14,8 +14,12 @@ export const GAME_ASSET_KEYS = {
   gameWallpaper: 'game-wallpaper',
   factionMarquise: 'faction-marquise',
   factionEyrie: 'faction-eyrie',
+  factionAlliance: 'faction-alliance',
+  factionVagabond: 'faction-vagabond',
   characterBoardMarquise: 'character-board-marquise',
   characterBoardEyrie: 'character-board-eyrie',
+  characterBoardAlliance: 'character-board-alliance',
+  characterBoardVagabond: 'character-board-vagabond',
   suitFox: 'suit-fox',
   suitMouse: 'suit-mouse',
   suitRabbit: 'suit-rabbit',
@@ -25,6 +29,12 @@ export const GAME_ASSET_KEYS = {
   tokenMarquiseWood: 'token-marquise-wood',
   tokenMarquiseKeep: 'token-marquise-keep',
   tokenEyrieRoost: 'token-eyrie-roost',
+  tokenAllianceSympathy: 'token-alliance-sympathy',
+  tokenAllianceBaseFox: 'token-alliance-base-fox',
+  tokenAllianceBaseMouse: 'token-alliance-base-mouse',
+  tokenAllianceBaseRabbit: 'token-alliance-base-rabbit',
+  tokenAllianceWarrior: 'token-alliance-warrior',
+  tokenVagabondPawn: 'token-vagabond-pawn',
   markerRuin: 'marker-ruin',
   itemBoot: 'item-boot',
   itemBag: 'item-bag',
@@ -77,11 +87,14 @@ export type GameImageAsset = {
   path: string
 }
 
-/** Map piece kind+type → token texture (GP2 Marquise / Eyrie). */
+/** Map piece kind+type → token texture (Marquise / Eyrie / Alliance / Vagabond). */
 export function pieceTokenTextureKey(
   kind: string,
   pieceType: string | undefined,
 ): string | null {
+  if (kind === 'pawn') {
+    return GAME_ASSET_KEYS.tokenVagabondPawn
+  }
   if (pieceType === undefined) {
     return null
   }
@@ -98,6 +111,9 @@ export function pieceTokenTextureKey(
     if (pieceType === 'roost') {
       return GAME_ASSET_KEYS.tokenEyrieRoost
     }
+    if (pieceType === 'base') {
+      return GAME_ASSET_KEYS.tokenAllianceBaseFox
+    }
     return null
   }
   if (kind === 'token') {
@@ -107,9 +123,37 @@ export function pieceTokenTextureKey(
     if (pieceType === 'keep') {
       return GAME_ASSET_KEYS.tokenMarquiseKeep
     }
+    if (pieceType === 'sympathy') {
+      return GAME_ASSET_KEYS.tokenAllianceSympathy
+    }
     return null
   }
   return null
+}
+
+/** Faction icon texture key for rail / warrior stacks. */
+export function factionTextureKey(factionId: string): string {
+  if (factionId === 'eyrie') {
+    return GAME_ASSET_KEYS.factionEyrie
+  }
+  if (factionId === 'alliance') {
+    return GAME_ASSET_KEYS.factionAlliance
+  }
+  if (factionId === 'vagabond') {
+    return GAME_ASSET_KEYS.factionVagabond
+  }
+  return GAME_ASSET_KEYS.factionMarquise
+}
+
+/** Alliance base token by clearing suit. */
+export function allianceBaseTextureKey(suit: string): string {
+  if (suit === 'mouse') {
+    return GAME_ASSET_KEYS.tokenAllianceBaseMouse
+  }
+  if (suit === 'rabbit') {
+    return GAME_ASSET_KEYS.tokenAllianceBaseRabbit
+  }
+  return GAME_ASSET_KEYS.tokenAllianceBaseFox
 }
 
 export type CardCatalogEntry = {
@@ -156,12 +200,28 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
     path: 'assets/factions/eyrie.png',
   },
   {
+    key: GAME_ASSET_KEYS.factionAlliance,
+    path: 'assets/factions/alliance.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.factionVagabond,
+    path: 'assets/factions/vagabond.png',
+  },
+  {
     key: GAME_ASSET_KEYS.characterBoardMarquise,
     path: 'assets/character-boards/marquise-de-cat-front.webp',
   },
   {
     key: GAME_ASSET_KEYS.characterBoardEyrie,
     path: 'assets/character-boards/eyrie-dynasties-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterBoardAlliance,
+    path: 'assets/character-boards/woodland-alliance-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterBoardVagabond,
+    path: 'assets/character-boards/vagabond-front.webp',
   },
   {
     key: GAME_ASSET_KEYS.suitFox,
@@ -198,6 +258,30 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.tokenEyrieRoost,
     path: 'assets/tokens/eyrie/roost.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenAllianceSympathy,
+    path: 'assets/tokens/alliance/sympathy.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenAllianceBaseFox,
+    path: 'assets/tokens/alliance/base-fox.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenAllianceBaseMouse,
+    path: 'assets/tokens/alliance/base-mouse.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenAllianceBaseRabbit,
+    path: 'assets/tokens/alliance/base-rabbit.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenAllianceWarrior,
+    path: 'assets/tokens/alliance/warrior.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenVagabondPawn,
+    path: 'assets/tokens/vagabond/pawn.png',
   },
   {
     key: GAME_ASSET_KEYS.markerRuin,

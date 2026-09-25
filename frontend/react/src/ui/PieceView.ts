@@ -1,5 +1,5 @@
 import {
-  GAME_ASSET_KEYS,
+  factionTextureKey,
   pieceTokenTextureKey,
 } from '#assets/gameAssets.ts'
 import { PIECE_DRAW } from '#game/theme.ts'
@@ -80,10 +80,7 @@ export function stackOffsets(count: number): PieceDrawPosition[] {
 
 /** @deprecated Prefer React PieceStack texture helpers. */
 export function factionTextureKeyForStack(factionId: string): string {
-  if (factionId === 'eyrie') {
-    return GAME_ASSET_KEYS.factionEyrie
-  }
-  return GAME_ASSET_KEYS.factionMarquise
+  return factionTextureKey(factionId)
 }
 
 export function textureKeyForPieceStack(stack: PieceStackViewModel): string {
@@ -91,5 +88,5 @@ export function textureKeyForPieceStack(stack: PieceStackViewModel): string {
   if (tokenKey !== null) {
     return tokenKey
   }
-  return factionTextureKeyForStack(stack.factionId)
+  return factionTextureKey(stack.factionId)
 }

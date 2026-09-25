@@ -1,6 +1,6 @@
 import { useSyncExternalStore, type JSX } from 'react'
 import {
-  GAME_ASSET_KEYS,
+  factionTextureKey,
   imagePathForAssetKey,
 } from '#assets/gameAssets.ts'
 import type { GameState } from '#api/client.ts'
@@ -31,11 +31,9 @@ export function PlayerRail(): JSX.Element | null {
       {rail.state.players.map((player) => {
         const isActive = player.seat === rail.activeSeat
         const color = factionColorForSeat(player.seat, rail.state.factions)
-        const iconKey =
-          player.faction === 'eyrie'
-            ? GAME_ASSET_KEYS.factionEyrie
-            : GAME_ASSET_KEYS.factionMarquise
-        const iconPath = imagePathForAssetKey(iconKey)
+        const iconPath = imagePathForAssetKey(
+          factionTextureKey(player.faction),
+        )
         return (
           <div
             key={player.seat}

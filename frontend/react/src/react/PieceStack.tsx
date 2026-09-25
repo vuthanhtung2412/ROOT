@@ -1,9 +1,12 @@
 import type { JSX } from 'react'
 import {
+  allianceBaseTextureKey,
   GAME_ASSET_KEYS,
+  factionTextureKey,
   imagePathForAssetKey,
   pieceTokenTextureKey,
 } from '#assets/gameAssets.ts'
+import { fallClearingSuit } from '#game/boardLayout.ts'
 import {
   clearingHasRuin,
   clearingOpenSlotCount,
@@ -27,14 +30,17 @@ export type BoardClearingPieces = {
   ruin?: { items: string[] }
 }
 
-function factionTextureKey(factionId: string): string {
-  if (factionId === 'eyrie') {
-    return GAME_ASSET_KEYS.factionEyrie
+function textureKeyForStack(
+  stack: PieceStackViewModel,
+  clearingId: number,
+): string {
+  if (stack.kind === 'building' && stack.type === 'base') {
+    const suit = fallClearingSuit(clearingId) ?? 'fox'
+    return allianceBaseTextureKey(suit)
   }
-  return GAME_ASSET_KEYS.factionMarquise
-}
-
-function textureKeyForStack(stack: PieceStackViewModel): string {
+  if (stack.kind === 'warrior' && stack.factionId === 'alliance') {
+    return GAME_ASSET_KEYS.tokenAllianceWarrior
+  }
   const tokenKey = pieceTokenTextureKey(stack.kind, stack.type)
   if (tokenKey !== null) {
     return tokenKey
@@ -50,17 +56,21 @@ export type PieceStackProps = {
   stack: PieceStackViewModel
   left: number
   top: number
+  clearingId?: number
 }
 
 export function PieceStack(props: PieceStackProps): JSX.Element {
+  const clearingId = props.clearingId ?? 0
   const usesTokenArt =
-    pieceTokenTextureKey(props.stack.kind, props.stack.type) !== null
+    pieceTokenTextureKey(props.stack.kind, props.stack.type) !== null ||
+    (props.stack.kind === 'warrior' && props.stack.factionId === 'alliance') ||
+    (props.stack.kind === 'building' && props.stack.type === 'base')
   const size = usesTokenArt
     ? PIECE_DRAW.buildingIconSize
     : props.stack.kind === 'warrior'
       ? PIECE_DRAW.iconSize
       : PIECE_DRAW.buildingIconSize
-  const textureKey = textureKeyForStack(props.stack)
+  const textureKey = textureKeyForStack(props.stack, clearingId)
   const imagePath = imagePathForAssetKey(textureKey)
   return (
     <div
@@ -212,6 +222,7 @@ export function ClearingPieceLayer(
           stack={stack}
           left={center.centerX + offset.x}
           top={center.centerY + offset.y}
+          clearingId={clearingId}
         />,
       )
     }
