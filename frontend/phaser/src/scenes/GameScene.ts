@@ -212,6 +212,9 @@ export class GameScene extends Phaser.Scene {
       },
     })
     this.battleOverlay = new BattleOverlay(this)
+    this.battleOverlay.setOnOutsideClick(() => {
+      this.battleOverlayController?.dismissResultFlash()
+    })
     this.factionBoardModal = new FactionBoardModal(this)
     this.craftedCardsModal = new CraftedCardsModal(this)
     this.cardPileModal = new CardPileModal(this)
