@@ -134,13 +134,6 @@ export function createEventComposerHooks(): {
     role: 'ambush' | 'foil',
   ): ComposerOutcome => {
     overlayKind = 'battle'
-    if (cardIds.length === 0) {
-      clear()
-      return {
-        kind: 'ready',
-        action: { type: 'resolveEvent', decline: true },
-      }
-    }
     const uniqueCardIds = [...new Set(cardIds)]
     draft = { type: 'pickAmbush', cardIds: uniqueCardIds, role }
     optionPresentation = 'buttons'

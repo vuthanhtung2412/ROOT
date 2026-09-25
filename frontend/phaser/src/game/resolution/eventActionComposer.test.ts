@@ -110,15 +110,21 @@ describe('eventActionComposer Field Hospitals', () => {
     expect(events.getDraft().type).toBe('pickAmbush')
   })
 
-  it('beginAmbush with no cards auto-skips', () => {
+  it('beginAmbush with no cards still prompts Skip', () => {
     const events = createEventComposerHooks()
-    expect(events.beginAmbush([], 'foil')).toEqual({
-      kind: 'ready',
-      action: { type: 'resolveEvent', decline: true },
-    })
+    const mid = events.beginAmbush([], 'foil')
+    expect(mid.kind).toBe('incomplete')
+    if (mid.kind !== 'incomplete') {
+      throw new Error('expected incomplete')
+    }
+    expect(mid.prompt.canCancel).toBe(false)
+    expect(mid.prompt.enabledCardIds).toEqual([])
+    expect(events.getPromptOptions()).toEqual([
+      { label: 'Skip foil', value: 'decline' },
+    ])
   })
 
-  it('decline resolveEvent submits immediately (ambush skip)', () => {
+  it('decline resolveEvent via begin still auto-submits (tray path)', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(events.hooks)
