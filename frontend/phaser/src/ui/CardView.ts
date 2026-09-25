@@ -29,7 +29,6 @@ export class CardView {
   readonly container: Phaser.GameObjects.Container
   readonly cardId: string
   readonly defId: string
-  private readonly frame: Phaser.GameObjects.Rectangle
   private readonly face: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle
   private holdTimer: Phaser.Time.TimerEvent | null = null
   private holdFired = false
@@ -46,10 +45,6 @@ export class CardView {
     this.cardId = viewModel.id
     this.defId = viewModel.defId
 
-    this.frame = scene.add
-      .rectangle(0, 0, CARD_WIDTH + 6, CARD_HEIGHT + 6, 0x1a1a1a, 1)
-      .setStrokeStyle(2, viewModel.selected ? 0xffe08a : 0xf0e6d3, 1)
-
     const textureKey = cardTextureKey(viewModel.defId)
     if (scene.textures.exists(textureKey)) {
       this.face = scene.add
@@ -60,8 +55,9 @@ export class CardView {
       this.face = scene.add.rectangle(0, 0, CARD_WIDTH, CARD_HEIGHT, 0x444444, 1)
     }
 
-    this.container = scene.add.container(0, 0, [this.frame, this.face])
-    this.container.setSize(CARD_WIDTH + 6, CARD_HEIGHT + 6)
+    // Art already has white border — no matte frame.
+    this.container = scene.add.container(0, 0, [this.face])
+    this.container.setSize(CARD_WIDTH, CARD_HEIGHT)
     this.container.setAlpha(viewModel.dimmed ? 0.45 : 1)
     this.selected = viewModel.selected
     this.applySelectedOffset()
@@ -105,11 +101,6 @@ export class CardView {
   }
 
   sync(viewModel: CardViewModel): void {
-    this.frame.setStrokeStyle(
-      2,
-      viewModel.selected ? 0xffe08a : 0xf0e6d3,
-      1,
-    )
     this.container.setAlpha(viewModel.dimmed ? 0.45 : 1)
     this.selected = viewModel.selected
     this.applySelectedOffset()

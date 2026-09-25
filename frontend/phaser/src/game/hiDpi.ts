@@ -4,8 +4,11 @@ import type Phaser from 'phaser'
 export const GAME_LOGICAL_WIDTH = 1280
 export const GAME_LOGICAL_HEIGHT = 720
 
-/** Cap DPR so mid-tier GPUs not crushed (3x/4x phones). */
-export const MAX_DEVICE_PIXEL_RATIO = 2
+/** Cap DPR so mid-tier GPUs not crushed (4x phones). */
+export const MAX_DEVICE_PIXEL_RATIO = 3
+
+let hiDpiTextResolution = 1
+let hiDpiSyncInProgress = false
 
 export function resolveDevicePixelRatio(): number {
   if (typeof window === 'undefined') {
@@ -15,16 +18,47 @@ export function resolveDevicePixelRatio(): number {
 }
 
 /**
- * Scale Manager uses width/height × DPR with zoom 1/DPR so the backing
- * canvas is dense. Camera zoom restores logical 1280×720 world coords.
+ * Grow backing store with FIT CSS size × DPR so Retina / big windows
+ * do not browser-upscale a soft canvas (sharpens every texture).
  */
+export function syncHiDpiGameSize(game: Phaser.Game): void {
+  if (hiDpiSyncInProgress) {
+    return
+  }
+
+  const devicePixelRatio = resolveDevicePixelRatio()
+  const displayWidth = game.scale.displaySize.width
+  const displayHeight = game.scale.displaySize.height
+  if (displayWidth < 2 || displayHeight < 2) {
+    return
+  }
+
+  const bufferWidth = Math.round(displayWidth * devicePixelRatio)
+  const bufferHeight = Math.round(displayHeight * devicePixelRatio)
+  const cameraZoom = bufferWidth / GAME_LOGICAL_WIDTH
+
+  if (
+    game.scale.gameSize.width === bufferWidth &&
+    game.scale.gameSize.height === bufferHeight
+  ) {
+    applyHiDpiToRunningScenes(game, cameraZoom)
+    return
+  }
+
+  hiDpiSyncInProgress = true
+  try {
+    game.scale.setGameSize(bufferWidth, bufferHeight)
+    game.scale.setZoom(1 / devicePixelRatio)
+    applyHiDpiToRunningScenes(game, cameraZoom)
+  } finally {
+    hiDpiSyncInProgress = false
+  }
+}
+
 export function applyHiDpiCamera(scene: Phaser.Scene): void {
-  const ratio = resolveDevicePixelRatio()
-  scene.cameras.main.setZoom(ratio)
-  scene.cameras.main.centerOn(
-    GAME_LOGICAL_WIDTH / 2,
-    GAME_LOGICAL_HEIGHT / 2,
-  )
+  const cameraZoom = scene.scale.width / GAME_LOGICAL_WIDTH
+  applyHiDpiCameraZoom(scene, cameraZoom)
+  setHiDpiTextResolution(cameraZoom)
 }
 
 export function gameViewSize(): { width: number; height: number } {
@@ -35,7 +69,6 @@ export function gameViewSize(): { width: number; height: number } {
 }
 
 type PhaserTextFactory = {
-  // Phaser GameObjects.Text factory signature — keep 5 params to match upstream API.
   // eslint-disable-next-line max-params -- Phaser upstream signature
   text: (
     this: Phaser.GameObjects.GameObjectFactory,
@@ -54,22 +87,18 @@ type PhaserWithTextFactory = {
   }
 }
 
-/**
- * Text textures stay 1× unless resolution raised; camera zoom would soften them.
- * Call once before `new Phaser.Game`.
- */
+/** Call once before `new Phaser.Game`. */
 export function installHiDpiTextResolution(
   PhaserNamespace: PhaserWithTextFactory,
 ): void {
-  const ratio = resolveDevicePixelRatio()
-  if (ratio <= 1) {
+  hiDpiTextResolution = resolveDevicePixelRatio()
+  if (hiDpiTextResolution <= 1) {
     return
   }
 
   const textFactoryPrototype =
     PhaserNamespace.GameObjects.GameObjectFactory.prototype
   const originalText = textFactoryPrototype.text
-  // Phaser requires mutating the shared GameObjectFactory prototype.
   Object.defineProperty(textFactoryPrototype, 'text', {
     configurable: true,
     writable: true,
@@ -82,8 +111,30 @@ export function installHiDpiTextResolution(
       style?: Phaser.Types.GameObjects.Text.TextStyle,
     ): Phaser.GameObjects.Text {
       const textObject = originalText.call(this, x, y, content, style)
-      textObject.setResolution(ratio)
+      textObject.setResolution(hiDpiTextResolution)
       return textObject
     },
   })
+}
+
+function applyHiDpiToRunningScenes(
+  game: Phaser.Game,
+  cameraZoom: number,
+): void {
+  setHiDpiTextResolution(cameraZoom)
+  for (const scene of game.scene.getScenes(true)) {
+    applyHiDpiCameraZoom(scene, cameraZoom)
+  }
+}
+
+function applyHiDpiCameraZoom(scene: Phaser.Scene, cameraZoom: number): void {
+  scene.cameras.main.setZoom(cameraZoom)
+  scene.cameras.main.centerOn(
+    GAME_LOGICAL_WIDTH / 2,
+    GAME_LOGICAL_HEIGHT / 2,
+  )
+}
+
+function setHiDpiTextResolution(cameraZoom: number): void {
+  hiDpiTextResolution = Math.max(1, cameraZoom)
 }

@@ -13,13 +13,21 @@ const devicePixelRatio = resolveDevicePixelRatio()
 
 /** Desktop-first hot-seat canvas; scenes: Boot → Menu → Game. */
 export const gameConfig: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO,
+  type: Phaser.WEBGL,
   parent: 'game',
   backgroundColor: CANVAS_FALLBACK_HEX,
+  render: {
+    antialias: true,
+    antialiasGL: true,
+    mipmapFilter: 'LINEAR_MIPMAP_LINEAR',
+    roundPixels: false,
+    powerPreference: 'high-performance',
+  },
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    // Dense backing store; zoom keeps CSS size at logical 1280×720.
+    // Dense backing store; zoom keeps CSS size at logical 1280×720 initially.
+    // syncHiDpiGameSize grows buffer when FIT enlarges CSS (Retina / big window).
     width: GAME_LOGICAL_WIDTH * devicePixelRatio,
     height: GAME_LOGICAL_HEIGHT * devicePixelRatio,
     zoom: 1 / devicePixelRatio,
