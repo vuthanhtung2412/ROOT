@@ -5,7 +5,6 @@ import {
 } from '#game/actionTrayDisable.ts'
 
 const IDLE_LOCAL: ActionTrayDisableInput = {
-  isFieldHospitalStaging: false,
   isComposerStaging: false,
   isAnyModalOpen: false,
   isLocalActor: true,
@@ -17,17 +16,7 @@ describe('shouldDisableActionTray', () => {
     expect(shouldDisableActionTray(IDLE_LOCAL)).toBe(false)
   })
 
-  it('keeps tray on during Field Hospitals staging', () => {
-    expect(
-      shouldDisableActionTray({
-        ...IDLE_LOCAL,
-        isComposerStaging: true,
-        isFieldHospitalStaging: true,
-      }),
-    ).toBe(false)
-  })
-
-  it('disables during other composer staging', () => {
+  it('disables during composer staging including Field Hospitals', () => {
     expect(
       shouldDisableActionTray({
         ...IDLE_LOCAL,
@@ -40,17 +29,6 @@ describe('shouldDisableActionTray', () => {
     expect(
       shouldDisableActionTray({
         ...IDLE_LOCAL,
-        isAnyModalOpen: true,
-      }),
-    ).toBe(true)
-  })
-
-  it('disables modal even over Field Hospitals', () => {
-    expect(
-      shouldDisableActionTray({
-        ...IDLE_LOCAL,
-        isComposerStaging: true,
-        isFieldHospitalStaging: true,
         isAnyModalOpen: true,
       }),
     ).toBe(true)

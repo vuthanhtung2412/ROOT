@@ -110,13 +110,17 @@ export function createEventComposerHooks(): {
     }
     const uniqueCardIds = [...new Set(cardIds)]
     draft = { type: 'pickFieldHospital', cardIds: uniqueCardIds }
-    // Decline / pay labels live in ActionTray — banner stays status-only.
-    optionPresentation = undefined
-    promptOptions = []
+    optionPresentation = 'buttons'
+    promptOptions = [
+      {
+        label: 'Decline Field Hospitals',
+        value: FIELD_HOSPITAL_DECLINE_VALUE,
+      },
+    ]
     return {
       kind: 'incomplete',
       prompt: {
-        message: '',
+        message: 'Field Hospitals — pay matching suit or Decline',
         highlightClearings: [],
         enabledCardIds: uniqueCardIds,
         canConfirm: false,

@@ -1,36 +1,40 @@
 ### Goal
-- Hide ActionTray whenever primary input leaves tray (board / hand / overlay / modal / waiting / finished), matching `REPORT.md`.
-- Keep tray ON for Field Hospitals (pay/decline live there).
+- Treat Field Hospitals as forced **prompt** (banner + hand), like Ambush — not proactive ActionTray choice.
+- Drop FH tray-keep exception from disable rules.
 
 ### Approach
-- Extract pure `shouldDisableActionTray(input)` (testable).
-- Replace march-only `marchActionTrayOptions()` with broader `actionTraySyncOptions()`.
-- Disable when: composer staging (except Field Hospital), any modal open, not local actor, game finished.
-- Re-sync tray after modal open/close (open paths today skip tray sync).
-- Leader pick / battle pick / card drafts already covered by composer staging.
+- `beginFieldHospital`: banner message + Decline button (mirror `beginAmbush`).
+- `composerOutcomeApplier`: always sync composer banner; only skip battle-overlay for FH.
+- `TurnBanner` pending prompt: show FH copy when not yet staged.
+- `shouldDisableActionTray`: staging alone hides tray (no FH exception).
+- Docs: `REPORT.md` / this plan.
 
 ### Files to change
-- `PLAN.md`: this plan
-- `frontend/phaser/src/game/actionTrayDisable.ts`: pure disable predicate
-- `frontend/phaser/src/game/actionTrayDisable.test.ts`: unit tests
-- `frontend/phaser/src/game/gameSceneModals.ts`: `isAnyOpen()`
-- `frontend/phaser/src/scenes/GameScene.ts`: wire options + modal re-sync
-- `frontend/phaser/src/game/gameSceneHudPaint.ts`: rename dep to `actionTraySyncOptions`
+- `frontend/phaser/src/game/eventActionComposer.ts`
+- `frontend/phaser/src/game/eventActionComposer.test.ts`
+- `frontend/phaser/src/game/composerOutcomeApplier.ts`
+- `frontend/phaser/src/ui/TurnBanner.ts`
+- `frontend/phaser/src/ui/TurnBanner.test.ts`
+- `frontend/phaser/src/game/actionTrayDisable.ts`
+- `frontend/phaser/src/game/actionTrayDisable.test.ts`
+- `frontend/phaser/src/scenes/GameScene.ts`
+- `REPORT.md`
+- `PLAN.md`
 
 ### Test plan
-- Unit: Field Hospital staging → not disabled
-- Unit: any other composer staging → disabled
-- Unit: modal / not-local / finished → disabled
-- Unit: idle local actor → not disabled
-- Manual: open faction board mid-turn → tray hides; close → tray back
+- Unit: beginFieldHospital has message + Decline option; card pay still works
+- Unit: disable predicate — staging disables (incl. former FH case)
+- Unit: TurnBanner pending FH shows prompt
+- Manual: FH → banner Decline + hand pay; tray hidden
 
 ### Commit plan
-- `docs: plan ActionTray disable rules`
+- `feat(phaser): Field Hospitals as banner prompt`
+  - `eventActionComposer.ts` (+ test)
+  - `composerOutcomeApplier.ts`
+  - `TurnBanner.ts` (+ test)
+- `refactor(phaser): drop FH ActionTray exception`
+  - `actionTrayDisable.ts` (+ test)
+  - `GameScene.ts`
+- `docs: FH is prompt not tray action`
+  - `REPORT.md`
   - `PLAN.md`
-- `feat(phaser): pure ActionTray disable predicate`
-  - `frontend/phaser/src/game/actionTrayDisable.ts`
-  - `frontend/phaser/src/game/actionTrayDisable.test.ts`
-- `feat(phaser): wire ActionTray disable + modal sync`
-  - `frontend/phaser/src/game/gameSceneModals.ts`
-  - `frontend/phaser/src/scenes/GameScene.ts`
-  - `frontend/phaser/src/game/gameSceneHudPaint.ts`

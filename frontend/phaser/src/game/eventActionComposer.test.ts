@@ -12,7 +12,7 @@ describe('eventActionComposer Field Hospitals', () => {
     })
   })
 
-  it('beginFieldHospital enables pay cards without banner prompt', () => {
+  it('beginFieldHospital prompts pay card or Decline', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(events.hooks)
@@ -22,13 +22,28 @@ describe('eventActionComposer Field Hospitals', () => {
     if (mid.kind !== 'incomplete') {
       throw new Error('expected incomplete')
     }
-    expect(mid.prompt.message).toBe('')
+    expect(mid.prompt.message).toContain('Field Hospitals')
     expect(mid.prompt.enabledCardIds).toEqual(['ROOT-205#1', 'ROOT-72#1'])
     expect(events.getOverlayKind()).toBe('fieldHospital')
-    expect(events.getPromptOptions()).toEqual([])
+    expect(events.getPromptOptions()).toEqual([
+      { label: 'Decline Field Hospitals', value: 'decline' },
+    ])
+    expect(events.getOptionPresentation()).toBe('buttons')
     expect(composer.chooseCard('ROOT-72#1')).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', cardId: 'ROOT-72#1' },
+    })
+  })
+
+  it('Field Hospitals Decline option submits decline', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    events.beginFieldHospital(['ROOT-205#1'])
+    expect(composer.chooseColumn('decline')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', decline: true },
     })
   })
 
