@@ -415,14 +415,20 @@ export const battleResolver: EventResolver = {
 const MAX_FORCED_BATTLE_STEPS = 32
 
 /**
- * No-choice battle steps (solo decline / sole removal combo) resolve in the
- * same apply so clients get one snapshot instead of auto-skip blink chains.
+ * No-choice battle steps (sole removal combo) resolve in the same apply so
+ * clients get one snapshot instead of auto-skip blink chains.
+ * Ambush/foil never auto-decline — player always confirms Skip.
  */
 function soleForcedBattleResolve(
   state: GameState,
   event: BattleEvent,
   ctx: Ctx,
 ): BattleEventApply | null {
+  // Always wait for player Skip/play — even with empty hand (no auto-decline).
+  if (event.stage === 'ambush' || event.stage === 'foil') {
+    return null
+  }
+
   const specs = battleResolver.legalActions(state, event, ctx)
   if (specs.length !== 1) {
     return null
@@ -434,17 +440,6 @@ function soleForcedBattleResolve(
   const actor = spec.actor
   if (actor === undefined) {
     return null
-  }
-
-  if (event.stage === 'ambush' || event.stage === 'foil') {
-    if (spec.params?.decline?.includes(true) !== true) {
-      return null
-    }
-    return {
-      event,
-      actor,
-      action: { type: 'resolveEvent', decline: true },
-    }
   }
 
   if (event.stage === 'removeDefender' || event.stage === 'removeAttacker') {

@@ -1,19 +1,15 @@
 ### Goal
-- Ambush prompt first; damage/dice overlay only after ambush resolved
-- Field Hospitals: spend bird (wild) works; no accidental decline via X
-- Ambush + FH: non-skippable → Decline/Skip only (no corner X)
+- Never auto-skip Ambush/Foil — always banner Skip even with empty hand
 
 ### Approach
-- `buildBattleOverlayViewModel`: return null for `ambush` / `foil` (banner owns that step)
-- `beginAmbush` / `beginFieldHospital`: `canCancel: false`; keep Decline/Skip option
-- Prove bird in FH `legalActions` + composer enables bird cardId
+- Lib: stop `soleForcedBattleResolve` for ambush/foil decline-only
+- Phaser: `beginAmbush([])` → incomplete Skip prompt (not ready decline)
 
 ### Test plan
-- Unit: battle overlay null on ambush/foil; shows on removeDefender
-- Unit: FH/ambush prompt `canCancel === false`
-- Unit: FH legalActions includes bird; chooseCard bird → resolveEvent
+- openBattle with no ambush cards → pending stays `ambush`
+- After manual decline, sole removals still drain
+- beginAmbush([]) → incomplete, canCancel false, Skip option
 
 ### Commit plan
-- ~~`fix(phaser): hide battle overlay during ambush`~~
-- ~~`fix(phaser): drop X on ambush and Field Hospitals`~~
-- ~~`test(lib): Field Hospitals legalActions include bird`~~
+- ~~`fix(lib): keep ambush prompt when hand empty`~~
+- ~~`fix(phaser): prompt Skip ambush with empty hand`~~
