@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type JSX } from 'react'
+import { useSyncExternalStore, type JSX, type MouseEvent } from 'react'
 import { cardImagePublicPath } from '#assets/gameAssets.ts'
 import {
   getCardPileSnapshot,
@@ -50,6 +50,46 @@ function CardStrip(props: {
   )
 }
 
+function CardGalleryShell(props: {
+  title: string
+  closeAriaLabel: string
+  onClose: () => void
+  children: JSX.Element
+}): JSX.Element {
+  return (
+    <div
+      className="card-gallery-modal"
+      role="dialog"
+      aria-modal="true"
+      onClick={() => {
+        props.onClose()
+      }}
+    >
+      <div className="card-gallery-modal__veil" aria-hidden="true" />
+      <button
+        type="button"
+        className="card-gallery-modal__close"
+        aria-label={props.closeAriaLabel}
+        onClick={(event: MouseEvent<HTMLButtonElement>) => {
+          event.stopPropagation()
+          props.onClose()
+        }}
+      >
+        ✕
+      </button>
+      <div
+        className="card-gallery-modal__panel"
+        onClick={(event: MouseEvent<HTMLDivElement>) => {
+          event.stopPropagation()
+        }}
+      >
+        <h2 className="card-gallery-modal__title">{props.title}</h2>
+        {props.children}
+      </div>
+    </div>
+  )
+}
+
 export function CraftedCardsModal(): JSX.Element | null {
   const content = useSyncExternalStore(
     subscribeCraftedCards,
@@ -60,22 +100,15 @@ export function CraftedCardsModal(): JSX.Element | null {
     return null
   }
   return (
-    <div className="card-gallery-modal" role="dialog" aria-modal="true">
-      <button
-        type="button"
-        className="card-gallery-modal__veil"
-        aria-label="Close crafted cards"
-        onClick={() => {
-          hideCraftedCards()
-        }}
-      />
-      <div className="card-gallery-modal__panel">
-        <h2 className="card-gallery-modal__title">
-          {`${content.faction} · crafted cards`}
-        </h2>
-        <CardStrip cards={content.cards} emptyMessage={EMPTY_CRAFTED_MESSAGE} />
-      </div>
-    </div>
+    <CardGalleryShell
+      title={`${content.faction} · crafted cards`}
+      closeAriaLabel="Close crafted cards"
+      onClose={() => {
+        hideCraftedCards()
+      }}
+    >
+      <CardStrip cards={content.cards} emptyMessage={EMPTY_CRAFTED_MESSAGE} />
+    </CardGalleryShell>
   )
 }
 
@@ -89,22 +122,17 @@ export function CardPileModal(): JSX.Element | null {
     return null
   }
   return (
-    <div className="card-gallery-modal" role="dialog" aria-modal="true">
-      <button
-        type="button"
-        className="card-gallery-modal__veil"
-        aria-label="Close card pile"
-        onClick={() => {
-          hideCardPile()
-        }}
+    <CardGalleryShell
+      title={content.title}
+      closeAriaLabel="Close card pile"
+      onClose={() => {
+        hideCardPile()
+      }}
+    >
+      <CardStrip
+        cards={content.cards}
+        emptyMessage={content.emptyMessage ?? DEFAULT_EMPTY_PILE_MESSAGE}
       />
-      <div className="card-gallery-modal__panel">
-        <h2 className="card-gallery-modal__title">{content.title}</h2>
-        <CardStrip
-          cards={content.cards}
-          emptyMessage={content.emptyMessage ?? DEFAULT_EMPTY_PILE_MESSAGE}
-        />
-      </div>
-    </div>
+    </CardGalleryShell>
   )
 }

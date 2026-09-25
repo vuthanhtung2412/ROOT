@@ -15,6 +15,21 @@
   padding: 0;
   border: none;
   background: rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.card-gallery-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  font-family: Georgia, serif;
+  font-size: 16px;
+  color: #1a1a1a;
+  background: #f0e6d3;
   cursor: pointer;
 }
 
