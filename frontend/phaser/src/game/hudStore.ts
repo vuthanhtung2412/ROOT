@@ -27,7 +27,7 @@ export type LeaderPickHudState = {
 export type GameDrawerHudState = {
   discardCount: number
   endGameArmed: boolean
-}
+} | null
 
 export type PlayerRailHudState = {
   state: GameState
@@ -97,10 +97,7 @@ const INITIAL_HUD_STATE: HudState = {
   cardDetail: null,
   winner: null,
   leaderPick: null,
-  gameDrawer: {
-    discardCount: 0,
-    endGameArmed: false,
-  },
+  gameDrawer: null,
   playerRail: null,
   actionTray: null,
   turnBanner: {

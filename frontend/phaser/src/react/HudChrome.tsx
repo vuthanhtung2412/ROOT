@@ -8,12 +8,15 @@ import {
 } from '#game/hudStore.ts'
 import '#react/HudChrome.css'
 
-export function GameDrawer(): JSX.Element {
+export function GameDrawer(): JSX.Element | null {
   const drawer = useSyncExternalStore(
     subscribeHud,
     () => getHudSnapshot().gameDrawer,
     () => getHudSnapshot().gameDrawer,
   )
+  if (drawer === null) {
+    return null
+  }
   const callbacks = getHudCallbacks()
 
   return (
@@ -141,13 +144,13 @@ export function LeaderPickOverlay(): JSX.Element | null {
 
 export function syncGameDrawerDiscardCount(discardCount: number): void {
   const current = getHudSnapshot().gameDrawer
-  if (current.discardCount === discardCount) {
+  if (current !== null && current.discardCount === discardCount) {
     return
   }
   patchHud({
     gameDrawer: {
       discardCount,
-      endGameArmed: current.endGameArmed,
+      endGameArmed: current?.endGameArmed ?? false,
     },
   })
 }
