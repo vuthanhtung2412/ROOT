@@ -7,10 +7,10 @@
     {
       "id": "sympathy",
       "cells": 10,
-      "cellSize": 90,
-      "gaps": [18, 18, 18, 18, 18, 18, 18, 18, 34],
-      "x": 320,
-      "y": 1000
+      "cellSize": 109,
+      "gaps": [2, 0, 1, 2, 0, -1, -1, 0, 1],
+      "x": 450,
+      "y": 1031
     }
   ],
   "regions": [
@@ -23,10 +23,10 @@
     },
     {
       "id": "supporters",
-      "x": 47,
-      "y": 668,
-      "width": 280,
-      "height": 360
+      "x": 57,
+      "y": 682,
+      "width": 352,
+      "height": 492
     },
     {
       "id": "base-fox",
@@ -51,8 +51,8 @@
     },
     {
       "id": "officers",
-      "x": 1141,
-      "y": 705,
+      "x": 1254,
+      "y": 704,
       "width": 102,
       "height": 102
     },
@@ -65,73 +65,73 @@
     },
     {
       "id": "sympathy-0",
-      "x": 320,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 450,
+      "y": 1031,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-1",
-      "x": 428,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 561,
+      "y": 979,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-2",
-      "x": 536,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 670,
+      "y": 1030,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-3",
-      "x": 644,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 780,
+      "y": 980,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-4",
-      "x": 752,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 891,
+      "y": 1029,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-5",
-      "x": 860,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 1000,
+      "y": 980,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-6",
-      "x": 968,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 1108,
+      "y": 1030,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-7",
-      "x": 1076,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 1216,
+      "y": 979,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-8",
-      "x": 1184,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 1325,
+      "y": 1031,
+      "width": 109,
+      "height": 109
     },
     {
       "id": "sympathy-9",
-      "x": 1308,
-      "y": 1000,
-      "width": 90,
-      "height": 90
+      "x": 1435,
+      "y": 981,
+      "width": 109,
+      "height": 109
     }
   ]
 }
