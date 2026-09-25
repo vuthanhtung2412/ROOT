@@ -402,16 +402,26 @@ function VagabondTrackItemOverlays(props: {
           if (region === null) {
             return null
           }
+          const textureKey = itemTextureKey(item.type)
+          const imagePath =
+            textureKey !== null ? imagePathForAssetKey(textureKey) : null
+          if (imagePath === null) {
+            return null
+          }
+          // Fill layout cell (tea/coin/bag slots) — not crafted-strip sizing.
           return (
-            <div
+            <img
               key={`${row.trackId}-${item.type}-${String(cellIndex)}`}
-              className="faction-board-modal__crafted"
+              className={
+                item.exhausted
+                  ? 'faction-board-modal__token faction-board-modal__token--exhausted'
+                  : 'faction-board-modal__token'
+              }
               style={layoutRegionStyle(region, props.layout)}
-            >
-              <CraftedItemIcon
-                item={{ type: item.type, exhausted: item.exhausted, count: 1 }}
-              />
-            </div>
+              src={imagePath}
+              alt={item.type}
+              draggable={false}
+            />
           )
         }),
       )}
@@ -455,7 +465,7 @@ function VagabondItemOverlays(props: {
       <VagabondTrackItemOverlays view={props.view} layout={props.layout} />
       {satchelRegion !== null ? (
         <div
-          className="faction-board-modal__crafted"
+          className="faction-board-modal__item-pack"
           style={layoutRegionStyle(satchelRegion, props.layout)}
         >
           {props.view.satchel.map((item, index) => (
@@ -468,7 +478,7 @@ function VagabondItemOverlays(props: {
       ) : null}
       {damagedRegion !== null && props.view.damaged.length > 0 ? (
         <div
-          className="faction-board-modal__crafted"
+          className="faction-board-modal__item-pack"
           style={layoutRegionStyle(damagedRegion, props.layout)}
         >
           {props.view.damaged.map((item, index) => (

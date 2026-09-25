@@ -85,6 +85,33 @@
   object-fit: cover;
 }
 
+.faction-board-modal__token--exhausted {
+  opacity: 0.4;
+}
+
+/* Vagabond satchel / damaged: shrink+wrap so all items fit the marked region. */
+.faction-board-modal__item-pack {
+  position: absolute;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2%;
+  padding: 3%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.faction-board-modal__item-pack .faction-board-modal__crafted-item {
+  /* ~4 across, 2 rows inside satchel */
+  width: 22%;
+  height: auto;
+  max-height: 42%;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+}
+
 .faction-board-modal__crafted {
   position: absolute;
   display: flex;
