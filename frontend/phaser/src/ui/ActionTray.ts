@@ -1,12 +1,6 @@
-import type Phaser from 'phaser'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { lookupCardCatalog } from '#assets/gameAssets.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
-import { gameViewSize } from '#game/hiDpi.ts'
-
-export type ActionTrayHandlers = {
-  onSelectAction: (spec: ActionSpec) => void
-}
 
 export type ActionTraySyncOptions = {
   lockToActionTypes?: readonly string[]
@@ -20,115 +14,6 @@ export interface ActionTrayState {
   pending?: unknown
   options?: ActionTraySyncOptions | undefined
   state?: GameState
-}
-
-const ACTION_TRAY_TITLE_FONT_SIZE_PIXELS = 20
-const ACTION_TRAY_BUTTON_FONT_SIZE_PIXELS = 18
-const ACTION_TRAY_ROOT_X_FROM_RIGHT_PIXELS = 260
-const ACTION_TRAY_ROOT_Y_PIXELS = 64
-const ACTION_TRAY_FIRST_BUTTON_Y_PIXELS = 36
-const ACTION_TRAY_BUTTON_ROW_HEIGHT_PIXELS = 42
-const ACTION_TRAY_DISABLED_SYNC_KEY = '__disabled__'
-
-/** Lists legal ActionSpecs for the current prompt actor. */
-export class ActionTray {
-  private readonly scene: Phaser.Scene
-  private readonly root: Phaser.GameObjects.Container
-  private readonly title: Phaser.GameObjects.Text
-  private buttonNodes: Phaser.GameObjects.GameObject[] = []
-  private handlers: ActionTrayHandlers
-  private lastSyncKey: string | null = null
-
-  constructor(scene: Phaser.Scene, handlers: ActionTrayHandlers) {
-    this.scene = scene
-    this.handlers = handlers
-    const { width } = gameViewSize()
-    this.title = scene.add.text(0, 0, 'Actions', {
-      fontFamily: 'Georgia, serif',
-      fontSize: `${String(ACTION_TRAY_TITLE_FONT_SIZE_PIXELS)}px`,
-      color: '#f0e6d3',
-      backgroundColor: '#0a0a0add',
-      padding: { x: 10, y: 5 },
-    })
-    this.root = scene.add
-      .container(
-        width - ACTION_TRAY_ROOT_X_FROM_RIGHT_PIXELS,
-        ACTION_TRAY_ROOT_Y_PIXELS,
-        [this.title],
-      )
-      .setDepth(110)
-  }
-
-  setHandlers(handlers: ActionTrayHandlers): void {
-    this.handlers = handlers
-  }
-
-  sync(actionTrayState: ActionTrayState): void {
-    const { actions, actorSeat, pending, options, state } = actionTrayState
-    if (options?.disabled === true) {
-      if (this.lastSyncKey === ACTION_TRAY_DISABLED_SYNC_KEY) {
-        return
-      }
-      this.lastSyncKey = ACTION_TRAY_DISABLED_SYNC_KEY
-      for (const node of this.buttonNodes) {
-        node.destroy()
-      }
-      this.buttonNodes = []
-      this.root.setVisible(false)
-      return
-    }
-    this.root.setVisible(true)
-
-    const forActor = filterTrayActions(actions, actorSeat, options)
-    const syncKey = JSON.stringify(
-      forActor.map((spec) => ({
-        type: spec.type,
-        actor: spec.actor,
-        params: spec.params,
-        label: formatActionLabel(spec, pending, state),
-      })),
-    )
-    if (syncKey === this.lastSyncKey) {
-      return
-    }
-    this.lastSyncKey = syncKey
-
-    for (const node of this.buttonNodes) {
-      node.destroy()
-    }
-    this.buttonNodes = []
-
-    this.title.setText(`Actions (${String(forActor.length)})`)
-
-    forActor.forEach((spec, index) => {
-      const button = this.scene.add
-        .text(
-          0,
-          ACTION_TRAY_FIRST_BUTTON_Y_PIXELS +
-            index * ACTION_TRAY_BUTTON_ROW_HEIGHT_PIXELS,
-          formatActionLabel(spec, pending, state),
-          {
-            fontFamily: 'monospace',
-            fontSize: `${String(ACTION_TRAY_BUTTON_FONT_SIZE_PIXELS)}px`,
-            color: '#1a1a1a',
-            backgroundColor: '#f0e6d3',
-            padding: { x: 12, y: 8 },
-          },
-        )
-        .setInteractive({ useHandCursor: true })
-
-      button.on('pointerdown', () => {
-        this.handlers.onSelectAction(spec)
-      })
-
-      this.root.add(button)
-      this.buttonNodes.push(button)
-    })
-  }
-
-  destroy(): void {
-    this.root.destroy(true)
-  }
 }
 
 const VIZIER_DEF_ID = 'VIZIER'

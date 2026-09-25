@@ -40,7 +40,8 @@ import {
 } from '#game/gameSceneBoardState.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
-import { ActionTray, type ActionTraySyncOptions } from '#ui/ActionTray.ts'
+import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
+import { syncActionTray } from '#react/ActionTray.tsx'
 import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
@@ -60,7 +61,6 @@ export class GameScene extends Phaser.Scene {
   private boardView: BoardView | null = null
   private turnBanner: TurnBanner | null = null
   private cardHand: CardHand | null = null
-  private actionTray: ActionTray | null = null
   private battleOverlay: BattleOverlay | null = null
   private readonly composer = new ActionComposer()
   private marquiseMarch = createMarchWorkflowHooks()
@@ -231,11 +231,6 @@ export class GameScene extends Phaser.Scene {
         })
       },
     )
-    this.actionTray = new ActionTray(this, {
-      onSelectAction: (spec) => {
-        this.handleSelectAction(spec)
-      },
-    })
     this.battleOverlay = new BattleOverlay(this)
     this.battleOverlay.setOnOutsideClick(() => {
       this.battleOverlayController?.dismissResultFlash()
@@ -280,8 +275,6 @@ export class GameScene extends Phaser.Scene {
     this.cardHand?.destroy()
     this.cardHand = null
     this.cardTextureWarmup = null
-    this.actionTray?.destroy()
-    this.actionTray = null
     this.battleOverlay?.destroy()
     this.battleOverlay = null
     this.battleOverlayController?.destroy()
@@ -402,7 +395,7 @@ export class GameScene extends Phaser.Scene {
       snapshot.legalActions,
     )
     const localControlsActor = this.localPlayerControlsSeat(banner.actorSeat)
-    this.actionTray?.sync({
+    syncActionTray({
       actions: localControlsActor
         ? collapsePieceIdsRemovalSpecs(snapshot.legalActions)
         : [],
@@ -499,7 +492,6 @@ export class GameScene extends Phaser.Scene {
       getSession: () => this.session,
       getTurnBanner: () => this.turnBanner,
       getCardHand: () => this.cardHand,
-      getActionTray: () => this.actionTray,
       getCardTextureWarmup: () => this.cardTextureWarmup,
       getModals: () => this.modals,
       getAutoPrompts: () => this.autoPrompts,

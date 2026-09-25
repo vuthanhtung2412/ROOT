@@ -1,4 +1,3 @@
-import type Phaser from 'phaser'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import type { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
 import type { AutoPromptController } from '#game/resolution/autoPromptController.ts'
@@ -9,8 +8,9 @@ import {
   syncGameDrawerDiscardCount,
   syncWinnerOverlay,
 } from '#react/HudChrome.tsx'
+import { syncActionTray } from '#react/ActionTray.tsx'
 import { syncPlayerRail } from '#react/PlayerRail.tsx'
-import type { ActionTray, ActionTraySyncOptions } from '#ui/ActionTray.ts'
+import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { CardHand } from '#ui/CardHand.ts'
 import {
   buildTurnBannerViewModel,
@@ -21,7 +21,6 @@ export type GameSceneHudPaintDeps = {
   getSession: () => GameSession | null
   getTurnBanner: () => TurnBanner | null
   getCardHand: () => CardHand | null
-  getActionTray: () => ActionTray | null
   getCardTextureWarmup: () => CardTextureWarmup | null
   getModals: () => GameSceneModals | null
   getAutoPrompts: () => AutoPromptController | null
@@ -62,7 +61,7 @@ export function paintGameSceneHud(
     snapshot.legalActions,
     deps.getSession()?.getLocalSeat() ?? null,
   )
-  deps.getActionTray()?.sync({
+  syncActionTray({
     actions: localControlsActor
       ? collapsePieceIdsRemovalSpecs(snapshot.legalActions)
       : [],
