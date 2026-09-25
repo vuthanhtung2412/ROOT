@@ -11,6 +11,8 @@ import {
   itemTextureKey,
 } from '#assets/gameAssets.ts'
 import { lookupEyrieLeader } from '#assets/eyrieLeaderCatalog.ts'
+import { EYRIE_ROOST_TRACK_SLOT_COUNT } from '#assets/eyrieBoardCatalog.ts'
+import { MARQUISE_TRACK_SLOT_COUNT } from '#assets/marquiseBoardCatalog.ts'
 import {
   formatDecreeSuitCounts,
   type CraftedItemView,
@@ -167,17 +169,17 @@ function SupplyOverlays(props: OverlayBaseProps): JSX.Element {
 function RemainingTrackTokens(props: {
   layout: FactionBoardPixelLayout
   trackId: string
+  cellCount: number
   emptiedCount: number
   textureKey: string
   alt: string
 }): JSX.Element | null {
-  const track = props.layout.tracks.find((entry) => entry.id === props.trackId)
   const imagePath = imagePathForAssetKey(props.textureKey)
-  if (track === undefined || imagePath === null) {
+  if (imagePath === null) {
     return null
   }
   const nodes: JSX.Element[] = []
-  for (let cellIndex = 0; cellIndex < track.cells; cellIndex += 1) {
+  for (let cellIndex = 0; cellIndex < props.cellCount; cellIndex += 1) {
     if (cellIndex < props.emptiedCount) {
       continue
     }
@@ -234,6 +236,7 @@ function MarquiseTrackOverlays(props: {
           key={row.trackId}
           layout={props.layout}
           trackId={row.trackId}
+          cellCount={MARQUISE_TRACK_SLOT_COUNT}
           emptiedCount={row.emptied}
           textureKey={row.textureKey}
           alt={row.alt}
@@ -312,6 +315,7 @@ export function FactionBoardOverlays(props: OverlayBaseProps): JSX.Element {
           <RemainingTrackTokens
             layout={props.layout}
             trackId="roost"
+            cellCount={EYRIE_ROOST_TRACK_SLOT_COUNT}
             emptiedCount={props.view.roostsOnMap}
             textureKey={GAME_ASSET_KEYS.tokenEyrieRoost}
             alt="Roost"

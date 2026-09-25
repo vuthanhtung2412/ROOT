@@ -301,7 +301,10 @@ export function imagePathForAssetKey(key: string): string | null {
   if (asset === undefined) {
     return null
   }
-  return asset.path
+  if (asset.path.startsWith('/')) {
+    return asset.path
+  }
+  return `/${asset.path}`
 }
 
 

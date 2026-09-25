@@ -1,15 +1,14 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useState, useSyncExternalStore, type JSX } from 'react'
 import {
   factionBoardLayoutForKind,
   placeBoardImage,
   type BoardImagePlacement,
 } from '#assets/factionBoardLayout.ts'
 import { imagePathForAssetKey } from '#assets/gameAssets.ts'
-import { EventBus } from '#game/EventBus.ts'
 import {
-  FACTION_BOARD_HIDE_EVENT,
-  FACTION_BOARD_SHOW_EVENT,
+  getFactionBoardSnapshot,
   hideFactionBoard,
+  subscribeFactionBoard,
 } from '#game/factionBoardBridge.ts'
 import { FactionBoardOverlays } from '#react/factionBoardOverlays.tsx'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
@@ -60,23 +59,12 @@ function useViewportSize(): { width: number; height: number } {
 
 /** React faction/character board (art + layout overlays). */
 export function FactionBoardModal(): JSX.Element | null {
-  const [view, setView] = useState<FactionBoardViewModel | null>(null)
+  const view = useSyncExternalStore(
+    subscribeFactionBoard,
+    getFactionBoardSnapshot,
+    getFactionBoardSnapshot,
+  )
   const viewport = useViewportSize()
-
-  useEffect(() => {
-    const onShow = (nextView: FactionBoardViewModel): void => {
-      setView(nextView)
-    }
-    const onHide = (): void => {
-      setView(null)
-    }
-    EventBus.on(FACTION_BOARD_SHOW_EVENT, onShow)
-    EventBus.on(FACTION_BOARD_HIDE_EVENT, onHide)
-    return () => {
-      EventBus.off(FACTION_BOARD_SHOW_EVENT, onShow)
-      EventBus.off(FACTION_BOARD_HIDE_EVENT, onHide)
-    }
-  }, [])
 
   if (view === null) {
     return null
