@@ -1,17 +1,14 @@
 ### Goal
-- Rename `frontend/phaser` → `frontend/react`; package `@root/react`
-- Deprecate Phaser script/API names with thin aliases
+- Tailwind on `@root/react`; migrate UI CSS → utilities
 
 ### Approach
-- Done: `git mv`, package rename, serve/static/process-compose/docs/QA
-- `createFrontendApi`; identity `root.react.*` + legacy migrate
-- Deprecated: `dev:phaser`, `build:phaser`, `serve:phaser`, `createPhaserApi`, `mountPhaserStatic`
+- Done: Tailwind v4 + `@tailwindcss/vite`, `@theme` tokens, `portrait` variant
+- Migrated: menu/boot/game/HUD/board/pieces to className utilities
+- Left as CSS (theme-tokenized): gallery / battle / card-detail / faction-board modals
 
 ### Test plan
-- `pnpm install`
-- `pnpm --filter @root/react typecheck` + `test`
-- `pnpm --filter @root/web typecheck`
+- typecheck + test + build (green)
 
 ### Commit plan
-- [ ] `refactor(frontend): move package to frontend/react`
-- [ ] `refactor(frontend): rename Phaser API helpers` (folded into same if small)
+- [ ] `build(ui): add Tailwind v4 Vite plugin`
+- [ ] `refactor(ui): migrate shell/HUD to Tailwind`

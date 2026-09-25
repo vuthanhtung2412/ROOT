@@ -14,7 +14,7 @@
   margin: 0;
   padding: 0;
   border: none;
-  background: rgba(0, 0, 0, 0.7);
+  background: color-mix(in srgb, var(--color-forest-deep) 72%, transparent);
   pointer-events: none;
 }
 
@@ -26,10 +26,10 @@
   margin: 0;
   padding: 4px 8px;
   border: none;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 16px;
-  color: #1a1a1a;
-  background: #f0e6d3;
+  color: var(--color-ink);
+  background: var(--color-parchment);
   cursor: pointer;
 }
 
@@ -49,10 +49,10 @@
 
 .card-gallery-modal__title {
   margin: 0;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: normal;
-  color: #f0e6d3;
+  color: var(--color-parchment);
   background: rgba(31, 26, 20, 0.8);
   padding: 4px 8px;
   align-self: flex-start;
@@ -60,7 +60,7 @@
 
 .card-gallery-modal__empty {
   margin: auto;
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   color: #9a9a9a;
 }

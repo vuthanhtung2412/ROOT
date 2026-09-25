@@ -15,7 +15,6 @@ import {
   filterTrayActions,
   formatActionLabel,
 } from '#ui/ActionTray.ts'
-import '#react/ActionTray.css'
 
 function isAnyHudModalOpen(): boolean {
   return (
@@ -44,11 +43,11 @@ export function ActionTray(): JSX.Element | null {
   const forActor = filterTrayActions(tray.actions, tray.actorSeat, tray.options)
   const callbacks = getHudCallbacks()
   return (
-    <div className="action-tray">
-      <div className="action-tray__title">
+    <div className="fixed top-16 right-3 z-[110] flex max-w-[260px] flex-col items-start gap-2 portrait:top-auto portrait:right-2 portrait:bottom-[118px] portrait:left-2 portrait:z-[115] portrait:max-w-none portrait:items-stretch">
+      <div className="root-panel px-3 py-1.5 font-display text-xl tracking-[0.02em] text-ink portrait:self-center portrait:text-base">
         {`Actions (${String(forActor.length)})`}
       </div>
-      <div className="action-tray__buttons">
+      <div className="flex flex-col items-start gap-1.5 portrait:flex-row portrait:flex-wrap portrait:items-stretch portrait:justify-center">
         {forActor.map((spec, index) => {
           const label = formatActionLabel(spec, tray.pending, tray.state)
           const key = `${spec.type}-${String(spec.actor)}-${String(index)}-${label}`
@@ -56,7 +55,7 @@ export function ActionTray(): JSX.Element | null {
             <button
               key={key}
               type="button"
-              className="action-tray__button"
+              className="root-button px-3 py-2 text-left text-[17px] portrait:px-2.5 portrait:py-[7px] portrait:text-sm"
               onClick={() => {
                 callbacks.onSelectAction(spec)
               }}

@@ -15,10 +15,10 @@ export const BOARD_MAP_WIDTH_RATIO_LANDSCAPE = 0.74
 export const BOARD_MAP_HEIGHT_RATIO_LANDSCAPE = 0.82
 export const BOARD_MAP_CENTER_Y_RATIO_LANDSCAPE = 0.44
 
-/** Portrait: fuller map — HUD moves to top/bottom chrome. */
-export const BOARD_MAP_WIDTH_RATIO_PORTRAIT = 0.96
-export const BOARD_MAP_HEIGHT_RATIO_PORTRAIT = 0.92
-export const BOARD_MAP_CENTER_Y_RATIO_PORTRAIT = 0.48
+/** Portrait: map nearly fills the native host (HUD is outside). */
+export const BOARD_MAP_WIDTH_RATIO_PORTRAIT = 0.98
+export const BOARD_MAP_HEIGHT_RATIO_PORTRAIT = 0.98
+export const BOARD_MAP_CENTER_Y_RATIO_PORTRAIT = 0.5
 
 export type BoardMapDisplayMetrics = {
   viewWidth: number

@@ -1,8 +1,5 @@
-/**
- * Boot / letterbox / page chrome behind wallpapers.
- * Keep in sync with `style.css` html/body/#root background.
- */
-export const CANVAS_FALLBACK_HEX = '#121810'
+/** Boot / letterbox / page chrome behind wallpapers. */
+export const CANVAS_FALLBACK_HEX = '#24362e'
 
 /** CSS object-fit: cover scale for a source image into bounds. */
 export function coverScaleForBounds(

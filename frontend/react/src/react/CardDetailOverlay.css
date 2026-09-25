@@ -13,7 +13,7 @@
   margin: 0;
   padding: 0;
   border: none;
-  background: rgba(0, 0, 0, 0.65);
+  background: color-mix(in srgb, var(--color-forest-deep) 72%, transparent);
   cursor: pointer;
 }
 
@@ -43,22 +43,22 @@
 
 .card-detail-overlay__name {
   margin: 0;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 22px;
   font-weight: normal;
-  color: #f0e6d3;
+  color: var(--color-parchment);
 }
 
 .card-detail-overlay__meta {
   margin: 8px 0 0;
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: #9a9a9a;
 }
 
 .card-detail-overlay__body {
   margin: 12px 0 0;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 14px;
   color: #d8d0c0;
   max-width: 360px;
@@ -67,7 +67,7 @@
 .card-detail-overlay__hint {
   margin-top: auto;
   padding-top: 16px;
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: #7a7a7a;
 }

@@ -16,7 +16,6 @@ import {
   type PieceStackViewModel,
   type PieceViewModel,
 } from '#ui/PieceView.ts'
-import '#react/PieceStack.css'
 
 export type BoardClearingPieces = {
   pieces: Array<{
@@ -65,7 +64,7 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
   const imagePath = imagePathForAssetKey(textureKey)
   return (
     <div
-      className="piece-stack"
+      className="pointer-events-none absolute z-[3] -translate-x-1/2 -translate-y-1/2"
       style={{
         left: props.left,
         top: props.top,
@@ -75,7 +74,7 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
     >
       {imagePath !== null ? (
         <img
-          className="piece-stack__icon"
+          className="block object-fill select-none"
           src={imagePath}
           alt=""
           draggable={false}
@@ -83,7 +82,7 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
         />
       ) : (
         <div
-          className="piece-stack__icon piece-stack__icon--fallback"
+          className="block rounded object-fill select-none"
           style={{
             width: size,
             height: size,
@@ -92,7 +91,7 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
         />
       )}
       <span
-        className="piece-stack__count"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center font-body font-bold text-white [text-shadow:-1px_-1px_0_#1a1a1a,1px_-1px_0_#1a1a1a,-1px_1px_0_#1a1a1a,1px_1px_0_#1a1a1a]"
         style={{ fontSize: Math.round(size * 0.55) }}
       >
         {String(props.stack.count)}
@@ -167,7 +166,7 @@ export function ClearingPieceLayer(
       nodes.push(
         <img
           key={`ruin-${String(clearingId)}`}
-          className="piece-stack__ruin"
+          className="pointer-events-none absolute z-[2] -translate-x-1/2 -translate-y-1/2 object-fill select-none"
           src={ruinPath}
           alt=""
           draggable={false}
@@ -186,7 +185,7 @@ export function ClearingPieceLayer(
       nodes.push(
         <span
           key={`slots-${String(clearingId)}`}
-          className="piece-stack__slots"
+          className="pointer-events-none absolute z-[2] -translate-x-1/2 -translate-y-full bg-[#1a2438cc] px-1 py-0.5 font-mono text-[11px] font-bold text-parchment"
           style={{
             left: center.centerX,
             top: center.centerY + center.radius - 2,

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DEFAULT_ROOT_DEV_API_BASE_URL } from '@root/web-client'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
@@ -11,7 +12,7 @@ const packageRoot = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   /** Expose `ROOT_*` from env / `.env` (via mise) to `import.meta.env`. */
   envPrefix: ['VITE_', 'ROOT_'],
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: [
       {

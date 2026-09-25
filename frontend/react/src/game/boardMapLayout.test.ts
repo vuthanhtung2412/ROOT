@@ -33,13 +33,16 @@ describe('boardMapLayout', () => {
       layoutMode: 'landscape',
     })
     const portrait = computeBoardMapDisplayMetrics({
-      viewWidth: GAME_LOGICAL_WIDTH,
-      viewHeight: GAME_LOGICAL_HEIGHT,
+      viewWidth: 370,
+      viewHeight: 516,
       naturalWidth: 2000,
       naturalHeight: 1500,
       layoutMode: 'portrait',
     })
-    expect(portrait.mapDisplayWidth).toBeGreaterThan(landscape.mapDisplayWidth)
+    const landscapeFill =
+      landscape.mapDisplayWidth / GAME_LOGICAL_WIDTH
+    const portraitFill = portrait.mapDisplayWidth / 370
+    expect(portraitFill).toBeGreaterThan(landscapeFill)
   })
 
   it('builds one hit target per fall clearing', () => {

@@ -30,7 +30,6 @@ import {
   computeRulerByClearing,
   type BoardClearingPieces,
 } from '#react/PieceStack.tsx'
-import '#react/BoardMap.css'
 
 export type ClearingSelectedHandler = (clearingId: number) => void
 
@@ -53,6 +52,8 @@ function colorToCss(color: number): string {
 export type BoardMapProps = {
   layout?: BoardLayout
   layoutMode?: ViewportLayoutMode
+  viewWidth?: number
+  viewHeight?: number
   highlightedClearingIds?: readonly number[]
   clearings?: readonly BoardClearingPieces[]
   factions?: readonly string[]
@@ -62,6 +63,8 @@ export type BoardMapProps = {
 export function BoardMap(props: BoardMapProps): JSX.Element {
   const layout = props.layout ?? FALL_BOARD_LAYOUT
   const layoutMode = props.layoutMode ?? 'landscape'
+  const viewWidth = props.viewWidth ?? GAME_LOGICAL_WIDTH
+  const viewHeight = props.viewHeight ?? GAME_LOGICAL_HEIGHT
   const mapPath = autumnMapPublicPath()
   const [naturalSize, setNaturalSize] = useState<{
     width: number
@@ -73,13 +76,13 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
       return null
     }
     return computeBoardMapDisplayMetrics({
-      viewWidth: GAME_LOGICAL_WIDTH,
-      viewHeight: GAME_LOGICAL_HEIGHT,
+      viewWidth,
+      viewHeight,
       naturalWidth: naturalSize.width,
       naturalHeight: naturalSize.height,
       layoutMode,
     })
-  }, [naturalSize, layoutMode])
+  }, [naturalSize, layoutMode, viewWidth, viewHeight])
 
   const targets: ClearingPixelHitTarget[] = useMemo(() => {
     if (metrics === null) {
@@ -140,16 +143,16 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
 
   return (
     <div
-      className="board-map"
+      className="relative shrink-0 overflow-hidden pointer-events-none"
       style={{
-        width: GAME_LOGICAL_WIDTH,
-        height: GAME_LOGICAL_HEIGHT,
+        width: viewWidth,
+        height: viewHeight,
       }}
     >
       {metrics !== null ? (
         <>
           <div
-            className="board-map__border"
+            className="pointer-events-none absolute z-[0] bg-parchment shadow-[inset_0_0_0_1px_var(--color-ink-soft)]"
             style={{
               left: metrics.mapLeft - MAP_BORDER_WIDTH_PIXELS,
               top: metrics.mapTop - MAP_BORDER_WIDTH_PIXELS,
@@ -158,7 +161,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
             }}
           />
           <img
-            className="board-map__art"
+            className="pointer-events-none absolute z-[1] block select-none"
             src={mapPath}
             alt="Autumn map"
             draggable={false}
@@ -169,7 +172,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               height: metrics.mapDisplayHeight,
             }}
           />
-          <div className="board-map__pieces">
+          <div className="pointer-events-none absolute inset-0 z-[3]">
             {props.clearings !== undefined && props.factions !== undefined ? (
               <ClearingPieceLayer
                 clearings={props.clearings}
@@ -182,12 +185,13 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
             const isHighlighted = highlighted.has(target.clearingId)
             const hasAnyHighlight = highlighted.size > 0
             const rulerSeat = rulerByClearing.get(target.clearingId) ?? null
-            let ringClass = 'board-map__ring'
             let ringColor = 'rgba(240, 230, 211, 0.35)'
             let ringWidth = 2
+            let ringExtraClass = ''
             if (isHighlighted) {
-              ringClass = 'board-map__ring board-map__ring--highlight'
-              ringColor = '#7ec8ff'
+              ringExtraClass =
+                'shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-gold)_75%,transparent)]'
+              ringColor = '#c9a04a'
               ringWidth = 3
             } else if (hasAnyHighlight) {
               ringColor = 'rgba(240, 230, 211, 0.2)'
@@ -207,7 +211,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               <button
                 key={target.clearingId}
                 type="button"
-                className="board-map__hit"
+                className="pointer-events-auto absolute z-[4] m-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
                 aria-label={`Clearing ${String(target.clearingId)}`}
                 onClick={() => {
                   handleClearingClick(target.clearingId)
@@ -220,7 +224,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
                 }}
               >
                 <span
-                  className={ringClass}
+                  className={`pointer-events-none absolute inset-0 box-border rounded-full border-solid ${ringExtraClass}`}
                   style={{
                     borderColor: ringColor,
                     borderWidth: ringWidth,
@@ -228,7 +232,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
                 />
                 {suitPath !== null ? (
                   <img
-                    className="board-map__suit"
+                    className="pointer-events-none absolute left-1/2 block -translate-x-1/2 select-none"
                     src={suitPath}
                     alt=""
                     draggable={false}
