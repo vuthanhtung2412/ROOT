@@ -255,6 +255,18 @@ export function cardImageAssetForDefId(defId: string): GameImageAsset | null {
   }
 }
 
+/** Absolute public URL for a card face (React overlays). */
+export function cardImagePublicPath(defId: string): string | null {
+  const asset = cardImageAssetForDefId(defId)
+  if (asset === null) {
+    return null
+  }
+  if (asset.path.startsWith('/')) {
+    return asset.path
+  }
+  return `/${asset.path}`
+}
+
 /**
  * Queue card faces not yet in the texture cache.
  * Returns how many new loads were queued.

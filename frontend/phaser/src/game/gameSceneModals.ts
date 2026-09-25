@@ -1,25 +1,23 @@
 import type { GameState } from '#api/client.ts'
-import type { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
+import {
+  craftedCardsOpenSeat,
+  hideCardPile,
+  hideCraftedCards,
+  isCardPileOpen,
+  isCraftedCardsOpen,
+  showCardPile,
+  showCraftedCards,
+} from '#game/cardGalleryBridge.ts'
 import {
   factionBoardOpenSeat,
   hideFactionBoard,
   isFactionBoardOpen,
   showFactionBoard,
 } from '#game/factionBoardBridge.ts'
-import type { CardPileModal } from '#ui/CardPileModal.ts'
-import type { CraftedCardsModal } from '#ui/CraftedCardsModal.ts'
 import { buildFactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
-
-export type GameSceneModalDeps = {
-  getCraftedCardsModal: () => CraftedCardsModal | null
-  getCardPileModal: () => CardPileModal | null
-  getCardTextureWarmup: () => CardTextureWarmup | null
-}
 
 /** Open / refresh faction board, crafted cards, and discard pile modals. */
 export class GameSceneModals {
-  constructor(private readonly deps: GameSceneModalDeps) {}
-
   openFactionBoard(state: GameState, seat: number): void {
     if (isFactionBoardOpen() === true && factionBoardOpenSeat() === seat) {
       hideFactionBoard()
@@ -33,13 +31,8 @@ export class GameSceneModals {
   }
 
   openCraftedCards(state: GameState, seat: number): void {
-    const modal = this.deps.getCraftedCardsModal()
-    if (modal === null) {
-      return
-    }
-    const openSeat = modal.openSeat()
-    if (modal.isOpen() === true && openSeat === seat) {
-      modal.hide()
+    if (isCraftedCardsOpen() === true && craftedCardsOpenSeat() === seat) {
+      hideCraftedCards()
       return
     }
     const player = state.players.find((entry) => entry.seat === seat)
@@ -47,8 +40,7 @@ export class GameSceneModals {
       return
     }
     const cards = player.playArea ?? []
-    this.deps.getCardTextureWarmup()?.ensure(cards.map((card) => card.defId))
-    modal.show({
+    showCraftedCards({
       seat: player.seat,
       faction: player.faction,
       cards,
@@ -56,17 +48,12 @@ export class GameSceneModals {
   }
 
   openDiscardPile(state: GameState): void {
-    const modal = this.deps.getCardPileModal()
-    if (modal === null) {
-      return
-    }
-    if (modal.isOpen() === true) {
-      modal.hide()
+    if (isCardPileOpen() === true) {
+      hideCardPile()
       return
     }
     const cards = state.deck?.discard ?? []
-    this.deps.getCardTextureWarmup()?.ensure(cards.map((card) => card.defId))
-    modal.show({
+    showCardPile({
       title: `Discard pile (${String(cards.length)})`,
       cards,
       emptyMessage: 'Discard pile empty',
@@ -76,8 +63,8 @@ export class GameSceneModals {
   isAnyOpen(): boolean {
     return (
       isFactionBoardOpen() === true ||
-      this.deps.getCraftedCardsModal()?.isOpen() === true ||
-      this.deps.getCardPileModal()?.isOpen() === true
+      isCraftedCardsOpen() === true ||
+      isCardPileOpen() === true
     )
   }
 
@@ -98,26 +85,24 @@ export class GameSceneModals {
   }
 
   refreshCraftedCards(state: GameState | null | undefined): void {
-    const modal = this.deps.getCraftedCardsModal()
-    if (modal?.isOpen() !== true) {
+    if (isCraftedCardsOpen() !== true) {
       return
     }
-    const seat = modal.openSeat()
+    const seat = craftedCardsOpenSeat()
     if (seat === null) {
       return
     }
     if (state === null || state === undefined) {
-      modal.hide()
+      hideCraftedCards()
       return
     }
     const player = state.players.find((entry) => entry.seat === seat)
     if (player === undefined) {
-      modal.hide()
+      hideCraftedCards()
       return
     }
     const cards = player.playArea ?? []
-    this.deps.getCardTextureWarmup()?.ensure(cards.map((card) => card.defId))
-    modal.show({
+    showCraftedCards({
       seat: player.seat,
       faction: player.faction,
       cards,

@@ -1,4 +1,8 @@
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
+import type {
+  CardPileModalContent,
+  CraftedCardsModalContent,
+} from '#ui/cardGalleryTypes.ts'
 
 export type HudListener = () => void
 
@@ -8,10 +12,14 @@ export type HudListener = () => void
  */
 export type HudState = {
   factionBoard: FactionBoardViewModel | null
+  craftedCards: CraftedCardsModalContent | null
+  cardPile: CardPileModalContent | null
 }
 
 const INITIAL_HUD_STATE: HudState = {
   factionBoard: null,
+  craftedCards: null,
+  cardPile: null,
 }
 
 let hudState: HudState = INITIAL_HUD_STATE

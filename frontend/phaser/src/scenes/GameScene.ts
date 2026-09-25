@@ -10,6 +10,7 @@ import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
 import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
+import { hideCardPile, hideCraftedCards } from '#game/cardGalleryBridge.ts'
 import { hideFactionBoard } from '#game/factionBoardBridge.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
 import { mergeComposerHooks } from '#game/resolution/mergeComposerHooks.ts'
@@ -39,8 +40,6 @@ import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
 import { CardDetailOverlay } from '#ui/CardDetailOverlay.ts'
-import { CardPileModal } from '#ui/CardPileModal.ts'
-import { CraftedCardsModal } from '#ui/CraftedCardsModal.ts'
 import { GameDrawer } from '#ui/GameDrawer.ts'
 import { LeaderPickOverlay } from '#ui/LeaderPickOverlay.ts'
 import { PlayerRail } from '#ui/PlayerRail.ts'
@@ -65,8 +64,6 @@ export class GameScene extends Phaser.Scene {
   private cardDetailOverlay: CardDetailOverlay | null = null
   private actionTray: ActionTray | null = null
   private battleOverlay: BattleOverlay | null = null
-  private craftedCardsModal: CraftedCardsModal | null = null
-  private cardPileModal: CardPileModal | null = null
   private gameDrawer: GameDrawer | null = null
   private winnerOverlay: WinnerOverlay | null = null
   private leaderPickOverlay: LeaderPickOverlay | null = null
@@ -142,11 +139,7 @@ export class GameScene extends Phaser.Scene {
         this.localPlayerControlsSeat(actorSeat),
       )
     })
-    this.modals = new GameSceneModals({
-      getCraftedCardsModal: () => this.craftedCardsModal,
-      getCardPileModal: () => this.cardPileModal,
-      getCardTextureWarmup: () => this.cardTextureWarmup,
-    })
+    this.modals = new GameSceneModals()
     this.composer.setHooks(
       mergeComposerHooks(
         this.marquiseCards.hooks,
@@ -213,8 +206,6 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlay.setOnOutsideClick(() => {
       this.battleOverlayController?.dismissResultFlash()
     })
-    this.craftedCardsModal = new CraftedCardsModal(this)
-    this.cardPileModal = new CardPileModal(this)
     this.gameDrawer = new GameDrawer(this, {
       onEndGame: () => {
         void this.handleEndGame()
@@ -261,6 +252,8 @@ export class GameScene extends Phaser.Scene {
 
   shutdown(): void {
     hideFactionBoard()
+    hideCraftedCards()
+    hideCardPile()
     if (this.unsubscribe !== null) {
       this.unsubscribe()
       this.unsubscribe = null
@@ -284,10 +277,6 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlayController = null
     this.autoPrompts = null
     this.modals = null
-    this.craftedCardsModal?.destroy()
-    this.craftedCardsModal = null
-    this.cardPileModal?.destroy()
-    this.cardPileModal = null
     this.gameDrawer?.destroy()
     this.gameDrawer = null
     this.winnerOverlay?.destroy()
