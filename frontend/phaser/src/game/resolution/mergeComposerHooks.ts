@@ -1,4 +1,4 @@
-import type { ActionComposerHooks } from '#game/ActionComposer.ts'
+import type { ActionComposerHooks } from '#game/resolution/ActionComposer.ts'
 
 /** First non-null hook win across faction/event composers. */
 export function mergeComposerHooks(

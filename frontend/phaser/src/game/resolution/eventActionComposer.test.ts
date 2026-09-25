@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { makeActionSpec } from '#test/factories.ts'
-import { ActionComposer } from '#game/ActionComposer.ts'
-import { createEventComposerHooks } from '#game/eventActionComposer.ts'
+import { ActionComposer } from '#game/resolution/ActionComposer.ts'
+import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
 
 describe('eventActionComposer Field Hospitals', () => {
   it('beginFieldHospital with no cards auto-declines', () => {

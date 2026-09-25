@@ -1,4 +1,4 @@
-import { readChoiceParams } from '#game/ActionComposer.ts'
+import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 import type { ActionSpec } from '#api/client.ts'
 
 export type BattleRemovalPieceView = {

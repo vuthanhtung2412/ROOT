@@ -1,7 +1,7 @@
 import type Phaser from 'phaser'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import type { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
-import type { AutoPromptController } from '#game/autoPromptController.ts'
+import type { AutoPromptController } from '#game/resolution/autoPromptController.ts'
 import type { GameSceneModals } from '#game/gameSceneModals.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { collapsePieceIdsRemovalSpecs } from '#game/battleRemovalStepper.ts'

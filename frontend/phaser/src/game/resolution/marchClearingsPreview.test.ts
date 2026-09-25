@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   applyMarchMovesToClearings,
   type ClearingPiecesSnapshot,
-} from '#game/marchClearingsPreview.ts'
+} from '#game/resolution/marchClearingsPreview.ts'
 
 function makeClearings(
   warriorsByClearing: ReadonlyMap<number, readonly string[]>,

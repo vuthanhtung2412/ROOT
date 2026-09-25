@@ -2,7 +2,7 @@
 
 Two kinds of “action” in play:
 
-1. **Action under resolution** (frontend staging) — lives only in Phaser composer draft. Not in `GameState`. May take multiple UI steps. Can cancel mid-flow. Detected by `isActionUnderResolution()` (`frontend/phaser/src/game/actionUnderResolution.ts`).
+1. **Action under resolution** (frontend staging) — lives only in Phaser composer draft. Not in `GameState`. May take multiple UI steps. Can cancel mid-flow. Detected by `isActionUnderResolution()` ([`frontend/phaser/src/game/resolution/`](../../frontend/phaser/src/game/resolution/)).
 2. **Backend-registered** — submitted via `POST /game/actions` → `game.apply()` → mutates `GameState` (and may push `state.pending`).
 
 Cancel rule for (1): clear composer draft, **`GameSession.refresh()`** (fetch + sync board/HUD) — needed when UI showed optimistic preview, e.g. march legs.
@@ -102,4 +102,4 @@ Persistent / dominance-style (backend types exist; no frontend under-resolution 
 
 Also: modal open / not local actor / game finished → tray **OFF** (see `REPORT.md` / `shouldDisableActionTray`).
 
-Source of truth for submitted shapes: `lib/src/actions/types.ts` (`Action`). Staging: `frontend/phaser/src/game/*ActionComposer.ts`. Detection: `actionUnderResolution.ts`. Tray: `actionTrayDisable.ts`.
+Source of truth for submitted shapes: `lib/src/actions/types.ts` (`Action`). Staging flows: `frontend/phaser/src/game/resolution/` (see README). Tray: `actionTrayDisable.ts`.

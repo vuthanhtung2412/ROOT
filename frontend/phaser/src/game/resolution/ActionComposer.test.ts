@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeActionSpec } from '#test/factories.ts'
-import { ActionComposer, readChoiceParams } from '#game/ActionComposer.ts'
+import { ActionComposer, readChoiceParams } from '#game/resolution/ActionComposer.ts'
 
 describe('ActionComposer', () => {
   it('endPhase is immediately ready', () => {

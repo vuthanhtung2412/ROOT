@@ -1,4 +1,4 @@
-import type { ComposerOutcome } from '#game/ActionComposer.ts'
+import type { ComposerOutcome } from '#game/resolution/ActionComposer.ts'
 import { mergeBattleClearingHighlight } from '#game/battleOverlayModel.ts'
 import type { GameState } from '#api/client.ts'
 import type { GameSessionSnapshot } from '#game/GameSession.ts'

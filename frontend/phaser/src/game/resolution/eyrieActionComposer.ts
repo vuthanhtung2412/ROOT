@@ -4,7 +4,7 @@ import {
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
-} from '#game/ActionComposer.ts'
+} from '#game/resolution/ActionComposer.ts'
 
 type DecreeCardOption = { cardId: string; column: string }
 type MarchMove = { from: number; to: number; count: number }
