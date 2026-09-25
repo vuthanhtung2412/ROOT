@@ -61,8 +61,9 @@ describe('factionBoardLayout', () => {
     expect(trackCellRegion(ALLIANCE_BOARD_LAYOUT, 'sympathy', 9)).not.toBeNull()
   })
 
-  it('loads Vagabond satchel + item tracks', () => {
+  it('loads Vagabond satchel + relationship + item tracks', () => {
     expect(VAGABOND_BOARD_LAYOUT.tracks.map((track) => track.id)).toEqual([
+      'relationship-development',
       'tea',
       'coin',
       'bag',
@@ -70,6 +71,15 @@ describe('factionBoardLayout', () => {
     expect(findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'satchel')).not.toBeNull()
     expect(
       findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'character-slot'),
+    ).not.toBeNull()
+    expect(
+      findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'relationship-hostile'),
+    ).not.toBeNull()
+    expect(
+      findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'crafted-items'),
+    ).toBeNull()
+    expect(
+      trackCellRegion(VAGABOND_BOARD_LAYOUT, 'relationship-development', 3),
     ).not.toBeNull()
     expect(trackCellRegion(VAGABOND_BOARD_LAYOUT, 'tea', 0)).not.toBeNull()
   })
