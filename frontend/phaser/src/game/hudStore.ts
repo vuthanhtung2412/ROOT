@@ -66,6 +66,18 @@ export type BootLoadingHudState = {
   progress: number
 } | null
 
+export type MenuHudState = {
+  statusText: string
+  statusColor: string
+  playPending: boolean
+  showQaContinue: boolean
+}
+
+export type MenuCallbacks = {
+  onPlay: () => void
+  onQaContinue: () => void
+}
+
 export type HudCallbacks = {
   onEndGame: () => void
   onOpenDiscardPile: () => void
@@ -102,6 +114,7 @@ export type HudState = {
   statusMessage: StatusMessageHudState
   shell: HudShell
   bootLoading: BootLoadingHudState
+  menu: MenuHudState | null
 }
 
 const INITIAL_HUD_STATE: HudState = {
@@ -123,6 +136,7 @@ const INITIAL_HUD_STATE: HudState = {
   statusMessage: null,
   shell: 'boot',
   bootLoading: { progress: 0 },
+  menu: null,
 }
 
 /** After leaving GameScene — menu shell, no boot flash. */
@@ -130,6 +144,7 @@ const CLEARED_GAME_HUD_STATE: HudState = {
   ...INITIAL_HUD_STATE,
   shell: 'menu',
   bootLoading: null,
+  menu: null,
 }
 
 const NOOP_CALLBACKS: HudCallbacks = {
@@ -148,8 +163,14 @@ const NOOP_CALLBACKS: HudCallbacks = {
   onCardHold: () => undefined,
 }
 
+const NOOP_MENU_CALLBACKS: MenuCallbacks = {
+  onPlay: () => undefined,
+  onQaContinue: () => undefined,
+}
+
 let hudState: HudState = INITIAL_HUD_STATE
 let hudCallbacks: HudCallbacks = NOOP_CALLBACKS
+let menuCallbacks: MenuCallbacks = NOOP_MENU_CALLBACKS
 const listeners = new Set<HudListener>()
 
 function notifyHudListeners(): void {
@@ -180,6 +201,7 @@ export function patchHud(partial: Partial<HudState>): void {
 export function resetHud(): void {
   hudState = CLEARED_GAME_HUD_STATE
   hudCallbacks = NOOP_CALLBACKS
+  menuCallbacks = NOOP_MENU_CALLBACKS
   notifyHudListeners()
 }
 
@@ -189,4 +211,12 @@ export function setHudCallbacks(callbacks: HudCallbacks): void {
 
 export function getHudCallbacks(): HudCallbacks {
   return hudCallbacks
+}
+
+export function setMenuCallbacks(callbacks: MenuCallbacks): void {
+  menuCallbacks = callbacks
+}
+
+export function getMenuCallbacks(): MenuCallbacks {
+  return menuCallbacks
 }

@@ -14,6 +14,7 @@ import {
   LeaderPickOverlay,
   WinnerOverlay,
 } from '#react/HudChrome.tsx'
+import { MenuOverlay } from '#react/MenuOverlay.tsx'
 import { PlayerRail } from '#react/PlayerRail.tsx'
 import { StatusMessage } from '#react/StatusMessage.tsx'
 import { TurnBanner } from '#react/TurnBanner.tsx'
@@ -23,6 +24,7 @@ export function ReactHud(): JSX.Element {
   return (
     <>
       <BootOverlay />
+      <MenuOverlay />
       <TurnBanner />
       <BattleOverlay />
       <PlayerRail />
