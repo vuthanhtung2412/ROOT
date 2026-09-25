@@ -11,10 +11,9 @@ import { CANVAS_FALLBACK_HEX } from '#ui/sceneBackdrop.ts'
 
 const devicePixelRatio = resolveDevicePixelRatio()
 
-/** Desktop-first hot-seat canvas; scenes: Boot → Menu → Game. */
+/** Desktop-first hot-seat canvas; scenes: Boot → Menu → Game. Parent set by `startGame`. */
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  parent: 'game',
   backgroundColor: CANVAS_FALLBACK_HEX,
   scale: {
     mode: Phaser.Scale.FIT,

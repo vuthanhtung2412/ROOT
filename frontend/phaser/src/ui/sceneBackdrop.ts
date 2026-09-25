@@ -2,7 +2,7 @@ import type Phaser from 'phaser'
 
 /**
  * Boot / letterbox / page chrome behind wallpapers.
- * Keep in sync with `style.css` html/body/#game background.
+ * Keep in sync with `style.css` html/body/#root background.
  */
 export const CANVAS_FALLBACK_HEX = '#121810'
 
