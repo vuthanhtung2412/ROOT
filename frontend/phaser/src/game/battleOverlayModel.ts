@@ -37,8 +37,12 @@ export type BattleTrackerUpdate = {
   finishedOutcome: FinishedBattleOutcome | null
 }
 
+/** Ambush/foil use TurnBanner only — damage strip starts after rolls. */
+const BATTLE_OVERLAY_HIDDEN_STAGES = new Set(['ambush', 'foil'])
+
 /**
  * Read first pending battle into overlay view-model.
+ * Null during ambush/foil so Ambush resolves before damage strip.
  */
 export function buildBattleOverlayViewModel(
   state: GameState,
@@ -46,6 +50,9 @@ export function buildBattleOverlayViewModel(
 ): BattleOverlayViewModel | null {
   const battle = readBattlePending(state.pending[0])
   if (battle === null) {
+    return null
+  }
+  if (BATTLE_OVERLAY_HIDDEN_STAGES.has(battle.stage)) {
     return null
   }
   return {

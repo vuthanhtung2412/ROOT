@@ -60,22 +60,38 @@ describe('buildBattleOverlayViewModel', () => {
     })
   })
 
-  it('hides rolls before dice stage', () => {
-    const view = buildBattleOverlayViewModel(
-      makeState([
-        {
-          type: 'battle',
-          clearing: 4,
-          attacker: 1,
-          defender: 0,
-          stage: 'ambush',
-          hits: { attacker: 0, defender: 0 },
-        },
-      ]),
-    )
-    expect(view?.rolls).toBeNull()
-    expect(view?.stage).toBe('ambush')
-    expect(view?.outcomeMessage).toBeNull()
+  it('hides overlay during ambush so banner resolves first', () => {
+    expect(
+      buildBattleOverlayViewModel(
+        makeState([
+          {
+            type: 'battle',
+            clearing: 4,
+            attacker: 1,
+            defender: 0,
+            stage: 'ambush',
+            hits: { attacker: 0, defender: 0 },
+          },
+        ]),
+      ),
+    ).toBeNull()
+  })
+
+  it('hides overlay during foil', () => {
+    expect(
+      buildBattleOverlayViewModel(
+        makeState([
+          {
+            type: 'battle',
+            clearing: 4,
+            attacker: 1,
+            defender: 0,
+            stage: 'foil',
+            hits: { attacker: 0, defender: 0 },
+          },
+        ]),
+      ),
+    ).toBeNull()
   })
 
   it('returns null clearing when no battle pending', () => {
