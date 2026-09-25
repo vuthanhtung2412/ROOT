@@ -88,7 +88,7 @@ describe('formatActionLabel decree suit', () => {
           pending: [],
         },
       ),
-    ).toBe('decree:recruit (fox)')
+    ).toBe('recruit: fox')
   })
 
   it('vizier resolves as bird suit', () => {
@@ -98,7 +98,7 @@ describe('formatActionLabel decree suit', () => {
         actor: 1,
         params: { column: ['move'], cardIds: ['VIZIER#1'] },
       }),
-    ).toBe('decree:move (bird)')
+    ).toBe('move: bird')
   })
 })
 

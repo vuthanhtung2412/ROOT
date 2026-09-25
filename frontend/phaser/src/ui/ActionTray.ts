@@ -33,9 +33,9 @@ function formatActionLabel(
     const cardId = params.cardIds?.[0]
     const suit = cardId !== undefined ? decreeCardSuit(cardId, state) : null
     if (column !== undefined && suit !== null) {
-      return `decree:${column} (${suit})`
+      return `${column}: ${suit}`
     }
-    return column !== undefined ? `decree:${column}` : 'decree'
+    return column !== undefined ? column : 'decree'
   }
   if (spec.type === 'resolveEvent') {
     const startingBuilding = params.building?.[0]
