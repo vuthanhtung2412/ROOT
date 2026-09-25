@@ -8,6 +8,7 @@ import { ActionComposer, type ComposerOutcome } from '#game/ActionComposer.ts'
 import { AutoPromptController } from '#game/autoPromptController.ts'
 import { BattleOverlayController } from '#game/battleOverlayController.ts'
 import { applyComposerOutcomeToHud } from '#game/composerOutcomeApplier.ts'
+import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/eventActionComposer.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
@@ -173,12 +174,14 @@ export class GameScene extends Phaser.Scene {
         const state = this.latestSnapshot?.state
         if (state !== null && state !== undefined) {
           this.modals?.openFactionBoard(state, seat)
+          this.syncActionTrayFromLatestSnapshot()
         }
       },
       (seat) => {
         const state = this.latestSnapshot?.state
         if (state !== null && state !== undefined) {
           this.modals?.openCraftedCards(state, seat)
+          this.syncActionTrayFromLatestSnapshot()
         }
       },
     )
@@ -218,6 +221,7 @@ export class GameScene extends Phaser.Scene {
         const state = this.latestSnapshot?.state
         if (state !== null && state !== undefined) {
           this.modals?.openDiscardPile(state)
+          this.syncActionTrayFromLatestSnapshot()
         }
       },
     })
@@ -375,8 +379,19 @@ export class GameScene extends Phaser.Scene {
     this.syncActionTrayFromLatestSnapshot()
   }
 
-  private marchActionTrayOptions(): ActionTraySyncOptions | undefined {
-    if (this.marquiseMarch.getDraft().type !== 'march') {
+  private actionTraySyncOptions(
+    localControlsActor: boolean,
+    state: GameState,
+  ): ActionTraySyncOptions | undefined {
+    const disabled = shouldDisableActionTray({
+      isFieldHospitalStaging:
+        this.eventComposer.getOverlayKind() === 'fieldHospital',
+      isComposerStaging: this.isComposerStaging(),
+      isAnyModalOpen: this.modals?.isAnyOpen() === true,
+      isLocalActor: localControlsActor,
+      isGameFinished: state.status === 'finished',
+    })
+    if (!disabled) {
       return undefined
     }
     return { disabled: true }
@@ -398,7 +413,7 @@ export class GameScene extends Phaser.Scene {
         : [],
       banner.actorSeat,
       snapshot.state.pending[0],
-      this.marchActionTrayOptions(),
+      this.actionTraySyncOptions(localControlsActor, snapshot.state),
       snapshot.state,
     )
   }
@@ -491,7 +506,20 @@ export class GameScene extends Phaser.Scene {
       getStatusText: () => this.statusText,
       localPlayerControlsSeat: (actorSeat) =>
         this.localPlayerControlsSeat(actorSeat),
-      marchActionTrayOptions: () => this.marchActionTrayOptions(),
+      actionTraySyncOptions: () => {
+        const snapshot = this.latestSnapshot
+        if (snapshot === null || snapshot.state === null) {
+          return { disabled: true }
+        }
+        const banner = buildTurnBannerViewModel(
+          snapshot.state,
+          snapshot.legalActions,
+        )
+        return this.actionTraySyncOptions(
+          this.localPlayerControlsSeat(banner.actorSeat),
+          snapshot.state,
+        )
+      },
       syncBattleOverlay: () => {
         this.battleOverlayController?.sync()
       },

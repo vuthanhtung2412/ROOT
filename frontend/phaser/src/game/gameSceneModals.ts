@@ -74,6 +74,14 @@ export class GameSceneModals {
     })
   }
 
+  isAnyOpen(): boolean {
+    return (
+      this.deps.getFactionBoardModal()?.isOpen() === true ||
+      this.deps.getCraftedCardsModal()?.isOpen() === true ||
+      this.deps.getCardPileModal()?.isOpen() === true
+    )
+  }
+
   refreshFactionBoard(state: GameState): void {
     const modal = this.deps.getFactionBoardModal()
     if (modal?.isOpen() !== true) {
