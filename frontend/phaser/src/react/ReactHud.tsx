@@ -1,9 +1,12 @@
 import type { JSX } from 'react'
+import { ActionTray } from '#react/ActionTray.tsx'
+import { BattleOverlay } from '#react/BattleOverlay.tsx'
 import { CardDetailOverlay } from '#react/CardDetailOverlay.tsx'
 import {
   CardPileModal,
   CraftedCardsModal,
 } from '#react/CardGalleryModal.tsx'
+import { CardHand } from '#react/CardHand.tsx'
 import { FactionBoardModal } from '#react/FactionBoardModal.tsx'
 import {
   GameDrawer,
@@ -11,15 +14,9 @@ import {
   WinnerOverlay,
 } from '#react/HudChrome.tsx'
 import { PlayerRail } from '#react/PlayerRail.tsx'
-import { ActionTray } from '#react/ActionTray.tsx'
 import { TurnBanner } from '#react/TurnBanner.tsx'
-import { BattleOverlay } from '#react/BattleOverlay.tsx'
-import { CardHand } from '#react/CardHand.tsx'
 
-/**
- * React HUD layer above the Phaser canvas.
- * Surfaces mount here as they migrate off Phaser.
- */
+/** React HUD layer above the Phaser canvas (map stays in Phaser). */
 export function ReactHud(): JSX.Element {
   return (
     <>

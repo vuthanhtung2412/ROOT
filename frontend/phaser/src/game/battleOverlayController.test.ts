@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { GameState } from '#api/client.ts'
-import { BattleOverlayController } from '#game/battleOverlayController.ts'
+import {
+  BattleOverlayController,
+  type BattleOverlaySyncTarget,
+} from '#game/battleOverlayController.ts'
 import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
 
 function makeState(pending: unknown[]): GameState {
@@ -29,7 +32,7 @@ describe('BattleOverlayController', () => {
       remove: ReturnType<typeof vi.fn>
     }> = []
     const overlaySync = vi.fn()
-    const overlay = {
+    const overlay: BattleOverlaySyncTarget = {
       sync: (viewModel: BattleOverlayViewModel | null): void => {
         overlaySync(viewModel)
       },
@@ -55,7 +58,7 @@ describe('BattleOverlayController', () => {
           return { remove }
         },
       },
-      () => overlay as never,
+      () => overlay,
       () => state,
     )
     const onEnded = vi.fn()

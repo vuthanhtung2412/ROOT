@@ -9,11 +9,9 @@ import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
 import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
-import { hideCardPile, hideCraftedCards } from '#game/cardGalleryBridge.ts'
-import { hideFactionBoard } from '#game/factionBoardBridge.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
 import { resetHud, setHudCallbacks } from '#game/hudStore.ts'
-import { hideCardDetail, showCardDetail } from '#react/CardDetailOverlay.tsx'
+import { showCardDetail } from '#react/CardDetailOverlay.tsx'
 import {
   syncLeaderPickOverlay,
 } from '#react/HudChrome.tsx'
@@ -227,10 +225,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   shutdown(): void {
-    hideFactionBoard()
-    hideCraftedCards()
-    hideCardPile()
-    hideCardDetail()
     resetHud()
     if (this.unsubscribe !== null) {
       this.unsubscribe()

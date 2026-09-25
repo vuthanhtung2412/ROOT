@@ -158,6 +158,7 @@ export function patchHud(partial: Partial<HudState>): void {
 
 export function resetHud(): void {
   hudState = INITIAL_HUD_STATE
+  hudCallbacks = NOOP_CALLBACKS
   notifyHudListeners()
 }
 
