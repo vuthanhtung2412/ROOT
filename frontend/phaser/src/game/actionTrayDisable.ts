@@ -1,5 +1,6 @@
 export type ActionTrayDisableInput = {
-  isComposerStaging: boolean
+  /** Frontend staging — composer draft mid-resolve. */
+  isActionUnderResolution: boolean
   isAnyModalOpen: boolean
   isLocalActor: boolean
   isGameFinished: boolean
@@ -7,7 +8,7 @@ export type ActionTrayDisableInput = {
 
 /**
  * Hide ActionTray when primary input is elsewhere
- * (composer prompt / board / hand / modal / waiting / finished).
+ * (under resolution / board / hand / modal / waiting / finished).
  */
 export function shouldDisableActionTray(
   input: ActionTrayDisableInput,
@@ -21,7 +22,7 @@ export function shouldDisableActionTray(
   if (input.isAnyModalOpen) {
     return true
   }
-  if (input.isComposerStaging) {
+  if (input.isActionUnderResolution) {
     return true
   }
   return false
