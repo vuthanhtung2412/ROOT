@@ -175,7 +175,7 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
         supporters: [{ id: 's1' }, { id: 's2' }],
         officers: 2,
         bases: ['fox', 'mouse'],
-        sympathyTrack: { placed: 3 },
+        sympathyTrack: { placed: 7 },
       },
     })
     expect(view).not.toBeNull()

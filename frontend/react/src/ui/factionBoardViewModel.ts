@@ -434,12 +434,10 @@ export function buildFactionBoardViewModelFromPlayer(
       abilities: ALLIANCE_ABILITIES,
       turnCheat: ALLIANCE_TURN_CHEAT,
       sympathyTrack: ALLIANCE_SYMPATHY_TRACK,
+      // `sympathyTrack.placed` = tokens still on the board track (same as Marquise tracks).
       sympathyTokensOnTrack: Math.min(
         ALLIANCE_SYMPATHY_TRACK_SLOT_COUNT,
-        Math.max(
-          0,
-          ALLIANCE_SYMPATHY_TRACK_SLOT_COUNT - board.sympathyTrack.placed,
-        ),
+        Math.max(0, board.sympathyTrack.placed),
       ),
       basesInSupply: board.bases,
       boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.alliance,
