@@ -44,9 +44,10 @@ export const GAME_ASSET_KEYS = {
   itemSword: 'item-sword',
   itemTea: 'item-tea',
   itemCoin: 'item-coin',
+  itemTorch: 'item-torch',
 } as const
 
-/** Crafted / supply item types with a board icon (torch has no icon — supply 0). */
+/** Item types with a board icon (crafted supply + Vagabond torch). */
 export const CRAFTED_ITEM_TEXTURE_TYPES = [
   'boot',
   'bag',
@@ -55,6 +56,7 @@ export const CRAFTED_ITEM_TEXTURE_TYPES = [
   'sword',
   'tea',
   'coin',
+  'torch',
 ] as const
 
 export type CraftedItemTextureType = (typeof CRAFTED_ITEM_TEXTURE_TYPES)[number]
@@ -67,13 +69,14 @@ const CRAFTED_ITEM_TEXTURE_BY_TYPE: Record<CraftedItemTextureType, string> = {
   sword: GAME_ASSET_KEYS.itemSword,
   tea: GAME_ASSET_KEYS.itemTea,
   coin: GAME_ASSET_KEYS.itemCoin,
+  torch: GAME_ASSET_KEYS.itemTorch,
 }
 
 function isCraftedItemTextureType(value: string): value is CraftedItemTextureType {
   return CRAFTED_ITEM_TEXTURE_TYPES.some((itemType) => itemType === value)
 }
 
-/** Map crafted item type → texture key; null when no icon (e.g. torch). */
+/** Map item type → texture key; null when unknown. */
 export function itemTextureKey(itemType: string): string | null {
   if (!isCraftedItemTextureType(itemType)) {
     return null
@@ -319,6 +322,10 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.itemCoin,
     path: 'assets/items/coin.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.itemTorch,
+    path: 'assets/items/torch.png',
   },
 ]
 

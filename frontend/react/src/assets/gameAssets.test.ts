@@ -36,9 +36,12 @@ describe('itemTextureKey', () => {
     }
   })
 
-  it('returns null for torch and unknown types', () => {
-    expect(itemTextureKey('torch')).toBeNull()
+  it('returns null for unknown types', () => {
     expect(itemTextureKey('not-an-item')).toBeNull()
+  })
+
+  it('maps torch Vagabond starting item', () => {
+    expect(itemTextureKey('torch')).toBe('item-torch')
   })
 })
 
