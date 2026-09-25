@@ -11,6 +11,7 @@ import {
   FACTION_BOARD_SHOW_EVENT,
   hideFactionBoard,
 } from '#game/factionBoardBridge.ts'
+import { FactionBoardOverlays } from '#react/factionBoardOverlays.tsx'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 import '#react/FactionBoardModal.css'
 
@@ -57,7 +58,7 @@ function useViewportSize(): { width: number; height: number } {
   return size
 }
 
-/** React faction/character board shell (veil + art + close). */
+/** React faction/character board (art + layout overlays). */
 export function FactionBoardModal(): JSX.Element | null {
   const [view, setView] = useState<FactionBoardViewModel | null>(null)
   const viewport = useViewportSize()
@@ -81,6 +82,7 @@ export function FactionBoardModal(): JSX.Element | null {
     return null
   }
 
+  const layout = factionBoardLayoutForKind(view.kind)
   const placement = computeBoardPlacement(view, viewport.width, viewport.height)
   const boardImagePath = imagePathForAssetKey(view.boardTextureKey)
 
@@ -129,6 +131,11 @@ export function FactionBoardModal(): JSX.Element | null {
             }
           />
         )}
+        <FactionBoardOverlays
+          view={view}
+          layout={layout}
+          placement={placement}
+        />
       </div>
     </div>
   )
