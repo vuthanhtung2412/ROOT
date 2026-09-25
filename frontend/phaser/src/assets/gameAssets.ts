@@ -319,6 +319,13 @@ export function imagePathForAssetKey(key: string): string | null {
   return `/${asset.path}`
 }
 
+export function autumnMapPublicPath(): string {
+  if (AUTUMN_MAP_ASSET.path.startsWith('/')) {
+    return AUTUMN_MAP_ASSET.path
+  }
+  return `/${AUTUMN_MAP_ASSET.path}`
+}
+
 
 export function queueAutumnMapImage(
   loader: ImageAssetLoader,

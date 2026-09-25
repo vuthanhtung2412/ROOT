@@ -1,18 +1,22 @@
 ### Goal
-- Finish React migration of remaining Phaser **chrome** (not map)
-- Keep map / pieces / clearing highlights in Phaser
+- Remove Phaser; React owns map/pieces/shell as well as HUD
+- Keep game rules wiring: `GameSession`, composers, `boardLayout`, `hudStore`
 
 ### Approach
-- Migrated: in-game status, boot loading, menu (banner / Play / QA / status / wallpaper)
-- Keep Phaser: `BoardView`, `PieceView`, battle clearing highlights, game wallpaper, HiDPI canvas
-- Drive via `hudStore.shell` = `boot` | `menu` | `game`
+- React DOM board: autumn map `<img>` + absolute clearing hits + piece stacks
+- Lift `GameSession` into React game controller; Boot/Menu/Game = React screens
+- Letterbox logical view 1280×720
 
 ### Test plan
-- typecheck + phaser vitest after each commit
-- Manual / Playwright: boot → menu (DOM buttons) → Continue → status → End → menu
+- typecheck + vitest after each commit
+- Playwright: boot → menu → Continue → clearing click; pieces; End → menu
+- Build without Phaser
 
 ### Commit plan
-- [x] `feat(ui): React in-game status message`
-- [x] `feat(ui): React boot loading overlay`
-- [x] `fix(ui): import patchHud for game shell`
-- [x] `feat(ui): React menu chrome`
+- `feat(ui): React BoardMap shell over map image`
+- `feat(ui): React piece stacks on BoardMap`
+- `feat(ui): React GameScreen wallpaper + board host`
+- `feat(ui): lift GameSession into React game controller`
+- `feat(ui): React shell replaces Phaser scenes`
+- `chore(ui): remove Phaser dependency and dead canvas code`
+- `ci: fix tests after Phaser removal`

@@ -1,0 +1,63 @@
+.board-map {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.board-map__border {
+  position: absolute;
+  z-index: 0;
+  background: #ffffff;
+  pointer-events: none;
+}
+
+.board-map__art {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.board-map__pieces {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.board-map__hit {
+  position: absolute;
+  z-index: 4;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.board-map__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border-style: solid;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.board-map__ring--highlight {
+  box-shadow: 0 0 0 1px rgba(126, 200, 255, 0.4);
+}
+
+.board-map__suit {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
