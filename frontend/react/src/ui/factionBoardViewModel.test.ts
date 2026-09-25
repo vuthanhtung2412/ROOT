@@ -163,6 +163,65 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
     ])
   })
 
+  it('Alliance: officers + sympathy tokens still on track', () => {
+    const view = buildFactionBoardViewModelFromPlayer({
+      seat: 2,
+      faction: 'alliance',
+      vp: 3,
+      hand: [{ id: 'a', defId: 'ROOT-1' }],
+      board: {
+        kind: 'alliance',
+        supply: { warriors: 8 },
+        supporters: [{ id: 's1' }, { id: 's2' }],
+        officers: 2,
+        bases: ['fox', 'mouse'],
+        sympathyTrack: { placed: 3 },
+      },
+    })
+    expect(view).not.toBeNull()
+    if (view === null || view.kind !== 'alliance') {
+      throw new Error('expected alliance view')
+    }
+    expect(view.warriors).toBe(8)
+    expect(view.officers).toBe(2)
+    expect(view.supporters).toBe(2)
+    expect(view.basesInSupply).toEqual(['fox', 'mouse'])
+    expect(view.sympathyTokensOnTrack).toBe(7)
+    expect(view.sympathyTrack).toHaveLength(10)
+  })
+
+  it('Vagabond: satchel + tracks + damaged', () => {
+    const view = buildFactionBoardViewModelFromPlayer({
+      seat: 3,
+      faction: 'vagabond',
+      vp: 1,
+      hand: [],
+      board: {
+        kind: 'vagabond',
+        satchel: [
+          { type: 'boot', exhausted: false },
+          { type: 'torch', exhausted: true },
+        ],
+        tracks: {
+          tea: [{ type: 'tea', exhausted: false }],
+          coin: [],
+          bag: [{ type: 'bag', exhausted: true }],
+        },
+        damaged: [{ type: 'sword', exhausted: true }],
+        forest: null,
+      },
+    })
+    expect(view).not.toBeNull()
+    if (view === null || view.kind !== 'vagabond') {
+      throw new Error('expected vagabond view')
+    }
+    expect(view.satchel).toHaveLength(2)
+    expect(view.tracks.tea).toHaveLength(1)
+    expect(view.tracks.bag[0]?.exhausted).toBe(true)
+    expect(view.damaged).toEqual([{ type: 'sword', exhausted: true }])
+    expect(view.startingItems).toContain('torch')
+  })
+
   it('returns null for missing board', () => {
     expect(
       buildFactionBoardViewModelFromPlayer({
