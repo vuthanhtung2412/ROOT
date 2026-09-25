@@ -163,7 +163,7 @@ export class GameScene extends Phaser.Scene {
         this.applyComposerOutcome(this.composer.confirm())
       },
       onCancel: () => {
-        this.applyComposerOutcome(this.composer.cancel())
+        void this.cancelActionUnderResolution()
       },
       onPickOption: (value) => {
         this.applyComposerOutcome(this.composer.chooseColumn(value))
@@ -425,6 +425,23 @@ export class GameScene extends Phaser.Scene {
       this.eyrieComposer.getDraft(),
       this.eventComposer.getDraft(),
     ])
+  }
+
+  /**
+   * Abort frontend under-resolution. Silent idle cancel → refresh from server
+   * (clears optimistic previews). Decline `ready` keeps submit path only.
+   */
+  private async cancelActionUnderResolution(): Promise<void> {
+    const wasUnderResolution = this.isActionUnderResolution()
+    const outcome = this.composer.cancel()
+    this.applyComposerOutcome(outcome)
+    if (!wasUnderResolution) {
+      return
+    }
+    if (outcome.kind !== 'idle') {
+      return
+    }
+    await this.session?.refresh()
   }
 
   private syncBattleClearingHighlight(state: GameState): void {

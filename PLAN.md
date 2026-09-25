@@ -21,11 +21,6 @@
 - Manual: cancel march → board matches server; FH Decline still posts
 
 ### Commit plan
-- `refactor(phaser): name action-under-resolution`
-  - `actionUnderResolution.ts` + test
-  - `actionTrayDisable.ts` + test
-  - `GameScene.ts` (helper wire)
-  - `PLAN.md` / notes / `REPORT.md`
+- ~~`refactor(phaser): name action-under-resolution`~~
 - `feat(phaser): refresh on staging cancel`
-  - `GameScene.ts` (cancel → `session.refresh()`)
-  - notes cancel rule (already documents refresh)
+  - `GameScene.ts` (cancel → `session.refresh()` when leave under-resolution to idle)
