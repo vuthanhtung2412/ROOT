@@ -36,6 +36,9 @@ export type ActionChoiceParamsView = {
   order?: number[][]
   leaders?: string[]
   building?: string[]
+  op?: Array<'move' | 'battle' | 'recruit' | 'organize'>
+  forests?: number[]
+  supporterIds?: string[]
 }
 
 export function readChoiceParams(
@@ -109,6 +112,18 @@ export function readChoiceParams(
   if (building !== undefined) {
     view.building = building
   }
+  const op = asMilitaryOpArray(raw.op)
+  if (op !== undefined) {
+    view.op = op
+  }
+  const forests = asNumberArray(raw.forests)
+  if (forests !== undefined) {
+    view.forests = forests
+  }
+  const supporterIds = asStringArray(raw.supporterIds)
+  if (supporterIds !== undefined) {
+    view.supporterIds = supporterIds
+  }
   return view
 }
 
@@ -120,6 +135,23 @@ function asStringArray(value: unknown): string[] | undefined {
     return undefined
   }
   return value
+}
+
+const MILITARY_OPS = new Set(['move', 'battle', 'recruit', 'organize'])
+
+function isMilitaryOp(
+  value: string,
+): value is 'move' | 'battle' | 'recruit' | 'organize' {
+  return MILITARY_OPS.has(value)
+}
+
+function asMilitaryOpArray(
+  value: unknown,
+): Array<'move' | 'battle' | 'recruit' | 'organize'> | undefined {
+  const strings = asStringArray(value)
+  if (strings === undefined) return undefined
+  if (!strings.every(isMilitaryOp)) return undefined
+  return strings
 }
 
 function asNumberArray(value: unknown): number[] | undefined {
@@ -225,6 +257,9 @@ const IMMEDIATE_TYPES = new Set([
   'eveningDraw',
   'emergencyOrders',
   'eveningScore',
+  'refresh',
+  'rest',
+  'explore',
 ])
 
 export type ActionComposerHooks = {

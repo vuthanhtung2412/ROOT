@@ -45,6 +45,17 @@ function formatActionLabel(
     const op = params.op?.[0]
     return op !== undefined ? `op: ${op}` : 'military op'
   }
+  if (spec.type === 'refresh') return 'refresh'
+  if (spec.type === 'slip') return 'slip'
+  if (spec.type === 'vbMove') return 'move'
+  if (spec.type === 'vbBattle') return 'battle'
+  if (spec.type === 'explore') return 'explore'
+  if (spec.type === 'aid') return 'aid'
+  if (spec.type === 'strike') return 'strike'
+  if (spec.type === 'repair') return 'repair'
+  if (spec.type === 'vbCraft') return 'craft'
+  if (spec.type === 'steal') return 'steal'
+  if (spec.type === 'rest') return 'rest'
   if (spec.type === 'resolveEvent') {
     const startingBuilding = params.building?.[0]
     if (startingBuilding !== undefined) {

@@ -39,7 +39,12 @@ export type PlayResult = 'continued' | JoinMatchResult
 
 const FIRST_PLAYER_ID = 'marquise'
 const SECOND_PLAYER_ID = 'eyrie'
-const DEFAULT_FACTIONS: string[] = ['marquise', 'eyrie']
+const DEFAULT_FACTIONS: string[] = [
+  'marquise',
+  'eyrie',
+  'alliance',
+  'vagabond',
+]
 
 export type GameSessionDependencies = {
   api: FrontendApiClient

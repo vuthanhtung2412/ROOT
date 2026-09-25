@@ -29,6 +29,7 @@ import {
   createMarquiseCardComposerHooks,
 } from '#game/resolution/marquiseActionComposer.ts'
 import { createMarchWorkflowHooks } from '#game/resolution/marchWorkflowHooks.ts'
+import { createVagabondComposerHooks } from '#game/resolution/vagabondActionComposer.ts'
 import { readBattleClearingId } from '#game/battleOverlayModel.ts'
 import {
   applyMarchPreview,
@@ -82,6 +83,7 @@ export class ReactGameController {
   private marquiseBoard = createMarquiseBoardComposerHooks()
   private marquiseCards = createMarquiseCardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
+  private vagabondComposer = createVagabondComposerHooks()
   private eventComposer = createEventComposerHooks()
   private unsubscribe: (() => void) | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -134,6 +136,7 @@ export class ReactGameController {
     })
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
+    this.vagabondComposer = createVagabondComposerHooks()
     this.eventComposer = createEventComposerHooks()
     this.autoPrompts = new AutoPromptController({
       applyComposerOutcome: (outcome) => this.applyComposerOutcome(outcome),
@@ -179,6 +182,7 @@ export class ReactGameController {
         this.marquiseMarch.hooks,
         this.marquiseBoard.hooks,
         this.eyrieComposer.hooks,
+        this.vagabondComposer.hooks,
         this.eventComposer.hooks,
       ),
     )
