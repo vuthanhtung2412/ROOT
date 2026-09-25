@@ -10,7 +10,7 @@ import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
-import { resetHud, setHudCallbacks } from '#game/hudStore.ts'
+import { patchHud, resetHud, setHudCallbacks } from '#game/hudStore.ts'
 import { showCardDetail } from '#react/CardDetailOverlay.tsx'
 import {
   syncLeaderPickOverlay,
