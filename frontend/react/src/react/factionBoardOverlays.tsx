@@ -6,6 +6,7 @@ import {
   type FactionBoardPixelLayout,
 } from '#assets/factionBoardLayout.ts'
 import {
+  factionTextureKey,
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
   itemTextureKey,
@@ -13,6 +14,7 @@ import {
 import { lookupEyrieLeader } from '#assets/eyrieLeaderCatalog.ts'
 import { EYRIE_ROOST_TRACK_SLOT_COUNT } from '#assets/eyrieBoardCatalog.ts'
 import { MARQUISE_TRACK_SLOT_COUNT } from '#assets/marquiseBoardCatalog.ts'
+import { ALLIANCE_SYMPATHY_TRACK_SLOT_COUNT } from '#assets/allianceBoardCatalog.ts'
 import {
   formatDecreeSuitCounts,
   type CraftedItemView,
@@ -145,13 +147,12 @@ function SupplyOverlays(props: OverlayBaseProps): JSX.Element {
           region={warriorsRegion}
           layout={props.layout}
           countLabel={String(props.view.warriors)}
-          textureKey={
-            props.view.kind === 'marquise'
-              ? GAME_ASSET_KEYS.factionMarquise
-              : GAME_ASSET_KEYS.factionEyrie
-          }
+          textureKey={factionTextureKey(props.view.kind)}
           alt="Warriors supply"
         />
+      ) : null}
+      {props.view.kind === 'alliance' ? (
+        <AllianceSupplyExtras view={props.view} layout={props.layout} />
       ) : null}
       {props.view.kind === 'marquise' && woodRegion !== null ? (
         <SupplyCell
@@ -302,15 +303,85 @@ function EyrieLeaderOverlay(props: {
   )
 }
 
+function AllianceSupplyExtras(props: {
+  view: Extract<FactionBoardViewModel, { kind: 'alliance' }>
+  layout: FactionBoardPixelLayout
+}): JSX.Element {
+  const officersRegion = findBoardLayoutRegion(props.layout, 'officers')
+  const supportersRegion = findBoardLayoutRegion(props.layout, 'supporters')
+  return (
+    <>
+      {officersRegion !== null ? (
+        <SupplyCell
+          region={officersRegion}
+          layout={props.layout}
+          countLabel={String(props.view.officers)}
+          textureKey={GAME_ASSET_KEYS.tokenAllianceWarrior}
+          alt="Officers"
+        />
+      ) : null}
+      {supportersRegion !== null ? (
+        <div
+          className="faction-board-modal__supply"
+          style={layoutRegionStyle(supportersRegion, props.layout)}
+        >
+          <span className="faction-board-modal__supply-badge">
+            {String(props.view.supporters)}
+          </span>
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+function VagabondItemOverlays(props: {
+  view: Extract<FactionBoardViewModel, { kind: 'vagabond' }>
+  layout: FactionBoardPixelLayout
+}): JSX.Element {
+  const satchelRegion = findBoardLayoutRegion(props.layout, 'satchel')
+  const damagedRegion = findBoardLayoutRegion(props.layout, 'damaged')
+  return (
+    <>
+      {satchelRegion !== null ? (
+        <div
+          className="faction-board-modal__crafted"
+          style={layoutRegionStyle(satchelRegion, props.layout)}
+        >
+          {props.view.satchel.map((item, index) => (
+            <CraftedItemIcon
+              key={`satchel-${item.type}-${String(index)}`}
+              item={{ type: item.type, exhausted: item.exhausted, count: 1 }}
+            />
+          ))}
+        </div>
+      ) : null}
+      {damagedRegion !== null && props.view.damaged.length > 0 ? (
+        <div
+          className="faction-board-modal__crafted"
+          style={layoutRegionStyle(damagedRegion, props.layout)}
+        >
+          {props.view.damaged.map((item, index) => (
+            <CraftedItemIcon
+              key={`damaged-${item.type}-${String(index)}`}
+              item={{ type: item.type, exhausted: true, count: 1 }}
+            />
+          ))}
+        </div>
+      ) : null}
+    </>
+  )
+}
+
 /** Layout-baked tokens/supply/decree/leader — coords from *.layout.json. */
 export function FactionBoardOverlays(props: OverlayBaseProps): JSX.Element {
   return (
     <div className="faction-board-modal__overlays">
       <CraftedItemsOverlay {...props} />
-      <SupplyOverlays {...props} />
+      {props.view.kind !== 'vagabond' ? <SupplyOverlays {...props} /> : null}
       {props.view.kind === 'marquise' ? (
         <MarquiseTrackOverlays view={props.view} layout={props.layout} />
-      ) : (
+      ) : null}
+      {props.view.kind === 'eyrie' ? (
         <>
           <RemainingTrackTokens
             layout={props.layout}
@@ -323,7 +394,22 @@ export function FactionBoardOverlays(props: OverlayBaseProps): JSX.Element {
           <EyrieDecreeOverlays view={props.view} layout={props.layout} />
           <EyrieLeaderOverlay view={props.view} layout={props.layout} />
         </>
-      )}
+      ) : null}
+      {props.view.kind === 'alliance' ? (
+        <RemainingTrackTokens
+          layout={props.layout}
+          trackId="sympathy"
+          cellCount={ALLIANCE_SYMPATHY_TRACK_SLOT_COUNT}
+          emptiedCount={
+            ALLIANCE_SYMPATHY_TRACK_SLOT_COUNT - props.view.sympathyTokensOnTrack
+          }
+          textureKey={GAME_ASSET_KEYS.tokenAllianceSympathy}
+          alt="Sympathy"
+        />
+      ) : null}
+      {props.view.kind === 'vagabond' ? (
+        <VagabondItemOverlays view={props.view} layout={props.layout} />
+      ) : null}
     </div>
   )
 }

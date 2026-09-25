@@ -18,6 +18,20 @@ import {
   type MarquiseAbilityInfo,
   type MarquiseTrackColumn,
 } from '#assets/marquiseBoardCatalog.ts'
+import {
+  ALLIANCE_ABILITIES,
+  ALLIANCE_SYMPATHY_TRACK,
+  ALLIANCE_SYMPATHY_TRACK_SLOT_COUNT,
+  ALLIANCE_TURN_CHEAT,
+  type AllianceAbilityInfo,
+  type AllianceSympathyTrackColumn,
+} from '#assets/allianceBoardCatalog.ts'
+import {
+  THIEF_STARTING_ITEM_LABELS,
+  VAGABOND_ABILITIES,
+  VAGABOND_TURN_CHEAT,
+  type VagabondAbilityInfo,
+} from '#assets/vagabondBoardCatalog.ts'
 import type { GameState } from '#api/client.ts'
 
 export type CraftedItemView = {
@@ -87,7 +101,52 @@ export type EyrieBoardViewModel = {
   boardTextureKey: string
 }
 
-export type FactionBoardViewModel = MarquiseBoardViewModel | EyrieBoardViewModel
+export type AllianceBoardViewModel = {
+  kind: 'alliance'
+  seat: number
+  factionName: string
+  victoryPoints: number
+  warriors: number
+  officers: number
+  supporters: number
+  handSize: number
+  crafted: CraftedLookup
+  abilities: readonly AllianceAbilityInfo[]
+  turnCheat: readonly string[]
+  sympathyTrack: readonly AllianceSympathyTrackColumn[]
+  /** Tokens still on track (right side); emptied = placed on map. */
+  sympathyTokensOnTrack: number
+  basesInSupply: readonly string[]
+  boardTextureKey: string
+}
+
+export type VagabondBoardViewModel = {
+  kind: 'vagabond'
+  seat: number
+  factionName: string
+  victoryPoints: number
+  warriors: number
+  handSize: number
+  crafted: CraftedLookup
+  abilities: readonly VagabondAbilityInfo[]
+  turnCheat: readonly string[]
+  startingItems: readonly string[]
+  satchel: Array<{ type: string; exhausted: boolean }>
+  damaged: Array<{ type: string; exhausted: boolean }>
+  tracks: {
+    tea: Array<{ type: string; exhausted: boolean }>
+    coin: Array<{ type: string; exhausted: boolean }>
+    bag: Array<{ type: string; exhausted: boolean }>
+  }
+  forest: number | null
+  boardTextureKey: string
+}
+
+export type FactionBoardViewModel =
+  | MarquiseBoardViewModel
+  | EyrieBoardViewModel
+  | AllianceBoardViewModel
+  | VagabondBoardViewModel
 
 type MarquiseBoardData = {
   kind: 'marquise'
@@ -107,6 +166,29 @@ type EyrieBoardData = {
   leader: string | null
   roostTrack: { placed: number }
   decree?: Partial<Record<EyrieDecreeColumnId, EyrieDecreeCard[]>>
+}
+
+type AllianceBoardData = {
+  kind: 'alliance'
+  supply: { warriors: number }
+  supporters: unknown[]
+  officers: number
+  bases: string[]
+  sympathyTrack: { placed: number }
+}
+
+type VagabondItemData = { type: string; exhausted: boolean }
+
+type VagabondBoardData = {
+  kind: 'vagabond'
+  satchel: VagabondItemData[]
+  tracks: {
+    tea: VagabondItemData[]
+    coin: VagabondItemData[]
+    bag: VagabondItemData[]
+  }
+  damaged: VagabondItemData[]
+  forest: number | null
 }
 
 type PlayerForBoard = {
@@ -130,6 +212,20 @@ function isEyrieBoardData(value: unknown): value is EyrieBoardData {
     return false
   }
   return Reflect.get(value, 'kind') === 'eyrie'
+}
+
+function isAllianceBoardData(value: unknown): value is AllianceBoardData {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  return Reflect.get(value, 'kind') === 'alliance'
+}
+
+function isVagabondBoardData(value: unknown): value is VagabondBoardData {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  return Reflect.get(value, 'kind') === 'vagabond'
 }
 
 function emptiedBuildingColumns(placedOnTrack: number): number {
@@ -251,6 +347,8 @@ function readActiveDecreeColumn(turnScratch: unknown): EyrieDecreeColumnId | nul
 export const CHARACTER_BOARD_TEXTURE_KEYS = {
   marquise: GAME_ASSET_KEYS.characterBoardMarquise,
   eyrie: GAME_ASSET_KEYS.characterBoardEyrie,
+  alliance: GAME_ASSET_KEYS.characterBoardAlliance,
+  vagabond: GAME_ASSET_KEYS.characterBoardVagabond,
 } as const
 
 export function buildFactionBoardViewModel(
@@ -318,6 +416,70 @@ export function buildFactionBoardViewModelFromPlayer(
       decreeColumns: decreeColumnsFromBoard(board.decree),
       activeDecreeColumn: null,
       boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.eyrie,
+    }
+  }
+
+  if (player.faction === 'alliance' && isAllianceBoardData(player.board)) {
+    const board = player.board
+    return {
+      kind: 'alliance',
+      seat: player.seat,
+      factionName: 'Woodland Alliance',
+      victoryPoints: player.vp,
+      warriors: board.supply.warriors,
+      officers: board.officers,
+      supporters: board.supporters.length,
+      handSize: player.hand.length,
+      crafted: craftedLookup(player),
+      abilities: ALLIANCE_ABILITIES,
+      turnCheat: ALLIANCE_TURN_CHEAT,
+      sympathyTrack: ALLIANCE_SYMPATHY_TRACK,
+      sympathyTokensOnTrack: Math.min(
+        ALLIANCE_SYMPATHY_TRACK_SLOT_COUNT,
+        Math.max(0, board.sympathyTrack.placed),
+      ),
+      basesInSupply: board.bases,
+      boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.alliance,
+    }
+  }
+
+  if (player.faction === 'vagabond' && isVagabondBoardData(player.board)) {
+    const board = player.board
+    return {
+      kind: 'vagabond',
+      seat: player.seat,
+      factionName: 'Vagabond (Thief)',
+      victoryPoints: player.vp,
+      warriors: 0,
+      handSize: player.hand.length,
+      crafted: craftedLookup(player),
+      abilities: VAGABOND_ABILITIES,
+      turnCheat: VAGABOND_TURN_CHEAT,
+      startingItems: [...THIEF_STARTING_ITEM_LABELS],
+      satchel: board.satchel.map((item) => ({
+        type: item.type,
+        exhausted: item.exhausted,
+      })),
+      damaged: board.damaged.map((item) => ({
+        type: item.type,
+        exhausted: item.exhausted,
+      })),
+      tracks: {
+        tea: board.tracks.tea.map((item) => ({
+          type: item.type,
+          exhausted: item.exhausted,
+        })),
+        coin: board.tracks.coin.map((item) => ({
+          type: item.type,
+          exhausted: item.exhausted,
+        })),
+        bag: board.tracks.bag.map((item) => ({
+          type: item.type,
+          exhausted: item.exhausted,
+        })),
+      },
+      forest: board.forest,
+      boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.vagabond,
     }
   }
 
