@@ -10,16 +10,13 @@ import {
 } from '#react/HudChrome.tsx'
 import { syncActionTray } from '#react/ActionTray.tsx'
 import { syncPlayerRail } from '#react/PlayerRail.tsx'
+import { syncTurnBannerTurn } from '#react/TurnBanner.tsx'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { CardHand } from '#ui/CardHand.ts'
-import {
-  buildTurnBannerViewModel,
-  type TurnBanner,
-} from '#ui/TurnBanner.ts'
+import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 
 export type GameSceneHudPaintDeps = {
   getSession: () => GameSession | null
-  getTurnBanner: () => TurnBanner | null
   getCardHand: () => CardHand | null
   getCardTextureWarmup: () => CardTextureWarmup | null
   getModals: () => GameSceneModals | null
@@ -48,7 +45,7 @@ export function paintGameSceneHud(
     snapshot.legalActions,
   )
   const localControlsActor = deps.localPlayerControlsSeat(banner.actorSeat)
-  deps.getTurnBanner()?.syncTurn(banner)
+  syncTurnBannerTurn(banner)
   syncPlayerRail(snapshot.state, banner.actorSeat)
   warmCardTexturesForHand(
     snapshot.state,

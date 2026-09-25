@@ -45,10 +45,8 @@ import { syncActionTray } from '#react/ActionTray.tsx'
 import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
-import {
-  buildTurnBannerViewModel,
-  TurnBanner,
-} from '#ui/TurnBanner.ts'
+import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
+import { syncTurnBannerComposer } from '#react/TurnBanner.tsx'
 import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import { drawCoverWallpaper } from '#ui/sceneBackdrop.ts'
 
@@ -59,7 +57,6 @@ export type GameSceneData = {
 export class GameScene extends Phaser.Scene {
   private session: GameSession | null = null
   private boardView: BoardView | null = null
-  private turnBanner: TurnBanner | null = null
   private cardHand: CardHand | null = null
   private battleOverlay: BattleOverlay | null = null
   private readonly composer = new ActionComposer()
@@ -202,17 +199,6 @@ export class GameScene extends Phaser.Scene {
       },
     })
 
-    this.turnBanner = new TurnBanner(this, {
-      onConfirm: () => {
-        this.applyComposerOutcome(this.composer.confirm())
-      },
-      onCancel: () => {
-        void this.cancelActionUnderResolution()
-      },
-      onPickOption: (value) => {
-        this.applyComposerOutcome(this.composer.chooseColumn(value))
-      },
-    })
     this.cardTextureWarmup = new CardTextureWarmup(this)
     this.cardTextureWarmup.setOnReady(() => {
       this.repaintCardHandFromLatestSnapshot()
@@ -270,8 +256,6 @@ export class GameScene extends Phaser.Scene {
     }
     this.boardView?.destroy()
     this.boardView = null
-    this.turnBanner?.destroy()
-    this.turnBanner = null
     this.cardHand?.destroy()
     this.cardHand = null
     this.cardTextureWarmup = null
@@ -320,7 +304,7 @@ export class GameScene extends Phaser.Scene {
     applyComposerOutcomeToHud(outcome, {
       getLatestSnapshot: () => this.latestSnapshot,
       syncComposerBanner: (input) => {
-        this.turnBanner?.syncComposer(input)
+        syncTurnBannerComposer(input)
       },
       syncLeaderPick: (leaders) => {
         syncLeaderPickOverlay(leaders)
@@ -490,7 +474,6 @@ export class GameScene extends Phaser.Scene {
   private paintHud(snapshot: GameSessionSnapshot): void {
     paintGameSceneHud(snapshot, {
       getSession: () => this.session,
-      getTurnBanner: () => this.turnBanner,
       getCardHand: () => this.cardHand,
       getCardTextureWarmup: () => this.cardTextureWarmup,
       getModals: () => this.modals,

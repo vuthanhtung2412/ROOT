@@ -12,6 +12,7 @@ import {
 } from '#react/HudChrome.tsx'
 import { PlayerRail } from '#react/PlayerRail.tsx'
 import { ActionTray } from '#react/ActionTray.tsx'
+import { TurnBanner } from '#react/TurnBanner.tsx'
 
 /**
  * React HUD layer above the Phaser canvas.
@@ -20,6 +21,7 @@ import { ActionTray } from '#react/ActionTray.tsx'
 export function ReactHud(): JSX.Element {
   return (
     <>
+      <TurnBanner />
       <PlayerRail />
       <ActionTray />
       <FactionBoardModal />
