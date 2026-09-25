@@ -3,7 +3,7 @@ import { factionFor } from '#factions/index.js'
 import { createInitialState, runSharedSetup } from '#game/setup.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
-import { factionOf } from '#queries/seat.js'
+import { factionOf, playerOf } from '#queries/seat.js'
 import { syncPlaceIdsFromState } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
 import { SeededRng } from '#rules/Rng.js'
@@ -366,6 +366,12 @@ export class Game {
         state.turnScratch.decree = null
         state.turnScratch.decreeDone = false
       }
+      if (state.phase === 'evening' && state.step === 'military') {
+        const board = playerOf(state, state.currentSeat).board
+        if (board.kind === 'alliance') {
+          state.turnScratch.militaryOpsLeft = board.officers
+        }
+      }
       logs.push({
         t: 'phase',
         actor: state.currentSeat,
@@ -382,6 +388,12 @@ export class Game {
       const nextPhase = PHASES[pi + 1]!
       state.phase = nextPhase
       state.step = faction.steps[nextPhase][0]!
+      if (nextPhase === 'evening' && state.step === 'military') {
+        const board = playerOf(state, state.currentSeat).board
+        if (board.kind === 'alliance') {
+          state.turnScratch.militaryOpsLeft = board.officers
+        }
+      }
       ctx.emit({ s: 'phase.start', actor: state.currentSeat, phase: nextPhase })
       logs.push(
         { t: 'phase', actor: state.currentSeat, phase: state.phase, step: state.step },

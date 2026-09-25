@@ -37,6 +37,14 @@ function formatActionLabel(
     }
     return column !== undefined ? column : 'decree'
   }
+  if (spec.type === 'revolt') return 'revolt'
+  if (spec.type === 'spreadSympathy') return 'spread sympathy'
+  if (spec.type === 'mobilize') return 'mobilize'
+  if (spec.type === 'train') return 'train'
+  if (spec.type === 'militaryOp') {
+    const op = params.op?.[0]
+    return op !== undefined ? `op: ${op}` : 'military op'
+  }
   if (spec.type === 'resolveEvent') {
     const startingBuilding = params.building?.[0]
     if (startingBuilding !== undefined) {
@@ -54,6 +62,14 @@ function formatActionLabel(
       }
       if (params.cardIds !== undefined) {
         return 'Field Hospitals: pay'
+      }
+    }
+    if (pendingType === 'outrage') {
+      if (params.decline !== undefined) {
+        return 'Outrage: reveal'
+      }
+      if (params.cardIds !== undefined) {
+        return 'Outrage: give card'
       }
     }
     if (params.decline !== undefined) {

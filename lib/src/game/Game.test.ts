@@ -32,19 +32,18 @@ describe('Game lobby', () => {
 
   it('Game.create rejects factions without implementations', () => {
     expect(() =>
-      Game.create({ seed: 1, factions: ['marquise', 'alliance'] }),
-    ).toThrow(expect.objectContaining({ code: 'UNSUPPORTED_FACTION' }))
-    expect(() =>
       Game.create({ seed: 1, factions: ['marquise', 'vagabond'] }),
     ).toThrow(expect.objectContaining({ code: 'UNSUPPORTED_FACTION' }))
   })
 
-  it('Game.join assigns factions[seat] — marquise then eyrie', () => {
+  it('Game.join assigns factions[seat] — marquise, eyrie, alliance', () => {
     const game = Game.create({ seed: 1 })
     game.join('p0')
     game.join('p1')
+    game.join('p2')
     expect(game.state.players[0]!.faction).toBe('marquise')
     expect(game.state.players[1]!.faction).toBe('eyrie')
+    expect(game.state.players[2]!.faction).toBe('alliance')
   })
 
   it('Game.join rejects when full', () => {
@@ -115,7 +114,7 @@ describe('Game.legalActions', () => {
     game.join('a')
     expect(game.legalActions().map((a) => a.type)).toEqual(['join'])
     game.join('b')
-    expect(game.legalActions().map((a) => a.type)).toEqual(['start'])
+    expect(game.legalActions().map((a) => a.type)).toEqual(['join', 'start'])
   })
 })
 

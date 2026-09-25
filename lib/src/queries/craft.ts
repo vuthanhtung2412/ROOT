@@ -47,6 +47,7 @@ function craftingSources(state: GameState, seat: Seat): CraftSource[] {
         out.push({ piece, suit, clearingId })
       }
       if (piece.kind === 'token' && piece.type === 'sympathy') {
+        if (state.turnScratch.sympathyCraftedIds.includes(piece.id)) continue
         out.push({ piece, suit, clearingId })
       }
     }

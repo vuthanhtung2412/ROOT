@@ -53,6 +53,10 @@ export type TurnScratch = {
   eveningScoreDone: boolean
   decree: DecreeCursor | null
   decreeDone: boolean
+  /** Alliance Evening — military ops remaining (≤ officers). */
+  militaryOpsLeft: number
+  /** Sympathy token piece ids activated for craft this turn. */
+  sympathyCraftedIds: string[]
 }
 
 export type GameState = {

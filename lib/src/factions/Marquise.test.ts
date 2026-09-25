@@ -6,6 +6,7 @@ import { warriors } from '#queries/pieces.js'
 import { keepOwner } from '#queries/place.js'
 import { resetPlaceIds } from '#rules/place.js'
 import { HAND_LIMIT } from '#state/constants.js'
+import { createTurnScratch } from '#state/turnScratch.js'
 import {
   card,
   createPlayingGame,
@@ -386,24 +387,17 @@ describe('Marquise turn', () => {
     const state = withPieces(minimalState(), 0, [
       { id: 'ws', kind: 'building', owner: 0, type: 'workshop', used: true },
     ])
-    state.turnScratch = {
+    state.turnScratch = createTurnScratch({
       actionsLeft: 0,
       extraActions: 1,
       recruited: true,
       birdsongWoodDone: true,
       eveningDrawDone: true,
       swapMeetUsed: true,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
       emergencyOrdersDone: true,
       eveningScoreDone: true,
-      decree: null,
       decreeDone: true,
-    }
+    })
     MARQUISE.endTurn(state)
     const workshop = state.clearings[0]!.pieces[0]
     expect(workshop?.kind).toBe('building')
@@ -412,24 +406,9 @@ describe('Marquise turn', () => {
     } else {
       throw new Error('expected workshop')
     }
-    expect(state.turnScratch).toEqual({
-      actionsLeft: 3,
-      extraActions: 0,
-      recruited: false,
-      birdsongWoodDone: false,
-      eveningDrawDone: false,
-      swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-      emergencyOrdersDone: false,
-      eveningScoreDone: false,
-      decree: null,
-      decreeDone: false,
-    })
+    expect(state.turnScratch).toEqual(
+      createTurnScratch({ actionsLeft: 3 }),
+    )
   })
 })
 

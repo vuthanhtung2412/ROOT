@@ -65,13 +65,22 @@ export function eyrieLeaderPools(leader: EyrieLeader): {
 export type DecreeColumn = 'recruit' | 'move' | 'battle' | 'build'
 export const DECREE_COLUMNS: DecreeColumn[] = ['recruit', 'move', 'battle', 'build']
 
+/** Rule: Alliance sympathy track — cost / VP by token index L→R (0–9). */
+export const ALLIANCE_SYMPATHY_COST = [1, 1, 1, 2, 2, 2, 3, 3, 3, 3] as const
+export const ALLIANCE_SYMPATHY_VP = [0, 1, 1, 1, 2, 2, 3, 4, 4, 4] as const
+export const ALLIANCE_SYMPATHY_TRACK_SIZE = 10
+export const ALLIANCE_SUPPORTERS_CAP_WITHOUT_BASE = 5
+export const ALLIANCE_STARTING_SUPPORTERS = 3
+export const ALLIANCE_BASE_SUITS: readonly Suit[] = ['fox', 'rabbit', 'mouse']
 
 export type AllianceBoard = {
   kind: 'alliance'
   supply: { warriors: number }
   supporters: Card[]
   officers: number
+  /** Bases still on the faction board (not yet revolted onto the map). */
   bases: Suit[]
+  /** Sympathy tokens remaining on the track. */
   sympathyTrack: { placed: number }
 }
 
@@ -118,8 +127,8 @@ export function createFactionBoard(faction: FactionId): FactionBoard {
         supply: { warriors: 10 },
         supporters: [],
         officers: 0,
-        bases: [],
-        sympathyTrack: { placed: 0 },
+        bases: [...ALLIANCE_BASE_SUITS],
+        sympathyTrack: { placed: ALLIANCE_SYMPATHY_TRACK_SIZE },
       }
     case 'vagabond':
       return {

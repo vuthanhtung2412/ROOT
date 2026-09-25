@@ -8,6 +8,7 @@ import type { Rng } from '#rules/Rng.js'
 import {
   EYRIE_LEADERS,
   eyrieLeaderPools,
+  createFactionBoard,
   type EyrieBoard,
   type EyrieLeader,
   type MarquiseBoard,
@@ -112,6 +113,12 @@ export function player(
   faction: FactionId,
   overrides?: Partial<Omit<PlayerState, 'seat' | 'faction'>>,
 ): PlayerState {
+  const board =
+    faction === 'eyrie'
+      ? eyrieBoard()
+      : faction === 'alliance'
+        ? createFactionBoard('alliance')
+        : marquiseBoard()
   return {
     playerId: `p${seat}`,
     seat,
@@ -120,7 +127,7 @@ export function player(
     hand: [],
     playArea: [],
     craftedItems: [],
-    board: faction === 'eyrie' ? eyrieBoard() : marquiseBoard(),
+    board,
     ...overrides,
   }
 }

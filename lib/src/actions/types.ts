@@ -68,6 +68,8 @@ export type ActionChoiceParams = {
   useEffect?: boolean[]
   column?: DecreeColumn[]
   leaders?: EyrieLeader[]
+  supporterIds?: string[]
+  op?: Array<'move' | 'battle' | 'recruit' | 'organize'>
 }
 
 export type Action =
@@ -132,6 +134,19 @@ export type Action =
       clearing?: ClearingId
       defender?: Seat
       moves?: MarchMove[]
+    }
+  | { type: 'revolt'; clearing: ClearingId }
+  | { type: 'spreadSympathy'; clearing: ClearingId; supporterIds: string[] }
+  | { type: 'mobilize'; cardId: string }
+  | { type: 'train'; cardId: string }
+  | {
+      type: 'militaryOp'
+      op: 'move' | 'battle' | 'recruit' | 'organize'
+      from?: ClearingId
+      to?: ClearingId
+      count?: number
+      clearing?: ClearingId
+      defender?: Seat
     }
   | ResolveEventAction
 

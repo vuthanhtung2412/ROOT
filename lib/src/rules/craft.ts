@@ -39,6 +39,9 @@ export function craftCard(
     if (isCraftingBuilding(src.piece)) {
       src.piece.used = true
     }
+    if (src.piece.kind === 'token' && src.piece.type === 'sympathy') {
+      state.turnScratch.sympathyCraftedIds.push(src.piece.id)
+    }
   }
 
   const logs: LogEntry[] = []

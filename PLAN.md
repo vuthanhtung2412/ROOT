@@ -1,14 +1,13 @@
 ### Goal
-- Tailwind on `@root/react`; migrate UI CSS → utilities
+- Ship GP3 (Alliance) then GP4 (Vagabond/Thief); auto gates + frontend QA.
 
 ### Approach
-- Done: Tailwind v4 + `@tailwindcss/vite`, `@theme` tokens, `portrait` variant
-- Migrated: menu/boot/game/HUD/board/pieces to className utilities
-- Left as CSS (theme-tokenized): gallery / battle / card-detail / faction-board modals
+- Mirror Eyrie faction shell; Phase 11 then 12 from grand-plan.
+- React: tokens + tray labels + composers; no full faction-board modals.
+- Guerrilla War: Alliance defender gets higher die.
 
 ### Test plan
-- typecheck + test + build (green)
+- Rule-named vitest per bullet; `auto --turns 50` gates; frontend Continue-loaded-game.
 
 ### Commit plan
-- [ ] `build(ui): add Tailwind v4 Vite plugin`
-- [ ] `refactor(ui): migrate shell/HUD to Tailwind`
+See `.cursor/plans/GP3 GP4 factions-3bb13606.plan.md` Phase 11–12 list.

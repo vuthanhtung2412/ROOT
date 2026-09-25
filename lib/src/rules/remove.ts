@@ -4,6 +4,14 @@ import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import type { Piece, Seat } from '#pieces/types.js'
 import { matchesSuit } from '#cards/suit.js'
+import { Deck } from '#cards/Deck.js'
+import type { Card } from '#cards/types.js'
+import { defOf } from '#cards/Deck.js'
+import { enqueueOutrage } from '#events/outrage.js'
+import {
+  boardOf,
+  discardSupportersOverflow,
+} from '#factions/alliance/rules.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
@@ -52,6 +60,48 @@ function returnPieceToOwner(state: GameState, piece: Piece): void {
     // Rule: Eyrie — destroyed roosts return to rightmost empty track space.
     board.roostTrack.placed = Math.min(6, board.roostTrack.placed + 1)
   }
+  if (piece.kind === 'token' && piece.type === 'sympathy' && board.kind === 'alliance') {
+    board.sympathyTrack.placed = Math.min(
+      10,
+      board.sympathyTrack.placed + 1,
+    )
+  }
+}
+
+/** Rule: Alliance — base removed → discard matching supporters; half officers up; cap 5. */
+function applyAllianceBaseRemoval(
+  state: GameState,
+  seat: Seat,
+  clearing: ClearingId,
+): void {
+  const board = boardOf(state, seat)
+  const suit = FALL.clearings[clearing]!.suit
+  const kept: Card[] = []
+  const discarded: Card[] = []
+  for (const card of board.supporters) {
+    const cardSuit = defOf(card).suit
+    if (cardSuit === suit || cardSuit === 'bird') {
+      discarded.push(card)
+    } else {
+      kept.push(card)
+    }
+  }
+  board.supporters = kept
+  for (const card of discarded) {
+    Deck.discard(state.deck, card, {
+      onDominance: (dominanceCard) => state.dominanceAvailable.push(dominanceCard),
+    })
+  }
+  const removeOfficers = Math.ceil(board.officers / 2)
+  if (removeOfficers > 0) {
+    board.officers -= removeOfficers
+    board.supply.warriors += removeOfficers
+  }
+  for (const overflow of discardSupportersOverflow(board)) {
+    Deck.discard(state.deck, overflow, {
+      onDominance: (dominanceCard) => state.dominanceAvailable.push(dominanceCard),
+    })
+  }
 }
 
 /** Rule: Victory — +1 VP per enemy building/token removed. */
@@ -83,6 +133,22 @@ export function removePieces(
       victims.set(piece.owner, (victims.get(piece.owner) ?? 0) + 1)
     } else {
       returnPieceToOwner(state, piece)
+    }
+    if (
+      piece.kind === 'building' &&
+      piece.type === 'base' &&
+      playerOf(state, piece.owner).faction === 'alliance'
+    ) {
+      applyAllianceBaseRemoval(state, piece.owner, clearing)
+    }
+    if (
+      piece.kind === 'token' &&
+      piece.type === 'sympathy' &&
+      scorer !== undefined &&
+      piece.owner !== scorer
+    ) {
+      // Rule: Outrage — remove sympathy → offender gives card / Alliance draws.
+      enqueueOutrage(state, actor, clearing)
     }
     if (piece.owner === actor) continue
     if (piece.kind === 'building' || piece.kind === 'token') {

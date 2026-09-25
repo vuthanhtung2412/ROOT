@@ -10,6 +10,7 @@ import { craftCard } from '#rules/craft.js'
 import { HAND_LIMIT } from '#state/constants.js'
 import { DECREE_COLUMNS, EYRIE_LEADERS, type DecreeColumn, type EyrieLeader } from '#state/boards.js'
 import type { DecreeCursor } from '#state/types.js'
+import { createTurnScratch } from '#state/turnScratch.js'
 import { defaultRuleHooks } from '#triggers/hooks.js'
 import {
   card,
@@ -37,24 +38,7 @@ function setupCtx() {
 }
 
 function scratch(decree: DecreeCursor | null = null, decreeDone = false) {
-  return {
-    actionsLeft: 0,
-    extraActions: 0,
-    recruited: false,
-    birdsongWoodDone: false,
-    eveningDrawDone: false,
-    swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-    emergencyOrdersDone: false,
-    eveningScoreDone: false,
-    decree,
-    decreeDone,
-  }
+  return createTurnScratch({ decree, decreeDone })
 }
 
 /** Fox suit card (not bird) for decree / craft. */

@@ -343,6 +343,59 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       }
       return null
     }
+    case 'revolt': {
+      const clearings = readNumberList(paramList(spec.params, 'clearings'))
+      const clearing = pick(clearings)
+      if (clearing === undefined) return null
+      return { type: 'revolt', clearing }
+    }
+    case 'spreadSympathy': {
+      const clearings = readNumberList(paramList(spec.params, 'clearings'))
+      const clearing = pick(clearings)
+      const supporterIds = readStringList(paramList(spec.params, 'supporterIds'))
+      if (clearing === undefined || supporterIds.length === 0) return null
+      return { type: 'spreadSympathy', clearing, supporterIds }
+    }
+    case 'mobilize': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      if (!cardId) return null
+      return { type: 'mobilize', cardId }
+    }
+    case 'train': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      if (!cardId) return null
+      return { type: 'train', cardId }
+    }
+    case 'militaryOp': {
+      const op = pick(readStringList(paramList(spec.params, 'op')))
+      if (op === 'move') {
+        const move = pick(readMarchMoves(paramList(spec.params, 'moves')))
+        if (!move) return null
+        return {
+          type: 'militaryOp',
+          op: 'move',
+          from: move.from,
+          to: move.to,
+          count: move.count,
+        }
+      }
+      if (op === 'battle') {
+        const choice = pick(readBattleTargets(paramList(spec.params, 'targets')))
+        if (!choice) return null
+        return {
+          type: 'militaryOp',
+          op: 'battle',
+          clearing: choice.clearing,
+          defender: choice.defender,
+        }
+      }
+      if (op === 'recruit' || op === 'organize') {
+        const clearing = pick(readNumberList(paramList(spec.params, 'clearings')))
+        if (clearing === undefined) return null
+        return { type: 'militaryOp', op, clearing }
+      }
+      return null
+    }
     case 'resolveEvent': {
       const params = spec.params
       const clearingList = paramList(params, 'clearing')

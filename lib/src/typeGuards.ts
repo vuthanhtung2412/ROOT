@@ -4,11 +4,17 @@ import type {
   ChooseLeaderEvent,
   Event,
   FieldHospitalEvent,
+  OutrageEvent,
   PlaceStartingBuildingEvent,
 } from '#events/types.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
-import type { EyrieBoard, FactionBoard, MarquiseBoard } from '#state/boards.js'
+import type {
+  AllianceBoard,
+  EyrieBoard,
+  FactionBoard,
+  MarquiseBoard,
+} from '#state/boards.js'
 
 const FALL_CLEARING_COUNT = 12
 
@@ -49,10 +55,18 @@ export function isChooseLeaderEvent(event: Event): event is ChooseLeaderEvent {
   return event.type === 'chooseLeader'
 }
 
+export function isOutrageEvent(event: Event): event is OutrageEvent {
+  return event.type === 'outrage'
+}
+
 export function isMarquiseBoard(board: FactionBoard): board is MarquiseBoard {
   return board.kind === 'marquise'
 }
 
 export function isEyrieBoard(board: FactionBoard): board is EyrieBoard {
   return board.kind === 'eyrie'
+}
+
+export function isAllianceBoard(board: FactionBoard): board is AllianceBoard {
+  return board.kind === 'alliance'
 }

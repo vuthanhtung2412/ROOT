@@ -69,8 +69,19 @@ function rollStage(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   const rolls: [number, number] = rollBattleDice(ctx)
   event.rolls = rolls
   const [high, low] = rolls
-  event.hits.attacker += capHits(high, warriors(state, event.clearing, event.attacker))
-  event.hits.defender += capHits(low, warriors(state, event.clearing, event.defender))
+  // Rule: Alliance Guerrilla War — as defender, deal higher die; attacker deals lower.
+  const defenderIsAlliance =
+    playerOf(state, event.defender).faction === 'alliance'
+  const attackerDie = defenderIsAlliance ? low : high
+  const defenderDie = defenderIsAlliance ? high : low
+  event.hits.attacker += capHits(
+    attackerDie,
+    warriors(state, event.clearing, event.attacker),
+  )
+  event.hits.defender += capHits(
+    defenderDie,
+    warriors(state, event.clearing, event.defender),
+  )
   return enterEffectsPipeline(state, event, ctx)
 }
 
