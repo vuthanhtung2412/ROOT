@@ -1,8 +1,13 @@
-import type { ActionSpec } from '#actions/types.js'
+import type { ActionSpec, ResolveEventAction } from '#actions/types.js'
+import {
+  boardOf as vagabondBoardOf,
+  damageItems,
+} from '#factions/vagabond/items.js'
 import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import type { ClearingId } from '#map/types.js'
 import type { Piece, Seat } from '#pieces/types.js'
+import { playerOf } from '#queries/seat.js'
 import { removePieces } from '#rules/remove.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
@@ -10,7 +15,14 @@ import type { BattleEvent } from '#events/types.js'
 import type { RemovalSelection, RemovalStage } from '#events/battle/types.js'
 
 function victimPieces(state: GameState, clearing: ClearingId, victim: Seat): Piece[] {
-  return state.clearings[clearing]!.pieces.filter((piece: Piece): boolean => piece.owner === victim)
+  // Rule: Vagabond pawn cannot be removed — hits damage items instead.
+  return state.clearings[clearing]!.pieces.filter(
+    (piece: Piece): boolean => piece.owner === victim && piece.kind !== 'pawn',
+  )
+}
+
+function victimIsVagabond(state: GameState, victim: Seat): boolean {
+  return playerOf(state, victim).faction === 'vagabond'
 }
 
 /**
@@ -64,6 +76,18 @@ export function legalRemovalSpecs(
   maxHits: number,
 ): ActionSpec[] {
   if (maxHits <= 0) return []
+
+  // Rule: Vagabond — each hit damages one undamaged item (acknowledge via decline).
+  if (victimIsVagabond(state, victim)) {
+    return [
+      {
+        type: 'resolveEvent',
+        actor: victim,
+        params: { decline: [true] },
+      },
+    ]
+  }
+
   const pieces: Piece[] = victimPieces(state, event.clearing, victim)
   if (pieces.length === 0) return []
 
@@ -133,6 +157,11 @@ export function applyRemovalStage(
   ctx: Ctx,
 ): LogEntry[] {
   const { event, action, victim, maxHits, scorer } = stage
+
+  if (victimIsVagabond(state, victim)) {
+    return applyVagabondHitDamage(state, victim, maxHits, action)
+  }
+
   if (!action.pieceIds) {
     throw new RuleError('INVALID_REMOVAL', { action })
   }
@@ -156,4 +185,24 @@ export function applyRemovalStage(
     },
     ctx,
   )
+}
+
+function applyVagabondHitDamage(
+  state: GameState,
+  victim: Seat,
+  maxHits: number,
+  action: ResolveEventAction,
+): LogEntry[] {
+  if (action.decline !== true && action.pieceIds === undefined) {
+    throw new RuleError('INVALID_REMOVAL', { action })
+  }
+  const board = vagabondBoardOf(state, victim)
+  damageItems(board, maxHits)
+  return [
+    {
+      t: 'action',
+      actor: victim,
+      action: { type: 'resolveEvent', decline: true },
+    },
+  ]
 }

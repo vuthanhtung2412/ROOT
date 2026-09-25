@@ -12,9 +12,16 @@ import {
   boardOf,
   discardSupportersOverflow,
 } from '#factions/alliance/rules.js'
+import {
+  boardOf as vagabondBoardOf,
+  damageItems,
+} from '#factions/vagabond/items.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
+
+/** Rule: Vagabond — full removal clears enemies → damage 3 items instead of pawn. */
+const VAGABOND_FULL_REMOVAL_ITEM_DAMAGE = 3
 
 export type PieceRemoval = {
   clearing: ClearingId
@@ -118,12 +125,27 @@ export function removePieces(
   const idSet = new Set(pieceIds)
   const removed: Piece[] = []
   const logs: LogEntry[] = []
+  const vagabondSeatsDamaged = new Set<Seat>()
 
   clearingState.pieces = clearingState.pieces.filter((piece) => {
     if (!idSet.has(piece.id)) return true
+    // Rule: Vagabond pawn cannot be removed — full-clear damages items instead.
+    if (piece.kind === 'pawn') {
+      if (playerOf(state, piece.owner).faction === 'vagabond') {
+        vagabondSeatsDamaged.add(piece.owner)
+      }
+      return true
+    }
     removed.push(piece)
     return false
   })
+
+  for (const vagabondSeat of vagabondSeatsDamaged) {
+    damageItems(
+      vagabondBoardOf(state, vagabondSeat),
+      VAGABOND_FULL_REMOVAL_ITEM_DAMAGE,
+    )
+  }
 
   let victoryPointsDelta = 0
   const victims = new Map<Seat, number>()

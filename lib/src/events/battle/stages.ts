@@ -1,6 +1,7 @@
 import { defOf, Deck } from '#cards/Deck.js'
 import { matchesSuit } from '#cards/suit.js'
 import type { Card } from '#cards/types.js'
+import { undamagedSwords, boardOf as vagabondBoardOf } from '#factions/vagabond/items.js'
 import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
@@ -26,8 +27,25 @@ export function ambushCards(state: GameState, seat: Seat, clearing: ClearingId):
   )
 }
 
+function seatIsVagabond(state: GameState, seat: Seat): boolean {
+  return playerOf(state, seat).faction === 'vagabond'
+}
+
 function attackerPresent(state: GameState, event: BattleEvent): boolean {
+  if (seatIsVagabond(state, event.attacker)) {
+    return state.clearings[event.clearing]!.pieces.some(
+      (piece) => piece.kind === 'pawn' && piece.owner === event.attacker,
+    )
+  }
   return warriors(state, event.clearing, event.attacker) > 0
+}
+
+/** Rule: Battle — max rolled hits = warriors, or undamaged swords for Vagabond. */
+function hitCap(state: GameState, clearing: ClearingId, seat: Seat): number {
+  if (seatIsVagabond(state, seat)) {
+    return undamagedSwords(vagabondBoardOf(state, seat))
+  }
+  return warriors(state, clearing, seat)
 }
 
 function sideOf(seat: Seat, event: BattleEvent): 'attacker' | 'defender' | null {
@@ -76,11 +94,11 @@ function rollStage(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   const defenderDie = defenderIsAlliance ? high : low
   event.hits.attacker += capHits(
     attackerDie,
-    warriors(state, event.clearing, event.attacker),
+    hitCap(state, event.clearing, event.attacker),
   )
   event.hits.defender += capHits(
     defenderDie,
-    warriors(state, event.clearing, event.defender),
+    hitCap(state, event.clearing, event.defender),
   )
   return enterEffectsPipeline(state, event, ctx)
 }
@@ -118,6 +136,12 @@ export function nextEffectSeat(event: BattleEvent): Seat | null {
 
 /** Rule: Battle 3 — defenseless defender gives attacker +1 hit. */
 export function applyDefenseless(state: GameState, event: BattleEvent): void {
+  if (seatIsVagabond(state, event.defender)) {
+    if (undamagedSwords(vagabondBoardOf(state, event.defender)) === 0) {
+      event.hits.attacker += 1
+    }
+    return
+  }
   if (warriors(state, event.clearing, event.defender) === 0) {
     event.hits.attacker += 1
   }

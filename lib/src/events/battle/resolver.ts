@@ -147,6 +147,14 @@ function soleForcedBattleResolve(
   }
 
   if (event.stage === 'removeDefender' || event.stage === 'removeAttacker') {
+    // Rule: Vagabond hits → sole decline acknowledges item damage.
+    if (spec.params?.decline?.[0] === true) {
+      return {
+        event,
+        actor,
+        action: { type: 'resolveEvent', decline: true },
+      }
+    }
     const pieceIds = spec.params?.pieceIds
     if (!isStringIdList(pieceIds)) {
       return null
