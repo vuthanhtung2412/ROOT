@@ -10,6 +10,7 @@ import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
 import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
+import { hideFactionBoard } from '#game/factionBoardBridge.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
 import { mergeComposerHooks } from '#game/resolution/mergeComposerHooks.ts'
 import {
@@ -40,7 +41,6 @@ import { CardHand } from '#ui/CardHand.ts'
 import { CardDetailOverlay } from '#ui/CardDetailOverlay.ts'
 import { CardPileModal } from '#ui/CardPileModal.ts'
 import { CraftedCardsModal } from '#ui/CraftedCardsModal.ts'
-import { FactionBoardModal } from '#ui/FactionBoardModal.ts'
 import { GameDrawer } from '#ui/GameDrawer.ts'
 import { LeaderPickOverlay } from '#ui/LeaderPickOverlay.ts'
 import { PlayerRail } from '#ui/PlayerRail.ts'
@@ -65,7 +65,6 @@ export class GameScene extends Phaser.Scene {
   private cardDetailOverlay: CardDetailOverlay | null = null
   private actionTray: ActionTray | null = null
   private battleOverlay: BattleOverlay | null = null
-  private factionBoardModal: FactionBoardModal | null = null
   private craftedCardsModal: CraftedCardsModal | null = null
   private cardPileModal: CardPileModal | null = null
   private gameDrawer: GameDrawer | null = null
@@ -144,7 +143,6 @@ export class GameScene extends Phaser.Scene {
       )
     })
     this.modals = new GameSceneModals({
-      getFactionBoardModal: () => this.factionBoardModal,
       getCraftedCardsModal: () => this.craftedCardsModal,
       getCardPileModal: () => this.cardPileModal,
       getCardTextureWarmup: () => this.cardTextureWarmup,
@@ -215,7 +213,6 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlay.setOnOutsideClick(() => {
       this.battleOverlayController?.dismissResultFlash()
     })
-    this.factionBoardModal = new FactionBoardModal(this)
     this.craftedCardsModal = new CraftedCardsModal(this)
     this.cardPileModal = new CardPileModal(this)
     this.gameDrawer = new GameDrawer(this, {
@@ -263,6 +260,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    hideFactionBoard()
     if (this.unsubscribe !== null) {
       this.unsubscribe()
       this.unsubscribe = null
@@ -286,8 +284,6 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlayController = null
     this.autoPrompts = null
     this.modals = null
-    this.factionBoardModal?.destroy()
-    this.factionBoardModal = null
     this.craftedCardsModal?.destroy()
     this.craftedCardsModal = null
     this.cardPileModal?.destroy()

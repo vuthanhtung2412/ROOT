@@ -295,6 +295,16 @@ export function preloadCoreGameAssets(loader: ImageAssetLoader): void {
   }
 }
 
+/** Public URL for a preloaded core image key (React overlays). */
+export function imagePathForAssetKey(key: string): string | null {
+  const asset = CORE_IMAGE_ASSETS.find((entry) => entry.key === key)
+  if (asset === undefined) {
+    return null
+  }
+  return asset.path
+}
+
+
 export function queueAutumnMapImage(
   loader: ImageAssetLoader,
   textureExists: (key: string) => boolean,

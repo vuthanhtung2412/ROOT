@@ -1,12 +1,16 @@
 import type { GameState } from '#api/client.ts'
 import type { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
+import {
+  factionBoardOpenSeat,
+  hideFactionBoard,
+  isFactionBoardOpen,
+  showFactionBoard,
+} from '#game/factionBoardBridge.ts'
 import type { CardPileModal } from '#ui/CardPileModal.ts'
 import type { CraftedCardsModal } from '#ui/CraftedCardsModal.ts'
-import type { FactionBoardModal } from '#ui/FactionBoardModal.ts'
 import { buildFactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 
 export type GameSceneModalDeps = {
-  getFactionBoardModal: () => FactionBoardModal | null
   getCraftedCardsModal: () => CraftedCardsModal | null
   getCardPileModal: () => CardPileModal | null
   getCardTextureWarmup: () => CardTextureWarmup | null
@@ -17,20 +21,15 @@ export class GameSceneModals {
   constructor(private readonly deps: GameSceneModalDeps) {}
 
   openFactionBoard(state: GameState, seat: number): void {
-    const modal = this.deps.getFactionBoardModal()
-    if (modal === null) {
-      return
-    }
-    const openSeat = modal.openSeat()
-    if (modal.isOpen() === true && openSeat === seat) {
-      modal.hide()
+    if (isFactionBoardOpen() === true && factionBoardOpenSeat() === seat) {
+      hideFactionBoard()
       return
     }
     const view = buildFactionBoardViewModel(state, seat)
     if (view === null) {
       return
     }
-    modal.show(view)
+    showFactionBoard(view)
   }
 
   openCraftedCards(state: GameState, seat: number): void {
@@ -76,27 +75,26 @@ export class GameSceneModals {
 
   isAnyOpen(): boolean {
     return (
-      this.deps.getFactionBoardModal()?.isOpen() === true ||
+      isFactionBoardOpen() === true ||
       this.deps.getCraftedCardsModal()?.isOpen() === true ||
       this.deps.getCardPileModal()?.isOpen() === true
     )
   }
 
   refreshFactionBoard(state: GameState): void {
-    const modal = this.deps.getFactionBoardModal()
-    if (modal?.isOpen() !== true) {
+    if (isFactionBoardOpen() !== true) {
       return
     }
-    const seat = modal.openSeat()
+    const seat = factionBoardOpenSeat()
     if (seat === null) {
       return
     }
     const view = buildFactionBoardViewModel(state, seat)
     if (view === null) {
-      modal.hide()
+      hideFactionBoard()
       return
     }
-    modal.show(view)
+    showFactionBoard(view)
   }
 
   refreshCraftedCards(state: GameState | null | undefined): void {
