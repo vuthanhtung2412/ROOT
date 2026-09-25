@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ALLIANCE_BOARD_LAYOUT,
   EYRIE_BOARD_LAYOUT,
   MARQUISE_BOARD_LAYOUT,
+  VAGABOND_BOARD_LAYOUT,
   findBoardLayoutRegion,
   placeBoardImage,
   scaleBoardLayoutRegion,
@@ -38,6 +40,38 @@ describe('factionBoardLayout', () => {
       expect.objectContaining({ x: 1230, y: 0, width: 370, height: 57 }),
     )
     expect(trackCellRegion(EYRIE_BOARD_LAYOUT, 'roost', 6)?.x).toBe(1432)
+  })
+
+  it('loads Alliance sympathy track + suit base slots', () => {
+    expect(ALLIANCE_BOARD_LAYOUT.tracks.map((track) => track.id)).toEqual([
+      'sympathy',
+    ])
+    expect(ALLIANCE_BOARD_LAYOUT.tracks[0]?.cells).toBe(10)
+    expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'base-fox')).toEqual(
+      expect.objectContaining({ width: 102, height: 102 }),
+    )
+    expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'base-rabbit')).toEqual(
+      expect.objectContaining({ width: 102, height: 102 }),
+    )
+    expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'base-mouse')).toEqual(
+      expect.objectContaining({ width: 102, height: 102 }),
+    )
+    expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'officers')).not.toBeNull()
+    expect(trackCellRegion(ALLIANCE_BOARD_LAYOUT, 'sympathy', 0)).not.toBeNull()
+    expect(trackCellRegion(ALLIANCE_BOARD_LAYOUT, 'sympathy', 9)).not.toBeNull()
+  })
+
+  it('loads Vagabond satchel + item tracks', () => {
+    expect(VAGABOND_BOARD_LAYOUT.tracks.map((track) => track.id)).toEqual([
+      'tea',
+      'coin',
+      'bag',
+    ])
+    expect(findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'satchel')).not.toBeNull()
+    expect(
+      findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'character-slot'),
+    ).not.toBeNull()
+    expect(trackCellRegion(VAGABOND_BOARD_LAYOUT, 'tea', 0)).not.toBeNull()
   })
 
   it('scales layout rects onto placed board image', () => {
