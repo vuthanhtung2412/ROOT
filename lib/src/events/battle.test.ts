@@ -188,7 +188,7 @@ describe('battleResolver', () => {
     expect(event.stage).toBe('removeDefender')
   })
 
-  it('forced: openBattle skips ambush and sole removals in one apply', () => {
+  it('forced: openBattle leaves ambush even with empty hand', () => {
     const state = withPieces(
       minimalState(),
       0,
@@ -203,8 +203,36 @@ describe('battleResolver', () => {
       onSignal: (signal) => signals.push(signal),
     })
     openBattle(state, { clearing: 0, attacker: 0, defender: 1 }, context)
-    expect(state.pending).toHaveLength(0)
+    const event = requireBattleEvent(state.pending[0])
+    expect(event.stage).toBe('ambush')
     expect(signals.some((signal) => signal.s === 'battle.start')).toBe(true)
+    expect(signals.some((signal) => signal.s === 'battle.hits')).toBe(false)
+  })
+
+  it('forced: after ambush decline, sole removals drain in one apply', () => {
+    const state = withPieces(
+      minimalState(),
+      0,
+      [
+        { id: 'a1', kind: 'warrior', owner: 0 },
+        { id: 'd1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    const signals: GameSignal[] = []
+    const context = battleContext({
+      dice: [2, 0],
+      onSignal: (signal) => signals.push(signal),
+    })
+    openBattle(state, { clearing: 0, attacker: 0, defender: 1 }, context)
+    const pending = requireBattleEvent(state.pending[0])
+    apply({
+      state,
+      event: pending,
+      action: { type: 'resolveEvent', decline: true },
+      actor: 1,
+      context,
+    })
+    expect(state.pending).toHaveLength(0)
     expect(signals.some((signal) => signal.s === 'battle.hits')).toBe(true)
     expect(signals.some((signal) => signal.s === 'battle.end')).toBe(true)
     expect(warriors(state, 0, 1)).toBe(0)
@@ -245,6 +273,15 @@ describe('battleResolver', () => {
     })
     openBattle(state, { clearing: 4, attacker: 0, defender: 1 }, context)
     expect(signals.some((signal) => signal.s === 'battle.start')).toBe(true)
+    const pending = requireBattleEvent(state.pending[0])
+    expect(pending.stage).toBe('ambush')
+    apply({
+      state,
+      event: pending,
+      action: { type: 'resolveEvent', decline: true },
+      actor: 1,
+      context,
+    })
     expect(signals.some((signal) => signal.s === 'battle.hits')).toBe(true)
     expect(signals.some((signal) => signal.s === 'battle.end')).toBe(true)
     expect(state.pending).toHaveLength(0)
