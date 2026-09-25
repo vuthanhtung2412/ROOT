@@ -13,6 +13,7 @@ import { createEventComposerHooks } from '#game/resolution/eventActionComposer.t
 import { hideCardPile, hideCraftedCards } from '#game/cardGalleryBridge.ts'
 import { hideFactionBoard } from '#game/factionBoardBridge.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
+import { hideCardDetail, showCardDetail } from '#react/CardDetailOverlay.tsx'
 import { mergeComposerHooks } from '#game/resolution/mergeComposerHooks.ts'
 import {
   buildBattleRemovalStepperChoices,
@@ -39,7 +40,6 @@ import { ActionTray, type ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
-import { CardDetailOverlay } from '#ui/CardDetailOverlay.ts'
 import { GameDrawer } from '#ui/GameDrawer.ts'
 import { LeaderPickOverlay } from '#ui/LeaderPickOverlay.ts'
 import { PlayerRail } from '#ui/PlayerRail.ts'
@@ -61,7 +61,6 @@ export class GameScene extends Phaser.Scene {
   private turnBanner: TurnBanner | null = null
   private playerRail: PlayerRail | null = null
   private cardHand: CardHand | null = null
-  private cardDetailOverlay: CardDetailOverlay | null = null
   private actionTray: ActionTray | null = null
   private battleOverlay: BattleOverlay | null = null
   private gameDrawer: GameDrawer | null = null
@@ -190,13 +189,12 @@ export class GameScene extends Phaser.Scene {
       },
       (held) => {
         this.cardTextureWarmup?.ensure([held.defId])
-        this.cardDetailOverlay?.show({
+        showCardDetail({
           defId: held.defId,
           catalog: held.catalog,
         })
       },
     )
-    this.cardDetailOverlay = new CardDetailOverlay(this)
     this.actionTray = new ActionTray(this, {
       onSelectAction: (spec) => {
         this.handleSelectAction(spec)
@@ -254,6 +252,7 @@ export class GameScene extends Phaser.Scene {
     hideFactionBoard()
     hideCraftedCards()
     hideCardPile()
+    hideCardDetail()
     if (this.unsubscribe !== null) {
       this.unsubscribe()
       this.unsubscribe = null
@@ -267,8 +266,6 @@ export class GameScene extends Phaser.Scene {
     this.cardHand?.destroy()
     this.cardHand = null
     this.cardTextureWarmup = null
-    this.cardDetailOverlay?.destroy()
-    this.cardDetailOverlay = null
     this.actionTray?.destroy()
     this.actionTray = null
     this.battleOverlay?.destroy()

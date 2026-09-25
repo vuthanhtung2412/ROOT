@@ -1,4 +1,5 @@
 import type { JSX } from 'react'
+import { CardDetailOverlay } from '#react/CardDetailOverlay.tsx'
 import {
   CardPileModal,
   CraftedCardsModal,
@@ -15,6 +16,7 @@ export function ReactHud(): JSX.Element {
       <FactionBoardModal />
       <CraftedCardsModal />
       <CardPileModal />
+      <CardDetailOverlay />
     </>
   )
 }
