@@ -1,40 +1,31 @@
 ### Goal
-- Treat Field Hospitals as forced **prompt** (banner + hand), like Ambush — not proactive ActionTray choice.
-- Drop FH tray-keep exception from disable rules.
+- Name frontend staging as **action under resolution**.
+- Tray OFF while under resolution; cancel to idle → `session.refresh()`.
 
 ### Approach
-- `beginFieldHospital`: banner message + Decline button (mirror `beginAmbush`).
-- `composerOutcomeApplier`: always sync composer banner; only skip battle-overlay for FH.
-- `TurnBanner` pending prompt: show FH copy when not yet staged.
-- `shouldDisableActionTray`: staging alone hides tray (no FH exception).
-- Docs: `REPORT.md` / this plan.
+- `isActionUnderResolution(drafts)` helper; tray flag rename.
+- GameScene uses helper; cancel → refresh when leave under-resolution to idle.
+- Docs use new name.
 
 ### Files to change
-- `frontend/phaser/src/game/eventActionComposer.ts`
-- `frontend/phaser/src/game/eventActionComposer.test.ts`
-- `frontend/phaser/src/game/composerOutcomeApplier.ts`
-- `frontend/phaser/src/ui/TurnBanner.ts`
-- `frontend/phaser/src/ui/TurnBanner.test.ts`
-- `frontend/phaser/src/game/actionTrayDisable.ts`
-- `frontend/phaser/src/game/actionTrayDisable.test.ts`
+- `frontend/phaser/src/game/actionUnderResolution.ts` (+ test)
+- `frontend/phaser/src/game/actionTrayDisable.ts` (+ test)
 - `frontend/phaser/src/scenes/GameScene.ts`
+- `resources/notes/frontend-vs-registered-actions.md`
 - `REPORT.md`
 - `PLAN.md`
 
 ### Test plan
-- Unit: beginFieldHospital has message + Decline option; card pay still works
-- Unit: disable predicate — staging disables (incl. former FH case)
-- Unit: TurnBanner pending FH shows prompt
-- Manual: FH → banner Decline + hand pay; tray hidden
+- Unit: `isActionUnderResolution` idle / non-idle
+- Unit: tray disable with `isActionUnderResolution: true`
+- Manual: cancel march → board matches server; FH Decline still posts
 
 ### Commit plan
-- `feat(phaser): Field Hospitals as banner prompt`
-  - `eventActionComposer.ts` (+ test)
-  - `composerOutcomeApplier.ts`
-  - `TurnBanner.ts` (+ test)
-- `refactor(phaser): drop FH ActionTray exception`
-  - `actionTrayDisable.ts` (+ test)
-  - `GameScene.ts`
-- `docs: FH is prompt not tray action`
-  - `REPORT.md`
-  - `PLAN.md`
+- `refactor(phaser): name action-under-resolution`
+  - `actionUnderResolution.ts` + test
+  - `actionTrayDisable.ts` + test
+  - `GameScene.ts` (helper wire)
+  - `PLAN.md` / notes / `REPORT.md`
+- `feat(phaser): refresh on staging cancel`
+  - `GameScene.ts` (cancel → `session.refresh()`)
+  - notes cancel rule (already documents refresh)

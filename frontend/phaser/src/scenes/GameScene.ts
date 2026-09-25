@@ -9,6 +9,7 @@ import { AutoPromptController } from '#game/autoPromptController.ts'
 import { BattleOverlayController } from '#game/battleOverlayController.ts'
 import { applyComposerOutcomeToHud } from '#game/composerOutcomeApplier.ts'
 import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
+import { isActionUnderResolution } from '#game/actionUnderResolution.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/eventActionComposer.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
@@ -384,7 +385,7 @@ export class GameScene extends Phaser.Scene {
     state: GameState,
   ): ActionTraySyncOptions | undefined {
     const disabled = shouldDisableActionTray({
-      isComposerStaging: this.isComposerStaging(),
+      isActionUnderResolution: this.isActionUnderResolution(),
       isAnyModalOpen: this.modals?.isAnyOpen() === true,
       isLocalActor: localControlsActor,
       isGameFinished: state.status === 'finished',
@@ -416,18 +417,18 @@ export class GameScene extends Phaser.Scene {
     )
   }
 
-  private isComposerStaging(): boolean {
-    return (
-      this.marquiseMarch.getDraft().type !== 'idle' ||
-      this.marquiseBoard.getDraft().type !== 'idle' ||
-      this.marquiseCards.getDraft().type !== 'idle' ||
-      this.eyrieComposer.getDraft().type !== 'idle' ||
-      this.eventComposer.getDraft().type !== 'idle'
-    )
+  private isActionUnderResolution(): boolean {
+    return isActionUnderResolution([
+      this.marquiseMarch.getDraft(),
+      this.marquiseBoard.getDraft(),
+      this.marquiseCards.getDraft(),
+      this.eyrieComposer.getDraft(),
+      this.eventComposer.getDraft(),
+    ])
   }
 
   private syncBattleClearingHighlight(state: GameState): void {
-    if (this.isComposerStaging()) {
+    if (this.isActionUnderResolution()) {
       return
     }
     const battleClearing = readBattleClearingId(state)

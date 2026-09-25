@@ -5,7 +5,7 @@ import {
 } from '#game/actionTrayDisable.ts'
 
 const IDLE_LOCAL: ActionTrayDisableInput = {
-  isComposerStaging: false,
+  isActionUnderResolution: false,
   isAnyModalOpen: false,
   isLocalActor: true,
   isGameFinished: false,
@@ -16,11 +16,11 @@ describe('shouldDisableActionTray', () => {
     expect(shouldDisableActionTray(IDLE_LOCAL)).toBe(false)
   })
 
-  it('disables during composer staging including Field Hospitals', () => {
+  it('disables while action under resolution including Field Hospitals', () => {
     expect(
       shouldDisableActionTray({
         ...IDLE_LOCAL,
-        isComposerStaging: true,
+        isActionUnderResolution: true,
       }),
     ).toBe(true)
   })
