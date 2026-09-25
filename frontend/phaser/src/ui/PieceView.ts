@@ -1,4 +1,3 @@
-import type Phaser from 'phaser'
 import {
   GAME_ASSET_KEYS,
   pieceTokenTextureKey,
@@ -29,23 +28,8 @@ export type PieceStackViewModel = {
   sampleIds: string[]
 }
 
-function factionTextureKey(factionId: string): string {
-  if (factionId === 'eyrie') {
-    return GAME_ASSET_KEYS.factionEyrie
-  }
-  return GAME_ASSET_KEYS.factionMarquise
-}
-
-function textureKeyForStack(stack: PieceStackViewModel): string {
-  const tokenKey = pieceTokenTextureKey(stack.kind, stack.type)
-  if (tokenKey !== null) {
-    return tokenKey
-  }
-  return factionTextureKey(stack.factionId)
-}
-
 /**
- * Stack pieces by owner + kind + type, then draw faction icon + count.
+ * Stack pieces by owner + kind + type for board rendering.
  */
 export function groupPiecesIntoStacks(
   pieces: readonly PieceViewModel[],
@@ -80,41 +64,6 @@ export function groupPiecesIntoStacks(
   return [...stacks.values()]
 }
 
-/**
- * Token/building art when known; else faction icon. Count overlay.
- */
-export function drawPieceStack(
-  scene: Phaser.Scene,
-  stack: PieceStackViewModel,
-  position: PieceDrawPosition,
-): Phaser.GameObjects.Container {
-  const usesTokenArt = pieceTokenTextureKey(stack.kind, stack.type) !== null
-  const size = usesTokenArt
-    ? PIECE_DRAW.buildingIconSize
-    : stack.kind === 'warrior'
-      ? PIECE_DRAW.iconSize
-      : PIECE_DRAW.buildingIconSize
-  const textureKey = textureKeyForStack(stack)
-
-  const icon = scene.add
-    .image(0, 0, textureKey)
-    .setDisplaySize(size, size)
-    .setOrigin(0.5)
-
-  const countText = scene.add
-    .text(0, 0, String(stack.count), {
-      fontFamily: 'Georgia, serif',
-      fontSize: `${Math.round(size * 0.55)}px`,
-      color: '#ffffff',
-      stroke: '#1a1a1a',
-      strokeThickness: 4,
-      fontStyle: 'bold',
-    })
-    .setOrigin(0.5)
-
-  return scene.add.container(position.x, position.y, [icon, countText])
-}
-
 export function stackOffsets(count: number): PieceDrawPosition[] {
   const offsets: PieceDrawPosition[] = []
   const columns = Math.ceil(Math.sqrt(Math.max(count, 1)))
@@ -127,4 +76,20 @@ export function stackOffsets(count: number): PieceDrawPosition[] {
     })
   }
   return offsets
+}
+
+/** @deprecated Prefer React PieceStack texture helpers. */
+export function factionTextureKeyForStack(factionId: string): string {
+  if (factionId === 'eyrie') {
+    return GAME_ASSET_KEYS.factionEyrie
+  }
+  return GAME_ASSET_KEYS.factionMarquise
+}
+
+export function textureKeyForPieceStack(stack: PieceStackViewModel): string {
+  const tokenKey = pieceTokenTextureKey(stack.kind, stack.type)
+  if (tokenKey !== null) {
+    return tokenKey
+  }
+  return factionTextureKeyForStack(stack.factionId)
 }

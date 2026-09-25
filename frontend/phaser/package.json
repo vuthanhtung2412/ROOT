@@ -20,7 +20,6 @@
     "@capacitor/core": "^8.5.2",
     "@root/lib": "workspace:*",
     "@root/web-client": "workspace:*",
-    "phaser": "^3.90.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
