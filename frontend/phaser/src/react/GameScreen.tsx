@@ -63,8 +63,12 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
           {props.layout !== null ? (
             <BoardMap
               layout={props.layout}
-              clearings={props.clearings ?? undefined}
-              factions={props.factions ?? undefined}
+              {...(props.clearings !== null
+                ? { clearings: props.clearings }
+                : {})}
+              {...(props.factions !== null
+                ? { factions: props.factions }
+                : {})}
               highlightedClearingIds={props.highlightedClearingIds}
               onClearingSelected={props.onClearingSelected}
             />
