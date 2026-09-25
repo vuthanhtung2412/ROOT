@@ -30,6 +30,7 @@ import {
 } from '#game/resolution/marquiseActionComposer.ts'
 import { createMarchWorkflowHooks } from '#game/resolution/marchWorkflowHooks.ts'
 import { createVagabondComposerHooks } from '#game/resolution/vagabondActionComposer.ts'
+import { createAllianceComposerHooks } from '#game/resolution/allianceActionComposer.ts'
 import { readBattleClearingId } from '#game/battleOverlayModel.ts'
 import {
   applyMarchPreview,
@@ -84,6 +85,7 @@ export class ReactGameController {
   private marquiseCards = createMarquiseCardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
   private vagabondComposer = createVagabondComposerHooks()
+  private allianceComposer = createAllianceComposerHooks()
   private eventComposer = createEventComposerHooks()
   private unsubscribe: (() => void) | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -137,6 +139,7 @@ export class ReactGameController {
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
     this.vagabondComposer = createVagabondComposerHooks()
+    this.allianceComposer = createAllianceComposerHooks()
     this.eventComposer = createEventComposerHooks()
     this.autoPrompts = new AutoPromptController({
       applyComposerOutcome: (outcome) => this.applyComposerOutcome(outcome),
@@ -182,6 +185,7 @@ export class ReactGameController {
         this.marquiseMarch.hooks,
         this.marquiseBoard.hooks,
         this.eyrieComposer.hooks,
+        this.allianceComposer.hooks,
         this.vagabondComposer.hooks,
         this.eventComposer.hooks,
       ),
@@ -367,6 +371,7 @@ export class ReactGameController {
         ...this.marquiseMarch.getPromptOptions(),
         ...this.marquiseBoard.getPromptOptions(),
         ...this.eyrieComposer.getPromptOptions(),
+        ...this.allianceComposer.getPromptOptions(),
         ...this.eventComposer.getPromptOptions(),
       ],
       getDiscardSelection: () => {
@@ -422,6 +427,8 @@ export class ReactGameController {
         this.marquiseBoard.getDraft(),
         this.marquiseCards.getDraft(),
         this.eyrieComposer.getDraft(),
+        this.allianceComposer.getDraft(),
+        this.vagabondComposer.getDraft(),
         this.eventComposer.getDraft(),
       ])
     )

@@ -23,6 +23,7 @@ function unique(values: number[]): number[] {
 /** Vagabond daylight / birdsong choice flows. */
 export function createVagabondComposerHooks(): {
   hooks: ActionComposerHooks
+  getDraft: () => VagabondDraft
 } {
   let draft: VagabondDraft = { type: 'idle' }
 
@@ -238,5 +239,8 @@ export function createVagabondComposerHooks(): {
     },
   }
 
-  return { hooks }
+  return {
+    hooks,
+    getDraft: (): VagabondDraft => draft,
+  }
 }
