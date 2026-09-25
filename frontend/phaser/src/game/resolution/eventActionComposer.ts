@@ -127,7 +127,7 @@ export function createEventComposerHooks(): {
     return {
       kind: 'incomplete',
       prompt: {
-        message: 'Field Hospitals — pay matching suit (bird OK) or Decline',
+        message: 'Field Hospitals — pay matching suit or Decline',
         highlightClearings: [],
         enabledCardIds: uniqueCardIds,
         canConfirm: false,
@@ -443,7 +443,7 @@ export function createEventComposerHooks(): {
         return {
           kind: 'incomplete',
           prompt: {
-            message: 'Field Hospitals — pay matching suit (bird OK) or Decline',
+            message: 'Field Hospitals — pay matching suit or Decline',
             highlightClearings: [],
             enabledCardIds: draft.cardIds,
             canConfirm: false,

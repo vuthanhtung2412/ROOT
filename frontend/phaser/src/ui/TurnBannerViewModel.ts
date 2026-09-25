@@ -151,7 +151,7 @@ function pendingEventPrompt(pending: unknown, actorSeat: number): string | null 
   }
   // Field Hospitals: forced prompt — banner + hand (like Ambush).
   if (event.type === 'fieldHospital') {
-    return 'Field Hospitals — pay matching suit (bird OK) or Decline'
+    return 'Field Hospitals — pay matching suit or Decline'
   }
   if (event.type === 'battle') {
     return BATTLE_STAGE_PROMPTS[event.stage]

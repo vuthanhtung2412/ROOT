@@ -23,7 +23,7 @@ describe('eventActionComposer Field Hospitals', () => {
       throw new Error('expected incomplete')
     }
     expect(mid.prompt.message).toContain('Field Hospitals')
-    expect(mid.prompt.message).toContain('bird OK')
+    expect(mid.prompt.message).toContain('pay matching suit')
     expect(mid.prompt.enabledCardIds).toEqual(['ROOT-205#1', 'ROOT-72#1'])
     expect(mid.prompt.canCancel).toBe(false)
     expect(events.getOverlayKind()).toBe('fieldHospital')
