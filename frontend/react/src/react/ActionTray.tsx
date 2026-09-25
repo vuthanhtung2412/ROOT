@@ -43,8 +43,8 @@ export function ActionTray(): JSX.Element | null {
   const forActor = filterTrayActions(tray.actions, tray.actorSeat, tray.options)
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed top-16 right-0 z-[110] box-border flex w-[var(--root-landscape-side-percent)] flex-col items-center gap-2 px-2 portrait:top-auto portrait:right-auto portrait:bottom-[var(--root-portrait-tray-bottom)] portrait:left-1/2 portrait:z-[115] portrait:w-[calc(100vw-16px)] portrait:-translate-x-1/2 portrait:px-0">
-      <div className="root-panel px-3 py-1.5 font-display text-xl tracking-[0.02em] text-ink portrait:text-base">
+    <div className="fixed bottom-[var(--root-portrait-tray-bottom)] left-1/2 z-[115] box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-2 px-0 md:top-16 md:right-0 md:bottom-auto md:left-auto md:z-[110] md:w-[var(--root-landscape-side-percent)] md:translate-x-0 md:px-2">
+      <div className="root-panel px-3 py-1.5 font-display text-base tracking-[0.02em] text-ink md:text-xl">
         {`Actions (${String(forActor.length)})`}
       </div>
       <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5">
@@ -55,7 +55,7 @@ export function ActionTray(): JSX.Element | null {
             <button
               key={key}
               type="button"
-              className="root-button px-3 py-2 text-center text-[17px] portrait:px-2.5 portrait:py-[7px] portrait:text-sm"
+              className="root-button px-2.5 py-[7px] text-center text-sm md:px-3 md:py-2 md:text-[17px]"
               onClick={() => {
                 callbacks.onSelectAction(spec)
               }}

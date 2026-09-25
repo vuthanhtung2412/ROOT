@@ -43,7 +43,7 @@ export function CardHand(): JSX.Element | null {
   const callbacks = getHudCallbacks()
 
   return (
-    <div className="pointer-events-none fixed bottom-6 left-1/2 z-[120] flex -translate-x-1/2 flex-row items-end gap-2.5 border-2 border-ink bg-[color-mix(in_srgb,var(--color-parchment)_55%,transparent)] px-2.5 pt-2 pb-1.5 [background-blend-mode:multiply] [background-image:var(--root-paper-grain)] shadow-[inset_0_0_0_1px_var(--color-parchment-shadow),2px_3px_0_color-mix(in_srgb,var(--color-ink)_25%,transparent)] portrait:bottom-3 portrait:max-w-[calc(100vw-16px)] portrait:gap-1.5 portrait:overflow-x-auto portrait:box-border portrait:px-2 portrait:py-1.5">
+    <div className="pointer-events-none fixed bottom-3 left-1/2 z-[120] box-border flex max-w-[calc(100vw-16px)] -translate-x-1/2 flex-row items-end gap-1.5 overflow-x-auto border-2 border-ink bg-[color-mix(in_srgb,var(--color-parchment)_55%,transparent)] px-2 py-1.5 [background-blend-mode:multiply] [background-image:var(--root-paper-grain)] shadow-[inset_0_0_0_1px_var(--color-parchment-shadow),2px_3px_0_color-mix(in_srgb,var(--color-ink)_25%,transparent)] md:bottom-6 md:max-w-none md:gap-2.5 md:overflow-x-visible md:px-2.5 md:pt-2 md:pb-1.5">
       {cards.map((card) => {
         const isSelected = selected.has(card.id)
         const isDimmed = enabled !== null && !enabled.has(card.id)
@@ -117,9 +117,9 @@ function HandCard(props: {
     <button
       type="button"
       className={[
-        'pointer-events-auto m-0 box-border h-[116px] w-[84px] cursor-pointer border-[3px] border-ink bg-ink p-0 shadow-[1px_2px_0_color-mix(in_srgb,var(--color-ink)_35%,transparent)] transition-transform duration-75 ease-out portrait:h-[88px] portrait:w-16 portrait:shrink-0 portrait:border-2',
+        'pointer-events-auto m-0 box-border h-[88px] w-16 shrink-0 cursor-pointer border-2 border-ink bg-ink p-0 shadow-[1px_2px_0_color-mix(in_srgb,var(--color-ink)_35%,transparent)] transition-transform duration-75 ease-out md:h-[116px] md:w-[84px] md:shrink md:border-[3px]',
         props.selected
-          ? 'border-gold -translate-y-[18px] shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-gold)_80%,var(--color-ink)),2px_4px_0_color-mix(in_srgb,var(--color-ink)_35%,transparent)] portrait:-translate-y-3'
+          ? 'border-gold -translate-y-3 shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-gold)_80%,var(--color-ink)),2px_4px_0_color-mix(in_srgb,var(--color-ink)_35%,transparent)] md:-translate-y-[18px]'
           : '',
         props.dimmed ? 'opacity-45' : '',
       ]

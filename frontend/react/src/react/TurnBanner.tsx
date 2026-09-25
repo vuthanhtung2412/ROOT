@@ -59,14 +59,14 @@ export function TurnBanner(): JSX.Element | null {
     <div
       className={
         hasOptionRow
-          ? 'root-panel fixed top-3 left-1/2 z-[130] grid w-[min(640px,calc(100vw-24px))] min-h-11 -translate-x-1/2 grid-cols-[56px_minmax(0,1fr)_56px] grid-rows-[auto_auto] items-center gap-x-3 gap-y-2 box-border px-3 py-2 portrait:top-2 portrait:w-[calc(100vw-16px)] portrait:min-h-10 portrait:grid-cols-[48px_minmax(0,1fr)_48px] portrait:gap-x-2 portrait:gap-y-1.5 portrait:px-2 portrait:py-1.5'
-          : 'root-panel fixed top-3 left-1/2 z-[130] grid w-[min(640px,calc(100vw-24px))] min-h-11 -translate-x-1/2 grid-cols-[56px_minmax(0,1fr)_56px] grid-rows-[auto] items-center gap-x-3 gap-y-2 box-border px-3 py-2 portrait:top-2 portrait:w-[calc(100vw-16px)] portrait:min-h-10 portrait:grid-cols-[48px_minmax(0,1fr)_48px] portrait:gap-x-2 portrait:gap-y-1.5 portrait:px-2 portrait:py-1.5'
+          ? 'root-panel fixed top-2 left-1/2 z-[130] box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[48px_minmax(0,1fr)_48px] grid-rows-[auto_auto] items-center gap-x-2 gap-y-1.5 px-2 py-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[56px_minmax(0,1fr)_56px] md:gap-x-3 md:gap-y-2 md:px-3 md:py-2'
+          : 'root-panel fixed top-2 left-1/2 z-[130] box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[48px_minmax(0,1fr)_48px] grid-rows-[auto] items-center gap-x-2 gap-y-1.5 px-2 py-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[56px_minmax(0,1fr)_56px] md:gap-x-3 md:gap-y-2 md:px-3 md:py-2'
       }
     >
       {showCancel ? (
         <button
           type="button"
-          className="root-button root-button--danger justify-self-center px-2.5 py-1 text-[15px] portrait:px-2 portrait:py-1 portrait:text-[13px]"
+          className="root-button root-button--danger justify-self-center px-2 py-1 text-[13px] md:px-2.5 md:text-[15px]"
           onClick={() => {
             callbacks.onBannerCancel()
           }}
@@ -76,13 +76,13 @@ export function TurnBanner(): JSX.Element | null {
       ) : (
         <span className="size-px" />
       )}
-      <p className="m-0 text-center font-display text-xl leading-[1.25] text-ink portrait:text-base">
+      <p className="m-0 text-center font-display text-base leading-[1.25] text-ink md:text-xl">
         {statusText}
       </p>
       {showConfirm ? (
         <button
           type="button"
-          className="root-button root-button--accent justify-self-center px-2.5 py-1 text-[15px] portrait:px-2 portrait:py-1 portrait:text-[13px]"
+          className="root-button root-button--accent justify-self-center px-2 py-1 text-[13px] md:px-2.5 md:text-[15px]"
           onClick={() => {
             if (countStepper !== null) {
               const selected = selectedCountStepperOption(countStepper)

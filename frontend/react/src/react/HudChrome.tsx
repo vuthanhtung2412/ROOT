@@ -19,7 +19,7 @@ export function GameDrawer(): JSX.Element | null {
   const callbacks = getHudCallbacks()
 
   return (
-    <div className="pointer-events-none fixed right-3 bottom-[90px] left-3 z-[112] flex justify-between portrait:right-2 portrait:bottom-[var(--root-portrait-drawer-bottom)] portrait:left-2">
+    <div className="pointer-events-none fixed right-2 bottom-[var(--root-portrait-drawer-bottom)] left-2 z-[112] flex justify-between md:right-3 md:bottom-[90px] md:left-3">
       <button
         type="button"
         className="root-button root-button--danger pointer-events-auto px-2.5 py-1.5 font-mono text-sm"

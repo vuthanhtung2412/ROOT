@@ -275,11 +275,8 @@ export function App(): JSX.Element {
     )
   }, [board, controller, gameVisible, layoutMode])
 
-  const appClassName =
-    layoutMode === 'portrait' ? 'layout-portrait' : 'layout-landscape'
-
   return (
-    <div id="app" className={appClassName}>
+    <div id="app">
       {gameScreen}
       <ReactHud />
     </div>

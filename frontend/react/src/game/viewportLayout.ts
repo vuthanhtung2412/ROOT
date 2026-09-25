@@ -1,17 +1,20 @@
-/** Viewport chrome layout for landscape vs portrait. */
+/** Viewport chrome layout for narrow vs wide (Tailwind `md` = 768px). */
 
 export type ViewportLayoutMode = 'landscape' | 'portrait'
 
-/** Portrait: reserve top for turn banner + player rail. */
+/** Match Tailwind default `md` breakpoint (min-width). */
+export const VIEWPORT_WIDE_MIN_WIDTH_PIXELS = 768
+
+/** Narrow: reserve top for turn banner + player rail. */
 export const PORTRAIT_MAP_TOP_INSET_PIXELS = 128
 
-/** Portrait: reserve bottom for hand, status, drawer, tray. */
+/** Narrow: reserve bottom for hand, status, drawer, tray. */
 export const PORTRAIT_MAP_BOTTOM_INSET_PIXELS = 200
 
 export const PORTRAIT_MAP_HORIZONTAL_INSET_PIXELS = 10
 
 /**
- * Landscape playfield columns: VP rail | map | action tray.
+ * Wide playfield columns: VP rail | map | action tray.
  * Ratio 1-3-1 of viewport width.
  */
 export const LANDSCAPE_PLAYFIELD_SIDE_WEIGHT = 1
@@ -29,12 +32,12 @@ export function landscapePlayfieldCenterFraction(): number {
 
 export function resolveViewportLayoutMode(
   width: number,
-  height: number,
+  _height?: number,
 ): ViewportLayoutMode {
-  if (height > width) {
-    return 'portrait'
+  if (width >= VIEWPORT_WIDE_MIN_WIDTH_PIXELS) {
+    return 'landscape'
   }
-  return 'landscape'
+  return 'portrait'
 }
 
 export function readWindowViewportLayoutMode(): ViewportLayoutMode {
@@ -61,7 +64,7 @@ export function portraitMapHostSize(viewport: {
   return { width, height }
 }
 
-/** Map host = center column of landscape 1-3-1 playfield. */
+/** Map host = center column of wide 1-3-1 playfield. */
 export function landscapeMapHostSize(viewport: {
   width: number
   height: number

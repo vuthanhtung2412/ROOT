@@ -5,15 +5,21 @@ import {
   landscapePlayfieldSideFraction,
   portraitMapHostSize,
   resolveViewportLayoutMode,
+  VIEWPORT_WIDE_MIN_WIDTH_PIXELS,
 } from '#game/viewportLayout.ts'
 
 describe('resolveViewportLayoutMode', () => {
-  it('marks taller viewports as portrait', () => {
+  it('marks widths below Tailwind md as portrait', () => {
     expect(resolveViewportLayoutMode(390, 844)).toBe('portrait')
-    expect(resolveViewportLayoutMode(768, 1024)).toBe('portrait')
+    expect(resolveViewportLayoutMode(VIEWPORT_WIDE_MIN_WIDTH_PIXELS - 1)).toBe(
+      'portrait',
+    )
   })
 
-  it('marks wider viewports as landscape', () => {
+  it('marks widths at or above Tailwind md as landscape', () => {
+    expect(resolveViewportLayoutMode(VIEWPORT_WIDE_MIN_WIDTH_PIXELS)).toBe(
+      'landscape',
+    )
     expect(resolveViewportLayoutMode(1280, 720)).toBe('landscape')
     expect(resolveViewportLayoutMode(844, 390)).toBe('landscape')
   })
