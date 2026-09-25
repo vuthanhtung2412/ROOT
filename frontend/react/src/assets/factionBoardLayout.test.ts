@@ -62,7 +62,7 @@ describe('factionBoardLayout', () => {
       expect.objectContaining({ x: 522, y: 690, width: 102, height: 102 }),
     )
     expect(findBoardLayoutRegion(ALLIANCE_BOARD_LAYOUT, 'officers')).toEqual(
-      expect.objectContaining({ x: 1141, y: 679, width: 357, height: 177 }),
+      expect.objectContaining({ x: 1141, y: 705, width: 102, height: 102 }),
     )
     expect(trackCellRegion(ALLIANCE_BOARD_LAYOUT, 'sympathy', 0)).toEqual(
       expect.objectContaining({ x: 320, y: 1000, width: 90, height: 90 }),
