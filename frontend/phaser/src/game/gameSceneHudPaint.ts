@@ -28,7 +28,7 @@ export type GameSceneHudPaintDeps = {
   getAutoPrompts: () => AutoPromptController | null
   getStatusText: () => Phaser.GameObjects.Text | null
   localPlayerControlsSeat: (actorSeat: number) => boolean
-  marchActionTrayOptions: () => ActionTraySyncOptions | undefined
+  actionTraySyncOptions: () => ActionTraySyncOptions | undefined
   syncBattleOverlay: () => void
   syncBattleClearingHighlight: (state: GameState) => void
   goToMenu: () => void
@@ -69,7 +69,7 @@ export function paintGameSceneHud(
       : [],
     banner.actorSeat,
     snapshot.state.pending[0],
-    deps.marchActionTrayOptions(),
+    deps.actionTraySyncOptions(),
     snapshot.state,
   )
   deps.getModals()?.refreshFactionBoard(snapshot.state)
