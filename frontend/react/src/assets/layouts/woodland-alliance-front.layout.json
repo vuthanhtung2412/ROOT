@@ -3,42 +3,135 @@
   "unit": "px",
   "naturalWidth": 1600,
   "naturalHeight": 1242,
-  "tracks": [],
+  "tracks": [
+    {
+      "id": "sympathy",
+      "cells": 10,
+      "cellSize": 90,
+      "gaps": [18, 18, 18, 18, 18, 18, 18, 18, 18],
+      "x": 320,
+      "y": 1000
+    }
+  ],
   "regions": [
     {
       "id": "crafted-items",
-      "x": 1180,
-      "y": 90,
-      "width": 360,
-      "height": 110
-    },
-    {
-      "id": "supply-warriors",
-      "x": 1180,
-      "y": 880,
-      "width": 160,
-      "height": 140
-    },
-    {
-      "id": "officers",
-      "x": 1180,
-      "y": 880,
-      "width": 360,
-      "height": 200
-    },
-    {
-      "id": "bases",
-      "x": 520,
-      "y": 820,
-      "width": 420,
-      "height": 160
+      "x": 1083,
+      "y": 194,
+      "width": 394,
+      "height": 98
     },
     {
       "id": "supporters",
-      "x": 40,
-      "y": 780,
+      "x": 47,
+      "y": 668,
       "width": 280,
       "height": 360
+    },
+    {
+      "id": "base-fox",
+      "x": 656,
+      "y": 690,
+      "width": 102,
+      "height": 102
+    },
+    {
+      "id": "base-rabbit",
+      "x": 767,
+      "y": 690,
+      "width": 102,
+      "height": 102
+    },
+    {
+      "id": "base-mouse",
+      "x": 877,
+      "y": 690,
+      "width": 102,
+      "height": 102
+    },
+    {
+      "id": "officers",
+      "x": 1141,
+      "y": 679,
+      "width": 357,
+      "height": 177
+    },
+    {
+      "id": "supply-warriors",
+      "x": 501,
+      "y": 673,
+      "width": 120,
+      "height": 120
+    },
+    {
+      "id": "sympathy-0",
+      "x": 320,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-1",
+      "x": 428,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-2",
+      "x": 536,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-3",
+      "x": 644,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-4",
+      "x": 752,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-5",
+      "x": 860,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-6",
+      "x": 968,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-7",
+      "x": 1076,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-8",
+      "x": 1184,
+      "y": 1000,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "sympathy-9",
+      "x": 1292,
+      "y": 1000,
+      "width": 90,
+      "height": 90
     }
   ]
 }
