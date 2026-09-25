@@ -221,6 +221,12 @@ const BANNER_PANEL_HEIGHT_COMPOSER_PIXELS = 68
 const BANNER_ROOT_Y_PIXELS = 32
 const BANNER_COMPOSER_STATUS_OFFSET_Y_PIXELS = -16
 const BANNER_OPTION_ROW_Y_PIXELS = 16
+/** Inset from panel left/right edge to control button center. */
+const BANNER_CONTROL_CORNER_INSET_PIXELS = 28
+/** Reserve each side so status text clears corner controls. */
+const BANNER_STATUS_SIDE_RESERVE_PIXELS = 48
+const BANNER_CANCEL_LABEL = 'X'
+const BANNER_CONFIRM_LABEL = 'OK'
 
 /**
  * Single top strip: turn status, or composer prompt + controls when staging.
@@ -255,12 +261,14 @@ export class TurnBanner {
         fontSize: `${String(BANNER_STATUS_FONT_SIZE_PIXELS)}px`,
         color: '#f0e6d3',
         align: 'center',
-        wordWrap: { width: bannerWidth - 160 },
+        wordWrap: {
+          width: bannerWidth - BANNER_STATUS_SIDE_RESERVE_PIXELS * 2,
+        },
       })
       .setOrigin(0.5)
 
     this.confirmButton = scene.add
-      .text(0, 0, 'OK', {
+      .text(0, 0, BANNER_CONFIRM_LABEL, {
         fontFamily: 'monospace',
         fontSize: `${String(BANNER_CONTROL_FONT_SIZE_PIXELS)}px`,
         color: '#1a1a1a',
@@ -272,7 +280,7 @@ export class TurnBanner {
       .setVisible(false)
 
     this.cancelButton = scene.add
-      .text(0, 0, 'X', {
+      .text(0, 0, BANNER_CANCEL_LABEL, {
         fontFamily: 'monospace',
         fontSize: `${String(BANNER_CONTROL_FONT_SIZE_PIXELS)}px`,
         color: '#1a1a1a',
@@ -398,10 +406,16 @@ export class TurnBanner {
     this.statusText.setText(`${view.actorFaction} · ${composer.message}`)
     this.statusText.setPosition(0, statusOffsetY)
 
-    this.confirmButton.setVisible(composer.canConfirm || useStepper)
-    this.cancelButton.setVisible(composer.canCancel)
-    this.confirmButton.setPosition(halfWidth - 56, statusOffsetY)
-    this.cancelButton.setPosition(halfWidth - 18, statusOffsetY)
+    const showConfirm = composer.canConfirm || useStepper
+    const showCancel = composer.canCancel
+    this.confirmButton.setVisible(showConfirm)
+    this.cancelButton.setVisible(showCancel)
+    this.layoutControlButtons({
+      halfWidth,
+      statusOffsetY,
+      showConfirm,
+      showCancel,
+    })
 
     if (useStepper && this.countStepper !== null) {
       this.paintCountStepper(this.countStepper)
@@ -438,6 +452,30 @@ export class TurnBanner {
         ? BANNER_PANEL_HEIGHT_COMPOSER_PIXELS
         : BANNER_PANEL_HEIGHT_STATUS_PIXELS,
     )
+  }
+
+  /**
+   * X left corner, OK right corner.
+   */
+  private layoutControlButtons(input: {
+    halfWidth: number
+    statusOffsetY: number
+    showConfirm: boolean
+    showCancel: boolean
+  }): void {
+    const { halfWidth, statusOffsetY, showConfirm, showCancel } = input
+    if (showCancel) {
+      this.cancelButton.setPosition(
+        -halfWidth + BANNER_CONTROL_CORNER_INSET_PIXELS,
+        statusOffsetY,
+      )
+    }
+    if (showConfirm) {
+      this.confirmButton.setPosition(
+        halfWidth - BANNER_CONTROL_CORNER_INSET_PIXELS,
+        statusOffsetY,
+      )
+    }
   }
 
   private paintCountStepper(state: CountStepperState): void {
