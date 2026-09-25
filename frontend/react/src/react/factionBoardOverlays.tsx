@@ -5,6 +5,7 @@ import {
   type BoardLayoutRegion,
   type FactionBoardPixelLayout,
 } from '#assets/factionBoardLayout.ts'
+import { getHudCallbacks } from '#game/hudStore.ts'
 import {
   allianceBaseTextureKey,
   factionTextureKey,
@@ -337,14 +338,19 @@ function AllianceSupplyExtras(props: {
         />
       ) : null}
       {supportersRegion !== null ? (
-        <div
-          className="faction-board-modal__supply"
+        <button
+          type="button"
+          className="faction-board-modal__supporters-hit"
           style={layoutRegionStyle(supportersRegion, props.layout)}
+          aria-label={`Observe supporters (${String(props.view.supporters)})`}
+          onClick={() => {
+            getHudCallbacks().onSupportersClick(props.view.seat)
+          }}
         >
           <span className="faction-board-modal__supply-badge">
             {String(props.view.supporters)}
           </span>
-        </div>
+        </button>
       ) : null}
       {baseSuitRegionIds.map((slot) => {
         if (!props.view.basesInSupply.includes(slot.suit)) {

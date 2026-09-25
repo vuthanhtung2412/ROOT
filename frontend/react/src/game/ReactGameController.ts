@@ -222,6 +222,13 @@ export class ReactGameController {
           this.syncActionTrayFromLatestSnapshot()
         }
       },
+      onSupportersClick: (seat) => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openSupporters(state, seat)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
       onSelectAction: (spec) => {
         this.handleSelectAction(spec)
       },

@@ -148,6 +148,17 @@
   box-sizing: border-box;
 }
 
+.faction-board-modal__supporters-hit {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
 .faction-board-modal__supply-token {
   display: block;
   width: 100%;
