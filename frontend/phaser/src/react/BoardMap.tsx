@@ -24,6 +24,11 @@ import {
 } from '#game/boardMapLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import { factionColorForSeat } from '#game/theme.ts'
+import {
+  ClearingPieceLayer,
+  computeRulerByClearing,
+  type BoardClearingPieces,
+} from '#react/PieceStack.tsx'
 import '#react/BoardMap.css'
 
 export type ClearingSelectedHandler = (clearingId: number) => void
@@ -47,10 +52,9 @@ function colorToCss(color: number): string {
 export type BoardMapProps = {
   layout?: BoardLayout
   highlightedClearingIds?: readonly number[]
-  rulerByClearing?: ReadonlyMap<number, number | null>
+  clearings?: readonly BoardClearingPieces[]
   factions?: readonly string[]
   onClearingSelected?: ClearingSelectedHandler
-  children?: JSX.Element | readonly JSX.Element[] | null
 }
 
 export function BoardMap(props: BoardMapProps): JSX.Element {
@@ -79,6 +83,32 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
     }
     return clearingHitTargetsForMap(layout, metrics)
   }, [layout, metrics])
+
+  const hitCenters = useMemo(() => {
+    const map = new Map<
+      number,
+      { centerX: number; centerY: number; radius: number }
+    >()
+    for (const target of targets) {
+      map.set(target.clearingId, {
+        centerX: target.centerX,
+        centerY: target.centerY,
+        radius: target.radius,
+      })
+    }
+    return map
+  }, [targets])
+
+  const rulerByClearing = useMemo(() => {
+    if (props.clearings === undefined || props.factions === undefined) {
+      return new Map<number, number | null>()
+    }
+    return computeRulerByClearing(
+      props.clearings,
+      props.factions,
+      [...hitCenters.keys()],
+    )
+  }, [props.clearings, props.factions, hitCenters])
 
   const highlighted = useMemo(
     () => new Set(props.highlightedClearingIds ?? []),
@@ -135,12 +165,19 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               height: metrics.mapDisplayHeight,
             }}
           />
-          <div className="board-map__pieces">{props.children}</div>
+          <div className="board-map__pieces">
+            {props.clearings !== undefined && props.factions !== undefined ? (
+              <ClearingPieceLayer
+                clearings={props.clearings}
+                factions={props.factions}
+                hitCenters={hitCenters}
+              />
+            ) : null}
+          </div>
           {targets.map((target) => {
             const isHighlighted = highlighted.has(target.clearingId)
             const hasAnyHighlight = highlighted.size > 0
-            const rulerSeat =
-              props.rulerByClearing?.get(target.clearingId) ?? null
+            const rulerSeat = rulerByClearing.get(target.clearingId) ?? null
             let ringClass = 'board-map__ring'
             let ringColor = 'rgba(240, 230, 211, 0.35)'
             let ringWidth = 2

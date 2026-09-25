@@ -32,7 +32,7 @@ describe('boardMapLayout', () => {
       naturalHeight: 1500,
     })
     const targets = clearingHitTargetsForMap(FALL_BOARD_LAYOUT, metrics)
-    expect(targets.length).toBe(FALL_BOARD_LAYOUT.clearings.length)
+    expect(targets.length).toBe(12)
     expect(targets[0]?.clearingId).toBe(0)
   })
 })

@@ -1,0 +1,56 @@
+.piece-stack {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.piece-stack__icon {
+  display: block;
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.piece-stack__icon--fallback {
+  border-radius: 4px;
+}
+
+.piece-stack__count {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow:
+    -1px -1px 0 #1a1a1a,
+    1px -1px 0 #1a1a1a,
+    -1px 1px 0 #1a1a1a,
+    1px 1px 0 #1a1a1a;
+  pointer-events: none;
+}
+
+.piece-stack__ruin {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.piece-stack__slots {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -100%);
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: #f0e6d3;
+  background: #1a2438cc;
+  padding: 2px 4px;
+  pointer-events: none;
+}
