@@ -22,6 +22,8 @@ export function createTurnScratch(
     decreeDone: false,
     militaryOpsLeft: 0,
     sympathyCraftedIds: [],
+    slipDone: false,
+    aidsThisTurn: {},
     ...overrides,
   }
 }

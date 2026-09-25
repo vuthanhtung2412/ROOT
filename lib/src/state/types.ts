@@ -57,6 +57,10 @@ export type TurnScratch = {
   militaryOpsLeft: number
   /** Sympathy token piece ids activated for craft this turn. */
   sympathyCraftedIds: string[]
+  /** Vagabond Birdsong — slip already used this turn. */
+  slipDone: boolean
+  /** Vagabond — aid counts toward relationship this turn per seat. */
+  aidsThisTurn: Partial<Record<Seat, number>>
 }
 
 export type GameState = {

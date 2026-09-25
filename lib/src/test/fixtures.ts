@@ -118,7 +118,9 @@ export function player(
       ? eyrieBoard()
       : faction === 'alliance'
         ? createFactionBoard('alliance')
-        : marquiseBoard()
+        : faction === 'vagabond'
+          ? createFactionBoard('vagabond')
+          : marquiseBoard()
   return {
     playerId: `p${seat}`,
     seat,

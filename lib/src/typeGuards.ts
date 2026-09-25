@@ -14,6 +14,7 @@ import type {
   EyrieBoard,
   FactionBoard,
   MarquiseBoard,
+  VagabondBoard,
 } from '#state/boards.js'
 
 const FALL_CLEARING_COUNT = 12
@@ -69,4 +70,8 @@ export function isEyrieBoard(board: FactionBoard): board is EyrieBoard {
 
 export function isAllianceBoard(board: FactionBoard): board is AllianceBoard {
   return board.kind === 'alliance'
+}
+
+export function isVagabondBoard(board: FactionBoard): board is VagabondBoard {
+  return board.kind === 'vagabond'
 }

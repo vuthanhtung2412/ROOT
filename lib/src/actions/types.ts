@@ -1,5 +1,5 @@
 import type { ClearingId } from '#map/types.js'
-import type { BuildingType, Seat } from '#pieces/types.js'
+import type { BuildingType, ItemType, Seat } from '#pieces/types.js'
 import type { DecreeColumn, EyrieLeader } from '#state/boards.js'
 
 export type MarchMove = {
@@ -70,6 +70,8 @@ export type ActionChoiceParams = {
   leaders?: EyrieLeader[]
   supporterIds?: string[]
   op?: Array<'move' | 'battle' | 'recruit' | 'organize'>
+  /** Vagabond slip — forest destination indices. */
+  forests?: number[]
 }
 
 export type Action =
@@ -148,6 +150,22 @@ export type Action =
       clearing?: ClearingId
       defender?: Seat
     }
+  | { type: 'slip'; to: ClearingId | `forest:${number}` }
+  | { type: 'vbMove'; to: ClearingId }
+  | { type: 'vbBattle'; defender: Seat }
+  | { type: 'explore' }
+  | {
+      type: 'aid'
+      target: Seat
+      cardId: string
+      takeItem?: ItemType
+    }
+  | { type: 'strike'; defender: Seat; pieceId?: string }
+  | { type: 'repair'; itemIndex: number }
+  | { type: 'vbCraft'; cardId: string }
+  | { type: 'steal'; target: Seat }
+  | { type: 'refresh' }
+  | { type: 'rest' }
   | ResolveEventAction
 
 export type ResolveEventAction = {

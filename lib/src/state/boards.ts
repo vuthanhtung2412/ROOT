@@ -89,12 +89,27 @@ export type VagabondItem = {
   exhausted: boolean
 }
 
+/** Rule: Vagabond relationship track — aid cost / VP per step from Indifferent. */
+export const VAGABOND_RELATIONSHIP_AID_COST = [1, 2, 3] as const
+export const VAGABOND_RELATIONSHIP_VP = [1, 2, 2] as const
+export const VAGABOND_ALLIED_STEP = 3
+
+export const THIEF_START_ITEMS: readonly ItemType[] = [
+  'boot',
+  'torch',
+  'tea',
+  'sword',
+]
+
 export type VagabondBoard = {
   kind: 'vagabond'
   satchel: VagabondItem[]
   tracks: { tea: VagabondItem[]; coin: VagabondItem[]; bag: VagabondItem[] }
   damaged: VagabondItem[]
+  /** 0..2 = Indifferent steps; 3 = Allied; 'hostile' = Hostile box. */
   relationships: Record<FactionId, number | 'hostile'>
+  /** Non-null when pawn is in a forest (not on a clearing). */
+  forest: number | null
 }
 
 export type FactionBoard = MarquiseBoard | EyrieBoard | AllianceBoard | VagabondBoard
@@ -142,6 +157,7 @@ export function createFactionBoard(faction: FactionId): FactionBoard {
           alliance: 0,
           vagabond: 0,
         },
+        forest: null,
       }
   }
 }
