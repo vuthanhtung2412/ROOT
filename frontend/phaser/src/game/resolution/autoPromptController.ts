@@ -34,6 +34,8 @@ export type AutoPromptControllerDeps = {
   submitEndPhase: () => void
   /** While battle result strip is showing, defer auto endPhase. */
   isBattleResultFlashActive: () => boolean
+  /** Setup keep/building highlights need BoardView; skip until ready. */
+  isBoardReady: () => boolean
 }
 
 /**
@@ -207,6 +209,11 @@ export class AutoPromptController {
   ): void {
     if (!localControlsActor || snapshot.state?.status !== 'setup') {
       this.setupPromptKey = null
+      return
+    }
+    if (!this.deps.isBoardReady()) {
+      // Do not lock setupPromptKey — retry after BoardView exists so corner
+      // highlights land on a live board (choose keep / starting buildings).
       return
     }
     const setupSpec = snapshot.legalActions.find(
