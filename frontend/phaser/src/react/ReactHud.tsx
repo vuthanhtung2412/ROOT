@@ -5,6 +5,11 @@ import {
   CraftedCardsModal,
 } from '#react/CardGalleryModal.tsx'
 import { FactionBoardModal } from '#react/FactionBoardModal.tsx'
+import {
+  GameDrawer,
+  LeaderPickOverlay,
+  WinnerOverlay,
+} from '#react/HudChrome.tsx'
 
 /**
  * React HUD layer above the Phaser canvas.
@@ -17,6 +22,9 @@ export function ReactHud(): JSX.Element {
       <CraftedCardsModal />
       <CardPileModal />
       <CardDetailOverlay />
+      <GameDrawer />
+      <WinnerOverlay />
+      <LeaderPickOverlay />
     </>
   )
 }

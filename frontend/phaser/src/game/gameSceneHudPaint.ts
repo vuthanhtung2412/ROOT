@@ -5,15 +5,17 @@ import type { AutoPromptController } from '#game/resolution/autoPromptController
 import type { GameSceneModals } from '#game/gameSceneModals.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { collapsePieceIdsRemovalSpecs } from '#game/battleRemovalStepper.ts'
+import {
+  syncGameDrawerDiscardCount,
+  syncWinnerOverlay,
+} from '#react/HudChrome.tsx'
 import type { ActionTray, ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { CardHand } from '#ui/CardHand.ts'
-import type { GameDrawer } from '#ui/GameDrawer.ts'
 import type { PlayerRail } from '#ui/PlayerRail.ts'
 import {
   buildTurnBannerViewModel,
   type TurnBanner,
 } from '#ui/TurnBanner.ts'
-import type { WinnerOverlay } from '#ui/WinnerOverlay.ts'
 
 export type GameSceneHudPaintDeps = {
   getSession: () => GameSession | null
@@ -21,8 +23,6 @@ export type GameSceneHudPaintDeps = {
   getPlayerRail: () => PlayerRail | null
   getCardHand: () => CardHand | null
   getActionTray: () => ActionTray | null
-  getGameDrawer: () => GameDrawer | null
-  getWinnerOverlay: () => WinnerOverlay | null
   getCardTextureWarmup: () => CardTextureWarmup | null
   getModals: () => GameSceneModals | null
   getAutoPrompts: () => AutoPromptController | null
@@ -73,10 +73,10 @@ export function paintGameSceneHud(
     state: snapshot.state,
   })
   deps.getModals()?.refreshFactionBoard(snapshot.state)
-  deps.getGameDrawer()?.sync(snapshot.state.deck?.discard.length ?? 0)
+  syncGameDrawerDiscardCount(snapshot.state.deck?.discard.length ?? 0)
   deps.syncBattleOverlay()
   deps.syncBattleClearingHighlight(snapshot.state)
-  syncWinner(snapshot.state, deps.getWinnerOverlay())
+  syncWinner(snapshot.state)
   deps.getAutoPrompts()?.runAfterHudPaint(
     snapshot,
     banner.actorSeat,
@@ -103,21 +103,16 @@ function warmCardTexturesForHand(
   warmup?.ensure(defIds)
 }
 
-function syncWinner(
-  state: GameState,
-  winnerOverlay: WinnerOverlay | null,
-): void {
+function syncWinner(state: GameState): void {
   if (state.status !== 'finished' || state.winner === undefined) {
-    winnerOverlay?.sync(null)
+    syncWinnerOverlay(null)
     return
   }
   const winnerSeat = state.winner
   const winnerPlayer = state.players.find(
     (player) => player.seat === winnerSeat,
   )
-  winnerOverlay?.sync(
-    winnerPlayer?.faction ?? `seat ${String(winnerSeat)}`,
-  )
+  syncWinnerOverlay(winnerPlayer?.faction ?? `seat ${String(winnerSeat)}`)
 }
 
 function paintStatus(

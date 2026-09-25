@@ -13,7 +13,11 @@ import { createEventComposerHooks } from '#game/resolution/eventActionComposer.t
 import { hideCardPile, hideCraftedCards } from '#game/cardGalleryBridge.ts'
 import { hideFactionBoard } from '#game/factionBoardBridge.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
+import { resetHud, setHudCallbacks } from '#game/hudStore.ts'
 import { hideCardDetail, showCardDetail } from '#react/CardDetailOverlay.tsx'
+import {
+  syncLeaderPickOverlay,
+} from '#react/HudChrome.tsx'
 import { mergeComposerHooks } from '#game/resolution/mergeComposerHooks.ts'
 import {
   buildBattleRemovalStepperChoices,
@@ -40,14 +44,11 @@ import { ActionTray, type ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'
 import { CardHand } from '#ui/CardHand.ts'
-import { GameDrawer } from '#ui/GameDrawer.ts'
-import { LeaderPickOverlay } from '#ui/LeaderPickOverlay.ts'
 import { PlayerRail } from '#ui/PlayerRail.ts'
 import {
   buildTurnBannerViewModel,
   TurnBanner,
 } from '#ui/TurnBanner.ts'
-import { WinnerOverlay } from '#ui/WinnerOverlay.ts'
 import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import { drawCoverWallpaper } from '#ui/sceneBackdrop.ts'
 
@@ -63,9 +64,6 @@ export class GameScene extends Phaser.Scene {
   private cardHand: CardHand | null = null
   private actionTray: ActionTray | null = null
   private battleOverlay: BattleOverlay | null = null
-  private gameDrawer: GameDrawer | null = null
-  private winnerOverlay: WinnerOverlay | null = null
-  private leaderPickOverlay: LeaderPickOverlay | null = null
   private readonly composer = new ActionComposer()
   private marquiseMarch = createMarchWorkflowHooks()
   private marquiseBoard = createMarquiseBoardComposerHooks()
@@ -204,7 +202,7 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlay.setOnOutsideClick(() => {
       this.battleOverlayController?.dismissResultFlash()
     })
-    this.gameDrawer = new GameDrawer(this, {
+    setHudCallbacks({
       onEndGame: () => {
         void this.handleEndGame()
       },
@@ -215,15 +213,12 @@ export class GameScene extends Phaser.Scene {
           this.syncActionTrayFromLatestSnapshot()
         }
       },
-    })
-    this.winnerOverlay = new WinnerOverlay(this, {
       onReturnToMenu: () => {
         void this.handleEndGame()
       },
-    })
-    this.leaderPickOverlay = new LeaderPickOverlay(this)
-    this.leaderPickOverlay.setOnPicked((leaderId) => {
-      this.applyComposerOutcome(this.composer.chooseColumn(leaderId))
+      onLeaderPicked: (leaderId) => {
+        this.applyComposerOutcome(this.composer.chooseColumn(leaderId))
+      },
     })
 
     this.statusText = this.add
@@ -253,6 +248,7 @@ export class GameScene extends Phaser.Scene {
     hideCraftedCards()
     hideCardPile()
     hideCardDetail()
+    resetHud()
     if (this.unsubscribe !== null) {
       this.unsubscribe()
       this.unsubscribe = null
@@ -274,12 +270,6 @@ export class GameScene extends Phaser.Scene {
     this.battleOverlayController = null
     this.autoPrompts = null
     this.modals = null
-    this.gameDrawer?.destroy()
-    this.gameDrawer = null
-    this.winnerOverlay?.destroy()
-    this.winnerOverlay = null
-    this.leaderPickOverlay?.destroy()
-    this.leaderPickOverlay = null
   }
 
   private async handleEndGame(): Promise<void> {
@@ -320,7 +310,7 @@ export class GameScene extends Phaser.Scene {
         this.turnBanner?.syncComposer(input)
       },
       syncLeaderPick: (leaders) => {
-        this.leaderPickOverlay?.sync(leaders)
+        syncLeaderPickOverlay(leaders)
       },
       setHighlightedClearings: (clearingIds) => {
         this.boardView?.setHighlightedClearings(clearingIds)
@@ -491,8 +481,6 @@ export class GameScene extends Phaser.Scene {
       getPlayerRail: () => this.playerRail,
       getCardHand: () => this.cardHand,
       getActionTray: () => this.actionTray,
-      getGameDrawer: () => this.gameDrawer,
-      getWinnerOverlay: () => this.winnerOverlay,
       getCardTextureWarmup: () => this.cardTextureWarmup,
       getModals: () => this.modals,
       getAutoPrompts: () => this.autoPrompts,
