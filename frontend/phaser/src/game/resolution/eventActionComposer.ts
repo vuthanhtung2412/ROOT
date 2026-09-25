@@ -120,11 +120,11 @@ export function createEventComposerHooks(): {
     return {
       kind: 'incomplete',
       prompt: {
-        message: 'Field Hospitals — pay matching suit or Decline',
+        message: 'Field Hospitals — pay matching suit (bird OK) or Decline',
         highlightClearings: [],
         enabledCardIds: uniqueCardIds,
         canConfirm: false,
-        canCancel: true,
+        canCancel: false,
       },
     }
   }
@@ -160,7 +160,7 @@ export function createEventComposerHooks(): {
         highlightClearings: [],
         enabledCardIds: uniqueCardIds,
         canConfirm: false,
-        canCancel: true,
+        canCancel: false,
       },
     }
   }
@@ -423,20 +423,32 @@ export function createEventComposerHooks(): {
       ) {
         return null
       }
-      // Ambush/foil must resolve — cancel = skip.
+      // Non-skippable: Decline/Skip is a banner option, not corner X.
       if (draft.type === 'pickAmbush') {
-        clear()
         return {
-          kind: 'ready',
-          action: { type: 'resolveEvent', decline: true },
+          kind: 'incomplete',
+          prompt: {
+            message:
+              draft.role === 'foil'
+                ? 'Foil ambush — play matching Ambush or Skip'
+                : 'Ambush? — play matching Ambush or Skip',
+            highlightClearings: [],
+            enabledCardIds: draft.cardIds,
+            canConfirm: false,
+            canCancel: false,
+          },
         }
       }
-      // Field Hospitals must resolve — cancel = decline.
       if (draft.type === 'pickFieldHospital') {
-        clear()
         return {
-          kind: 'ready',
-          action: { type: 'resolveEvent', decline: true },
+          kind: 'incomplete',
+          prompt: {
+            message: 'Field Hospitals — pay matching suit (bird OK) or Decline',
+            highlightClearings: [],
+            enabledCardIds: draft.cardIds,
+            canConfirm: false,
+            canCancel: false,
+          },
         }
       }
       clear()
