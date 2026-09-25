@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { soleEndPhaseAction } from '#game/forcedAction.ts'
+import { soleEndPhaseAction } from '#game/resolution/forcedAction.ts'
 import { makeActionSpec } from '#test/factories.ts'
 
 describe('soleEndPhaseAction', () => {

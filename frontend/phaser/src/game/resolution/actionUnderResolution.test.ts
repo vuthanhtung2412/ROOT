@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isActionUnderResolution } from '#game/actionUnderResolution.ts'
+import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.ts'
 
 describe('isActionUnderResolution', () => {
   it('is false when every draft is idle', () => {

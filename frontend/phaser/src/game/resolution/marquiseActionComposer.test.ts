@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { makeActionSpec } from '#test/factories.ts'
-import { ActionComposer } from '#game/ActionComposer.ts'
-import { mergeComposerHooks } from '#game/mergeComposerHooks.ts'
+import { ActionComposer } from '#game/resolution/ActionComposer.ts'
+import { mergeComposerHooks } from '#game/resolution/mergeComposerHooks.ts'
 import {
   createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
   createMarquiseMarchComposerHooks,
-} from '#game/marquiseActionComposer.ts'
+} from '#game/resolution/marquiseActionComposer.ts'
 
 describe('marquiseActionComposer cards', () => {
   it('overwork pairs card then clearing', () => {

@@ -1,6 +1,7 @@
 /**
  * Frontend action under resolution = composer draft not idle.
  * Not in GameState until POST. See resources/notes/frontend-vs-registered-actions.md.
+ * Flows live in frontend/phaser/src/game/resolution/.
  */
 export const COMPOSER_DRAFT_IDLE_TYPE = 'idle'
 

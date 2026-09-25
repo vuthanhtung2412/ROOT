@@ -4,16 +4,16 @@ import { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { createPhaserApi } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
-import { ActionComposer, type ComposerOutcome } from '#game/ActionComposer.ts'
-import { AutoPromptController } from '#game/autoPromptController.ts'
+import { ActionComposer, type ComposerOutcome } from '#game/resolution/ActionComposer.ts'
+import { AutoPromptController } from '#game/resolution/autoPromptController.ts'
 import { BattleOverlayController } from '#game/battleOverlayController.ts'
-import { applyComposerOutcomeToHud } from '#game/composerOutcomeApplier.ts'
+import { applyComposerOutcomeToHud } from '#game/resolution/composerOutcomeApplier.ts'
 import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
-import { isActionUnderResolution } from '#game/actionUnderResolution.ts'
+import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
-import { createEventComposerHooks } from '#game/eventActionComposer.ts'
+import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
-import { mergeComposerHooks } from '#game/mergeComposerHooks.ts'
+import { mergeComposerHooks } from '#game/resolution/mergeComposerHooks.ts'
 import {
   buildBattleRemovalStepperChoices,
   buildPiecesByIdFromClearings,
@@ -21,12 +21,12 @@ import {
   collectPieceIdsCombosFromSpecs,
   isPieceIdsRemovalSpec,
 } from '#game/battleRemovalStepper.ts'
-import { createEyrieComposerHooks } from '#game/eyrieActionComposer.ts'
+import { createEyrieComposerHooks } from '#game/resolution/eyrieActionComposer.ts'
 import {
   createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
   createMarquiseMarchComposerHooks,
-} from '#game/marquiseActionComposer.ts'
+} from '#game/resolution/marquiseActionComposer.ts'
 import {
   boardLayoutFromFallResponse,
   FALL_BOARD_LAYOUT,
@@ -35,7 +35,7 @@ import {
 import { readBattleClearingId } from '#game/battleOverlayModel.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { applyHiDpiCamera, gameViewSize } from '#game/hiDpi.ts'
-import { applyMarchMovesToClearings } from '#game/marchClearingsPreview.ts'
+import { applyMarchMovesToClearings } from '#game/resolution/marchClearingsPreview.ts'
 import { ActionTray, type ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { BattleOverlay } from '#ui/BattleOverlay.ts'
 import { BoardView } from '#ui/BoardView.ts'

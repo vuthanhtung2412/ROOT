@@ -7,7 +7,7 @@ import {
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
-} from '#game/ActionComposer.ts'
+} from '#game/resolution/ActionComposer.ts'
 import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
 
 const FIELD_HOSPITAL_DECLINE_VALUE = 'decline'

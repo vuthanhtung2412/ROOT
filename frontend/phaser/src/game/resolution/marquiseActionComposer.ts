@@ -4,13 +4,13 @@ import {
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
-} from '#game/ActionComposer.ts'
+} from '#game/resolution/ActionComposer.ts'
 import { clearingRuler } from '#game/clearingRuler.ts'
 import { fallAdjacentClearings } from '#game/fallPaths.ts'
 import {
   applyMarchMovesToClearings,
   type ClearingPiecesSnapshot,
-} from '#game/marchClearingsPreview.ts'
+} from '#game/resolution/marchClearingsPreview.ts'
 
 type OverworkOption = { cardId: string; clearing: number }
 

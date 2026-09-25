@@ -1,5 +1,5 @@
 import type { ActionSpec } from '#api/client.ts'
-import type { ActionComposer, ComposerOutcome } from '#game/ActionComposer.ts'
+import type { ActionComposer, ComposerOutcome } from '#game/resolution/ActionComposer.ts'
 import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
 import {
   buildBattleRemovalStepperChoices,
@@ -12,8 +12,8 @@ import {
   fieldHospitalCardIdsFromSpecs,
   isBattleRemovalPending,
   isFieldHospitalPending,
-} from '#game/eventActionComposer.ts'
-import { soleEndPhaseAction } from '#game/forcedAction.ts'
+} from '#game/resolution/eventActionComposer.ts'
+import { soleEndPhaseAction } from '#game/resolution/forcedAction.ts'
 import type { GameSessionSnapshot } from '#game/GameSession.ts'
 
 export type EventComposerAutoPromptHooks = {
