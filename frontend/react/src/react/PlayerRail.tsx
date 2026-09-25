@@ -27,7 +27,7 @@ export function PlayerRail(): JSX.Element | null {
   }
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed top-14 left-3 z-[100] flex w-[178px] flex-col gap-2 portrait:top-16 portrait:right-2 portrait:left-2 portrait:w-auto portrait:flex-row portrait:flex-wrap portrait:justify-center portrait:gap-1.5">
+    <div className="fixed top-14 left-0 z-[100] box-border flex w-[var(--root-landscape-side-percent)] flex-col items-center gap-2 px-2 portrait:top-16 portrait:right-2 portrait:left-2 portrait:w-auto portrait:flex-row portrait:flex-wrap portrait:justify-center portrait:gap-1.5 portrait:px-0">
       {rail.state.players.map((player) => {
         const isActive = player.seat === rail.activeSeat
         const color = factionColorForSeat(player.seat, rail.state.factions)
@@ -41,8 +41,8 @@ export function PlayerRail(): JSX.Element | null {
             key={player.seat}
             className={
               isActive
-                ? 'root-panel relative box-border h-16 portrait:h-14 portrait:w-[min(168px,calc(50vw-14px))] shadow-[inset_0_0_0_1px_var(--color-parchment-shadow),0_0_0_2px_color-mix(in_srgb,var(--color-gold)_70%,var(--color-ink)),2px_2px_0_color-mix(in_srgb,var(--color-ink)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-parchment)_96%,var(--color-gold))]'
-                : 'root-panel relative box-border h-16 portrait:h-14 portrait:w-[min(168px,calc(50vw-14px))]'
+                ? 'root-panel relative box-border h-16 w-full max-w-[178px] portrait:h-14 portrait:w-[min(168px,calc(50vw-14px))] portrait:max-w-none shadow-[inset_0_0_0_1px_var(--color-parchment-shadow),0_0_0_2px_color-mix(in_srgb,var(--color-gold)_70%,var(--color-ink)),2px_2px_0_color-mix(in_srgb,var(--color-ink)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-parchment)_96%,var(--color-gold))]'
+                : 'root-panel relative box-border h-16 w-full max-w-[178px] portrait:h-14 portrait:w-[min(168px,calc(50vw-14px))] portrait:max-w-none'
             }
             style={{
               borderColor: isActive ? '#ffe08a' : colorToCss(color),

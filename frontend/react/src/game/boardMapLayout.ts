@@ -10,8 +10,11 @@ import {
 } from '#game/hiDpi.ts'
 import type { ViewportLayoutMode } from '#game/viewportLayout.ts'
 
-/** Match legacy Phaser BoardView.fitMapToBoardArea band (landscape). */
-export const BOARD_MAP_WIDTH_RATIO_LANDSCAPE = 0.74
+/**
+ * Landscape map band inside center playfield column (1-3-1 grid).
+ * Side columns hold VP rail + action tray, so map may fill most of host.
+ */
+export const BOARD_MAP_WIDTH_RATIO_LANDSCAPE = 0.96
 export const BOARD_MAP_HEIGHT_RATIO_LANDSCAPE = 0.82
 export const BOARD_MAP_CENTER_Y_RATIO_LANDSCAPE = 0.44
 

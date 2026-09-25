@@ -15,7 +15,7 @@ describe('boardMapLayout', () => {
       naturalHeight: 1500,
     })
     expect(metrics.mapDisplayWidth).toBeLessThanOrEqual(
-      GAME_LOGICAL_WIDTH * 0.74 + 0.01,
+      GAME_LOGICAL_WIDTH * 0.96 + 0.01,
     )
     expect(metrics.mapDisplayHeight).toBeLessThanOrEqual(
       GAME_LOGICAL_HEIGHT * 0.82 + 0.01,

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  landscapeMapHostSize,
+  landscapePlayfieldCenterFraction,
+  landscapePlayfieldSideFraction,
   portraitMapHostSize,
   resolveViewportLayoutMode,
 } from '#game/viewportLayout.ts'
@@ -21,5 +24,18 @@ describe('portraitMapHostSize', () => {
     const host = portraitMapHostSize({ width: 390, height: 844 })
     expect(host.width).toBe(370)
     expect(host.height).toBe(516)
+  })
+})
+
+describe('landscape playfield 1-3-1', () => {
+  it('splits viewport into side and center fractions', () => {
+    expect(landscapePlayfieldSideFraction()).toBe(0.2)
+    expect(landscapePlayfieldCenterFraction()).toBe(0.6)
+  })
+
+  it('sizes map host to center column', () => {
+    const host = landscapeMapHostSize({ width: 1600, height: 900 })
+    expect(host.width).toBe(960)
+    expect(host.height).toBe(900)
   })
 })

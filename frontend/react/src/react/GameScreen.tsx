@@ -6,6 +6,9 @@ import {
 import type { BoardLayout } from '#game/boardLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import {
+  landscapeMapHostSize,
+  landscapePlayfieldCenterFraction,
+  landscapePlayfieldSideFraction,
   portraitMapHostSize,
   type ViewportLayoutMode,
 } from '#game/viewportLayout.ts'
@@ -50,42 +53,23 @@ function useViewportPixelSize(): ViewportPixelSize {
   return size
 }
 
-function useLandscapeLetterboxScale(): number {
-  const [scale, setScale] = useState(1)
-  useEffect(() => {
-    const updateScale = (): void => {
-      setScale(
-        Math.min(
-          window.innerWidth / GAME_LOGICAL_WIDTH,
-          window.innerHeight / GAME_LOGICAL_HEIGHT,
-        ),
-      )
-    }
-    updateScale()
-    window.addEventListener('resize', updateScale)
-    window.addEventListener('orientationchange', updateScale)
-    return () => {
-      window.removeEventListener('resize', updateScale)
-      window.removeEventListener('orientationchange', updateScale)
-    }
-  }, [])
-  return scale
-}
-
 export function GameScreen(props: GameScreenProps): JSX.Element {
   const wallpaperPath = imagePathForAssetKey(GAME_ASSET_KEYS.gameWallpaper)
   const viewport = useViewportPixelSize()
-  const landscapeScale = useLandscapeLetterboxScale()
   const isPortrait = props.layoutMode === 'portrait'
   const portraitHost = portraitMapHostSize(viewport)
+  const landscapeHost = landscapeMapHostSize(viewport)
+  const mapHost = isPortrait ? portraitHost : landscapeHost
+  const landscapeSidePercent = landscapePlayfieldSideFraction() * 100
+  const landscapeCenterPercent = landscapePlayfieldCenterFraction() * 100
 
   const boardMap =
     props.layout !== null ? (
       <BoardMap
         layout={props.layout}
         layoutMode={props.layoutMode}
-        viewWidth={isPortrait ? portraitHost.width : GAME_LOGICAL_WIDTH}
-        viewHeight={isPortrait ? portraitHost.height : GAME_LOGICAL_HEIGHT}
+        viewWidth={mapHost.width}
+        viewHeight={mapHost.height}
         {...(props.clearings !== null ? { clearings: props.clearings } : {})}
         {...(props.factions !== null ? { factions: props.factions } : {})}
         highlightedClearingIds={props.highlightedClearingIds}
@@ -118,13 +102,18 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
           </div>
         </div>
       ) : (
-        <div className="absolute inset-0 z-[1] flex items-center justify-center overflow-hidden">
+        <div
+          className="absolute inset-y-0 z-[1] box-border flex items-center justify-center overflow-hidden"
+          style={{
+            left: `${String(landscapeSidePercent)}%`,
+            width: `${String(landscapeCenterPercent)}%`,
+          }}
+        >
           <div
-            className="relative max-h-full max-w-full shrink-0 origin-center"
+            className="relative max-h-full max-w-full shrink-0"
             style={{
-              width: GAME_LOGICAL_WIDTH,
-              height: GAME_LOGICAL_HEIGHT,
-              transform: `scale(${String(landscapeScale)})`,
+              width: landscapeHost.width,
+              height: landscapeHost.height,
             }}
           >
             {boardMap}

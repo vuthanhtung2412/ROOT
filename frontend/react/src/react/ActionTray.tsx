@@ -43,11 +43,11 @@ export function ActionTray(): JSX.Element | null {
   const forActor = filterTrayActions(tray.actions, tray.actorSeat, tray.options)
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed top-16 right-3 z-[110] flex max-w-[260px] flex-col items-start gap-2 portrait:top-auto portrait:right-2 portrait:bottom-[118px] portrait:left-2 portrait:z-[115] portrait:max-w-none portrait:items-stretch">
-      <div className="root-panel px-3 py-1.5 font-display text-xl tracking-[0.02em] text-ink portrait:self-center portrait:text-base">
+    <div className="fixed top-16 right-0 z-[110] box-border flex w-[var(--root-landscape-side-percent)] flex-col items-center gap-2 px-2 portrait:top-auto portrait:right-auto portrait:bottom-[118px] portrait:left-1/2 portrait:z-[115] portrait:w-[calc(100vw-16px)] portrait:-translate-x-1/2 portrait:px-0">
+      <div className="root-panel px-3 py-1.5 font-display text-xl tracking-[0.02em] text-ink portrait:text-base">
         {`Actions (${String(forActor.length)})`}
       </div>
-      <div className="flex flex-col items-start gap-1.5 portrait:flex-row portrait:flex-wrap portrait:items-stretch portrait:justify-center">
+      <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5">
         {forActor.map((spec, index) => {
           const label = formatActionLabel(spec, tray.pending, tray.state)
           const key = `${spec.type}-${String(spec.actor)}-${String(index)}-${label}`
@@ -55,7 +55,7 @@ export function ActionTray(): JSX.Element | null {
             <button
               key={key}
               type="button"
-              className="root-button px-3 py-2 text-left text-[17px] portrait:px-2.5 portrait:py-[7px] portrait:text-sm"
+              className="root-button px-3 py-2 text-center text-[17px] portrait:px-2.5 portrait:py-[7px] portrait:text-sm"
               onClick={() => {
                 callbacks.onSelectAction(spec)
               }}
