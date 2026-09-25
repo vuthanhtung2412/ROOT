@@ -1,54 +1,39 @@
+import {
+  getHudSnapshot,
+  patchHud,
+  subscribeHud,
+} from '#game/hudStore.ts'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 
-type FactionBoardListener = () => void
+/** Faction-board slice of the shared HUD store. */
 
-type FactionBoardBridgeState = {
-  view: FactionBoardViewModel | null
-}
-
-const bridgeState: FactionBoardBridgeState = {
-  view: null,
-}
-
-const listeners = new Set<FactionBoardListener>()
-
-function notifyFactionBoardListeners(): void {
-  for (const listener of listeners) {
-    listener()
-  }
-}
-
-export function subscribeFactionBoard(listener: FactionBoardListener): () => void {
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-  }
+export function subscribeFactionBoard(listener: () => void): () => void {
+  return subscribeHud(listener)
 }
 
 export function getFactionBoardSnapshot(): FactionBoardViewModel | null {
-  return bridgeState.view
+  return getHudSnapshot().factionBoard
 }
 
 export function isFactionBoardOpen(): boolean {
-  return bridgeState.view !== null
+  return getHudSnapshot().factionBoard !== null
 }
 
 export function factionBoardOpenSeat(): number | null {
-  if (bridgeState.view === null) {
+  const view = getHudSnapshot().factionBoard
+  if (view === null) {
     return null
   }
-  return bridgeState.view.seat
+  return view.seat
 }
 
 export function showFactionBoard(view: FactionBoardViewModel): void {
-  bridgeState.view = view
-  notifyFactionBoardListeners()
+  patchHud({ factionBoard: view })
 }
 
 export function hideFactionBoard(): void {
-  if (bridgeState.view === null) {
+  if (getHudSnapshot().factionBoard === null) {
     return
   }
-  bridgeState.view = null
-  notifyFactionBoardListeners()
+  patchHud({ factionBoard: null })
 }
