@@ -1,3 +1,4 @@
++ IMPORTANT: Make as few code modification as possible for a feature, I don't like many code insertion
 - Prefer language for anything is typescript
 - If there is a script to do certain thing use it (boostrap ts project, generate client) instead of modifying code
 - Rules **SoT** = `./resources/rules/Law_of_Root.pdf` (markdown twin: `./resources/rules/Law_of_Root.md`).
@@ -74,8 +75,6 @@ function addItem(items: string[], newItem: string) {
   return [...items, newItem];
 }
 ```
-
-+ Make as few code modification as possible for a feature
 
 + No magic number or strings create descriptive constant
 ```typescript
