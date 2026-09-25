@@ -27,25 +27,40 @@ const STAGE_LABELS: Record<string, string> = {
 /**
  * Top battle strip: stage + big dice + hits.
  * Visible whenever a battle event is pending — not only mid-composer.
+ * Post-battle result flash: click outside panel dismisses.
  */
 export class BattleOverlay {
   private readonly root: Phaser.GameObjects.Container
+  private readonly dismissVeil: Phaser.GameObjects.Rectangle
+  private readonly panel: Phaser.GameObjects.Rectangle
   private readonly headline: Phaser.GameObjects.Text
   private readonly promptText: Phaser.GameObjects.Text
   private readonly attackerDie: DieFace
   private readonly defenderDie: DieFace
   private readonly attackerMeta: Phaser.GameObjects.Text
   private readonly defenderMeta: Phaser.GameObjects.Text
+  private onOutsideClick: (() => void) | null = null
 
   constructor(scene: Phaser.Scene) {
-    const { width } = gameViewSize()
+    const { width, height } = gameViewSize()
     const centerX = width / 2
     // Sit under TurnBanner (~y 10–66)
     const panelY = 118
+    const panelWidth = Math.min(540, width - 40)
+    const panelHeight = 132
 
-    const panel = scene.add
-      .rectangle(centerX, panelY, Math.min(540, width - 40), 132, 0x1a2438, 0.94)
+    this.dismissVeil = scene.add
+      .rectangle(width / 2, height / 2, width, height, 0x000000, 0)
+      .setInteractive()
+      .setVisible(false)
+    this.dismissVeil.on('pointerdown', (): void => {
+      this.onOutsideClick?.()
+    })
+
+    this.panel = scene.add
+      .rectangle(centerX, panelY, panelWidth, panelHeight, 0x1a2438, 0.94)
       .setStrokeStyle(2, 0xc8a45c, 0.9)
+      .setInteractive()
 
     this.headline = scene.add
       .text(centerX, panelY - 52, '', {
@@ -86,7 +101,8 @@ export class BattleOverlay {
 
     this.root = scene.add
       .container(0, 0, [
-        panel,
+        this.dismissVeil,
+        this.panel,
         this.headline,
         this.promptText,
         this.attackerDie.container,
@@ -98,13 +114,19 @@ export class BattleOverlay {
     this.root.setVisible(false)
   }
 
+  setOnOutsideClick(callback: (() => void) | null): void {
+    this.onOutsideClick = callback
+  }
+
   sync(viewModel: BattleOverlayViewModel | null): void {
     if (viewModel === null) {
+      this.dismissVeil.setVisible(false)
       this.root.setVisible(false)
       return
     }
 
     const isOutcomeFlash = viewModel.outcomeMessage !== null
+    this.dismissVeil.setVisible(isOutcomeFlash)
     const stageLabel = isOutcomeFlash
       ? viewModel.outcomeMessage
       : (STAGE_LABELS[viewModel.stage] ?? viewModel.stage)
@@ -149,6 +171,7 @@ export class BattleOverlay {
   }
 
   destroy(): void {
+    this.onOutsideClick = null
     this.root.destroy(true)
   }
 }

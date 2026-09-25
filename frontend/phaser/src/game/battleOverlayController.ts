@@ -40,6 +40,14 @@ export class BattleOverlayController {
     return this.resultFlashOutcome !== null
   }
 
+  /** End post-battle banner early (outside click). No-op if flash inactive. */
+  dismissResultFlash(): void {
+    if (this.resultFlashOutcome === null) {
+      return
+    }
+    this.endResultFlash()
+  }
+
   sync(prompt: string | null = null): void {
     const overlay = this.getOverlay()
     const state = this.getState()
@@ -75,11 +83,16 @@ export class BattleOverlayController {
     this.resultFlashTimer = this.clock.delayedCall(
       battleResultFlashDurationMs(),
       () => {
-        this.resultFlashOutcome = null
-        this.resultFlashTimer = null
-        this.sync()
-        this.onResultFlashEnded?.()
+        this.endResultFlash()
       },
     )
+  }
+
+  private endResultFlash(): void {
+    this.resultFlashTimer?.remove(false)
+    this.resultFlashTimer = null
+    this.resultFlashOutcome = null
+    this.sync()
+    this.onResultFlashEnded?.()
   }
 }
