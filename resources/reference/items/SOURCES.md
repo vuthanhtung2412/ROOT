@@ -1,7 +1,7 @@
 # Crafted item icons — sources
 
 Square item glyphs cropped from EP craft-card faces in
-`frontend/phaser/public/assets/cards/` (same Decimator85 / Root Database lineage
+`frontend/react/public/assets/cards/` (same Decimator85 / Root Database lineage
 as other reference art).
 
 | File | Cropped from |

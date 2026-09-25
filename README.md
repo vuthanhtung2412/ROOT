@@ -10,7 +10,7 @@ TypeScript implementation of the Root board game (GP2 playable: Marquise vs Eyri
 | `@root/web` | `backend/web/` | Hono HTTP API — **one game slot**, no rooms |
 | `@root/web-client` | `backend/web_client/` | Generated OpenAPI client (`createRootWebClient`) |
 | `@root/cli` | `frontend/cli/` | Terminal client — talks **only** to web API |
-| `@root/phaser` | `frontend/phaser/` | Phaser GP2 hot-seat UI — talks **only** to web API |
+| `@root/react` | `frontend/react/` | React GP2 hot-seat UI — talks **only** to web API |
 
 ## Quick start
 
@@ -32,10 +32,10 @@ Use `Game.create` / `join` / `start` / `apply` / `legalActions` / `undo` / `toJS
 
 ```bash
 pnpm --filter @root/web dev    # http://localhost:3000
-pnpm dev                       # web + Phaser (process-compose TUI)
+pnpm dev                       # web + React UI (process-compose TUI)
 ```
 
-Remote play (friends): **`pnpm remote`** — build + serve + Tailscale Funnel URL. See `frontend/phaser/README.md`.
+Remote play (friends): **`pnpm remote`** — build + serve + Tailscale Funnel URL. See `frontend/react/README.md`.
 
 Single game slot at `/game/...` (no game id):
 
@@ -85,17 +85,17 @@ pnpm --filter @root/cli start -- auto --turns 50 --players 2
 
 `new` always uses `?replace=1`. Optional `--factions marquise,eyrie`.
 
-### Phaser (GP2 hot-seat)
+### React UI (GP2 hot-seat)
 
 ```bash
 # terminal 1
 pnpm --filter @root/web dev
 
 # terminal 2
-pnpm --filter @root/phaser dev
+pnpm --filter @root/react dev
 ```
 
-Open the Vite URL. **New GP2 game** creates Marquise vs Eyrie, joins both seats, and starts. See `frontend/phaser/README.md`.
+Open the Vite URL. **New GP2 game** creates Marquise vs Eyrie, joins both seats, and starts. See `frontend/react/README.md`.
 
 Regenerate shared API client after OpenAPI changes:
 

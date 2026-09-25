@@ -41,7 +41,7 @@ export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
 }
 
 /**
- * Tracks Phaser WS clients by join `playerId`.
+ * Tracks game WS clients by join `playerId`.
  * Broadcast sends JSON; dead sockets are dropped.
  */
 export class GameHub {

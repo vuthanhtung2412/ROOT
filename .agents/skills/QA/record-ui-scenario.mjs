@@ -21,7 +21,7 @@ const skillDirectory = path.dirname(fileURLToPath(import.meta.url))
 const rootDirectory = path.resolve(skillDirectory, '../../..')
 const artifactsDirectory = path.join(rootDirectory, 'tmp/artifacts')
 const snapshotsDirectory = path.join(rootDirectory, 'tmp/qa/snapshots')
-const phaserUrl = process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
+const reactUiUrl = process.env.ROOT_REACT_URL ?? process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
 /** Keep in sync with `@root/web-client` DEFAULT_ROOT_DEV_API_BASE_URL / `.env` ROOT_DEV_API. */
 const DEFAULT_ROOT_DEV_API_BASE_URL = 'http://localhost:3000'
 const apiUrl = process.env.ROOT_DEV_API ?? DEFAULT_ROOT_DEV_API_BASE_URL
@@ -236,7 +236,7 @@ async function main() {
   // Real mouse clicks auto-blink; synthetic Phaser acts use flashGameClick.
   await installAutonomousClickHighlight(page)
 
-  await page.goto(phaserUrl, { waitUntil: 'networkidle' })
+  await page.goto(reactUiUrl, { waitUntil: 'networkidle' })
   await page.waitForSelector('canvas', { timeout: 20_000 })
   await page.waitForTimeout(1200)
   const canvas = page.locator('canvas').first()

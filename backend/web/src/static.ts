@@ -7,17 +7,20 @@ import type { OpenAPIHono } from '@hono/zod-openapi'
 
 const packageRootDirectory = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-/** Vite Phaser build output copied here by `serve-phaser` script. */
-export const phaserPublicDirectory: string = join(
+/** Vite React UI build output copied here by `serve-react` script. */
+export const reactPublicDirectory: string = join(
   packageRootDirectory,
   'public',
 )
+
+/** @deprecated Use `reactPublicDirectory`. */
+export const phaserPublicDirectory: string = reactPublicDirectory
 
 const VITE_HASHED_ASSET_PATTERN =
   /(?:^|\/)assets\/[^/]+-[A-Za-z0-9_-]{8}\.(js|css)$/
 
 /**
- * Cache policy for served Phaser files.
+ * Cache policy for served React UI files.
  * Hashed Vite chunks are immutable; HTML must revalidate; other assets short TTL.
  */
 export function cacheControlForStaticPath(filePath: string): string {
@@ -39,19 +42,24 @@ function applyStaticCacheHeaders(filePath: string, context: Context): void {
 }
 
 /**
- * Serve built Phaser assets from `public/` when present.
+ * Serve built React UI assets from `public/` when present.
  * Mount after API routes so `/game`, `/map`, `/doc`, `/health`, `/ws` win.
  */
-export function mountPhaserStatic(app: OpenAPIHono): void {
-  if (!existsSync(phaserPublicDirectory)) {
+export function mountReactStatic(app: OpenAPIHono): void {
+  if (!existsSync(reactPublicDirectory)) {
     return
   }
 
   app.use(
     '/*',
     serveStatic({
-      root: phaserPublicDirectory,
+      root: reactPublicDirectory,
       onFound: applyStaticCacheHeaders,
     }),
   )
+}
+
+/** @deprecated Use `mountReactStatic`. */
+export function mountPhaserStatic(app: OpenAPIHono): void {
+  mountReactStatic(app)
 }

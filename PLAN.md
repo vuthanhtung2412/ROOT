@@ -1,19 +1,17 @@
 ### Goal
-- Remove Phaser; React owns map/pieces/shell as well as HUD
+- Rename `frontend/phaser` → `frontend/react`; package `@root/react`
+- Deprecate Phaser script/API names with thin aliases
 
 ### Approach
-- Done: BoardMap, pieces, GameScreen, ReactGameController, App shell
-- Phaser package + scenes deleted
+- Done: `git mv`, package rename, serve/static/process-compose/docs/QA
+- `createFrontendApi`; identity `root.react.*` + legacy migrate
+- Deprecated: `dev:phaser`, `build:phaser`, `serve:phaser`, `createPhaserApi`, `mountPhaserStatic`
 
 ### Test plan
-- typecheck + vitest
-- Playwright: boot → menu → Continue → board
-- `pnpm --filter @root/phaser build`
+- `pnpm install`
+- `pnpm --filter @root/react typecheck` + `test`
+- `pnpm --filter @root/web typecheck`
 
 ### Commit plan
-- [x] `feat(ui): React BoardMap shell over map image`
-- [x] `feat(ui): React piece stacks on BoardMap`
-- [x] `feat(ui): React GameScreen wallpaper + board host`
-- [x] `feat(ui): lift GameSession into React game controller`
-- [x] `feat(ui): React shell replaces Phaser scenes`
-- [ ] `ci: fix tests after Phaser removal`
+- [ ] `refactor(frontend): move package to frontend/react`
+- [ ] `refactor(frontend): rename Phaser API helpers` (folded into same if small)

@@ -93,7 +93,7 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
-  frontend/phaser:
+  frontend/react:
     dependencies:
       '@capacitor/core':
         specifier: ^8.5.2

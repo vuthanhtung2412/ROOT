@@ -1,7 +1,7 @@
 import type { GameState, PlayerState } from '@root/lib'
 
 /**
- * Seat-scoped view for Phaser WS: keep viewer's hand, strip other seats' cards.
+ * Seat-scoped view for game WS: keep viewer's hand, strip other seats' cards.
  * Does not mutate `state`.
  */
 export function redactStateForViewer(

@@ -1,8 +1,8 @@
 /**
  * Frontend QA: open crafted-cards modal with packed playArea; scroll + screenshots.
  *
- * Usage (servers up: web :3000, phaser :5173/:5174):
- *   ROOT_PHASER_URL=http://localhost:5173 node .cursor/skills/QA/qa-crafted-cards-modal.mjs
+ * Usage (servers up: web :3000, React UI :5173/:5174):
+ *   ROOT_REACT_URL=http://localhost:5173 node .cursor/skills/QA/qa-crafted-cards-modal.mjs
  */
 import { chromium } from './node_modules/playwright/index.mjs'
 import { mkdir } from 'node:fs/promises'
@@ -18,7 +18,7 @@ const snapshotPath = path.join(
   rootDirectory,
   'tmp/qa/snapshots/crafted-cards-many.json',
 )
-const phaserUrl = process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
+const reactUiUrl = process.env.ROOT_REACT_URL ?? process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
 const apiUrl = process.env.ROOT_API ?? 'http://localhost:3000'
 
 /** PlayerRail: container (12,56), row0 button origin(1,1) at (ROW_WIDTH-8, ROW_HEIGHT-12) */
@@ -88,7 +88,7 @@ async function main() {
   })
 
   await installAutonomousClickHighlight(page)
-  await page.goto(phaserUrl, { waitUntil: 'networkidle' })
+  await page.goto(reactUiUrl, { waitUntil: 'networkidle' })
   await page.waitForSelector('canvas', { timeout: 20_000 })
   await page.waitForTimeout(1500)
   const canvas = page.locator('canvas').first()

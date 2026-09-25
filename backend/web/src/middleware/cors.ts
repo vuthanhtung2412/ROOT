@@ -14,7 +14,7 @@ const LAN_HTTP_ORIGIN_PATTERN =
 
 /**
  * Whether a browser/WebView Origin may call the REST API.
- * Phaser Vite (localhost + LAN) + Capacitor native shells.
+ * React Vite (localhost + LAN) + Capacitor native shells.
  */
 export function isAllowedCorsOrigin(origin: string): boolean {
   if (CAPACITOR_APP_ORIGINS.has(origin)) {
@@ -30,7 +30,7 @@ export function isAllowedCorsOrigin(origin: string): boolean {
 }
 
 /**
- * Allow Phaser Vite + Capacitor origins to call REST.
+ * Allow React Vite + Capacitor origins to call REST.
  * WebSocket upgrade is same-host or proxied; CORS covers browser fetch.
  */
 export const corsMiddleware: MiddlewareHandler = cors({

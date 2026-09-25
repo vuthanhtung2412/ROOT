@@ -1,7 +1,7 @@
 import type { ActionSpec, GameState } from '@root/lib'
 
 /**
- * Seat-scoped legal actions for Phaser WS.
+ * Seat-scoped legal actions for game WS.
  * Drop other seats' specs so cardIds cannot leak opponent hands.
  */
 export function redactLegalActionsForViewer(

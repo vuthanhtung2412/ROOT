@@ -3,10 +3,10 @@ import { serve } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
 import { app } from '#openapi.js'
 import { attachGameWebSocket } from '#routes/ws.js'
-import { mountPhaserStatic, phaserPublicDirectory } from '#static.js'
+import { mountReactStatic, reactPublicDirectory } from '#static.js'
 
 attachGameWebSocket(app)
-mountPhaserStatic(app)
+mountReactStatic(app)
 
 const webSocketServer = new WebSocketServer({ noServer: true })
 
@@ -21,8 +21,8 @@ serve(
     console.log(`Health: http://localhost:${info.port}/health`)
     console.log(`OpenAPI doc: http://localhost:${info.port}/doc`)
     console.log(`WebSocket: ws://localhost:${info.port}/ws?playerId=…`)
-    if (existsSync(phaserPublicDirectory)) {
-      console.log(`Phaser game: http://localhost:${info.port}/`)
+    if (existsSync(reactPublicDirectory)) {
+      console.log(`React game: http://localhost:${info.port}/`)
     }
   },
 )
