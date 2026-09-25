@@ -131,11 +131,7 @@ export function FactionBoardModal(): JSX.Element | null {
             }
           />
         )}
-        <FactionBoardOverlays
-          view={view}
-          layout={layout}
-          placement={placement}
-        />
+        <FactionBoardOverlays view={view} layout={layout} />
       </div>
     </div>
   )
