@@ -1,5 +1,4 @@
-import type { ActionSpec, GameState } from '#api/client.ts'
-import type { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
+import type { GameState } from '#api/client.ts'
 import type { AutoPromptController } from '#game/resolution/autoPromptController.ts'
 import type { GameSceneModals } from '#game/gameSceneModals.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
@@ -9,16 +8,14 @@ import {
   syncWinnerOverlay,
 } from '#react/HudChrome.tsx'
 import { syncActionTray } from '#react/ActionTray.tsx'
+import { syncCardHand } from '#react/CardHand.tsx'
 import { syncPlayerRail } from '#react/PlayerRail.tsx'
 import { syncTurnBannerTurn } from '#react/TurnBanner.tsx'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
-import type { CardHand } from '#ui/CardHand.ts'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 
 export type GameSceneHudPaintDeps = {
   getSession: () => GameSession | null
-  getCardHand: () => CardHand | null
-  getCardTextureWarmup: () => CardTextureWarmup | null
   getModals: () => GameSceneModals | null
   getAutoPrompts: () => AutoPromptController | null
   getStatusText: () => Phaser.GameObjects.Text | null
@@ -47,17 +44,11 @@ export function paintGameSceneHud(
   const localControlsActor = deps.localPlayerControlsSeat(banner.actorSeat)
   syncTurnBannerTurn(banner)
   syncPlayerRail(snapshot.state, banner.actorSeat)
-  warmCardTexturesForHand(
-    snapshot.state,
-    snapshot.legalActions,
-    deps.getSession()?.getLocalSeat() ?? null,
-    deps.getCardTextureWarmup(),
-  )
-  deps.getCardHand()?.sync(
-    snapshot.state,
-    snapshot.legalActions,
-    deps.getSession()?.getLocalSeat() ?? null,
-  )
+  syncCardHand({
+    state: snapshot.state,
+    legalActions: snapshot.legalActions,
+    localSeat: deps.getSession()?.getLocalSeat() ?? null,
+  })
   syncActionTray({
     actions: localControlsActor
       ? collapsePieceIdsRemovalSpecs(snapshot.legalActions)
@@ -83,19 +74,6 @@ export function paintGameSceneHud(
       ? snapshot.error
       : (snapshot.error ?? 'Waiting for other player…'),
   )
-}
-
-function warmCardTexturesForHand(
-  state: GameState,
-  legalActions: readonly ActionSpec[],
-  localSeat: number | null,
-  warmup: CardTextureWarmup | null,
-): void {
-  const seat =
-    localSeat ?? buildTurnBannerViewModel(state, legalActions).actorSeat
-  const player = state.players.find((entry) => entry.seat === seat)
-  const defIds = (player?.hand ?? []).map((card) => card.defId)
-  warmup?.ensure(defIds)
 }
 
 function syncWinner(state: GameState): void {

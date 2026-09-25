@@ -14,6 +14,7 @@ import { PlayerRail } from '#react/PlayerRail.tsx'
 import { ActionTray } from '#react/ActionTray.tsx'
 import { TurnBanner } from '#react/TurnBanner.tsx'
 import { BattleOverlay } from '#react/BattleOverlay.tsx'
+import { CardHand } from '#react/CardHand.tsx'
 
 /**
  * React HUD layer above the Phaser canvas.
@@ -26,6 +27,7 @@ export function ReactHud(): JSX.Element {
       <BattleOverlay />
       <PlayerRail />
       <ActionTray />
+      <CardHand />
       <FactionBoardModal />
       <CraftedCardsModal />
       <CardPileModal />

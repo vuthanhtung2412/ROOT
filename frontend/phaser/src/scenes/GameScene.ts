@@ -1,6 +1,5 @@
 import Phaser from 'phaser'
 import { ensureAutumnMapLoaded } from '#assets/autumnMapLoader.ts'
-import { CardTextureWarmup } from '#assets/cardTextureWarmup.ts'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { ActionComposer, type ComposerOutcome } from '#game/resolution/ActionComposer.ts'
 import { AutoPromptController } from '#game/resolution/autoPromptController.ts'
@@ -18,6 +17,10 @@ import { hideCardDetail, showCardDetail } from '#react/CardDetailOverlay.tsx'
 import {
   syncLeaderPickOverlay,
 } from '#react/HudChrome.tsx'
+import {
+  setCardHandEnabledCards,
+  setCardHandSelection,
+} from '#react/CardHand.tsx'
 import { mergeComposerHooks } from '#game/resolution/mergeComposerHooks.ts'
 import {
   buildBattleRemovalStepperChoices,
@@ -45,7 +48,6 @@ import { syncActionTray } from '#react/ActionTray.tsx'
 import { syncBattleOverlayView } from '#react/BattleOverlay.tsx'
 import type { BattleOverlaySyncTarget } from '#game/battleOverlayController.ts'
 import { BoardView } from '#ui/BoardView.ts'
-import { CardHand } from '#ui/CardHand.ts'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 import { syncTurnBannerComposer } from '#react/TurnBanner.tsx'
 import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
@@ -58,7 +60,6 @@ export type GameSceneData = {
 export class GameScene extends Phaser.Scene {
   private session: GameSession | null = null
   private boardView: BoardView | null = null
-  private cardHand: CardHand | null = null
   private readonly battleOverlayTarget: BattleOverlaySyncTarget = {
     sync: (viewModel) => {
       syncBattleOverlayView(viewModel)
@@ -73,7 +74,6 @@ export class GameScene extends Phaser.Scene {
   private unsubscribe: (() => void) | null = null
   private statusText: Phaser.GameObjects.Text | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
-  private cardTextureWarmup: CardTextureWarmup | null = null
   private autoPrompts: AutoPromptController | null = null
   private battleOverlayController: BattleOverlayController | null = null
   private modals: GameSceneModals | null = null
@@ -204,25 +204,6 @@ export class GameScene extends Phaser.Scene {
       },
     })
 
-    this.cardTextureWarmup = new CardTextureWarmup(this)
-    this.cardTextureWarmup.setOnReady(() => {
-      this.repaintCardHandFromLatestSnapshot()
-      this.modals?.refreshCraftedCards(this.latestSnapshot?.state)
-    })
-    this.cardHand = new CardHand(
-      this,
-      (cardId) => {
-        this.applyComposerOutcome(this.composer.chooseCard(cardId))
-      },
-      (held) => {
-        this.cardTextureWarmup?.ensure([held.defId])
-        showCardDetail({
-          defId: held.defId,
-          catalog: held.catalog,
-        })
-      },
-    )
-
     this.statusText = this.add
       .text(width * 0.38, height * 0.92, '', {
         fontFamily: 'monospace',
@@ -257,9 +238,6 @@ export class GameScene extends Phaser.Scene {
     }
     this.boardView?.destroy()
     this.boardView = null
-    this.cardHand?.destroy()
-    this.cardHand = null
-    this.cardTextureWarmup = null
     this.battleOverlayController?.destroy()
     this.battleOverlayController = null
     this.autoPrompts = null
@@ -315,10 +293,10 @@ export class GameScene extends Phaser.Scene {
         this.syncBattleClearingHighlight(state)
       },
       setEnabledCards: (cardIds) => {
-        this.cardHand?.setEnabledCards(cardIds)
+        setCardHandEnabledCards(cardIds)
       },
       setCardSelection: (cardIds) => {
-        this.cardHand?.setSelection(cardIds)
+        setCardHandSelection(cardIds)
       },
       syncBattleOverlay: (prompt) => {
         this.battleOverlayController?.sync(prompt)
@@ -473,8 +451,6 @@ export class GameScene extends Phaser.Scene {
   private paintHud(snapshot: GameSessionSnapshot): void {
     paintGameSceneHud(snapshot, {
       getSession: () => this.session,
-      getCardHand: () => this.cardHand,
-      getCardTextureWarmup: () => this.cardTextureWarmup,
       getModals: () => this.modals,
       getAutoPrompts: () => this.autoPrompts,
       getStatusText: () => this.statusText,
@@ -506,18 +482,6 @@ export class GameScene extends Phaser.Scene {
         }
       },
     })
-  }
-
-  private repaintCardHandFromLatestSnapshot(): void {
-    const snapshot = this.latestSnapshot
-    if (snapshot === null || snapshot.state === null) {
-      return
-    }
-    this.cardHand?.sync(
-      snapshot.state,
-      snapshot.legalActions,
-      this.session?.getLocalSeat() ?? null,
-    )
   }
 
   /** QA (no localPlayerId) may control any seat; remote only own seat. */
