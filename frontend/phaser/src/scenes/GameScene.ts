@@ -124,6 +124,7 @@ export class GameScene extends Phaser.Scene {
       },
       isBattleResultFlashActive: () =>
         this.battleOverlayController?.isResultFlashActive() === true,
+      isBoardReady: () => this.boardView !== null,
     })
     this.battleOverlayController = new BattleOverlayController(
       {
@@ -509,6 +510,11 @@ export class GameScene extends Phaser.Scene {
     if (this.latestSnapshot !== null) {
       this.syncBoardPieces(this.latestSnapshot)
       this.paintHud(this.latestSnapshot)
+      // If setup prompt began before BoardView existed, re-apply highlights.
+      const outcome = this.composer.getOutcome()
+      if (outcome.kind === 'incomplete') {
+        this.applyComposerOutcome(outcome)
+      }
     }
   }
 
