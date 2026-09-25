@@ -32,18 +32,20 @@ describe('Game lobby', () => {
 
   it('Game.create rejects factions without implementations', () => {
     expect(() =>
-      Game.create({ seed: 1, factions: ['marquise', 'vagabond'] }),
+      Game.create({ seed: 1, factions: ['marquise', 'lizard'] as never }),
     ).toThrow(expect.objectContaining({ code: 'UNSUPPORTED_FACTION' }))
   })
 
-  it('Game.join assigns factions[seat] — marquise, eyrie, alliance', () => {
+  it('Game.join assigns factions[seat] — marquise, eyrie, alliance, vagabond', () => {
     const game = Game.create({ seed: 1 })
     game.join('p0')
     game.join('p1')
     game.join('p2')
+    game.join('p3')
     expect(game.state.players[0]!.faction).toBe('marquise')
     expect(game.state.players[1]!.faction).toBe('eyrie')
     expect(game.state.players[2]!.faction).toBe('alliance')
+    expect(game.state.players[3]!.faction).toBe('vagabond')
   })
 
   it('Game.join rejects when full', () => {

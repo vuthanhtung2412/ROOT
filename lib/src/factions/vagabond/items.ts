@@ -1,0 +1,146 @@
+import type { ItemType, Seat } from '#pieces/types.js'
+import { playerOf } from '#queries/seat.js'
+import type { VagabondBoard, VagabondItem } from '#state/boards.js'
+import type { GameState } from '#state/types.js'
+import { RuleError } from '#rules/RuleError.js'
+
+export function boardOf(state: GameState, seat: Seat): VagabondBoard {
+  const board = playerOf(state, seat).board
+  if (board.kind !== 'vagabond') {
+    throw new RuleError('NOT_VAGABOND', { seat })
+  }
+  return board
+}
+
+export function allUndamagedItems(board: VagabondBoard): VagabondItem[] {
+  return [
+    ...board.satchel,
+    ...board.tracks.tea,
+    ...board.tracks.coin,
+    ...board.tracks.bag,
+  ]
+}
+
+export function undamagedSwords(board: VagabondBoard): number {
+  return allUndamagedItems(board).filter((item) => item.type === 'sword').length
+}
+
+export function faceUpTeaCount(board: VagabondBoard): number {
+  return board.tracks.tea.filter((item) => !item.exhausted).length
+}
+
+export function faceUpCoinCount(board: VagabondBoard): number {
+  return board.tracks.coin.filter((item) => !item.exhausted).length
+}
+
+export function faceUpBagCount(board: VagabondBoard): number {
+  return board.tracks.bag.filter((item) => !item.exhausted).length
+}
+
+export function satchelCapacity(board: VagabondBoard): number {
+  // Rule: Vagabond Evening — 6 + 2× face-up bags.
+  return 6 + 2 * faceUpBagCount(board)
+}
+
+/** Exhaust one undamaged matching item (track → satchel if tea/coin/bag). */
+export function exhaustItem(
+  board: VagabondBoard,
+  type: ItemType,
+): VagabondItem | null {
+  for (const trackKey of ['tea', 'coin', 'bag'] as const) {
+    const track = board.tracks[trackKey]
+    const index = track.findIndex(
+      (item) => item.type === type && !item.exhausted,
+    )
+    if (index >= 0) {
+      const [item] = track.splice(index, 1)
+      if (item === undefined) return null
+      item.exhausted = true
+      board.satchel.push(item)
+      return item
+    }
+  }
+  const satchelIndex = board.satchel.findIndex(
+    (item) => item.type === type && !item.exhausted,
+  )
+  if (satchelIndex < 0) return null
+  const item = board.satchel[satchelIndex]!
+  item.exhausted = true
+  return item
+}
+
+export function refreshItems(board: VagabondBoard, count: number): number {
+  let refreshed = 0
+  const pools = [
+    board.satchel,
+    board.tracks.tea,
+    board.tracks.coin,
+    board.tracks.bag,
+  ]
+  for (const pool of pools) {
+    for (const item of pool) {
+      if (refreshed >= count) return refreshed
+      if (item.exhausted) {
+        item.exhausted = false
+        refreshed += 1
+      }
+    }
+  }
+  return refreshed
+}
+
+export function damageItems(board: VagabondBoard, count: number): number {
+  let damaged = 0
+  while (damaged < count) {
+    const undamaged = allUndamagedItems(board)
+    if (undamaged.length === 0) break
+    const item = undamaged[0]!
+    removeItemFromBoard(board, item)
+    board.damaged.push({ type: item.type, exhausted: item.exhausted })
+    damaged += 1
+  }
+  return damaged
+}
+
+function removeItemFromBoard(board: VagabondBoard, target: VagabondItem): void {
+  const satchelIndex = board.satchel.indexOf(target)
+  if (satchelIndex >= 0) {
+    board.satchel.splice(satchelIndex, 1)
+    return
+  }
+  for (const trackKey of ['tea', 'coin', 'bag'] as const) {
+    const track = board.tracks[trackKey]
+    const index = track.indexOf(target)
+    if (index >= 0) {
+      track.splice(index, 1)
+      return
+    }
+  }
+}
+
+export function placeItemInSatchelOrTrack(
+  board: VagabondBoard,
+  type: ItemType,
+): void {
+  const item: VagabondItem = { type, exhausted: false }
+  if (type === 'tea' || type === 'coin' || type === 'bag') {
+    board.tracks[type].push(item)
+    return
+  }
+  board.satchel.push(item)
+}
+
+export function pawnClearing(state: GameState, seat: Seat): number | null {
+  const board = boardOf(state, seat)
+  if (board.forest !== null) return null
+  for (let clearing = 0; clearing < state.clearings.length; clearing++) {
+    if (
+      state.clearings[clearing]?.pieces.some(
+        (piece) => piece.kind === 'pawn' && piece.owner === seat,
+      )
+    ) {
+      return clearing
+    }
+  }
+  return null
+}

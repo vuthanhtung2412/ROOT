@@ -3,12 +3,14 @@ import { Faction } from '#factions/Faction.js'
 import { ALLIANCE } from '#factions/Alliance.js'
 import { EYRIE } from '#factions/Eyrie.js'
 import { MARQUISE } from '#factions/Marquise.js'
+import { VAGABOND } from '#factions/Vagabond.js'
 import { RuleError } from '#rules/RuleError.js'
 
 export const FACTIONS: Partial<Record<FactionId, Faction>> = {
   marquise: MARQUISE,
   eyrie: EYRIE,
   alliance: ALLIANCE,
+  vagabond: VAGABOND,
 }
 
 export function factionFor(faction: FactionId): Faction {
@@ -41,3 +43,4 @@ export {
 } from '#factions/Eyrie.js'
 export { Alliance, ALLIANCE } from '#factions/Alliance.js'
 export { placeAllianceSetup } from '#factions/alliance/setup.js'
+export { Vagabond, VAGABOND } from '#factions/Vagabond.js'
