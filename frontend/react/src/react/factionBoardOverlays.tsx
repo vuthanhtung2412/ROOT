@@ -152,7 +152,11 @@ function SupplyOverlays(props: OverlayBaseProps): JSX.Element {
           region={warriorsRegion}
           layout={props.layout}
           countLabel={String(props.view.warriors)}
-          textureKey={factionTextureKey(props.view.kind)}
+          textureKey={
+            props.view.kind === 'alliance'
+              ? GAME_ASSET_KEYS.tokenAllianceWarrior
+              : factionTextureKey(props.view.kind)
+          }
           alt="Warriors supply"
         />
       ) : null}
