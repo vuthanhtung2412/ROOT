@@ -1,19 +1,15 @@
 ### Goal
-- Colocate frontend action-under-resolution flows in one folder.
+- Temporal-style async resolution for multi-step actions that benefit (like march).
 
 ### Approach
-- Move composers + helpers into `frontend/phaser/src/game/resolution/`.
-- Fix `#game/resolution/...` imports; add README index.
+- Keep `resolveMarch` as reference.
+- Skip thin-wrapper migrations (decree tried — not worth it).
 
-### Files to change
-- `frontend/phaser/src/game/resolution/**` (moved cluster + README)
-- Importers: `GameScene.ts`, `ActionTray.ts`, `gameSceneHudPaint.ts`, `battleRemovalStepper.ts`
-- Notes / `REPORT.md` / `PLAN.md` paths
-
-### Test plan
-- `npm test` + `npm run typecheck` in `frontend/phaser`
+### Next candidates (only if clear win)
+- Marquise `battle` / `build` — clearing→option; skip if same thin-wrapper smell.
+- Card flows (`overwork`, `addToDecree`) — need `pickCard` first; bigger win.
 
 ### Commit plan
-- `refactor(phaser): colocate resolution flows`
-  - move into `game/resolution/`
-  - fix imports + README + docs
+- ~~`feat(phaser): add ResolutionController bridge`~~
+- ~~`feat(phaser): march async workflow`~~
+- ~~`refactor(phaser): wire march workflow, drop draft`~~

@@ -25,8 +25,8 @@ import { createEyrieComposerHooks } from '#game/resolution/eyrieActionComposer.t
 import {
   createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
-  createMarquiseMarchComposerHooks,
 } from '#game/resolution/marquiseActionComposer.ts'
+import { createMarchWorkflowHooks } from '#game/resolution/marchWorkflowHooks.ts'
 import {
   boardLayoutFromFallResponse,
   FALL_BOARD_LAYOUT,
@@ -75,7 +75,7 @@ export class GameScene extends Phaser.Scene {
   private winnerOverlay: WinnerOverlay | null = null
   private leaderPickOverlay: LeaderPickOverlay | null = null
   private readonly composer = new ActionComposer()
-  private marquiseMarch = createMarquiseMarchComposerHooks()
+  private marquiseMarch = createMarchWorkflowHooks()
   private marquiseBoard = createMarquiseBoardComposerHooks()
   private marquiseCards = createMarquiseCardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
@@ -105,9 +105,12 @@ export class GameScene extends Phaser.Scene {
     drawCoverWallpaper(this, width, height, GAME_ASSET_KEYS.gameWallpaper)
 
     this.marquiseCards = createMarquiseCardComposerHooks()
-    this.marquiseMarch = createMarquiseMarchComposerHooks({
+    this.marquiseMarch = createMarchWorkflowHooks({
       warriorCountsForCurrentSeat: () => this.readCurrentSeatWarriorCounts(),
       boardForMarch: () => this.readMarchBoardSnapshot(),
+    })
+    this.marquiseMarch.setOnOutcome((outcome) => {
+      this.applyComposerOutcome(outcome)
     })
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
@@ -418,13 +421,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private isActionUnderResolution(): boolean {
-    return isActionUnderResolution([
-      this.marquiseMarch.getDraft(),
-      this.marquiseBoard.getDraft(),
-      this.marquiseCards.getDraft(),
-      this.eyrieComposer.getDraft(),
-      this.eventComposer.getDraft(),
-    ])
+    return (
+      this.marquiseMarch.isActive() ||
+      isActionUnderResolution([
+        this.marquiseBoard.getDraft(),
+        this.marquiseCards.getDraft(),
+        this.eyrieComposer.getDraft(),
+        this.eventComposer.getDraft(),
+      ])
+    )
   }
 
   /**
@@ -588,13 +593,11 @@ export class GameScene extends Phaser.Scene {
     clearings: GameState['clearings'],
     warriorOwnerSeat: number,
   ): GameState['clearings'] {
-    const draft = this.marquiseMarch.getDraft()
-    if (draft.type !== 'march' || draft.firstMove === null) {
+    const firstMove = this.marquiseMarch.getMarchPreviewMove()
+    if (firstMove === null) {
       return clearings
     }
-    return applyMarchMovesToClearings(clearings, warriorOwnerSeat, [
-      draft.firstMove,
-    ])
+    return applyMarchMovesToClearings(clearings, warriorOwnerSeat, [firstMove])
   }
 
   private async loadLayout(): Promise<BoardLayout> {
