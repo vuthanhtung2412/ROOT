@@ -22,6 +22,9 @@ export type CardHoldHandler = (card: {
 
 const CARD_WIDTH = 78
 const CARD_HEIGHT = 110
+const CARD_BORDER_WIDTH = 2
+const CARD_BORDER_CREAM = 0xf0e6d3
+const CARD_BORDER_SELECTED = 0xffe08a
 const HOLD_MS = 350
 const SELECTED_RAISE_OFFSET = -18
 
@@ -29,6 +32,7 @@ export class CardView {
   readonly container: Phaser.GameObjects.Container
   readonly cardId: string
   readonly defId: string
+  private readonly border: Phaser.GameObjects.Rectangle
   private readonly face: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle
   private holdTimer: Phaser.Time.TimerEvent | null = null
   private holdFired = false
@@ -45,6 +49,14 @@ export class CardView {
     this.cardId = viewModel.id
     this.defId = viewModel.defId
 
+    this.border = scene.add
+      .rectangle(0, 0, CARD_WIDTH, CARD_HEIGHT, 0x000000, 0)
+      .setStrokeStyle(
+        CARD_BORDER_WIDTH,
+        viewModel.selected ? CARD_BORDER_SELECTED : CARD_BORDER_CREAM,
+        1,
+      )
+
     const textureKey = cardTextureKey(viewModel.defId)
     if (scene.textures.exists(textureKey)) {
       this.face = scene.add
@@ -55,8 +67,7 @@ export class CardView {
       this.face = scene.add.rectangle(0, 0, CARD_WIDTH, CARD_HEIGHT, 0x444444, 1)
     }
 
-    // Art already has white border — no matte frame.
-    this.container = scene.add.container(0, 0, [this.face])
+    this.container = scene.add.container(0, 0, [this.face, this.border])
     this.container.setSize(CARD_WIDTH, CARD_HEIGHT)
     this.container.setAlpha(viewModel.dimmed ? 0.45 : 1)
     this.selected = viewModel.selected
@@ -101,6 +112,11 @@ export class CardView {
   }
 
   sync(viewModel: CardViewModel): void {
+    this.border.setStrokeStyle(
+      CARD_BORDER_WIDTH,
+      viewModel.selected ? CARD_BORDER_SELECTED : CARD_BORDER_CREAM,
+      1,
+    )
     this.container.setAlpha(viewModel.dimmed ? 0.45 : 1)
     this.selected = viewModel.selected
     this.applySelectedOffset()
