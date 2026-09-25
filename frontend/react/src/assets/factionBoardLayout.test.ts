@@ -68,20 +68,30 @@ describe('factionBoardLayout', () => {
       'coin',
       'bag',
     ])
-    expect(findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'satchel')).not.toBeNull()
+    expect(findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'satchel')).toEqual(
+      expect.objectContaining({ x: 666, y: 761, width: 460, height: 274 }),
+    )
     expect(
       findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'character-slot'),
-    ).not.toBeNull()
+    ).toEqual(
+      expect.objectContaining({ x: 1176, y: 694, width: 353, height: 492 }),
+    )
     expect(
       findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'relationship-hostile'),
-    ).not.toBeNull()
+    ).toEqual(
+      expect.objectContaining({ x: 676, y: 409, width: 314, height: 160 }),
+    )
     expect(
       findBoardLayoutRegion(VAGABOND_BOARD_LAYOUT, 'crafted-items'),
     ).toBeNull()
     expect(
       trackCellRegion(VAGABOND_BOARD_LAYOUT, 'relationship-development', 3),
-    ).not.toBeNull()
-    expect(trackCellRegion(VAGABOND_BOARD_LAYOUT, 'tea', 0)).not.toBeNull()
+    ).toEqual(
+      expect.objectContaining({ x: 1379, y: 278, width: 119, height: 289 }),
+    )
+    expect(trackCellRegion(VAGABOND_BOARD_LAYOUT, 'tea', 0)).toEqual(
+      expect.objectContaining({ x: 332, y: 327, width: 89, height: 89 }),
+    )
   })
 
   it('scales layout rects onto placed board image', () => {

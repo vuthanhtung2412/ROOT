@@ -7,92 +7,155 @@
     {
       "id": "relationship-development",
       "cells": 4,
-      "cellSize": 120,
+      "cellSize": 119,
       "gaps": [0, 0, 0],
-      "x": 1048,
-      "y": 120
+      "x": 1030,
+      "y": 278
     },
     {
       "id": "tea",
       "cells": 3,
-      "cellSize": 70,
-      "gaps": [12, 12],
-      "x": 120,
-      "y": 220
+      "cellSize": 89,
+      "gaps": [3, 3],
+      "x": 332,
+      "y": 327
     },
     {
       "id": "coin",
       "cells": 3,
-      "cellSize": 70,
-      "gaps": [12, 12],
-      "x": 120,
-      "y": 900
+      "cellSize": 89,
+      "gaps": [6, 5],
+      "x": 327,
+      "y": 972
     },
     {
       "id": "bag",
       "cells": 3,
-      "cellSize": 70,
-      "gaps": [12, 12],
-      "x": 420,
-      "y": 1050
+      "cellSize": 90,
+      "gaps": [5, 5],
+      "x": 326,
+      "y": 1083
     }
   ],
   "regions": [
     {
       "id": "relationship-hostile",
-      "x": 900,
-      "y": 120,
-      "width": 140,
-      "height": 220
-    },
-    {
-      "id": "relationship-development-0",
-      "x": 1048,
-      "y": 120,
-      "width": 120,
-      "height": 220
-    },
-    {
-      "id": "relationship-development-1",
-      "x": 1168,
-      "y": 120,
-      "width": 120,
-      "height": 220
-    },
-    {
-      "id": "relationship-development-2",
-      "x": 1288,
-      "y": 120,
-      "width": 120,
-      "height": 220
-    },
-    {
-      "id": "relationship-development-3",
-      "x": 1408,
-      "y": 120,
-      "width": 120,
-      "height": 220
+      "x": 676,
+      "y": 409,
+      "width": 314,
+      "height": 160
     },
     {
       "id": "satchel",
-      "x": 900,
-      "y": 420,
-      "width": 620,
-      "height": 280
+      "x": 666,
+      "y": 761,
+      "width": 460,
+      "height": 274
     },
     {
       "id": "damaged",
-      "x": 900,
-      "y": 720,
-      "width": 620,
-      "height": 100
+      "x": 687,
+      "y": 1051,
+      "width": 422,
+      "height": 126
     },
     {
       "id": "character-slot",
-      "x": 980,
-      "y": 860,
-      "width": 480,
-      "height": 320
+      "x": 1176,
+      "y": 694,
+      "width": 353,
+      "height": 492
+    },
+    {
+      "id": "relationship-development-0",
+      "x": 1030,
+      "y": 278,
+      "width": 119,
+      "height": 289
+    },
+    {
+      "id": "relationship-development-1",
+      "x": 1146,
+      "y": 278,
+      "width": 119,
+      "height": 289
+    },
+    {
+      "id": "relationship-development-2",
+      "x": 1262,
+      "y": 278,
+      "width": 119,
+      "height": 289
+    },
+    {
+      "id": "relationship-development-3",
+      "x": 1379,
+      "y": 278,
+      "width": 119,
+      "height": 289
+    },
+    {
+      "id": "tea-0",
+      "x": 332,
+      "y": 327,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "tea-1",
+      "x": 424,
+      "y": 328,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "tea-2",
+      "x": 516,
+      "y": 328,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "coin-0",
+      "x": 327,
+      "y": 972,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "coin-1",
+      "x": 422,
+      "y": 972,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "coin-2",
+      "x": 516,
+      "y": 972,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "bag-0",
+      "x": 326,
+      "y": 1083,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "bag-1",
+      "x": 421,
+      "y": 1083,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "bag-2",
+      "x": 516,
+      "y": 1083,
+      "width": 90,
+      "height": 90
     }
   ]
 }
