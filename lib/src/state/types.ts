@@ -90,6 +90,9 @@ export type GameState = {
   questsAvailable: QuestCard[]
   itemSupply: Record<ItemType, number>
   pending: Event[]
+  /** Seat that won (VP / dominance). */
   winner?: Seat
+  /** Vagabond seats in coalition with `winner`. Rule: Vagabond 9.2.8. */
+  coWinners?: Seat[]
   turnScratch: TurnScratch
 }

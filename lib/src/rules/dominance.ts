@@ -2,8 +2,12 @@ import type { Action, ActionSpec } from '#actions/types.js'
 import { Deck, defOf } from '#cards/Deck.js'
 import type { Card } from '#cards/types.js'
 import { matchesSuit } from '#cards/suit.js'
+import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
+import { FALL } from '#map/fall.js'
+import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
+import { rules } from '#queries/ruler.js'
 import { playerOf } from '#queries/seat.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
@@ -221,4 +225,67 @@ export function hasActivatedDominance(player: {
   activatedDominance: Card | null
 }): boolean {
   return player.activatedDominance !== null
+}
+
+/** Opposite corner pairs on Fall. Rule: Dominance 3.3.1.II bird. */
+export function oppositeCornerPairs(): Array<[ClearingId, ClearingId]> {
+  const pairs: Array<[ClearingId, ClearingId]> = []
+  const seen = new Set<string>()
+  for (const corner of FALL.corners) {
+    const opposite = FALL.opposite(corner)
+    const key = [corner, opposite].sort((a, b) => a - b).join('-')
+    if (seen.has(key)) continue
+    seen.add(key)
+    pairs.push([corner, opposite])
+  }
+  return pairs
+}
+
+/**
+ * Rule: Dominance 3.3.1 — at start of Birdsong, activated non-Vagabond wins
+ * if they rule 3 matching suit clearings (or 2 opposite corners for bird).
+ */
+export function checkActivatedDominanceWin(
+  state: GameState,
+  context: Ctx,
+): LogEntry[] {
+  if (state.status !== 'playing' || state.phase !== 'birdsong') {
+    return []
+  }
+  const player = playerOf(state, state.currentSeat)
+  if (player.activatedDominance === null) return []
+  if (player.faction === 'vagabond') return []
+
+  const suit = defOf(player.activatedDominance).suit
+  if (suit === 'bird') {
+    const ok = oppositeCornerPairs().some(
+      ([left, right]) =>
+        rules(state, left, player.seat, context.hooks) &&
+        rules(state, right, player.seat, context.hooks),
+    )
+    if (!ok) return []
+  } else {
+    let ruled = 0
+    for (const clearing of FALL.clearings) {
+      if (clearing.suit !== suit) continue
+      if (rules(state, clearing.id, player.seat, context.hooks)) {
+        ruled += 1
+      }
+    }
+    if (ruled < 3) return []
+  }
+
+  return finishGameWithWinner(state, player.seat)
+}
+
+export function finishGameWithWinner(
+  state: GameState,
+  winner: Seat,
+): LogEntry[] {
+  state.winner = winner
+  state.coWinners = state.players
+    .filter((player) => player.coalitionWith === winner)
+    .map((player) => player.seat)
+  state.status = 'finished'
+  return [{ t: 'win', winner }]
 }

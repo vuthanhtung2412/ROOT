@@ -38,6 +38,7 @@ import { playerOf } from '#queries/seat.js'
 import { removePieces } from '#rules/remove.js'
 import { RuleError } from '#rules/RuleError.js'
 import { randomIndex } from '#rules/Rng.js'
+import { addVictoryPoints } from '#rules/dominance.js'
 import {
   FACE_UP_QUEST_COUNT,
   THIEF_START_ITEMS,
@@ -253,8 +254,10 @@ export class Vagabond extends Faction {
         }
         const item = ruin.items.pop()!
         placeItemInSatchelOrTrack(board, item)
-        playerOf(state, seat).vp += 1
-        logs.push({ t: 'vp', actor: seat, delta: 1, reason: 'explore' })
+        const exploreDelta = addVictoryPoints(state, seat, 1)
+        if (exploreDelta > 0) {
+          logs.push({ t: 'vp', actor: seat, delta: exploreDelta, reason: 'explore' })
+        }
         if (ruin.items.length === 0) {
           delete state.clearings[clearing]!.ruin
         }
@@ -290,13 +293,15 @@ export class Vagabond extends Faction {
           const matchingCompleted = board.completedQuests.filter(
             (completed) => questDefOf(completed).suit === definition.suit,
           ).length
-          playerOf(state, seat).vp += matchingCompleted
-          logs.push({
-            t: 'vp',
-            actor: seat,
-            delta: matchingCompleted,
-            reason: 'quest',
-          })
+          const questDelta = addVictoryPoints(state, seat, matchingCompleted)
+          if (questDelta > 0) {
+            logs.push({
+              t: 'vp',
+              actor: seat,
+              delta: questDelta,
+              reason: 'quest',
+            })
+          }
         } else {
           drawCards(state, { seat, count: 2 }, ctx)
         }

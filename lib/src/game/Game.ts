@@ -10,6 +10,8 @@ import { SeededRng } from '#rules/Rng.js'
 import {
   applyActivateDominance,
   applyTakeDominance,
+  checkActivatedDominanceWin,
+  finishGameWithWinner,
   pushActivateDominanceActions,
   pushTakeDominanceActions,
 } from '#rules/dominance.js'
@@ -164,7 +166,10 @@ export class Game {
 
     if (action.type === 'endPhase' && this.state.status === 'playing') {
       logs.push(...this.advanceStepOrPhase())
-      logs.push(...this.runAutoActions())
+      logs.push(...checkActivatedDominanceWin(this.state, this.makeCtx()))
+      if (this.state.status === 'playing') {
+        logs.push(...this.runAutoActions())
+      }
     }
 
     if (
@@ -360,7 +365,11 @@ export class Game {
     ctx.emit({ s: 'phase.start', actor: 0, phase: 'birdsong' })
 
     const autoLogs = this.runAutoActions()
-    return [{ t: 'phase', actor: 0, phase: 'birdsong', step: state.step }, ...autoLogs]
+    return [
+      { t: 'phase', actor: 0, phase: 'birdsong', step: state.step },
+      ...checkActivatedDominanceWin(state, ctx),
+      ...autoLogs,
+    ]
   }
 
   private applyEndPhase(): LogEntry[] {
@@ -514,7 +523,7 @@ export class Game {
 
   private checkWin(): LogEntry[] {
     const { state } = this
-    const contenders = state.players.filter((p) => p.vp >= 30)
+    const contenders = state.players.filter((player) => player.vp >= 30)
     if (contenders.length === 0) return []
 
     let winner: Seat
@@ -525,8 +534,6 @@ export class Game {
       winner = state.currentSeat
     }
 
-    state.winner = winner
-    state.status = 'finished'
-    return [{ t: 'win', winner }]
+    return finishGameWithWinner(state, winner)
   }
 }
