@@ -153,6 +153,8 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
     clearings: emptyClearings(),
     deck: { draw: [], discard: [] },
     dominanceAvailable: [],
+    questDeck: [],
+    questsAvailable: [],
     itemSupply: { ...ITEM_SUPPLY },
     pending: [],
     turnScratch: createTurnScratch({ actionsLeft: 3 }),

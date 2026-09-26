@@ -1,6 +1,10 @@
+import type { QuestCard } from '#cards/quests.js'
 import type { Card } from '#cards/types.js'
 import type { Suit } from '#map/types.js'
 import type { FactionId, ItemType } from '#pieces/types.js'
+
+/** Face-up quests drawn at Vagabond setup. Rule: Vagabond > Setup 3. */
+export const FACE_UP_QUEST_COUNT = 3
 
 /** Rule: Marquise > Buildings tracks — six columns left→right. */
 export const MARQUISE_BUILD_COST = [0, 1, 2, 3, 3, 4] as const
@@ -106,6 +110,8 @@ export type VagabondBoard = {
   satchel: VagabondItem[]
   tracks: { tea: VagabondItem[]; coin: VagabondItem[]; bag: VagabondItem[] }
   damaged: VagabondItem[]
+  /** Completed quests in play area. Rule: Vagabond > Quest. */
+  completedQuests: QuestCard[]
   /** 0..2 = Indifferent steps; 3 = Allied; 'hostile' = Hostile box. */
   relationships: Record<FactionId, number | 'hostile'>
   /** Non-null when pawn is in a forest (not on a clearing). */
@@ -151,6 +157,7 @@ export function createFactionBoard(faction: FactionId): FactionBoard {
         satchel: [],
         tracks: { tea: [], coin: [], bag: [] },
         damaged: [],
+        completedQuests: [],
         relationships: {
           marquise: 0,
           eyrie: 0,

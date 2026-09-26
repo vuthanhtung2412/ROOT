@@ -1,4 +1,5 @@
 import type { DeckState } from '#cards/Deck.js'
+import type { QuestCard } from '#cards/quests.js'
 import type { Card } from '#cards/types.js'
 import type { Event } from '#events/types.js'
 import type { FactionId, ItemType, Piece, Seat } from '#pieces/types.js'
@@ -77,6 +78,10 @@ export type GameState = {
   clearings: ClearingState[]
   deck: DeckState
   dominanceAvailable: Card[]
+  /** Shared Vagabond quest draw pile. Rule: Vagabond > Setup 3; Share Quests 9.7.2. */
+  questDeck: QuestCard[]
+  /** Face-up quests near the map (3 after setup). */
+  questsAvailable: QuestCard[]
   itemSupply: Record<ItemType, number>
   pending: Event[]
   winner?: Seat

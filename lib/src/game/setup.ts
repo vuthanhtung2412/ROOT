@@ -53,6 +53,8 @@ export function createInitialState(
     ),
     deck: { draw: [], discard: [] },
     dominanceAvailable: [],
+    questDeck: [],
+    questsAvailable: [],
     itemSupply: { ...ITEM_SUPPLY },
     pending: [],
     turnScratch: createTurnScratch(),
