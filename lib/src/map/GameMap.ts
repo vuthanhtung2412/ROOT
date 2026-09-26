@@ -31,7 +31,11 @@ export class GameMap {
     for (const [, neighbors] of this.adjacency) {
       neighbors.sort((x, y) => x - y)
     }
-    this.forestAdjacency = buildForestAdjacency(this.forests, this.paths)
+    this.forestAdjacency = buildForestAdjacency(
+      this.forests,
+      this.paths,
+      this.rivers,
+    )
   }
 
   adjacent(id: ClearingId): ClearingId[] {
@@ -43,8 +47,8 @@ export class GameMap {
   }
 
   /**
-   * Forests separated by exactly one printed path.
-   * Rule: Board > Forests > Adjacency (2.4.1)
+   * Forests separated by one printed path or river.
+   * Rule: Board > Forests > Adjacency (2.4.1); rivers divide forests.
    */
   adjacentForests(forestIndex: number): number[] {
     return this.forestAdjacency.get(forestIndex) ?? []
@@ -80,14 +84,30 @@ export class GameMap {
   }
 }
 
+function forestsShareEdge(
+  leftBorder: Set<ClearingId>,
+  rightBorder: Set<ClearingId>,
+  edges: Path[],
+): boolean {
+  return edges.some(([edgeLeft, edgeRight]) => {
+    return (
+      leftBorder.has(edgeLeft) &&
+      leftBorder.has(edgeRight) &&
+      rightBorder.has(edgeLeft) &&
+      rightBorder.has(edgeRight)
+    )
+  })
+}
+
 /**
- * Two forests share a path edge when both endpoints of that path sit on both
- * forests' bordering clearing sets — i.e. one printed path separates them.
+ * Two forests are adjacent when one printed path or river separates them
+ * (shared edge endpoints on both borders).
  * Rule: Board > Forests > Adjacency (2.4.1)
  */
 function buildForestAdjacency(
   forests: ClearingId[][],
   paths: Path[],
+  rivers: Path[],
 ): Map<number, number[]> {
   const adjacency = new Map<number, number[]>()
   for (let forestIndex = 0; forestIndex < forests.length; forestIndex++) {
@@ -97,15 +117,10 @@ function buildForestAdjacency(
     const leftBorder = new Set(forests[left] ?? [])
     for (let right = left + 1; right < forests.length; right++) {
       const rightBorder = new Set(forests[right] ?? [])
-      const sharePathEdge = paths.some(([pathLeft, pathRight]) => {
-        return (
-          leftBorder.has(pathLeft) &&
-          leftBorder.has(pathRight) &&
-          rightBorder.has(pathLeft) &&
-          rightBorder.has(pathRight)
-        )
-      })
-      if (!sharePathEdge) continue
+      const adjacent =
+        forestsShareEdge(leftBorder, rightBorder, paths) ||
+        forestsShareEdge(leftBorder, rightBorder, rivers)
+      if (!adjacent) continue
       adjacency.get(left)!.push(right)
       adjacency.get(right)!.push(left)
     }
