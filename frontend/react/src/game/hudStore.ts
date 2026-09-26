@@ -74,7 +74,8 @@ export type MenuHudState = {
 }
 
 export type MenuCallbacks = {
-  onPlay: () => void
+  /** Local hotseat: create lobby with chosen factions, join all, start. */
+  onStartParty: (factions: string[]) => void
   onQaContinue: () => void
 }
 
@@ -166,7 +167,7 @@ const NOOP_CALLBACKS: HudCallbacks = {
 }
 
 const NOOP_MENU_CALLBACKS: MenuCallbacks = {
-  onPlay: () => undefined,
+  onStartParty: () => undefined,
   onQaContinue: () => undefined,
 }
 

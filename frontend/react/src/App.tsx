@@ -13,13 +13,12 @@ import {
   autumnMapPublicPath,
   CORE_IMAGE_ASSETS,
 } from '#assets/gameAssets.ts'
-import { GameSession, type PlayResult } from '#game/GameSession.ts'
+import { GameSession } from '#game/GameSession.ts'
 import {
   getHudSnapshot,
   setMenuCallbacks,
   subscribeHud,
 } from '#game/hudStore.ts'
-import { loadPlayerIdentity } from '#game/playerIdentity.ts'
 import { ReactGameController } from '#game/ReactGameController.ts'
 import {
   clearBootLoading,
@@ -78,7 +77,7 @@ export function App(): JSX.Element {
   )
   const playPendingRef = useRef(false)
   const lobbyUnsubscribeRef = useRef<(() => void) | null>(null)
-  const handlePlayRef = useRef<() => void>(() => undefined)
+  const handleStartPartyRef = useRef<(factions: string[]) => void>(() => undefined)
   const handleQaContinueRef = useRef<() => void>(() => undefined)
 
   if (controllerRef.current === null) {
@@ -127,46 +126,39 @@ export function App(): JSX.Element {
     [ensureSession],
   )
 
-  const handlePlay = useCallback(async (): Promise<void> => {
-    if (playPendingRef.current) {
-      return
-    }
-    playPendingRef.current = true
-    syncMenuPlayPending(true)
-    clearLobbyWait()
-    const stored = loadPlayerIdentity()
-    const nextBase =
-      stored !== null && stored.apiBaseUrl !== ''
-        ? stored.apiBaseUrl
-        : resolveDefaultApiBaseUrl()
-    setApiBaseUrlInput(nextBase)
-    rebindSessionApi(nextBase)
-    syncMenuStatus(
-      stored !== null ? 'Checking seat…' : 'Joining…',
-      '#9a9a9a',
-    )
+  const handleStartParty = useCallback(
+    async (factions: string[]): Promise<void> => {
+      if (playPendingRef.current) {
+        return
+      }
+      playPendingRef.current = true
+      syncMenuPlayPending(true)
+      clearLobbyWait()
+      const nextBase = resolveDefaultApiBaseUrl()
+      setApiBaseUrlInput(nextBase)
+      rebindSessionApi(nextBase)
+      syncMenuStatus('Starting…', '#9a9a9a')
 
-    const session = ensureSession()
-    let result: PlayResult | null
-    try {
-      result = await session.play()
-    } catch (error: unknown) {
-      const message: string =
-        error instanceof Error ? error.message : 'Play failed'
-      syncMenuStatus(message, '#c44')
+      const session = ensureSession()
+      let started = false
+      try {
+        started = await session.startLocalParty(factions)
+      } catch (error: unknown) {
+        const message: string =
+          error instanceof Error ? error.message : 'Start failed'
+        syncMenuStatus(message, '#c44')
+        playPendingRef.current = false
+        syncMenuPlayPending(false)
+        return
+      }
       playPendingRef.current = false
       syncMenuPlayPending(false)
-      return
-    }
-    playPendingRef.current = false
-    syncMenuPlayPending(false)
 
-    if (result === null) {
-      syncMenuStatus(session.getSnapshot().error ?? 'Play failed', '#c44')
-      return
-    }
+      if (!started) {
+        syncMenuStatus(session.getSnapshot().error ?? 'Start failed', '#c44')
+        return
+      }
 
-    if (result === 'continued') {
       const snapshot = session.getSnapshot()
       if (
         snapshot.state?.status === 'playing' ||
@@ -175,27 +167,10 @@ export function App(): JSX.Element {
         enterGame()
         return
       }
-      syncMenuStatus('Waiting for second player…', '#9a9a9a')
-    } else if (result === 'playing') {
-      syncMenuStatus('Starting…', '#9a9a9a')
-    } else {
-      syncMenuStatus('Waiting for second player…', '#9a9a9a')
-    }
-
-    clearLobbyWait()
-    lobbyUnsubscribeRef.current = session.subscribe((snapshot) => {
-      if (snapshot.error !== null) {
-        syncMenuStatus(snapshot.error, '#c44')
-        return
-      }
-      if (
-        snapshot.state?.status === 'playing' ||
-        snapshot.state?.status === 'setup'
-      ) {
-        enterGame()
-      }
-    })
-  }, [clearLobbyWait, ensureSession, enterGame, rebindSessionApi])
+      syncMenuStatus('Game not ready', '#c44')
+    },
+    [clearLobbyWait, ensureSession, enterGame, rebindSessionApi],
+  )
 
   const handleQaContinue = useCallback(async (): Promise<void> => {
     const session = ensureSession()
@@ -217,8 +192,8 @@ export function App(): JSX.Element {
     enterGame()
   }, [apiBaseUrlInput, ensureSession, enterGame, rebindSessionApi])
 
-  handlePlayRef.current = () => {
-    void handlePlay()
+  handleStartPartyRef.current = (factions: string[]) => {
+    void handleStartParty(factions)
   }
   handleQaContinueRef.current = () => {
     void handleQaContinue()
@@ -239,8 +214,8 @@ export function App(): JSX.Element {
       clearBootLoading()
       showMenuShell(import.meta.env.DEV === true)
       setMenuCallbacks({
-        onPlay: () => {
-          handlePlayRef.current()
+        onStartParty: (factions) => {
+          handleStartPartyRef.current(factions)
         },
         onQaContinue: () => {
           handleQaContinueRef.current()
