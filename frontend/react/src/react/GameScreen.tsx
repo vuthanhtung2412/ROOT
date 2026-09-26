@@ -14,12 +14,14 @@ import {
 } from '#game/viewportLayout.ts'
 import { BoardMap } from '#react/BoardMap.tsx'
 import type { BoardClearingPieces } from '#react/PieceStack.tsx'
+import type { ForestPawnMarker } from '#game/forestLayout.ts'
 
 export type GameScreenProps = {
   layout: BoardLayout | null
   layoutMode: ViewportLayoutMode
   clearings: readonly BoardClearingPieces[] | null
   factions: readonly string[] | null
+  forestPawns: readonly ForestPawnMarker[]
   highlightedClearingIds: readonly number[]
   onClearingSelected: (clearingId: number) => void
 }
@@ -72,6 +74,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
         viewHeight={mapHost.height}
         {...(props.clearings !== null ? { clearings: props.clearings } : {})}
         {...(props.factions !== null ? { factions: props.factions } : {})}
+        forestPawns={props.forestPawns}
         highlightedClearingIds={props.highlightedClearingIds}
         onClearingSelected={props.onClearingSelected}
       />

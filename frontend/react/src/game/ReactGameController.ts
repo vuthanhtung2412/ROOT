@@ -46,11 +46,16 @@ import type { BattleOverlaySyncTarget } from '#game/battleOverlayController.ts'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 import { syncTurnBannerComposer } from '#react/TurnBanner.tsx'
 import type { BoardClearingPieces } from '#react/PieceStack.tsx'
+import {
+  isVagabondBoardWithForest,
+  type ForestPawnMarker,
+} from '#game/forestLayout.ts'
 
 export type ReactGameBoardSnapshot = {
   layout: BoardLayout | null
   clearings: readonly BoardClearingPieces[] | null
   factions: readonly string[] | null
+  forestPawns: readonly ForestPawnMarker[]
   highlightedClearingIds: readonly number[]
 }
 
@@ -64,12 +69,14 @@ export class ReactGameController {
   private layout: BoardLayout | null = null
   private boardClearings: readonly BoardClearingPieces[] | null = null
   private boardFactions: readonly string[] | null = null
+  private forestPawns: readonly ForestPawnMarker[] = []
   private highlightedClearingIds: readonly number[] = []
   private boardReady = false
   private boardSnapshot: ReactGameBoardSnapshot = {
     layout: null,
     clearings: null,
     factions: null,
+    forestPawns: [],
     highlightedClearingIds: [],
   }
   private readonly boardListeners = new Set<BoardListener>()
@@ -111,6 +118,7 @@ export class ReactGameController {
       layout: this.layout,
       clearings: this.boardClearings,
       factions: this.boardFactions,
+      forestPawns: this.forestPawns,
       highlightedClearingIds: this.highlightedClearingIds,
     }
     for (const listener of this.boardListeners) {
@@ -287,6 +295,7 @@ export class ReactGameController {
     this.layout = null
     this.boardClearings = null
     this.boardFactions = null
+    this.forestPawns = []
     this.highlightedClearingIds = []
     this.session = null
     this.notifyBoard()
@@ -545,6 +554,23 @@ export class ReactGameController {
     )
     this.boardClearings = clearings
     this.boardFactions = snapshot.state.factions
+    this.forestPawns = forestPawnsFromState(snapshot.state)
     this.notifyBoard()
   }
+}
+
+function forestPawnsFromState(state: {
+  players: Array<{ seat: number; faction: string; board?: unknown }>
+  factions: string[]
+}): ForestPawnMarker[] {
+  const markers: ForestPawnMarker[] = []
+  for (const player of state.players) {
+    if (!isVagabondBoardWithForest(player.board)) continue
+    markers.push({
+      forestIndex: player.board.forest,
+      seat: player.seat,
+      factionId: player.faction,
+    })
+  }
+  return markers
 }

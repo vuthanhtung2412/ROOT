@@ -22,9 +22,14 @@ import {
   computeBoardMapDisplayMetrics,
   type BoardMapDisplayMetrics,
 } from '#game/boardMapLayout.ts'
+import {
+  allForestPixelLayouts,
+  type ForestPawnMarker,
+} from '#game/forestLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import type { ViewportLayoutMode } from '#game/viewportLayout.ts'
+import { ForestPawnLayer } from '#react/ForestPawnLayer.tsx'
 import {
   ClearingPieceLayer,
   computeRulerByClearing,
@@ -57,6 +62,7 @@ export type BoardMapProps = {
   highlightedClearingIds?: readonly number[]
   clearings?: readonly BoardClearingPieces[]
   factions?: readonly string[]
+  forestPawns?: readonly ForestPawnMarker[]
   onClearingSelected?: ClearingSelectedHandler
 }
 
@@ -122,6 +128,13 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
     [props.highlightedClearingIds],
   )
 
+  const forestLayouts = useMemo(() => {
+    if (metrics === null) return []
+    return allForestPixelLayouts(metrics)
+  }, [metrics])
+
+  const forestPawns = props.forestPawns ?? []
+
   const onClearingSelected = props.onClearingSelected
 
   const handleClearingClick = useCallback(
@@ -173,6 +186,12 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
             }}
           />
           <div className="pointer-events-none absolute inset-0 z-[3]">
+            {forestPawns.length > 0 ? (
+              <ForestPawnLayer
+                forestLayouts={forestLayouts}
+                forestPawns={forestPawns}
+              />
+            ) : null}
             {props.clearings !== undefined && props.factions !== undefined ? (
               <ClearingPieceLayer
                 clearings={props.clearings}

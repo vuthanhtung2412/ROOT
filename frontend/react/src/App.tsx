@@ -267,6 +267,7 @@ export function App(): JSX.Element {
         layoutMode={layoutMode}
         clearings={board.clearings}
         factions={board.factions}
+        forestPawns={board.forestPawns}
         highlightedClearingIds={board.highlightedClearingIds}
         onClearingSelected={(clearingId) => {
           controller.selectClearing(clearingId)
