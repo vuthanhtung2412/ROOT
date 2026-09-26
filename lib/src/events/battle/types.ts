@@ -25,6 +25,8 @@ export type OpenBattle = {
   clearing: ClearingId
   attacker: Seat
   defender: Seat
+  /** Rule: 9.2.9.IIc — Vagabond treats this Allied faction's warriors as own. */
+  alliedSeat?: Seat
 }
 
 export type BattleEventApply = {

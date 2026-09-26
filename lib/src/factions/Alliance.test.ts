@@ -101,7 +101,7 @@ describe('Alliance base removal', () => {
         ],
       }),
       0,
-      [{ id: 'base-fox', kind: 'building', type: 'base', owner: 2, used: false }],
+      [{ id: 'base-fox', kind: 'building', type: 'base', owner: 2 }],
     )
     const board = boardOf(state, 2)
     board.bases = board.bases.filter((suit) => suit !== 'fox')
@@ -183,7 +183,6 @@ describe('Alliance revolt Birdsong', () => {
           kind: 'building',
           type: 'sawmill',
           owner: 0,
-          used: false,
         },
       ],
     )
@@ -194,7 +193,12 @@ describe('Alliance revolt Birdsong', () => {
       (spec) => spec.type === 'revolt',
     )
     expect(revolt).toBeDefined()
-    expect(revolt?.params?.options?.[0]?.clearing).toBe(0)
+    const firstOption = revolt?.params?.options?.[0]
+    expect(firstOption).toBeDefined()
+    if (firstOption === undefined || !('clearing' in firstOption)) {
+      throw new Error('expected RevoltChoice')
+    }
+    expect(firstOption.clearing).toBe(0)
 
     ALLIANCE.apply(
       state,

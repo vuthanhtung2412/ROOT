@@ -1,8 +1,9 @@
-import type { ActionSpec } from '#actions/types.js'
+import type { ActionSpec, VagabondMoveChoice } from '#actions/types.js'
 import { defOf } from '#cards/Deck.js'
 import { questDefOf } from '#cards/quests.js'
 import type { Card } from '#cards/types.js'
 import { matchesSuit } from '#cards/suit.js'
+import { alliedWarriorSeatsInClearing } from '#factions/vagabond/allied.js'
 import {
   boardOf,
   pawnClearing,
@@ -11,8 +12,12 @@ import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import type { ItemType, Seat } from '#pieces/types.js'
 import { enemySeatsInClearing } from '#queries/enemySeats.js'
+import { warriors } from '#queries/pieces.js'
 import { playerOf } from '#queries/seat.js'
-import type { VagabondBoard } from '#state/boards.js'
+import {
+  VAGABOND_TRACK_ITEM_CAP,
+  type VagabondBoard,
+} from '#state/boards.js'
 import type { GameState } from '#state/types.js'
 
 export function hasExhaustible(board: VagabondBoard, type: ItemType): boolean {
@@ -141,7 +146,7 @@ export function pushDaylightActions(
   if (clearing === null) return
 
   if (hasExhaustible(board, 'boot')) {
-    const destinations: ClearingId[] = []
+    const vbMoves: VagabondMoveChoice[] = []
     for (const to of FALL.adjacent(clearing)) {
       const needsExtraBoot = destinationHasHostile(state, seat, to)
       if (needsExtraBoot) {
@@ -153,13 +158,23 @@ export function pushDaylightActions(
         ].filter((item) => item.type === 'boot' && !item.exhausted).length
         if (boots < 2) continue
       }
-      destinations.push(to)
+      vbMoves.push({ to })
+      // Rule: 9.2.9.IIb — may force Allied warriors along from origin.
+      for (const allySeat of alliedWarriorSeatsInClearing(state, seat, clearing)) {
+        const available = warriors(state, clearing, allySeat)
+        for (let allyCount = 1; allyCount <= available; allyCount++) {
+          vbMoves.push({ to, allySeat, allyCount })
+        }
+      }
     }
-    if (destinations.length > 0) {
+    if (vbMoves.length > 0) {
       specs.push({
         type: 'vbMove',
         actor: seat,
-        params: { clearings: destinations },
+        params: {
+          clearings: [...new Set(vbMoves.map((move) => move.to))],
+          vbMoves,
+        },
       })
     }
   }
@@ -171,6 +186,18 @@ export function pushDaylightActions(
         actor: seat,
         params: { targets: [{ clearing, defender }] },
       })
+      // Rule: 9.2.9.IIc — may treat one Allied faction's warriors as own.
+      for (const alliedSeat of alliedWarriorSeatsInClearing(state, seat, clearing)) {
+        if (alliedSeat === defender) continue
+        specs.push({
+          type: 'vbBattle',
+          actor: seat,
+          params: {
+            targets: [{ clearing, defender }],
+            alliedSeat: [alliedSeat],
+          },
+        })
+      }
     }
   }
 
@@ -268,6 +295,39 @@ export function pushDaylightActions(
         type: 'steal',
         actor: seat,
         params: { defender: [player.seat] },
+      })
+    }
+  }
+
+  // Rule: 9.2.5.III — freely move face-up undamaged T/X/B between track and satchel.
+  pushRearrangeActions(board, seat, specs)
+}
+
+function pushRearrangeActions(
+  board: VagabondBoard,
+  seat: Seat,
+  specs: ActionSpec[],
+): void {
+  for (const itemType of ['tea', 'coin', 'bag'] as const) {
+    const faceUpOnTrack = board.tracks[itemType].some((item) => !item.exhausted)
+    if (faceUpOnTrack) {
+      specs.push({
+        type: 'vbRearrange',
+        actor: seat,
+        params: { itemTypes: [itemType], rearrangeFrom: ['track'] },
+      })
+    }
+    const faceUpInSatchel = board.satchel.some(
+      (item) => item.type === itemType && !item.exhausted,
+    )
+    if (
+      faceUpInSatchel &&
+      board.tracks[itemType].length < VAGABOND_TRACK_ITEM_CAP
+    ) {
+      specs.push({
+        type: 'vbRearrange',
+        actor: seat,
+        params: { itemTypes: [itemType], rearrangeFrom: ['satchel'] },
       })
     }
   }

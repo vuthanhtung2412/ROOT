@@ -23,6 +23,12 @@ export type BattleEvent = {
   ambushCardId?: string
   /** Attacker/Defender opted into optional battle effects. */
   effectsUsed?: Partial<Record<'attacker' | 'defender', boolean>>
+  /** Rule: 9.2.9.IIc — Allied seat treated as own by Vagabond attacker. */
+  alliedSeat?: Seat
+  /** Rule: 9.2.9.IId — ally warriors removed as hits this battle. */
+  alliedHitsTaken?: number
+  /** Rule: 9.2.9.IId — items damaged as hits this battle. */
+  itemHitsTaken?: number
 }
 
 export type FieldHospitalEvent = {

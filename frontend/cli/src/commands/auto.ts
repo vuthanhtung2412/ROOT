@@ -429,6 +429,26 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return { type: 'slip', to: `forest:${forest}` }
     }
     case 'vbMove': {
+      const vbMovesRaw = paramList(spec.params, 'vbMoves')
+      if (vbMovesRaw !== undefined && vbMovesRaw.length > 0) {
+        const choices = vbMovesRaw.filter(
+          (entry): entry is { to: number; allySeat?: number; allyCount?: number } =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            typeof (entry as { to?: unknown }).to === 'number',
+        )
+        const choice = pick(choices)
+        if (choice === undefined) return null
+        if (choice.allySeat !== undefined && choice.allyCount !== undefined) {
+          return {
+            type: 'vbMove',
+            to: choice.to,
+            allySeat: choice.allySeat,
+            allyCount: choice.allyCount,
+          }
+        }
+        return { type: 'vbMove', to: choice.to }
+      }
       const to = pick(readNumberList(paramList(spec.params, 'clearings')))
       if (to === undefined) return null
       return { type: 'vbMove', to }
@@ -436,7 +456,28 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
     case 'vbBattle': {
       const choice = pick(readBattleTargets(paramList(spec.params, 'targets')))
       if (!choice) return null
+      const allied = readNumberList(paramList(spec.params, 'alliedSeat'))
+      if (allied[0] !== undefined) {
+        return {
+          type: 'vbBattle',
+          defender: choice.defender,
+          alliedSeat: allied[0],
+        }
+      }
       return { type: 'vbBattle', defender: choice.defender }
+    }
+    case 'vbRearrange': {
+      const itemTypes = readStringList(paramList(spec.params, 'itemTypes'))
+      const fromList = readStringList(paramList(spec.params, 'rearrangeFrom'))
+      const itemType = pick(itemTypes)
+      const from = pick(fromList)
+      if (
+        (itemType !== 'tea' && itemType !== 'coin' && itemType !== 'bag') ||
+        (from !== 'track' && from !== 'satchel')
+      ) {
+        return null
+      }
+      return { type: 'vbRearrange', itemType, from }
     }
     case 'aid': {
       const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))

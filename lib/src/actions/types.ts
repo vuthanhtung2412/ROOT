@@ -31,10 +31,23 @@ export type BuildChoice = {
   building: MarquiseBuildingType
 }
 
+/** Paired battle target: clearing × defender seat. */
+export type BattleTargetChoice = {
+  clearing: ClearingId
+  defender: Seat
+}
+
 /** Paired Alliance revolt: clearing × two supporter ids (8.4.1). */
 export type RevoltChoice = {
   clearing: ClearingId
   supporterIds: string[]
+}
+
+/** Rule: 9.2.9.IIb — optional Allied warriors dragged with pawn move. */
+export type VagabondMoveChoice = {
+  to: ClearingId
+  allySeat?: Seat
+  allyCount?: number
 }
 
 /**
@@ -76,6 +89,14 @@ export type ActionChoiceParams = {
   questIds?: string[]
   /** Vagabond quest reward choice. */
   rewards?: Array<'vp' | 'draw'>
+  /** Vagabond rearrange — track item types that can move. */
+  itemTypes?: Array<'tea' | 'coin' | 'bag'>
+  /** Vagabond rearrange direction. */
+  rearrangeFrom?: Array<'track' | 'satchel'>
+  /** Vagabond Allied escort choices for move. */
+  vbMoves?: VagabondMoveChoice[]
+  /** Vagabond Allied warriors treated as own in battle (9.2.9.IIc). */
+  alliedSeat?: Seat[]
 }
 
 export type Action =
@@ -155,8 +176,13 @@ export type Action =
       defender?: Seat
     }
   | { type: 'slip'; to: ClearingId | `forest:${number}` }
-  | { type: 'vbMove'; to: ClearingId }
-  | { type: 'vbBattle'; defender: Seat }
+  | {
+      type: 'vbMove'
+      to: ClearingId
+      allySeat?: Seat
+      allyCount?: number
+    }
+  | { type: 'vbBattle'; defender: Seat; alliedSeat?: Seat }
   | { type: 'explore' }
   | {
       type: 'quest'
@@ -173,6 +199,11 @@ export type Action =
   | { type: 'repair'; itemIndex: number }
   | { type: 'vbCraft'; cardId: string }
   | { type: 'steal'; target: Seat }
+  | {
+      type: 'vbRearrange'
+      itemType: 'tea' | 'coin' | 'bag'
+      from: 'track' | 'satchel'
+    }
   | { type: 'takeDominance'; cardId: string }
   | {
       type: 'activateDominance'

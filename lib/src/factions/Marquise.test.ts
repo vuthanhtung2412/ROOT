@@ -149,8 +149,8 @@ describe('Marquise turn', () => {
       }),
       4,
       [
-        { id: 'saw-a', kind: 'building', type: 'sawmill', owner: seat, used: false },
-        { id: 'saw-b', kind: 'building', type: 'sawmill', owner: seat, used: false },
+        { id: 'saw-a', kind: 'building', type: 'sawmill', owner: seat },
+        { id: 'saw-b', kind: 'building', type: 'sawmill', owner: seat },
       ],
     )
     const board = state.players[seat]!.board

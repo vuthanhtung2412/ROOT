@@ -16,6 +16,7 @@ import {
   maybeHostile,
   movePawn,
 } from '#factions/vagabond/apply.js'
+import { isAlliedWith } from '#factions/vagabond/allied.js'
 import {
   boardOf,
   exhaustItem,
@@ -36,6 +37,8 @@ import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { Seat } from '#pieces/types.js'
 import { playerOf } from '#queries/seat.js'
+import { warriors } from '#queries/pieces.js'
+import { moveWarriors } from '#rules/move.js'
 import { removePieces } from '#rules/remove.js'
 import { RuleError } from '#rules/RuleError.js'
 import { randomIndex } from '#rules/Rng.js'
@@ -43,6 +46,7 @@ import { addVictoryPoints } from '#rules/dominance.js'
 import {
   FACE_UP_QUEST_COUNT,
   THIEF_START_ITEMS,
+  VAGABOND_TRACK_ITEM_CAP,
 } from '#state/boards.js'
 import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
@@ -232,18 +236,89 @@ export class Vagabond extends Faction {
             throw new RuleError('NO_BOOT_HOSTILE')
           }
         }
+        const origin = pawnClearing(state, seat)
+        if (origin === null && board.forest === null) {
+          throw new RuleError('PAWN_MISSING')
+        }
         movePawn(state, seat, action.to)
-        return [{ t: 'action', actor: seat, action }]
+        if (
+          action.allySeat !== undefined &&
+          action.allyCount !== undefined &&
+          action.allyCount > 0
+        ) {
+          if (origin === null) throw new RuleError('ALLY_MOVE_FROM_FOREST')
+          if (!isAlliedWith(board, action.allySeat, state)) {
+            throw new RuleError('NOT_ALLIED', { seat: action.allySeat })
+          }
+          if (warriors(state, origin, action.allySeat) < action.allyCount) {
+            throw new RuleError('NOT_ENOUGH_ALLY_WARRIORS')
+          }
+          logs.push(
+            ...moveWarriors(
+              state,
+              {
+                seat: action.allySeat,
+                from: origin,
+                to: action.to,
+                count: action.allyCount,
+              },
+              ctx,
+            ),
+          )
+        }
+        logs.push({ t: 'action', actor: seat, action })
+        return logs
       }
       case 'vbBattle': {
         if (exhaustItem(board, 'sword') === null) throw new RuleError('NO_SWORD')
         const clearing = pawnClearing(state, seat)
         if (clearing === null) throw new RuleError('PAWN_IN_FOREST')
+        if (action.alliedSeat !== undefined) {
+          if (!isAlliedWith(board, action.alliedSeat, state)) {
+            throw new RuleError('NOT_ALLIED', { seat: action.alliedSeat })
+          }
+          if (action.alliedSeat === action.defender) {
+            throw new RuleError('CANNOT_ALLY_SAME_DEFENDER')
+          }
+          if (warriors(state, clearing, action.alliedSeat) < 1) {
+            throw new RuleError('NO_ALLY_WARRIORS')
+          }
+        }
         return openBattle(
           state,
-          { clearing, attacker: seat, defender: action.defender },
+          {
+            clearing,
+            attacker: seat,
+            defender: action.defender,
+            ...(action.alliedSeat !== undefined
+              ? { alliedSeat: action.alliedSeat }
+              : {}),
+          },
           ctx,
         )
+      }
+      case 'vbRearrange': {
+        // Rule: 9.2.5.III — face-up undamaged T/X/B between track and satchel.
+        if (action.from === 'track') {
+          const track = board.tracks[action.itemType]
+          const index = track.findIndex((item) => !item.exhausted)
+          if (index < 0) throw new RuleError('NO_TRACK_ITEM')
+          const [item] = track.splice(index, 1)
+          if (item === undefined) throw new RuleError('NO_TRACK_ITEM')
+          board.satchel.push(item)
+        } else {
+          const index = board.satchel.findIndex(
+            (item) => item.type === action.itemType && !item.exhausted,
+          )
+          if (index < 0) throw new RuleError('NO_SATCHEL_ITEM')
+          if (board.tracks[action.itemType].length >= VAGABOND_TRACK_ITEM_CAP) {
+            throw new RuleError('TRACK_FULL')
+          }
+          const [item] = board.satchel.splice(index, 1)
+          if (item === undefined) throw new RuleError('NO_SATCHEL_ITEM')
+          board.tracks[action.itemType].push(item)
+        }
+        return [{ t: 'action', actor: seat, action }]
       }
       case 'explore': {
         if (exhaustItem(board, 'torch') === null) throw new RuleError('NO_TORCH')

@@ -77,8 +77,14 @@ export function legalRemovalSpecs(
 ): ActionSpec[] {
   if (maxHits <= 0) return []
 
-  // Rule: Vagabond — each hit damages one undamaged item (acknowledge via decline).
+  // Rule: Vagabond — hits damage items; with Allied (9.2.9.IId) may remove ally warriors.
   if (victimIsVagabond(state, victim)) {
+    if (
+      event.alliedSeat !== undefined &&
+      event.attacker === victim
+    ) {
+      return legalAlliedVagabondHitSpecs(state, event, victim, maxHits)
+    }
     return [
       {
         type: 'resolveEvent',
@@ -151,6 +157,51 @@ export function legalRemovalSpecs(
   return specs
 }
 
+function legalAlliedVagabondHitSpecs(
+  state: GameState,
+  event: BattleEvent,
+  victim: Seat,
+  maxHits: number,
+): ActionSpec[] {
+  const alliedSeat = event.alliedSeat!
+  const allyIds = state.clearings[event.clearing]!.pieces
+    .filter(
+      (piece) => piece.kind === 'warrior' && piece.owner === alliedSeat,
+    )
+    .map((piece) => piece.id)
+  const specs: ActionSpec[] = [
+    {
+      type: 'resolveEvent',
+      actor: victim,
+      params: { decline: [true] },
+    },
+  ]
+  const maxAllyHits = Math.min(maxHits, allyIds.length)
+  function addAllyCombos(
+    chooseCount: number,
+    startIndex: number,
+    current: string[],
+  ): void {
+    if (current.length === chooseCount) {
+      specs.push({
+        type: 'resolveEvent',
+        actor: victim,
+        params: { pieceIds: [...current] },
+      })
+      return
+    }
+    for (let index = startIndex; index < allyIds.length; index++) {
+      current.push(allyIds[index]!)
+      addAllyCombos(chooseCount, index + 1, current)
+      current.pop()
+    }
+  }
+  for (let allyHits = 1; allyHits <= maxAllyHits; allyHits++) {
+    addAllyCombos(allyHits, 0, [])
+  }
+  return specs
+}
+
 export function applyRemovalStage(
   state: GameState,
   stage: RemovalStage,
@@ -159,7 +210,7 @@ export function applyRemovalStage(
   const { event, action, victim, maxHits, scorer } = stage
 
   if (victimIsVagabond(state, victim)) {
-    return applyVagabondHitDamage(state, victim, maxHits, action)
+    return applyVagabondHitDamage(state, event, victim, maxHits, action, ctx)
   }
 
   if (!action.pieceIds) {
@@ -189,20 +240,63 @@ export function applyRemovalStage(
 
 function applyVagabondHitDamage(
   state: GameState,
+  event: BattleEvent,
   victim: Seat,
   maxHits: number,
   action: ResolveEventAction,
+  ctx: Ctx,
 ): LogEntry[] {
-  if (action.decline !== true && action.pieceIds === undefined) {
+  const allyPieceIds = action.pieceIds ?? []
+  if (action.decline !== true && allyPieceIds.length === 0) {
     throw new RuleError('INVALID_REMOVAL', { action })
   }
-  const board = vagabondBoardOf(state, victim)
-  damageItems(board, maxHits)
-  return [
-    {
-      t: 'action',
-      actor: victim,
-      action: { type: 'resolveEvent', decline: true },
-    },
-  ]
+  const logs: LogEntry[] = []
+  if (allyPieceIds.length > 0) {
+    if (event.alliedSeat === undefined) {
+      throw new RuleError('NO_ALLIED_SEAT')
+    }
+    for (const pieceId of allyPieceIds) {
+      const piece = state.clearings[event.clearing]!.pieces.find(
+        (entry) => entry.id === pieceId,
+      )
+      if (
+        piece === undefined ||
+        piece.kind !== 'warrior' ||
+        piece.owner !== event.alliedSeat
+      ) {
+        throw new RuleError('INVALID_ALLY_HIT', { pieceId })
+      }
+    }
+    if (allyPieceIds.length > maxHits) {
+      throw new RuleError('TOO_MANY_ALLY_HITS')
+    }
+    logs.push(
+      ...removePieces(
+        state,
+        {
+          clearing: event.clearing,
+          pieceIds: allyPieceIds,
+          scorer: event.defender,
+          options: { fromBattle: true, skipFieldHospital: true },
+        },
+        ctx,
+      ),
+    )
+    event.alliedHitsTaken = (event.alliedHitsTaken ?? 0) + allyPieceIds.length
+  }
+  const itemHits = maxHits - allyPieceIds.length
+  if (itemHits > 0) {
+    const board = vagabondBoardOf(state, victim)
+    damageItems(board, itemHits)
+    event.itemHitsTaken = (event.itemHitsTaken ?? 0) + itemHits
+  }
+  logs.push({
+    t: 'action',
+    actor: victim,
+    action:
+      allyPieceIds.length > 0
+        ? { type: 'resolveEvent', pieceIds: allyPieceIds }
+        : { type: 'resolveEvent', decline: true },
+  })
+  return logs
 }

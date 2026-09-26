@@ -205,7 +205,7 @@ export const battleResolver: EventResolver = {
 }
 
 export function openBattle(state: GameState, open: OpenBattle, ctx: Ctx): LogEntry[] {
-  const { clearing, attacker, defender } = open
+  const { clearing, attacker, defender, alliedSeat } = open
   const event: BattleEvent = {
     type: 'battle',
     clearing,
@@ -213,6 +213,11 @@ export function openBattle(state: GameState, open: OpenBattle, ctx: Ctx): LogEnt
     defender,
     stage: 'ambush',
     hits: { attacker: 0, defender: 0 },
+    alliedHitsTaken: 0,
+    itemHitsTaken: 0,
+  }
+  if (alliedSeat !== undefined) {
+    event.alliedSeat = alliedSeat
   }
   state.pending.push(event)
   ctx.emit({ s: 'battle.start', ev: event })

@@ -41,9 +41,18 @@ function attackerPresent(state: GameState, event: BattleEvent): boolean {
 }
 
 /** Rule: Battle — max rolled hits = warriors, or undamaged swords for Vagabond. */
-function hitCap(state: GameState, clearing: ClearingId, seat: Seat): number {
+function hitCap(state: GameState, clearing: ClearingId, seat: Seat, event?: BattleEvent): number {
   if (seatIsVagabond(state, seat)) {
-    return undamagedSwords(vagabondBoardOf(state, seat))
+    const swords = undamagedSwords(vagabondBoardOf(state, seat))
+    if (
+      event !== undefined &&
+      event.attacker === seat &&
+      event.alliedSeat !== undefined
+    ) {
+      // Rule: 9.2.9.IIc — max hits = Allied warriors + undamaged S.
+      return swords + warriors(state, clearing, event.alliedSeat)
+    }
+    return swords
   }
   return warriors(state, clearing, seat)
 }
@@ -67,6 +76,15 @@ function rollBattleDice(ctx: Ctx): [number, number] {
 function finishBattle(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   const eventIndex: number = state.pending.indexOf(event)
   if (eventIndex >= 0) state.pending.splice(eventIndex, 1)
+  // Rule: 9.2.9.IId — more ally hits than item damage → Allied becomes Hostile.
+  if (
+    event.alliedSeat !== undefined &&
+    (event.alliedHitsTaken ?? 0) > (event.itemHitsTaken ?? 0)
+  ) {
+    const board = vagabondBoardOf(state, event.attacker)
+    const faction = playerOf(state, event.alliedSeat).faction
+    board.relationships[faction] = 'hostile'
+  }
   ctx.emit({ s: 'battle.end', ev: event })
   return [{ t: 'event', event: { ...event, stage: 'removeAttacker' } }]
 }
@@ -94,11 +112,11 @@ function rollStage(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   const defenderDie = defenderIsAlliance ? high : low
   event.hits.attacker += capHits(
     attackerDie,
-    hitCap(state, event.clearing, event.attacker),
+    hitCap(state, event.clearing, event.attacker, event),
   )
   event.hits.defender += capHits(
     defenderDie,
-    hitCap(state, event.clearing, event.defender),
+    hitCap(state, event.clearing, event.defender, event),
   )
   return enterEffectsPipeline(state, event, ctx)
 }

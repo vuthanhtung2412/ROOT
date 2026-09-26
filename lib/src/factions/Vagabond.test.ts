@@ -8,12 +8,14 @@ import {
   satchelCapacity,
 } from '#factions/vagabond/items.js'
 import { FALL } from '#map/fall.js'
+import { warriors } from '#queries/pieces.js'
 import { resetPlaceIds } from '#rules/place.js'
 import { removePieces } from '#rules/remove.js'
 import { SeededRng } from '#rules/Rng.js'
 import {
   FACE_UP_QUEST_COUNT,
   THIEF_START_ITEMS,
+  VAGABOND_ALLIED_STEP,
   VAGABOND_TRACK_ITEM_CAP,
   createFactionBoard,
 } from '#state/boards.js'
@@ -227,6 +229,58 @@ describe('Vagabond relationships / items SoT', () => {
     expect(board.damaged).toHaveLength(0)
     const repaired = board.satchel.find((item) => item.type === 'crossbow')
     expect(repaired?.exhausted).toBe(true)
+  })
+
+  it('Rule: 9.2.5.III — rearrange face-up undamaged track item to satchel', () => {
+    const board = createFactionBoard('vagabond')
+    if (board.kind !== 'vagabond') return
+    board.tracks.tea.push({ type: 'tea', exhausted: false })
+    placeItemInSatchelOrTrack(board, 'boot')
+    const state = minimalState({
+      factions: ['marquise', 'vagabond'],
+      players: [player(0, 'marquise'), player(1, 'vagabond', { board })],
+      currentSeat: 1,
+      phase: 'daylight',
+      step: 'daylight',
+    })
+    VAGABOND.apply(
+      state,
+      { type: 'vbRearrange', itemType: 'tea', from: 'track' },
+      testContext({ state }),
+    )
+    expect(boardOf(state, 1).tracks.tea).toHaveLength(0)
+    expect(boardOf(state, 1).satchel.some((item) => item.type === 'tea')).toBe(
+      true,
+    )
+  })
+
+  it('Rule: 9.2.9.IIb — Allied move may drag warriors', () => {
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'vagabond'],
+        players: [player(0, 'marquise'), player(1, 'vagabond')],
+        currentSeat: 1,
+        phase: 'daylight',
+        step: 'daylight',
+      }),
+      4,
+      [
+        { id: 'pawn-1', kind: 'pawn', owner: 1 },
+        { id: 'ally-w', kind: 'warrior', owner: 0 },
+      ],
+    )
+    const board = boardOf(state, 1)
+    board.forest = null
+    board.relationships.marquise = VAGABOND_ALLIED_STEP
+    board.satchel.push({ type: 'boot', exhausted: false })
+    const destination = FALL.adjacent(4)[0]!
+    VAGABOND.apply(
+      state,
+      { type: 'vbMove', to: destination, allySeat: 0, allyCount: 1 },
+      testContext({ state }),
+    )
+    expect(warriors(state, destination, 0)).toBe(1)
+    expect(warriors(state, 4, 0)).toBe(0)
   })
 
   it('Rule: 9.2.9.III/IIIa — battle Hostile then Infamy; strike no Infamy', () => {
