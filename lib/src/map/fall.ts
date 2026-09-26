@@ -3,6 +3,7 @@ import type { Clearing, ClearingId, Path } from '#map/types.js'
 import { FALL_CLEARING_SLOT_COUNTS } from '#map/fallSlots.js'
 import {
   FALL_CLEARING_SUITS,
+  FALL_FORESTS,
   FALL_PATHS,
 } from '#public/fallMetadata.js'
 
@@ -23,15 +24,7 @@ const paths: Path[] = FALL_PATHS.map(
 )
 
 /** Forests as bordering clearing ids (7 on Autumn). */
-const FORESTS: ClearingId[][] = [
-  [0, 4, 9],
-  [0, 8, 9, 11],
-  [1, 4, 5],
-  [1, 5, 9, 10, 11],
-  [2, 5, 10, 11],
-  [2, 6, 10, 11],
-  [3, 6, 7, 8, 11],
-]
+const FORESTS: ClearingId[][] = FALL_FORESTS.map((border) => [...border])
 
 /** Rivers link clearings but are not paths. Rule: Board > Rivers */
 const RIVERS: Path[] = [
