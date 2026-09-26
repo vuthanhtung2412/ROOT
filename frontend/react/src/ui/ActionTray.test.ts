@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { filterTrayActions, formatActionLabel } from '#ui/ActionTray.ts'
+import {
+  collapseTrayActionsByLabel,
+  filterTrayActions,
+  formatActionLabel,
+  partitionTrayActionRegions,
+} from '#ui/ActionTray.ts'
 
 describe('formatActionLabel setup', () => {
   it('labels keep vs starting buildings distinctly', () => {
@@ -125,5 +130,138 @@ describe('formatActionLabel Field Hospitals', () => {
         pending,
       ),
     ).toBe('Field Hospitals: pay')
+  })
+})
+
+describe('collapseTrayActionsByLabel', () => {
+  it('merges duplicate Vagabond battle/aid/steal into one button each', () => {
+    const collapsed = collapseTrayActionsByLabel([
+      {
+        type: 'vbBattle',
+        actor: 3,
+        params: { targets: [{ clearing: 5, defender: 0 }] },
+      },
+      {
+        type: 'vbBattle',
+        actor: 3,
+        params: { targets: [{ clearing: 5, defender: 1 }] },
+      },
+      {
+        type: 'aid',
+        actor: 3,
+        params: { cardIds: ['ROOT-202#1'], defender: [0] },
+      },
+      {
+        type: 'aid',
+        actor: 3,
+        params: { cardIds: ['ROOT-202#1'], defender: [1] },
+      },
+      { type: 'steal', actor: 3, params: { defender: [0] } },
+      { type: 'steal', actor: 3, params: { defender: [2] } },
+      { type: 'endPhase', actor: 3 },
+    ])
+    expect(collapsed.map((spec) => spec.type)).toEqual([
+      'vbBattle',
+      'aid',
+      'steal',
+      'endPhase',
+    ])
+    expect(collapsed[0]?.params?.targets).toEqual([
+      { clearing: 5, defender: 0 },
+      { clearing: 5, defender: 1 },
+    ])
+    expect(collapsed[1]?.params?.defender).toEqual([0, 1])
+    expect(collapsed[2]?.params?.defender).toEqual([0, 2])
+  })
+
+  it('keeps Marquise daylight types as one button each', () => {
+    const collapsed = collapseTrayActionsByLabel([
+      { type: 'recruit', actor: 0 },
+      {
+        type: 'march',
+        actor: 0,
+        params: { moves: [{ from: 1, to: 2 }] },
+      },
+      {
+        type: 'build',
+        actor: 0,
+        params: { options: [{ clearing: 3, building: 'sawmill' }] },
+      },
+      {
+        type: 'battle',
+        actor: 0,
+        params: {
+          targets: [
+            { clearing: 4, defender: 1 },
+            { clearing: 5, defender: 2 },
+          ],
+        },
+      },
+      { type: 'endPhase', actor: 0 },
+    ])
+    expect(collapsed.map((spec) => spec.type)).toEqual([
+      'recruit',
+      'march',
+      'build',
+      'battle',
+      'endPhase',
+    ])
+  })
+
+  it('keeps distinct decree labels separate', () => {
+    const collapsed = collapseTrayActionsByLabel([
+      {
+        type: 'decree',
+        actor: 1,
+        params: { column: ['recruit'], cardIds: ['ROOT-204#1'] },
+      },
+      {
+        type: 'decree',
+        actor: 1,
+        params: { column: ['move'], cardIds: ['VIZIER#1'] },
+      },
+    ])
+    expect(collapsed).toHaveLength(2)
+  })
+})
+
+describe('partitionTrayActionRegions', () => {
+  it('puts Marquise daylight choices in Actions and spend bird/end phase in Turn', () => {
+    const regions = partitionTrayActionRegions([
+      { type: 'recruit', actor: 0 },
+      { type: 'battle', actor: 0, params: { targets: [] } },
+      { type: 'build', actor: 0, params: { options: [] } },
+      {
+        type: 'spendBird',
+        actor: 0,
+        params: { cardIds: ['ROOT-01#1'] },
+      },
+      { type: 'endPhase', actor: 0 },
+    ])
+    expect(regions.map((region) => region.id)).toEqual(['actions', 'meta'])
+    expect(regions[0]?.title).toBe('Actions (3)')
+    expect(regions[0]?.actions.map((spec) => spec.type)).toEqual([
+      'recruit',
+      'battle',
+      'build',
+    ])
+    expect(regions[1]?.title).toBe('Turn (2)')
+    expect(regions[1]?.actions.map((spec) => spec.type)).toEqual([
+      'spendBird',
+      'endPhase',
+    ])
+  })
+
+  it('omits empty Actions region when only end phase remains', () => {
+    const regions = partitionTrayActionRegions([
+      { type: 'endPhase', actor: 0 },
+    ])
+    expect(regions).toEqual([
+      {
+        id: 'meta',
+        title: 'Turn',
+        actions: [{ type: 'endPhase', actor: 0 }],
+      },
+    ])
   })
 })

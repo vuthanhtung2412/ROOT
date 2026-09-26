@@ -1,4 +1,5 @@
 import { useSyncExternalStore, type JSX } from 'react'
+import type { ActionSpec } from '#api/client.ts'
 import {
   isCardPileOpen,
   isCraftedCardsOpen,
@@ -12,8 +13,10 @@ import {
 } from '#game/hudStore.ts'
 import type { ActionTrayState } from '#ui/ActionTray.ts'
 import {
+  collapseTrayActionsByLabel,
   filterTrayActions,
   formatActionLabel,
+  partitionTrayActionRegions,
 } from '#ui/ActionTray.ts'
 
 function isAnyHudModalOpen(): boolean {
@@ -21,6 +24,34 @@ function isAnyHudModalOpen(): boolean {
     isFactionBoardOpen() === true ||
     isCraftedCardsOpen() === true ||
     isCardPileOpen() === true
+  )
+}
+
+function TrayActionButtons(props: {
+  actions: readonly ActionSpec[]
+  pending: unknown
+  state: ActionTrayState['state']
+  onSelectAction: (spec: ActionSpec) => void
+}): JSX.Element {
+  return (
+    <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5">
+      {props.actions.map((spec, index) => {
+        const label = formatActionLabel(spec, props.pending, props.state)
+        const key = `${spec.type}-${String(spec.actor)}-${String(index)}-${label}`
+        return (
+          <button
+            key={key}
+            type="button"
+            className="root-button px-2.5 py-[7px] text-center text-sm md:px-3 md:py-2 md:text-[17px]"
+            onClick={() => {
+              props.onSelectAction(spec)
+            }}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -40,31 +71,34 @@ export function ActionTray(): JSX.Element | null {
   if (tray === null || anyModalOpen || tray.options?.disabled === true) {
     return null
   }
-  const forActor = filterTrayActions(tray.actions, tray.actorSeat, tray.options)
+  const forActor = collapseTrayActionsByLabel(
+    filterTrayActions(tray.actions, tray.actorSeat, tray.options),
+    tray.pending,
+    tray.state,
+  )
+  const regions = partitionTrayActionRegions(forActor)
+  if (regions.length === 0) {
+    return null
+  }
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed bottom-[var(--root-portrait-tray-bottom)] left-1/2 z-[115] box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-2 px-0 md:top-16 md:right-0 md:bottom-auto md:left-auto md:z-[110] md:w-[var(--root-landscape-side-percent)] md:translate-x-0 md:px-2">
-      <div className="root-panel px-3 py-1.5 font-display text-base tracking-[0.02em] text-ink md:text-xl">
-        {`Actions (${String(forActor.length)})`}
-      </div>
-      <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5">
-        {forActor.map((spec, index) => {
-          const label = formatActionLabel(spec, tray.pending, tray.state)
-          const key = `${spec.type}-${String(spec.actor)}-${String(index)}-${label}`
-          return (
-            <button
-              key={key}
-              type="button"
-              className="root-button px-2.5 py-[7px] text-center text-sm md:px-3 md:py-2 md:text-[17px]"
-              onClick={() => {
-                callbacks.onSelectAction(spec)
-              }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
+    <div className="fixed bottom-[var(--root-portrait-tray-bottom)] left-1/2 z-[115] box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-3 px-0 md:top-16 md:right-0 md:bottom-auto md:left-auto md:z-[110] md:w-[var(--root-landscape-side-percent)] md:translate-x-0 md:px-2">
+      {regions.map((region) => (
+        <div
+          key={region.id}
+          className="flex w-full flex-col items-center gap-2"
+        >
+          <div className="root-panel px-3 py-1.5 font-display text-base tracking-[0.02em] text-ink md:text-xl">
+            {region.title}
+          </div>
+          <TrayActionButtons
+            actions={region.actions}
+            pending={tray.pending}
+            state={tray.state}
+            onSelectAction={callbacks.onSelectAction}
+          />
+        </div>
+      ))}
     </div>
   )
 }

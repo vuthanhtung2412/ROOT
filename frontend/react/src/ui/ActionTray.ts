@@ -56,6 +56,10 @@ function formatActionLabel(
   if (spec.type === 'vbCraft') return 'craft'
   if (spec.type === 'steal') return 'steal'
   if (spec.type === 'rest') return 'rest'
+  if (spec.type === 'spendBird') return 'spend bird'
+  if (spec.type === 'eveningDraw') return 'draw'
+  if (spec.type === 'endPhase') return 'end phase'
+  if (spec.type === 'overwork') return 'overwork'
   if (spec.type === 'resolveEvent') {
     const startingBuilding = params.building?.[0]
     if (startingBuilding !== undefined) {
@@ -195,6 +199,139 @@ export function filterTrayActions(
     }
     return true
   })
+}
+
+/**
+ * Turn-control / budget helpers sit apart from the main action choices
+ * (e.g. Marquise daylight: battle/build/… vs spend bird + end phase).
+ */
+const TRAY_META_ACTION_TYPES: ReadonlySet<string> = new Set([
+  'spendBird',
+  'endPhase',
+  'eveningDraw',
+])
+
+export type TrayActionRegion = {
+  readonly id: 'actions' | 'meta'
+  readonly title: string
+  readonly actions: readonly ActionSpec[]
+}
+
+/**
+ * Split collapsed tray specs into primary choices vs turn meta.
+ * Empty regions are omitted.
+ */
+export function partitionTrayActionRegions(
+  actions: readonly ActionSpec[],
+): TrayActionRegion[] {
+  const primary: ActionSpec[] = []
+  const meta: ActionSpec[] = []
+  for (const spec of actions) {
+    if (TRAY_META_ACTION_TYPES.has(spec.type)) {
+      meta.push(spec)
+    } else {
+      primary.push(spec)
+    }
+  }
+  const regions: TrayActionRegion[] = []
+  if (primary.length > 0) {
+    regions.push({
+      id: 'actions',
+      title: `Actions (${String(primary.length)})`,
+      actions: primary,
+    })
+  }
+  if (meta.length > 0) {
+    regions.push({
+      id: 'meta',
+      title: meta.length === 1 ? 'Turn' : `Turn (${String(meta.length)})`,
+      actions: meta,
+    })
+  }
+  return regions
+}
+
+/**
+ * One tray button per label: merge duplicate specs (e.g. many `aid` /
+ * `battle` targets) so Marquise daylight / Vagabond satchel stay readable.
+ */
+export function collapseTrayActionsByLabel(
+  actions: readonly ActionSpec[],
+  pending?: unknown,
+  state?: GameState,
+): ActionSpec[] {
+  const groups = new Map<string, ActionSpec[]>()
+  const order: string[] = []
+  for (const spec of actions) {
+    const label = formatActionLabel(spec, pending, state)
+    const key = `${spec.type}::${label}`
+    const existing = groups.get(key)
+    if (existing === undefined) {
+      groups.set(key, [spec])
+      order.push(key)
+      continue
+    }
+    existing.push(spec)
+  }
+  return order.map((key) => {
+    const group = groups.get(key)
+    if (group === undefined || group.length === 0) {
+      throw new Error(`missing tray group ${key}`)
+    }
+    if (group.length === 1) {
+      return group[0]!
+    }
+    return mergeActionSpecs(group)
+  })
+}
+
+function mergeActionSpecs(specs: readonly ActionSpec[]): ActionSpec {
+  const first = specs[0]
+  if (first === undefined) {
+    throw new Error('mergeActionSpecs requires at least one spec')
+  }
+  const mergedParams: Record<string, unknown[]> = {}
+  for (const spec of specs) {
+    if (spec.params === undefined) {
+      continue
+    }
+    for (const [key, value] of Object.entries(spec.params)) {
+      if (!Array.isArray(value)) {
+        continue
+      }
+      const bucket = mergedParams[key] ?? []
+      for (const entry of value) {
+        if (!paramEntryAlreadyPresent(bucket, entry)) {
+          bucket.push(entry)
+        }
+      }
+      mergedParams[key] = bucket
+    }
+  }
+  return {
+    type: first.type,
+    actor: first.actor,
+    params: mergedParams,
+  }
+}
+
+function paramEntryAlreadyPresent(
+  bucket: readonly unknown[],
+  entry: unknown,
+): boolean {
+  if (typeof entry === 'string' || typeof entry === 'number' || typeof entry === 'boolean') {
+    return bucket.includes(entry)
+  }
+  if (typeof entry !== 'object' || entry === null) {
+    return false
+  }
+  const serialized = JSON.stringify(entry)
+  return bucket.some(
+    (existing) =>
+      typeof existing === 'object' &&
+      existing !== null &&
+      JSON.stringify(existing) === serialized,
+  )
 }
 
 /** Exported for unit tests. */
