@@ -112,7 +112,8 @@
   flex: 0 0 auto;
 }
 
-/* Vagabond relationship markers — same visual weight as tea/coin/bag items. */
+/* Vagabond relationship markers — vertical stack, item-token size,
+   centered in full Allied column / Hostile box. */
 .faction-board-modal__relationship-pack {
   position: absolute;
   z-index: 2;
@@ -121,24 +122,24 @@
   flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 4px;
+  gap: 2px;
+  padding: 0;
   box-sizing: border-box;
   overflow: visible;
   pointer-events: none;
 }
 
 .faction-board-modal__relationship-pack--hostile {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 
 .faction-board-modal__relationship-marker {
-  /* Match tea/coin/bag track tokens (~89 layout px → ~60 screen px). */
+  /* Same ballpark as tea/coin/bag track tokens (~61px screen). */
   width: 64px;
   height: 64px;
   object-fit: contain;
+  object-position: center;
+  margin: 0;
   flex: 0 0 auto;
   user-select: none;
   -webkit-user-drag: none;

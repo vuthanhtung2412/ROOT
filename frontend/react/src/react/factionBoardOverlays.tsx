@@ -557,6 +557,7 @@ function RelationshipMarkerPack(props: {
     <div
       className={props.packClassName}
       style={layoutRegionStyle(props.region, props.layout)}
+      data-marker-count={String(props.markers.length)}
     >
       {props.markers.map((marker) => {
         const imagePath = imagePathForAssetKey(

@@ -101,7 +101,7 @@ describe('factionBoardLayout', () => {
     expect(
       trackCellRegion(VAGABOND_BOARD_LAYOUT, 'relationship-development', 3),
     ).toEqual(
-      expect.objectContaining({ x: 1379, y: 420, width: 119, height: 130 }),
+      expect.objectContaining({ x: 1387, y: 278, width: 119, height: 289 }),
     )
     expect(trackCellRegion(VAGABOND_BOARD_LAYOUT, 'tea', 0)).toEqual(
       expect.objectContaining({ x: 332, y: 327, width: 89, height: 89 }),

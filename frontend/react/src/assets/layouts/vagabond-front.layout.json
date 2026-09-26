@@ -10,7 +10,7 @@
       "cellSize": 119,
       "gaps": [0, 0, 0],
       "x": 1030,
-      "y": 420
+      "y": 278
     },
     {
       "id": "tea",
@@ -69,30 +69,30 @@
     {
       "id": "relationship-development-0",
       "x": 1030,
-      "y": 420,
+      "y": 278,
       "width": 119,
-      "height": 130
+      "height": 289
     },
     {
       "id": "relationship-development-1",
-      "x": 1146,
-      "y": 420,
+      "x": 1149,
+      "y": 278,
       "width": 119,
-      "height": 130
+      "height": 289
     },
     {
       "id": "relationship-development-2",
-      "x": 1262,
-      "y": 420,
+      "x": 1268,
+      "y": 278,
       "width": 119,
-      "height": 130
+      "height": 289
     },
     {
       "id": "relationship-development-3",
-      "x": 1379,
-      "y": 420,
+      "x": 1387,
+      "y": 278,
       "width": 119,
-      "height": 130
+      "height": 289
     },
     {
       "id": "tea-0",
