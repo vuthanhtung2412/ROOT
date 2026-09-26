@@ -1,11 +1,13 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { ALLIANCE } from '#factions/Alliance.js'
 import {
+  allianceEveningDrawCount,
   boardOf,
   clearingHasSympathy,
   nextSympathyCost,
   supportersCapacity,
 } from '#factions/alliance/rules.js'
+import { removePieces } from '#rules/remove.js'
 import { resetPlaceIds } from '#rules/place.js'
 import {
   ALLIANCE_STARTING_SUPPORTERS,
@@ -18,6 +20,7 @@ import {
   minimalState,
   player,
   testContext,
+  withPieces,
 } from '#test/fixtures.js'
 
 describe('Alliance setup', () => {
@@ -69,6 +72,46 @@ describe('Alliance supporters capacity', () => {
     if (board.kind !== 'alliance') return
     board.bases.pop()
     expect(supportersCapacity(board)).toBeNull()
+  })
+})
+
+describe('Alliance evening draw', () => {
+  it('Rule: 8.6.2 — draw 1 + uncovered Bases draw bonuses', () => {
+    const board = createFactionBoard('alliance')
+    if (board.kind !== 'alliance') return
+    expect(allianceEveningDrawCount(board)).toBe(1)
+    board.bases.pop()
+    expect(allianceEveningDrawCount(board)).toBe(2)
+    board.bases.pop()
+    expect(allianceEveningDrawCount(board)).toBe(3)
+  })
+})
+
+describe('Alliance base removal', () => {
+  beforeEach(() => resetPlaceIds())
+
+  it('Rule: 8.2.4 — removed base returns to Bases box; supporters cap resumes', () => {
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'eyrie', 'alliance'],
+        players: [
+          player(0, 'marquise'),
+          player(1, 'eyrie'),
+          player(2, 'alliance'),
+        ],
+      }),
+      0,
+      [{ id: 'base-fox', kind: 'building', type: 'base', owner: 2, used: false }],
+    )
+    const board = boardOf(state, 2)
+    board.bases = board.bases.filter((suit) => suit !== 'fox')
+    expect(board.bases.includes('fox')).toBe(false)
+    expect(supportersCapacity(board)).toBeNull()
+
+    removePieces(state, { clearing: 0, pieceIds: ['base-fox'], scorer: 0 })
+
+    expect(board.bases.includes('fox')).toBe(true)
+    expect(supportersCapacity(board)).toBe(ALLIANCE_SUPPORTERS_CAP_WITHOUT_BASE)
   })
 })
 

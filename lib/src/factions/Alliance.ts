@@ -5,6 +5,7 @@ import { openBattle } from '#events/battle.js'
 import { allianceLegalActions } from '#factions/alliance/legalActions.js'
 import {
   addSupporter,
+  allianceEveningDrawCount,
   boardOf,
   clearingHasSympathy,
   discardSupportersOverflow,
@@ -105,13 +106,13 @@ export class Alliance extends Faction {
         return []
       case 'eveningDraw': {
         state.turnScratch.eveningDrawDone = true
-        const drawn = drawCards(state, { seat, count: 1 }, ctx)
+        const drawCount = allianceEveningDrawCount(boardOf(state, seat))
+        drawCards(state, { seat, count: drawCount }, ctx)
         logs.push({
           t: 'action',
           actor: seat,
           action: { type: 'eveningDraw' },
         })
-        void drawn
         return logs
       }
       case 'craft':

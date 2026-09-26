@@ -76,7 +76,7 @@ function returnPieceToOwner(state: GameState, piece: Piece): void {
   }
 }
 
-/** Rule: Alliance — base removed → discard matching supporters; half officers up; cap 5. */
+/** Rule: Alliance — base removed → return to Bases box; discard matching supporters; half officers up; cap 5. */
 function applyAllianceBaseRemoval(
   state: GameState,
   seat: Seat,
@@ -84,6 +84,10 @@ function applyAllianceBaseRemoval(
 ): void {
   const board = boardOf(state, seat)
   const suit = FALL.clearings[clearing]!.suit
+  // Rule: 8.2.4 — removed base returns to Bases box.
+  if (!board.bases.includes(suit)) {
+    board.bases = [...board.bases, suit]
+  }
   const kept: Card[] = []
   const discarded: Card[] = []
   for (const card of board.supporters) {

@@ -122,14 +122,16 @@ export function allianceLegalActions(
 
   if (state.phase === 'evening' && state.step === 'military') {
     if (state.turnScratch.militaryOpsLeft > 0) {
-      // Move
+      // Move — Rule: 8.6.1.I — one move of any warrior count.
       const moves: MarchMove[] = []
       for (let from = 0; from < state.clearings.length; from++) {
-        const count = warriors(state, from, seat)
-        if (count < 1) continue
+        const available = warriors(state, from, seat)
+        if (available < 1) continue
         for (const to of adjacentClearings(from)) {
           if (canMove(state, { seat, from, to }, ctx.hooks)) {
-            moves.push({ from, to, count: 1 })
+            for (let count = 1; count <= available; count++) {
+              moves.push({ from, to, count })
+            }
           }
         }
       }

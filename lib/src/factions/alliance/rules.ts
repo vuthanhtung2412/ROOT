@@ -6,6 +6,7 @@ import type { Seat } from '#pieces/types.js'
 import { warriors } from '#queries/pieces.js'
 import { playerOf } from '#queries/seat.js'
 import {
+  ALLIANCE_BASE_SUITS,
   ALLIANCE_SUPPORTERS_CAP_WITHOUT_BASE,
   ALLIANCE_SYMPATHY_COST,
   ALLIANCE_SYMPATHY_TRACK_SIZE,
@@ -49,7 +50,13 @@ export function hasAnyBaseOnMap(board: AllianceBoard): boolean {
   return board.bases.length < ALLIANCE_BASE_COUNT_START
 }
 
-const ALLIANCE_BASE_COUNT_START = 3
+const ALLIANCE_BASE_COUNT_START = ALLIANCE_BASE_SUITS.length
+
+/** Rule: 8.6.2 — draw 1 + one per uncovered Bases-box draw bonus (bases on map). */
+export function allianceEveningDrawCount(board: AllianceBoard): number {
+  const basesOnMap = ALLIANCE_BASE_COUNT_START - board.bases.length
+  return 1 + Math.max(0, basesOnMap)
+}
 
 export function supportersCapacity(board: AllianceBoard): number | null {
   // Rule: Alliance — no base on map → max 5; any base → unlimited.
