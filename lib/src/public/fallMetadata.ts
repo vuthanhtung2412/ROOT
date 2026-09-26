@@ -42,19 +42,37 @@ export const FALL_PATHS: ReadonlyArray<readonly [number, number]> = [
   [10, 11],
 ]
 
+/** Rivers link clearings but are not paths. They still divide forests. */
+export const FALL_RIVERS: ReadonlyArray<readonly [number, number]> = [
+  [3, 6],
+  [4, 9],
+  [6, 10],
+  [9, 10],
+]
+
 /**
- * Forests as bordering clearing ids (corners of the forest polygon).
+ * Forests as bordering clearing ids (polygon corners).
+ * Array index 0 = human F1 … index 10 = human F11.
  * Rule: Board > Forests (2.4)
  */
 export const FALL_FORESTS: ReadonlyArray<readonly number[]> = [
-  [0, 4, 9],
-  [0, 8, 9, 11],
-  [1, 4, 5],
-  [1, 5, 9, 10, 11],
-  [2, 5, 10, 11],
-  [2, 6, 10, 11],
-  [3, 6, 7, 8, 11],
+  [0, 8, 9, 11], // F1
+  [0, 4, 9], // F2
+  [1, 4, 9], // F3
+  [9, 10, 11], // F4
+  [1, 5, 9, 10], // F5
+  [3, 8, 11], // F6
+  [3, 6, 11], // F7
+  [6, 10, 11], // F8
+  [2, 6, 10], // F9
+  [2, 5, 10], // F10
+  [3, 6, 7], // F11
 ]
+
+/** Human-facing forest id (F1…F11). Internal index is 0-based. */
+export function fallForestDisplayId(forestIndex: number): number {
+  return forestIndex + 1
+}
 
 export type FallLayoutPoint2d = {
   x: number

@@ -5,6 +5,7 @@ import {
   FALL_CLEARING_SUITS,
   FALL_FORESTS,
   FALL_PATHS,
+  FALL_RIVERS,
 } from '#public/fallMetadata.js'
 
 /** Fall (Autumn) clearing ids are 0..11. Source: therootdatabase.com/map/autumn + rootgame autumn_map_setup. */
@@ -23,16 +24,13 @@ const paths: Path[] = FALL_PATHS.map(
   ([left, right]): Path => [left, right],
 )
 
-/** Forests as bordering clearing ids (7 on Autumn). */
+/** Forests as bordering clearing ids (11 on Autumn). */
 const FORESTS: ClearingId[][] = FALL_FORESTS.map((border) => [...border])
 
 /** Rivers link clearings but are not paths. Rule: Board > Rivers */
-const RIVERS: Path[] = [
-  [3, 6],
-  [4, 9],
-  [6, 10],
-  [9, 10],
-]
+const RIVERS: Path[] = FALL_RIVERS.map(
+  ([left, right]): Path => [left, right],
+)
 
 export class FallMap extends GameMap {
   /** NW, NE, SE, SW corner clearing ids. */
@@ -40,8 +38,8 @@ export class FallMap extends GameMap {
     0, 1, 2, 3,
   ]
 
-  /** Default forest index for Vagabond setup (central-ish). */
-  readonly vagabondForest = 3
+  /** Default forest index for Vagabond setup (human F5 — central). */
+  readonly vagabondForest = 4
 
   /** Diagonally opposite corner. Involutive on corners. */
   opposite(corner: ClearingId): ClearingId {

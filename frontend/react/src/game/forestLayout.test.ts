@@ -17,8 +17,8 @@ describe('forestLayout helpers', () => {
   })
 
   it('FALL_FORESTS corners available for polygon', () => {
-    expect(FALL_FORESTS.length).toBe(7)
-    expect(FALL_FORESTS[3]).toEqual([1, 5, 9, 10, 11])
+    expect(FALL_FORESTS.length).toBe(11)
+    expect(FALL_FORESTS[4]).toEqual([1, 5, 9, 10])
   })
 })
 
