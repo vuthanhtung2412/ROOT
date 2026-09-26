@@ -259,6 +259,69 @@ describe('GameSession', () => {
     expect(storage.getItem('root.react.playerIdentity')).toBeNull()
   })
 
+  it('startLocalParty creates, joins all seats, starts, follows actor', async () => {
+    const storage = createMemoryStorage()
+    storage.setItem(
+      'root.react.playerIdentity',
+      JSON.stringify({ playerId: 'stale', apiBaseUrl: 'http://old' }),
+    )
+    const setupState = makeGameState({
+      status: 'setup',
+      currentSeat: 0,
+      factions: ['marquise', 'eyrie', 'alliance'],
+      players: [
+        {
+          seat: 0,
+          playerId: 'marquise',
+          faction: 'marquise',
+          vp: 0,
+          hand: [],
+        },
+        {
+          seat: 1,
+          playerId: 'eyrie',
+          faction: 'eyrie',
+          vp: 0,
+          hand: [],
+        },
+        {
+          seat: 2,
+          playerId: 'alliance',
+          faction: 'alliance',
+          vp: 0,
+          hand: [],
+        },
+      ],
+    })
+    const fetchMock = stubFetchSequence([
+      { body: { state: setupState }, status: 201 },
+      { body: { state: setupState, log: [] } },
+      { body: { state: setupState, log: [] } },
+      { body: { state: setupState, log: [] } },
+      { body: { state: setupState, log: [] } },
+      { body: { state: setupState, historyLength: 4 } },
+      { body: { actions: [makeActionSpec({ type: 'resolveEvent', actor: 0 })] } },
+      { body: { log: [] } },
+    ])
+    const session = createSession({ storage })
+    const ok = await session.startLocalParty([
+      'marquise',
+      'eyrie',
+      'alliance',
+    ])
+    expect(ok).toBe(true)
+    expect(session.getSnapshot().state?.status).toBe('setup')
+    expect(session.getSnapshot().state?.factions).toEqual([
+      'marquise',
+      'eyrie',
+      'alliance',
+    ])
+    expect(session.getLocalPlayerId()).toBe('marquise')
+    expect(storage.getItem('root.react.playerIdentity')).toBeNull()
+    // create + 3×join + start + refresh(get/legal/log) = 8
+    expect(fetchMock.mock.calls.length).toBe(8)
+  })
+
   it('continueQaLoadedGame binds actor, opens socket, skips identity save', async () => {
     const state = makeGameState({ currentSeat: 1 })
     const storage = createMemoryStorage()

@@ -268,6 +268,42 @@ export class GameSession {
     this.syncQaViewerToActor()
   }
 
+  /**
+   * Local hotseat from menu: replace slot, join every seat, start.
+   * Follows current actor like QA (one device, all roles).
+   */
+  async startLocalParty(factions: readonly string[]): Promise<boolean> {
+    this.setLoading(true)
+    try {
+      clearPlayerIdentity(
+        this.identityStorage === undefined
+          ? undefined
+          : this.identityStorage,
+      )
+      this.localPlayerId = null
+      this.qaMode = true
+      await this.api.createGame({
+        factions: [...factions],
+        replace: true,
+      })
+      for (const faction of factions) {
+        await this.api.join(faction)
+      }
+      await this.api.start()
+      await this.refresh()
+      this.syncQaViewerToActor()
+      this.publish({
+        ...this.snapshot,
+        loading: false,
+        error: null,
+      })
+      return true
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+      return false
+    }
+  }
+
   async refresh(): Promise<void> {
     this.setLoading(true)
     try {
