@@ -41,6 +41,10 @@ export type ActionChoiceParamsView = {
   supporterIds?: string[]
   questIds?: string[]
   rewards?: Array<'vp' | 'draw'>
+  itemTypes?: Array<'tea' | 'coin' | 'bag'>
+  rearrangeFrom?: Array<'track' | 'satchel'>
+  vbMoves?: Array<{ to: number; allySeat?: number; allyCount?: number }>
+  alliedSeat?: number[]
 }
 
 export function readChoiceParams(
@@ -133,6 +137,34 @@ export function readChoiceParams(
   const rewards = asQuestRewardArray(raw.rewards)
   if (rewards !== undefined) {
     view.rewards = rewards
+  }
+  const itemTypes = asStringArray(raw.itemTypes)
+  if (
+    itemTypes !== undefined &&
+    itemTypes.every(
+      (entry) => entry === 'tea' || entry === 'coin' || entry === 'bag',
+    )
+  ) {
+    view.itemTypes = itemTypes
+  }
+  const rearrangeFrom = asStringArray(raw.rearrangeFrom)
+  if (
+    rearrangeFrom !== undefined &&
+    rearrangeFrom.every((entry) => entry === 'track' || entry === 'satchel')
+  ) {
+    view.rearrangeFrom = rearrangeFrom
+  }
+  if (Array.isArray(raw.vbMoves)) {
+    view.vbMoves = raw.vbMoves.filter(
+      (entry): entry is { to: number; allySeat?: number; allyCount?: number } =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        typeof (entry as { to?: unknown }).to === 'number',
+    )
+  }
+  const alliedSeat = asNumberArray(raw.alliedSeat)
+  if (alliedSeat !== undefined) {
+    view.alliedSeat = alliedSeat
   }
   return view
 }
