@@ -173,6 +173,12 @@ export type Action =
   | { type: 'repair'; itemIndex: number }
   | { type: 'vbCraft'; cardId: string }
   | { type: 'steal'; target: Seat }
+  | { type: 'takeDominance'; cardId: string }
+  | {
+      type: 'activateDominance'
+      cardId: string
+      coalitionTarget?: Seat
+    }
   | { type: 'refresh' }
   | { type: 'rest' }
   | ResolveEventAction

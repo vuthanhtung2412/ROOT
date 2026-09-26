@@ -7,6 +7,12 @@ import { factionOf, playerOf } from '#queries/seat.js'
 import { syncPlaceIdsFromState } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
 import { SeededRng } from '#rules/Rng.js'
+import {
+  applyActivateDominance,
+  applyTakeDominance,
+  pushActivateDominanceActions,
+  pushTakeDominanceActions,
+} from '#rules/dominance.js'
 import { DEFAULT_FACTIONS } from '#state/constants.js'
 import { createFactionBoard } from '#state/boards.js'
 import type { GameSnapshot } from '#state/snapshot.js'
@@ -124,7 +130,13 @@ export class Game {
     }
 
     const ctx = this.makeCtx()
-    return factionFor(factionOf(state, state.currentSeat)).legalActions(state, ctx)
+    const specs = factionFor(factionOf(state, state.currentSeat)).legalActions(
+      state,
+      ctx,
+    )
+    pushTakeDominanceActions(state, state.currentSeat, specs)
+    pushActivateDominanceActions(state, state.currentSeat, specs)
+    return specs
   }
 
   apply(action: Action): ActionResult {
@@ -257,6 +269,10 @@ export class Game {
 
     if (effectForAction(action) !== undefined) return
 
+    if (action.type === 'takeDominance' || action.type === 'activateDominance') {
+      return
+    }
+
     const ctx = this.makeCtx()
     const faction = factionFor(factionOf(this.state, this.state.currentSeat))
     faction.validate(this.state, action, ctx)
@@ -272,6 +288,10 @@ export class Game {
         return this.applyEndPhase()
       case 'resolveEvent':
         return this.applyResolveEvent(action)
+      case 'takeDominance':
+        return applyTakeDominance(this.state, this.state.currentSeat, action.cardId)
+      case 'activateDominance':
+        return applyActivateDominance(this.state, this.state.currentSeat, action)
       default: {
         const ctx = this.makeCtx()
         const effect = effectForAction(action)
@@ -300,8 +320,11 @@ export class Game {
       seat,
       faction,
       vp: 0,
+      scoresVictoryPoints: true,
       hand: [],
       playArea: [],
+      activatedDominance: null,
+      coalitionWith: null,
       craftedItems: [],
       board: createFactionBoard(faction),
     })

@@ -21,8 +21,14 @@ export type PlayerState = {
   seat: Seat
   faction: FactionId
   vp: number
+  /** False after activating dominance / forming coalition. Rule: Dominance 3.3.1. */
+  scoresVictoryPoints: boolean
   hand: Card[]
   playArea: Card[]
+  /** Activated dominance card in play area (non-null = alt win / coalition). */
+  activatedDominance: Card | null
+  /** Vagabond coalition partner seat. Rule: Vagabond 9.2.8. */
+  coalitionWith: Seat | null
   craftedItems: CraftedItem[]
   board: FactionBoard
 }

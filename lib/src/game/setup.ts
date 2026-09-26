@@ -66,8 +66,11 @@ export function runSharedSetup(state: GameState, rng: Rng): void {
 
   for (const player of state.players) {
     player.vp = 0
+    player.scoresVictoryPoints = true
     player.hand = []
     player.playArea = []
+    player.activatedDominance = null
+    player.coalitionWith = null
     player.craftedItems = []
   }
 
