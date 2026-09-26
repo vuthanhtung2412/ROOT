@@ -222,15 +222,19 @@ function isRelationshipSpace(value: unknown): value is number | 'hostile' {
   )
 }
 
-/** Law 9.2.8 — one marker per non-Vagabond faction. */
+/** Law 9.2.8 — one marker per non-Vagabond faction in this game. */
 export function relationshipMarkersFromBoard(
   relationships: unknown,
+  presentFactions: readonly string[] = VAGABOND_RELATIONSHIP_MARKER_FACTIONS,
 ): VagabondRelationshipMarkerView[] {
   if (typeof relationships !== 'object' || relationships === null) {
     return []
   }
   const markers: VagabondRelationshipMarkerView[] = []
   for (const faction of VAGABOND_RELATIONSHIP_MARKER_FACTIONS) {
+    if (!presentFactions.includes(faction)) {
+      continue
+    }
     const space = Reflect.get(relationships, faction)
     if (!isRelationshipSpace(space)) {
       continue
@@ -432,7 +436,7 @@ export function buildFactionBoardViewModel(
   if (player === undefined) {
     return null
   }
-  const view = buildFactionBoardViewModelFromPlayer(player)
+  const view = buildFactionBoardViewModelFromPlayer(player, state.factions)
   if (view === null || view.kind !== 'eyrie') {
     return view
   }
@@ -444,6 +448,7 @@ export function buildFactionBoardViewModel(
 
 export function buildFactionBoardViewModelFromPlayer(
   player: PlayerForBoard,
+  presentFactions: readonly string[] = VAGABOND_RELATIONSHIP_MARKER_FACTIONS,
 ): FactionBoardViewModel | null {
   if (player.faction === 'marquise' && isMarquiseBoardData(player.board)) {
     const board = player.board
@@ -557,7 +562,10 @@ export function buildFactionBoardViewModelFromPlayer(
           exhausted: item.exhausted,
         })),
       },
-      relationships: relationshipMarkersFromBoard(board.relationships),
+      relationships: relationshipMarkersFromBoard(
+        board.relationships,
+        presentFactions,
+      ),
       forest: board.forest,
       boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.vagabond,
     }

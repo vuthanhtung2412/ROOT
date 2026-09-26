@@ -196,32 +196,35 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
   })
 
   it('Vagabond: satchel + tracks + damaged + relationships', () => {
-    const view = buildFactionBoardViewModelFromPlayer({
-      seat: 3,
-      faction: 'vagabond',
-      vp: 1,
-      hand: [],
-      board: {
-        kind: 'vagabond',
-        satchel: [
-          { type: 'boot', exhausted: false },
-          { type: 'torch', exhausted: true },
-        ],
-        tracks: {
-          tea: [{ type: 'tea', exhausted: false }],
-          coin: [],
-          bag: [{ type: 'bag', exhausted: true }],
+    const view = buildFactionBoardViewModelFromPlayer(
+      {
+        seat: 3,
+        faction: 'vagabond',
+        vp: 1,
+        hand: [],
+        board: {
+          kind: 'vagabond',
+          satchel: [
+            { type: 'boot', exhausted: false },
+            { type: 'torch', exhausted: true },
+          ],
+          tracks: {
+            tea: [{ type: 'tea', exhausted: false }],
+            coin: [],
+            bag: [{ type: 'bag', exhausted: true }],
+          },
+          damaged: [{ type: 'sword', exhausted: true }],
+          relationships: {
+            marquise: 'hostile',
+            eyrie: 2,
+            alliance: 3,
+            vagabond: 0,
+          },
+          forest: null,
         },
-        damaged: [{ type: 'sword', exhausted: true }],
-        relationships: {
-          marquise: 'hostile',
-          eyrie: 2,
-          alliance: 3,
-          vagabond: 0,
-        },
-        forest: null,
       },
-    })
+      ['marquise', 'eyrie', 'alliance', 'vagabond'],
+    )
     expect(view).not.toBeNull()
     if (view === null || view.kind !== 'vagabond') {
       throw new Error('expected vagabond view')
@@ -235,6 +238,38 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       { faction: 'marquise', space: 'hostile' },
       { faction: 'eyrie', space: 2 },
       { faction: 'alliance', space: 3 },
+    ])
+  })
+
+  it('Vagabond: relationship markers only for factions in game', () => {
+    const view = buildFactionBoardViewModelFromPlayer(
+      {
+        seat: 1,
+        faction: 'vagabond',
+        vp: 0,
+        hand: [],
+        board: {
+          kind: 'vagabond',
+          satchel: [],
+          tracks: { tea: [], coin: [], bag: [] },
+          damaged: [],
+          relationships: {
+            marquise: 0,
+            eyrie: 0,
+            alliance: 0,
+            vagabond: 0,
+          },
+          forest: null,
+        },
+      },
+      ['marquise', 'vagabond'],
+    )
+    expect(view).not.toBeNull()
+    if (view === null || view.kind !== 'vagabond') {
+      throw new Error('expected vagabond view')
+    }
+    expect(view.relationships).toEqual([
+      { faction: 'marquise', space: 0 },
     ])
   })
 
