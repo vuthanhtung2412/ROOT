@@ -12,34 +12,29 @@ describe('toAscii', () => {
   })
 
   it('showSuit appends F/R/M to clearing ids', () => {
-    const ascii = toAscii(FALL, FALL_LAYOUT, { width: 56, height: 22, showSuit: true })
+    const ascii = toAscii(FALL, FALL_LAYOUT, {
+      width: 56,
+      height: 22,
+      showSuit: true,
+    })
     expect(ascii).toContain('0F')
     expect(ascii).toContain('1M')
     expect(ascii).toContain('2R')
   })
 
-  it('showForests places f# at centroids; V# when occupied', () => {
-    const empty = toAscii(FALL, FALL_LAYOUT, {
+  it('showForests labels [fN]; showRivers marks ~', () => {
+    const ascii = toAscii(FALL, FALL_LAYOUT, {
       width: 64,
       height: 26,
       showSuit: true,
       showForests: true,
+      showRivers: true,
     })
-    expect(empty).toContain('[f0]')
-    expect(empty).toContain('[f3]')
-    expect(empty).toContain(':')
-    expect(empty).toContain('+')
-    expect(empty).not.toContain('[V3]')
-
-    const occupied = toAscii(FALL, FALL_LAYOUT, {
-      width: 64,
-      height: 26,
-      showSuit: true,
-      showForests: true,
-      occupiedForests: new Map([[3, 'V']]),
-    })
-    expect(occupied).toContain('[V3]')
-    expect(occupied).toContain('*')
-    expect(occupied).not.toContain('[f3]')
+    expect(ascii).toContain('[f1]')
+    expect(ascii).toContain('[f5]')
+    expect(ascii).toContain('[f11]')
+    expect(ascii).toContain('~')
+    expect(ascii).not.toContain(':')
+    expect(ascii).not.toContain('*')
   })
 })

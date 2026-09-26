@@ -5,6 +5,7 @@ import type { Event } from '#events/types.js'
 import { FALL } from '#map/fall.js'
 import { FALL_LAYOUT } from '#layout/fall.js'
 import { toAscii } from '#layout/render/ascii.js'
+import { fallForestDisplayId } from '#public/fallMetadata.js'
 import type { LogEntry } from '#log/types.js'
 import type { Seat } from '#pieces/types.js'
 import { DECREE_COLUMNS } from '#state/boards.js'
@@ -149,7 +150,7 @@ function boardLines(
   if (board.kind === 'vagabond') {
     let pawn = 'pawn: (missing)'
     if (board.forest !== null) {
-      pawn = `pawn: FOREST ${board.forest}`
+      pawn = `pawn: FOREST ${fallForestDisplayId(board.forest)}`
     } else {
       for (let clearingId = 0; clearingId < state.clearings.length; clearingId++) {
         const hasPawn = state.clearings[clearingId]?.pieces.some(
@@ -184,7 +185,8 @@ function describePawnDestination(
   to: number | `forest:${number}`,
 ): string {
   if (typeof to === 'string' && to.startsWith('forest:')) {
-    return `FOREST ${to.slice('forest:'.length)}`
+    const forestIndex = Number(to.slice('forest:'.length))
+    return `FOREST ${fallForestDisplayId(forestIndex)}`
   }
   return `C${to}`
 }
@@ -392,67 +394,35 @@ function clearingsSection(state: GameState): string[] {
 }
 
 /**
- * Forest polygons + who sits in them (Vagabond pawn).
+ * Where each Vagabond pawn sits (forest only — skip empty forest catalog).
  * Rule: Board > Forests (2.4); Vagabond pawn may be in a forest.
  */
 function forestsSection(state: GameState): string[] {
   const lines: string[] = ['forests:']
-  const occupantsByForest = new Map<number, string[]>()
+  let any = false
   for (const player of state.players) {
     if (player.board.kind !== 'vagabond') continue
     if (player.board.forest === null) continue
-    const list = occupantsByForest.get(player.board.forest) ?? []
-    list.push(playerRef(player))
-    occupantsByForest.set(player.board.forest, list)
+    any = true
+    lines.push(
+      `  ${playerRef(player)} @ F${fallForestDisplayId(player.board.forest)}`,
+    )
   }
-  for (let forestIndex = 0; forestIndex < FALL.forests.length; forestIndex++) {
-    const borders = (FALL.forests[forestIndex] ?? [])
-      .map((clearingId) => `C${clearingId}`)
-      .join(',')
-    const occupants = occupantsByForest.get(forestIndex)
-    if (occupants !== undefined && occupants.length > 0) {
-      lines.push(
-        `  F${forestIndex} borders=${borders} ← ${occupants.join(', ')}`,
-      )
-    } else {
-      lines.push(`  F${forestIndex} borders=${borders}`)
-    }
-  }
-  if (occupantsByForest.size === 0) {
-    lines.push('  (no pawn in any forest)')
-  } else {
-    const occupied = [...occupantsByForest.entries()]
-      .sort(([left], [right]) => left - right)
-      .map(
-        ([forestIndex, occupants]) =>
-          `F${forestIndex}:${occupants.join(',')}`,
-      )
-      .join(' ')
-    lines.push(`  occupied: ${occupied}`)
+  if (!any) {
+    lines.push('  (no vagabond in forest)')
   }
   return lines
 }
 
-/** Forest indexes with a Vagabond pawn — for ASCII map markers. */
-function occupiedForestMarkers(state: GameState): Map<number, string> {
-  const markers = new Map<number, string>()
-  for (const player of state.players) {
-    if (player.board.kind !== 'vagabond') continue
-    if (player.board.forest === null) continue
-    markers.set(player.board.forest, 'V')
-  }
-  return markers
-}
-
-function asciiMapBlock(state: GameState): string[] {
+function asciiMapBlock(_state: GameState): string[] {
   return [
-    'map (clearing=id+suit; forest fill :=empty *=pawn; [f#]/[V#]=label):',
+    'map (clearing=id+suit; path=·; river=~; forest=[fN]):',
     toAscii(FALL, FALL_LAYOUT, {
       width: 64,
       height: 26,
       showSuit: true,
       showForests: true,
-      occupiedForests: occupiedForestMarkers(state),
+      showRivers: true,
     }),
   ]
 }
