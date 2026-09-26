@@ -34,6 +34,7 @@ import { moveWarriors } from '#rules/move.js'
 import { placeUpTo } from '#rules/place.js'
 import { removePieces } from '#rules/remove.js'
 import { RuleError } from '#rules/RuleError.js'
+import { addVictoryPoints } from '#rules/dominance.js'
 import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 
@@ -253,9 +254,11 @@ export class Alliance extends Faction {
 
     const logs: LogEntry[] = []
     if (vp > 0) {
-      playerOf(state, seat).vp += vp
-      logs.push({ t: 'vp', actor: seat, delta: vp, reason: 'sympathy' })
-      ctx.emit({ s: 'vp', actor: seat, delta: vp })
+      const scored = addVictoryPoints(state, seat, vp)
+      if (scored > 0) {
+        logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'sympathy' })
+        ctx.emit({ s: 'vp', actor: seat, delta: scored })
+      }
     }
     logs.push({
       t: 'action',
@@ -405,9 +408,11 @@ export class Alliance extends Faction {
           count: 1,
         })
         if (vp > 0) {
-          playerOf(state, seat).vp += vp
-          logs.push({ t: 'vp', actor: seat, delta: vp, reason: 'organize' })
-          ctx.emit({ s: 'vp', actor: seat, delta: vp })
+          const scored = addVictoryPoints(state, seat, vp)
+          if (scored > 0) {
+            logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'organize' })
+            ctx.emit({ s: 'vp', actor: seat, delta: scored })
+          }
         }
         break
       }

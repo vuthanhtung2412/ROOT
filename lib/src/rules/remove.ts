@@ -18,6 +18,7 @@ import {
 } from '#factions/vagabond/items.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
+import { addVictoryPoints } from '#rules/dominance.js'
 import type { GameState } from '#state/types.js'
 
 /** Rule: Vagabond — full removal clears enemies → damage 3 items instead of pawn. */
@@ -184,22 +185,26 @@ export function removePieces(
   }
 
   if (victoryPointsDelta > 0) {
-    playerOf(state, actor).vp += victoryPointsDelta
-    logs.push({
-      t: 'vp',
-      actor,
-      delta: victoryPointsDelta,
-      reason: 'removed building/token',
-    })
-    ctx?.emit({ s: 'vp', actor, delta: victoryPointsDelta })
+    const scored = addVictoryPoints(state, actor, victoryPointsDelta)
+    if (scored > 0) {
+      logs.push({
+        t: 'vp',
+        actor,
+        delta: scored,
+        reason: 'removed building/token',
+      })
+      ctx?.emit({ s: 'vp', actor, delta: scored })
+    }
 
     // Rule: 7.8.4 Despot — in battle, ≥1 enemy building/token → +1 extra VP.
     if (options?.fromBattle === true) {
       const board = playerOf(state, actor).board
       if (board.kind === 'eyrie' && board.leader === 'despot') {
-        playerOf(state, actor).vp += 1
-        logs.push({ t: 'vp', actor, delta: 1, reason: 'despot' })
-        ctx?.emit({ s: 'vp', actor, delta: 1 })
+        const despotScored = addVictoryPoints(state, actor, 1)
+        if (despotScored > 0) {
+          logs.push({ t: 'vp', actor, delta: despotScored, reason: 'despot' })
+          ctx?.emit({ s: 'vp', actor, delta: despotScored })
+        }
       }
     }
   }

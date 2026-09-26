@@ -36,6 +36,7 @@ import { craftCard, resetCraftingBuildingUsed } from '#rules/craft.js'
 import { moveWarriors } from '#rules/move.js'
 import { placeUpTo } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
+import { addVictoryPoints } from '#rules/dominance.js'
 import {
   DECREE_COLUMNS,
   EYRIE_ROOST_VP,
@@ -399,9 +400,11 @@ export class Eyrie extends Faction {
         const n = roostsOnMap(state, seat)
         const vp = EYRIE_ROOST_VP[Math.min(n, 7)] ?? 0
         if (vp > 0) {
-          playerOf(state, seat).vp += vp
-          logs.push({ t: 'vp', actor: seat, delta: vp, reason: 'roosts' })
-          ctx.emit({ s: 'vp', actor: seat, delta: vp })
+          const scored = addVictoryPoints(state, seat, vp)
+          if (scored > 0) {
+            logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'roosts' })
+            ctx.emit({ s: 'vp', actor: seat, delta: scored })
+          }
         }
         state.turnScratch.eveningScoreDone = true
         logs.push({ t: 'action', actor: seat, action })

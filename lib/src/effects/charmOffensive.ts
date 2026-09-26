@@ -1,3 +1,4 @@
+import { addVictoryPoints } from '#rules/dominance.js'
 import type { Action, ActionSpec } from '#actions/types.js'
 import { Deck } from '#cards/Deck.js'
 import type { CardEffect } from '#triggers/effects.js'
@@ -45,8 +46,8 @@ export function tryApplyCharmOffensive(
   if (drawn.length > 0) {
     ctx.emit({ s: 'draw', actor: ownerSeat, count: drawn.length })
   }
-  target.vp += 1
-  ctx.emit({ s: 'vp', actor: target.seat, delta: 1 })
+  const scored = addVictoryPoints(state, target.seat, 1)
+  if (scored > 0) ctx.emit({ s: 'vp', actor: target.seat, delta: scored })
   state.turnScratch.charmOffensiveUsed = true
   return true
 }

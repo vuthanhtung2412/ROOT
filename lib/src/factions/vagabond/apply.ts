@@ -12,6 +12,7 @@ import type { LogEntry } from '#log/types.js'
 import type { ClearingId } from '#map/types.js'
 import type { ItemType, Seat } from '#pieces/types.js'
 import { playerOf } from '#queries/seat.js'
+import { addVictoryPoints } from '#rules/dominance.js'
 import { RuleError } from '#rules/RuleError.js'
 import {
   VAGABOND_ALLIED_STEP,
@@ -87,9 +88,11 @@ export function craftWithHammers(
   const logs: LogEntry[] = []
   const vp = ctx.hooks.craftVp(state, seat, card)
   if (vp > 0) {
-    player.vp += vp
-    logs.push({ t: 'vp', actor: seat, delta: vp, reason: 'craft' })
-    ctx.emit({ s: 'vp', actor: seat, delta: vp })
+    const scored = addVictoryPoints(state, seat, vp)
+    if (scored > 0) {
+      logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'craft' })
+      ctx.emit({ s: 'vp', actor: seat, delta: scored })
+    }
   }
   if (def.type === 'item' && def.item !== undefined) {
     state.itemSupply[def.item]! -= 1
@@ -118,9 +121,11 @@ export function improveRelationship(
   const current = board.relationships[faction]
   if (current === 'hostile' || current === undefined) return
   if (current >= VAGABOND_ALLIED_STEP) {
-    playerOf(state, seat).vp += 2
-    logs.push({ t: 'vp', actor: seat, delta: 2, reason: 'allied aid' })
-    ctx.emit({ s: 'vp', actor: seat, delta: 2 })
+    const scored = addVictoryPoints(state, seat, 2)
+    if (scored > 0) {
+      logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'allied aid' })
+      ctx.emit({ s: 'vp', actor: seat, delta: scored })
+    }
     return
   }
   const aids = (state.turnScratch.aidsThisTurn[target] ?? 0) + 1
@@ -132,9 +137,11 @@ export function improveRelationship(
   state.turnScratch.aidsThisTurn[target] = 0
   const vp = VAGABOND_RELATIONSHIP_VP[current] ?? 0
   if (vp > 0) {
-    playerOf(state, seat).vp += vp
-    logs.push({ t: 'vp', actor: seat, delta: vp, reason: 'relationship' })
-    ctx.emit({ s: 'vp', actor: seat, delta: vp })
+    const scored = addVictoryPoints(state, seat, vp)
+    if (scored > 0) {
+      logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'relationship' })
+      ctx.emit({ s: 'vp', actor: seat, delta: scored })
+    }
   }
 }
 
@@ -150,9 +157,11 @@ export function maybeHostile(
   const board = boardOf(state, seat)
   const faction = playerOf(state, target).faction
   if (board.relationships[faction] === 'hostile') {
-    playerOf(state, seat).vp += 1
-    logs.push({ t: 'vp', actor: seat, delta: 1, reason: 'infamy' })
-    ctx.emit({ s: 'vp', actor: seat, delta: 1 })
+    const scored = addVictoryPoints(state, seat, 1)
+    if (scored > 0) {
+      logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'infamy' })
+      ctx.emit({ s: 'vp', actor: seat, delta: scored })
+    }
     return
   }
   board.relationships[faction] = 'hostile'
