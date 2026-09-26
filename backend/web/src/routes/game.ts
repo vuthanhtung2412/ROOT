@@ -284,7 +284,7 @@ gameRoutes.openapi(postActionsRoute, async (context) => {
     throw new HttpError(400, 'BAD_ACTION', 'invalid action shape')
   }
   const result = game.apply(body)
-  logGameEvent('ACT', result.state, body)
+  logGameEvent('ACT', result.state, body, result.log)
   broadcastCurrentGame()
   return context.json(result, 200)
 })
