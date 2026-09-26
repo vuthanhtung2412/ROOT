@@ -29,7 +29,9 @@ export const GAME_ASSET_KEYS = {
   tokenMarquiseRecruiter: 'token-marquise-recruiter',
   tokenMarquiseWood: 'token-marquise-wood',
   tokenMarquiseKeep: 'token-marquise-keep',
+  tokenMarquiseWarrior: 'token-marquise-warrior',
   tokenEyrieRoost: 'token-eyrie-roost',
+  tokenEyrieWarrior: 'token-eyrie-warrior',
   tokenAllianceSympathy: 'token-alliance-sympathy',
   tokenAllianceBaseFox: 'token-alliance-base-fox',
   tokenAllianceBaseMouse: 'token-alliance-base-mouse',
@@ -149,6 +151,20 @@ export function factionTextureKey(factionId: string): string {
   return GAME_ASSET_KEYS.factionMarquise
 }
 
+/** Warrior meeple token for a faction; null when no dedicated warrior art. */
+export function warriorTokenTextureKey(factionId: string): string | null {
+  if (factionId === 'marquise') {
+    return GAME_ASSET_KEYS.tokenMarquiseWarrior
+  }
+  if (factionId === 'eyrie') {
+    return GAME_ASSET_KEYS.tokenEyrieWarrior
+  }
+  if (factionId === 'alliance') {
+    return GAME_ASSET_KEYS.tokenAllianceWarrior
+  }
+  return null
+}
+
 /** Alliance base token by clearing suit. */
 export function allianceBaseTextureKey(suit: string): string {
   if (suit === 'mouse') {
@@ -264,8 +280,16 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
     path: 'assets/tokens/marquise/keep.png',
   },
   {
+    key: GAME_ASSET_KEYS.tokenMarquiseWarrior,
+    path: 'assets/tokens/marquise/warrior.png',
+  },
+  {
     key: GAME_ASSET_KEYS.tokenEyrieRoost,
     path: 'assets/tokens/eyrie/roost.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenEyrieWarrior,
+    path: 'assets/tokens/eyrie/warrior.png',
   },
   {
     key: GAME_ASSET_KEYS.tokenAllianceSympathy,

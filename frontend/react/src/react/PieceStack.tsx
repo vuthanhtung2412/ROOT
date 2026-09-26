@@ -5,6 +5,7 @@ import {
   factionTextureKey,
   imagePathForAssetKey,
   pieceTokenTextureKey,
+  warriorTokenTextureKey,
 } from '#assets/gameAssets.ts'
 import { fallClearingSuit } from '#game/boardLayout.ts'
 import {
@@ -38,8 +39,11 @@ function textureKeyForStack(
     const suit = fallClearingSuit(clearingId) ?? 'fox'
     return allianceBaseTextureKey(suit)
   }
-  if (stack.kind === 'warrior' && stack.factionId === 'alliance') {
-    return GAME_ASSET_KEYS.tokenAllianceWarrior
+  if (stack.kind === 'warrior') {
+    const warriorKey = warriorTokenTextureKey(stack.factionId)
+    if (warriorKey !== null) {
+      return warriorKey
+    }
   }
   const tokenKey = pieceTokenTextureKey(stack.kind, stack.type)
   if (tokenKey !== null) {
@@ -63,7 +67,8 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
   const clearingId = props.clearingId ?? 0
   const usesTokenArt =
     pieceTokenTextureKey(props.stack.kind, props.stack.type) !== null ||
-    (props.stack.kind === 'warrior' && props.stack.factionId === 'alliance') ||
+    (props.stack.kind === 'warrior' &&
+      warriorTokenTextureKey(props.stack.factionId) !== null) ||
     (props.stack.kind === 'building' && props.stack.type === 'base')
   const size = usesTokenArt
     ? PIECE_DRAW.buildingIconSize

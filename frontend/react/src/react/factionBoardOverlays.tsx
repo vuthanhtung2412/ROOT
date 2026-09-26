@@ -13,6 +13,7 @@ import {
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
   itemTextureKey,
+  warriorTokenTextureKey,
 } from '#assets/gameAssets.ts'
 import { lookupEyrieLeader } from '#assets/eyrieLeaderCatalog.ts'
 import { EYRIE_ROOST_TRACK_SLOT_COUNT } from '#assets/eyrieBoardCatalog.ts'
@@ -159,9 +160,8 @@ function SupplyOverlays(props: OverlayBaseProps): JSX.Element {
           layout={props.layout}
           countLabel={String(props.view.warriors)}
           textureKey={
-            props.view.kind === 'alliance'
-              ? GAME_ASSET_KEYS.tokenAllianceWarrior
-              : factionTextureKey(props.view.kind)
+            warriorTokenTextureKey(props.view.kind) ??
+            factionTextureKey(props.view.kind)
           }
           alt="Warriors supply"
         />

@@ -10,6 +10,7 @@ import {
   preloadCoreGameAssets,
   queueAutumnMapImage,
   queueMissingCardImages,
+  warriorTokenTextureKey,
   type ImageAssetLoader,
 } from '#assets/gameAssets.ts'
 
@@ -42,6 +43,15 @@ describe('itemTextureKey', () => {
 
   it('maps torch Vagabond starting item', () => {
     expect(itemTextureKey('torch')).toBe('item-torch')
+  })
+})
+
+describe('warriorTokenTextureKey', () => {
+  it('maps marquise eyrie alliance warriors', () => {
+    expect(warriorTokenTextureKey('marquise')).toBe('token-marquise-warrior')
+    expect(warriorTokenTextureKey('eyrie')).toBe('token-eyrie-warrior')
+    expect(warriorTokenTextureKey('alliance')).toBe('token-alliance-warrior')
+    expect(warriorTokenTextureKey('vagabond')).toBeNull()
   })
 })
 
