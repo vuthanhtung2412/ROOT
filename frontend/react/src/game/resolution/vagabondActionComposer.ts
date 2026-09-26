@@ -24,11 +24,34 @@ function unique(values: number[]): number[] {
 export function createVagabondComposerHooks(): {
   hooks: ActionComposerHooks
   getDraft: () => VagabondDraft
+  getPromptOptions: () => Array<{ label: string; value: string }>
 } {
   let draft: VagabondDraft = { type: 'idle' }
+  let promptOptions: Array<{ label: string; value: string }> = []
+
+  function setDefenderPrompt(
+    message: string,
+    defenders: readonly number[],
+  ): ComposerOutcome {
+    promptOptions = defenders.map((seat) => ({
+      label: `seat ${String(seat)}`,
+      value: String(seat),
+    }))
+    return {
+      kind: 'incomplete',
+      prompt: {
+        message,
+        highlightClearings: [],
+        enabledCardIds: null,
+        canConfirm: false,
+        canCancel: true,
+      },
+    }
+  }
 
   const hooks: ActionComposerHooks = {
     begin: (spec: ActionSpec): ComposerOutcome | null => {
+      promptOptions = []
       const params = readChoiceParams(spec)
       if (spec.type === 'slip') {
         const clearings = params.clearings ?? []
@@ -135,22 +158,14 @@ export function createVagabondComposerHooks(): {
             action: { type: 'steal', target: defenders[0]! },
           }
         }
-        return {
-          kind: 'incomplete',
-          prompt: {
-            message: 'Steal — pick target seat via defender',
-            highlightClearings: [],
-            enabledCardIds: null,
-            canConfirm: false,
-            canCancel: true,
-          },
-        }
+        return setDefenderPrompt('Steal — pick target', defenders)
       }
       draft = { type: 'idle' }
       return null
     },
 
     chooseClearing: (clearingId: number): ComposerOutcome | null => {
+      promptOptions = []
       if (draft.type === 'slip') {
         if (!draft.clearings.includes(clearingId)) return null
         draft = { type: 'idle' }
@@ -175,6 +190,10 @@ export function createVagabondComposerHooks(): {
             action: { type, defender: match.defender },
           }
         }
+        promptOptions = matches.map((match) => ({
+          label: `seat ${String(match.defender)}`,
+          value: String(match.defender),
+        }))
         return {
           kind: 'incomplete',
           prompt: {
@@ -195,13 +214,23 @@ export function createVagabondComposerHooks(): {
 
     chooseCard: (cardId: string): ComposerOutcome | null => {
       if (draft.type === 'aid' && draft.cardIds.includes(cardId)) {
-        const target = draft.defenders[0]
-        if (target === undefined) return null
-        draft = { type: 'idle' }
-        return { kind: 'ready', action: { type: 'aid', cardId, target } }
+        if (draft.defenders.length === 1) {
+          const target = draft.defenders[0]!
+          draft = { type: 'idle' }
+          promptOptions = []
+          return { kind: 'ready', action: { type: 'aid', cardId, target } }
+        }
+        if (draft.defenders.length > 1) {
+          // Keep card selection; next pick defender.
+          const defenders = draft.defenders
+          draft = { type: 'aid', cardIds: [cardId], defenders }
+          return setDefenderPrompt('Aid — pick target', defenders)
+        }
+        return null
       }
       if (draft.type === 'vbCraft' && draft.cardIds.includes(cardId)) {
         draft = { type: 'idle' }
+        promptOptions = []
         return { kind: 'ready', action: { type: 'vbCraft', cardId } }
       }
       return null
@@ -210,7 +239,20 @@ export function createVagabondComposerHooks(): {
     chooseDefender: (defenderSeat: number): ComposerOutcome | null => {
       if (draft.type === 'steal' && draft.defenders.includes(defenderSeat)) {
         draft = { type: 'idle' }
+        promptOptions = []
         return { kind: 'ready', action: { type: 'steal', target: defenderSeat } }
+      }
+      if (draft.type === 'aid' && draft.defenders.includes(defenderSeat)) {
+        const cardId = draft.cardIds[0]
+        if (cardId === undefined) {
+          return null
+        }
+        draft = { type: 'idle' }
+        promptOptions = []
+        return {
+          kind: 'ready',
+          action: { type: 'aid', cardId, target: defenderSeat },
+        }
       }
       if (draft.type === 'vbBattle' || draft.type === 'strike') {
         const match = draft.targets.find(
@@ -219,15 +261,25 @@ export function createVagabondComposerHooks(): {
         if (match === undefined) return null
         const type = draft.type === 'vbBattle' ? 'vbBattle' : 'strike'
         draft = { type: 'idle' }
+        promptOptions = []
         return { kind: 'ready', action: { type, defender: match.defender } }
       }
       return null
+    },
+
+    chooseColumn: (column: string): ComposerOutcome | null => {
+      const seat = Number(column)
+      if (!Number.isInteger(seat)) {
+        return null
+      }
+      return hooks.chooseDefender?.(seat) ?? null
     },
 
     confirm: (): ComposerOutcome | null => {
       if (draft.type === 'slip' && draft.forests.length > 0) {
         const forest = draft.forests[0]!
         draft = { type: 'idle' }
+        promptOptions = []
         return { kind: 'ready', action: { type: 'slip', to: `forest:${forest}` } }
       }
       return null
@@ -235,6 +287,7 @@ export function createVagabondComposerHooks(): {
 
     cancel: (): ComposerOutcome | null => {
       draft = { type: 'idle' }
+      promptOptions = []
       return { kind: 'idle' }
     },
   }
@@ -242,5 +295,6 @@ export function createVagabondComposerHooks(): {
   return {
     hooks,
     getDraft: (): VagabondDraft => draft,
+    getPromptOptions: () => promptOptions,
   }
 }

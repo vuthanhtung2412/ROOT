@@ -388,6 +388,7 @@ export class ReactGameController {
         ...this.marquiseBoard.getPromptOptions(),
         ...this.eyrieComposer.getPromptOptions(),
         ...this.allianceComposer.getPromptOptions(),
+        ...this.vagabondComposer.getPromptOptions(),
         ...this.eventComposer.getPromptOptions(),
       ],
       getDiscardSelection: () => {
