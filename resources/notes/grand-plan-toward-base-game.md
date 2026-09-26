@@ -55,7 +55,7 @@ Implementable summary (non-SoT) = `resources/notes/root-base-rules.md` (see `AGE
 | Evening — draw 1 + bonuses; discard to 5 | steps `['draw','discard']`; action `{type:'discard', cardIds}`; supporters exempt |
 | *(GP2)* Eyrie — setup roost + 6, Builder viziers; Birdsong 1–3; Daylight craft → Decree left→right; Turmoil 1–4; Evening roost VP; Disdain for Trade; Lords of the Forest | `EyrieBoard { leader, decree, roostTrack }`; `turnScratch.decree` cursor; turmoil = forced step change; craft VP hook |
 | *(GP3)* Alliance — setup; supporters cap 5; Revolt; Spread Sympathy + Martial Law; Mobilize/Train; Military Ops ≤ officers; Guerrilla War; Outrage (2 triggers); base removal | `AllianceBoard { supporters, officers, bases, sympathyTrack }`; `Event.outrage`; battle hook swaps dice for defender |
-| *(GP4)* Vagabond — pawn ≠ warrior, unremovable; Nimble; items exhaust/damage/repair/capacity; Refresh/Slip; 9 Daylight actions; Evening rest/draw/capacity; relationships Allied/Hostile/Infamy; full-clear → damage 3; **quests + coalition deferred** | `VagabondBoard { satchel, tracks, damaged, relationships }`; ruins seeded from `RUIN_ITEMS`; `Event.vagabondDamage`; battle takes hits as item damage |
+| *(GP4)* Vagabond — pawn ≠ warrior, unremovable; Nimble; items exhaust/damage/repair/capacity; Refresh/Slip; 9 Daylight actions; Evening rest/draw/capacity; relationships Allied/Hostile/Infamy; full-clear → damage 3; **quests + coalitions shipped** | `VagabondBoard { satchel, tracks, damaged, relationships, completedQuests }`; shared `questDeck` / `questsAvailable`; ruins seeded from `RUIN_ITEMS`; `Event.vagabondDamage`; battle takes hits as item damage |
 
 **Gap in rules doc** — faction board numbers are not in the Law: Marquise building costs/VP/draw-bonus per column, Eyrie roost track VP, Alliance sympathy cost/VP per token, **Vagabond relationship track step costs + VP per space**. Must be added to `root-base-rules.md` from reference sheets before Phase 4 (relationships before Phase 12). Also `cards.json` lacks item `vp` — add field, don't parse description.
 
@@ -555,7 +555,7 @@ commands/auto.ts       create (replace) → join ×N (N = factions.length) → s
 - `feat(lib): relationships Hostile and Infamy` — same, test (remove their warrior → Hostile; +1 VP per Hostile piece removed in battle on own turn, except the flipping warrior)
 - `feat(lib): vagabondDamage event on full clear` — `events/vagabondDamage.ts`, test (Rule: Vagabond — full removal → damage 3; e.g. Revolt)
 - `feat(lib): Vagabond ignores dominance win` — `Game.ts` (Dominance/coalitions: cannot activate; coalition deferred)
-- `docs(plan): post-GP4 backlog` — dominance take/activate + Birdsong win check, coalitions, quests, 3 Eyrie leaders, 2 Vagabond characters, remaining E&P effects, hand-size-public / faces-private API view
+- `docs(plan): post-GP4 backlog` — 3 Eyrie leaders, 2 Vagabond characters, remaining E&P effects, hand-size-public / faces-private API view; wire `addVictoryPoints` everywhere; dominance/coalition FE composers polish
 - `feat(lib): DEFAULT_FACTIONS = marquise, eyrie, alliance, vagabond` — `state/constants.ts`, test (setup letters A→D; 4p)
 - `feat(cli): auto plays vagabond actions` — `commands/auto.ts` (item choices, aid targets)
 - `ci: fix test` · `chore: prettier`
