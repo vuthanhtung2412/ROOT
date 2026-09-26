@@ -1,5 +1,6 @@
 import type { ActionSpec } from '#actions/types.js'
 import { defOf } from '#cards/Deck.js'
+import { questDefOf } from '#cards/quests.js'
 import type { Card } from '#cards/types.js'
 import { matchesSuit } from '#cards/suit.js'
 import {
@@ -15,12 +16,16 @@ import type { VagabondBoard } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
 
 export function hasExhaustible(board: VagabondBoard, type: ItemType): boolean {
-  return (
-    board.satchel.some((item) => item.type === type && !item.exhausted) ||
-    board.tracks.tea.some((item) => item.type === type && !item.exhausted) ||
-    board.tracks.coin.some((item) => item.type === type && !item.exhausted) ||
-    board.tracks.bag.some((item) => item.type === type && !item.exhausted)
-  )
+  return exhaustibleCount(board, type) > 0
+}
+
+export function exhaustibleCount(board: VagabondBoard, type: ItemType): number {
+  return [
+    ...board.satchel,
+    ...board.tracks.tea,
+    ...board.tracks.coin,
+    ...board.tracks.bag,
+  ].filter((item) => item.type === type && !item.exhausted).length
 }
 
 export function hasAnyExhaustible(board: VagabondBoard): boolean {
@@ -171,6 +176,33 @@ export function pushDaylightActions(
 
   if (hasExhaustible(board, 'torch') && state.clearings[clearing]?.ruin !== undefined) {
     specs.push({ type: 'explore', actor: seat })
+  }
+
+  // Rule: Vagabond > Quest 9.5.5 — suit match + exhaust listed items.
+  {
+    const clearingSuit = FALL.clearings[clearing]!.suit
+    const questIds: string[] = []
+    for (const quest of state.questsAvailable) {
+      const definition = questDefOf(quest)
+      if (definition.suit !== clearingSuit) continue
+      const [firstItem, secondItem] = definition.items
+      if (firstItem === secondItem) {
+        if (exhaustibleCount(board, firstItem) < 2) continue
+      } else if (
+        !hasExhaustible(board, firstItem) ||
+        !hasExhaustible(board, secondItem)
+      ) {
+        continue
+      }
+      questIds.push(quest.id)
+    }
+    if (questIds.length > 0) {
+      specs.push({
+        type: 'quest',
+        actor: seat,
+        params: { questIds, rewards: ['vp', 'draw'] },
+      })
+    }
   }
 
   if (hasAnyExhaustible(board)) {

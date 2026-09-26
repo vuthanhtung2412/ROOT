@@ -1,5 +1,5 @@
 import type { Action, ActionSpec } from '#actions/types.js'
-import { QUEST_DECK } from '#cards/quests.js'
+import { QUEST_DECK, questDefOf } from '#cards/quests.js'
 import { openBattle } from '#events/battle.js'
 import { Faction } from '#factions/Faction.js'
 import {
@@ -259,6 +259,48 @@ export class Vagabond extends Faction {
           delete state.clearings[clearing]!.ruin
         }
         logs.push({ t: 'action', actor: seat, action: { type: 'explore' } })
+        return logs
+      }
+      case 'quest': {
+        const clearing = pawnClearing(state, seat)
+        if (clearing === null) throw new RuleError('PAWN_IN_FOREST')
+        const questIndex = state.questsAvailable.findIndex(
+          (quest) => quest.id === action.questId,
+        )
+        if (questIndex < 0) throw new RuleError('QUEST_NOT_AVAILABLE')
+        const quest = state.questsAvailable[questIndex]!
+        const definition = questDefOf(quest)
+        if (definition.suit !== FALL.clearings[clearing]!.suit) {
+          throw new RuleError('QUEST_SUIT_MISMATCH')
+        }
+        for (const itemType of definition.items) {
+          if (exhaustItem(board, itemType) === null) {
+            throw new RuleError('NO_QUEST_ITEM', { item: itemType })
+          }
+        }
+        state.questsAvailable = state.questsAvailable.filter(
+          (_, index) => index !== questIndex,
+        )
+        board.completedQuests.push(quest)
+        const replacement = state.questDeck.pop()
+        if (replacement !== undefined) {
+          state.questsAvailable.push(replacement)
+        }
+        if (action.reward === 'vp') {
+          const matchingCompleted = board.completedQuests.filter(
+            (completed) => questDefOf(completed).suit === definition.suit,
+          ).length
+          playerOf(state, seat).vp += matchingCompleted
+          logs.push({
+            t: 'vp',
+            actor: seat,
+            delta: matchingCompleted,
+            reason: 'quest',
+          })
+        } else {
+          drawCards(state, { seat, count: 2 }, ctx)
+        }
+        logs.push({ t: 'action', actor: seat, action })
         return logs
       }
       case 'aid': {

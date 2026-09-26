@@ -72,6 +72,10 @@ export type ActionChoiceParams = {
   op?: Array<'move' | 'battle' | 'recruit' | 'organize'>
   /** Vagabond slip — forest destination indices. */
   forests?: number[]
+  /** Vagabond quest — face-up quest card ids. */
+  questIds?: string[]
+  /** Vagabond quest reward choice. */
+  rewards?: Array<'vp' | 'draw'>
 }
 
 export type Action =
@@ -154,6 +158,11 @@ export type Action =
   | { type: 'vbMove'; to: ClearingId }
   | { type: 'vbBattle'; defender: Seat }
   | { type: 'explore' }
+  | {
+      type: 'quest'
+      questId: string
+      reward: 'vp' | 'draw'
+    }
   | {
       type: 'aid'
       target: Seat
