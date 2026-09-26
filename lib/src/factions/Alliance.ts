@@ -40,7 +40,7 @@ import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 
 const STEPS: Record<Phase, Step[]> = {
-  birdsong: ['actions'],
+  birdsong: ['revolt', 'spread'],
   daylight: ['actions'],
   evening: ['military', 'draw', 'discard'],
 }
@@ -122,7 +122,13 @@ export class Alliance extends Faction {
         applyDiscard(state, seat, action.cardIds)
         return [{ t: 'action', actor: seat, action }]
       case 'revolt':
-        return this.applyRevolt(state, seat, action.clearing, ctx)
+        return this.applyRevolt(
+          state,
+          seat,
+          action.clearing,
+          action.supporterIds,
+          ctx,
+        )
       case 'spreadSympathy':
         return this.applySpread(
           state,
@@ -151,6 +157,7 @@ export class Alliance extends Faction {
     state: GameState,
     seat: Seat,
     clearing: number,
+    supporterIds: string[],
     ctx: Ctx,
   ): LogEntry[] {
     // Rule: Alliance Birdsong Revolt 1–3.
@@ -162,11 +169,18 @@ export class Alliance extends Faction {
     if (!board.bases.includes(suit)) {
       throw new RuleError('NO_MATCHING_BASE', { suit })
     }
-    const supporters = removeSupportersByIds(
-      board,
-      pickTwoSupporterIds(board, suit),
-    )
+    if (supporterIds.length !== 2) {
+      throw new RuleError('WRONG_SUPPORTER_COUNT', {
+        need: 2,
+        got: supporterIds.length,
+      })
+    }
+    const supporters = removeSupportersByIds(board, supporterIds)
     for (const card of supporters) {
+      const cardSuit = defOf(card).suit
+      if (cardSuit !== suit && cardSuit !== 'bird') {
+        throw new RuleError('SUPPORTER_SUIT_MISMATCH', { cardId: card.id })
+      }
       discardCardToAvailable(state, card)
     }
 
@@ -205,7 +219,7 @@ export class Alliance extends Faction {
     logs.push({
       t: 'action',
       actor: seat,
-      action: { type: 'revolt', clearing },
+      action: { type: 'revolt', clearing, supporterIds },
     })
     return logs
   }
@@ -422,18 +436,6 @@ export class Alliance extends Faction {
     logs.push({ t: 'action', actor: seat, action })
     return logs
   }
-}
-
-function pickTwoSupporterIds(
-  board: ReturnType<typeof boardOf>,
-  suit: import('#map/types.js').Suit,
-): string[] {
-  const matching = board.supporters.filter((card) => {
-    const cardSuit = defOf(card).suit
-    return cardSuit === suit || cardSuit === 'bird'
-  })
-  if (matching.length < 2) throw new RuleError('NOT_ENOUGH_SUPPORTERS')
-  return [matching[0]!.id, matching[1]!.id]
 }
 
 export const ALLIANCE = new Alliance()

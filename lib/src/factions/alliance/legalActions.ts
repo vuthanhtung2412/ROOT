@@ -1,10 +1,12 @@
-import type { ActionSpec, BattleTargetChoice, MarchMove } from '#actions/types.js'
+import type { ActionSpec, BattleTargetChoice, MarchMove, RevoltChoice } from '#actions/types.js'
 import { defOf } from '#cards/Deck.js'
 import {
   boardOf,
+  canPlaceBaseAfterRevolt,
   clearingHasSympathy,
   isLegalSympathySpreadClearing,
   martialLawSurcharge,
+  matchingSupporterPairIds,
   nextSympathyCost,
   pickSupportersOfSuit,
   sympatheticClearings,
@@ -15,7 +17,6 @@ import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { canMove } from '#queries/move.js'
-import { openSlots } from '#queries/slots.js'
 import { warriors } from '#queries/pieces.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
@@ -32,20 +33,29 @@ export function allianceLegalActions(
   const board = boardOf(state, seat)
   const specs: ActionSpec[] = [...ctx.grantedActions()]
 
-  if (state.phase === 'birdsong' && state.step === 'actions') {
-    // Rule: Alliance Birdsong — Revolt / Spread Sympathy (0+), then end.
+  // Rule: 8.4 Birdsong — all Revolts, then all Spreads (ordered steps).
+  if (state.phase === 'birdsong' && state.step === 'revolt') {
+    const options: RevoltChoice[] = []
     for (const clearing of sympatheticClearings(state, seat)) {
       const suit = FALL.clearings[clearing]!.suit
       if (!board.bases.includes(suit)) continue
-      if (pickSupportersOfSuit(board, suit, 2) === null) continue
-      if (openSlots(state, clearing) < 1) continue
+      if (!canPlaceBaseAfterRevolt(state, clearing, seat)) continue
+      for (const supporterIds of matchingSupporterPairIds(board, suit)) {
+        options.push({ clearing, supporterIds })
+      }
+    }
+    if (options.length > 0) {
       specs.push({
         type: 'revolt',
         actor: seat,
-        params: { clearings: [clearing] },
+        params: { options },
       })
     }
+    specs.push({ type: 'endPhase', actor: seat })
+    return specs
+  }
 
+  if (state.phase === 'birdsong' && state.step === 'spread') {
     const sympathetic = sympatheticClearings(state, seat)
     const costBase = nextSympathyCost(board)
     if (costBase !== null) {

@@ -5,6 +5,7 @@ import type { ClearingId, Suit } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { warriors } from '#queries/pieces.js'
 import { playerOf } from '#queries/seat.js'
+import { openSlots } from '#queries/slots.js'
 import {
   ALLIANCE_BASE_SUITS,
   ALLIANCE_SUPPORTERS_CAP_WITHOUT_BASE,
@@ -165,6 +166,41 @@ export function pickSupportersOfSuit(
   })
   if (matching.length < count) return null
   return matching.slice(0, count)
+}
+
+/** Rule: 8.4.1.II — player chooses which two matching supporters to spend. */
+export function matchingSupporterPairIds(
+  board: AllianceBoard,
+  suit: Suit,
+): string[][] {
+  const matching = board.supporters.filter((card) => {
+    const cardSuit = defOf(card).suit
+    return cardSuit === suit || cardSuit === 'bird'
+  })
+  const pairs: string[][] = []
+  for (let first = 0; first < matching.length; first++) {
+    for (let second = first + 1; second < matching.length; second++) {
+      pairs.push([matching[first]!.id, matching[second]!.id])
+    }
+  }
+  return pairs
+}
+
+/**
+ * Rule: 8.4.1.III — base needs an open slot after enemy pieces are cleared.
+ * Enemy buildings free slots when removed; warriors do not.
+ */
+export function canPlaceBaseAfterRevolt(
+  state: GameState,
+  clearing: ClearingId,
+  seat: Seat,
+): boolean {
+  const open = openSlots(state, clearing)
+  if (open >= 1) return true
+  const enemyBuildings = state.clearings[clearing]!.pieces.filter(
+    (piece) => piece.kind === 'building' && piece.owner !== seat,
+  ).length
+  return open + enemyBuildings >= 1
 }
 
 export function removeSupportersByIds(

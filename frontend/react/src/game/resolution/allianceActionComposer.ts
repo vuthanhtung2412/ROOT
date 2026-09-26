@@ -7,7 +7,10 @@ import {
 
 type AllianceDraft =
   | { type: 'idle' }
-  | { type: 'revolt'; clearings: number[] }
+  | {
+      type: 'revolt'
+      options: Array<{ clearing: number; supporterIds: string[] }>
+    }
   | {
       type: 'spreadSympathy'
       clearings: number[]
@@ -28,6 +31,18 @@ function unique(values: number[]): number[] {
   return [...new Set(values)]
 }
 
+function isRevoltOption(
+  value: unknown,
+): value is { clearing: number; supporterIds: string[] } {
+  if (typeof value !== 'object' || value === null) return false
+  const record = value as Record<string, unknown>
+  return (
+    typeof record.clearing === 'number' &&
+    Array.isArray(record.supporterIds) &&
+    record.supporterIds.every((id) => typeof id === 'string')
+  )
+}
+
 /** Alliance birdsong/daylight/evening choice flows. */
 export function createAllianceComposerHooks(): {
   hooks: ActionComposerHooks
@@ -42,14 +57,21 @@ export function createAllianceComposerHooks(): {
       promptOptions = []
       const params = readChoiceParams(spec)
       if (spec.type === 'revolt') {
-        const clearings = params.clearings ?? []
-        if (clearings.length === 1) {
+        const rawOptions = params.options ?? []
+        const options = rawOptions.filter(isRevoltOption)
+        if (options.length === 1) {
+          const choice = options[0]!
           return {
             kind: 'ready',
-            action: { type: 'revolt', clearing: clearings[0]! },
+            action: {
+              type: 'revolt',
+              clearing: choice.clearing,
+              supporterIds: choice.supporterIds,
+            },
           }
         }
-        draft = { type: 'revolt', clearings }
+        draft = { type: 'revolt', options }
+        const clearings = unique(options.map((choice) => choice.clearing))
         return {
           kind: 'incomplete',
           prompt: {
@@ -130,9 +152,38 @@ export function createAllianceComposerHooks(): {
     },
 
     chooseClearing: (clearingId: number): ComposerOutcome | null => {
-      if (draft.type === 'revolt' && draft.clearings.includes(clearingId)) {
-        draft = { type: 'idle' }
-        return { kind: 'ready', action: { type: 'revolt', clearing: clearingId } }
+      if (draft.type === 'revolt') {
+        const matches = draft.options.filter(
+          (choice) => choice.clearing === clearingId,
+        )
+        if (matches.length === 0) return null
+        if (matches.length === 1) {
+          const choice = matches[0]!
+          draft = { type: 'idle' }
+          return {
+            kind: 'ready',
+            action: {
+              type: 'revolt',
+              clearing: choice.clearing,
+              supporterIds: choice.supporterIds,
+            },
+          }
+        }
+        promptOptions = matches.map((choice, index) => ({
+          label: `supporters ${choice.supporterIds.join('+')}`,
+          value: String(index),
+        }))
+        draft = { type: 'revolt', options: matches }
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: 'Revolt — pick supporters',
+            highlightClearings: [clearingId],
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: true,
+          },
+        }
       }
       if (
         draft.type === 'spreadSympathy' &&
@@ -201,6 +252,23 @@ export function createAllianceComposerHooks(): {
     },
 
     chooseColumn: (value: string): ComposerOutcome | null => {
+      if (draft.type === 'revolt') {
+        const index = Number(value)
+        if (!Number.isInteger(index) || index < 0 || index >= draft.options.length) {
+          return null
+        }
+        const choice = draft.options[index]!
+        draft = { type: 'idle' }
+        promptOptions = []
+        return {
+          kind: 'ready',
+          action: {
+            type: 'revolt',
+            clearing: choice.clearing,
+            supporterIds: choice.supporterIds,
+          },
+        }
+      }
       if (draft.type !== 'militaryOp') return null
       if (
         value !== 'move' &&

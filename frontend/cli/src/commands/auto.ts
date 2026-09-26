@@ -344,10 +344,22 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return null
     }
     case 'revolt': {
-      const clearings = readNumberList(paramList(spec.params, 'clearings'))
-      const clearing = pick(clearings)
-      if (clearing === undefined) return null
-      return { type: 'revolt', clearing }
+      const options = paramList(spec.params, 'options')
+      const choice = pick(
+        options.filter(
+          (entry): entry is { clearing: number; supporterIds: string[] } =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            typeof (entry as { clearing?: unknown }).clearing === 'number' &&
+            Array.isArray((entry as { supporterIds?: unknown }).supporterIds),
+        ),
+      )
+      if (choice === undefined) return null
+      return {
+        type: 'revolt',
+        clearing: choice.clearing,
+        supporterIds: choice.supporterIds,
+      }
     }
     case 'spreadSympathy': {
       const clearings = readNumberList(paramList(spec.params, 'clearings'))

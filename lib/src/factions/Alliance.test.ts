@@ -115,6 +115,107 @@ describe('Alliance base removal', () => {
   })
 })
 
+describe('Alliance revolt Birdsong', () => {
+  beforeEach(() => resetPlaceIds())
+
+  it('Rule: 8.4 — birdsong is revolt step then spread step', () => {
+    expect(ALLIANCE.steps.birdsong).toEqual(['revolt', 'spread'])
+  })
+
+  it('Rule: 8.4.1.II — revolt exposes supporter pair choices', () => {
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'eyrie', 'alliance'],
+        players: [
+          player(0, 'marquise'),
+          player(1, 'eyrie'),
+          player(2, 'alliance'),
+        ],
+        currentSeat: 2,
+        phase: 'birdsong',
+        step: 'revolt',
+      }),
+      0,
+      [{ id: 'sym', kind: 'token', type: 'sympathy', owner: 2 }],
+    )
+    const board = boardOf(state, 2)
+    const foxA = card('ROOT-72')
+    const foxB = card('ROOT-72', 2)
+    const foxC = card('ROOT-57')
+    board.supporters = [foxA, foxB, foxC]
+
+    const revolt = ALLIANCE.legalActions(state, testContext({ state })).find(
+      (spec) => spec.type === 'revolt',
+    )
+    expect(revolt?.params?.options).toEqual(
+      expect.arrayContaining([
+        { clearing: 0, supporterIds: [foxA.id, foxB.id] },
+        { clearing: 0, supporterIds: [foxA.id, foxC.id] },
+        { clearing: 0, supporterIds: [foxB.id, foxC.id] },
+      ]),
+    )
+    expect(
+      ALLIANCE.legalActions(state, testContext({ state })).some(
+        (spec) => spec.type === 'spreadSympathy',
+      ),
+    ).toBe(false)
+  })
+
+  it('Rule: 8.4.1.III — revolt legal when enemy building frees the only slot', () => {
+    // Clearing 0 on Fall has 1 slot; fill with enemy building + sympathy.
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'eyrie', 'alliance'],
+        players: [
+          player(0, 'marquise'),
+          player(1, 'eyrie'),
+          player(2, 'alliance'),
+        ],
+        currentSeat: 2,
+        phase: 'birdsong',
+        step: 'revolt',
+      }),
+      0,
+      [
+        { id: 'sym', kind: 'token', type: 'sympathy', owner: 2 },
+        {
+          id: 'saw',
+          kind: 'building',
+          type: 'sawmill',
+          owner: 0,
+          used: false,
+        },
+      ],
+    )
+    const board = boardOf(state, 2)
+    board.supporters = [card('ROOT-72'), card('ROOT-72', 2)]
+
+    const revolt = ALLIANCE.legalActions(state, testContext({ state })).find(
+      (spec) => spec.type === 'revolt',
+    )
+    expect(revolt).toBeDefined()
+    expect(revolt?.params?.options?.[0]?.clearing).toBe(0)
+
+    ALLIANCE.apply(
+      state,
+      {
+        type: 'revolt',
+        clearing: 0,
+        supporterIds: [board.supporters[0]!.id, board.supporters[1]!.id],
+      },
+      testContext({ state }),
+    )
+    expect(
+      state.clearings[0]!.pieces.some(
+        (piece) =>
+          piece.kind === 'building' &&
+          piece.type === 'base' &&
+          piece.owner === 2,
+      ),
+    ).toBe(true)
+  })
+})
+
 describe('Alliance spreadSympathy', () => {
   beforeEach(() => resetPlaceIds())
 
@@ -128,7 +229,7 @@ describe('Alliance spreadSympathy', () => {
       ],
       currentSeat: 2,
       phase: 'birdsong',
-      step: 'actions',
+      step: 'spread',
     })
     const board = boardOf(state, 2)
     const fox = card('ROOT-72')
@@ -160,7 +261,7 @@ describe('Alliance spreadSympathy', () => {
       ],
       currentSeat: 2,
       phase: 'birdsong',
-      step: 'actions',
+      step: 'spread',
     })
     const board = boardOf(state, 2)
     const firstFox = card('ROOT-72')

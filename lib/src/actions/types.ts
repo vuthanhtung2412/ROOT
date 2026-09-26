@@ -31,10 +31,10 @@ export type BuildChoice = {
   building: MarquiseBuildingType
 }
 
-/** Paired battle target: clearing × defender seat. */
-export type BattleTargetChoice = {
+/** Paired Alliance revolt: clearing × two supporter ids (8.4.1). */
+export type RevoltChoice = {
   clearing: ClearingId
-  defender: Seat
+  supporterIds: string[]
 }
 
 /**
@@ -59,7 +59,7 @@ export type ActionChoiceParams = {
    * Correlated choices: overwork pairs, build pairs, or addToDecree card×column.
    * Emitter picks one element shape per action type.
    */
-  options?: OverworkChoice[] | BuildChoice[] | AddToDecreeCard[]
+  options?: OverworkChoice[] | BuildChoice[] | AddToDecreeCard[] | RevoltChoice[]
   /** Correlated battle / decree-battle targets. */
   targets?: BattleTargetChoice[]
   decline?: true[]
@@ -141,7 +141,7 @@ export type Action =
       defender?: Seat
       moves?: MarchMove[]
     }
-  | { type: 'revolt'; clearing: ClearingId }
+  | { type: 'revolt'; clearing: ClearingId; supporterIds: string[] }
   | { type: 'spreadSympathy'; clearing: ClearingId; supporterIds: string[] }
   | { type: 'mobilize'; cardId: string }
   | { type: 'train'; cardId: string }
