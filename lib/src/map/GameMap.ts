@@ -7,6 +7,8 @@ export class GameMap {
   readonly forests: ClearingId[][]
 
   private readonly adjacency: Map<ClearingId, ClearingId[]>
+  /** Forest index → adjacent forest indexes. Rule: 2.4.1 */
+  private readonly forestAdjacency: Map<number, number[]>
 
   constructor(args: {
     clearings: Clearing[]
@@ -29,6 +31,7 @@ export class GameMap {
     for (const [, neighbors] of this.adjacency) {
       neighbors.sort((x, y) => x - y)
     }
+    this.forestAdjacency = buildForestAdjacency(this.forests, this.paths)
   }
 
   adjacent(id: ClearingId): ClearingId[] {
@@ -37,6 +40,18 @@ export class GameMap {
 
   isAdjacent(a: ClearingId, b: ClearingId): boolean {
     return this.adjacent(a).includes(b)
+  }
+
+  /**
+   * Forests separated by exactly one printed path.
+   * Rule: Board > Forests > Adjacency (2.4.1)
+   */
+  adjacentForests(forestIndex: number): number[] {
+    return this.forestAdjacency.get(forestIndex) ?? []
+  }
+
+  isForestAdjacent(forestA: number, forestB: number): boolean {
+    return this.adjacentForests(forestA).includes(forestB)
   }
 
   shortestPath(a: ClearingId, b: ClearingId): ClearingId[] | null {
@@ -63,4 +78,40 @@ export class GameMap {
     }
     return null
   }
+}
+
+/**
+ * Two forests share a path edge when both endpoints of that path sit on both
+ * forests' bordering clearing sets — i.e. one printed path separates them.
+ * Rule: Board > Forests > Adjacency (2.4.1)
+ */
+function buildForestAdjacency(
+  forests: ClearingId[][],
+  paths: Path[],
+): Map<number, number[]> {
+  const adjacency = new Map<number, number[]>()
+  for (let forestIndex = 0; forestIndex < forests.length; forestIndex++) {
+    adjacency.set(forestIndex, [])
+  }
+  for (let left = 0; left < forests.length; left++) {
+    const leftBorder = new Set(forests[left] ?? [])
+    for (let right = left + 1; right < forests.length; right++) {
+      const rightBorder = new Set(forests[right] ?? [])
+      const sharePathEdge = paths.some(([pathLeft, pathRight]) => {
+        return (
+          leftBorder.has(pathLeft) &&
+          leftBorder.has(pathRight) &&
+          rightBorder.has(pathLeft) &&
+          rightBorder.has(pathRight)
+        )
+      })
+      if (!sharePathEdge) continue
+      adjacency.get(left)!.push(right)
+      adjacency.get(right)!.push(left)
+    }
+  }
+  for (const [, neighbors] of adjacency) {
+    neighbors.sort((a, b) => a - b)
+  }
+  return adjacency
 }

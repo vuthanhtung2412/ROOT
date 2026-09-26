@@ -69,9 +69,13 @@ export function slipDestinations(
 ): { clearings: ClearingId[]; forests: number[] } {
   const clearings: ClearingId[] = []
   const forests: number[] = []
+  // Rule: Vagabond > Birdsong > Slip (9.4.2) — adjacent clearing or forest.
   if (board.forest !== null) {
     for (const adjacent of FALL.forests[board.forest] ?? []) {
       clearings.push(adjacent)
+    }
+    for (const adjacentForest of FALL.adjacentForests(board.forest)) {
+      forests.push(adjacentForest)
     }
     return { clearings, forests }
   }

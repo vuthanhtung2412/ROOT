@@ -108,4 +108,38 @@ describe('Vagabond slip / move', () => {
       ),
     ).toBe(true)
   })
+
+  // Rule: Vagabond > Birdsong > Slip (9.4.2) — forest → adjacent forest ok.
+  it('Rule: Birdsong Slip — free move into adjacent forest', () => {
+    const state = minimalState({
+      factions: ['marquise', 'vagabond'],
+      players: [player(0, 'marquise'), player(1, 'vagabond')],
+      currentSeat: 1,
+      phase: 'birdsong',
+      step: 'slip',
+    })
+    VAGABOND.setup(state, 1, testContext({ state }))
+    const slip = VAGABOND.legalActions(state, testContext({ state })).find(
+      (spec) => spec.type === 'slip',
+    )
+    expect(slip?.params?.forests).toEqual(
+      FALL.adjacentForests(FALL.vagabondForest),
+    )
+    const destinationForest = FALL.adjacentForests(FALL.vagabondForest)[0]!
+    VAGABOND.apply(
+      state,
+      { type: 'slip', to: `forest:${destinationForest}` },
+      testContext({ state }),
+    )
+    const board = boardOf(state, 1)
+    expect(board.forest).toBe(destinationForest)
+    expect(
+      state.clearings.every(
+        (clearing) =>
+          !clearing.pieces.some(
+            (piece) => piece.kind === 'pawn' && piece.owner === 1,
+          ),
+      ),
+    ).toBe(true)
+  })
 })

@@ -42,4 +42,17 @@ describe('Fall graph', () => {
   it('has 4 ruin slots', () => {
     expect(FALL.clearings.filter((c) => c.ruinSlot)).toHaveLength(4)
   })
+
+  // Rule: Board > Forests > Adjacency (2.4.1) — forests separated by one path.
+  it('forest adjacency is symmetric via shared path edge', () => {
+    expect(FALL.forests).toHaveLength(7)
+    for (let forestIndex = 0; forestIndex < FALL.forests.length; forestIndex++) {
+      for (const neighbor of FALL.adjacentForests(forestIndex)) {
+        expect(FALL.isForestAdjacent(neighbor, forestIndex)).toBe(true)
+        expect(neighbor).not.toBe(forestIndex)
+      }
+    }
+    // Central forest (vagabond default) touches four neighbors.
+    expect(FALL.adjacentForests(FALL.vagabondForest)).toEqual([1, 2, 4, 5])
+  })
 })
