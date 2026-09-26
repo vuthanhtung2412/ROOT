@@ -1,5 +1,19 @@
 /** Vagabond (Thief) board lookup — from faction board / root-base-rules. */
 
+/** Law 9.2.8 — Allied track spaces (Indifferent → Allied). */
+export const VAGABOND_RELATIONSHIP_DEVELOPMENT_CELLS = 4
+/** Allied = final Allied-track space (index 3). */
+export const VAGABOND_RELATIONSHIP_ALLIED_SPACE = 3
+/** Markers exist for each non-Vagabond faction (Law 9.2.8 / Setup). */
+export const VAGABOND_RELATIONSHIP_MARKER_FACTIONS = [
+  'marquise',
+  'eyrie',
+  'alliance',
+] as const
+
+export type VagabondRelationshipMarkerFaction =
+  (typeof VAGABOND_RELATIONSHIP_MARKER_FACTIONS)[number]
+
 export type VagabondAbilityInfo = {
   id: string
   name: string

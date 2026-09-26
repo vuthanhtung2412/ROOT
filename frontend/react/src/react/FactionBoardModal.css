@@ -112,6 +112,38 @@
   flex: 0 0 auto;
 }
 
+/* Vagabond relationship markers — same visual weight as tea/coin/bag items. */
+.faction-board-modal__relationship-pack {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px;
+  box-sizing: border-box;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.faction-board-modal__relationship-pack--hostile {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.faction-board-modal__relationship-marker {
+  /* Match tea/coin/bag track tokens (~89 layout px → ~60 screen px). */
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 .faction-board-modal__crafted {
   position: absolute;
   display: flex;

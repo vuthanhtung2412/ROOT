@@ -195,7 +195,7 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
     expect(view.sympathyTrack).toHaveLength(10)
   })
 
-  it('Vagabond: satchel + tracks + damaged', () => {
+  it('Vagabond: satchel + tracks + damaged + relationships', () => {
     const view = buildFactionBoardViewModelFromPlayer({
       seat: 3,
       faction: 'vagabond',
@@ -213,6 +213,12 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
           bag: [{ type: 'bag', exhausted: true }],
         },
         damaged: [{ type: 'sword', exhausted: true }],
+        relationships: {
+          marquise: 'hostile',
+          eyrie: 2,
+          alliance: 3,
+          vagabond: 0,
+        },
         forest: null,
       },
     })
@@ -225,6 +231,11 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
     expect(view.tracks.bag[0]?.exhausted).toBe(true)
     expect(view.damaged).toEqual([{ type: 'sword', exhausted: true }])
     expect(view.startingItems).toContain('torch')
+    expect(view.relationships).toEqual([
+      { faction: 'marquise', space: 'hostile' },
+      { faction: 'eyrie', space: 2 },
+      { faction: 'alliance', space: 3 },
+    ])
   })
 
   it('returns null for missing board', () => {

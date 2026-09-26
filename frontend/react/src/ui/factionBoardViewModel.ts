@@ -29,6 +29,8 @@ import {
 import {
   THIEF_STARTING_ITEM_LABELS,
   VAGABOND_ABILITIES,
+  VAGABOND_RELATIONSHIP_ALLIED_SPACE,
+  VAGABOND_RELATIONSHIP_MARKER_FACTIONS,
   VAGABOND_TURN_CHEAT,
   type VagabondAbilityInfo,
 } from '#assets/vagabondBoardCatalog.ts'
@@ -124,6 +126,12 @@ export type AllianceBoardViewModel = {
   boardTextureKey: string
 }
 
+/** Law 9.2.8 — marker on Allied track (0..3) or Hostile box. */
+export type VagabondRelationshipMarkerView = {
+  faction: string
+  space: number | 'hostile'
+}
+
 export type VagabondBoardViewModel = {
   kind: 'vagabond'
   seat: number
@@ -142,6 +150,7 @@ export type VagabondBoardViewModel = {
     coin: Array<{ type: string; exhausted: boolean }>
     bag: Array<{ type: string; exhausted: boolean }>
   }
+  relationships: VagabondRelationshipMarkerView[]
   forest: number | null
   boardTextureKey: string
 }
@@ -197,7 +206,38 @@ type VagabondBoardData = {
     bag: VagabondItemData[]
   }
   damaged: VagabondItemData[]
+  relationships?: unknown
   forest: number | null
+}
+
+function isRelationshipSpace(value: unknown): value is number | 'hostile' {
+  if (value === 'hostile') {
+    return true
+  }
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= VAGABOND_RELATIONSHIP_ALLIED_SPACE
+  )
+}
+
+/** Law 9.2.8 — one marker per non-Vagabond faction. */
+export function relationshipMarkersFromBoard(
+  relationships: unknown,
+): VagabondRelationshipMarkerView[] {
+  if (typeof relationships !== 'object' || relationships === null) {
+    return []
+  }
+  const markers: VagabondRelationshipMarkerView[] = []
+  for (const faction of VAGABOND_RELATIONSHIP_MARKER_FACTIONS) {
+    const space = Reflect.get(relationships, faction)
+    if (!isRelationshipSpace(space)) {
+      continue
+    }
+    markers.push({ faction, space })
+  }
+  return markers
 }
 
 type PlayerForBoard = {
@@ -517,6 +557,7 @@ export function buildFactionBoardViewModelFromPlayer(
           exhausted: item.exhausted,
         })),
       },
+      relationships: relationshipMarkersFromBoard(board.relationships),
       forest: board.forest,
       boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.vagabond,
     }

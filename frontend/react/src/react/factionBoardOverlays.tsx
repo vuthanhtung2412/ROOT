@@ -19,9 +19,13 @@ import { EYRIE_ROOST_TRACK_SLOT_COUNT } from '#assets/eyrieBoardCatalog.ts'
 import { MARQUISE_TRACK_SLOT_COUNT } from '#assets/marquiseBoardCatalog.ts'
 import { ALLIANCE_SYMPATHY_TRACK_SLOT_COUNT } from '#assets/allianceBoardCatalog.ts'
 import {
+  VAGABOND_RELATIONSHIP_DEVELOPMENT_CELLS,
+} from '#assets/vagabondBoardCatalog.ts'
+import {
   formatDecreeSuitCounts,
   type CraftedItemView,
   type FactionBoardViewModel,
+  type VagabondRelationshipMarkerView,
 } from '#ui/factionBoardViewModel.ts'
 
 type OverlayBaseProps = {
@@ -482,6 +486,99 @@ function VagabondCharacterOverlay(props: {
   )
 }
 
+function VagabondRelationshipOverlays(props: {
+  view: Extract<FactionBoardViewModel, { kind: 'vagabond' }>
+  layout: FactionBoardPixelLayout
+}): JSX.Element {
+  const hostileRegion = findBoardLayoutRegion(
+    props.layout,
+    'relationship-hostile',
+  )
+  const hostileMarkers = props.view.relationships.filter(
+    (marker) => marker.space === 'hostile',
+  )
+  const developmentSlots: VagabondRelationshipMarkerView[][] = Array.from(
+    { length: VAGABOND_RELATIONSHIP_DEVELOPMENT_CELLS },
+    () => [],
+  )
+  for (const marker of props.view.relationships) {
+    if (marker.space === 'hostile') {
+      continue
+    }
+    const slot = developmentSlots[marker.space]
+    if (slot === undefined) {
+      continue
+    }
+    slot.push(marker)
+  }
+  return (
+    <>
+      {hostileRegion !== null && hostileMarkers.length > 0 ? (
+        <RelationshipMarkerPack
+          region={hostileRegion}
+          layout={props.layout}
+          markers={hostileMarkers}
+          packClassName="faction-board-modal__relationship-pack faction-board-modal__relationship-pack--hostile"
+        />
+      ) : null}
+      {developmentSlots.map((markers, cellIndex) => {
+        if (markers.length === 0) {
+          return null
+        }
+        const region = trackCellRegion(
+          props.layout,
+          'relationship-development',
+          cellIndex,
+        )
+        if (region === null) {
+          return null
+        }
+        return (
+          <RelationshipMarkerPack
+            key={`relationship-dev-${String(cellIndex)}`}
+            region={region}
+            layout={props.layout}
+            markers={markers}
+            packClassName="faction-board-modal__relationship-pack"
+          />
+        )
+      })}
+    </>
+  )
+}
+
+function RelationshipMarkerPack(props: {
+  region: BoardLayoutRegion
+  layout: FactionBoardPixelLayout
+  markers: readonly VagabondRelationshipMarkerView[]
+  packClassName: string
+}): JSX.Element {
+  return (
+    <div
+      className={props.packClassName}
+      style={layoutRegionStyle(props.region, props.layout)}
+    >
+      {props.markers.map((marker) => {
+        const imagePath = imagePathForAssetKey(
+          factionTextureKey(marker.faction),
+        )
+        if (imagePath === null) {
+          return null
+        }
+        return (
+          <img
+            key={marker.faction}
+            className="faction-board-modal__relationship-marker"
+            src={imagePath}
+            alt={`${marker.faction} relationship`}
+            draggable={false}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
 function VagabondItemOverlays(props: {
   view: Extract<FactionBoardViewModel, { kind: 'vagabond' }>
   layout: FactionBoardPixelLayout
@@ -491,6 +588,7 @@ function VagabondItemOverlays(props: {
   return (
     <>
       <VagabondCharacterOverlay layout={props.layout} />
+      <VagabondRelationshipOverlays view={props.view} layout={props.layout} />
       <VagabondTrackItemOverlays view={props.view} layout={props.layout} />
       {satchelRegion !== null ? (
         <div
