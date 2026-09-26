@@ -3,6 +3,7 @@ import { defOf } from '#cards/Deck.js'
 import {
   boardOf,
   clearingHasSympathy,
+  isLegalSympathySpreadClearing,
   martialLawSurcharge,
   nextSympathyCost,
   pickSupportersOfSuit,
@@ -55,12 +56,10 @@ export function allianceLegalActions(
               ...new Set(
                 sympathetic.flatMap((clearing) => adjacentClearings(clearing)),
               ),
-            ].filter(
-              (clearing) => !clearingHasSympathy(state, clearing, seat),
-            )
+            ]
 
       for (const clearing of candidates) {
-        if (clearingHasSympathy(state, clearing, seat)) continue
+        if (!isLegalSympathySpreadClearing(state, seat, clearing)) continue
         const suit = FALL.clearings[clearing]!.suit
         const cost =
           costBase + martialLawSurcharge(state, clearing, seat)

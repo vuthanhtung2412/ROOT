@@ -106,4 +106,52 @@ describe('Alliance spreadSympathy', () => {
     expect(board.sympathyTrack.placed).toBe(ALLIANCE_SYMPATHY_TRACK_SIZE - 1)
     expect(state.players[2]!.vp).toBe(0)
   })
+
+  it('Rule: first sympathy any clearing; never stack two in one clearing', () => {
+    const state = minimalState({
+      factions: ['marquise', 'eyrie', 'alliance'],
+      players: [
+        player(0, 'marquise'),
+        player(1, 'eyrie'),
+        player(2, 'alliance'),
+      ],
+      currentSeat: 2,
+      phase: 'birdsong',
+      step: 'actions',
+    })
+    const board = boardOf(state, 2)
+    const firstFox = card('ROOT-72')
+    const secondFox = card('ROOT-72', 2)
+    board.supporters = [firstFox, secondFox, card('ROOT-57'), card('ROOT-84')]
+
+    const legal = ALLIANCE.legalActions(state, testContext({ state }))
+    const spreadClearings = new Set(
+      legal
+        .filter((spec) => spec.type === 'spreadSympathy')
+        .flatMap((spec) => spec.params?.clearings ?? []),
+    )
+    expect(spreadClearings.size).toBeGreaterThan(1)
+
+    ALLIANCE.apply(
+      state,
+      {
+        type: 'spreadSympathy',
+        clearing: 0,
+        supporterIds: [firstFox.id],
+      },
+      testContext({ state }),
+    )
+    expect(clearingHasSympathy(state, 0, 2)).toBe(true)
+    expect(() =>
+      ALLIANCE.apply(
+        state,
+        {
+          type: 'spreadSympathy',
+          clearing: 0,
+          supporterIds: [secondFox.id],
+        },
+        testContext({ state }),
+      ),
+    ).toThrow(/ALREADY_SYMPATHETIC/)
+  })
 })

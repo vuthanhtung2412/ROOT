@@ -8,6 +8,7 @@ import {
   boardOf,
   clearingHasSympathy,
   discardSupportersOverflow,
+  isLegalSympathySpreadClearing,
   martialLawSurcharge,
   nextSympathyCost,
   nextSympathyVictoryPoints,
@@ -216,8 +217,11 @@ export class Alliance extends Faction {
   ): LogEntry[] {
     // Rule: Alliance Birdsong Spread Sympathy 1–3 + Martial Law.
     const board = boardOf(state, seat)
-    if (clearingHasSympathy(state, clearing, seat)) {
-      throw new RuleError('ALREADY_SYMPATHETIC', { clearing })
+    if (!isLegalSympathySpreadClearing(state, seat, clearing)) {
+      if (clearingHasSympathy(state, clearing, seat)) {
+        throw new RuleError('ALREADY_SYMPATHETIC', { clearing })
+      }
+      throw new RuleError('SPREAD_NOT_ADJACENT', { clearing })
     }
     const baseCost = nextSympathyCost(board)
     if (baseCost === null) throw new RuleError('NO_SYMPATHY_TOKENS')
@@ -374,6 +378,9 @@ export class Alliance extends Faction {
           throw new RuleError('MISSING_ORGANIZE_CLEARING')
         }
         const clearing = action.clearing
+        if (clearingHasSympathy(state, clearing, seat)) {
+          throw new RuleError('ALREADY_SYMPATHETIC', { clearing })
+        }
         const warrior = state.clearings[clearing]?.pieces.find(
           (piece) => piece.kind === 'warrior' && piece.owner === seat,
         )

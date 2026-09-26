@@ -95,6 +95,27 @@ export function sympatheticClearings(state: GameState, seat: Seat): ClearingId[]
   return result
 }
 
+/**
+ * Rule: Alliance Spread Sympathy — first token any clearing; later tokens
+ * adjacent to existing sympathy. Never stack two sympathy in one clearing.
+ */
+export function isLegalSympathySpreadClearing(
+  state: GameState,
+  seat: Seat,
+  clearing: ClearingId,
+): boolean {
+  if (clearingHasSympathy(state, clearing, seat)) {
+    return false
+  }
+  const sympathetic = sympatheticClearings(state, seat)
+  if (sympathetic.length === 0) {
+    return true
+  }
+  return sympathetic.some((sympatheticClearing) =>
+    FALL.adjacent(sympatheticClearing).includes(clearing),
+  )
+}
+
 export function sympatheticOfSuit(
   state: GameState,
   seat: Seat,
