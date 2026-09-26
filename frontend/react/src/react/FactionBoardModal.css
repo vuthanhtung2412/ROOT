@@ -89,25 +89,29 @@
   opacity: 0.4;
 }
 
-/* Vagabond satchel / damaged: shrink+wrap so all items fit the marked region. */
+/* Vagabond satchel / damaged: fixed item size (match track tokens), scroll. */
 .faction-board-modal__item-pack {
   position: absolute;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
-  gap: 2%;
-  padding: 3%;
+  gap: 4px;
+  padding: 4px;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  pointer-events: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .faction-board-modal__item-pack .faction-board-modal__crafted-item {
-  /* ~4 across, 2 rows inside satchel */
-  width: 22%;
-  height: auto;
-  max-height: 42%;
+  /* Match tea/coin/bag track token ballpark (~64px). */
+  width: 64px;
+  height: 64px;
+  max-height: none;
   aspect-ratio: 1;
   flex: 0 0 auto;
 }
