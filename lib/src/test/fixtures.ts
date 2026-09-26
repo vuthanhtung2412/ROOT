@@ -53,12 +53,14 @@ export function testContext(options?: {
   state?: GameState
   /** Imposed battle die faces (0–3) in roll order. Required if the test path rolls. */
   dice?: DieFace[]
+  /** Override RNG (e.g. SeededRng for shuffles). Defaults to createTestRng(dice). */
+  rng?: Rng
   onSignal?: (signal: GameSignal) => void
 }): Ctx {
   const state = options?.state ?? minimalState()
   return {
     map: FALL,
-    rng: createTestRng(options?.dice ?? []),
+    rng: options?.rng ?? createTestRng(options?.dice ?? []),
     emit: (signal) => options?.onSignal?.(signal),
     hooks: buildRuleHooks(state, FALL),
     grantedActions: () => [],

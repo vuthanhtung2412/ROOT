@@ -1,4 +1,5 @@
 import type { Action, ActionSpec } from '#actions/types.js'
+import { QUEST_DECK } from '#cards/quests.js'
 import { openBattle } from '#events/battle.js'
 import { Faction } from '#factions/Faction.js'
 import {
@@ -37,9 +38,44 @@ import { playerOf } from '#queries/seat.js'
 import { removePieces } from '#rules/remove.js'
 import { RuleError } from '#rules/RuleError.js'
 import { randomIndex } from '#rules/Rng.js'
-import { THIEF_START_ITEMS } from '#state/boards.js'
+import {
+  FACE_UP_QUEST_COUNT,
+  THIEF_START_ITEMS,
+} from '#state/boards.js'
 import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
+
+function shuffleWithRng<T>(items: T[], rng: Ctx['rng']): T[] {
+  const shuffled = [...items]
+  for (let index = shuffled.length - 1; index > 0; index--) {
+    const swapIndex = randomIndex(rng, index + 1)
+    ;[shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex]!,
+      shuffled[index]!,
+    ]
+  }
+  return shuffled
+}
+
+/** Rule: Vagabond > Setup 3 / Share Quests 9.7.2 — one shared 3 face-up. */
+function ensureFaceUpQuests(state: GameState, context: Ctx): void {
+  if (state.questsAvailable.length > 0) {
+    return
+  }
+  if (state.questDeck.length === 0) {
+    state.questDeck = shuffleWithRng([...QUEST_DECK], context.rng)
+  }
+  while (
+    state.questsAvailable.length < FACE_UP_QUEST_COUNT &&
+    state.questDeck.length > 0
+  ) {
+    const nextQuest = state.questDeck.pop()
+    if (nextQuest === undefined) {
+      break
+    }
+    state.questsAvailable.push(nextQuest)
+  }
+}
 
 const STEPS: Record<Phase, Step[]> = {
   birdsong: ['refresh', 'slip'],
@@ -51,13 +87,15 @@ export class Vagabond extends Faction {
   readonly id = 'vagabond' as const
   readonly steps = STEPS
 
-  setup(state: GameState, seat: Seat, _ctx: Ctx): void {
+  setup(state: GameState, seat: Seat, context: Ctx): void {
     // Rule: Vagabond > Setup 2, 5, 6 — pawn in forest; Thief items; relationships Indifferent.
     const board = boardOf(state, seat)
     board.forest = FALL.vagabondForest
     for (const type of THIEF_START_ITEMS) {
       placeItemInSatchelOrTrack(board, type)
     }
+    // Rule: Vagabond > Setup 3 — shuffle quests; draw 3 face up (shared).
+    ensureFaceUpQuests(state, context)
   }
 
   autoActions(state: GameState, phase: Phase, step: Step): Action[] {

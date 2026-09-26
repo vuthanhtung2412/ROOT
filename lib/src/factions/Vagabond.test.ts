@@ -6,17 +6,26 @@ import {
   refreshItems,
   satchelCapacity,
 } from '#factions/vagabond/items.js'
+import { FALL } from '#map/fall.js'
 import { resetPlaceIds } from '#rules/place.js'
+import { SeededRng } from '#rules/Rng.js'
 import {
+  FACE_UP_QUEST_COUNT,
   THIEF_START_ITEMS,
   createFactionBoard,
 } from '#state/boards.js'
-import { FALL } from '#map/fall.js'
 import {
   minimalState,
   player,
   testContext,
 } from '#test/fixtures.js'
+
+function setupContext(state: ReturnType<typeof minimalState>) {
+  return testContext({
+    state,
+    rng: new SeededRng({ seed: 1, cursor: 0 }),
+  })
+}
 
 describe('Vagabond setup', () => {
   beforeEach(() => resetPlaceIds())
@@ -27,6 +36,7 @@ describe('Vagabond setup', () => {
     if (board.kind !== 'vagabond') return
     expect(board.satchel).toHaveLength(0)
     expect(board.forest).toBeNull()
+    expect(board.completedQuests).toHaveLength(0)
   })
 
   it('Rule: Vagabond > Setup 2, 5 — forest + Thief start items', () => {
@@ -39,7 +49,7 @@ describe('Vagabond setup', () => {
         player(3, 'vagabond'),
       ],
     })
-    VAGABOND.setup(state, 3, testContext({ state }))
+    VAGABOND.setup(state, 3, setupContext(state))
     const board = boardOf(state, 3)
     expect(board.forest).toBe(FALL.vagabondForest)
     const types = [
@@ -49,6 +59,34 @@ describe('Vagabond setup', () => {
       ...board.tracks.bag.map((item) => item.type),
     ].sort()
     expect(types).toEqual([...THIEF_START_ITEMS].sort())
+  })
+
+  it('Rule: Vagabond > Setup 3 — shuffle quests; draw 3 face up', () => {
+    const state = minimalState({
+      factions: ['marquise', 'vagabond'],
+      players: [player(0, 'marquise'), player(1, 'vagabond')],
+    })
+    VAGABOND.setup(state, 1, setupContext(state))
+    expect(state.questsAvailable).toHaveLength(FACE_UP_QUEST_COUNT)
+    expect(state.questDeck).toHaveLength(15 - FACE_UP_QUEST_COUNT)
+    const ids = new Set([
+      ...state.questsAvailable.map((quest) => quest.id),
+      ...state.questDeck.map((quest) => quest.id),
+    ])
+    expect(ids.size).toBe(15)
+  })
+
+  it('Rule: Vagabond > Share Quests 9.7.2 — second setup does not draw extra', () => {
+    const state = minimalState({
+      factions: ['marquise', 'vagabond'],
+      players: [player(0, 'marquise'), player(1, 'vagabond')],
+    })
+    VAGABOND.setup(state, 1, setupContext(state))
+    const firstFaceUp = state.questsAvailable.map((quest) => quest.id)
+    const deckCount = state.questDeck.length
+    VAGABOND.setup(state, 1, setupContext(state))
+    expect(state.questsAvailable.map((quest) => quest.id)).toEqual(firstFaceUp)
+    expect(state.questDeck).toHaveLength(deckCount)
   })
 })
 
@@ -97,7 +135,7 @@ describe('Vagabond slip / move', () => {
       phase: 'birdsong',
       step: 'slip',
     })
-    VAGABOND.setup(state, 1, testContext({ state }))
+    VAGABOND.setup(state, 1, setupContext(state))
     const adjacent = FALL.forests[FALL.vagabondForest]![0]!
     VAGABOND.apply(state, { type: 'slip', to: adjacent }, testContext({ state }))
     const board = boardOf(state, 1)
@@ -118,7 +156,7 @@ describe('Vagabond slip / move', () => {
       phase: 'birdsong',
       step: 'slip',
     })
-    VAGABOND.setup(state, 1, testContext({ state }))
+    VAGABOND.setup(state, 1, setupContext(state))
     const slip = VAGABOND.legalActions(state, testContext({ state })).find(
       (spec) => spec.type === 'slip',
     )
