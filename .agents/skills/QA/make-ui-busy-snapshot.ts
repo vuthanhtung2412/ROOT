@@ -19,6 +19,8 @@ const rootDirectory = path.resolve(skillDirectory, '../../..')
 const outDirectory = path.join(rootDirectory, 'tmp/qa/snapshots')
 const OUT_NAME = 'ui-busy.json'
 
+type SnapshotPiece = GameSnapshot['state']['clearings'][number]['pieces'][number]
+
 function resolveStartingBuildings(game: Game): void {
   while (game.state.pending[0]?.type === 'placeStartingBuilding') {
     const clearings = game.legalActions()[0]?.params?.clearing
@@ -46,13 +48,30 @@ function item(type: ItemType, exhausted = false): { type: ItemType; exhausted: b
   return { type, exhausted }
 }
 
+function card(defId: string, tag: string): { id: string; defId: string } {
+  return { id: `${defId}#${tag}`, defId }
+}
+
 function pushPieces(
   snap: GameSnapshot,
   clearingId: number,
-  pieces: GameSnapshot['state']['clearings'][number]['pieces'],
+  pieces: readonly SnapshotPiece[],
 ): void {
   const clearing = snap.state.clearings[clearingId]!
   clearing.pieces = [...clearing.pieces, ...pieces]
+}
+
+function warriors(
+  owner: Seat,
+  clearingId: number,
+  count: number,
+  factionCode: string,
+): SnapshotPiece[] {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `w-${factionCode}-${String(clearingId)}-${String(index)}`,
+    kind: 'warrior' as const,
+    owner,
+  }))
 }
 
 function enrichBusyUi(snap: GameSnapshot): void {
@@ -61,7 +80,7 @@ function enrichBusyUi(snap: GameSnapshot): void {
   const alliance = 2 as Seat
   const vagabond = 3 as Seat
 
-  snap.state.turn = 8
+  snap.state.turn = 18
   snap.state.currentSeat = vagabond
   snap.state.phase = 'daylight'
   snap.state.step = 'actions'
@@ -74,107 +93,154 @@ function enrichBusyUi(snap: GameSnapshot): void {
   }
   snap.state.winner = undefined
 
-  // Scores + hands + crafted for every seat.
-  snap.state.players[marquise]!.vp = 12
-  snap.state.players[eyrie]!.vp = 9
-  snap.state.players[alliance]!.vp = 14
-  snap.state.players[vagabond]!.vp = 7
+  // Near-endgame scores so the VP rail looks busy.
+  snap.state.players[marquise]!.vp = 24
+  snap.state.players[eyrie]!.vp = 21
+  snap.state.players[alliance]!.vp = 26
+  snap.state.players[vagabond]!.vp = 19
 
+  // Hands at/near limit with mixed suits.
   snap.state.players[marquise]!.hand = [
-    { id: 'ROOT-79#m1', defId: 'ROOT-79' },
-    { id: 'ROOT-72#m2', defId: 'ROOT-72' },
-    { id: 'ROOT-108#m3', defId: 'ROOT-108' },
-    { id: 'ROOT-103#m4', defId: 'ROOT-103' },
+    card('ROOT-79', 'm1'),
+    card('ROOT-72', 'm2'),
+    card('ROOT-108', 'm3'),
+    card('ROOT-103', 'm4'),
+    card('ROOT-205', 'm5'),
   ]
   snap.state.players[eyrie]!.hand = [
-    { id: 'ROOT-72#e1', defId: 'ROOT-72' },
-    { id: 'ROOT-84#e2', defId: 'ROOT-84' },
-    { id: 'ROOT-203#e3', defId: 'ROOT-203' },
+    card('ROOT-72', 'e1'),
+    card('ROOT-84', 'e2'),
+    card('ROOT-203', 'e3'),
+    card('ROOT-211', 'e4'),
+    card('ROOT-88', 'e5'),
   ]
   snap.state.players[alliance]!.hand = [
-    { id: 'ROOT-201#a1', defId: 'ROOT-201' },
-    { id: 'ROOT-202#a2', defId: 'ROOT-202' },
-    { id: 'ROOT-200#a3', defId: 'ROOT-200' },
-    { id: 'ROOT-88#a4', defId: 'ROOT-88' },
+    card('ROOT-201', 'a1'),
+    card('ROOT-202', 'a2'),
+    card('ROOT-200', 'a3'),
+    card('ROOT-88', 'a4'),
+    card('ROOT-214', 'a5'),
   ]
   snap.state.players[vagabond]!.hand = [
-    { id: 'ROOT-211#v1', defId: 'ROOT-211' },
-    { id: 'ROOT-202#v2', defId: 'ROOT-202' },
-    { id: 'ROOT-64#v3', defId: 'ROOT-64' },
+    card('ROOT-211', 'v1'),
+    card('ROOT-202', 'v2'),
+    card('ROOT-64', 'v3'),
+    card('ROOT-57', 'v4'),
+    card('ROOT-208', 'v5'),
   ]
 
+  // Crafted permanent cards across seats (gallery + board chrome).
   snap.state.players[marquise]!.playArea = [
-    { id: 'ROOT-64#craft1', defId: 'ROOT-64' },
+    card('ROOT-64', 'craft-m1'),
+    card('ROOT-57', 'craft-m2'),
+    card('ROOT-79', 'craft-m3'),
+    card('ROOT-81', 'craft-m4'),
   ]
+  snap.state.players[eyrie]!.playArea = [
+    card('ROOT-72', 'craft-e1'),
+    card('ROOT-84', 'craft-e2'),
+    card('ROOT-71', 'craft-e3'),
+  ]
+  snap.state.players[alliance]!.playArea = [
+    card('ROOT-225', 'craft-a1'),
+    card('ROOT-59', 'craft-a2'),
+    card('ROOT-62', 'craft-a3'),
+    card('ROOT-77', 'craft-a4'),
+  ]
+  snap.state.players[vagabond]!.playArea = [
+    card('ROOT-88', 'craft-v1'),
+    card('ROOT-82', 'craft-v2'),
+  ]
+
   snap.state.players[marquise]!.craftedItems = [
     item('bag'),
     item('coin'),
+    item('hammer'),
+    item('sword'),
   ]
-  snap.state.players[eyrie]!.craftedItems = [item('hammer')]
-  snap.state.players[alliance]!.playArea = [
-    { id: 'ROOT-225#craft2', defId: 'ROOT-225' },
-  ]
+  snap.state.players[eyrie]!.craftedItems = [item('hammer'), item('boot'), item('tea')]
+  snap.state.players[alliance]!.craftedItems = [item('coin'), item('bag'), item('crossbow')]
+  snap.state.players[vagabond]!.craftedItems = [item('boot')]
 
-  // Discard pile so gallery has content.
+  // Fat discard for pile UI.
   snap.state.deck.discard = [
-    { id: 'ROOT-57#d1', defId: 'ROOT-57' },
-    { id: 'ROOT-59#d2', defId: 'ROOT-59' },
-    { id: 'ROOT-62#d3', defId: 'ROOT-62' },
-    { id: 'ROOT-71#d4', defId: 'ROOT-71' },
-    { id: 'ROOT-81#d5', defId: 'ROOT-81' },
+    card('ROOT-57', 'd1'),
+    card('ROOT-59', 'd2'),
+    card('ROOT-62', 'd3'),
+    card('ROOT-71', 'd4'),
+    card('ROOT-81', 'd5'),
+    card('ROOT-82', 'd6'),
+    card('ROOT-103', 'd7'),
+    card('ROOT-108', 'd8'),
+    card('ROOT-200', 'd9'),
+    card('ROOT-201', 'd10'),
+    card('ROOT-203', 'd11'),
+    card('ROOT-204', 'd12'),
+    card('ROOT-206', 'd13'),
+    card('ROOT-207', 'd14'),
+    card('ROOT-209', 'd15'),
   ]
 
   // --- Marquise board ---
-  // tracks.*.placed = buildings still ON TRACK (6 slots; setup leaves 5).
+  // tracks.*.placed = buildings still ON TRACK (6 slots).
   const marquiseBoard = snap.state.players[marquise]!.board
   if (marquiseBoard.kind === 'marquise') {
-    marquiseBoard.supply.warriors = 8
-    marquiseBoard.supply.wood = 3
-    marquiseBoard.tracks.sawmill.placed = 3 // 3 on map
-    marquiseBoard.tracks.workshop.placed = 4 // 2 on map
-    marquiseBoard.tracks.recruiter.placed = 3 // 3 on map
+    // 25 warriors total: 20 on map + 5 supply. Wood: 8 total → 7 on map + 1 supply.
+    marquiseBoard.supply.warriors = 5
+    marquiseBoard.supply.wood = 1
+    marquiseBoard.tracks.sawmill.placed = 1 // 5 on map
+    marquiseBoard.tracks.workshop.placed = 2 // 4 on map
+    marquiseBoard.tracks.recruiter.placed = 1 // 5 on map
   }
 
   // --- Eyrie board ---
-  // roostTrack.placed = roosts still ON TRACK (7 slots).
   const eyrieBoard = snap.state.players[eyrie]!.board
   if (eyrieBoard.kind === 'eyrie') {
-    eyrieBoard.supply.warriors = 6
+    // 20 warriors total: 16 on map + 4 supply.
+    eyrieBoard.supply.warriors = 4
     eyrieBoard.leader = 'charismatic'
-    eyrieBoard.roostTrack.placed = 3 // 4 roosts on map
+    eyrieBoard.leadersFaceUp = ['builder', 'commander', 'despot']
+    eyrieBoard.leadersFaceDown = []
+    eyrieBoard.roostTrack.placed = 1 // 6 roosts on map
     eyrieBoard.decree = {
       recruit: [
-        { id: 'ROOT-72#dr1', defId: 'ROOT-72' },
-        { id: 'ROOT-203#dr2', defId: 'ROOT-203' },
+        card('ROOT-72', 'dr1'),
+        card('ROOT-203', 'dr2'),
+        card('ROOT-200', 'dr3'),
       ],
-      move: [{ id: 'ROOT-84#dm1', defId: 'ROOT-84' }],
+      move: [card('ROOT-84', 'dm1'), card('ROOT-211', 'dm2')],
       battle: [
-        { id: 'ROOT-72#db1', defId: 'ROOT-72' },
-        { id: 'ROOT-213#db2', defId: 'ROOT-213' },
+        card('ROOT-72', 'db1'),
+        card('ROOT-213', 'db2'),
+        card('ROOT-214', 'db3'),
       ],
-      build: [{ id: 'ROOT-88#dbu1', defId: 'ROOT-88' }],
+      build: [card('ROOT-88', 'dbu1'), card('ROOT-201', 'dbu2')],
     }
   }
 
   // --- Alliance board ---
-  // sympathyTrack.placed = tokens still ON TRACK (10 slots).
   const allianceBoard = snap.state.players[alliance]!.board
   if (allianceBoard.kind === 'alliance') {
-    allianceBoard.supply.warriors = 2
-    allianceBoard.officers = 3
-    allianceBoard.bases = ['mouse'] // fox+rabbit on map
-    allianceBoard.sympathyTrack.placed = 5 // 5 on map
+    // 10 warriors total: 6 on map + 4 officers.
+    allianceBoard.supply.warriors = 0
+    allianceBoard.officers = 4
+    allianceBoard.bases = [] // all three bases on map
+    allianceBoard.sympathyTrack.placed = 2 // 8 on map
     allianceBoard.supporters = [
-      { id: 'ROOT-202#s1', defId: 'ROOT-202' },
-      { id: 'ROOT-202#s2', defId: 'ROOT-202' },
-      { id: 'ROOT-201#s3', defId: 'ROOT-201' },
-      { id: 'ROOT-200#s4', defId: 'ROOT-200' },
-      { id: 'ROOT-202#s5', defId: 'ROOT-202' },
-      { id: 'ROOT-201#s6', defId: 'ROOT-201' },
+      card('ROOT-202', 's1'),
+      card('ROOT-202', 's2'),
+      card('ROOT-201', 's3'),
+      card('ROOT-200', 's4'),
+      card('ROOT-202', 's5'),
+      card('ROOT-201', 's6'),
+      card('ROOT-214', 's7'),
+      card('ROOT-203', 's8'),
+      card('ROOT-200', 's9'),
+      card('ROOT-211', 's10'),
     ]
   }
 
-  // --- Vagabond board (busy pack) ---
+  // --- Vagabond board (maxed satchel / tracks) ---
   const vagabondBoard = snap.state.players[vagabond]!.board
   if (vagabondBoard.kind === 'vagabond') {
     vagabondBoard.forest = null
@@ -186,11 +252,17 @@ function enrichBusyUi(snap: GameSnapshot): void {
       item('sword', true),
       item('hammer'),
       item('crossbow'),
+      item('boot'),
+      item('sword'),
+      item('hammer'),
+      item('crossbow', true),
+      item('torch'),
     ]
-    vagabondBoard.tracks.tea = [item('tea'), item('tea', true)]
-    vagabondBoard.tracks.coin = [item('coin')]
-    vagabondBoard.tracks.bag = [item('bag'), item('bag')]
-    vagabondBoard.damaged = [item('boot'), item('sword')]
+    // Rule: tea/coin/bag tracks hold only matching item types.
+    vagabondBoard.tracks.tea = [item('tea'), item('tea'), item('tea', true)]
+    vagabondBoard.tracks.coin = [item('coin'), item('coin', true)]
+    vagabondBoard.tracks.bag = [item('bag'), item('bag'), item('bag')]
+    vagabondBoard.damaged = [item('boot'), item('sword'), item('torch'), item('bag')]
     vagabondBoard.relationships = {
       marquise: 'hostile',
       eyrie: 2,
@@ -199,121 +271,132 @@ function enrichBusyUi(snap: GameSnapshot): void {
     }
   }
 
-  // Clear map pieces then rebuild a crowded board (keep ruins).
+  // Clear map pieces then rebuild a packed board.
   for (const clearing of snap.state.clearings) {
-    clearing.pieces = clearing.pieces.filter(
-      (piece) => piece.kind !== 'warrior' && piece.kind !== 'building' && piece.kind !== 'token' && piece.kind !== 'pawn',
-    )
+    clearing.pieces = []
   }
 
-  // Keep at NW (C0) + warriors + sawmill + wood
+  // Warrior budgets (component totals): M20+E16+A6 on map.
+  // C0 keep nest — dense cats + wood pile
   pushPieces(snap, 0, [
     { id: 'keep', kind: 'token', type: 'keep', owner: marquise },
     { id: 'sawmill-0', kind: 'building', type: 'sawmill', owner: marquise },
+    { id: 'workshop-0', kind: 'building', type: 'workshop', owner: marquise, used: false },
     { id: 'wood-0a', kind: 'token', type: 'wood', owner: marquise },
     { id: 'wood-0b', kind: 'token', type: 'wood', owner: marquise },
-    { id: 'w-m-0a', kind: 'warrior', owner: marquise },
-    { id: 'w-m-0b', kind: 'warrior', owner: marquise },
-    { id: 'w-m-0c', kind: 'warrior', owner: marquise },
+    ...warriors(marquise, 0, 3, 'm'),
   ])
 
-  // C4 — workshop + recruiter + cats
+  // C1 — roost nest
+  pushPieces(snap, 1, [
+    { id: 'roost-1', kind: 'building', type: 'roost', owner: eyrie, used: false },
+    ...warriors(eyrie, 1, 3, 'e'),
+    ...warriors(marquise, 1, 1, 'm'),
+  ])
+
+  // C2 — roost + contested
+  pushPieces(snap, 2, [
+    { id: 'roost-2', kind: 'building', type: 'roost', owner: eyrie, used: false },
+    { id: 'sympathy-2', kind: 'token', type: 'sympathy', owner: alliance },
+    ...warriors(eyrie, 2, 2, 'e'),
+    ...warriors(alliance, 2, 1, 'a'),
+  ])
+
+  // C3 — recruiters stack
+  pushPieces(snap, 3, [
+    { id: 'recruiter-3a', kind: 'building', type: 'recruiter', owner: marquise },
+    { id: 'recruiter-3b', kind: 'building', type: 'recruiter', owner: marquise },
+    { id: 'sawmill-3', kind: 'building', type: 'sawmill', owner: marquise },
+    { id: 'wood-3', kind: 'token', type: 'wood', owner: marquise },
+    ...warriors(marquise, 3, 2, 'm'),
+  ])
+
+  // C4 — workshop + recruiter hub
   pushPieces(snap, 4, [
     { id: 'workshop-4', kind: 'building', type: 'workshop', owner: marquise, used: false },
     { id: 'recruiter-4', kind: 'building', type: 'recruiter', owner: marquise },
-    { id: 'w-m-4a', kind: 'warrior', owner: marquise },
-    { id: 'w-m-4b', kind: 'warrior', owner: marquise },
+    { id: 'sawmill-4', kind: 'building', type: 'sawmill', owner: marquise },
+    { id: 'wood-4a', kind: 'token', type: 'wood', owner: marquise },
+    { id: 'wood-4b', kind: 'token', type: 'wood', owner: marquise },
+    ...warriors(marquise, 4, 3, 'm'),
+    ...warriors(eyrie, 4, 1, 'e'),
   ])
 
-  // C7 — extra workshop + sawmill (board tracks match)
-  pushPieces(snap, 7, [
-    { id: 'workshop-7', kind: 'building', type: 'workshop', owner: marquise, used: true },
-    { id: 'sawmill-7', kind: 'building', type: 'sawmill', owner: marquise },
-    { id: 'wood-7', kind: 'token', type: 'wood', owner: marquise },
-    { id: 'w-m-7a', kind: 'warrior', owner: marquise },
-    { id: 'w-m-7b', kind: 'warrior', owner: marquise },
-  ])
-
-  // C9 — contested: cats + birds + sympathy
-  pushPieces(snap, 9, [
-    { id: 'w-m-9a', kind: 'warrior', owner: marquise },
-    { id: 'w-m-9b', kind: 'warrior', owner: marquise },
-    { id: 'roost-9', kind: 'building', type: 'roost', owner: eyrie, used: false },
-    { id: 'w-e-9a', kind: 'warrior', owner: eyrie },
-    { id: 'w-e-9b', kind: 'warrior', owner: eyrie },
-    { id: 'w-e-9c', kind: 'warrior', owner: eyrie },
-    { id: 'sympathy-9', kind: 'token', type: 'sympathy', owner: alliance },
-  ])
-
-  // C1 — Eyrie roost nest
-  pushPieces(snap, 1, [
-    { id: 'roost-1', kind: 'building', type: 'roost', owner: eyrie, used: false },
-    { id: 'w-e-1a', kind: 'warrior', owner: eyrie },
-    { id: 'w-e-1b', kind: 'warrior', owner: eyrie },
-    { id: 'w-e-1c', kind: 'warrior', owner: eyrie },
-    { id: 'w-e-1d', kind: 'warrior', owner: eyrie },
-  ])
-
-  // C2 — roost + birds
-  pushPieces(snap, 2, [
-    { id: 'roost-2', kind: 'building', type: 'roost', owner: eyrie, used: false },
-    { id: 'w-e-2a', kind: 'warrior', owner: eyrie },
-    { id: 'w-e-2b', kind: 'warrior', owner: eyrie },
-  ])
-
-  // C6 — fourth roost
-  pushPieces(snap, 6, [
-    { id: 'roost-6', kind: 'building', type: 'roost', owner: eyrie, used: true },
-    { id: 'sympathy-6', kind: 'token', type: 'sympathy', owner: alliance },
-    { id: 'w-e-6a', kind: 'warrior', owner: eyrie },
-    { id: 'w-a-6a', kind: 'warrior', owner: alliance },
-  ])
-
-  // C5 — fox: Alliance base + warriors + sympathy + ruin busy
+  // C5 — fox base mega-stack + ruin loot
   pushPieces(snap, 5, [
     { id: 'base-fox', kind: 'building', type: 'base', owner: alliance },
     { id: 'sympathy-5', kind: 'token', type: 'sympathy', owner: alliance },
-    { id: 'w-a-5a', kind: 'warrior', owner: alliance },
-    { id: 'w-a-5b', kind: 'warrior', owner: alliance },
-    { id: 'w-a-5c', kind: 'warrior', owner: alliance },
-    { id: 'w-m-5a', kind: 'warrior', owner: marquise },
+    { id: 'roost-5', kind: 'building', type: 'roost', owner: eyrie, used: false },
+    ...warriors(alliance, 5, 2, 'a'),
+    ...warriors(marquise, 5, 2, 'm'),
+    ...warriors(eyrie, 5, 2, 'e'),
   ])
   snap.state.clearings[5]!.ruin = { items: ['hammer', 'boot'] }
 
-  // C10 — rabbit base + sympathy + VB pawn here (busy mid-map)
-  pushPieces(snap, 10, [
-    { id: 'base-rabbit', kind: 'building', type: 'base', owner: alliance },
-    { id: 'sympathy-10', kind: 'token', type: 'sympathy', owner: alliance },
-    { id: 'w-a-10a', kind: 'warrior', owner: alliance },
-    { id: 'w-a-10b', kind: 'warrior', owner: alliance },
-    { id: 'w-e-10a', kind: 'warrior', owner: eyrie },
-    { id: `pawn-${String(vagabond)}`, kind: 'pawn', owner: vagabond },
+  // C6 — roost + sympathy tangle
+  pushPieces(snap, 6, [
+    { id: 'roost-6', kind: 'building', type: 'roost', owner: eyrie, used: true },
+    { id: 'sympathy-6', kind: 'token', type: 'sympathy', owner: alliance },
+    { id: 'workshop-6', kind: 'building', type: 'workshop', owner: marquise, used: true },
+    ...warriors(eyrie, 6, 2, 'e'),
+    ...warriors(alliance, 6, 1, 'a'),
+    ...warriors(marquise, 6, 1, 'm'),
   ])
-  snap.state.clearings[10]!.ruin = { items: ['sword'] }
 
-  // More sympathy + cats
+  // C7 — industrial cats
+  pushPieces(snap, 7, [
+    { id: 'workshop-7', kind: 'building', type: 'workshop', owner: marquise, used: true },
+    { id: 'sawmill-7', kind: 'building', type: 'sawmill', owner: marquise },
+    { id: 'recruiter-7', kind: 'building', type: 'recruiter', owner: marquise },
+    { id: 'wood-7a', kind: 'token', type: 'wood', owner: marquise },
+    { id: 'wood-7b', kind: 'token', type: 'wood', owner: marquise },
+    ...warriors(marquise, 7, 3, 'm'),
+  ])
+
+  // C8 — sympathy + sawmill fringe
   pushPieces(snap, 8, [
     { id: 'sympathy-8', kind: 'token', type: 'sympathy', owner: alliance },
     { id: 'sawmill-8', kind: 'building', type: 'sawmill', owner: marquise },
-    { id: 'wood-8', kind: 'token', type: 'wood', owner: marquise },
-    { id: 'w-m-8a', kind: 'warrior', owner: marquise },
+    { id: 'roost-8', kind: 'building', type: 'roost', owner: eyrie, used: false },
+    ...warriors(marquise, 8, 2, 'm'),
+    ...warriors(eyrie, 8, 2, 'e'),
   ])
+
+  // C9 — triple-faction scrap
+  pushPieces(snap, 9, [
+    { id: 'roost-9', kind: 'building', type: 'roost', owner: eyrie, used: false },
+    { id: 'sympathy-9', kind: 'token', type: 'sympathy', owner: alliance },
+    { id: 'recruiter-9', kind: 'building', type: 'recruiter', owner: marquise },
+    ...warriors(marquise, 9, 2, 'm'),
+    ...warriors(eyrie, 9, 2, 'e'),
+    ...warriors(alliance, 9, 1, 'a'),
+  ])
+
+  // C10 — rabbit base + VB pawn mid-map
+  pushPieces(snap, 10, [
+    { id: 'base-rabbit', kind: 'building', type: 'base', owner: alliance },
+    { id: 'sympathy-10', kind: 'token', type: 'sympathy', owner: alliance },
+    { id: `pawn-${String(vagabond)}`, kind: 'pawn', owner: vagabond },
+    ...warriors(alliance, 10, 1, 'a'),
+    ...warriors(eyrie, 10, 1, 'e'),
+    ...warriors(marquise, 10, 1, 'm'),
+  ])
+  snap.state.clearings[10]!.ruin = { items: ['sword'] }
+
+  // C11 — mouse base (one sympathy max per clearing)
   pushPieces(snap, 11, [
+    { id: 'base-mouse', kind: 'building', type: 'base', owner: alliance },
     { id: 'sympathy-11', kind: 'token', type: 'sympathy', owner: alliance },
-    { id: 'w-m-11a', kind: 'warrior', owner: marquise },
-    { id: 'w-e-11a', kind: 'warrior', owner: eyrie },
-    { id: 'w-a-11a', kind: 'warrior', owner: alliance },
+    ...warriors(eyrie, 11, 1, 'e'),
   ])
   snap.state.clearings[11]!.ruin = { items: ['bag'] }
 
-  // C3 corner — cats thin presence
+  // Eighth sympathy on a clearing that had none (no stacking).
   pushPieces(snap, 3, [
-    { id: 'recruiter-3', kind: 'building', type: 'recruiter', owner: marquise },
-    { id: 'recruiter-3b', kind: 'building', type: 'recruiter', owner: marquise },
-    { id: 'w-m-3a', kind: 'warrior', owner: marquise },
+    { id: 'sympathy-3', kind: 'token', type: 'sympathy', owner: alliance },
   ])
 
-  // Item supply depleted-ish so craft UI looks used
+  // Item supply emptied (crafted / VB took them).
   snap.state.itemSupply = {
     boot: 0,
     bag: 0,
@@ -321,7 +404,7 @@ function enrichBusyUi(snap: GameSnapshot): void {
     hammer: 0,
     sword: 0,
     tea: 0,
-    coin: 1,
+    coin: 0,
     torch: 0,
   }
 }
@@ -347,6 +430,12 @@ async function main(): Promise<void> {
     (sum, clearing) => sum + clearing.pieces.length,
     0,
   )
+  const piecesByKind: Record<string, number> = {}
+  for (const clearing of state.clearings) {
+    for (const piece of clearing.pieces) {
+      piecesByKind[piece.kind] = (piecesByKind[piece.kind] ?? 0) + 1
+    }
+  }
   console.log(
     JSON.stringify(
       {
@@ -363,6 +452,7 @@ async function main(): Promise<void> {
           playArea: player.playArea.length,
         })),
         mapPieces: pieceCount,
+        piecesByKind,
         discard: state.deck.discard.length,
         vagabond: (() => {
           const board = state.players[3]!.board
