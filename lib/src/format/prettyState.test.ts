@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   cardLabel,
+  describeAction,
   describeLogEntry,
   formatDecreeColumn,
   formatGameLogEntry,
@@ -104,7 +105,8 @@ describe('formatStateDiff / formatGameLogEntry', () => {
     b.players[0]!.vp = 3
     const text = formatGameLogEntry(b, { label: 'ACT', prev: a, action: { type: 'endPhase' } })
     expect(text).toContain('──────── game ────────')
-    expect(text).toContain('map (id+suit')
+    expect(text).toContain('map (clearing=id+suit')
+    expect(text).toContain('f0')
     expect(text).toContain('```diff')
     expect(text).toMatch(/^- +marquise\/p0 VP=0/m)
     expect(text).toMatch(/^\+ +marquise\/p0 VP=3/m)
@@ -230,5 +232,28 @@ describe('describeLogEntry / formatTurnLog', () => {
 
   it('empty log', () => {
     expect(formatTurnLog([], minimalState())).toBe('(empty log)')
+  })
+
+  it('Rule: Vagabond forest — slip + pawn line show FOREST', () => {
+    const state = minimalState({
+      factions: ['marquise', 'vagabond'],
+      players: [player(0, 'marquise'), player(1, 'vagabond')],
+    })
+    const board = state.players[1]!.board
+    if (board.kind === 'vagabond') {
+      board.forest = 3
+    }
+    expect(describeAction({ type: 'slip', to: 'forest:3' }, state)).toBe(
+      'SLIP → FOREST 3',
+    )
+    expect(describeAction({ type: 'slip', to: 5 }, state)).toBe('SLIP → C5')
+    const view = formatGameView(state)
+    expect(view).toContain('pawn: FOREST 3')
+    expect(view).toContain('forests:')
+    expect(view).toMatch(/F3 borders=.*← vagabond\/p1/)
+    expect(view).toContain('occupied: F3:vagabond/p1')
+    expect(view).toContain('[V3]')
+    expect(view).toContain('[f0]')
+    expect(view).toContain('*')
   })
 })

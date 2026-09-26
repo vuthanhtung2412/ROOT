@@ -17,4 +17,29 @@ describe('toAscii', () => {
     expect(ascii).toContain('1M')
     expect(ascii).toContain('2R')
   })
+
+  it('showForests places f# at centroids; V# when occupied', () => {
+    const empty = toAscii(FALL, FALL_LAYOUT, {
+      width: 64,
+      height: 26,
+      showSuit: true,
+      showForests: true,
+    })
+    expect(empty).toContain('[f0]')
+    expect(empty).toContain('[f3]')
+    expect(empty).toContain(':')
+    expect(empty).toContain('+')
+    expect(empty).not.toContain('[V3]')
+
+    const occupied = toAscii(FALL, FALL_LAYOUT, {
+      width: 64,
+      height: 26,
+      showSuit: true,
+      showForests: true,
+      occupiedForests: new Map([[3, 'V']]),
+    })
+    expect(occupied).toContain('[V3]')
+    expect(occupied).toContain('*')
+    expect(occupied).not.toContain('[f3]')
+  })
 })
