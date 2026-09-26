@@ -30,6 +30,7 @@ import {
 } from '#game/resolution/marquiseActionComposer.ts'
 import { createMarchWorkflowHooks } from '#game/resolution/marchWorkflowHooks.ts'
 import { createVagabondComposerHooks } from '#game/resolution/vagabondActionComposer.ts'
+import { createDominanceComposerHooks } from '#game/resolution/dominanceActionComposer.ts'
 import { createAllianceComposerHooks } from '#game/resolution/allianceActionComposer.ts'
 import { readBattleClearingId } from '#game/battleOverlayModel.ts'
 import {
@@ -92,6 +93,7 @@ export class ReactGameController {
   private marquiseCards = createMarquiseCardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
   private vagabondComposer = createVagabondComposerHooks()
+  private dominanceComposer = createDominanceComposerHooks()
   private allianceComposer = createAllianceComposerHooks()
   private eventComposer = createEventComposerHooks()
   private unsubscribe: (() => void) | null = null
@@ -147,6 +149,7 @@ export class ReactGameController {
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
     this.vagabondComposer = createVagabondComposerHooks()
+    this.dominanceComposer = createDominanceComposerHooks()
     this.allianceComposer = createAllianceComposerHooks()
     this.eventComposer = createEventComposerHooks()
     this.autoPrompts = new AutoPromptController({
@@ -195,6 +198,7 @@ export class ReactGameController {
         this.eyrieComposer.hooks,
         this.allianceComposer.hooks,
         this.vagabondComposer.hooks,
+        this.dominanceComposer.hooks,
         this.eventComposer.hooks,
       ),
     )
@@ -389,6 +393,7 @@ export class ReactGameController {
         ...this.eyrieComposer.getPromptOptions(),
         ...this.allianceComposer.getPromptOptions(),
         ...this.vagabondComposer.getPromptOptions(),
+        ...this.dominanceComposer.getPromptOptions(),
         ...this.eventComposer.getPromptOptions(),
       ],
       getDiscardSelection: () => {
@@ -446,6 +451,7 @@ export class ReactGameController {
         this.eyrieComposer.getDraft(),
         this.allianceComposer.getDraft(),
         this.vagabondComposer.getDraft(),
+        this.dominanceComposer.getDraft(),
         this.eventComposer.getDraft(),
       ])
     )
