@@ -116,6 +116,77 @@
   flex: 0 0 auto;
 }
 
+/* Shared face-up quest pile (Vagabond board). */
+.faction-board-modal__quest-pile {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  pointer-events: auto;
+  background: rgba(20, 24, 18, 0.72);
+  border: 1px solid rgba(230, 220, 190, 0.35);
+  border-radius: 4px;
+  color: #f3ecd8;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.faction-board-modal__quest-pile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.faction-board-modal__quest-deck-count,
+.faction-board-modal__quest-completed,
+.faction-board-modal__quest-empty {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.faction-board-modal__quest-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  background: rgba(248, 242, 224, 0.92);
+  color: #1c1a14;
+  border-left: 4px solid #888;
+}
+
+.faction-board-modal__quest-card--fox {
+  border-left-color: #b54a2a;
+}
+
+.faction-board-modal__quest-card--mouse {
+  border-left-color: #c47a2c;
+}
+
+.faction-board-modal__quest-card--rabbit {
+  border-left-color: #c9a227;
+}
+
+.faction-board-modal__quest-name {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.faction-board-modal__quest-suit,
+.faction-board-modal__quest-items {
+  font-size: 11px;
+  line-height: 1.2;
+  text-transform: capitalize;
+}
+
 /* Vagabond relationship markers — vertical stack, item-token size,
    centered in full Allied column / Hostile box. */
 .faction-board-modal__relationship-pack {

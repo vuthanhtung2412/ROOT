@@ -50,6 +50,7 @@ function formatActionLabel(
   if (spec.type === 'vbMove') return 'move'
   if (spec.type === 'vbBattle') return 'battle'
   if (spec.type === 'explore') return 'explore'
+  if (spec.type === 'quest') return 'quest'
   if (spec.type === 'aid') return 'aid'
   if (spec.type === 'strike') return 'strike'
   if (spec.type === 'repair') return 'repair'

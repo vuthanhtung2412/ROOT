@@ -39,6 +39,8 @@ export type ActionChoiceParamsView = {
   op?: Array<'move' | 'battle' | 'recruit' | 'organize'>
   forests?: number[]
   supporterIds?: string[]
+  questIds?: string[]
+  rewards?: Array<'vp' | 'draw'>
 }
 
 export function readChoiceParams(
@@ -124,7 +126,28 @@ export function readChoiceParams(
   if (supporterIds !== undefined) {
     view.supporterIds = supporterIds
   }
+  const questIds = asStringArray(raw.questIds)
+  if (questIds !== undefined) {
+    view.questIds = questIds
+  }
+  const rewards = asQuestRewardArray(raw.rewards)
+  if (rewards !== undefined) {
+    view.rewards = rewards
+  }
   return view
+}
+
+function asQuestRewardArray(
+  value: unknown,
+): Array<'vp' | 'draw'> | undefined {
+  const strings = asStringArray(value)
+  if (strings === undefined) {
+    return undefined
+  }
+  if (!strings.every((entry) => entry === 'vp' || entry === 'draw')) {
+    return undefined
+  }
+  return strings
 }
 
 function asStringArray(value: unknown): string[] | undefined {

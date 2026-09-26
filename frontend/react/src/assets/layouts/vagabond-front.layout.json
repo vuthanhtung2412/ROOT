@@ -67,6 +67,13 @@
       "height": 492
     },
     {
+      "id": "quests",
+      "x": 40,
+      "y": 220,
+      "width": 260,
+      "height": 520
+    },
+    {
       "id": "relationship-development-0",
       "x": 1030,
       "y": 278,

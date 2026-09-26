@@ -35,6 +35,7 @@ import {
   type VagabondAbilityInfo,
 } from '#assets/vagabondBoardCatalog.ts'
 import type { GameState } from '#api/client.ts'
+import { questDefOf, type QuestCard } from '@root/lib/quests'
 
 export type CraftedItemView = {
   type: string
@@ -132,6 +133,14 @@ export type VagabondRelationshipMarkerView = {
   space: number | 'hostile'
 }
 
+export type VagabondQuestView = {
+  id: string
+  defId: string
+  name: string
+  suit: string
+  items: readonly [string, string]
+}
+
 export type VagabondBoardViewModel = {
   kind: 'vagabond'
   seat: number
@@ -152,6 +161,10 @@ export type VagabondBoardViewModel = {
   }
   relationships: VagabondRelationshipMarkerView[]
   forest: number | null
+  /** Face-up quests near the map. Rule: Vagabond > Setup 3. */
+  questsAvailable: VagabondQuestView[]
+  questDeckCount: number
+  completedQuestCount: number
   boardTextureKey: string
 }
 
@@ -437,13 +450,72 @@ export function buildFactionBoardViewModel(
     return null
   }
   const view = buildFactionBoardViewModelFromPlayer(player, state.factions)
-  if (view === null || view.kind !== 'eyrie') {
-    return view
+  if (view === null) {
+    return null
   }
-  return {
-    ...view,
-    activeDecreeColumn: readActiveDecreeColumn(state.turnScratch),
+  if (view.kind === 'eyrie') {
+    return {
+      ...view,
+      activeDecreeColumn: readActiveDecreeColumn(state.turnScratch),
+    }
   }
+  if (view.kind === 'vagabond') {
+    return {
+      ...view,
+      questsAvailable: questViewsFromState(state),
+      questDeckCount: questDeckCountFromState(state),
+      completedQuestCount: completedQuestCountFromBoard(player.board),
+    }
+  }
+  return view
+}
+
+function isQuestCard(value: unknown): value is QuestCard {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const id = Reflect.get(value, 'id')
+  const defId = Reflect.get(value, 'defId')
+  return typeof id === 'string' && typeof defId === 'string'
+}
+
+function questViewsFromState(state: GameState): VagabondQuestView[] {
+  const raw = Reflect.get(state, 'questsAvailable')
+  if (!Array.isArray(raw)) {
+    return []
+  }
+  const views: VagabondQuestView[] = []
+  for (const entry of raw) {
+    if (!isQuestCard(entry)) {
+      continue
+    }
+    try {
+      const definition = questDefOf(entry)
+      views.push({
+        id: entry.id,
+        defId: entry.defId,
+        name: definition.name,
+        suit: definition.suit,
+        items: definition.items,
+      })
+    } catch {
+      continue
+    }
+  }
+  return views
+}
+
+function questDeckCountFromState(state: GameState): number {
+  const raw = Reflect.get(state, 'questDeck')
+  return Array.isArray(raw) ? raw.length : 0
+}
+
+function completedQuestCountFromBoard(board: unknown): number {
+  if (typeof board !== 'object' || board === null) {
+    return 0
+  }
+  const completed = Reflect.get(board, 'completedQuests')
+  return Array.isArray(completed) ? completed.length : 0
 }
 
 export function buildFactionBoardViewModelFromPlayer(
@@ -567,6 +639,13 @@ export function buildFactionBoardViewModelFromPlayer(
         presentFactions,
       ),
       forest: board.forest,
+      questsAvailable: [],
+      questDeckCount: 0,
+      completedQuestCount: Array.isArray(
+        Reflect.get(board, 'completedQuests'),
+      )
+        ? (Reflect.get(board, 'completedQuests') as unknown[]).length
+        : 0,
       boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.vagabond,
     }
   }

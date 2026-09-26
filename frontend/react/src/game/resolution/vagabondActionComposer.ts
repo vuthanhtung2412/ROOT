@@ -15,6 +15,7 @@ type VagabondDraft =
   | { type: 'repair'; indexes: number[] }
   | { type: 'vbCraft'; cardIds: string[] }
   | { type: 'steal'; defenders: number[] }
+  | { type: 'quest'; questIds: string[]; questId?: string }
 
 function unique(values: number[]): number[] {
   return [...new Set(values)]
@@ -160,6 +161,41 @@ export function createVagabondComposerHooks(): {
         }
         return setDefenderPrompt('Steal — pick target', defenders)
       }
+      if (spec.type === 'quest') {
+        const questIds = params.questIds ?? []
+        draft = { type: 'quest', questIds }
+        if (questIds.length === 1) {
+          draft = { type: 'quest', questIds, questId: questIds[0]! }
+          promptOptions = [
+            { label: 'VP for suit', value: 'vp' },
+            { label: 'Draw 2', value: 'draw' },
+          ]
+          return {
+            kind: 'incomplete',
+            prompt: {
+              message: 'Quest — pick reward',
+              highlightClearings: [],
+              enabledCardIds: null,
+              canConfirm: false,
+              canCancel: true,
+            },
+          }
+        }
+        promptOptions = questIds.map((questId, index) => ({
+          label: `quest ${String(index + 1)}`,
+          value: questId,
+        }))
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: 'Quest — pick face-up quest',
+            highlightClearings: [],
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: true,
+          },
+        }
+      }
       draft = { type: 'idle' }
       return null
     },
@@ -268,6 +304,38 @@ export function createVagabondComposerHooks(): {
     },
 
     chooseColumn: (column: string): ComposerOutcome | null => {
+      if (draft.type === 'quest') {
+        if (draft.questId === undefined) {
+          if (!draft.questIds.includes(column)) {
+            return null
+          }
+          draft = { type: 'quest', questIds: draft.questIds, questId: column }
+          promptOptions = [
+            { label: 'VP for suit', value: 'vp' },
+            { label: 'Draw 2', value: 'draw' },
+          ]
+          return {
+            kind: 'incomplete',
+            prompt: {
+              message: 'Quest — pick reward',
+              highlightClearings: [],
+              enabledCardIds: null,
+              canConfirm: false,
+              canCancel: true,
+            },
+          }
+        }
+        if (column !== 'vp' && column !== 'draw') {
+          return null
+        }
+        const questId = draft.questId
+        draft = { type: 'idle' }
+        promptOptions = []
+        return {
+          kind: 'ready',
+          action: { type: 'quest', questId, reward: column },
+        }
+      }
       const seat = Number(column)
       if (!Number.isInteger(seat)) {
         return null
