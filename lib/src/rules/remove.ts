@@ -19,6 +19,7 @@ import {
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { addVictoryPoints } from '#rules/dominance.js'
+import { EYRIE_TOTAL_ROOSTS } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
 
 /** Rule: Vagabond — full removal clears enemies → damage 3 items instead of pawn. */
@@ -65,8 +66,8 @@ function returnPieceToOwner(state: GameState, piece: Piece): void {
     }
   }
   if (piece.kind === 'building' && piece.type === 'roost' && board.kind === 'eyrie') {
-    // Rule: Eyrie — destroyed roosts return to rightmost empty track space.
-    board.roostTrack.placed = Math.min(6, board.roostTrack.placed + 1)
+    // Rule: Eyrie — destroyed roosts return to rightmost empty track space (up to all 7).
+    board.roostTrack.placed = Math.min(EYRIE_TOTAL_ROOSTS, board.roostTrack.placed + 1)
   }
   if (piece.kind === 'token' && piece.type === 'sympathy' && board.kind === 'alliance') {
     board.sympathyTrack.placed = Math.min(

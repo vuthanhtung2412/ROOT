@@ -72,18 +72,14 @@ export function moveLegal(
   ctx: Ctx,
 ): boolean {
   const { seat, card, moves } = check
-  if (moves.length < 1) return false
-  const from = moves[0]!.from
-  if (!cardMatchesClearing(card, from)) return false
-  if (warriors(state, from, seat) < 1) return false
-  for (const move of moves) {
-    if (move.count < 1) return false
-    if (!canMove(state, { seat, from: move.from, to: move.to }, ctx.hooks)) {
-      return false
-    }
-    if (move.count > warriors(state, move.from, seat)) return false
-  }
-  return true
+  // Rule: 7.5.2.II — one move: one origin → one adjacent.
+  if (moves.length !== 1) return false
+  const move = moves[0]!
+  if (!cardMatchesClearing(card, move.from)) return false
+  if (warriors(state, move.from, seat) < 1) return false
+  if (move.count < 1) return false
+  if (move.count > warriors(state, move.from, seat)) return false
+  return canMove(state, { seat, from: move.from, to: move.to }, ctx.hooks)
 }
 
 function hasAnyDecreeMove(

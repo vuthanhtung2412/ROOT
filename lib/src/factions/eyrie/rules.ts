@@ -69,11 +69,15 @@ export function fewestWarriorClearings(
   state: GameState,
   seat: Seat,
 ): ClearingId[] {
+  const board = boardOf(state, seat)
+  // Rule: 7.4.3 — roost + 3 warriors must all be placeable.
+  if (board.roostTrack.placed < 1) return []
+  if (board.supply.warriors < 3) return []
+
   const candidates: ClearingId[] = []
   for (let clearing = 0; clearing < state.clearings.length; clearing++) {
     if (!canPlace(state, seat, clearing)) continue
     if (openSlots(state, clearing) < 1) continue
-    if (boardOf(state, seat).roostTrack.placed < 1) continue
     candidates.push(clearing)
   }
   if (candidates.length === 0) return []

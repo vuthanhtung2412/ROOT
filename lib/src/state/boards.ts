@@ -44,6 +44,8 @@ export type EyrieBoard = {
 
 /** Evening VP by roosts on map (index 0..7). Rule: Eyrie roosts track. */
 export const EYRIE_ROOST_VP = [0, 0, 1, 2, 3, 4, 4, 5] as const
+/** Total roost pieces (1 starts on map + 6 on track). */
+export const EYRIE_TOTAL_ROOSTS = 7
 /** Roosts-on-map thresholds that uncover +1 draw. */
 export const EYRIE_ROOST_DRAW_BONUS_THRESHOLDS = [3, 6] as const
 
