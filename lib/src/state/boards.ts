@@ -99,6 +99,8 @@ export type VagabondItem = {
 export const VAGABOND_RELATIONSHIP_AID_COST = [1, 2, 3] as const
 export const VAGABOND_RELATIONSHIP_VP = [1, 2, 2] as const
 export const VAGABOND_ALLIED_STEP = 3
+/** Rule: 9.2.5.I — tea/coin/bag tracks hold at most three matching items. */
+export const VAGABOND_TRACK_ITEM_CAP = 3
 
 export const THIEF_START_ITEMS: readonly ItemType[] = [
   'boot',

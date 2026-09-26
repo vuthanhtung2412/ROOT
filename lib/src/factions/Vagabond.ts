@@ -24,6 +24,7 @@ import {
   pawnClearing,
   placeItemInSatchelOrTrack,
   refreshItems,
+  restoreRepairedItem,
 } from '#factions/vagabond/items.js'
 import {
   destinationHasHostile,
@@ -349,7 +350,6 @@ export class Vagabond extends Faction {
               clearing,
               pieceIds: [target.id],
               scorer: seat,
-              options: { fromBattle: true },
             },
             ctx,
           ),
@@ -370,7 +370,7 @@ export class Vagabond extends Faction {
         const item = board.damaged[action.itemIndex]
         if (item === undefined) throw new RuleError('NO_DAMAGED_ITEM')
         board.damaged = board.damaged.filter((_, index) => index !== action.itemIndex)
-        placeItemInSatchelOrTrack(board, item.type)
+        restoreRepairedItem(board, item)
         return [{ t: 'action', actor: seat, action }]
       }
       case 'vbCraft': {

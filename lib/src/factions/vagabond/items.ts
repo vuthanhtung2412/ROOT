@@ -1,6 +1,7 @@
 import type { ItemType, Seat } from '#pieces/types.js'
 import { playerOf } from '#queries/seat.js'
 import type { VagabondBoard, VagabondItem } from '#state/boards.js'
+import { VAGABOND_TRACK_ITEM_CAP } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
 import { RuleError } from '#rules/RuleError.js'
 
@@ -124,10 +125,28 @@ export function placeItemInSatchelOrTrack(
 ): void {
   const item: VagabondItem = { type, exhausted: false }
   if (type === 'tea' || type === 'coin' || type === 'bag') {
-    board.tracks[type].push(item)
-    return
+    if (board.tracks[type].length < VAGABOND_TRACK_ITEM_CAP) {
+      board.tracks[type].push(item)
+      return
+    }
   }
   board.satchel.push(item)
+}
+
+/** Rule: 9.5.7 Repair — restore damaged item, keep current face (exhausted or not). */
+export function restoreRepairedItem(board: VagabondBoard, item: VagabondItem): void {
+  const restored: VagabondItem = { type: item.type, exhausted: item.exhausted }
+  if (
+    (restored.type === 'tea' ||
+      restored.type === 'coin' ||
+      restored.type === 'bag') &&
+    !restored.exhausted &&
+    board.tracks[restored.type].length < VAGABOND_TRACK_ITEM_CAP
+  ) {
+    board.tracks[restored.type].push(restored)
+    return
+  }
+  board.satchel.push(restored)
 }
 
 export function pawnClearing(state: GameState, seat: Seat): number | null {

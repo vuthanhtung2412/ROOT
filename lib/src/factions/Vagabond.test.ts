@@ -3,21 +3,25 @@ import { VAGABOND } from '#factions/Vagabond.js'
 import {
   boardOf,
   exhaustItem,
+  placeItemInSatchelOrTrack,
   refreshItems,
   satchelCapacity,
 } from '#factions/vagabond/items.js'
 import { FALL } from '#map/fall.js'
 import { resetPlaceIds } from '#rules/place.js'
+import { removePieces } from '#rules/remove.js'
 import { SeededRng } from '#rules/Rng.js'
 import {
   FACE_UP_QUEST_COUNT,
   THIEF_START_ITEMS,
+  VAGABOND_TRACK_ITEM_CAP,
   createFactionBoard,
 } from '#state/boards.js'
 import {
   minimalState,
   player,
   testContext,
+  withPieces,
 } from '#test/fixtures.js'
 
 function setupContext(state: ReturnType<typeof minimalState>) {
@@ -179,5 +183,113 @@ describe('Vagabond slip / move', () => {
           ),
       ),
     ).toBe(true)
+  })
+})
+
+describe('Vagabond relationships / items SoT', () => {
+  beforeEach(() => resetPlaceIds())
+
+  it('Rule: 9.2.5.I — tea/coin/bag tracks cap at 3', () => {
+    const board = createFactionBoard('vagabond')
+    if (board.kind !== 'vagabond') return
+    placeItemInSatchelOrTrack(board, 'tea')
+    placeItemInSatchelOrTrack(board, 'tea')
+    placeItemInSatchelOrTrack(board, 'tea')
+    placeItemInSatchelOrTrack(board, 'tea')
+    expect(board.tracks.tea).toHaveLength(VAGABOND_TRACK_ITEM_CAP)
+    expect(board.satchel.filter((item) => item.type === 'tea')).toHaveLength(1)
+  })
+
+  it('Rule: 9.5.7 Repair — keep exhausted face', () => {
+    const state = minimalState({
+      factions: ['marquise', 'vagabond'],
+      players: [player(0, 'marquise'), player(1, 'vagabond')],
+      currentSeat: 1,
+      phase: 'daylight',
+      step: 'daylight',
+    })
+    VAGABOND.setup(state, 1, setupContext(state))
+    const board = boardOf(state, 1)
+    board.forest = null
+    const clearing = FALL.forests[FALL.vagabondForest]![0]!
+    state.clearings[clearing]!.pieces.push({
+      id: 'pawn-1',
+      kind: 'pawn',
+      owner: 1,
+    })
+    board.satchel.push({ type: 'hammer', exhausted: false })
+    board.damaged.push({ type: 'crossbow', exhausted: true })
+    VAGABOND.apply(
+      state,
+      { type: 'repair', itemIndex: 0 },
+      testContext({ state }),
+    )
+    expect(board.damaged).toHaveLength(0)
+    const repaired = board.satchel.find((item) => item.type === 'crossbow')
+    expect(repaired?.exhausted).toBe(true)
+  })
+
+  it('Rule: 9.2.9.III/IIIa — battle Hostile then Infamy; strike no Infamy', () => {
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'vagabond'],
+        players: [player(0, 'marquise'), player(1, 'vagabond')],
+        currentSeat: 1,
+        phase: 'daylight',
+        step: 'daylight',
+      }),
+      4,
+      [
+        { id: 'w1', kind: 'warrior', owner: 0 },
+        { id: 'w2', kind: 'warrior', owner: 0 },
+        { id: 'tok', kind: 'token', type: 'wood', owner: 0 },
+      ],
+    )
+    const board = boardOf(state, 1)
+    board.relationships.marquise = 0
+
+    removePieces(
+      state,
+      {
+        clearing: 4,
+        pieceIds: ['w1'],
+        scorer: 1,
+        options: { fromBattle: true },
+      },
+      testContext({ state }),
+    )
+    expect(board.relationships.marquise).toBe('hostile')
+    expect(state.players[1]!.vp).toBe(0)
+
+    removePieces(
+      state,
+      {
+        clearing: 4,
+        pieceIds: ['w2', 'tok'],
+        scorer: 1,
+        options: { fromBattle: true },
+      },
+      testContext({ state }),
+    )
+    // Infamy: warrior + wood token of already-Hostile (+1 building/token VP for wood)
+    expect(state.players[1]!.vp).toBe(3)
+
+    const strikeState = withPieces(
+      minimalState({
+        factions: ['marquise', 'vagabond'],
+        players: [player(0, 'marquise'), player(1, 'vagabond')],
+        currentSeat: 1,
+      }),
+      5,
+      [{ id: 'hostile-w', kind: 'warrior', owner: 0 }],
+    )
+    const strikeBoard = boardOf(strikeState, 1)
+    strikeBoard.relationships.marquise = 'hostile'
+    removePieces(
+      strikeState,
+      { clearing: 5, pieceIds: ['hostile-w'], scorer: 1 },
+      testContext({ state: strikeState }),
+    )
+    expect(strikeState.players[1]!.vp).toBe(0)
   })
 })

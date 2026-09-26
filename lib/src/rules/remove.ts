@@ -117,6 +117,46 @@ function applyAllianceBaseRemoval(
   }
 }
 
+/**
+ * Rule: 9.2.9.III — remove warrior → Hostile.
+ * Rule: 9.2.9.IIIa Infamy — in battle on your turn, +1 VP per Hostile piece removed
+ * except the warrior that made the faction Hostile.
+ */
+function applyVagabondHostileAndInfamy(
+  state: GameState,
+  actor: Seat,
+  removed: Piece[],
+  fromBattle: boolean,
+  ctx: Ctx | undefined,
+  logs: LogEntry[],
+): void {
+  const board = vagabondBoardOf(state, actor)
+  let infamyPoints = 0
+  for (const piece of removed) {
+    if (piece.owner === actor) continue
+    const faction = playerOf(state, piece.owner).faction
+    if (faction === 'vagabond') continue
+    const wasHostile = board.relationships[faction] === 'hostile'
+    if (piece.kind === 'warrior' && !wasHostile) {
+      board.relationships[faction] = 'hostile'
+      continue
+    }
+    if (
+      fromBattle &&
+      state.currentSeat === actor &&
+      board.relationships[faction] === 'hostile'
+    ) {
+      infamyPoints += 1
+    }
+  }
+  if (infamyPoints <= 0) return
+  const scored = addVictoryPoints(state, actor, infamyPoints)
+  if (scored > 0) {
+    logs.push({ t: 'vp', actor, delta: scored, reason: 'infamy' })
+    ctx?.emit({ s: 'vp', actor, delta: scored })
+  }
+}
+
 /** Rule: Victory — +1 VP per enemy building/token removed. */
 export function removePieces(
   state: GameState,
@@ -187,6 +227,18 @@ export function removePieces(
       }
       victoryPointsDelta += 1
     }
+  }
+
+  // Rule: 9.2.9.III / IIIa — Vagabond Hostile + Infamy (battle on your turn).
+  if (playerOf(state, actor).faction === 'vagabond') {
+    applyVagabondHostileAndInfamy(
+      state,
+      actor,
+      removed,
+      options?.fromBattle === true,
+      ctx,
+      logs,
+    )
   }
 
   if (victoryPointsDelta > 0) {

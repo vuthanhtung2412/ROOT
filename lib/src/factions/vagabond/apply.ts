@@ -150,20 +150,14 @@ export function maybeHostile(
   seat: Seat,
   target: Seat,
   removedWarrior: boolean,
-  ctx: Ctx,
-  logs: LogEntry[],
+  _ctx: Ctx,
+  _logs: LogEntry[],
 ): void {
+  // Rule: 9.2.9.III — remove warrior → Hostile. Infamy only in battle (removePieces).
   if (!removedWarrior) return
   const board = boardOf(state, seat)
   const faction = playerOf(state, target).faction
-  if (board.relationships[faction] === 'hostile') {
-    const scored = addVictoryPoints(state, seat, 1)
-    if (scored > 0) {
-      logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'infamy' })
-      ctx.emit({ s: 'vp', actor: seat, delta: scored })
-    }
-    return
-  }
+  if (board.relationships[faction] === 'hostile') return
   board.relationships[faction] = 'hostile'
 }
 
