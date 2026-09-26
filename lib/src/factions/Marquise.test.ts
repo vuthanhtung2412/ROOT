@@ -19,6 +19,7 @@ import {
   buildColumn,
   keepCornerFor,
   MARQUISE,
+  placeBirdsongWood,
   recruiterDrawBonus,
 } from '#factions/Marquise.js'
 
@@ -136,6 +137,32 @@ describe('Marquise turn', () => {
         ),
       ).toBe(true)
     }
+  })
+
+  it('Rule: 6.4 Birdsong — one wood per sawmill in same clearing', () => {
+    const seat = 0 as const
+    const state = withPieces(
+      minimalState({
+        phase: 'birdsong',
+        step: 'wood',
+        players: [player(seat, 'marquise')],
+      }),
+      4,
+      [
+        { id: 'saw-a', kind: 'building', type: 'sawmill', owner: seat, used: false },
+        { id: 'saw-b', kind: 'building', type: 'sawmill', owner: seat, used: false },
+      ],
+    )
+    const board = state.players[seat]!.board
+    expect(board.kind).toBe('marquise')
+    if (board.kind !== 'marquise') return
+    board.supply.wood = 8
+    placeBirdsongWood(state, seat)
+    const woodCount = state.clearings[4]!.pieces.filter(
+      (piece) => piece.kind === 'token' && piece.type === 'wood' && piece.owner === seat,
+    ).length
+    expect(woodCount).toBe(2)
+    expect(board.supply.wood).toBe(6)
   })
 
   it('Rule: Marquise > Daylight — craft step then actions step', () => {

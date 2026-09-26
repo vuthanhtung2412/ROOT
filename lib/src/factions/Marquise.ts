@@ -63,6 +63,7 @@ export {
 } from '#factions/marquise/setup.js'
 export {
   buildColumn,
+  placeBirdsongWood,
   recruiterDrawBonus,
   trackColumnOccupied,
 } from '#factions/marquise/rules.js'
