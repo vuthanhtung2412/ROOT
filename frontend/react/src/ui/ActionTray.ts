@@ -49,6 +49,7 @@ function formatActionLabel(
   if (spec.type === 'slip') return 'slip'
   if (spec.type === 'vbMove') return 'move'
   if (spec.type === 'vbBattle') return 'battle'
+  if (spec.type === 'vbRearrange') return 'rearrange'
   if (spec.type === 'explore') return 'explore'
   if (spec.type === 'quest') return 'quest'
   if (spec.type === 'takeDominance') return 'take dominance'

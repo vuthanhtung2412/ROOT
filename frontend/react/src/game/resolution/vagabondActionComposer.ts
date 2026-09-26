@@ -8,8 +8,16 @@ import {
 type VagabondDraft =
   | { type: 'idle' }
   | { type: 'slip'; clearings: number[]; forests: number[] }
-  | { type: 'vbMove'; clearings: number[] }
-  | { type: 'vbBattle'; targets: Array<{ clearing: number; defender: number }> }
+  | {
+      type: 'vbMove'
+      clearings: number[]
+      vbMoves: Array<{ to: number; allySeat?: number; allyCount?: number }>
+    }
+  | {
+      type: 'vbBattle'
+      targets: Array<{ clearing: number; defender: number }>
+      alliedSeat?: number
+    }
   | { type: 'aid'; cardIds: string[]; defenders: number[] }
   | { type: 'strike'; targets: Array<{ clearing: number; defender: number }> }
   | { type: 'repair'; indexes: number[] }
@@ -19,6 +27,13 @@ type VagabondDraft =
 
 function unique(values: number[]): number[] {
   return [...new Set(values)]
+}
+
+function isVbMoveChoice(
+  value: unknown,
+): value is { to: number; allySeat?: number; allyCount?: number } {
+  if (typeof value !== 'object' || value === null) return false
+  return typeof (value as { to?: unknown }).to === 'number'
 }
 
 /** Vagabond daylight / birdsong choice flows. */
@@ -54,6 +69,20 @@ export function createVagabondComposerHooks(): {
     begin: (spec: ActionSpec): ComposerOutcome | null => {
       promptOptions = []
       const params = readChoiceParams(spec)
+      if (spec.type === 'vbRearrange') {
+        const itemType = params.itemTypes?.[0]
+        const from = params.rearrangeFrom?.[0]
+        if (
+          (itemType === 'tea' || itemType === 'coin' || itemType === 'bag') &&
+          (from === 'track' || from === 'satchel')
+        ) {
+          return {
+            kind: 'ready',
+            action: { type: 'vbRearrange', itemType, from },
+          }
+        }
+        return null
+      }
       if (spec.type === 'slip') {
         const clearings = params.clearings ?? []
         const forests = params.forests ?? []
@@ -71,7 +100,8 @@ export function createVagabondComposerHooks(): {
       }
       if (spec.type === 'vbMove') {
         const clearings = params.clearings ?? []
-        draft = { type: 'vbMove', clearings }
+        const vbMoves = (params.vbMoves ?? []).filter(isVbMoveChoice)
+        draft = { type: 'vbMove', clearings, vbMoves }
         return {
           kind: 'incomplete',
           prompt: {
@@ -85,9 +115,13 @@ export function createVagabondComposerHooks(): {
       }
       if (spec.type === 'vbBattle' || spec.type === 'strike') {
         const targets = params.targets ?? []
+        const alliedSeat = params.alliedSeat?.[0]
         draft = {
           type: spec.type === 'vbBattle' ? 'vbBattle' : 'strike',
           targets,
+          ...(spec.type === 'vbBattle' && alliedSeat !== undefined
+            ? { alliedSeat }
+            : {}),
         }
         return {
           kind: 'incomplete',
@@ -209,8 +243,45 @@ export function createVagabondComposerHooks(): {
       }
       if (draft.type === 'vbMove') {
         if (!draft.clearings.includes(clearingId)) return null
-        draft = { type: 'idle' }
-        return { kind: 'ready', action: { type: 'vbMove', to: clearingId } }
+        const matches = draft.vbMoves.filter((move) => move.to === clearingId)
+        if (matches.length === 0) {
+          draft = { type: 'idle' }
+          return { kind: 'ready', action: { type: 'vbMove', to: clearingId } }
+        }
+        if (matches.length === 1) {
+          const choice = matches[0]!
+          draft = { type: 'idle' }
+          if (choice.allySeat !== undefined && choice.allyCount !== undefined) {
+            return {
+              kind: 'ready',
+              action: {
+                type: 'vbMove',
+                to: choice.to,
+                allySeat: choice.allySeat,
+                allyCount: choice.allyCount,
+              },
+            }
+          }
+          return { kind: 'ready', action: { type: 'vbMove', to: choice.to } }
+        }
+        promptOptions = matches.map((choice, index) => ({
+          label:
+            choice.allySeat !== undefined
+              ? `+${String(choice.allyCount)} ally seat ${String(choice.allySeat)}`
+              : 'pawn only',
+          value: String(index),
+        }))
+        draft = { type: 'vbMove', clearings: [clearingId], vbMoves: matches }
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: 'Move — escort Allied?',
+            highlightClearings: [clearingId],
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: true,
+          },
+        }
       }
       if (draft.type === 'vbBattle' || draft.type === 'strike') {
         const matches = draft.targets.filter(
@@ -219,11 +290,25 @@ export function createVagabondComposerHooks(): {
         if (matches.length === 0) return null
         if (matches.length === 1) {
           const match = matches[0]!
-          const type = draft.type === 'vbBattle' ? 'vbBattle' : 'strike'
+          if (draft.type === 'vbBattle') {
+            const alliedSeat = draft.alliedSeat
+            draft = { type: 'idle' }
+            return {
+              kind: 'ready',
+              action:
+                alliedSeat !== undefined
+                  ? {
+                      type: 'vbBattle',
+                      defender: match.defender,
+                      alliedSeat,
+                    }
+                  : { type: 'vbBattle', defender: match.defender },
+            }
+          }
           draft = { type: 'idle' }
           return {
             kind: 'ready',
-            action: { type, defender: match.defender },
+            action: { type: 'strike', defender: match.defender },
           }
         }
         promptOptions = matches.map((match) => ({
@@ -304,6 +389,31 @@ export function createVagabondComposerHooks(): {
     },
 
     chooseColumn: (column: string): ComposerOutcome | null => {
+      if (draft.type === 'vbMove') {
+        const index = Number(column)
+        if (
+          !Number.isInteger(index) ||
+          index < 0 ||
+          index >= draft.vbMoves.length
+        ) {
+          return null
+        }
+        const choice = draft.vbMoves[index]!
+        draft = { type: 'idle' }
+        promptOptions = []
+        if (choice.allySeat !== undefined && choice.allyCount !== undefined) {
+          return {
+            kind: 'ready',
+            action: {
+              type: 'vbMove',
+              to: choice.to,
+              allySeat: choice.allySeat,
+              allyCount: choice.allyCount,
+            },
+          }
+        }
+        return { kind: 'ready', action: { type: 'vbMove', to: choice.to } }
+      }
       if (draft.type === 'quest') {
         if (draft.questId === undefined) {
           if (!draft.questIds.includes(column)) {
