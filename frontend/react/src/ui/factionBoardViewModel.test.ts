@@ -232,6 +232,7 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
     expect(view.satchel).toHaveLength(2)
     expect(view.questsAvailable).toEqual([])
     expect(view.questDeckCount).toBe(0)
+    expect(view.completedQuests).toEqual([])
     expect(view.tracks.tea).toHaveLength(1)
     expect(view.tracks.bag[0]?.exhausted).toBe(true)
     expect(view.damaged).toEqual([{ type: 'sword', exhausted: true }])

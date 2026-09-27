@@ -78,6 +78,24 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.card-gallery-modal__quest-strip {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.card-gallery-modal__quest-strip .faction-board-modal__quest-card {
+  width: 160px;
+  flex: 0 0 auto;
+}
+
 .card-gallery-modal__card {
   flex: 0 0 auto;
   height: 100%;

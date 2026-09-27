@@ -116,10 +116,32 @@
   flex: 0 0 auto;
 }
 
-/* Shared face-up quest pile (Vagabond board). */
-.faction-board-modal__quest-pile {
+.faction-board-modal__stage {
   position: absolute;
-  z-index: 2;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.faction-board-modal__stage .faction-board-modal__board {
+  position: relative;
+  left: auto;
+  top: auto;
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
+
+.faction-board-modal__quest-side {
+  flex: 0 0 auto;
+  pointer-events: auto;
+  min-height: 0;
+}
+
+/* Shared face-up quest pile (beside Vagabond board). */
+.faction-board-modal__quest-pile {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -132,6 +154,13 @@
   border-radius: 4px;
   color: #f3ecd8;
   font-family: Georgia, 'Times New Roman', serif;
+}
+
+.faction-board-modal__quest-pile--side {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
 }
 
 .faction-board-modal__quest-pile-header {

@@ -234,6 +234,13 @@ export class ReactGameController {
           this.syncActionTrayFromLatestSnapshot()
         }
       },
+      onCompletedQuestsClick: (seat) => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openCompletedQuests(state, seat)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
       onSupportersClick: (seat) => {
         const state = this.latestSnapshot?.state
         if (state !== null && state !== undefined) {

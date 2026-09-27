@@ -586,47 +586,11 @@ function VagabondItemOverlays(props: {
 }): JSX.Element {
   const satchelRegion = findBoardLayoutRegion(props.layout, 'satchel')
   const damagedRegion = findBoardLayoutRegion(props.layout, 'damaged')
-  const questsRegion = findBoardLayoutRegion(props.layout, 'quests')
   return (
     <>
       <VagabondCharacterOverlay layout={props.layout} />
       <VagabondRelationshipOverlays view={props.view} layout={props.layout} />
       <VagabondTrackItemOverlays view={props.view} layout={props.layout} />
-      {questsRegion !== null ? (
-        <div
-          className="faction-board-modal__quest-pile"
-          style={layoutRegionStyle(questsRegion, props.layout)}
-          aria-label={`Quests (${String(props.view.questsAvailable.length)} face up, ${String(props.view.questDeckCount)} in deck)`}
-        >
-          <div className="faction-board-modal__quest-pile-header">
-            Quests
-            <span className="faction-board-modal__quest-deck-count">
-              deck {String(props.view.questDeckCount)}
-            </span>
-          </div>
-          {props.view.questsAvailable.length === 0 ? (
-            <div className="faction-board-modal__quest-empty">No face-up quests</div>
-          ) : (
-            props.view.questsAvailable.map((quest) => (
-              <div
-                key={quest.id}
-                className={`faction-board-modal__quest-card faction-board-modal__quest-card--${quest.suit}`}
-              >
-                <div className="faction-board-modal__quest-name">{quest.name}</div>
-                <div className="faction-board-modal__quest-suit">{quest.suit}</div>
-                <div className="faction-board-modal__quest-items">
-                  {quest.items.join(' + ')}
-                </div>
-              </div>
-            ))
-          )}
-          {props.view.completedQuestCount > 0 ? (
-            <div className="faction-board-modal__quest-completed">
-              done {String(props.view.completedQuestCount)}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
       {satchelRegion !== null ? (
         <div
           className="faction-board-modal__item-pack"

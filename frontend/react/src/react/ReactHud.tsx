@@ -5,6 +5,7 @@ import { BootOverlay } from '#react/BootOverlay.tsx'
 import { CardDetailOverlay } from '#react/CardDetailOverlay.tsx'
 import {
   CardPileModal,
+  CompletedQuestsModal,
   CraftedCardsModal,
 } from '#react/CardGalleryModal.tsx'
 import { CardHand } from '#react/CardHand.tsx'
@@ -33,6 +34,7 @@ export function ReactHud(): JSX.Element {
       <StatusMessage />
       <FactionBoardModal />
       <CraftedCardsModal />
+      <CompletedQuestsModal />
       <CardPileModal />
       <CardDetailOverlay />
       <GameDrawer />

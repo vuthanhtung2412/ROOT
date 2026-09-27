@@ -2,16 +2,22 @@ import { useSyncExternalStore, type JSX, type MouseEvent } from 'react'
 import { cardImagePublicPath } from '#assets/gameAssets.ts'
 import {
   getCardPileSnapshot,
+  getCompletedQuestsSnapshot,
   getCraftedCardsSnapshot,
   hideCardPile,
+  hideCompletedQuests,
   hideCraftedCards,
   subscribeCardPile,
+  subscribeCompletedQuests,
   subscribeCraftedCards,
 } from '#game/cardGalleryBridge.ts'
+import { QuestCardFace } from '#react/QuestPilePanel.tsx'
 import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
 import '#react/CardGalleryModal.css'
+import '#react/FactionBoardModal.css'
 
 const EMPTY_CRAFTED_MESSAGE = 'No permanent crafted cards'
+const EMPTY_COMPLETED_QUESTS_MESSAGE = 'No completed quests'
 const DEFAULT_EMPTY_PILE_MESSAGE = 'Pile empty'
 
 function CardStrip(props: {
@@ -108,6 +114,36 @@ export function CraftedCardsModal(): JSX.Element | null {
       }}
     >
       <CardStrip cards={content.cards} emptyMessage={EMPTY_CRAFTED_MESSAGE} />
+    </CardGalleryShell>
+  )
+}
+
+export function CompletedQuestsModal(): JSX.Element | null {
+  const content = useSyncExternalStore(
+    subscribeCompletedQuests,
+    getCompletedQuestsSnapshot,
+    getCompletedQuestsSnapshot,
+  )
+  if (content === null) {
+    return null
+  }
+  return (
+    <CardGalleryShell
+      title={`${content.faction} · completed quests`}
+      closeAriaLabel="Close completed quests"
+      onClose={() => {
+        hideCompletedQuests()
+      }}
+    >
+      {content.quests.length === 0 ? (
+        <p className="card-gallery-modal__empty">{EMPTY_COMPLETED_QUESTS_MESSAGE}</p>
+      ) : (
+        <div className="card-gallery-modal__quest-strip">
+          {content.quests.map((quest) => (
+            <QuestCardFace key={quest.id} quest={quest} />
+          ))}
+        </div>
+      )}
     </CardGalleryShell>
   )
 }

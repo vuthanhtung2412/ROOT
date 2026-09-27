@@ -1,6 +1,7 @@
 import { getHudSnapshot, patchHud, subscribeHud } from '#game/hudStore.ts'
 import type {
   CardPileModalContent,
+  CompletedQuestsModalContent,
   CraftedCardsModalContent,
 } from '#ui/cardGalleryTypes.ts'
 
@@ -33,6 +34,37 @@ export function hideCraftedCards(): void {
     return
   }
   patchHud({ craftedCards: null })
+}
+
+export function subscribeCompletedQuests(listener: () => void): () => void {
+  return subscribeHud(listener)
+}
+
+export function getCompletedQuestsSnapshot(): CompletedQuestsModalContent | null {
+  return getHudSnapshot().completedQuests
+}
+
+export function isCompletedQuestsOpen(): boolean {
+  return getHudSnapshot().completedQuests !== null
+}
+
+export function completedQuestsOpenSeat(): number | null {
+  const content = getHudSnapshot().completedQuests
+  if (content === null) {
+    return null
+  }
+  return content.seat
+}
+
+export function showCompletedQuests(content: CompletedQuestsModalContent): void {
+  patchHud({ completedQuests: content })
+}
+
+export function hideCompletedQuests(): void {
+  if (getHudSnapshot().completedQuests === null) {
+    return
+  }
+  patchHud({ completedQuests: null })
 }
 
 export function subscribeCardPile(listener: () => void): () => void {

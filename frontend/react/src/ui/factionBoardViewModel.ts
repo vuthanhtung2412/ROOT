@@ -164,7 +164,8 @@ export type VagabondBoardViewModel = {
   /** Face-up quests near the map. Rule: Vagabond > Setup 3. */
   questsAvailable: VagabondQuestView[]
   questDeckCount: number
-  completedQuestCount: number
+  /** Completed quests in play area. Rule: Vagabond > Quest. */
+  completedQuests: VagabondQuestView[]
   boardTextureKey: string
 }
 
@@ -464,7 +465,7 @@ export function buildFactionBoardViewModel(
       ...view,
       questsAvailable: questViewsFromState(state),
       questDeckCount: questDeckCountFromState(state),
-      completedQuestCount: completedQuestCountFromBoard(player.board),
+      completedQuests: completedQuestViewsFromBoard(player.board),
     }
   }
   return view
@@ -479,8 +480,7 @@ function isQuestCard(value: unknown): value is QuestCard {
   return typeof id === 'string' && typeof defId === 'string'
 }
 
-function questViewsFromState(state: GameState): VagabondQuestView[] {
-  const raw = Reflect.get(state, 'questsAvailable')
+function questViewsFromRawList(raw: unknown): VagabondQuestView[] {
   if (!Array.isArray(raw)) {
     return []
   }
@@ -505,17 +505,20 @@ function questViewsFromState(state: GameState): VagabondQuestView[] {
   return views
 }
 
+function questViewsFromState(state: GameState): VagabondQuestView[] {
+  return questViewsFromRawList(Reflect.get(state, 'questsAvailable'))
+}
+
 function questDeckCountFromState(state: GameState): number {
   const raw = Reflect.get(state, 'questDeck')
   return Array.isArray(raw) ? raw.length : 0
 }
 
-function completedQuestCountFromBoard(board: unknown): number {
+export function completedQuestViewsFromBoard(board: unknown): VagabondQuestView[] {
   if (typeof board !== 'object' || board === null) {
-    return 0
+    return []
   }
-  const completed = Reflect.get(board, 'completedQuests')
-  return Array.isArray(completed) ? completed.length : 0
+  return questViewsFromRawList(Reflect.get(board, 'completedQuests'))
 }
 
 export function buildFactionBoardViewModelFromPlayer(
@@ -641,11 +644,7 @@ export function buildFactionBoardViewModelFromPlayer(
       forest: board.forest,
       questsAvailable: [],
       questDeckCount: 0,
-      completedQuestCount: Array.isArray(
-        Reflect.get(board, 'completedQuests'),
-      )
-        ? (Reflect.get(board, 'completedQuests') as unknown[]).length
-        : 0,
+      completedQuests: completedQuestViewsFromBoard(board),
       boardTextureKey: CHARACTER_BOARD_TEXTURE_KEYS.vagabond,
     }
   }

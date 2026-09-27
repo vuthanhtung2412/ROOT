@@ -12,6 +12,8 @@ import {
 } from '#game/hudStore.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 
+const VAGABOND_FACTION_ID = 'vagabond'
+
 function colorToCss(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`
 }
@@ -34,6 +36,7 @@ export function PlayerRail(): JSX.Element | null {
         const iconPath = imagePathForAssetKey(
           factionTextureKey(player.faction),
         )
+        const isVagabond = player.faction === VAGABOND_FACTION_ID
         return (
           <div
             key={player.seat}
@@ -67,15 +70,28 @@ export function PlayerRail(): JSX.Element | null {
                 {`${player.faction}\n${String(player.vp)} VP`}
               </span>
             </button>
-            <button
-              type="button"
-              className="root-button root-button--quiet absolute right-2.5 bottom-2.5 px-2 py-1 font-mono text-[12px] md:text-[14px]"
-              onClick={() => {
-                callbacks.onCraftedCardsClick(player.seat)
-              }}
-            >
-              cards
-            </button>
+            <div className="absolute right-2.5 bottom-2.5 flex flex-row gap-1">
+              {isVagabond ? (
+                <button
+                  type="button"
+                  className="root-button root-button--quiet px-2 py-1 font-mono text-[12px] md:text-[14px]"
+                  onClick={() => {
+                    callbacks.onCompletedQuestsClick(player.seat)
+                  }}
+                >
+                  quests
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="root-button root-button--quiet px-2 py-1 font-mono text-[12px] md:text-[14px]"
+                onClick={() => {
+                  callbacks.onCraftedCardsClick(player.seat)
+                }}
+              >
+                cards
+              </button>
+            </div>
           </div>
         )
       })}

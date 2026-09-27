@@ -1,17 +1,32 @@
 import type { GameState } from '#api/client.ts'
 import {
+  completedQuestsOpenSeat,
   craftedCardsOpenSeat,
   getCardPileSnapshot,
   hideCardPile,
+  hideCompletedQuests,
   hideCraftedCards,
   isCardPileOpen,
+  isCompletedQuestsOpen,
   isCraftedCardsOpen,
   showCardPile,
+  showCompletedQuests,
   showCraftedCards,
 } from '#game/cardGalleryBridge.ts'
+import {
+  factionBoardOpenSeat,
+  hideFactionBoard,
+  isFactionBoardOpen,
+  showFactionBoard,
+} from '#game/factionBoardBridge.ts'
 import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
+import {
+  buildFactionBoardViewModel,
+  completedQuestViewsFromBoard,
+} from '#ui/factionBoardViewModel.ts'
 
 const SUPPORTERS_PILE_TITLE_PREFIX = 'Supporters ('
+const VAGABOND_FACTION_ID = 'vagabond'
 
 function isCardGalleryFace(value: unknown): value is CardGalleryFace {
   if (typeof value !== 'object' || value === null) {
@@ -42,13 +57,6 @@ function allianceSupportersFromBoard(board: unknown): CardGalleryFace[] | null {
   }
   return faces
 }
-import {
-  factionBoardOpenSeat,
-  hideFactionBoard,
-  isFactionBoardOpen,
-  showFactionBoard,
-} from '#game/factionBoardBridge.ts'
-import { buildFactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 
 /** Open / refresh faction board, crafted cards, and discard pile modals. */
 export class GameSceneModals {
@@ -78,6 +86,28 @@ export class GameSceneModals {
       seat: player.seat,
       faction: player.faction,
       cards,
+    })
+  }
+
+  openCompletedQuests(state: GameState, seat: number): void {
+    if (
+      isCompletedQuestsOpen() === true &&
+      completedQuestsOpenSeat() === seat
+    ) {
+      hideCompletedQuests()
+      return
+    }
+    const player = state.players.find((entry) => entry.seat === seat)
+    if (player === undefined) {
+      return
+    }
+    if (player.faction !== VAGABOND_FACTION_ID) {
+      return
+    }
+    showCompletedQuests({
+      seat: player.seat,
+      faction: player.faction,
+      quests: completedQuestViewsFromBoard(player.board),
     })
   }
 
@@ -122,6 +152,7 @@ export class GameSceneModals {
     return (
       isFactionBoardOpen() === true ||
       isCraftedCardsOpen() === true ||
+      isCompletedQuestsOpen() === true ||
       isCardPileOpen() === true
     )
   }
@@ -164,6 +195,30 @@ export class GameSceneModals {
       seat: player.seat,
       faction: player.faction,
       cards,
+    })
+  }
+
+  refreshCompletedQuests(state: GameState | null | undefined): void {
+    if (isCompletedQuestsOpen() !== true) {
+      return
+    }
+    const seat = completedQuestsOpenSeat()
+    if (seat === null) {
+      return
+    }
+    if (state === null || state === undefined) {
+      hideCompletedQuests()
+      return
+    }
+    const player = state.players.find((entry) => entry.seat === seat)
+    if (player === undefined || player.faction !== VAGABOND_FACTION_ID) {
+      hideCompletedQuests()
+      return
+    }
+    showCompletedQuests({
+      seat: player.seat,
+      faction: player.faction,
+      quests: completedQuestViewsFromBoard(player.board),
     })
   }
 }

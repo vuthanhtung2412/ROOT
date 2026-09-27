@@ -2,6 +2,7 @@ import type { ActionSpec, GameState } from '#api/client.ts'
 import type { CardCatalogEntry } from '#assets/gameAssets.ts'
 import type {
   CardPileModalContent,
+  CompletedQuestsModalContent,
   CraftedCardsModalContent,
 } from '#ui/cardGalleryTypes.ts'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
@@ -86,6 +87,7 @@ export type HudCallbacks = {
   onLeaderPicked: (leaderId: string) => void
   onSeatClick: (seat: number) => void
   onCraftedCardsClick: (seat: number) => void
+  onCompletedQuestsClick: (seat: number) => void
   onSupportersClick: (seat: number) => void
   onSelectAction: (spec: ActionSpec) => void
   onBannerConfirm: () => void
@@ -103,6 +105,7 @@ export type HudCallbacks = {
 export type HudState = {
   factionBoard: FactionBoardViewModel | null
   craftedCards: CraftedCardsModalContent | null
+  completedQuests: CompletedQuestsModalContent | null
   cardPile: CardPileModalContent | null
   cardDetail: CardDetailContent | null
   winner: WinnerHudState
@@ -122,6 +125,7 @@ export type HudState = {
 const INITIAL_HUD_STATE: HudState = {
   factionBoard: null,
   craftedCards: null,
+  completedQuests: null,
   cardPile: null,
   cardDetail: null,
   winner: null,
@@ -156,6 +160,7 @@ const NOOP_CALLBACKS: HudCallbacks = {
   onLeaderPicked: () => undefined,
   onSeatClick: () => undefined,
   onCraftedCardsClick: () => undefined,
+  onCompletedQuestsClick: () => undefined,
   onSupportersClick: () => undefined,
   onSelectAction: () => undefined,
   onBannerConfirm: () => undefined,
