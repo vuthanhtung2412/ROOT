@@ -18,6 +18,7 @@ const skillDirectory = path.dirname(fileURLToPath(import.meta.url))
 const rootDirectory = path.resolve(skillDirectory, '../../..')
 const outDirectory = path.join(rootDirectory, 'tmp/qa/snapshots')
 const OUT_NAME = 'ui-busy.json'
+const QUEST_PANEL_OUT_NAME = 'quest-panel.json'
 
 type SnapshotPiece = GameSnapshot['state']['clearings'][number]['pieces'][number]
 
@@ -269,7 +270,37 @@ function enrichBusyUi(snap: GameSnapshot): void {
       alliance: 3,
       vagabond: 0,
     }
+    // Completed quests in play area (VP rail "quests" button).
+    vagabondBoard.completedQuests = [
+      { id: 'QUEST-F-SHED#1', defId: 'QUEST-F-SHED' },
+      { id: 'QUEST-M-ESCORT#1', defId: 'QUEST-M-ESCORT' },
+      { id: 'QUEST-R-SPEECH#1', defId: 'QUEST-R-SPEECH' },
+    ]
   }
+
+  // Shared face-up quest pile (side panel on Vagabond board).
+  snap.state.questsAvailable = [
+    { id: 'QUEST-F-FUNDS#1', defId: 'QUEST-F-FUNDS' },
+    { id: 'QUEST-M-BANDITS#1', defId: 'QUEST-M-BANDITS' },
+    { id: 'QUEST-R-ERRAND#1', defId: 'QUEST-R-ERRAND' },
+  ]
+  const questsInPlay = new Set([
+    ...snap.state.questsAvailable.map((quest) => quest.defId),
+    'QUEST-F-SHED',
+    'QUEST-M-ESCORT',
+    'QUEST-R-SPEECH',
+  ])
+  snap.state.questDeck = [
+    { id: 'QUEST-F-LOGS#1', defId: 'QUEST-F-LOGS' },
+    { id: 'QUEST-F-SPEECH#1', defId: 'QUEST-F-SPEECH' },
+    { id: 'QUEST-F-ERRAND#1', defId: 'QUEST-F-ERRAND' },
+    { id: 'QUEST-M-BEAR#1', defId: 'QUEST-M-BEAR' },
+    { id: 'QUEST-M-GUARD#1', defId: 'QUEST-M-GUARD' },
+    { id: 'QUEST-M-LOGS#1', defId: 'QUEST-M-LOGS' },
+    { id: 'QUEST-R-BANDITS#1', defId: 'QUEST-R-BANDITS' },
+    { id: 'QUEST-R-BEAR#1', defId: 'QUEST-R-BEAR' },
+    { id: 'QUEST-R-GUARD#1', defId: 'QUEST-R-GUARD' },
+  ].filter((quest) => !questsInPlay.has(quest.defId))
 
   // Clear map pieces then rebuild a packed board.
   for (const clearing of snap.state.clearings) {
@@ -423,7 +454,10 @@ async function main(): Promise<void> {
   enrichBusyUi(snap)
   const restored = Game.fromJSON(snap)
   const filePath = path.join(outDirectory, OUT_NAME)
-  await writeFile(filePath, `${JSON.stringify(restored.toJSON(), null, 2)}\n`, 'utf8')
+  const questPanelPath = path.join(outDirectory, QUEST_PANEL_OUT_NAME)
+  const payload = `${JSON.stringify(restored.toJSON(), null, 2)}\n`
+  await writeFile(filePath, payload, 'utf8')
+  await writeFile(questPanelPath, payload, 'utf8')
 
   const state = restored.state
   const pieceCount = state.clearings.reduce(
@@ -440,6 +474,7 @@ async function main(): Promise<void> {
     JSON.stringify(
       {
         path: filePath,
+        questPanelPath,
         turn: state.turn,
         phase: `${state.phase}/${state.step}`,
         seat: state.currentSeat,
@@ -465,8 +500,13 @@ async function main(): Promise<void> {
             bag: board.tracks.bag.length,
             forest: board.forest,
             relationships: board.relationships,
+            completedQuests: board.completedQuests.length,
           }
         })(),
+        quests: {
+          available: state.questsAvailable.map((quest) => quest.defId),
+          deck: state.questDeck.length,
+        },
         alliance: (() => {
           const board = state.players[2]!.board
           if (board.kind !== 'alliance') return null
