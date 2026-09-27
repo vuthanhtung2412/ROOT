@@ -147,8 +147,9 @@
   --root-portrait-drawer-bottom: 12px;
   --root-portrait-tray-bottom: 118px;
   /* Wide (md+) playfield 1-3-1: VP | map | actions */
-  --root-landscape-side-percent: 20%;
-  --root-landscape-center-percent: 60%;
+  --root-landscape-side-percent: 24%;
+  --root-landscape-center-percent: 52%;
+  --root-player-rail-seat-max-width: 320px;
   /* Card gallery (discard / crafted): half viewport, centered by flex parent */
   --root-card-gallery-panel-width: 50vw;
   --root-card-gallery-panel-height: 50vh;
