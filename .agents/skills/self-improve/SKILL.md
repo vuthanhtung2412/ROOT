@@ -28,14 +28,19 @@ This repo: project skills live under `.cursor/skills/` (same tree as `.agents/sk
 
 1. **Name the lesson** in one sentence (failure mode → correct behavior).
 2. **Search first**: existing `AGENTS.md`, `.cursor/skills/**/SKILL.md`, user rules. Extend; do not duplicate.
-3. **Minimal edit**:
+3. **Propose for review (required)**: show user the draft before any write —
+   - **Where**: AGENTS.md bullet, new skill, or extend which skill.
+   - **What**: exact text (or full `SKILL.md` draft) to add/change.
+   - **Why**: one-line failure mode → correct behavior.
+   - **Stop**. Do not create/edit files until user approves (or asks for a tweak).
+4. **Minimal edit** (only after approval):
    - AGENTS.md: one bullet or short block; no essays.
    - Skill: follow create-skill norms — third-person `description` with WHAT + WHEN; body under ~200 lines; progressive disclosure for long reference.
-4. **Wire discovery**:
+5. **Wire discovery**:
    - New skill → ensure `description` has trigger phrases the user actually says.
    - Repo-wide invariant → add/adjust an `AGENTS.md` bullet; if a skill owns the procedure, AGENTS.md may point at it in one line.
-5. **Verify**: re-read the change as if cold-starting; would a new agent still miss the lesson? If yes, tighten triggers or move up to AGENTS.md.
-6. **Commit separately** from feature work when user wants commits (`docs(agents): …` / `dx(skills): …`).
+6. **Verify**: re-read the change as if cold-starting; would a new agent still miss the lesson? If yes, tighten triggers or move up to AGENTS.md — and re-propose that follow-up before writing.
+7. **Commit separately** from feature work when user wants commits (`docs(agents): …` / `dx(skills): …`).
 
 ## What to write
 
@@ -43,8 +48,16 @@ This repo: project skills live under `.cursor/skills/` (same tree as `.agents/sk
 - **Negatives that stuck**: "never X; do Y instead" with a tiny good/bad snippet only when ambiguity is high.
 - **Not**: session diary, praise, restating general coding knowledge, or rules already covered elsewhere.
 
+## Bar for new skill / rule text
+
+Every draft must pass all three:
+- **Human-reviewable**: one clear intent; scannable; no buried exceptions.
+- **LLM-usable**: concrete triggers, paths, do/don't; no vibe-only advice.
+- **Concise**: no filler, praise, restatement, or words that do not change behavior.
+
 ## Anti-patterns
 
+- Writing AGENTS.md / skill changes without user review approval.
 - Bloated AGENTS.md (token tax every turn) — push procedures into skills.
 - Skill with vague description and no triggers — agent will never load it.
 - Copy-pasting the same rule into both AGENTS.md and a skill without a single SoT pointer.
