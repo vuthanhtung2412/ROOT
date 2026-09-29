@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { VAGABOND } from '#factions/Vagabond.js'
+import { VAGABOND, placeVagabondForest } from '#factions/Vagabond.js'
 import {
   boardOf,
   exhaustItem,
@@ -45,7 +45,7 @@ describe('Vagabond setup', () => {
     expect(board.completedQuests).toHaveLength(0)
   })
 
-  it('Rule: Vagabond > Setup 2, 5 — forest + Thief start items', () => {
+  it('Rule: Vagabond > Setup 2, 5 — Thief start items; forest via place helper', () => {
     const state = minimalState({
       factions: ['marquise', 'eyrie', 'alliance', 'vagabond'],
       players: [
@@ -57,6 +57,8 @@ describe('Vagabond setup', () => {
     })
     VAGABOND.setup(state, 3, setupContext(state))
     const board = boardOf(state, 3)
+    expect(board.forest).toBeNull()
+    placeVagabondForest(state, 3, FALL.vagabondForest)
     expect(board.forest).toBe(FALL.vagabondForest)
     const types = [
       ...board.satchel.map((item) => item.type),
@@ -142,6 +144,7 @@ describe('Vagabond slip / move', () => {
       step: 'slip',
     })
     VAGABOND.setup(state, 1, setupContext(state))
+    placeVagabondForest(state, 1, FALL.vagabondForest)
     const adjacent = FALL.forests[FALL.vagabondForest]![0]!
     VAGABOND.apply(state, { type: 'slip', to: adjacent }, testContext({ state }))
     const board = boardOf(state, 1)
@@ -163,6 +166,7 @@ describe('Vagabond slip / move', () => {
       step: 'slip',
     })
     VAGABOND.setup(state, 1, setupContext(state))
+    placeVagabondForest(state, 1, FALL.vagabondForest)
     const slip = VAGABOND.legalActions(state, testContext({ state })).find(
       (spec) => spec.type === 'slip',
     )

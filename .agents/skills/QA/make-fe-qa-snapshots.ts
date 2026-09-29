@@ -34,6 +34,9 @@ function finishSetup(game: Game): void {
   if (game.state.pending[0]?.type === 'chooseLeader') {
     game.apply({ type: 'resolveEvent', leader: 'builder' })
   }
+  if (game.state.pending[0]?.type === 'chooseForest') {
+    game.apply({ type: 'resolveEvent', forest: FALL.vagabondForest })
+  }
   if (game.state.pending.length > 0) {
     throw new Error(`setup pending: ${JSON.stringify(game.state.pending[0])}`)
   }

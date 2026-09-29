@@ -58,6 +58,12 @@ export type ChooseLeaderEvent = {
   reason: 'setup' | 'depose'
 }
 
+/** Rule: Vagabond > Setup 2 — place pawn in any forest. */
+export type ChooseForestEvent = {
+  type: 'chooseForest'
+  seat: Seat
+}
+
 export type OutrageEvent = {
   type: 'outrage'
   offender: Seat
@@ -75,5 +81,6 @@ export type Event =
   | ChooseKeepEvent
   | PlaceStartingBuildingEvent
   | ChooseLeaderEvent
+  | ChooseForestEvent
   | OutrageEvent
   | VagabondDamageEvent

@@ -1,5 +1,6 @@
 import type {
   BattleEvent,
+  ChooseForestEvent,
   ChooseKeepEvent,
   ChooseLeaderEvent,
   Event,
@@ -18,9 +19,14 @@ import type {
 } from '#state/boards.js'
 
 const FALL_CLEARING_COUNT = 12
+const FALL_FOREST_COUNT = 11
 
 export function isClearingId(value: number): value is ClearingId {
   return Number.isInteger(value) && value >= 0 && value < FALL_CLEARING_COUNT
+}
+
+export function isForestIndex(value: number): boolean {
+  return Number.isInteger(value) && value >= 0 && value < FALL_FOREST_COUNT
 }
 
 export function isSeat(value: number): value is Seat {
@@ -54,6 +60,10 @@ export function isPlaceStartingBuildingEvent(
 
 export function isChooseLeaderEvent(event: Event): event is ChooseLeaderEvent {
   return event.type === 'chooseLeader'
+}
+
+export function isChooseForestEvent(event: Event): event is ChooseForestEvent {
+  return event.type === 'chooseForest'
 }
 
 export function isOutrageEvent(event: Event): event is OutrageEvent {

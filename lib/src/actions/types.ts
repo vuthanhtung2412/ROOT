@@ -223,6 +223,8 @@ export type ResolveEventAction = {
   useEffect?: boolean
   clearing?: ClearingId
   leader?: EyrieLeader
+  /** Rule: Vagabond > Setup 2 — forest index on Fall map. */
+  forest?: number
 }
 
 export type ActionSpec = {

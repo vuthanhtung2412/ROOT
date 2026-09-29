@@ -27,6 +27,10 @@ function resolveSetup(game: Game): void {
       game.apply({ type: 'resolveEvent', leader: 'builder' })
       continue
     }
+    if (pending.type === 'chooseForest') {
+      game.apply({ type: 'resolveEvent', forest: FALL.vagabondForest })
+      continue
+    }
     const legal = game.legalActions()[0]
     const clearing = legal?.params?.clearing?.[0]
     const building = legal?.params?.building?.[0]

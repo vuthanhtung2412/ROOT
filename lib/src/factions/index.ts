@@ -43,4 +43,4 @@ export {
 } from '#factions/Eyrie.js'
 export { Alliance, ALLIANCE } from '#factions/Alliance.js'
 export { placeAllianceSetup } from '#factions/alliance/setup.js'
-export { Vagabond, VAGABOND } from '#factions/Vagabond.js'
+export { Vagabond, VAGABOND, placeVagabondForest } from '#factions/Vagabond.js'

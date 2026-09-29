@@ -63,6 +63,19 @@ function shuffleWithRng<T>(items: T[], rng: Ctx['rng']): T[] {
   return shuffled
 }
 
+/** Rule: Vagabond > Setup 2 — place pawn in chosen forest. */
+export function placeVagabondForest(
+  state: GameState,
+  seat: Seat,
+  forestIndex: number,
+): void {
+  if (forestIndex < 0 || forestIndex >= FALL.forests.length) {
+    throw new RuleError('INVALID_FOREST', { forestIndex })
+  }
+  const board = boardOf(state, seat)
+  board.forest = forestIndex
+}
+
 /** Rule: Vagabond > Setup 3 / Share Quests 9.7.2 — one shared 3 face-up. */
 function ensureFaceUpQuests(state: GameState, context: Ctx): void {
   if (state.questsAvailable.length > 0) {
@@ -94,9 +107,9 @@ export class Vagabond extends Faction {
   readonly steps = STEPS
 
   setup(state: GameState, seat: Seat, context: Ctx): void {
-    // Rule: Vagabond > Setup 2, 5, 6 — pawn in forest; Thief items; relationships Indifferent.
+    // Rule: Vagabond > Setup 5, 6 — Thief items; relationships Indifferent.
+    // Setup 2 (forest) is interactive via chooseForest pending after Marquise/Eyrie.
     const board = boardOf(state, seat)
-    board.forest = FALL.vagabondForest
     for (const type of THIEF_START_ITEMS) {
       placeItemInSatchelOrTrack(board, type)
     }

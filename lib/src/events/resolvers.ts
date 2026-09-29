@@ -4,6 +4,7 @@ import type { LogEntry } from '#log/types.js'
 import type { Seat } from '#pieces/types.js'
 import type { GameState } from '#state/types.js'
 import { battleResolver } from '#events/battle.js'
+import { chooseForestResolver } from '#events/chooseForest.js'
 import { chooseKeepResolver } from '#events/chooseKeep.js'
 import { chooseLeaderResolver } from '#events/chooseLeader.js'
 import { fieldHospitalResolver } from '#events/fieldHospital.js'
@@ -12,6 +13,7 @@ import { placeStartingBuildingResolver } from '#events/placeStartingBuilding.js'
 import type { Event } from '#events/types.js'
 import {
   isBattleEvent,
+  isChooseForestEvent,
   isChooseKeepEvent,
   isChooseLeaderEvent,
   isFieldHospitalEvent,
@@ -120,6 +122,24 @@ export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
     matchesAction(state, event, action, ctx) {
       if (!isChooseLeaderEvent(event)) return false
       return chooseLeaderResolver.matchesAction(state, event, action, ctx)
+    },
+  },
+  chooseForest: {
+    legalActions(state, event, ctx) {
+      if (!isChooseForestEvent(event)) return []
+      return chooseForestResolver.legalActions(state, event, ctx)
+    },
+    apply(state, apply, ctx) {
+      if (!isChooseForestEvent(apply.event)) return []
+      return chooseForestResolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
+    },
+    matchesAction(state, event, action, ctx) {
+      if (!isChooseForestEvent(event)) return false
+      return chooseForestResolver.matchesAction(state, event, action, ctx)
     },
   },
   outrage: {

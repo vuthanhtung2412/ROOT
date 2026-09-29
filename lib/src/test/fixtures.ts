@@ -212,6 +212,7 @@ export function resolveStartingBuildings(game: Game): void {
 export type FinishSetupOptions = {
   keep?: ClearingId
   leader?: EyrieLeader
+  forest?: number
 }
 
 export function finishSetup(
@@ -229,6 +230,12 @@ export function finishSetup(
     game.apply({
       type: 'resolveEvent',
       leader: options.leader ?? 'builder',
+    })
+  }
+  if (game.state.pending[0]?.type === 'chooseForest') {
+    game.apply({
+      type: 'resolveEvent',
+      forest: options.forest ?? FALL.vagabondForest,
     })
   }
 }
