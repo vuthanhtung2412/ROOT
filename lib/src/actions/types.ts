@@ -37,11 +37,14 @@ export type BattleTargetChoice = {
   defender: Seat
 }
 
-/** Paired Alliance revolt: clearing × two supporter ids (8.4.1). */
+/** Paired Alliance revolt / spread: clearing × supporter ids. */
 export type RevoltChoice = {
   clearing: ClearingId
   supporterIds: string[]
 }
+
+/** Alias — same shape as revolt spend choice. */
+export type SpreadSympathyChoice = RevoltChoice
 
 /** Rule: 9.2.9.IIb — optional Allied warriors dragged with pawn move. */
 export type VagabondMoveChoice = {

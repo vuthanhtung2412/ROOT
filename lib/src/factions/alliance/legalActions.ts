@@ -6,9 +6,9 @@ import {
   clearingHasSympathy,
   isLegalSympathySpreadClearing,
   martialLawSurcharge,
+  matchingSupporterCombinations,
   matchingSupporterPairIds,
   nextSympathyCost,
-  pickSupportersOfSuit,
   sympatheticClearings,
 } from '#factions/alliance/rules.js'
 import { craftStepLegalActions, handLimitLegalAction } from '#factions/sharedTurn.js'
@@ -68,20 +68,27 @@ export function allianceLegalActions(
               ),
             ]
 
+      // Paired clearing × supporter spend (like revolt) so tray collapse
+      // cannot union unrelated supporterIds across clearings.
+      const options: RevoltChoice[] = []
       for (const clearing of candidates) {
         if (!isLegalSympathySpreadClearing(state, seat, clearing)) continue
         const suit = FALL.clearings[clearing]!.suit
         const cost =
           costBase + martialLawSurcharge(state, clearing, seat)
-        const supporters = pickSupportersOfSuit(board, suit, cost)
-        if (supporters === null) continue
+        for (const supporterIds of matchingSupporterCombinations(
+          board,
+          suit,
+          cost,
+        )) {
+          options.push({ clearing, supporterIds })
+        }
+      }
+      if (options.length > 0) {
         specs.push({
           type: 'spreadSympathy',
           actor: seat,
-          params: {
-            clearings: [clearing],
-            supporterIds: supporters.map((card) => card.id),
-          },
+          params: { options },
         })
       }
     }

@@ -160,12 +160,50 @@ export function pickSupportersOfSuit(
   suit: Suit,
   count: number,
 ): Card[] | null {
-  const matching = board.supporters.filter((card) => {
+  const matching = matchingSupporters(board, suit)
+  if (matching.length < count) return null
+  return matching.slice(0, count)
+}
+
+function matchingSupporters(board: AllianceBoard, suit: Suit): Card[] {
+  return board.supporters.filter((card) => {
     const cardSuit = defOf(card).suit
     return cardSuit === suit || cardSuit === 'bird'
   })
-  if (matching.length < count) return null
-  return matching.slice(0, count)
+}
+
+/** Rule: 8.4.2 — player chooses which matching/bird supporters to spend. */
+export function matchingSupporterCombinations(
+  board: AllianceBoard,
+  suit: Suit,
+  count: number,
+): string[][] {
+  if (count <= 0) return []
+  const matching = matchingSupporters(board, suit)
+  if (matching.length < count) return []
+  return combinationsOfIds(
+    matching.map((card) => card.id),
+    count,
+  )
+}
+
+function combinationsOfIds(ids: readonly string[], count: number): string[][] {
+  if (count === 0) return [[]]
+  if (count > ids.length) return []
+  const results: string[][] = []
+  const choose = (start: number, chosen: string[]): void => {
+    if (chosen.length === count) {
+      results.push([...chosen])
+      return
+    }
+    for (let index = start; index < ids.length; index++) {
+      chosen.push(ids[index]!)
+      choose(index + 1, chosen)
+      chosen.pop()
+    }
+  }
+  choose(0, [])
+  return results
 }
 
 /** Rule: 8.4.1.II — player chooses which two matching supporters to spend. */
@@ -173,17 +211,7 @@ export function matchingSupporterPairIds(
   board: AllianceBoard,
   suit: Suit,
 ): string[][] {
-  const matching = board.supporters.filter((card) => {
-    const cardSuit = defOf(card).suit
-    return cardSuit === suit || cardSuit === 'bird'
-  })
-  const pairs: string[][] = []
-  for (let first = 0; first < matching.length; first++) {
-    for (let second = first + 1; second < matching.length; second++) {
-      pairs.push([matching[first]!.id, matching[second]!.id])
-    }
-  }
-  return pairs
+  return matchingSupporterCombinations(board, suit, 2)
 }
 
 /**

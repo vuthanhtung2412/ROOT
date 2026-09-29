@@ -7,6 +7,7 @@ import {
   nextSympathyCost,
   supportersCapacity,
 } from '#factions/alliance/rules.js'
+import { FALL } from '#map/fall.js'
 import { removePieces } from '#rules/remove.js'
 import { resetPlaceIds } from '#rules/place.js'
 import {
@@ -273,11 +274,21 @@ describe('Alliance spreadSympathy', () => {
     board.supporters = [firstFox, secondFox, card('ROOT-57'), card('ROOT-84')]
 
     const legal = ALLIANCE.legalActions(state, testContext({ state }))
+    const spread = legal.find((spec) => spec.type === 'spreadSympathy')
+    const options = spread?.params?.options ?? []
     const spreadClearings = new Set(
-      legal
-        .filter((spec) => spec.type === 'spreadSympathy')
-        .flatMap((spec) => spec.params?.clearings ?? []),
+      options.map((choice) => {
+        if (
+          typeof choice !== 'object' ||
+          choice === null ||
+          !('clearing' in choice)
+        ) {
+          return -1
+        }
+        return Reflect.get(choice, 'clearing') as number
+      }),
     )
+    expect(spreadClearings.has(-1)).toBe(false)
     expect(spreadClearings.size).toBeGreaterThan(1)
 
     ALLIANCE.apply(
@@ -301,5 +312,62 @@ describe('Alliance spreadSympathy', () => {
         testContext({ state }),
       ),
     ).toThrow(/ALREADY_SYMPATHETIC/)
+  })
+
+  it('Rule: first spread — birds + mouse can pay mouse clearing (cost 1)', () => {
+    const state = minimalState({
+      factions: ['marquise', 'eyrie', 'alliance'],
+      players: [
+        player(0, 'marquise'),
+        player(1, 'eyrie'),
+        player(2, 'alliance'),
+      ],
+      currentSeat: 2,
+      phase: 'birdsong',
+      step: 'spread',
+    })
+    const board = boardOf(state, 2)
+    const mouse = card('ROOT-84')
+    const birdA = card('ROOT-57')
+    const birdB = card('ROOT-57', 2)
+    board.supporters = [mouse, birdA, birdB]
+
+    const mouseClearings = FALL.clearings
+      .filter((clearing) => clearing.suit === 'mouse')
+      .map((clearing) => clearing.id)
+    expect(mouseClearings.length).toBeGreaterThan(0)
+
+    const spread = ALLIANCE.legalActions(state, testContext({ state })).find(
+      (spec) => spec.type === 'spreadSympathy',
+    )
+    const options = spread?.params?.options ?? []
+    const mouseOptions = options.filter((choice) => {
+      if (typeof choice !== 'object' || choice === null) return false
+      const clearing = Reflect.get(choice, 'clearing')
+      return typeof clearing === 'number' && mouseClearings.includes(clearing)
+    })
+    expect(mouseOptions.length).toBeGreaterThan(0)
+
+    const pick = mouseOptions[0]!
+    const clearing = Reflect.get(pick, 'clearing')
+    const supporterIds = Reflect.get(pick, 'supporterIds')
+    expect(typeof clearing).toBe('number')
+    expect(Array.isArray(supporterIds)).toBe(true)
+    if (typeof clearing !== 'number' || !Array.isArray(supporterIds)) {
+      throw new Error('expected mouse spread option')
+    }
+
+    ALLIANCE.apply(
+      state,
+      {
+        type: 'spreadSympathy',
+        clearing,
+        supporterIds: supporterIds.filter(
+          (id): id is string => typeof id === 'string',
+        ),
+      },
+      testContext({ state }),
+    )
+    expect(clearingHasSympathy(state, clearing, 2)).toBe(true)
   })
 })
