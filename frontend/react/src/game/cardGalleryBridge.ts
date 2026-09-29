@@ -89,3 +89,12 @@ export function hideCardPile(): void {
   }
   patchHud({ cardPile: null })
 }
+
+/** Close only a selectable pick pile; leave view-only piles open. */
+export function hideSelectableCardPile(): void {
+  const pile = getHudSnapshot().cardPile
+  if (pile === null || pile.selectable !== true) {
+    return
+  }
+  patchHud({ cardPile: null })
+}

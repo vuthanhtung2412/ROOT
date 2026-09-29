@@ -146,22 +146,41 @@ async function makeBoardsSnapshot(): Promise<void> {
 async function makeAllianceBirdsongSpread(): Promise<void> {
   const game = createFourPlayerGame(110)
   const snap = game.toJSON()
-  forceSeatPhase(snap, 2, 'birdsong', 'actions')
-  // Ensure fox supporters for first-cost spread into a fox clearing.
+  // Rule: Alliance Birdsong Spread is step `spread` (after revolt).
+  forceSeatPhase(snap, 2, 'birdsong', 'spread')
   const alliance = snap.state.players[2]!
   if (alliance.board.kind !== 'alliance') {
     throw new Error('alliance board missing')
   }
+  // Cost 2: place 3 sympathy tokens so next band costs 2 supporters.
+  // Anchor on fox clearing 0 → adjacent clearings for second+ spreads.
+  placeAllianceSympathy(snap, 0, 2)
+  placeAllianceSympathy(snap, 5, 2)
+  placeAllianceSympathy(snap, 7, 2)
+  // Mix of fox + bird so fox-adjacent clearings show several faces to pick.
+  // Also mouse + rabbit so other adjacent clearings (1,4,8,6,…) stay viable.
   alliance.board.supporters = [
-    { id: 'ROOT-202#qa1', defId: 'ROOT-202' },
-    { id: 'ROOT-202#qa2', defId: 'ROOT-202' },
-    { id: 'ROOT-201#qa1', defId: 'ROOT-201' },
+    { id: 'ROOT-202#spread1', defId: 'ROOT-202' }, // fox
+    { id: 'ROOT-72#spread2', defId: 'ROOT-72' }, // fox
+    { id: 'ROOT-57#spread3', defId: 'ROOT-57' }, // bird
+    { id: 'ROOT-57#spread4', defId: 'ROOT-57' }, // bird
+    { id: 'ROOT-84#spread5', defId: 'ROOT-84' }, // mouse
+    { id: 'ROOT-201#spread6', defId: 'ROOT-201' }, // rabbit
   ]
   const restored = Game.fromJSON(snap)
+  const spread = restored
+    .legalActions()
+    .find((spec) => spec.type === 'spreadSympathy')
+  const optionCount = Array.isArray(spread?.params?.options)
+    ? spread.params.options.length
+    : 0
   await writeNamed('alliance-birdsong-spread.json', restored.toJSON(), {
     phase: `${restored.state.phase}/${restored.state.step}`,
     seat: restored.state.currentSeat,
     actions: actionTypes(restored),
+    spreadOptionCount: optionCount,
+    howToTest:
+      'Tray → spread sympathy → pick clearing → tap 2 supporter faces → Confirm (or Cancel/X)',
   })
 }
 

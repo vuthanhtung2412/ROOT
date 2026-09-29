@@ -3,6 +3,10 @@ import { ActionComposer, type ComposerOutcome } from '#game/resolution/ActionCom
 import { AutoPromptController } from '#game/resolution/autoPromptController.ts'
 import { BattleOverlayController } from '#game/battleOverlayController.ts'
 import { applyComposerOutcomeToHud } from '#game/resolution/composerOutcomeApplier.ts'
+import {
+  hideSelectableCardPile,
+  showCardPile,
+} from '#game/cardGalleryBridge.ts'
 import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
 import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
@@ -423,6 +427,20 @@ export class ReactGameController {
       getDiscardSelection: () => {
         const discardDraft = this.marquiseCards.getDraft()
         return discardDraft.type === 'discardMany' ? discardDraft.selected : []
+      },
+      getSupporterPilePick: () => this.allianceComposer.getSupporterPilePick(),
+      syncSupporterPilePick: (pick) => {
+        if (pick === null) {
+          hideSelectableCardPile()
+          return
+        }
+        showCardPile({
+          title: pick.title,
+          cards: pick.cards,
+          emptyMessage: 'No matching supporters',
+          selectable: true,
+          selectedCardIds: pick.selectedCardIds,
+        })
       },
       getOverlayKind: () => this.eventComposer.getOverlayKind(),
     })

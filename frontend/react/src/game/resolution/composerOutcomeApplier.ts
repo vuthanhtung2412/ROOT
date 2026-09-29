@@ -1,4 +1,5 @@
 import type { ComposerOutcome } from '#game/resolution/ActionComposer.ts'
+import type { AllianceSupporterPilePick } from '#game/resolution/allianceActionComposer.ts'
 import { mergeBattleClearingHighlight } from '#game/battleOverlayModel.ts'
 import type { GameState } from '#api/client.ts'
 import type { GameSessionSnapshot } from '#game/GameSession.ts'
@@ -26,6 +27,8 @@ export type ComposerOutcomeApplierDeps = {
   getOptionPresentation: () => 'stepper' | 'buttons' | undefined
   getPromptOptions: () => Array<{ label: string; value: string }>
   getDiscardSelection: () => string[]
+  getSupporterPilePick: () => AllianceSupporterPilePick | null
+  syncSupporterPilePick: (pick: AllianceSupporterPilePick | null) => void
   /** Skip battle overlay when Field Hospitals owns the prompt. */
   getOverlayKind: () => 'fieldHospital' | 'battle' | null
 }
@@ -41,6 +44,7 @@ export function applyComposerOutcomeToHud(
   if (outcome.kind === 'ready') {
     deps.syncComposerBanner(null)
     deps.syncLeaderPick(null)
+    deps.syncSupporterPilePick(null)
     if (state !== null) {
       deps.syncBattleClearingHighlight(state)
     } else {
@@ -75,6 +79,7 @@ export function applyComposerOutcomeToHud(
     deps.setHighlightedForests(outcome.prompt.highlightForests ?? [])
     deps.setEnabledCards(outcome.prompt.enabledCardIds)
     deps.setCardSelection(deps.getDiscardSelection())
+    deps.syncSupporterPilePick(deps.getSupporterPilePick())
     if (overlayKind !== 'fieldHospital') {
       deps.syncBattleOverlay(outcome.prompt.message)
     }
@@ -86,6 +91,7 @@ export function applyComposerOutcomeToHud(
 
   deps.syncComposerBanner(null)
   deps.syncLeaderPick(null)
+  deps.syncSupporterPilePick(null)
   deps.setEnabledCards(null)
   deps.setCardSelection([])
   deps.syncBattleOverlay(null)

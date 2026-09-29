@@ -1,27 +1,29 @@
 import type { ActionSpec } from '#api/client.ts'
-import { lookupCardCatalog } from '#assets/gameAssets.ts'
 import { fallClearingSuit } from '#game/boardLayout.ts'
 import {
   readChoiceParams,
   type ActionComposerHooks,
   type ComposerOutcome,
 } from '#game/resolution/ActionComposer.ts'
+import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
 
 type SupporterSpendChoice = {
   clearing: number
   supporterIds: string[]
 }
 
+type SupporterSpendDraft = {
+  type: 'revolt' | 'spreadSympathy'
+  allOptions: SupporterSpendChoice[]
+  clearing: number | null
+  eligibleIds: string[]
+  cost: number
+  selected: string[]
+}
+
 type AllianceDraft =
   | { type: 'idle' }
-  | {
-      type: 'revolt'
-      options: SupporterSpendChoice[]
-    }
-  | {
-      type: 'spreadSympathy'
-      options: SupporterSpendChoice[]
-    }
+  | SupporterSpendDraft
   | { type: 'mobilize'; cardIds: string[] }
   | { type: 'train'; cardIds: string[] }
   | {
@@ -33,6 +35,12 @@ type AllianceDraft =
       op: 'move' | 'battle' | 'recruit' | 'organize' | null
     }
 
+export type AllianceSupporterPilePick = {
+  title: string
+  cards: CardGalleryFace[]
+  selectedCardIds: readonly string[]
+}
+
 function parseDefIdFromCardId(cardId: string): string | null {
   const hashIndex = cardId.indexOf('#')
   if (hashIndex <= 0) {
@@ -41,15 +49,9 @@ function parseDefIdFromCardId(cardId: string): string | null {
   return cardId.slice(0, hashIndex)
 }
 
-function formatSupporterSpendLabel(supporterIds: readonly string[]): string {
-  const suits = supporterIds.map((cardId) => {
-    const defId = parseDefIdFromCardId(cardId)
-    if (defId === null) {
-      return '?'
-    }
-    return lookupCardCatalog(defId)?.suit ?? '?'
-  })
-  return suits.join(' + ')
+function cardFaceFromId(cardId: string): CardGalleryFace {
+  const defId = parseDefIdFromCardId(cardId)
+  return { id: cardId, defId: defId ?? cardId }
 }
 
 /** e.g. "Choose 1 mouse supporter to discard" / "Choose 2 fox supporters to discard". */
@@ -66,6 +68,10 @@ function unique(values: number[]): number[] {
   return [...new Set(values)]
 }
 
+function uniqueStrings(values: readonly string[]): string[] {
+  return [...new Set(values)]
+}
+
 function isSupporterSpendChoice(value: unknown): value is SupporterSpendChoice {
   if (typeof value !== 'object' || value === null) return false
   const record = value as Record<string, unknown>
@@ -76,78 +82,110 @@ function isSupporterSpendChoice(value: unknown): value is SupporterSpendChoice {
   )
 }
 
-function beginSupporterSpendPick(
-  actionType: 'revolt' | 'spreadSympathy',
-  options: SupporterSpendChoice[],
-): ComposerOutcome {
-  if (options.length === 1) {
-    const choice = options[0]!
-    return {
-      kind: 'ready',
-      action: {
-        type: actionType,
-        clearing: choice.clearing,
-        supporterIds: choice.supporterIds,
-      },
-    }
+function eligibleIdsForClearing(
+  options: readonly SupporterSpendChoice[],
+  clearingId: number,
+): { eligibleIds: string[]; cost: number } | null {
+  const matches = options.filter((choice) => choice.clearing === clearingId)
+  if (matches.length === 0) {
+    return null
   }
-  const clearings = unique(options.map((choice) => choice.clearing))
+  const cost = matches[0]!.supporterIds.length
+  const eligibleIds = uniqueStrings(
+    matches.flatMap((choice) => choice.supporterIds),
+  )
+  return { eligibleIds, cost }
+}
+
+function supporterPickPrompt(
+  clearingId: number,
+  cost: number,
+  selectedCount: number,
+): ComposerOutcome {
+  const baseMessage = formatChooseSupportersToDiscardTitle(clearingId, cost)
+  const message =
+    selectedCount === cost
+      ? `${baseMessage} — Confirm when ready`
+      : baseMessage
   return {
     kind: 'incomplete',
     prompt: {
-      message:
-        actionType === 'revolt'
-          ? 'Revolt — pick clearing'
-          : 'Spread Sympathy — pick clearing',
-      highlightClearings: clearings,
+      message,
+      highlightClearings: [clearingId],
       enabledCardIds: null,
-      canConfirm: false,
+      canConfirm: selectedCount === cost,
       canCancel: true,
     },
   }
 }
 
-function chooseSupporterSpendClearing(
+function beginSupporterSpendAtClearing(
+  actionType: 'revolt' | 'spreadSympathy',
+  allOptions: SupporterSpendChoice[],
+  clearingId: number,
+): { draft: SupporterSpendDraft; outcome: ComposerOutcome } | null {
+  const eligible = eligibleIdsForClearing(allOptions, clearingId)
+  if (eligible === null) {
+    return null
+  }
+  const draft: SupporterSpendDraft = {
+    type: actionType,
+    allOptions,
+    clearing: clearingId,
+    eligibleIds: eligible.eligibleIds,
+    cost: eligible.cost,
+    selected: [],
+  }
+  return {
+    draft,
+    outcome: supporterPickPrompt(clearingId, eligible.cost, 0),
+  }
+}
+
+function beginSupporterSpendPick(
   actionType: 'revolt' | 'spreadSympathy',
   options: SupporterSpendChoice[],
-  clearingId: number,
-  setDraft: (next: AllianceDraft) => void,
-  setPromptOptions: (
-    next: Array<{ label: string; value: string }>,
-  ) => void,
-): ComposerOutcome | null {
-  const matches = options.filter((choice) => choice.clearing === clearingId)
-  if (matches.length === 0) return null
-  if (matches.length === 1) {
-    const choice = matches[0]!
-    setDraft({ type: 'idle' })
-    return {
-      kind: 'ready',
-      action: {
-        type: actionType,
-        clearing: choice.clearing,
-        supporterIds: choice.supporterIds,
-      },
+): { draft: AllianceDraft; outcome: ComposerOutcome } {
+  const clearings = unique(options.map((choice) => choice.clearing))
+  if (clearings.length === 1) {
+    const started = beginSupporterSpendAtClearing(
+      actionType,
+      options,
+      clearings[0]!,
+    )
+    if (started !== null) {
+      return started
     }
   }
-  setPromptOptions(
-    matches.map((choice, index) => ({
-      label: formatSupporterSpendLabel(choice.supporterIds),
-      value: String(index),
-    })),
-  )
-  setDraft({ type: actionType, options: matches })
-  const supporterCount = matches[0]?.supporterIds.length ?? 0
   return {
-    kind: 'incomplete',
-    prompt: {
-      message: formatChooseSupportersToDiscardTitle(clearingId, supporterCount),
-      highlightClearings: [clearingId],
-      enabledCardIds: null,
-      canConfirm: false,
-      canCancel: true,
+    draft: {
+      type: actionType,
+      allOptions: options,
+      clearing: null,
+      eligibleIds: [],
+      cost: 0,
+      selected: [],
+    },
+    outcome: {
+      kind: 'incomplete',
+      prompt: {
+        message:
+          actionType === 'revolt'
+            ? 'Revolt — pick clearing'
+            : 'Spread Sympathy — pick clearing',
+        highlightClearings: clearings,
+        enabledCardIds: null,
+        canConfirm: false,
+        canCancel: true,
+      },
     },
   }
+}
+
+function isSupporterSpendDraft(
+  draft: AllianceDraft,
+): draft is SupporterSpendDraft {
+  return draft.type === 'revolt' || draft.type === 'spreadSympathy'
 }
 
 /** Alliance birdsong/daylight/evening choice flows. */
@@ -155,6 +193,7 @@ export function createAllianceComposerHooks(): {
   hooks: ActionComposerHooks
   getDraft: () => AllianceDraft
   getPromptOptions: () => Array<{ label: string; value: string }>
+  getSupporterPilePick: () => AllianceSupporterPilePick | null
 } {
   let draft: AllianceDraft = { type: 'idle' }
   let promptOptions: Array<{ label: string; value: string }> = []
@@ -170,8 +209,9 @@ export function createAllianceComposerHooks(): {
           draft = { type: 'idle' }
           return null
         }
-        draft = { type: spec.type, options }
-        return beginSupporterSpendPick(spec.type, options)
+        const started = beginSupporterSpendPick(spec.type, options)
+        draft = started.draft
+        return started.outcome
       }
       if (spec.type === 'mobilize' || spec.type === 'train') {
         const cardIds = params.cardIds ?? []
@@ -217,18 +257,17 @@ export function createAllianceComposerHooks(): {
     },
 
     chooseClearing: (clearingId: number): ComposerOutcome | null => {
-      if (draft.type === 'revolt' || draft.type === 'spreadSympathy') {
-        return chooseSupporterSpendClearing(
+      if (isSupporterSpendDraft(draft) && draft.clearing === null) {
+        const started = beginSupporterSpendAtClearing(
           draft.type,
-          draft.options,
+          draft.allOptions,
           clearingId,
-          (next) => {
-            draft = next
-          },
-          (next) => {
-            promptOptions = next
-          },
         )
+        if (started === null) {
+          return null
+        }
+        draft = started.draft
+        return started.outcome
       }
       if (draft.type === 'militaryOp' && draft.op !== null) {
         if (draft.op === 'recruit' || draft.op === 'organize') {
@@ -274,6 +313,23 @@ export function createAllianceComposerHooks(): {
     },
 
     chooseCard: (cardId: string): ComposerOutcome | null => {
+      if (isSupporterSpendDraft(draft) && draft.clearing !== null) {
+        const clearingId = draft.clearing
+        if (!draft.eligibleIds.includes(cardId)) {
+          return null
+        }
+        const alreadySelected = draft.selected.includes(cardId)
+        let selected: string[]
+        if (alreadySelected) {
+          selected = draft.selected.filter((id) => id !== cardId)
+        } else if (draft.selected.length >= draft.cost) {
+          return null
+        } else {
+          selected = [...draft.selected, cardId]
+        }
+        draft = { ...draft, selected }
+        return supporterPickPrompt(clearingId, draft.cost, selected.length)
+      }
       if (
         (draft.type === 'mobilize' || draft.type === 'train') &&
         draft.cardIds.includes(cardId)
@@ -286,24 +342,6 @@ export function createAllianceComposerHooks(): {
     },
 
     chooseColumn: (value: string): ComposerOutcome | null => {
-      if (draft.type === 'revolt' || draft.type === 'spreadSympathy') {
-        const index = Number(value)
-        if (!Number.isInteger(index) || index < 0 || index >= draft.options.length) {
-          return null
-        }
-        const choice = draft.options[index]!
-        const actionType = draft.type
-        draft = { type: 'idle' }
-        promptOptions = []
-        return {
-          kind: 'ready',
-          action: {
-            type: actionType,
-            clearing: choice.clearing,
-            supporterIds: choice.supporterIds,
-          },
-        }
-      }
       if (draft.type !== 'militaryOp') return null
       if (
         value !== 'move' &&
@@ -334,6 +372,28 @@ export function createAllianceComposerHooks(): {
       }
     },
 
+    confirm: (): ComposerOutcome | null => {
+      if (
+        !isSupporterSpendDraft(draft) ||
+        draft.clearing === null ||
+        draft.selected.length !== draft.cost
+      ) {
+        return null
+      }
+      const actionType = draft.type
+      const clearing = draft.clearing
+      const supporterIds = draft.selected
+      draft = { type: 'idle' }
+      return {
+        kind: 'ready',
+        action: {
+          type: actionType,
+          clearing,
+          supporterIds,
+        },
+      }
+    },
+
     cancel: (): ComposerOutcome | null => {
       draft = { type: 'idle' }
       return { kind: 'idle' }
@@ -344,6 +404,16 @@ export function createAllianceComposerHooks(): {
     hooks,
     getDraft: (): AllianceDraft => draft,
     getPromptOptions: (): Array<{ label: string; value: string }> => promptOptions,
+    getSupporterPilePick: (): AllianceSupporterPilePick | null => {
+      if (!isSupporterSpendDraft(draft) || draft.clearing === null) {
+        return null
+      }
+      return {
+        title: formatChooseSupportersToDiscardTitle(draft.clearing, draft.cost),
+        cards: draft.eligibleIds.map(cardFaceFromId),
+        selectedCardIds: draft.selected,
+      }
+    },
   }
 }
 

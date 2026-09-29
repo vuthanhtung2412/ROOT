@@ -11,6 +11,7 @@ import {
   subscribeCompletedQuests,
   subscribeCraftedCards,
 } from '#game/cardGalleryBridge.ts'
+import { getHudCallbacks } from '#game/hudStore.ts'
 import { QuestCardFace } from '#react/QuestPilePanel.tsx'
 import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
 import '#react/CardGalleryModal.css'
@@ -23,6 +24,9 @@ const DEFAULT_EMPTY_PILE_MESSAGE = 'Pile empty'
 function CardStrip(props: {
   cards: readonly CardGalleryFace[]
   emptyMessage: string
+  selectable: boolean
+  selectedCardIds: ReadonlySet<string>
+  onSelectCard: (cardId: string) => void
 }): JSX.Element {
   if (props.cards.length === 0) {
     return (
@@ -33,23 +37,57 @@ function CardStrip(props: {
     <div className="card-gallery-modal__strip">
       {props.cards.map((card) => {
         const imagePath = cardImagePublicPath(card.defId)
-        if (imagePath === null) {
+        const isSelected = props.selectedCardIds.has(card.id)
+        const className = [
+          'card-gallery-modal__card',
+          imagePath === null ? 'card-gallery-modal__card--fallback' : '',
+          props.selectable ? 'card-gallery-modal__card--selectable' : '',
+          isSelected ? 'card-gallery-modal__card--selected' : '',
+        ]
+          .filter((part) => part.length > 0)
+          .join(' ')
+
+        if (!props.selectable) {
+          if (imagePath === null) {
+            return (
+              <div
+                key={card.id}
+                className={className}
+                title={card.defId}
+              />
+            )
+          }
           return (
-            <div
+            <img
               key={card.id}
-              className="card-gallery-modal__card card-gallery-modal__card--fallback"
-              title={card.defId}
+              className={className}
+              src={imagePath}
+              alt={card.defId}
+              draggable={false}
             />
           )
         }
+
         return (
-          <img
+          <button
             key={card.id}
-            className="card-gallery-modal__card"
-            src={imagePath}
-            alt={card.defId}
-            draggable={false}
-          />
+            type="button"
+            className={className}
+            title={card.defId}
+            aria-pressed={isSelected}
+            onClick={() => {
+              props.onSelectCard(card.id)
+            }}
+          >
+            {imagePath === null ? null : (
+              <img
+                className="card-gallery-modal__card-image"
+                src={imagePath}
+                alt={card.defId}
+                draggable={false}
+              />
+            )}
+          </button>
         )
       })}
     </div>
@@ -60,34 +98,51 @@ function CardGalleryShell(props: {
   title: string
   closeAriaLabel: string
   onClose: () => void
+  /** When false, map/banner stay clickable; no dim veil. */
+  blocksBackground: boolean
   children: JSX.Element
 }): JSX.Element {
+  const rootClassName = props.blocksBackground
+    ? 'card-gallery-modal'
+    : 'card-gallery-modal card-gallery-modal--nonblocking'
   return (
     <div
-      className="card-gallery-modal"
+      className={rootClassName}
       role="dialog"
-      aria-modal="true"
-      onClick={() => {
-        props.onClose()
-      }}
+      aria-modal={props.blocksBackground}
+      onClick={
+        props.blocksBackground
+          ? () => {
+              props.onClose()
+            }
+          : undefined
+      }
     >
-      <div className="card-gallery-modal__veil" aria-hidden="true" />
-      <button
-        type="button"
-        className="card-gallery-modal__close"
-        aria-label={props.closeAriaLabel}
-        onClick={(event: MouseEvent<HTMLButtonElement>) => {
-          event.stopPropagation()
-          props.onClose()
-        }}
-      >
-        ✕
-      </button>
+      {props.blocksBackground ? (
+        <div className="card-gallery-modal__veil" aria-hidden="true" />
+      ) : null}
+      {props.blocksBackground ? (
+        <button
+          type="button"
+          className="card-gallery-modal__close"
+          aria-label={props.closeAriaLabel}
+          onClick={(event: MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation()
+            props.onClose()
+          }}
+        >
+          ✕
+        </button>
+      ) : null}
       <div
         className="card-gallery-modal__panel"
-        onClick={(event: MouseEvent<HTMLDivElement>) => {
-          event.stopPropagation()
-        }}
+        onClick={
+          props.blocksBackground
+            ? (event: MouseEvent<HTMLDivElement>) => {
+                event.stopPropagation()
+              }
+            : undefined
+        }
       >
         <h2 className="card-gallery-modal__title">{props.title}</h2>
         {props.children}
@@ -109,11 +164,18 @@ export function CraftedCardsModal(): JSX.Element | null {
     <CardGalleryShell
       title={`${content.faction} · crafted cards`}
       closeAriaLabel="Close crafted cards"
+      blocksBackground={true}
       onClose={() => {
         hideCraftedCards()
       }}
     >
-      <CardStrip cards={content.cards} emptyMessage={EMPTY_CRAFTED_MESSAGE} />
+      <CardStrip
+        cards={content.cards}
+        emptyMessage={EMPTY_CRAFTED_MESSAGE}
+        selectable={false}
+        selectedCardIds={new Set()}
+        onSelectCard={() => undefined}
+      />
     </CardGalleryShell>
   )
 }
@@ -131,6 +193,7 @@ export function CompletedQuestsModal(): JSX.Element | null {
     <CardGalleryShell
       title={`${content.faction} · completed quests`}
       closeAriaLabel="Close completed quests"
+      blocksBackground={true}
       onClose={() => {
         hideCompletedQuests()
       }}
@@ -157,17 +220,29 @@ export function CardPileModal(): JSX.Element | null {
   if (content === null) {
     return null
   }
+  const selectable = content.selectable === true
+  const selectedCardIds = new Set(content.selectedCardIds ?? [])
   return (
     <CardGalleryShell
       title={content.title}
-      closeAriaLabel="Close card pile"
+      closeAriaLabel={selectable ? 'Abort card choice' : 'Close card pile'}
+      blocksBackground={!selectable}
       onClose={() => {
+        if (selectable) {
+          getHudCallbacks().onBannerCancel()
+          return
+        }
         hideCardPile()
       }}
     >
       <CardStrip
         cards={content.cards}
         emptyMessage={content.emptyMessage ?? DEFAULT_EMPTY_PILE_MESSAGE}
+        selectable={selectable}
+        selectedCardIds={selectedCardIds}
+        onSelectCard={(cardId) => {
+          getHudCallbacks().onCardSelected(cardId)
+        }}
       />
     </CardGalleryShell>
   )

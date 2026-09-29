@@ -15,6 +15,9 @@ export type CardPileModalContent = {
   title: string
   cards: readonly CardGalleryFace[]
   emptyMessage?: string
+  /** When true, cards are tappable; selection uses selectedCardIds. */
+  selectable?: boolean
+  selectedCardIds?: readonly string[]
 }
 
 export type CompletedQuestsModalContent = {
