@@ -1,20 +1,25 @@
 import type { ActionSpec } from '#api/client.ts'
+import { lookupCardCatalog } from '#assets/gameAssets.ts'
 import {
   readChoiceParams,
   type ActionComposerHooks,
   type ComposerOutcome,
 } from '#game/resolution/ActionComposer.ts'
 
+type SupporterSpendChoice = {
+  clearing: number
+  supporterIds: string[]
+}
+
 type AllianceDraft =
   | { type: 'idle' }
   | {
       type: 'revolt'
-      options: Array<{ clearing: number; supporterIds: string[] }>
+      options: SupporterSpendChoice[]
     }
   | {
       type: 'spreadSympathy'
-      clearings: number[]
-      supporterIds: string[]
+      options: SupporterSpendChoice[]
     }
   | { type: 'mobilize'; cardIds: string[] }
   | { type: 'train'; cardIds: string[] }
@@ -27,13 +32,30 @@ type AllianceDraft =
       op: 'move' | 'battle' | 'recruit' | 'organize' | null
     }
 
+function parseDefIdFromCardId(cardId: string): string | null {
+  const hashIndex = cardId.indexOf('#')
+  if (hashIndex <= 0) {
+    return cardId.length > 0 ? cardId : null
+  }
+  return cardId.slice(0, hashIndex)
+}
+
+function formatSupporterSpendLabel(supporterIds: readonly string[]): string {
+  const suits = supporterIds.map((cardId) => {
+    const defId = parseDefIdFromCardId(cardId)
+    if (defId === null) {
+      return '?'
+    }
+    return lookupCardCatalog(defId)?.suit ?? '?'
+  })
+  return suits.join(' + ')
+}
+
 function unique(values: number[]): number[] {
   return [...new Set(values)]
 }
 
-function isRevoltOption(
-  value: unknown,
-): value is { clearing: number; supporterIds: string[] } {
+function isSupporterSpendChoice(value: unknown): value is SupporterSpendChoice {
   if (typeof value !== 'object' || value === null) return false
   const record = value as Record<string, unknown>
   return (
@@ -41,6 +63,82 @@ function isRevoltOption(
     Array.isArray(record.supporterIds) &&
     record.supporterIds.every((id) => typeof id === 'string')
   )
+}
+
+function beginSupporterSpendPick(
+  actionType: 'revolt' | 'spreadSympathy',
+  options: SupporterSpendChoice[],
+): ComposerOutcome {
+  if (options.length === 1) {
+    const choice = options[0]!
+    return {
+      kind: 'ready',
+      action: {
+        type: actionType,
+        clearing: choice.clearing,
+        supporterIds: choice.supporterIds,
+      },
+    }
+  }
+  const clearings = unique(options.map((choice) => choice.clearing))
+  return {
+    kind: 'incomplete',
+    prompt: {
+      message:
+        actionType === 'revolt'
+          ? 'Revolt — pick clearing'
+          : 'Spread Sympathy — pick clearing',
+      highlightClearings: clearings,
+      enabledCardIds: null,
+      canConfirm: false,
+      canCancel: true,
+    },
+  }
+}
+
+function chooseSupporterSpendClearing(
+  actionType: 'revolt' | 'spreadSympathy',
+  options: SupporterSpendChoice[],
+  clearingId: number,
+  setDraft: (next: AllianceDraft) => void,
+  setPromptOptions: (
+    next: Array<{ label: string; value: string }>,
+  ) => void,
+): ComposerOutcome | null {
+  const matches = options.filter((choice) => choice.clearing === clearingId)
+  if (matches.length === 0) return null
+  if (matches.length === 1) {
+    const choice = matches[0]!
+    setDraft({ type: 'idle' })
+    return {
+      kind: 'ready',
+      action: {
+        type: actionType,
+        clearing: choice.clearing,
+        supporterIds: choice.supporterIds,
+      },
+    }
+  }
+  setPromptOptions(
+    matches.map((choice, index) => ({
+      label: formatSupporterSpendLabel(choice.supporterIds),
+      value: String(index),
+    })),
+  )
+  setDraft({ type: actionType, options: matches })
+  return {
+    kind: 'incomplete',
+    prompt: {
+      message:
+        actionType === 'revolt'
+          ? 'Revolt — pick supporters'
+          : 'Spread Sympathy — pick supporters',
+      highlightClearings: [clearingId],
+      enabledCardIds: null,
+      canConfirm: false,
+      canCancel: true,
+    },
+  }
 }
 
 /** Alliance birdsong/daylight/evening choice flows. */
@@ -56,57 +154,15 @@ export function createAllianceComposerHooks(): {
     begin: (spec: ActionSpec): ComposerOutcome | null => {
       promptOptions = []
       const params = readChoiceParams(spec)
-      if (spec.type === 'revolt') {
+      if (spec.type === 'revolt' || spec.type === 'spreadSympathy') {
         const rawOptions = params.options ?? []
-        const options = rawOptions.filter(isRevoltOption)
-        if (options.length === 1) {
-          const choice = options[0]!
-          return {
-            kind: 'ready',
-            action: {
-              type: 'revolt',
-              clearing: choice.clearing,
-              supporterIds: choice.supporterIds,
-            },
-          }
+        const options = rawOptions.filter(isSupporterSpendChoice)
+        if (options.length === 0) {
+          draft = { type: 'idle' }
+          return null
         }
-        draft = { type: 'revolt', options }
-        const clearings = unique(options.map((choice) => choice.clearing))
-        return {
-          kind: 'incomplete',
-          prompt: {
-            message: 'Revolt — pick clearing',
-            highlightClearings: clearings,
-            enabledCardIds: null,
-            canConfirm: false,
-            canCancel: true,
-          },
-        }
-      }
-      if (spec.type === 'spreadSympathy') {
-        const clearings = params.clearings ?? []
-        const supporterIds = params.supporterIds ?? []
-        if (clearings.length === 1 && supporterIds.length > 0) {
-          return {
-            kind: 'ready',
-            action: {
-              type: 'spreadSympathy',
-              clearing: clearings[0]!,
-              supporterIds,
-            },
-          }
-        }
-        draft = { type: 'spreadSympathy', clearings, supporterIds }
-        return {
-          kind: 'incomplete',
-          prompt: {
-            message: 'Spread Sympathy — pick clearing',
-            highlightClearings: clearings,
-            enabledCardIds: null,
-            canConfirm: false,
-            canCancel: true,
-          },
-        }
+        draft = { type: spec.type, options }
+        return beginSupporterSpendPick(spec.type, options)
       }
       if (spec.type === 'mobilize' || spec.type === 'train') {
         const cardIds = params.cardIds ?? []
@@ -152,49 +208,18 @@ export function createAllianceComposerHooks(): {
     },
 
     chooseClearing: (clearingId: number): ComposerOutcome | null => {
-      if (draft.type === 'revolt') {
-        const matches = draft.options.filter(
-          (choice) => choice.clearing === clearingId,
-        )
-        if (matches.length === 0) return null
-        if (matches.length === 1) {
-          const choice = matches[0]!
-          draft = { type: 'idle' }
-          return {
-            kind: 'ready',
-            action: {
-              type: 'revolt',
-              clearing: choice.clearing,
-              supporterIds: choice.supporterIds,
-            },
-          }
-        }
-        promptOptions = matches.map((choice, index) => ({
-          label: `supporters ${choice.supporterIds.join('+')}`,
-          value: String(index),
-        }))
-        draft = { type: 'revolt', options: matches }
-        return {
-          kind: 'incomplete',
-          prompt: {
-            message: 'Revolt — pick supporters',
-            highlightClearings: [clearingId],
-            enabledCardIds: null,
-            canConfirm: false,
-            canCancel: true,
+      if (draft.type === 'revolt' || draft.type === 'spreadSympathy') {
+        return chooseSupporterSpendClearing(
+          draft.type,
+          draft.options,
+          clearingId,
+          (next) => {
+            draft = next
           },
-        }
-      }
-      if (
-        draft.type === 'spreadSympathy' &&
-        draft.clearings.includes(clearingId)
-      ) {
-        const supporterIds = draft.supporterIds
-        draft = { type: 'idle' }
-        return {
-          kind: 'ready',
-          action: { type: 'spreadSympathy', clearing: clearingId, supporterIds },
-        }
+          (next) => {
+            promptOptions = next
+          },
+        )
       }
       if (draft.type === 'militaryOp' && draft.op !== null) {
         if (draft.op === 'recruit' || draft.op === 'organize') {
@@ -252,18 +277,19 @@ export function createAllianceComposerHooks(): {
     },
 
     chooseColumn: (value: string): ComposerOutcome | null => {
-      if (draft.type === 'revolt') {
+      if (draft.type === 'revolt' || draft.type === 'spreadSympathy') {
         const index = Number(value)
         if (!Number.isInteger(index) || index < 0 || index >= draft.options.length) {
           return null
         }
         const choice = draft.options[index]!
+        const actionType = draft.type
         draft = { type: 'idle' }
         promptOptions = []
         return {
           kind: 'ready',
           action: {
-            type: 'revolt',
+            type: actionType,
             clearing: choice.clearing,
             supporterIds: choice.supporterIds,
           },
