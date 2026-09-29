@@ -1,5 +1,6 @@
 import type { ActionSpec } from '#api/client.ts'
 import { lookupCardCatalog } from '#assets/gameAssets.ts'
+import { fallClearingSuit } from '#game/boardLayout.ts'
 import {
   readChoiceParams,
   type ActionComposerHooks,
@@ -49,6 +50,16 @@ function formatSupporterSpendLabel(supporterIds: readonly string[]): string {
     return lookupCardCatalog(defId)?.suit ?? '?'
   })
   return suits.join(' + ')
+}
+
+/** e.g. "Choose 1 mouse supporter to discard" / "Choose 2 fox supporters to discard". */
+export function formatChooseSupportersToDiscardTitle(
+  clearingId: number,
+  supporterCount: number,
+): string {
+  const suit = fallClearingSuit(clearingId) ?? 'matching'
+  const noun = supporterCount === 1 ? 'supporter' : 'supporters'
+  return `Choose ${String(supporterCount)} ${suit} ${noun} to discard`
 }
 
 function unique(values: number[]): number[] {
@@ -126,13 +137,11 @@ function chooseSupporterSpendClearing(
     })),
   )
   setDraft({ type: actionType, options: matches })
+  const supporterCount = matches[0]?.supporterIds.length ?? 0
   return {
     kind: 'incomplete',
     prompt: {
-      message:
-        actionType === 'revolt'
-          ? 'Revolt — pick supporters'
-          : 'Spread Sympathy — pick supporters',
+      message: formatChooseSupportersToDiscardTitle(clearingId, supporterCount),
       highlightClearings: [clearingId],
       enabledCardIds: null,
       canConfirm: false,

@@ -9,7 +9,7 @@ describe('allianceActionComposer spreadSympathy', () => {
     const composer = new ActionComposer()
     composer.setHooks(alliance.hooks)
 
-    const mouseClearing = 3
+    const mouseClearing = 1
     const foxClearing = 0
     const mid = composer.begin(
       makeActionSpec({
@@ -32,6 +32,10 @@ describe('allianceActionComposer spreadSympathy', () => {
 
     const afterClearing = composer.chooseClearing(mouseClearing)
     expect(afterClearing.kind).toBe('incomplete')
+    if (afterClearing.kind !== 'incomplete') throw new Error('expected incomplete')
+    expect(afterClearing.prompt.message).toBe(
+      'Choose 1 mouse supporter to discard',
+    )
     expect(alliance.getPromptOptions().map((option) => option.label)).toEqual([
       'mouse',
       'bird',
@@ -47,6 +51,29 @@ describe('allianceActionComposer spreadSympathy', () => {
     })
   })
 
+  it('titles supporter pick as Choose N suit supporters to discard', () => {
+    const alliance = createAllianceComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(alliance.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'revolt',
+        params: {
+          options: [
+            { clearing: 0, supporterIds: ['ROOT-72#1', 'ROOT-57#1'] },
+            { clearing: 0, supporterIds: ['ROOT-72#1', 'ROOT-57#2'] },
+          ],
+        },
+      }),
+    )
+    const afterClearing = composer.chooseClearing(0)
+    expect(afterClearing).toMatchObject({
+      kind: 'incomplete',
+      prompt: { message: 'Choose 2 fox supporters to discard' },
+    })
+  })
+
   it('auto-submits when only one clearing×supporter option', () => {
     const alliance = createAllianceComposerHooks()
     const composer = new ActionComposer()
@@ -57,7 +84,7 @@ describe('allianceActionComposer spreadSympathy', () => {
         makeActionSpec({
           type: 'spreadSympathy',
           params: {
-            options: [{ clearing: 3, supporterIds: ['bird-1'] }],
+            options: [{ clearing: 1, supporterIds: ['ROOT-57#1'] }],
           },
         }),
       ),
@@ -65,8 +92,8 @@ describe('allianceActionComposer spreadSympathy', () => {
       kind: 'ready',
       action: {
         type: 'spreadSympathy',
-        clearing: 3,
-        supporterIds: ['bird-1'],
+        clearing: 1,
+        supporterIds: ['ROOT-57#1'],
       },
     })
   })
