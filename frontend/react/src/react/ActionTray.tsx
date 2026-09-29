@@ -82,7 +82,7 @@ export function ActionTray(): JSX.Element | null {
   }
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed bottom-[var(--root-portrait-tray-bottom)] left-1/2 z-[115] box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-3 px-0 md:top-16 md:right-0 md:bottom-auto md:left-auto md:z-[110] md:w-[var(--root-landscape-side-percent)] md:translate-x-0 md:px-2">
+    <div className="fixed bottom-[var(--root-portrait-tray-bottom)] left-1/2 z-[115] box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-3 px-0 md:top-16 md:right-0 md:bottom-3 md:left-auto md:z-[110] md:w-[var(--root-landscape-side-percent)] md:translate-x-0 md:overflow-x-hidden md:overflow-y-auto md:px-2">
       {regions.map((region) => (
         <div
           key={region.id}
