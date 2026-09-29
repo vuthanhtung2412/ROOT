@@ -1,5 +1,6 @@
 import type { ActionSpec, GameState } from '#api/client.ts'
 import {
+  isChooseForestPendingEvent,
   isChooseKeepPendingEvent,
   isChooseLeaderPendingEvent,
   isPlaceStartingBuildingPendingEvent,
@@ -64,7 +65,8 @@ function readPendingActorFromEvent(event: unknown): number | null {
   if (
     pending.type === 'chooseKeep' ||
     pending.type === 'chooseLeader' ||
-    pending.type === 'placeStartingBuilding'
+    pending.type === 'placeStartingBuilding' ||
+    pending.type === 'chooseForest'
   ) {
     return pending.seat
   }
@@ -165,6 +167,9 @@ function pendingEventPrompt(pending: unknown, actorSeat: number): string | null 
   if (event.type === 'chooseLeader') {
     return 'Choose Eyrie leader'
   }
+  if (event.type === 'chooseForest') {
+    return 'Choose starting forest'
+  }
   return `Pending choice · seat ${String(actorSeat)}`
 }
 
@@ -177,6 +182,9 @@ function setupPrompt(pending: unknown): string | null {
   }
   if (isChooseLeaderPendingEvent(pending)) {
     return 'Choose Eyrie leader'
+  }
+  if (isChooseForestPendingEvent(pending)) {
+    return 'Choose starting forest'
   }
   return null
 }

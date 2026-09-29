@@ -9,6 +9,8 @@ export type ClientAction = {
 export type ComposerPrompt = {
   message: string
   highlightClearings: number[]
+  /** Forest indexes to highlight / click (Vagabond setup + slip). */
+  highlightForests?: number[]
   enabledCardIds: string[] | null
   canConfirm: boolean
   canCancel: boolean
@@ -321,6 +323,7 @@ export type ActionComposerHooks = {
   begin?: (spec: ActionSpec) => ComposerOutcome | null
   chooseCard?: (cardId: string) => ComposerOutcome | null
   chooseClearing?: (clearingId: number) => ComposerOutcome | null
+  chooseForest?: (forestIndex: number) => ComposerOutcome | null
   chooseDefender?: (defenderSeat: number) => ComposerOutcome | null
   chooseColumn?: (column: string) => ComposerOutcome | null
   choosePiece?: (pieceId: string) => ComposerOutcome | null
@@ -429,6 +432,15 @@ export class ActionComposer {
 
   chooseClearing(clearingId: number): ComposerOutcome {
     const hooked = this.hooks.chooseClearing?.(clearingId) ?? null
+    if (hooked !== null) {
+      this.outcome = hooked
+      return this.outcome
+    }
+    return this.outcome
+  }
+
+  chooseForest(forestIndex: number): ComposerOutcome {
+    const hooked = this.hooks.chooseForest?.(forestIndex) ?? null
     if (hooked !== null) {
       this.outcome = hooked
       return this.outcome

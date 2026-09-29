@@ -7,8 +7,6 @@ import type { BoardLayout } from '#game/boardLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import {
   landscapeMapHostSize,
-  landscapePlayfieldCenterFraction,
-  landscapePlayfieldSideFraction,
   portraitMapHostSize,
   type ViewportLayoutMode,
 } from '#game/viewportLayout.ts'
@@ -23,7 +21,9 @@ export type GameScreenProps = {
   factions: readonly string[] | null
   forestPawns: readonly ForestPawnMarker[]
   highlightedClearingIds: readonly number[]
+  highlightedForestIndexes: readonly number[]
   onClearingSelected: (clearingId: number) => void
+  onForestSelected: (forestIndex: number) => void
 }
 
 type ViewportPixelSize = {
@@ -62,8 +62,6 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
   const portraitHost = portraitMapHostSize(viewport)
   const landscapeHost = landscapeMapHostSize(viewport)
   const mapHost = isPortrait ? portraitHost : landscapeHost
-  const landscapeSidePercent = landscapePlayfieldSideFraction() * 100
-  const landscapeCenterPercent = landscapePlayfieldCenterFraction() * 100
 
   const boardMap =
     props.layout !== null ? (
@@ -76,7 +74,9 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
         {...(props.factions !== null ? { factions: props.factions } : {})}
         forestPawns={props.forestPawns}
         highlightedClearingIds={props.highlightedClearingIds}
+        highlightedForestIndexes={props.highlightedForestIndexes}
         onClearingSelected={props.onClearingSelected}
+        onForestSelected={props.onForestSelected}
       />
     ) : null
 
@@ -105,13 +105,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
           </div>
         </div>
       ) : (
-        <div
-          className="absolute inset-y-0 z-[1] box-border flex items-center justify-center overflow-hidden"
-          style={{
-            left: `${String(landscapeSidePercent)}%`,
-            width: `${String(landscapeCenterPercent)}%`,
-          }}
-        >
+        <div className="absolute inset-y-0 left-[var(--root-landscape-side-percent)] z-[1] box-border flex w-[var(--root-landscape-center-percent)] items-center justify-center overflow-hidden">
           <div
             className="relative max-h-full max-w-full shrink-0"
             style={{

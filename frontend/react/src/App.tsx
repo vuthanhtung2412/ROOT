@@ -244,8 +244,12 @@ export function App(): JSX.Element {
         factions={board.factions}
         forestPawns={board.forestPawns}
         highlightedClearingIds={board.highlightedClearingIds}
+        highlightedForestIndexes={board.highlightedForestIndexes}
         onClearingSelected={(clearingId) => {
           controller.selectClearing(clearingId)
+        }}
+        onForestSelected={(forestIndex) => {
+          controller.selectForest(forestIndex)
         }}
       />
     )

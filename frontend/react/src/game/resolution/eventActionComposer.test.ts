@@ -307,4 +307,26 @@ describe('eventActionComposer setup picks', () => {
       action: { type: 'resolveEvent', clearing: 5 },
     })
   })
+
+  it('chooseForest highlights forests then submits forest index', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const forests = [0, 1, 2, 3, 4]
+    const mid = composer.begin(
+      makeActionSpec({
+        type: 'resolveEvent',
+        params: { forests },
+      }),
+    )
+    expect(mid.kind).toBe('incomplete')
+    if (mid.kind !== 'incomplete') throw new Error('expected incomplete')
+    expect(mid.prompt.message).toBe('Choose starting forest')
+    expect(mid.prompt.highlightForests).toEqual(forests)
+    expect(composer.chooseForest(3)).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', forest: 3 },
+    })
+  })
 })

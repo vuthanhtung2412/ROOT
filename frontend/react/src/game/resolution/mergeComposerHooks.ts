@@ -32,6 +32,15 @@ export function mergeComposerHooks(
       }
       return null
     },
+    chooseForest: (forestIndex) => {
+      for (const hooks of hookSets) {
+        const outcome = hooks.chooseForest?.(forestIndex) ?? null
+        if (outcome !== null) {
+          return outcome
+        }
+      }
+      return null
+    },
     chooseDefender: (defenderSeat) => {
       for (const hooks of hookSets) {
         const outcome = hooks.chooseDefender?.(defenderSeat) ?? null

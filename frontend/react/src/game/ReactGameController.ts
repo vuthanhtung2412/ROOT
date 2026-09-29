@@ -58,6 +58,7 @@ export type ReactGameBoardSnapshot = {
   factions: readonly string[] | null
   forestPawns: readonly ForestPawnMarker[]
   highlightedClearingIds: readonly number[]
+  highlightedForestIndexes: readonly number[]
 }
 
 type BoardListener = () => void
@@ -72,6 +73,7 @@ export class ReactGameController {
   private boardFactions: readonly string[] | null = null
   private forestPawns: readonly ForestPawnMarker[] = []
   private highlightedClearingIds: readonly number[] = []
+  private highlightedForestIndexes: readonly number[] = []
   private boardReady = false
   private boardSnapshot: ReactGameBoardSnapshot = {
     layout: null,
@@ -79,6 +81,7 @@ export class ReactGameController {
     factions: null,
     forestPawns: [],
     highlightedClearingIds: [],
+    highlightedForestIndexes: [],
   }
   private readonly boardListeners = new Set<BoardListener>()
 
@@ -122,6 +125,7 @@ export class ReactGameController {
       factions: this.boardFactions,
       forestPawns: this.forestPawns,
       highlightedClearingIds: this.highlightedClearingIds,
+      highlightedForestIndexes: this.highlightedForestIndexes,
     }
     for (const listener of this.boardListeners) {
       listener()
@@ -308,6 +312,7 @@ export class ReactGameController {
     this.boardFactions = null
     this.forestPawns = []
     this.highlightedClearingIds = []
+    this.highlightedForestIndexes = []
     this.session = null
     this.notifyBoard()
   }
@@ -316,8 +321,17 @@ export class ReactGameController {
     this.applyComposerOutcome(this.composer.chooseClearing(clearingId))
   }
 
+  selectForest(forestIndex: number): void {
+    this.applyComposerOutcome(this.composer.chooseForest(forestIndex))
+  }
+
   private setHighlightedClearings(clearingIds: readonly number[]): void {
     this.highlightedClearingIds = clearingIds
+    this.notifyBoard()
+  }
+
+  private setHighlightedForests(forestIndexes: readonly number[]): void {
+    this.highlightedForestIndexes = forestIndexes
     this.notifyBoard()
   }
 
@@ -367,6 +381,9 @@ export class ReactGameController {
       },
       setHighlightedClearings: (clearingIds) => {
         this.setHighlightedClearings(clearingIds)
+      },
+      setHighlightedForests: (forestIndexes) => {
+        this.setHighlightedForests(forestIndexes)
       },
       syncBattleClearingHighlight: (state) => {
         this.syncBattleClearingHighlight(state)

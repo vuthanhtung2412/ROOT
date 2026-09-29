@@ -517,6 +517,12 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
         const clearing = pick(readNumberList(clearingList))
         if (clearing !== undefined) return { type: 'resolveEvent', clearing }
       }
+      // Setup chooseForest: params.forests = forest indexes
+      const forests = paramList(params, 'forests')
+      if (forests && forests.length > 0 && typeof forests[0] === 'number') {
+        const forest = pick(readNumberList(forests))
+        if (forest !== undefined) return { type: 'resolveEvent', forest }
+      }
       // Setup / depose chooseLeader
       const leaders = paramList(params, 'leaders')
       if (leaders && leaders.length > 0 && typeof leaders[0] === 'string') {

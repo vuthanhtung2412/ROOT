@@ -33,6 +33,7 @@ type EventDraft =
       building: string
     }
   | { type: 'pickLeader'; leaders: string[] }
+  | { type: 'pickForest'; forests: number[] }
   | { type: 'pickRemoval'; choices: BattleRemovalStepperChoice[] }
 
 /**
@@ -211,6 +212,21 @@ export function createEventComposerHooks(): {
         }
       }
 
+      if (params.forests !== undefined) {
+        draft = { type: 'pickForest', forests: params.forests }
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: 'Choose starting forest',
+            highlightClearings: [],
+            highlightForests: params.forests,
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: false,
+          },
+        }
+      }
+
       if (params.leaders !== undefined) {
         draft = { type: 'pickLeader', leaders: params.leaders }
         promptOptions = params.leaders.map((leader) => ({
@@ -357,6 +373,17 @@ export function createEventComposerHooks(): {
       return {
         kind: 'ready',
         action: { type: 'resolveEvent', clearing: clearingId },
+      }
+    },
+
+    chooseForest: (forestIndex: number): ComposerOutcome | null => {
+      if (draft.type !== 'pickForest' || !draft.forests.includes(forestIndex)) {
+        return null
+      }
+      clear()
+      return {
+        kind: 'ready',
+        action: { type: 'resolveEvent', forest: forestIndex },
       }
     },
 

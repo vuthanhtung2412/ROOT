@@ -72,6 +72,9 @@ function formatActionLabel(
     if (params.clearing !== undefined) {
       return 'choose keep'
     }
+    if (params.forests !== undefined) {
+      return 'choose forest'
+    }
     if (params.leaders !== undefined) {
       return 'choose leader'
     }

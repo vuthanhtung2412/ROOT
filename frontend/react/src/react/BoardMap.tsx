@@ -37,6 +37,7 @@ import {
 } from '#react/PieceStack.tsx'
 
 export type ClearingSelectedHandler = (clearingId: number) => void
+export type ForestSelectedHandler = (forestIndex: number) => void
 
 const MAP_BORDER_WIDTH_PIXELS = 4
 
@@ -60,10 +61,12 @@ export type BoardMapProps = {
   viewWidth?: number
   viewHeight?: number
   highlightedClearingIds?: readonly number[]
+  highlightedForestIndexes?: readonly number[]
   clearings?: readonly BoardClearingPieces[]
   factions?: readonly string[]
   forestPawns?: readonly ForestPawnMarker[]
   onClearingSelected?: ClearingSelectedHandler
+  onForestSelected?: ForestSelectedHandler
 }
 
 export function BoardMap(props: BoardMapProps): JSX.Element {
@@ -128,6 +131,11 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
     [props.highlightedClearingIds],
   )
 
+  const highlightedForests = useMemo(
+    () => new Set(props.highlightedForestIndexes ?? []),
+    [props.highlightedForestIndexes],
+  )
+
   const forestLayouts = useMemo(() => {
     if (metrics === null) return []
     return allForestPixelLayouts(metrics)
@@ -136,6 +144,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
   const forestPawns = props.forestPawns ?? []
 
   const onClearingSelected = props.onClearingSelected
+  const onForestSelected = props.onForestSelected
 
   const handleClearingClick = useCallback(
     (clearingId: number) => {
@@ -144,6 +153,15 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
       }
     },
     [onClearingSelected],
+  )
+
+  const handleForestClick = useCallback(
+    (forestIndex: number) => {
+      if (onForestSelected !== undefined) {
+        onForestSelected(forestIndex)
+      }
+    },
+    [onForestSelected],
   )
 
   useEffect(() => {
@@ -192,6 +210,32 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
                 forestPawns={forestPawns}
               />
             ) : null}
+            {highlightedForests.size > 0 ? (
+              <svg
+                className="pointer-events-none absolute inset-0 z-[2] overflow-visible"
+                width="100%"
+                height="100%"
+                aria-hidden
+              >
+                {forestLayouts.map((layout) => {
+                  if (!highlightedForests.has(layout.forestIndex)) {
+                    return null
+                  }
+                  const points = layout.corners
+                    .map((corner) => `${String(corner.x)},${String(corner.y)}`)
+                    .join(' ')
+                  return (
+                    <polygon
+                      key={`forest-highlight-${String(layout.forestIndex)}`}
+                      points={points}
+                      fill="color-mix(in srgb, var(--color-gold) 28%, transparent)"
+                      stroke="var(--color-gold)"
+                      strokeWidth={3}
+                    />
+                  )
+                })}
+              </svg>
+            ) : null}
             {props.clearings !== undefined && props.factions !== undefined ? (
               <ClearingPieceLayer
                 clearings={props.clearings}
@@ -200,6 +244,36 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               />
             ) : null}
           </div>
+          {highlightedForests.size > 0
+            ? forestLayouts.map((layout) => {
+                if (!highlightedForests.has(layout.forestIndex)) {
+                  return null
+                }
+                const points = layout.corners
+                  .map((corner) => `${String(corner.x)},${String(corner.y)}`)
+                  .join(' ')
+                return (
+                  <button
+                    key={`forest-hit-${String(layout.forestIndex)}`}
+                    type="button"
+                    className="pointer-events-auto absolute inset-0 z-[5] m-0 cursor-pointer border-0 bg-transparent p-0"
+                    aria-label={`Forest ${String(layout.forestIndex)}`}
+                    onClick={() => {
+                      handleForestClick(layout.forestIndex)
+                    }}
+                    style={{
+                      clipPath: `polygon(${points
+                        .split(' ')
+                        .map((point) => {
+                          const [x, y] = point.split(',')
+                          return `${x}px ${y}px`
+                        })
+                        .join(', ')})`,
+                    }}
+                  />
+                )
+              })
+            : null}
           {targets.map((target) => {
             const isHighlighted = highlighted.has(target.clearingId)
             const hasAnyHighlight = highlighted.size > 0

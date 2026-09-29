@@ -14,6 +14,7 @@ export type ComposerOutcomeApplierDeps = {
   } | null) => void
   syncLeaderPick: (leaders: string[] | null) => void
   setHighlightedClearings: (clearingIds: number[]) => void
+  setHighlightedForests: (forestIndexes: number[]) => void
   syncBattleClearingHighlight: (state: GameState) => void
   setEnabledCards: (cardIds: string[] | null) => void
   setCardSelection: (cardIds: string[]) => void
@@ -45,6 +46,7 @@ export function applyComposerOutcomeToHud(
     } else {
       deps.setHighlightedClearings([])
     }
+    deps.setHighlightedForests([])
     deps.setEnabledCards(null)
     deps.setCardSelection([])
     deps.resetComposer()
@@ -70,6 +72,7 @@ export function applyComposerOutcomeToHud(
     deps.setHighlightedClearings(
       mergeBattleClearingHighlight(outcome.prompt.highlightClearings, state),
     )
+    deps.setHighlightedForests(outcome.prompt.highlightForests ?? [])
     deps.setEnabledCards(outcome.prompt.enabledCardIds)
     deps.setCardSelection(deps.getDiscardSelection())
     if (overlayKind !== 'fieldHospital') {
@@ -86,6 +89,7 @@ export function applyComposerOutcomeToHud(
   deps.setEnabledCards(null)
   deps.setCardSelection([])
   deps.syncBattleOverlay(null)
+  deps.setHighlightedForests([])
   if (state !== null) {
     deps.syncBattleClearingHighlight(state)
   } else {
