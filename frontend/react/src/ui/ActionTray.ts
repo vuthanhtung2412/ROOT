@@ -227,9 +227,11 @@ export type TrayActionRegion = {
 /**
  * Split collapsed tray specs into primary choices vs turn meta.
  * Empty regions are omitted.
+ * Marquise daylight: title shows action budget left, not button count.
  */
 export function partitionTrayActionRegions(
   actions: readonly ActionSpec[],
+  state?: GameState,
 ): TrayActionRegion[] {
   const primary: ActionSpec[] = []
   const meta: ActionSpec[] = []
@@ -244,7 +246,7 @@ export function partitionTrayActionRegions(
   if (primary.length > 0) {
     regions.push({
       id: 'actions',
-      title: `Actions (${String(primary.length)})`,
+      title: primaryActionsRegionTitle(primary.length, state),
       actions: primary,
     })
   }
@@ -256,6 +258,41 @@ export function partitionTrayActionRegions(
     })
   }
   return regions
+}
+
+function primaryActionsRegionTitle(
+  buttonCount: number,
+  state: GameState | undefined,
+): string {
+  const actionsLeft = marquiseDaylightActionsLeft(state)
+  if (actionsLeft !== null) {
+    return `Actions · ${String(actionsLeft)} left`
+  }
+  return `Actions (${String(buttonCount)})`
+}
+
+/** Marquise Daylight action budget (actionsLeft + spend-bird extras). */
+function marquiseDaylightActionsLeft(state: GameState | undefined): number | null {
+  if (state === undefined) {
+    return null
+  }
+  if (state.phase !== 'daylight' || state.step !== 'actions') {
+    return null
+  }
+  const actor = state.players.find((player) => player.seat === state.currentSeat)
+  if (actor?.faction !== 'marquise') {
+    return null
+  }
+  const scratch = state.turnScratch
+  if (typeof scratch !== 'object' || scratch === null) {
+    return null
+  }
+  const actionsLeft = Reflect.get(scratch, 'actionsLeft')
+  const extraActions = Reflect.get(scratch, 'extraActions')
+  if (typeof actionsLeft !== 'number' || typeof extraActions !== 'number') {
+    return null
+  }
+  return actionsLeft + extraActions
 }
 
 /**

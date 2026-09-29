@@ -76,7 +76,7 @@ export function ActionTray(): JSX.Element | null {
     tray.pending,
     tray.state,
   )
-  const regions = partitionTrayActionRegions(forActor)
+  const regions = partitionTrayActionRegions(forActor, tray.state)
   if (regions.length === 0) {
     return null
   }

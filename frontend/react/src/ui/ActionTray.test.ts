@@ -5,6 +5,7 @@ import {
   formatActionLabel,
   partitionTrayActionRegions,
 } from '#ui/ActionTray.ts'
+import { makeGameState } from '#test/factories.ts'
 
 describe('formatActionLabel setup', () => {
   it('labels keep vs starting buildings distinctly', () => {
@@ -250,6 +251,23 @@ describe('partitionTrayActionRegions', () => {
       'spendBird',
       'endPhase',
     ])
+  })
+
+  it('shows Marquise daylight action budget left in Actions title', () => {
+    const regions = partitionTrayActionRegions(
+      [
+        { type: 'recruit', actor: 0 },
+        { type: 'battle', actor: 0, params: { targets: [] } },
+        { type: 'endPhase', actor: 0 },
+      ],
+      makeGameState({
+        phase: 'daylight',
+        step: 'actions',
+        currentSeat: 0,
+        turnScratch: { actionsLeft: 2, extraActions: 1 },
+      }),
+    )
+    expect(regions[0]?.title).toBe('Actions · 3 left')
   })
 
   it('omits empty Actions region when only end phase remains', () => {
