@@ -3,6 +3,7 @@
 - Rules **SoT** = `./resources/rules/Law_of_Root.pdf` (markdown twin: `./resources/rules/Law_of_Root.md`).
   - Clockwork / electric-bot **SoT** = `./resources/rules/Law_of_Rootbotics.pdf` (markdown twin: `./resources/rules/Law_of_Rootbotics.md`). Errata: `./resources/rules/Electric_Eyrie_Errata.pdf`.
   - Simplified implementable summary (non-SoT): `./resources/notes/root-base-rules.md`
+  - Manual QA (Woodland + Vagabond): `./resources/notes/QA-plan-woodland-vagabond.md`
   - Build plan: `./resources/notes/grand-plan-toward-base-game.md` + commit plan in `PLAN.md`
 - Commit as soon as a step in the plan is done.
 - Stay close to the commit plan in PLAN.md and if something need tweak stop and ask user.

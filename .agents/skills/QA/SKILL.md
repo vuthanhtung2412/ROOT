@@ -10,6 +10,8 @@ description: >
 
 Rules SoT: `resources/rules/Law_of_Root.md` (PDF twin same folder).  
 Implementable summary (non-SoT): `resources/notes/root-base-rules.md`.  
+Manual WA + Vagabond scenarios: `resources/notes/QA-plan-woodland-vagabond.md`  
+(one snapshot: `tmp/qa/snapshots/wa-vb-qa-run.json`, regen via `.cursor/skills/QA/make-wa-vb-qa-run.ts`).  
 Cite fixes `// Rule: Section > Subsection`. Name tests after rule lines.
 
 ## Backend QA
