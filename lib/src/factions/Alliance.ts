@@ -29,6 +29,7 @@ import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { Seat } from '#pieces/types.js'
 import { canCraft } from '#queries/craft.js'
+import { canPlace } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { craftCard, resetCraftingBuildingUsed } from '#rules/craft.js'
 import { moveWarriors } from '#rules/move.js'
@@ -237,6 +238,10 @@ export class Alliance extends Faction {
       if (clearingHasSympathy(state, clearing, seat)) {
         throw new RuleError('ALREADY_SYMPATHETIC', { clearing })
       }
+      // Rule: 6.2.2 The Keep — cannot place sympathy in keep clearing.
+      if (!canPlace(state, seat, clearing)) {
+        throw new RuleError('KEEP_BLOCKS_PLACE', { clearing })
+      }
       throw new RuleError('SPREAD_NOT_ADJACENT', { clearing })
     }
     const baseCost = nextSympathyCost(board)
@@ -398,6 +403,10 @@ export class Alliance extends Faction {
         const clearing = action.clearing
         if (clearingHasSympathy(state, clearing, seat)) {
           throw new RuleError('ALREADY_SYMPATHETIC', { clearing })
+        }
+        // Rule: 6.2.2 The Keep — cannot place sympathy in keep clearing.
+        if (!canPlace(state, seat, clearing)) {
+          throw new RuleError('KEEP_BLOCKS_PLACE', { clearing })
         }
         const warrior = state.clearings[clearing]?.pieces.find(
           (piece) => piece.kind === 'warrior' && piece.owner === seat,

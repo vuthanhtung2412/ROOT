@@ -18,6 +18,7 @@ import type { ClearingId } from '#map/types.js'
 import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { canMove } from '#queries/move.js'
 import { warriors } from '#queries/pieces.js'
+import { canPlace } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
 
@@ -197,12 +198,13 @@ export function allianceLegalActions(
         })
       }
 
-      // Organize
+      // Organize — Rule: 6.2.2 Keep blocks placing sympathy.
       const organizeClearings: ClearingId[] = []
       for (let clearing = 0; clearing < state.clearings.length; clearing++) {
         if (clearingHasSympathy(state, clearing, seat)) continue
         if (warriors(state, clearing, seat) < 1) continue
         if (nextSympathyCost(board) === null) continue
+        if (!canPlace(state, seat, clearing)) continue
         organizeClearings.push(clearing)
       }
       if (organizeClearings.length > 0) {

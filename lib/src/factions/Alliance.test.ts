@@ -8,6 +8,7 @@ import {
   supportersCapacity,
 } from '#factions/alliance/rules.js'
 import { FALL } from '#map/fall.js'
+import { canPlace } from '#queries/place.js'
 import { removePieces } from '#rules/remove.js'
 import { resetPlaceIds } from '#rules/place.js'
 import {
@@ -369,5 +370,68 @@ describe('Alliance spreadSympathy', () => {
       testContext({ state }),
     )
     expect(clearingHasSympathy(state, clearing, 2)).toBe(true)
+  })
+
+  it('Rule: 6.2.2 The Keep — cannot spread sympathy into keep clearing', () => {
+    const keep = FALL.corners[0]!
+    const adjacent = FALL.adjacent(keep)[0]!
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'eyrie', 'alliance'],
+        players: [
+          player(0, 'marquise'),
+          player(1, 'eyrie'),
+          player(2, 'alliance'),
+        ],
+        currentSeat: 2,
+        phase: 'birdsong',
+        step: 'spread',
+      }),
+      keep,
+      [{ id: 'keep-0', kind: 'token', owner: 0, type: 'keep' }],
+    )
+    // Anchor sympathy adjacent so keep is a candidate by adjacency alone.
+    state.clearings[adjacent]!.pieces.push({
+      id: 'sym-adj',
+      kind: 'token',
+      type: 'sympathy',
+      owner: 2,
+    })
+    const board = boardOf(state, 2)
+    board.sympathyTrack.placed = ALLIANCE_SYMPATHY_TRACK_SIZE - 1
+    board.supporters = [
+      card('ROOT-202'),
+      card('ROOT-202', 2),
+      card('ROOT-201'),
+      card('ROOT-201', 2),
+      card('ROOT-200'),
+    ]
+
+    expect(canPlace(state, 2, keep)).toBe(false)
+
+    const legal = ALLIANCE.legalActions(state, testContext({ state }))
+    const spread = legal.find((spec) => spec.type === 'spreadSympathy')
+    const options = spread?.params?.options ?? []
+    const keepOption = options.find((choice) => {
+      if (typeof choice !== 'object' || choice === null || !('clearing' in choice)) {
+        return false
+      }
+      return Reflect.get(choice, 'clearing') === keep
+    })
+    expect(keepOption).toBeUndefined()
+
+    expect(() =>
+      ALLIANCE.apply(
+        state,
+        {
+          type: 'spreadSympathy',
+          clearing: keep,
+          supporterIds: [board.supporters[0]!.id],
+        },
+        testContext({ state }),
+      ),
+    ).toThrow(/KEEP_BLOCKS_PLACE/)
+    expect(clearingHasSympathy(state, keep, 2)).toBe(false)
+    expect(board.sympathyTrack.placed).toBe(ALLIANCE_SYMPATHY_TRACK_SIZE - 1)
   })
 })

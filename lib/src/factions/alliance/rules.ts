@@ -4,6 +4,7 @@ import { FALL } from '#map/fall.js'
 import type { ClearingId, Suit } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { warriors } from '#queries/pieces.js'
+import { canPlace } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { openSlots } from '#queries/slots.js'
 import {
@@ -106,6 +107,7 @@ export function sympatheticClearings(state: GameState, seat: Seat): ClearingId[]
 /**
  * Rule: Alliance Spread Sympathy — first token any clearing; later tokens
  * adjacent to existing sympathy. Never stack two sympathy in one clearing.
+ * Rule: Marquise > The Keep (6.2.2) — other players cannot place (sympathy is place).
  */
 export function isLegalSympathySpreadClearing(
   state: GameState,
@@ -113,6 +115,10 @@ export function isLegalSympathySpreadClearing(
   clearing: ClearingId,
 ): boolean {
   if (clearingHasSympathy(state, clearing, seat)) {
+    return false
+  }
+  // Rule: 6.2.2 The Keep — enemy cannot place pieces in keep clearing.
+  if (!canPlace(state, seat, clearing)) {
     return false
   }
   const sympathetic = sympatheticClearings(state, seat)
