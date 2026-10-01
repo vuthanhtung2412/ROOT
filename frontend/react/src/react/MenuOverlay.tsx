@@ -9,6 +9,8 @@ import {
   patchHud,
   subscribeHud,
   type MenuHudState,
+  type MenuLobbyHudState,
+  type MenuLobbySeat,
 } from '#game/hudStore.ts'
 import {
   assignFactionAtSeat,
@@ -27,6 +29,56 @@ const DEFAULT_MENU: MenuHudState = {
   statusColor: '#c44',
   playPending: false,
   showQaContinue: import.meta.env.DEV === true,
+  lobby: null,
+}
+
+function lobbySeatStatus(seat: MenuLobbySeat): string {
+  if (seat.isLocalPlayer) return 'you'
+  return seat.occupied ? 'joined' : 'waiting…'
+}
+
+/** Online lobby: who sits where, and the host's Start button. */
+function OnlineLobbyPanel(props: {
+  lobby: MenuLobbyHudState
+  playPending: boolean
+  onStart: () => void
+}): JSX.Element {
+  return (
+    <section className="m-0 flex w-full flex-col gap-2" aria-label="Online lobby">
+      <h2 className="m-0 font-display text-lg tracking-[0.02em] text-ink">
+        Online lobby
+      </h2>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {props.lobby.seats.map((seat, seatIndex) => (
+          <li
+            key={`lobby-seat-${String(seatIndex)}`}
+            className="flex flex-row items-center justify-between gap-3 border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_55%,transparent)] px-3 py-2 font-body text-base text-ink"
+          >
+            <span>
+              Seat {seatIndex + 1} · {seat.faction}
+            </span>
+            <span className="text-sm text-ink-soft italic">
+              {lobbySeatStatus(seat)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {props.lobby.isHost ? (
+        <button
+          type="button"
+          className="root-button root-button--accent min-w-[200px] self-center px-[22px] py-2.5 font-display text-2xl tracking-[0.02em]"
+          disabled={props.playPending || !props.lobby.canStart}
+          onClick={props.onStart}
+        >
+          Start online game
+        </button>
+      ) : (
+        <p className="m-0 text-center font-body text-[15px] text-ink-soft italic">
+          Waiting for the host to start…
+        </p>
+      )}
+    </section>
+  )
 }
 
 export function MenuOverlay(): JSX.Element | null {
@@ -79,6 +131,16 @@ export function MenuOverlay(): JSX.Element | null {
           </h1>
         )}
 
+        {menu.lobby !== null ? (
+          <OnlineLobbyPanel
+            lobby={menu.lobby}
+            playPending={menu.playPending}
+            onStart={() => {
+              callbacks.onStartOnline()
+            }}
+          />
+        ) : (
+          <>
         <fieldset
           className="m-0 flex w-full flex-col gap-2 border-0 p-0"
           disabled={menu.playPending}
@@ -173,6 +235,33 @@ export function MenuOverlay(): JSX.Element | null {
         >
           Start game
         </button>
+        <div className="flex flex-row flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            className="root-button root-button--quiet px-4 py-2 font-display text-lg tracking-[0.02em]"
+            disabled={menu.playPending || !validation.ok}
+            title="One browser per player: you take seat 1, others join"
+            onClick={() => {
+              if (!validation.ok) {
+                return
+              }
+              callbacks.onHostOnline(validation.factions)
+            }}
+          >
+            Host online game
+          </button>
+          <button
+            type="button"
+            className="root-button root-button--quiet px-4 py-2 font-display text-lg tracking-[0.02em]"
+            disabled={menu.playPending}
+            title="Take the next free seat of the host's lobby"
+            onClick={() => {
+              callbacks.onJoinOnline()
+            }}
+          >
+            Join online game
+          </button>
+        </div>
         {menu.showQaContinue ? (
           <button
             type="button"
@@ -185,6 +274,8 @@ export function MenuOverlay(): JSX.Element | null {
             QA: Continue loaded game
           </button>
         ) : null}
+          </>
+        )}
         {menu.statusText.length > 0 ? (
           <p
             className="m-0 max-w-[70vw] border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_70%,transparent)] px-3 py-1.5 text-center font-body text-[15px] text-ink-soft italic"
@@ -231,6 +322,20 @@ export function syncMenuStatus(message: string, color: string): void {
       ...current,
       statusText: message,
       statusColor: color,
+    },
+  })
+}
+
+/** Show (or with null, leave) the online lobby panel in the menu. */
+export function syncMenuLobby(lobby: MenuLobbyHudState | null): void {
+  const current = getHudSnapshot().menu
+  if (current === null) {
+    return
+  }
+  patchHud({
+    menu: {
+      ...current,
+      lobby,
     },
   })
 }

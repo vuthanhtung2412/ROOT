@@ -67,17 +67,38 @@ export type BootLoadingHudState = {
   progress: number
 } | null
 
+export type MenuLobbySeat = {
+  faction: string
+  occupied: boolean
+  isLocalPlayer: boolean
+}
+
+/** Online lobby shown in the menu while seats fill up. */
+export type MenuLobbyHudState = {
+  seats: MenuLobbySeat[]
+  isHost: boolean
+  canStart: boolean
+}
+
 export type MenuHudState = {
   statusText: string
   statusColor: string
   playPending: boolean
   showQaContinue: boolean
+  /** Non-null while this browser waits in an online lobby. */
+  lobby: MenuLobbyHudState | null
 }
 
 export type MenuCallbacks = {
   /** Local hotseat: create lobby with chosen factions, join all, start. */
   onStartParty: (factions: string[]) => void
   onQaContinue: () => void
+  /** Online: create a lobby with the chosen factions and take seat 1. */
+  onHostOnline: (factions: string[]) => void
+  /** Online: take the next free seat of the waiting lobby. */
+  onJoinOnline: () => void
+  /** Online host: start once every seat is filled. */
+  onStartOnline: () => void
 }
 
 export type HudCallbacks = {
@@ -174,6 +195,9 @@ const NOOP_CALLBACKS: HudCallbacks = {
 const NOOP_MENU_CALLBACKS: MenuCallbacks = {
   onStartParty: () => undefined,
   onQaContinue: () => undefined,
+  onHostOnline: () => undefined,
+  onJoinOnline: () => undefined,
+  onStartOnline: () => undefined,
 }
 
 let hudState: HudState = INITIAL_HUD_STATE
