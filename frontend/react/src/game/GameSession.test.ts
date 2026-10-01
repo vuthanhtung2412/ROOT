@@ -42,6 +42,7 @@ type SocketController = {
 function createSession(options?: {
   storage?: PlayerIdentityStorage | null
   socket?: SocketController
+  generatePlayerId?: () => string
 }): GameSession {
   const socketController: SocketController = options?.socket ?? {
     push: () => {
@@ -62,6 +63,9 @@ function createSession(options?: {
       return { close: vi.fn() }
     },
     resolveSocketUrl: () => 'ws://example/ws',
+    ...(options?.generatePlayerId === undefined
+      ? {}
+      : { generatePlayerId: options.generatePlayerId }),
   })
 }
 
@@ -115,6 +119,137 @@ describe('GameSession', () => {
     expect(publishedSteps).not.toContain('revolt')
     expect(session.getSnapshot().state?.step).toBe('spread')
     expect(session.getSnapshot().legalActions).toEqual(freshActions)
+  })
+
+  describe('online play', () => {
+    const HOST_PLAYER_ID = 'player-host'
+    const GUEST_PLAYER_ID = 'player-guest'
+
+    function lobbyState(joinedPlayerIds: string[]): ReturnType<typeof makeGameState> {
+      const full = makeGameState({ status: 'waiting' })
+      return {
+        ...full,
+        players: joinedPlayerIds.map((playerId, seat) => ({
+          ...full.players[seat]!,
+          playerId,
+        })),
+      }
+    }
+
+    it('host creates an online lobby and takes seat 0', async () => {
+      const fetchMock = stubFetchSequence([
+        { body: { state: lobbyState([]), mode: 'online' }, status: 201 },
+        { body: { state: lobbyState([HOST_PLAYER_ID]), log: [] } },
+      ])
+      const storage = createMemoryStorage()
+      const session = createSession({
+        storage,
+        generatePlayerId: () => HOST_PLAYER_ID,
+      })
+
+      const hosted = await session.hostOnlineGame(['marquise', 'eyrie'])
+
+      expect(hosted).toBe(true)
+      const createRequest: unknown = fetchMock.mock.calls[0]![0]
+      if (!(createRequest instanceof Request)) throw new Error('expected Request')
+      expect(await createRequest.json()).toMatchObject({ mode: 'online' })
+      expect(session.getLocalPlayerId()).toBe(HOST_PLAYER_ID)
+      expect(session.getLocalSeat()).toBe(0)
+      expect(session.isOnlineHost()).toBe(true)
+      expect(storage.getItem('root.react.playerIdentity')).toContain(HOST_PLAYER_ID)
+    })
+
+    it('guest joins the next free seat of a waiting online lobby', async () => {
+      stubFetchSequence([
+        {
+          body: {
+            state: lobbyState([HOST_PLAYER_ID]),
+            historyLength: 0,
+            mode: 'online',
+          },
+        },
+        {
+          body: {
+            state: lobbyState(['hidden-seat-0', GUEST_PLAYER_ID]),
+            log: [],
+          },
+        },
+      ])
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
+
+      const joined = await session.joinOnlineGame()
+
+      expect(joined).toBe(true)
+      expect(session.getLocalSeat()).toBe(1)
+      expect(session.isOnlineHost()).toBe(false)
+    })
+
+    it('guest cannot join a hotseat or missing game', async () => {
+      stubFetchSequence([
+        {
+          body: {
+            state: lobbyState([HOST_PLAYER_ID]),
+            historyLength: 0,
+            mode: 'hotseat',
+          },
+        },
+      ])
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
+
+      expect(await session.joinOnlineGame()).toBe(false)
+      expect(session.getSnapshot().error).toBe(
+        'The game on this server cannot be joined',
+      )
+      expect(session.getLocalPlayerId()).toBeNull()
+    })
+
+    it('resumes the stored seat after a reload', async () => {
+      const playing = {
+        ...makeGameState({ status: 'playing' }),
+        players: lobbyState(['hidden-seat-0', GUEST_PLAYER_ID]).players,
+      }
+      stubFetchSequence([
+        { body: { state: playing, historyLength: 4, mode: 'online' } },
+      ])
+      const storage = createMemoryStorage()
+      storage.setItem(
+        'root.react.playerIdentity',
+        JSON.stringify({
+          playerId: GUEST_PLAYER_ID,
+          apiBaseUrl: 'http://example.test',
+        }),
+      )
+      const session = createSession({ storage })
+
+      expect(await session.resumeOnlineGame()).toBe(true)
+      expect(session.getLocalSeat()).toBe(1)
+      expect(session.getRequestPlayerId()).toBe(GUEST_PLAYER_ID)
+    })
+
+    it('forgets a stored id that no longer owns a seat', async () => {
+      stubFetchSequence([
+        {
+          body: {
+            state: lobbyState(['hidden-seat-0', 'hidden-seat-1']),
+            historyLength: 0,
+            mode: 'online',
+          },
+        },
+      ])
+      const storage = createMemoryStorage()
+      storage.setItem(
+        'root.react.playerIdentity',
+        JSON.stringify({
+          playerId: GUEST_PLAYER_ID,
+          apiBaseUrl: 'http://example.test',
+        }),
+      )
+      const session = createSession({ storage })
+
+      expect(await session.resumeOnlineGame()).toBe(false)
+      expect(session.getLocalPlayerId()).toBeNull()
+      expect(storage.getItem('root.react.playerIdentity')).toBeNull()
+    })
   })
 
   it('joinMatch first player creates lobby as marquise and waits', async () => {

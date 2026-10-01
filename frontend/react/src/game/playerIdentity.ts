@@ -13,6 +13,16 @@ export type PlayerIdentityStorage = {
   removeItem: (key: string) => void
 }
 
+const PLAYER_ID_PREFIX = 'player-'
+
+/**
+ * Random join id for online play. It is the seat's secret: the server only
+ * accepts actions for a seat from the browser that holds this id.
+ */
+export function createPlayerId(): string {
+  return `${PLAYER_ID_PREFIX}${crypto.randomUUID()}`
+}
+
 function defaultStorage(): PlayerIdentityStorage | null {
   // sessionStorage = per browser tab so two windows on one machine keep seats.
   if (typeof sessionStorage === 'undefined') {

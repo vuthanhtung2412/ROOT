@@ -14,6 +14,7 @@ import {
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 import {
   clearPlayerIdentity,
+  createPlayerId,
   loadPlayerIdentity,
   savePlayerIdentity,
   type PlayerIdentityStorage,
@@ -37,6 +38,15 @@ export type JoinMatchResult = 'waiting' | 'playing'
 /** Play = resume stored seat when still in slot, else joinMatch. */
 export type PlayResult = 'continued' | JoinMatchResult
 
+/**
+ * Server slot seen from the menu: nothing there, an online lobby with a free
+ * seat, or a game that cannot be joined (hotseat, full, already started).
+ */
+export type OnlineLobbyStatus = 'none' | 'joinable' | 'busy'
+
+/** The lobby creator joins first, so the host always holds seat 0. */
+const ONLINE_HOST_SEAT = 0
+
 const FIRST_PLAYER_ID = 'marquise'
 const SECOND_PLAYER_ID = 'eyrie'
 const DEFAULT_FACTIONS: string[] = [
@@ -52,6 +62,8 @@ export type GameSessionDependencies = {
   identityStorage?: PlayerIdentityStorage | null
   connectSocket?: (options: ConnectGameSocketOptions) => GameSocketConnection
   resolveSocketUrl?: (apiBaseUrl: string, playerId: string) => string
+  /** Online join id factory; defaults to a random id. */
+  generatePlayerId?: () => string
 }
 
 /**
@@ -69,6 +81,7 @@ export class GameSession {
     apiBaseUrl: string,
     playerId: string,
   ) => string
+  private readonly generatePlayerId: () => string
   private readonly listeners: Set<GameSessionListener> = new Set()
   private localPlayerId: string | null = null
   private socket: GameSocketConnection | null = null
@@ -92,6 +105,7 @@ export class GameSession {
     this.connectSocket = dependencies.connectSocket ?? connectGameSocket
     this.resolveSocketUrl =
       dependencies.resolveSocketUrl ?? resolveWebSocketUrl
+    this.generatePlayerId = dependencies.generatePlayerId ?? createPlayerId
   }
 
   getSnapshot(): GameSessionSnapshot {
@@ -268,6 +282,152 @@ export class GameSession {
     this.qaMode = true
     await this.refresh()
     this.syncQaViewerToActor()
+  }
+
+  /**
+   * Join id to send with API requests so the server can check the seat.
+   * Null until this browser holds a seat.
+   */
+  getRequestPlayerId(): string | null {
+    return this.localPlayerId
+  }
+
+  /** Online: true when this browser holds seat 0 (the lobby creator). */
+  isOnlineHost(): boolean {
+    return !this.qaMode && this.getLocalSeat() === ONLINE_HOST_SEAT
+  }
+
+  /** What an online player can do with the server slot right now. */
+  async findOnlineLobby(): Promise<OnlineLobbyStatus> {
+    try {
+      const game = await this.api.getGame()
+      const hasFreeSeat = game.state.players.length < game.state.factions.length
+      if (
+        game.mode === 'online' &&
+        game.state.status === 'waiting' &&
+        hasFreeSeat
+      ) {
+        return 'joinable'
+      }
+      return 'busy'
+    } catch (error: unknown) {
+      if (isNoGameError(error)) {
+        return 'none'
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Online host: create an online lobby with the chosen factions and take
+   * seat 0. Other browsers join; the host starts once every seat is filled.
+   */
+  async hostOnlineGame(factions: readonly string[]): Promise<boolean> {
+    this.setLoading(true)
+    this.qaMode = false
+    try {
+      await this.api.createGame({ factions: [...factions], mode: 'online' })
+      return await this.takeNextOnlineSeat()
+    } catch (error: unknown) {
+      this.setError(
+        isGameExistsError(error)
+          ? 'A game is already running on this server'
+          : errorMessage(error),
+      )
+      return false
+    }
+  }
+
+  /** Online guest: take the next free seat of the waiting online lobby. */
+  async joinOnlineGame(): Promise<boolean> {
+    this.setLoading(true)
+    this.qaMode = false
+    try {
+      const lobby = await this.findOnlineLobby()
+      if (lobby !== 'joinable') {
+        this.setError(
+          lobby === 'none'
+            ? 'No online game to join — ask the host to create one'
+            : 'The game on this server cannot be joined',
+        )
+        return false
+      }
+      return await this.takeNextOnlineSeat()
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+      return false
+    }
+  }
+
+  /** Online host: start the game once the lobby is full. */
+  async startOnlineGame(): Promise<void> {
+    this.setLoading(true)
+    try {
+      await this.api.start()
+      this.publish({ ...this.snapshot, loading: false, error: null })
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+    }
+  }
+
+  /**
+   * Online reload: the stored join id still owns a seat in an online game →
+   * reconnect to it. Otherwise forget the id.
+   */
+  async resumeOnlineGame(): Promise<boolean> {
+    const storage =
+      this.identityStorage === undefined ? undefined : this.identityStorage
+    const stored = loadPlayerIdentity(storage)
+    if (stored === null) {
+      return false
+    }
+    // Send the stored id so the server returns this seat's own view.
+    this.localPlayerId = stored.playerId
+    try {
+      const game = await this.api.getGame()
+      if (
+        game.mode === 'online' &&
+        playerIdInState(game.state, stored.playerId) &&
+        isResumableStatus(game.state.status)
+      ) {
+        this.qaMode = false
+        this.connectLocalSocket(stored.playerId)
+        this.publish({
+          state: game.state,
+          legalActions: [],
+          historyLength: game.historyLength,
+          log: [],
+          error: null,
+          loading: false,
+        })
+        return true
+      }
+    } catch (error: unknown) {
+      if (!isNoGameError(error)) {
+        this.localPlayerId = null
+        this.setError(errorMessage(error))
+        return false
+      }
+    }
+    this.localPlayerId = null
+    clearPlayerIdentity(storage)
+    return false
+  }
+
+  private async takeNextOnlineSeat(): Promise<boolean> {
+    const playerId = this.generatePlayerId()
+    const joined = await this.api.join(playerId)
+    this.bindLocalPlayer(playerId)
+    this.connectLocalSocket(playerId)
+    this.publish({
+      state: joined.state,
+      legalActions: [],
+      historyLength: 0,
+      log: [],
+      error: null,
+      loading: false,
+    })
+    return true
   }
 
   /**
