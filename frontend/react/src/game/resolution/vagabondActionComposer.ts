@@ -37,6 +37,7 @@ type AidDraft = {
   costItem?: string
 }
 
+const REPAIR_VALUE_PREFIX = 'repair:'
 const AID_COST_VALUE_PREFIX = 'cost:'
 const AID_TAKE_VALUE_PREFIX = 'take:'
 const AID_TAKE_NOTHING_VALUE = 'take-nothing'
@@ -254,11 +255,20 @@ export function createVagabondComposerHooks(): {
             action: { type: 'repair', itemIndex: indexes[0]! },
           }
         }
+        const damagedItems = params.vagabondItems ?? []
+        promptOptions = indexes.map((itemIndex) => {
+          const item = damagedItems[itemIndex]
+          const itemName = item?.type ?? `item ${String(itemIndex + 1)}`
+          return {
+            label: item?.exhausted === true ? `${itemName} (exhausted)` : itemName,
+            value: `${REPAIR_VALUE_PREFIX}${String(itemIndex)}`,
+          }
+        })
         return {
           kind: 'incomplete',
           prompt: {
-            message: 'Repair — pick damaged item index via clearing click',
-            highlightClearings: indexes,
+            message: 'Repair — pick damaged item',
+            highlightClearings: [],
             enabledCardIds: null,
             canConfirm: false,
             canCancel: true,
@@ -420,10 +430,6 @@ export function createVagabondComposerHooks(): {
           },
         }
       }
-      if (draft.type === 'repair' && draft.indexes.includes(clearingId)) {
-        draft = { type: 'idle' }
-        return { kind: 'ready', action: { type: 'repair', itemIndex: clearingId } }
-      }
       return null
     },
 
@@ -470,6 +476,13 @@ export function createVagabondComposerHooks(): {
     },
 
     chooseColumn: (column: string): ComposerOutcome | null => {
+      if (draft.type === 'repair' && column.startsWith(REPAIR_VALUE_PREFIX)) {
+        const itemIndex = Number(column.slice(REPAIR_VALUE_PREFIX.length))
+        if (!draft.indexes.includes(itemIndex)) return null
+        draft = { type: 'idle' }
+        promptOptions = []
+        return { kind: 'ready', action: { type: 'repair', itemIndex } }
+      }
       if (draft.type === 'aid' && column.startsWith(AID_COST_VALUE_PREFIX)) {
         const costItem = column.slice(AID_COST_VALUE_PREFIX.length)
         if (!draft.costItemTypes.includes(costItem)) return null

@@ -289,6 +289,12 @@ export function pushDaylightActions(
       actor: seat,
       params: {
         clearings: board.damaged.map((_, index) => index),
+        // Same order as `clearings` indexes, so the UI can name each item.
+        vagabondItems: board.damaged.map((item) => ({
+          type: item.type,
+          exhausted: item.exhausted,
+          damaged: true,
+        })),
       },
     })
   }

@@ -130,6 +130,37 @@ describe('vagabondActionComposer multi-target', () => {
     })
   })
 
+  it('repair lists damaged items by name', () => {
+    const vagabond = createVagabondComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(vagabond.hooks)
+
+    const opened = composer.begin(
+      makeActionSpec({
+        type: 'repair',
+        params: {
+          clearings: [0, 1],
+          vagabondItems: [
+            { type: 'boot', exhausted: true, damaged: true },
+            { type: 'torch', exhausted: false, damaged: true },
+          ],
+        },
+      }),
+    )
+    expect(opened).toMatchObject({
+      kind: 'incomplete',
+      prompt: { message: 'Repair — pick damaged item', highlightClearings: [] },
+    })
+    expect(vagabond.getPromptOptions()).toEqual([
+      { label: 'boot (exhausted)', value: 'repair:0' },
+      { label: 'torch', value: 'repair:1' },
+    ])
+    expect(composer.chooseColumn('repair:1')).toEqual({
+      kind: 'ready',
+      action: { type: 'repair', itemIndex: 1 },
+    })
+  })
+
   it('steal with one defender is ready immediately', () => {
     const vagabond = createVagabondComposerHooks()
     const composer = new ActionComposer()
