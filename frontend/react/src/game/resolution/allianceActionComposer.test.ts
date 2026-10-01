@@ -179,3 +179,75 @@ describe('allianceActionComposer spreadSympathy', () => {
     })
   })
 })
+
+describe('allianceActionComposer militaryOp move', () => {
+  const ORIGIN_CLEARING = 7
+  const DESTINATION_CLEARING = 3
+  const OTHER_ORIGIN_CLEARING = 8
+  const OTHER_DESTINATION_CLEARING = 0
+
+  function beginMove(
+    moves: Array<{ from: number; to: number; count: number }>,
+  ): { composer: ActionComposer; alliance: ReturnType<typeof createAllianceComposerHooks> } {
+    const alliance = createAllianceComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(alliance.hooks)
+    composer.begin(
+      makeActionSpec({ type: 'militaryOp', params: { op: ['move'], moves } }),
+    )
+    return { composer, alliance }
+  }
+
+  it('origin then destination submits the move when one count is legal', () => {
+    const { composer } = beginMove([
+      { from: OTHER_ORIGIN_CLEARING, to: OTHER_DESTINATION_CLEARING, count: 1 },
+      { from: ORIGIN_CLEARING, to: DESTINATION_CLEARING, count: 1 },
+    ])
+    const afterOrigin = composer.chooseClearing(OTHER_ORIGIN_CLEARING)
+    expect(afterOrigin).toMatchObject({
+      kind: 'incomplete',
+      prompt: {
+        message: 'Military move — pick destination',
+        highlightClearings: [OTHER_DESTINATION_CLEARING],
+      },
+    })
+    expect(composer.chooseClearing(OTHER_DESTINATION_CLEARING)).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'militaryOp',
+        op: 'move',
+        from: OTHER_ORIGIN_CLEARING,
+        to: OTHER_DESTINATION_CLEARING,
+        count: 1,
+      },
+    })
+  })
+
+  it('asks how many warriors when several counts are legal', () => {
+    const { composer, alliance } = beginMove([
+      { from: ORIGIN_CLEARING, to: DESTINATION_CLEARING, count: 1 },
+      { from: ORIGIN_CLEARING, to: DESTINATION_CLEARING, count: 2 },
+      { from: OTHER_ORIGIN_CLEARING, to: OTHER_DESTINATION_CLEARING, count: 1 },
+    ])
+    composer.chooseClearing(ORIGIN_CLEARING)
+    const afterDestination = composer.chooseClearing(DESTINATION_CLEARING)
+    expect(afterDestination).toMatchObject({
+      kind: 'incomplete',
+      prompt: { message: 'Military move — how many warriors?' },
+    })
+    expect(alliance.getPromptOptions()).toEqual([
+      { label: '1 warrior', value: '1' },
+      { label: '2 warriors', value: '2' },
+    ])
+    expect(composer.chooseColumn('2')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'militaryOp',
+        op: 'move',
+        from: ORIGIN_CLEARING,
+        to: DESTINATION_CLEARING,
+        count: 2,
+      },
+    })
+  })
+})

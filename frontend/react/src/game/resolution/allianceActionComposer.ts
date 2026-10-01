@@ -33,6 +33,8 @@ type AllianceDraft =
       targets: Array<{ clearing: number; defender: number }>
       clearings: number[]
       op: 'move' | 'battle' | 'recruit' | 'organize' | null
+      moveOrigin: number | null
+      moveDestination: number | null
     }
 
 export type AllianceSupporterPilePick = {
@@ -62,6 +64,10 @@ export function formatChooseSupportersToDiscardTitle(
   const suit = fallClearingSuit(clearingId) ?? 'matching'
   const noun = supporterCount === 1 ? 'supporter' : 'supporters'
   return `Choose ${String(supporterCount)} ${suit} ${noun} to discard`
+}
+
+function formatWarriorCountLabel(count: number): string {
+  return count === 1 ? '1 warrior' : `${String(count)} warriors`
 }
 
 function unique(values: number[]): number[] {
@@ -236,6 +242,8 @@ export function createAllianceComposerHooks(): {
           targets: params.targets ?? [],
           clearings: params.clearings ?? [],
           op: ops.length === 1 ? ops[0]! : null,
+          moveOrigin: null,
+          moveDestination: null,
         }
         if (ops.length === 1) {
           return beginMilitaryOpChoice(draft)
@@ -294,18 +302,56 @@ export function createAllianceComposerHooks(): {
           }
         }
         if (draft.op === 'move') {
-          const fromMatches = draft.moves.filter((m) => m.from === clearingId)
-          if (fromMatches.length > 0 && !('fromPicked' in draft)) {
+          if (draft.moveOrigin === null) {
+            const originMoves = draft.moves.filter(
+              (move) => move.from === clearingId,
+            )
+            if (originMoves.length === 0) return null
+            draft = { ...draft, moveOrigin: clearingId }
             return {
               kind: 'incomplete',
               prompt: {
                 message: 'Military move — pick destination',
-                highlightClearings: unique(fromMatches.map((m) => m.to)),
+                highlightClearings: unique(originMoves.map((move) => move.to)),
                 enabledCardIds: null,
                 canConfirm: false,
                 canCancel: true,
               },
             }
+          }
+          const origin = draft.moveOrigin
+          const routeMoves = draft.moves.filter(
+            (move) => move.from === origin && move.to === clearingId,
+          )
+          if (routeMoves.length === 0) return null
+          if (routeMoves.length === 1) {
+            const move = routeMoves[0]!
+            draft = { type: 'idle' }
+            return {
+              kind: 'ready',
+              action: {
+                type: 'militaryOp',
+                op: 'move',
+                from: move.from,
+                to: move.to,
+                count: move.count,
+              },
+            }
+          }
+          draft = { ...draft, moveDestination: clearingId }
+          promptOptions = routeMoves.map((move) => ({
+            label: formatWarriorCountLabel(move.count),
+            value: String(move.count),
+          }))
+          return {
+            kind: 'incomplete',
+            prompt: {
+              message: 'Military move — how many warriors?',
+              highlightClearings: [clearingId],
+              enabledCardIds: null,
+              canConfirm: false,
+              canCancel: true,
+            },
           }
         }
       }
@@ -343,6 +389,33 @@ export function createAllianceComposerHooks(): {
 
     chooseColumn: (value: string): ComposerOutcome | null => {
       if (draft.type !== 'militaryOp') return null
+      if (
+        draft.op === 'move' &&
+        draft.moveOrigin !== null &&
+        draft.moveDestination !== null
+      ) {
+        const origin = draft.moveOrigin
+        const destination = draft.moveDestination
+        const move = draft.moves.find(
+          (candidate) =>
+            candidate.from === origin &&
+            candidate.to === destination &&
+            String(candidate.count) === value,
+        )
+        if (move === undefined) return null
+        draft = { type: 'idle' }
+        promptOptions = []
+        return {
+          kind: 'ready',
+          action: {
+            type: 'militaryOp',
+            op: 'move',
+            from: move.from,
+            to: move.to,
+            count: move.count,
+          },
+        }
+      }
       if (
         value !== 'move' &&
         value !== 'battle' &&
