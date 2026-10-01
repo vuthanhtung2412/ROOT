@@ -61,6 +61,12 @@ export type VagabondItemChoice = {
   damaged?: boolean
 }
 
+/** Rule: 9.5.6 Aid — crafted items one target seat can hand over. */
+export type AidTakeOption = {
+  target: Seat
+  itemTypes: ItemType[]
+}
+
 /**
  * Typed UI choice metadata for ActionSpec.
  * Prefer paired fields (`options`, `targets`, `moves`) over parallel arrays
@@ -110,8 +116,8 @@ export type ActionChoiceParams = {
   alliedSeat?: Seat[]
   /** Vagabond aid — item types that can be exhausted as the cost. */
   costItemTypes?: ItemType[]
-  /** Vagabond aid — crafted item types the target can hand over. */
-  takeItemTypes?: ItemType[]
+  /** Vagabond aid — crafted item types each target can hand over. */
+  aidTakeOptions?: AidTakeOption[]
   /** Vagabond item damage — undamaged items the player may choose from. */
   vagabondItems?: VagabondItemChoice[]
   /** Vagabond item damage — exact number of items to choose. */

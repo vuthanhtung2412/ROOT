@@ -265,8 +265,16 @@ export function pushDaylightActions(
           defender: [player.seat],
           costItemTypes: exhaustibleItemTypes(board),
           // Rule: 9.5.6 Aid — may take one item from the target's Crafted Items box.
-          takeItemTypes: [
-            ...new Set(player.craftedItems.map((item): ItemType => item.type)),
+          // Paired with the target so merged specs keep each seat's own items.
+          aidTakeOptions: [
+            {
+              target: player.seat,
+              itemTypes: [
+                ...new Set(
+                  player.craftedItems.map((item): ItemType => item.type),
+                ),
+              ],
+            },
           ],
         },
       })

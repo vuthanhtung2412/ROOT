@@ -50,7 +50,23 @@ export type ActionChoiceParamsView = {
   vagabondItems?: VagabondItemChoiceView[]
   itemCount?: number[]
   costItemTypes?: string[]
-  takeItemTypes?: string[]
+  aidTakeOptions?: AidTakeOptionView[]
+}
+
+/** Crafted item types one Aid target seat can hand over. */
+export type AidTakeOptionView = {
+  target: number
+  itemTypes: string[]
+}
+
+function isAidTakeOptionView(value: unknown): value is AidTakeOptionView {
+  if (typeof value !== 'object' || value === null) return false
+  const itemTypes: unknown = Reflect.get(value, 'itemTypes')
+  return (
+    typeof Reflect.get(value, 'target') === 'number' &&
+    Array.isArray(itemTypes) &&
+    itemTypes.every((itemType: unknown) => typeof itemType === 'string')
+  )
 }
 
 /** One undamaged Vagabond item offered for damage (type + face). */
@@ -204,9 +220,12 @@ export function readChoiceParams(
   if (costItemTypes !== undefined) {
     view.costItemTypes = costItemTypes
   }
-  const takeItemTypes = asStringArray(Reflect.get(raw, 'takeItemTypes'))
-  if (takeItemTypes !== undefined) {
-    view.takeItemTypes = takeItemTypes
+  const rawAidTakeOptions: unknown = Reflect.get(raw, 'aidTakeOptions')
+  if (
+    Array.isArray(rawAidTakeOptions) &&
+    rawAidTakeOptions.every(isAidTakeOptionView)
+  ) {
+    view.aidTakeOptions = rawAidTakeOptions
   }
   return view
 }

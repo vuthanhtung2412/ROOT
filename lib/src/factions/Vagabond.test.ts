@@ -307,7 +307,9 @@ describe('Vagabond relationships / items SoT', () => {
       (spec) => spec.type === 'aid',
     )
     expect(aidSpec?.params?.costItemTypes).toEqual(['boot', 'sword'])
-    expect(aidSpec?.params?.takeItemTypes).toEqual(['coin'])
+    expect(aidSpec?.params?.aidTakeOptions).toEqual([
+      { target: 0, itemTypes: ['coin'] },
+    ])
 
     VAGABOND.apply(
       state,

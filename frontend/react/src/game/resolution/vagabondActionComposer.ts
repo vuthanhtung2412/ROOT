@@ -1,6 +1,7 @@
 import type { ActionSpec } from '#api/client.ts'
 import {
   type ActionComposerHooks,
+  type AidTakeOptionView,
   type ComposerOutcome,
   type SeatLabelOptions,
   SEAT_VALUE_PREFIX,
@@ -35,7 +36,7 @@ type AidDraft = {
   cardIds: string[]
   defenders: number[]
   costItemTypes: string[]
-  takeItemTypes: string[]
+  aidTakeOptions: AidTakeOptionView[]
   cardId?: string
   target?: number
   costItem?: string
@@ -44,6 +45,17 @@ type AidDraft = {
 /** Artwork for a face-up, undamaged, not-yet-picked item option. */
 function faceUpItemArtwork(itemType: string): TurnBannerOptionItem {
   return { type: itemType, exhausted: false, damaged: false, selected: false }
+}
+
+/** Crafted items the chosen Aid target can hand over (none for other seats). */
+function takeItemTypesForTarget(aid: AidDraft, target: number): string[] {
+  return [
+    ...new Set(
+      aid.aidTakeOptions
+        .filter((option) => option.target === target)
+        .flatMap((option) => option.itemTypes),
+    ),
+  ]
 }
 
 const REPAIR_VALUE_PREFIX = 'repair:'
@@ -129,10 +141,11 @@ export function createVagabondComposerHooks(
         },
       }
     }
-    if (aid.takeItemTypes.length > 0) {
+    const takeItemTypes = takeItemTypesForTarget(aid, target)
+    if (takeItemTypes.length > 0) {
       draft = aid
       promptOptions = [
-        ...aid.takeItemTypes.map((itemType) => ({
+        ...takeItemTypes.map((itemType) => ({
           label: `take ${itemType}`,
           value: `${AID_TAKE_VALUE_PREFIX}${itemType}`,
           item: faceUpItemArtwork(itemType),
@@ -248,7 +261,7 @@ export function createVagabondComposerHooks(
           cardIds: params.cardIds ?? [],
           defenders: params.defender ?? [],
           costItemTypes: params.costItemTypes ?? [],
-          takeItemTypes: params.takeItemTypes ?? [],
+          aidTakeOptions: params.aidTakeOptions ?? [],
         }
         return {
           kind: 'incomplete',
@@ -523,7 +536,9 @@ export function createVagabondComposerHooks(
         }
         if (column.startsWith(AID_TAKE_VALUE_PREFIX)) {
           const takeItem = column.slice(AID_TAKE_VALUE_PREFIX.length)
-          if (!draft.takeItemTypes.includes(takeItem)) return null
+          if (!takeItemTypesForTarget(draft, draft.target).includes(takeItem)) {
+            return null
+          }
           return finishAid(draft, draft.cardId, draft.target, takeItem)
         }
       }

@@ -116,7 +116,7 @@ describe('vagabondActionComposer multi-target', () => {
           cardIds: ['ROOT-203#1'],
           defender: [1],
           costItemTypes: ['sword'],
-          takeItemTypes: ['boot'],
+          aidTakeOptions: [{ target: 1, itemTypes: ['boot'] }],
         },
       }),
     )
@@ -141,6 +141,38 @@ describe('vagabondActionComposer multi-target', () => {
         target: 1,
         costItem: 'sword',
         takeItem: 'boot',
+      },
+    })
+  })
+
+  it('aid offers only the chosen target crafted items when specs are merged', () => {
+    const vagabond = createVagabondComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(vagabond.hooks)
+
+    // Tray merges one aid spec per target: seat 0 has nothing, seat 2 a hammer.
+    composer.begin(
+      makeActionSpec({
+        type: 'aid',
+        params: {
+          cardIds: ['ROOT-202#1'],
+          defender: [0, 2],
+          costItemTypes: ['sword'],
+          aidTakeOptions: [
+            { target: 0, itemTypes: [] },
+            { target: 2, itemTypes: ['hammer'] },
+          ],
+        },
+      }),
+    )
+    composer.chooseCard('ROOT-202#1')
+    expect(composer.chooseColumn('seat:0')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'aid',
+        cardId: 'ROOT-202#1',
+        target: 0,
+        costItem: 'sword',
       },
     })
   })
