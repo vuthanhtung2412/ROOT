@@ -58,35 +58,35 @@ Assumptions (say if wrong):
 - Regression: `replay-wa-vb-qa.mjs` still 17/17; lib and React suites green.
 
 ### Commit plan
-- `feat(web): add online lobby mode to game slot`
+- done: `feat(web): add online lobby mode to game slot`
   - `backend/web/src/store/GameStore.ts`
   - `backend/web/src/schemas/game.ts`
   - `backend/web/src/routes/game.ts`
   - `backend/web/src/routes/game.test.ts`
-- `feat(web): enforce player seat on actions in online mode`
+- done: `feat(web): enforce player seat on actions in online mode`
   - `backend/web/src/view/actionSeatGuard.ts`
   - `backend/web/src/view/actionSeatGuard.test.ts`
   - `backend/web/src/routes/game.ts`
   - `backend/web/src/routes/game.test.ts`
   - `backend/web/src/middleware/cors.ts`
   - `backend/web/src/middleware/cors.test.ts`
-- `fix(web): redact REST game views per player in online mode`
+- done: `fix(web): redact REST game views per player in online mode`
   - `backend/web/src/view/redactStateForViewer.ts`
   - `backend/web/src/view/redactStateForViewer.test.ts`
   - `backend/web/src/routes/game.ts`
   - `backend/web/src/routes/game.test.ts`
-- `feat(web-client): send player id and lobby mode`
+- done: `feat(web-client): send player id and lobby mode`
   - `backend/web_client/src/gameApi.ts`
   - `backend/web_client/src/schema.d.ts`
   - `frontend/react/src/api/client.ts`
-- `feat(ui): host, join and resume online game in session`
+- done: `feat(ui): host, join and resume online game in session`
   - `frontend/react/src/game/playerIdentity.ts`
   - `frontend/react/src/game/playerIdentity.test.ts`
   - `frontend/react/src/game/GameSession.ts`
   - `frontend/react/src/game/GameSession.test.ts`
-- `feat(ui): online lobby in menu`
+- done: `feat(ui): online lobby in menu`
   - `frontend/react/src/game/hudStore.ts`
   - `frontend/react/src/react/MenuOverlay.tsx`
   - `frontend/react/src/App.tsx`
-- `test(qa): two-browser online replay`
+- done: `test(qa): two-browser online replay`
   - `.agents/skills/QA/replay-online-two-players.mjs`
