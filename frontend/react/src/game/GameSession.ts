@@ -319,6 +319,16 @@ export class GameSession {
   }
 
   /**
+   * True when the server slot holds no live online game: a hotseat / QA game
+   * (e.g. reloaded from disk after a restart) or a finished one. Such a slot
+   * belongs to nobody, so a new online host may replace it.
+   */
+  private async isSlotLeftover(): Promise<boolean> {
+    const game = await this.api.getGame()
+    return game.mode !== 'online' || game.state.status === 'finished'
+  }
+
+  /**
    * Online host: create an online lobby with the chosen factions and take
    * seat 0. Other browsers join; the host starts once every seat is filled.
    */
@@ -326,7 +336,18 @@ export class GameSession {
     this.setLoading(true)
     this.qaMode = false
     try {
-      await this.api.createGame({ factions: [...factions], mode: 'online' })
+      try {
+        await this.api.createGame({ factions: [...factions], mode: 'online' })
+      } catch (error: unknown) {
+        if (!isGameExistsError(error) || !(await this.isSlotLeftover())) {
+          throw error
+        }
+        await this.api.createGame({
+          factions: [...factions],
+          mode: 'online',
+          replace: true,
+        })
+      }
       return await this.takeNextOnlineSeat()
     } catch (error: unknown) {
       this.setError(
