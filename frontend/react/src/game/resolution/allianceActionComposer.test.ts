@@ -251,3 +251,48 @@ describe('allianceActionComposer militaryOp move', () => {
     })
   })
 })
+
+describe('allianceActionComposer militaryOp battle', () => {
+  const SHARED_CLEARING = 6
+  const MARQUISE_SEAT = 0
+  const EYRIE_SEAT = 1
+  const VAGABOND_SEAT = 3
+
+  it('asks for the defender when several enemies share the clearing', () => {
+    const alliance = createAllianceComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(alliance.hooks)
+    composer.begin(
+      makeActionSpec({
+        type: 'militaryOp',
+        params: {
+          op: ['battle'],
+          targets: [
+            { clearing: SHARED_CLEARING, defender: MARQUISE_SEAT },
+            { clearing: SHARED_CLEARING, defender: EYRIE_SEAT },
+            { clearing: 7, defender: VAGABOND_SEAT },
+          ],
+        },
+      }),
+    )
+    const afterClearing = composer.chooseClearing(SHARED_CLEARING)
+    expect(afterClearing).toMatchObject({
+      kind: 'incomplete',
+      prompt: { message: 'Military battle — pick defender seat' },
+    })
+    expect(alliance.getPromptOptions()).toEqual([
+      { label: 'seat 0', value: '0' },
+      { label: 'seat 1', value: '1' },
+    ])
+    expect(composer.chooseColumn(String(VAGABOND_SEAT)).kind).toBe('incomplete')
+    expect(composer.chooseColumn(String(EYRIE_SEAT))).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'militaryOp',
+        op: 'battle',
+        clearing: SHARED_CLEARING,
+        defender: EYRIE_SEAT,
+      },
+    })
+  })
+})

@@ -35,6 +35,7 @@ type AllianceDraft =
       op: 'move' | 'battle' | 'recruit' | 'organize' | null
       moveOrigin: number | null
       moveDestination: number | null
+      battleClearing: number | null
     }
 
 export type AllianceSupporterPilePick = {
@@ -244,6 +245,7 @@ export function createAllianceComposerHooks(): {
           op: ops.length === 1 ? ops[0]! : null,
           moveOrigin: null,
           moveDestination: null,
+          battleClearing: null,
         }
         if (ops.length === 1) {
           return beginMilitaryOpChoice(draft)
@@ -299,6 +301,22 @@ export function createAllianceComposerHooks(): {
                 defender: match.defender,
               },
             }
+          }
+          // Rule: 4.3 Battle — attacker chooses which enemy in the clearing defends.
+          draft = { ...draft, battleClearing: clearingId }
+          promptOptions = matches.map((match) => ({
+            label: `seat ${String(match.defender)}`,
+            value: String(match.defender),
+          }))
+          return {
+            kind: 'incomplete',
+            prompt: {
+              message: 'Military battle — pick defender seat',
+              highlightClearings: [clearingId],
+              enabledCardIds: null,
+              canConfirm: false,
+              canCancel: true,
+            },
           }
         }
         if (draft.op === 'move') {
@@ -416,6 +434,11 @@ export function createAllianceComposerHooks(): {
           },
         }
       }
+      if (draft.op === 'battle' && draft.battleClearing !== null) {
+        const defenderSeat = Number(value)
+        if (!Number.isInteger(defenderSeat)) return null
+        return hooks.chooseDefender?.(defenderSeat) ?? null
+      }
       if (
         value !== 'move' &&
         value !== 'battle' &&
@@ -431,9 +454,15 @@ export function createAllianceComposerHooks(): {
 
     chooseDefender: (defenderSeat: number): ComposerOutcome | null => {
       if (draft.type !== 'militaryOp' || draft.op !== 'battle') return null
-      const match = draft.targets.find((t) => t.defender === defenderSeat)
+      const battleClearing = draft.battleClearing
+      const match = draft.targets.find(
+        (target) =>
+          target.defender === defenderSeat &&
+          (battleClearing === null || target.clearing === battleClearing),
+      )
       if (match === undefined) return null
       draft = { type: 'idle' }
+      promptOptions = []
       return {
         kind: 'ready',
         action: {
