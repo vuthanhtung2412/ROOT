@@ -143,6 +143,29 @@ describe('game routes', () => {
       expect(snapshotDump.status).toBe(403)
     })
 
+    it('only the host may remove or replace a live online game; undo is off', async () => {
+      await createOnlineLobby()
+      await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
+
+      const guestDelete = await app.request('/game', asPlayer(GUEST_PLAYER_ID, 'DELETE'))
+      expect(guestDelete.status).toBe(403)
+      expect(await guestDelete.json()).toMatchObject({ code: 'NOT_HOST' })
+
+      const strangerReplace = await app.request(
+        '/game?replace=1',
+        jsonRequest('POST', { factions: ['marquise', 'eyrie'] }),
+      )
+      expect(strangerReplace.status).toBe(403)
+      expect(store.mode).toBe('online')
+
+      const hostUndo = await app.request('/game/undo', asPlayer(HOST_PLAYER_ID, 'POST'))
+      expect(hostUndo.status).toBe(403)
+
+      const hostDelete = await app.request('/game', asPlayer(HOST_PLAYER_ID, 'DELETE'))
+      expect(hostDelete.status).toBe(204)
+      expect(store.game).toBeNull()
+    })
+
     it('rejects an action from a seat that is not the actor', async () => {
       await createOnlineLobby()
       await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))

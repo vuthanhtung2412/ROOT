@@ -3,6 +3,9 @@ import type { ActionSpec, Game, GameState } from '@root/lib'
 /** Request header carrying the caller's join `playerId` (secret per browser). */
 export const PLAYER_ID_HEADER = 'X-Player-Id'
 
+/** The lobby creator joins first, so the host always holds seat 0. */
+export const ONLINE_HOST_SEAT = 0
+
 export function seatForPlayerId(
   state: GameState,
   playerId: string,

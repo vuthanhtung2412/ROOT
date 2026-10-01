@@ -19,7 +19,9 @@ import {
 } from '#middleware/errors.js'
 import {
   mayPlayerSendAction,
+  ONLINE_HOST_SEAT,
   PLAYER_ID_HEADER,
+  seatForPlayerId,
 } from '#view/actionSeatGuard.js'
 import { errorResponses, ReplaceQuerySchema } from '#schemas/common.js'
 import {
@@ -80,6 +82,29 @@ function requireHotseatForFullDump(): void {
   }
 }
 
+/**
+ * A live online game belongs to its players: only the host (seat 0) may
+ * replace or remove it. Free slot, hotseat games and finished games are open.
+ */
+function requireHostToReplaceOnlineGame(playerId: string | undefined): void {
+  const game = store.game
+  if (
+    game === null ||
+    store.mode !== 'online' ||
+    game.state.status === 'finished' ||
+    // Lobby nobody joined yet has no host to ask.
+    game.state.players.length === 0
+  ) {
+    return
+  }
+  const isHost =
+    playerId !== undefined &&
+    seatForPlayerId(game.state, playerId) === ONLINE_HOST_SEAT
+  if (!isHost) {
+    throw new HttpError(403, 'NOT_HOST', 'only the host may end an online game')
+  }
+}
+
 /** Online mode only: reject callers whose seat may not send this action type. */
 function requireSeatForAction(
   game: Game,
@@ -121,6 +146,7 @@ gameRoutes.openapi(createGameRoute, async (context) => {
   if (store.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
+  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
   const body = context.req.valid('json') ?? {}
   const seed = Math.floor(Math.random() * 1_000_000_000)
   const factions =
@@ -291,6 +317,7 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   if (store.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
+  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
   const body = context.req.valid('json')
   if (!isGameSnapshot(body)) {
     throw new HttpError(400, 'BAD_SNAPSHOT', 'invalid snapshot shape')
@@ -432,6 +459,10 @@ const undoRoute = createRoute({
 
 gameRoutes.openapi(undoRoute, (context) => {
   const game = requireGame()
+  if (store.mode === 'online') {
+    // Undo would rewind draws and reveals other players have already seen.
+    throw new HttpError(403, 'ONLINE_MODE', 'undo is hotseat-only')
+  }
   game.undo()
   logGameEvent('UNDO', game.state)
   broadcastCurrentGame()
@@ -489,6 +520,7 @@ const deleteGameRoute = createRoute({
 })
 
 gameRoutes.openapi(deleteGameRoute, (context) => {
+  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
   store.game = null
   store.mode = DEFAULT_LOBBY_MODE
   broadcastCurrentGame()
