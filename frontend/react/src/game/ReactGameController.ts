@@ -487,6 +487,8 @@ export class ReactGameController {
   private isActionUnderResolution(): boolean {
     return (
       this.marquiseMarch.isActive() ||
+      // Core composer flows (craft / spendBird card pick) hold no faction draft.
+      this.composer.getOutcome().kind === 'incomplete' ||
       isActionUnderResolution([
         this.marquiseBoard.getDraft(),
         this.marquiseCards.getDraft(),
