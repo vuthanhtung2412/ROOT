@@ -18,12 +18,24 @@ type VagabondDraft =
       targets: Array<{ clearing: number; defender: number }>
       alliedSeat?: number
     }
-  | { type: 'aid'; cardIds: string[]; defenders: number[] }
+  | AidDraft
   | { type: 'strike'; targets: Array<{ clearing: number; defender: number }> }
   | { type: 'repair'; indexes: number[] }
   | { type: 'vbCraft'; cardIds: string[] }
   | { type: 'steal'; defenders: number[] }
   | { type: 'quest'; questIds: string[]; questId?: string }
+
+/** Aid picks in order: card → target → item to exhaust. */
+type AidDraft = {
+  type: 'aid'
+  cardIds: string[]
+  defenders: number[]
+  costItemTypes: string[]
+  cardId?: string
+  target?: number
+}
+
+const AID_COST_VALUE_PREFIX = 'cost:'
 
 function unique(values: number[]): number[] {
   return [...new Set(values)]
@@ -62,6 +74,48 @@ export function createVagabondComposerHooks(): {
         canConfirm: false,
         canCancel: true,
       },
+    }
+  }
+
+  /** Rule: 9.5.6 Aid — ask for whatever is still missing, then submit. */
+  function continueAid(aid: AidDraft): ComposerOutcome | null {
+    const cardId = aid.cardId
+    if (cardId === undefined) return null
+    if (aid.target === undefined) {
+      if (aid.defenders.length === 0) return null
+      if (aid.defenders.length > 1) {
+        draft = aid
+        return setDefenderPrompt('Aid — pick target', aid.defenders)
+      }
+      return continueAid({ ...aid, target: aid.defenders[0]! })
+    }
+    const target = aid.target
+    if (aid.costItemTypes.length > 1) {
+      draft = aid
+      promptOptions = aid.costItemTypes.map((itemType) => ({
+        label: itemType,
+        value: `${AID_COST_VALUE_PREFIX}${itemType}`,
+      }))
+      return {
+        kind: 'incomplete',
+        prompt: {
+          message: 'Aid — pick item to exhaust',
+          highlightClearings: [],
+          enabledCardIds: null,
+          canConfirm: false,
+          canCancel: true,
+        },
+      }
+    }
+    const costItem = aid.costItemTypes[0]
+    draft = { type: 'idle' }
+    promptOptions = []
+    return {
+      kind: 'ready',
+      action:
+        costItem !== undefined
+          ? { type: 'aid', cardId, target, costItem }
+          : { type: 'aid', cardId, target },
     }
   }
 
@@ -139,6 +193,7 @@ export function createVagabondComposerHooks(): {
           type: 'aid',
           cardIds: params.cardIds ?? [],
           defenders: params.defender ?? [],
+          costItemTypes: params.costItemTypes ?? [],
         }
         return {
           kind: 'incomplete',
@@ -334,20 +389,12 @@ export function createVagabondComposerHooks(): {
     },
 
     chooseCard: (cardId: string): ComposerOutcome | null => {
-      if (draft.type === 'aid' && draft.cardIds.includes(cardId)) {
-        if (draft.defenders.length === 1) {
-          const target = draft.defenders[0]!
-          draft = { type: 'idle' }
-          promptOptions = []
-          return { kind: 'ready', action: { type: 'aid', cardId, target } }
-        }
-        if (draft.defenders.length > 1) {
-          // Keep card selection; next pick defender.
-          const defenders = draft.defenders
-          draft = { type: 'aid', cardIds: [cardId], defenders }
-          return setDefenderPrompt('Aid — pick target', defenders)
-        }
-        return null
+      if (
+        draft.type === 'aid' &&
+        draft.cardId === undefined &&
+        draft.cardIds.includes(cardId)
+      ) {
+        return continueAid({ ...draft, cardId })
       }
       if (draft.type === 'vbCraft' && draft.cardIds.includes(cardId)) {
         draft = { type: 'idle' }
@@ -363,17 +410,12 @@ export function createVagabondComposerHooks(): {
         promptOptions = []
         return { kind: 'ready', action: { type: 'steal', target: defenderSeat } }
       }
-      if (draft.type === 'aid' && draft.defenders.includes(defenderSeat)) {
-        const cardId = draft.cardIds[0]
-        if (cardId === undefined) {
-          return null
-        }
-        draft = { type: 'idle' }
-        promptOptions = []
-        return {
-          kind: 'ready',
-          action: { type: 'aid', cardId, target: defenderSeat },
-        }
+      if (
+        draft.type === 'aid' &&
+        draft.target === undefined &&
+        draft.defenders.includes(defenderSeat)
+      ) {
+        return continueAid({ ...draft, target: defenderSeat })
       }
       if (draft.type === 'vbBattle' || draft.type === 'strike') {
         const match = draft.targets.find(
@@ -389,6 +431,11 @@ export function createVagabondComposerHooks(): {
     },
 
     chooseColumn: (column: string): ComposerOutcome | null => {
+      if (draft.type === 'aid' && column.startsWith(AID_COST_VALUE_PREFIX)) {
+        const costItem = column.slice(AID_COST_VALUE_PREFIX.length)
+        if (!draft.costItemTypes.includes(costItem)) return null
+        return continueAid({ ...draft, costItemTypes: [costItem] })
+      }
       if (draft.type === 'vbMove') {
         const index = Number(column)
         if (

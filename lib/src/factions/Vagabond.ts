@@ -398,7 +398,14 @@ export class Vagabond extends Faction {
         return logs
       }
       case 'aid': {
-        if (!exhaustAnyItem(board)) throw new RuleError('NO_ITEM')
+        // Rule: 9.5.6 Aid — the Vagabond chooses which item to exhaust.
+        if (action.costItem !== undefined) {
+          if (exhaustItem(board, action.costItem) === null) {
+            throw new RuleError('NO_ITEM', { costItem: action.costItem })
+          }
+        } else if (!exhaustAnyItem(board)) {
+          throw new RuleError('NO_ITEM')
+        }
         const hand = playerOf(state, seat).hand
         const index = hand.findIndex((card) => card.id === action.cardId)
         if (index < 0) throw new RuleError('CARD_NOT_IN_HAND')

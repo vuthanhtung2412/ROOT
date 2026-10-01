@@ -58,6 +58,41 @@ describe('vagabondActionComposer multi-target', () => {
     })
   })
 
+  it('aid asks which item to exhaust when several types are available', () => {
+    const vagabond = createVagabondComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(vagabond.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'aid',
+        params: {
+          cardIds: ['ROOT-203#1'],
+          defender: [1],
+          costItemTypes: ['boot', 'sword'],
+        },
+      }),
+    )
+    const afterCard = composer.chooseCard('ROOT-203#1')
+    expect(afterCard).toMatchObject({
+      kind: 'incomplete',
+      prompt: { message: 'Aid — pick item to exhaust' },
+    })
+    expect(vagabond.getPromptOptions()).toEqual([
+      { label: 'boot', value: 'cost:boot' },
+      { label: 'sword', value: 'cost:sword' },
+    ])
+    expect(composer.chooseColumn('cost:sword')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'aid',
+        cardId: 'ROOT-203#1',
+        target: 1,
+        costItem: 'sword',
+      },
+    })
+  })
+
   it('steal with one defender is ready immediately', () => {
     const vagabond = createVagabondComposerHooks()
     const composer = new ActionComposer()

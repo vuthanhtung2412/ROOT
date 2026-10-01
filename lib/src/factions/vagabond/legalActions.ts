@@ -33,6 +33,19 @@ export function exhaustibleCount(board: VagabondBoard, type: ItemType): number {
   ].filter((item) => item.type === type && !item.exhausted).length
 }
 
+/** Distinct types of face-up undamaged items, in board order. */
+export function exhaustibleItemTypes(board: VagabondBoard): ItemType[] {
+  const types: ItemType[] = [
+    ...board.satchel,
+    ...board.tracks.tea,
+    ...board.tracks.coin,
+    ...board.tracks.bag,
+  ]
+    .filter((item) => !item.exhausted)
+    .map((item): ItemType => item.type)
+  return [...new Set(types)]
+}
+
 export function hasAnyExhaustible(board: VagabondBoard): boolean {
   return (
     board.satchel.some((item) => !item.exhausted) ||
@@ -247,7 +260,11 @@ export function pushDaylightActions(
       specs.push({
         type: 'aid',
         actor: seat,
-        params: { cardIds, defender: [player.seat] },
+        params: {
+          cardIds,
+          defender: [player.seat],
+          costItemTypes: exhaustibleItemTypes(board),
+        },
       })
     }
   }

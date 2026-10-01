@@ -106,6 +106,8 @@ export type ActionChoiceParams = {
   vbMoves?: VagabondMoveChoice[]
   /** Vagabond Allied warriors treated as own in battle (9.2.9.IIc). */
   alliedSeat?: Seat[]
+  /** Vagabond aid — item types that can be exhausted as the cost. */
+  costItemTypes?: ItemType[]
   /** Vagabond item damage — undamaged items the player may choose from. */
   vagabondItems?: VagabondItemChoice[]
   /** Vagabond item damage — exact number of items to choose. */
@@ -207,6 +209,8 @@ export type Action =
       target: Seat
       cardId: string
       takeItem?: ItemType
+      /** Rule: 9.5.6 Aid — which item the Vagabond exhausts as the cost. */
+      costItem?: ItemType
     }
   | { type: 'strike'; defender: Seat; pieceId?: string }
   | { type: 'repair'; itemIndex: number }

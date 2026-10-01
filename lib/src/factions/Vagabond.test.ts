@@ -235,6 +235,49 @@ describe('Vagabond relationships / items SoT', () => {
     expect(repaired?.exhausted).toBe(true)
   })
 
+  it('Rule: 9.5.6 Aid — exhausts the item the Vagabond chose', () => {
+    const board = createFactionBoard('vagabond')
+    if (board.kind !== 'vagabond') return
+    board.satchel = [
+      { type: 'boot', exhausted: false },
+      { type: 'sword', exhausted: false },
+    ]
+    const aidClearing = 0
+    const aidCard = { id: 'ROOT-202#aid', defId: 'ROOT-202' }
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'vagabond'],
+        players: [
+          player(0, 'marquise'),
+          player(1, 'vagabond', { board, hand: [aidCard] }),
+        ],
+        currentSeat: 1,
+        phase: 'daylight',
+        step: 'actions',
+      }),
+      aidClearing,
+      [
+        { id: 'pawn-1', kind: 'pawn', owner: 1 },
+        { id: 'warrior-marquise', kind: 'warrior', owner: 0 },
+      ],
+    )
+    const context = testContext({ state })
+    const aidSpec = VAGABOND.legalActions(state, context).find(
+      (spec) => spec.type === 'aid',
+    )
+    expect(aidSpec?.params?.costItemTypes).toEqual(['boot', 'sword'])
+
+    VAGABOND.apply(
+      state,
+      { type: 'aid', target: 0, cardId: aidCard.id, costItem: 'sword' },
+      context,
+    )
+    expect(boardOf(state, 1).satchel).toEqual([
+      { type: 'boot', exhausted: false },
+      { type: 'sword', exhausted: true },
+    ])
+  })
+
   it('Rule: 9.2.5.III — rearrange face-up undamaged track item to satchel', () => {
     const board = createFactionBoard('vagabond')
     if (board.kind !== 'vagabond') return
