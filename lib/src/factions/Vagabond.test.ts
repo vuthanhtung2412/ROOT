@@ -248,7 +248,9 @@ describe('Vagabond relationships / items SoT', () => {
       minimalState({
         factions: ['marquise', 'vagabond'],
         players: [
-          player(0, 'marquise'),
+          player(0, 'marquise', {
+            craftedItems: [{ type: 'coin', exhausted: false }],
+          }),
           player(1, 'vagabond', { board, hand: [aidCard] }),
         ],
         currentSeat: 1,
@@ -266,6 +268,7 @@ describe('Vagabond relationships / items SoT', () => {
       (spec) => spec.type === 'aid',
     )
     expect(aidSpec?.params?.costItemTypes).toEqual(['boot', 'sword'])
+    expect(aidSpec?.params?.takeItemTypes).toEqual(['coin'])
 
     VAGABOND.apply(
       state,

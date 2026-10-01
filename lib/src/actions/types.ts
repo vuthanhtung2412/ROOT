@@ -108,6 +108,8 @@ export type ActionChoiceParams = {
   alliedSeat?: Seat[]
   /** Vagabond aid — item types that can be exhausted as the cost. */
   costItemTypes?: ItemType[]
+  /** Vagabond aid — crafted item types the target can hand over. */
+  takeItemTypes?: ItemType[]
   /** Vagabond item damage — undamaged items the player may choose from. */
   vagabondItems?: VagabondItemChoice[]
   /** Vagabond item damage — exact number of items to choose. */

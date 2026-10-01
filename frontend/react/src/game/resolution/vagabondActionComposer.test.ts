@@ -93,6 +93,43 @@ describe('vagabondActionComposer multi-target', () => {
     })
   })
 
+  it('aid offers the target crafted items, or taking nothing', () => {
+    const vagabond = createVagabondComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(vagabond.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'aid',
+        params: {
+          cardIds: ['ROOT-203#1'],
+          defender: [1],
+          costItemTypes: ['sword'],
+          takeItemTypes: ['boot'],
+        },
+      }),
+    )
+    const afterCard = composer.chooseCard('ROOT-203#1')
+    expect(afterCard).toMatchObject({
+      kind: 'incomplete',
+      prompt: { message: 'Aid — take a crafted item?' },
+    })
+    expect(vagabond.getPromptOptions()).toEqual([
+      { label: 'take boot', value: 'take:boot' },
+      { label: 'take nothing', value: 'take-nothing' },
+    ])
+    expect(composer.chooseColumn('take:boot')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'aid',
+        cardId: 'ROOT-203#1',
+        target: 1,
+        costItem: 'sword',
+        takeItem: 'boot',
+      },
+    })
+  })
+
   it('steal with one defender is ready immediately', () => {
     const vagabond = createVagabondComposerHooks()
     const composer = new ActionComposer()

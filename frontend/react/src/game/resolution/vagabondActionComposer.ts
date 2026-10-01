@@ -31,11 +31,15 @@ type AidDraft = {
   cardIds: string[]
   defenders: number[]
   costItemTypes: string[]
+  takeItemTypes: string[]
   cardId?: string
   target?: number
+  costItem?: string
 }
 
 const AID_COST_VALUE_PREFIX = 'cost:'
+const AID_TAKE_VALUE_PREFIX = 'take:'
+const AID_TAKE_NOTHING_VALUE = 'take-nothing'
 
 function unique(values: number[]): number[] {
   return [...new Set(values)]
@@ -90,7 +94,10 @@ export function createVagabondComposerHooks(): {
       return continueAid({ ...aid, target: aid.defenders[0]! })
     }
     const target = aid.target
-    if (aid.costItemTypes.length > 1) {
+    if (aid.costItem === undefined && aid.costItemTypes.length === 1) {
+      return continueAid({ ...aid, costItem: aid.costItemTypes[0]! })
+    }
+    if (aid.costItem === undefined && aid.costItemTypes.length > 1) {
       draft = aid
       promptOptions = aid.costItemTypes.map((itemType) => ({
         label: itemType,
@@ -107,15 +114,46 @@ export function createVagabondComposerHooks(): {
         },
       }
     }
-    const costItem = aid.costItemTypes[0]
+    if (aid.takeItemTypes.length > 0) {
+      draft = aid
+      promptOptions = [
+        ...aid.takeItemTypes.map((itemType) => ({
+          label: `take ${itemType}`,
+          value: `${AID_TAKE_VALUE_PREFIX}${itemType}`,
+        })),
+        { label: 'take nothing', value: AID_TAKE_NOTHING_VALUE },
+      ]
+      return {
+        kind: 'incomplete',
+        prompt: {
+          message: 'Aid — take a crafted item?',
+          highlightClearings: [],
+          enabledCardIds: null,
+          canConfirm: false,
+          canCancel: true,
+        },
+      }
+    }
+    return finishAid(aid, cardId, target, undefined)
+  }
+
+  function finishAid(
+    aid: AidDraft,
+    cardId: string,
+    target: number,
+    takeItem: string | undefined,
+  ): ComposerOutcome {
     draft = { type: 'idle' }
     promptOptions = []
     return {
       kind: 'ready',
-      action:
-        costItem !== undefined
-          ? { type: 'aid', cardId, target, costItem }
-          : { type: 'aid', cardId, target },
+      action: {
+        type: 'aid',
+        cardId,
+        target,
+        ...(aid.costItem !== undefined ? { costItem: aid.costItem } : {}),
+        ...(takeItem !== undefined ? { takeItem } : {}),
+      },
     }
   }
 
@@ -194,6 +232,7 @@ export function createVagabondComposerHooks(): {
           cardIds: params.cardIds ?? [],
           defenders: params.defender ?? [],
           costItemTypes: params.costItemTypes ?? [],
+          takeItemTypes: params.takeItemTypes ?? [],
         }
         return {
           kind: 'incomplete',
@@ -434,7 +473,21 @@ export function createVagabondComposerHooks(): {
       if (draft.type === 'aid' && column.startsWith(AID_COST_VALUE_PREFIX)) {
         const costItem = column.slice(AID_COST_VALUE_PREFIX.length)
         if (!draft.costItemTypes.includes(costItem)) return null
-        return continueAid({ ...draft, costItemTypes: [costItem] })
+        return continueAid({ ...draft, costItem })
+      }
+      if (
+        draft.type === 'aid' &&
+        draft.cardId !== undefined &&
+        draft.target !== undefined
+      ) {
+        if (column === AID_TAKE_NOTHING_VALUE) {
+          return finishAid(draft, draft.cardId, draft.target, undefined)
+        }
+        if (column.startsWith(AID_TAKE_VALUE_PREFIX)) {
+          const takeItem = column.slice(AID_TAKE_VALUE_PREFIX.length)
+          if (!draft.takeItemTypes.includes(takeItem)) return null
+          return finishAid(draft, draft.cardId, draft.target, takeItem)
+        }
       }
       if (draft.type === 'vbMove') {
         const index = Number(column)

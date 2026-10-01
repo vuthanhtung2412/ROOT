@@ -50,6 +50,7 @@ export type ActionChoiceParamsView = {
   vagabondItems?: VagabondItemChoiceView[]
   itemCount?: number[]
   costItemTypes?: string[]
+  takeItemTypes?: string[]
 }
 
 /** One undamaged Vagabond item offered for damage (type + face). */
@@ -201,6 +202,10 @@ export function readChoiceParams(
   const costItemTypes = asStringArray(Reflect.get(raw, 'costItemTypes'))
   if (costItemTypes !== undefined) {
     view.costItemTypes = costItemTypes
+  }
+  const takeItemTypes = asStringArray(Reflect.get(raw, 'takeItemTypes'))
+  if (takeItemTypes !== undefined) {
+    view.takeItemTypes = takeItemTypes
   }
   return view
 }
