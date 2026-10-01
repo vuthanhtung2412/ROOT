@@ -281,11 +281,13 @@ describe('allianceActionComposer militaryOp battle', () => {
       prompt: { message: 'Military battle — pick defender seat' },
     })
     expect(alliance.getPromptOptions()).toEqual([
-      { label: 'seat 0', value: '0' },
-      { label: 'seat 1', value: '1' },
+      { label: 'seat 0', value: 'seat:0' },
+      { label: 'seat 1', value: 'seat:1' },
     ])
-    expect(composer.chooseColumn(String(VAGABOND_SEAT)).kind).toBe('incomplete')
-    expect(composer.chooseColumn(String(EYRIE_SEAT))).toEqual({
+    expect(composer.chooseColumn(`seat:${String(VAGABOND_SEAT)}`).kind).toBe(
+      'incomplete',
+    )
+    expect(composer.chooseColumn(`seat:${String(EYRIE_SEAT)}`)).toEqual({
       kind: 'ready',
       action: {
         type: 'militaryOp',

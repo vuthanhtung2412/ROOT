@@ -67,6 +67,8 @@ export function formatChooseSupportersToDiscardTitle(
   return `Choose ${String(supporterCount)} ${suit} ${noun} to discard`
 }
 
+const DEFENDER_VALUE_PREFIX = 'seat:'
+
 function formatWarriorCountLabel(count: number): string {
   return count === 1 ? '1 warrior' : `${String(count)} warriors`
 }
@@ -306,7 +308,8 @@ export function createAllianceComposerHooks(): {
           draft = { ...draft, battleClearing: clearingId }
           promptOptions = matches.map((match) => ({
             label: `seat ${String(match.defender)}`,
-            value: String(match.defender),
+            // Prefixed so the banner shows buttons, not a numeric count stepper.
+            value: `${DEFENDER_VALUE_PREFIX}${String(match.defender)}`,
           }))
           return {
             kind: 'incomplete',
@@ -435,7 +438,8 @@ export function createAllianceComposerHooks(): {
         }
       }
       if (draft.op === 'battle' && draft.battleClearing !== null) {
-        const defenderSeat = Number(value)
+        if (!value.startsWith(DEFENDER_VALUE_PREFIX)) return null
+        const defenderSeat = Number(value.slice(DEFENDER_VALUE_PREFIX.length))
         if (!Number.isInteger(defenderSeat)) return null
         return hooks.chooseDefender?.(defenderSeat) ?? null
       }
