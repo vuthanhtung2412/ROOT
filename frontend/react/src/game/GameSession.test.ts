@@ -92,6 +92,31 @@ describe('GameSession', () => {
     expect(snapshot.error).toBeNull()
   })
 
+  it('drops a refresh superseded by a newer one (no stale or mixed snapshot)', async () => {
+    const staleState = makeGameState({ step: 'revolt' })
+    const freshState = makeGameState({ step: 'spread' })
+    const freshActions = [makeActionSpec({ type: 'spreadSympathy' })]
+    stubFetchSequence([
+      { body: { state: staleState, historyLength: 1 } },
+      { body: { actions: [makeActionSpec({ type: 'endPhase' })] } },
+      { body: { log: [] } },
+      { body: { state: freshState, historyLength: 2 } },
+      { body: { actions: freshActions } },
+      { body: { log: [] } },
+    ])
+
+    const session = createSession()
+    const publishedSteps: Array<string | undefined> = []
+    session.subscribe((snapshot) => {
+      if (snapshot.state !== null) publishedSteps.push(snapshot.state.step)
+    })
+    await Promise.all([session.refresh(), session.refresh()])
+
+    expect(publishedSteps).not.toContain('revolt')
+    expect(session.getSnapshot().state?.step).toBe('spread')
+    expect(session.getSnapshot().legalActions).toEqual(freshActions)
+  })
+
   it('joinMatch first player creates lobby as marquise and waits', async () => {
     const waiting = makeGameState({ status: 'waiting' })
     const fetchMock = stubFetchSequence([

@@ -74,6 +74,8 @@ export class GameSession {
   private socket: GameSocketConnection | null = null
   /** QA Continue: live WS wake + REST refresh; never touch Play identity storage. */
   private qaMode = false
+  /** Counts refresh() calls so only the latest one may publish. */
+  private refreshSequence = 0
   private snapshot: GameSessionSnapshot = {
     state: null,
     legalActions: [],
@@ -305,6 +307,8 @@ export class GameSession {
   }
 
   async refresh(): Promise<void> {
+    this.refreshSequence += 1
+    const sequence: number = this.refreshSequence
     this.setLoading(true)
     try {
       const [game, legal, logResponse] = await Promise.all([
@@ -312,6 +316,12 @@ export class GameSession {
         this.api.legalActions(),
         this.api.gameLog(),
       ])
+      // A newer refresh started while these three reads were in flight: this
+      // result may be stale or mix two game states (state from one, legal
+      // actions from the next). Drop it; the newer refresh publishes.
+      if (sequence !== this.refreshSequence) {
+        return
+      }
       this.publish({
         state: game.state,
         legalActions: legal.actions,
