@@ -6,6 +6,7 @@ import {
 } from '#events/vagabondDamage.js'
 import type { VagabondDamageEvent } from '#events/types.js'
 import { boardOf } from '#factions/vagabond/items.js'
+import { Game } from '#game/Game.js'
 import type { Seat } from '#pieces/types.js'
 import { removePieces } from '#rules/remove.js'
 import type { GameState } from '#state/types.js'
@@ -105,6 +106,21 @@ describe('vagabondDamage event', () => {
         context,
       ),
     ).toBe(false)
+  })
+
+  it('Rule: 9.2.6 — Game.apply accepts the Vagabond item choice', () => {
+    const state: GameState = stateWithSatchel([BOOT, TORCH, SWORD, HAMMER])
+    enqueueVagabondDamage(state, VAGABOND_SEAT, FULL_REMOVAL_ITEM_DAMAGE)
+    const game: Game = Game.fromJSON({
+      state,
+      history: [],
+      log: [],
+      rng: { seed: 1, cursor: 0 },
+    })
+    const chosen: VagabondItemChoice[] = [TORCH, SWORD, HAMMER]
+    game.apply({ type: 'resolveEvent', items: chosen })
+    expect(boardOf(game.state, VAGABOND_SEAT).damaged).toEqual(chosen)
+    expect(game.state.pending).toEqual([])
   })
 
   it('Rule: 9.2.6 — no choice is asked when every undamaged item is damaged', () => {

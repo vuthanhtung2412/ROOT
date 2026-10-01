@@ -508,6 +508,10 @@ export class Game {
             Array.isArray(ids) && JSON.stringify(ids) === JSON.stringify(action.pieceIds),
         )
       }
+      // Vagabond item choice — the resolver's matchesAction validated the items.
+      if (action.items !== undefined && s.params?.vagabondItems !== undefined) {
+        return true
+      }
       return false
     })
     if (!spec) throw new RuleError('ILLEGAL_ACTION', { action })
