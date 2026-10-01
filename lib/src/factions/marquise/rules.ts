@@ -231,6 +231,8 @@ export function validateMarchMoves(
     clearings: state.clearings.map((clearing) => ({
       pieces: [...clearing.pieces],
     })),
+    // Simulated moves must not leak pending events (Outrage) into the real state.
+    pending: [...state.pending],
   }
   const silentContext: Ctx = {
     ...ctx,
