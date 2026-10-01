@@ -1,9 +1,11 @@
 import type { ActionSpec } from '#api/client.ts'
 import { fallClearingSuit } from '#game/boardLayout.ts'
 import {
+  fallbackSeatLabel,
   readChoiceParams,
   type ActionComposerHooks,
   type ComposerOutcome,
+  type SeatLabelOptions,
 } from '#game/resolution/ActionComposer.ts'
 import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
 
@@ -198,7 +200,9 @@ function isSupporterSpendDraft(
 }
 
 /** Alliance birdsong/daylight/evening choice flows. */
-export function createAllianceComposerHooks(): {
+export function createAllianceComposerHooks(
+  options?: SeatLabelOptions,
+): {
   hooks: ActionComposerHooks
   getDraft: () => AllianceDraft
   getPromptOptions: () => Array<{ label: string; value: string }>
@@ -307,14 +311,16 @@ export function createAllianceComposerHooks(): {
           // Rule: 4.3 Battle — attacker chooses which enemy in the clearing defends.
           draft = { ...draft, battleClearing: clearingId }
           promptOptions = matches.map((match) => ({
-            label: `seat ${String(match.defender)}`,
+            label:
+              options?.factionNameForSeat?.(match.defender) ??
+              fallbackSeatLabel(match.defender),
             // Prefixed so the banner shows buttons, not a numeric count stepper.
             value: `${DEFENDER_VALUE_PREFIX}${String(match.defender)}`,
           }))
           return {
             kind: 'incomplete',
             prompt: {
-              message: 'Military battle — pick defender seat',
+              message: 'Military battle — pick defender',
               highlightClearings: [clearingId],
               enabledCardIds: null,
               canConfirm: false,

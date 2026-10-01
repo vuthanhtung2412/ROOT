@@ -23,17 +23,20 @@ describe('vagabondActionComposer multi-target', () => {
     const mid = composer.chooseClearing(5)
     expect(mid.kind).toBe('incomplete')
     expect(vagabond.getPromptOptions()).toEqual([
-      { label: 'seat 0', value: '0' },
-      { label: 'seat 1', value: '1' },
+      { label: 'seat 0', value: 'seat:0' },
+      { label: 'seat 1', value: 'seat:1' },
     ])
-    expect(composer.chooseColumn('1')).toEqual({
+    expect(composer.chooseColumn('seat:1')).toEqual({
       kind: 'ready',
       action: { type: 'vbBattle', defender: 1 },
     })
   })
 
-  it('aid picks card then defender when multiple targets', () => {
-    const vagabond = createVagabondComposerHooks()
+  it('aid picks card then defender, shown by faction name', () => {
+    const factions = ['marquise', 'eyrie', 'alliance', 'vagabond']
+    const vagabond = createVagabondComposerHooks({
+      factionNameForSeat: (seat: number): string | null => factions[seat] ?? null,
+    })
     const composer = new ActionComposer()
     composer.setHooks(vagabond.hooks)
 
@@ -49,10 +52,10 @@ describe('vagabondActionComposer multi-target', () => {
     const afterCard = composer.chooseCard('ROOT-202#1')
     expect(afterCard.kind).toBe('incomplete')
     expect(vagabond.getPromptOptions()).toEqual([
-      { label: 'seat 0', value: '0' },
-      { label: 'seat 2', value: '2' },
+      { label: 'marquise', value: 'seat:0' },
+      { label: 'alliance', value: 'seat:2' },
     ])
-    expect(composer.chooseColumn('2')).toEqual({
+    expect(composer.chooseColumn('seat:2')).toEqual({
       kind: 'ready',
       action: { type: 'aid', cardId: 'ROOT-202#1', target: 2 },
     })

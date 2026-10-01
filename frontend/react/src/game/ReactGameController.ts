@@ -1,5 +1,9 @@
 import type { ActionSpec, GameState } from '#api/client.ts'
-import { ActionComposer, type ComposerOutcome } from '#game/resolution/ActionComposer.ts'
+import {
+  ActionComposer,
+  type ComposerOutcome,
+  type SeatLabelOptions,
+} from '#game/resolution/ActionComposer.ts'
 import { AutoPromptController } from '#game/resolution/autoPromptController.ts'
 import { BattleOverlayController } from '#game/battleOverlayController.ts'
 import { applyComposerOutcomeToHud } from '#game/resolution/composerOutcomeApplier.ts'
@@ -156,9 +160,13 @@ export class ReactGameController {
     })
     this.marquiseBoard = createMarquiseBoardComposerHooks()
     this.eyrieComposer = createEyrieComposerHooks()
-    this.vagabondComposer = createVagabondComposerHooks()
+    const seatLabelOptions: SeatLabelOptions = {
+      factionNameForSeat: (seat: number): string | null =>
+        this.latestSnapshot?.state?.factions[seat] ?? null,
+    }
+    this.vagabondComposer = createVagabondComposerHooks(seatLabelOptions)
     this.dominanceComposer = createDominanceComposerHooks()
-    this.allianceComposer = createAllianceComposerHooks()
+    this.allianceComposer = createAllianceComposerHooks(seatLabelOptions)
     this.eventComposer = createEventComposerHooks()
     this.autoPrompts = new AutoPromptController({
       applyComposerOutcome: (outcome) => this.applyComposerOutcome(outcome),

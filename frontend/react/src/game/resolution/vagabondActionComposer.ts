@@ -2,6 +2,9 @@ import type { ActionSpec } from '#api/client.ts'
 import {
   type ActionComposerHooks,
   type ComposerOutcome,
+  type SeatLabelOptions,
+  SEAT_VALUE_PREFIX,
+  fallbackSeatLabel,
   readChoiceParams,
 } from '#game/resolution/ActionComposer.ts'
 import type { TurnBannerOption, TurnBannerOptionItem } from '#ui/TurnBanner.ts'
@@ -60,21 +63,25 @@ function isVbMoveChoice(
 }
 
 /** Vagabond daylight / birdsong choice flows. */
-export function createVagabondComposerHooks(): {
+export function createVagabondComposerHooks(
+  options?: SeatLabelOptions,
+): {
   hooks: ActionComposerHooks
   getDraft: () => VagabondDraft
   getPromptOptions: () => TurnBannerOption[]
 } {
   let draft: VagabondDraft = { type: 'idle' }
   let promptOptions: TurnBannerOption[] = []
+  const seatLabel = (seat: number): string =>
+    options?.factionNameForSeat?.(seat) ?? fallbackSeatLabel(seat)
 
   function setDefenderPrompt(
     message: string,
     defenders: readonly number[],
   ): ComposerOutcome {
     promptOptions = defenders.map((seat) => ({
-      label: `seat ${String(seat)}`,
-      value: String(seat),
+      label: seatLabel(seat),
+      value: `${SEAT_VALUE_PREFIX}${String(seat)}`,
     }))
     return {
       kind: 'incomplete',
@@ -434,13 +441,13 @@ export function createVagabondComposerHooks(): {
           }
         }
         promptOptions = matches.map((match) => ({
-          label: `seat ${String(match.defender)}`,
-          value: String(match.defender),
+          label: seatLabel(match.defender),
+          value: `${SEAT_VALUE_PREFIX}${String(match.defender)}`,
         }))
         return {
           kind: 'incomplete',
           prompt: {
-            message: 'Pick defender seat',
+            message: 'Pick defender',
             highlightClearings: [clearingId],
             enabledCardIds: null,
             canConfirm: false,
@@ -577,7 +584,10 @@ export function createVagabondComposerHooks(): {
           action: { type: 'quest', questId, reward: column },
         }
       }
-      const seat = Number(column)
+      if (!column.startsWith(SEAT_VALUE_PREFIX)) {
+        return null
+      }
+      const seat = Number(column.slice(SEAT_VALUE_PREFIX.length))
       if (!Number.isInteger(seat)) {
         return null
       }

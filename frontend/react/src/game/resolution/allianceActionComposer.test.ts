@@ -278,7 +278,7 @@ describe('allianceActionComposer militaryOp battle', () => {
     const afterClearing = composer.chooseClearing(SHARED_CLEARING)
     expect(afterClearing).toMatchObject({
       kind: 'incomplete',
-      prompt: { message: 'Military battle — pick defender seat' },
+      prompt: { message: 'Military battle — pick defender' },
     })
     expect(alliance.getPromptOptions()).toEqual([
       { label: 'seat 0', value: 'seat:0' },

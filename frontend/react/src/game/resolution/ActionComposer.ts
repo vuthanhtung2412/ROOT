@@ -359,6 +359,18 @@ const IMMEDIATE_TYPES = new Set([
   'explore',
 ])
 
+/** Players are shown by faction name; null when the seat is unknown. */
+export type SeatLabelOptions = {
+  factionNameForSeat?: (seat: number) => string | null
+}
+
+/** Banner option value prefix for a seat choice (keeps it off the count stepper). */
+export const SEAT_VALUE_PREFIX = 'seat:'
+
+export function fallbackSeatLabel(seat: number): string {
+  return `seat ${String(seat)}`
+}
+
 export type ActionComposerHooks = {
   begin?: (spec: ActionSpec) => ComposerOutcome | null
   chooseCard?: (cardId: string) => ComposerOutcome | null
