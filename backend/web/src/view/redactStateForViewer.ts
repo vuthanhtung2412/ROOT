@@ -25,6 +25,11 @@ function redactPlayerForViewer(
   }
   return {
     ...player,
+    // A join id is that seat's secret: never hand it to another viewer.
+    playerId: `${HIDDEN_PLAYER_ID_PREFIX}${String(player.seat)}`,
     hand: [],
   }
 }
+
+/** Placeholder shown instead of another seat's join id. */
+export const HIDDEN_PLAYER_ID_PREFIX = 'hidden-seat-'

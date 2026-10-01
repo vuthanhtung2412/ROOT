@@ -2,6 +2,7 @@ import {
   FALL,
   FALL_LAYOUT,
   Game,
+  type GameState,
   formatGameView,
   formatTurnLog,
   toAscii,
@@ -33,6 +34,8 @@ import {
   UndoResponseSchema,
 } from '#schemas/game.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
+import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
+import { redactStateForViewer } from '#view/redactStateForViewer.js'
 import { broadcastCurrentGame } from '#ws/GameHub.js'
 import {
   isAction,
@@ -43,6 +46,21 @@ import {
 function requireGame(): Game {
   if (!store.game) noGame()
   return store.game
+}
+
+/** Online mode: state as the caller may see it. Hotseat: full state. */
+function stateForCaller(game: Game, playerId: string | undefined): GameState {
+  if (store.mode !== 'online') {
+    return game.state
+  }
+  return redactStateForViewer(game.state, playerId ?? '')
+}
+
+/** Online mode: full-slot dumps would leak hands and join ids. */
+function requireHotseatForFullDump(): void {
+  if (store.mode === 'online') {
+    throw new HttpError(403, 'ONLINE_MODE', 'full game dump is hotseat-only')
+  }
 }
 
 /** Online mode only: reject callers whose seat may not send this action type. */
@@ -129,7 +147,10 @@ gameRoutes.openapi(joinRoute, async (context) => {
   const result = game.join(body.playerId)
   logGameEvent('JOIN', result.state, { type: 'join', playerId: body.playerId })
   broadcastCurrentGame()
-  return context.json(result, 200)
+  return context.json(
+    { ...result, state: stateForCaller(game, body.playerId) },
+    200,
+  )
 })
 
 const startRoute = createRoute({
@@ -148,11 +169,15 @@ const startRoute = createRoute({
 
 gameRoutes.openapi(startRoute, (context) => {
   const game = requireGame()
-  requireSeatForAction(game, context.req.header(PLAYER_ID_HEADER), 'start')
+  const playerId = context.req.header(PLAYER_ID_HEADER)
+  requireSeatForAction(game, playerId, 'start')
   const result = game.start()
   logGameEvent('START', result.state, { type: 'start' })
   broadcastCurrentGame()
-  return context.json(result, 200)
+  return context.json(
+    { ...result, state: stateForCaller(game, playerId) },
+    200,
+  )
 })
 
 const getGameRoute = createRoute({
@@ -173,7 +198,7 @@ gameRoutes.openapi(getGameRoute, (context) => {
   const game = requireGame()
   return context.json(
     {
-      state: game.state,
+      state: stateForCaller(game, context.req.header(PLAYER_ID_HEADER)),
       historyLength: game.history.length,
       mode: store.mode,
     },
@@ -197,6 +222,7 @@ const getGameViewRoute = createRoute({
 
 gameRoutes.openapi(getGameViewRoute, (context) => {
   const game = requireGame()
+  requireHotseatForFullDump()
   return context.text(
     formatGameView(game.state, { historyLength: game.history.length }),
     200,
@@ -219,6 +245,7 @@ const getSnapshotRoute = createRoute({
 
 gameRoutes.openapi(getSnapshotRoute, (context) => {
   const game = requireGame()
+  requireHotseatForFullDump()
   return context.json(game.toJSON(), 200)
 })
 
@@ -282,7 +309,15 @@ const getActionsRoute = createRoute({
 
 gameRoutes.openapi(getActionsRoute, (context) => {
   const game = requireGame()
-  return context.json({ actions: game.legalActions() }, 200)
+  const actions =
+    store.mode === 'online'
+      ? redactLegalActionsForViewer(
+          game.legalActions(),
+          game.state,
+          context.req.header(PLAYER_ID_HEADER) ?? '',
+        )
+      : game.legalActions()
+  return context.json({ actions }, 200)
 })
 
 const postActionsRoute = createRoute({
@@ -311,11 +346,15 @@ gameRoutes.openapi(postActionsRoute, async (context) => {
   if (!isAction(body)) {
     throw new HttpError(400, 'BAD_ACTION', 'invalid action shape')
   }
-  requireSeatForAction(game, context.req.header(PLAYER_ID_HEADER), body.type)
+  const playerId = context.req.header(PLAYER_ID_HEADER)
+  requireSeatForAction(game, playerId, body.type)
   const result = game.apply(body)
   logGameEvent('ACT', result.state, body, result.log)
   broadcastCurrentGame()
-  return context.json(result, 200)
+  return context.json(
+    { ...result, state: stateForCaller(game, playerId) },
+    200,
+  )
 })
 
 const getLogRoute = createRoute({

@@ -116,6 +116,33 @@ describe('game routes', () => {
       expect(hostStart.status).toBe(200)
     })
 
+    it('REST views show only the caller hand, actions and join id', async () => {
+      await createOnlineLobby()
+      await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
+
+      const guestView = await app.request('/game', asPlayer(GUEST_PLAYER_ID, 'GET'))
+      const guestBody = JSON.stringify(await guestView.json())
+      expect(guestBody).toContain(GUEST_PLAYER_ID)
+      expect(guestBody).not.toContain(HOST_PLAYER_ID)
+
+      const hostState = store.game?.state.players[0]
+      expect(hostState?.hand.length).toBeGreaterThan(0)
+      const firstHostCardId = hostState?.hand[0]?.id ?? ''
+      expect(guestBody).not.toContain(`"${firstHostCardId}"`)
+
+      const guestActions = await app.request(
+        '/game/actions',
+        asPlayer(GUEST_PLAYER_ID, 'GET'),
+      )
+      expect(await guestActions.json()).toEqual({ actions: [] })
+
+      const snapshotDump = await app.request(
+        '/game/snapshot',
+        asPlayer(GUEST_PLAYER_ID, 'GET'),
+      )
+      expect(snapshotDump.status).toBe(403)
+    })
+
     it('rejects an action from a seat that is not the actor', async () => {
       await createOnlineLobby()
       await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
@@ -159,7 +186,8 @@ describe('game routes', () => {
     expect(await createResponse.json()).toMatchObject({ mode: 'online' })
     expect(store.mode).toBe('online')
 
-    const snapshot = await (await app.request('/game/snapshot')).text()
+    // GET /game/snapshot is blocked in online mode; dump straight from the store.
+    const snapshot = JSON.stringify(store.game?.toJSON())
     const restoreResponse = await app.request('/game/snapshot?replace=1', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

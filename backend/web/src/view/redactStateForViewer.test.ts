@@ -32,6 +32,19 @@ describe('redactStateForViewer', () => {
     expect(state.players[1]?.hand).toHaveLength(2)
   })
 
+  it('hides other seats join ids so they cannot be reused', () => {
+    const state = createTwoPlayerGameState([
+      { playerId: 'marquise-secret', hand: [] },
+      { playerId: 'eyrie-secret', hand: [] },
+    ])
+
+    const forMarquise = redactStateForViewer(state, 'marquise-secret')
+
+    expect(forMarquise.players[0]?.playerId).toBe('marquise-secret')
+    expect(forMarquise.players[1]?.playerId).toBe('hidden-seat-1')
+    expect(JSON.stringify(forMarquise)).not.toContain('eyrie-secret')
+  })
+
   it('does not mutate clearing pieces', () => {
     const state = createTwoPlayerGameState([
       {
