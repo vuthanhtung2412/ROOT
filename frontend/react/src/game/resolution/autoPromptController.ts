@@ -1,5 +1,9 @@
 import type { ActionSpec } from '#api/client.ts'
-import type { ActionComposer, ComposerOutcome } from '#game/resolution/ActionComposer.ts'
+import {
+  readChoiceParams,
+  type ActionComposer,
+  type ComposerOutcome,
+} from '#game/resolution/ActionComposer.ts'
 import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
 import {
   buildBattleRemovalStepperChoices,
@@ -48,6 +52,7 @@ export class AutoPromptController {
   private battleRemovalKey: string | null = null
   private setupPromptKey: string | null = null
   private endPhaseKey: string | null = null
+  private itemDamageKey: string | null = null
 
   constructor(private readonly deps: AutoPromptControllerDeps) {}
 
@@ -60,6 +65,7 @@ export class AutoPromptController {
     this.maybeBeginFieldHospitalPrompt(snapshot, actorSeat, localControlsActor)
     this.maybeBeginAmbushPrompt(snapshot, actorSeat, localControlsActor)
     this.maybeBeginBattleRemoval(snapshot, actorSeat, localControlsActor)
+    this.maybeBeginItemDamagePrompt(snapshot, actorSeat, localControlsActor)
     this.maybeAutoEndPhase(snapshot, actorSeat, localControlsActor)
   }
 
@@ -165,6 +171,37 @@ export class AutoPromptController {
     this.deps.applyComposerOutcome(
       this.deps.eventComposer.beginBattleRemoval(choices),
     )
+  }
+
+  /** Rule: 9.2.6 — open the Vagabond item-damage choice without a tray click. */
+  private maybeBeginItemDamagePrompt(
+    snapshot: GameSessionSnapshot,
+    actorSeat: number,
+    localControlsActor: boolean,
+  ): void {
+    if (!localControlsActor || snapshot.state === null) {
+      this.itemDamageKey = null
+      return
+    }
+    const itemDamageSpec = snapshot.legalActions.find(
+      (spec: ActionSpec) =>
+        spec.type === 'resolveEvent' &&
+        spec.actor === actorSeat &&
+        readChoiceParams(spec).vagabondItems !== undefined,
+    )
+    if (itemDamageSpec === undefined) {
+      this.itemDamageKey = null
+      return
+    }
+    const key = JSON.stringify({
+      pending: snapshot.state.pending[0],
+      params: itemDamageSpec.params,
+    })
+    if (key === this.itemDamageKey) {
+      return
+    }
+    this.itemDamageKey = key
+    this.deps.applyComposerOutcome(this.deps.composer.begin(itemDamageSpec))
   }
 
   private maybeAutoEndPhase(

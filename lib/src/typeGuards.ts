@@ -6,6 +6,7 @@ import type {
   Event,
   FieldHospitalEvent,
   OutrageEvent,
+  VagabondDamageEvent,
   PlaceStartingBuildingEvent,
 } from '#events/types.js'
 import type { ClearingId } from '#map/types.js'
@@ -68,6 +69,10 @@ export function isChooseForestEvent(event: Event): event is ChooseForestEvent {
 
 export function isOutrageEvent(event: Event): event is OutrageEvent {
   return event.type === 'outrage'
+}
+
+export function isVagabondDamageEvent(event: Event): event is VagabondDamageEvent {
+  return event.type === 'vagabondDamage'
 }
 
 export function isMarquiseBoard(board: FactionBoard): board is MarquiseBoard {

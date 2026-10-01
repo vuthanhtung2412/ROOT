@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { validateMarchMoves } from '#factions/marquise/rules.js'
 import { moveWarriors } from '#rules/move.js'
+import type { Seat } from '#pieces/types.js'
 import type { GameState } from '#state/types.js'
 import { minimalState, player, testContext, withPieces } from '#test/fixtures.js'
 
-const MARQUISE_SEAT = 0
-const ALLIANCE_SEAT = 1
+const MARQUISE_SEAT: Seat = 0
+const ALLIANCE_SEAT: Seat = 1
 const ORIGIN_CLEARING = 4
 const SYMPATHETIC_CLEARING = 0
 

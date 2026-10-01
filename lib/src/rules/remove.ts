@@ -12,10 +12,8 @@ import {
   boardOf,
   discardSupportersOverflow,
 } from '#factions/alliance/rules.js'
-import {
-  boardOf as vagabondBoardOf,
-  damageItems,
-} from '#factions/vagabond/items.js'
+import { enqueueVagabondDamage } from '#events/vagabondDamage.js'
+import { boardOf as vagabondBoardOf } from '#factions/vagabond/items.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { addVictoryPoints } from '#rules/dominance.js'
@@ -187,8 +185,9 @@ export function removePieces(
   })
 
   for (const vagabondSeat of vagabondSeatsDamaged) {
-    damageItems(
-      vagabondBoardOf(state, vagabondSeat),
+    enqueueVagabondDamage(
+      state,
+      vagabondSeat,
       VAGABOND_FULL_REMOVAL_ITEM_DAMAGE,
     )
   }

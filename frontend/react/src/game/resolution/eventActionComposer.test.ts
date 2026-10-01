@@ -330,3 +330,72 @@ describe('eventActionComposer setup picks', () => {
     })
   })
 })
+
+describe('eventActionComposer Vagabond item damage', () => {
+  const VAGABOND_SEAT = 3
+  const OFFERED_ITEMS = [
+    { type: 'boot', exhausted: false },
+    { type: 'boot', exhausted: true },
+    { type: 'torch', exhausted: false },
+    { type: 'sword', exhausted: false },
+  ]
+
+  it('toggles items and confirms once the exact count is chosen', () => {
+    const eventComposer = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(eventComposer.hooks)
+
+    const opened = composer.begin(
+      makeActionSpec({
+        type: 'resolveEvent',
+        actor: VAGABOND_SEAT,
+        params: { vagabondItems: OFFERED_ITEMS, itemCount: [2] },
+      }),
+    )
+    expect(opened).toMatchObject({
+      kind: 'incomplete',
+      prompt: {
+        message: 'Vagabond — choose 2 items to damage (0/2)',
+        canConfirm: false,
+        canCancel: false,
+      },
+    })
+    expect(eventComposer.getPromptOptions()).toEqual([
+      { label: 'boot', value: '0' },
+      { label: 'boot (exhausted)', value: '1' },
+      { label: 'torch', value: '2' },
+      { label: 'sword', value: '3' },
+    ])
+    expect(composer.confirm().kind).toBe('incomplete')
+
+    composer.chooseColumn('0')
+    composer.chooseColumn('3')
+    // Third pick beyond the count is ignored.
+    composer.chooseColumn('2')
+    // Deselect boot, then take the exhausted boot instead.
+    composer.chooseColumn('0')
+    const afterPicks = composer.chooseColumn('1')
+    expect(afterPicks).toMatchObject({
+      kind: 'incomplete',
+      prompt: {
+        message: 'Vagabond — choose 2 items to damage — Confirm when ready',
+        canConfirm: true,
+      },
+    })
+    expect(eventComposer.getPromptOptions()[1]).toEqual({
+      label: '✓ boot (exhausted)',
+      value: '1',
+    })
+
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'resolveEvent',
+        items: [
+          { type: 'sword', exhausted: false },
+          { type: 'boot', exhausted: true },
+        ],
+      },
+    })
+  })
+})

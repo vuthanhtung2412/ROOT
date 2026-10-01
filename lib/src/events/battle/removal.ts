@@ -1,7 +1,12 @@
 import type { ActionSpec, ResolveEventAction } from '#actions/types.js'
 import {
   boardOf as vagabondBoardOf,
+  damageChosenItems,
   damageItems,
+  damageableItemCount,
+  isItemDamageChoiceRequired,
+  isValidItemDamageChoice,
+  undamagedItemChoices,
 } from '#factions/vagabond/items.js'
 import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
@@ -84,6 +89,20 @@ export function legalRemovalSpecs(
       event.attacker === victim
     ) {
       return legalAlliedVagabondHitSpecs(state, event, victim, maxHits)
+    }
+    const board = vagabondBoardOf(state, victim)
+    // Rule: 9.2.6 Taking Hits — the Vagabond chooses which items to damage.
+    if (isItemDamageChoiceRequired(board, maxHits)) {
+      return [
+        {
+          type: 'resolveEvent',
+          actor: victim,
+          params: {
+            vagabondItems: undamagedItemChoices(board),
+            itemCount: [damageableItemCount(board, maxHits)],
+          },
+        },
+      ]
     }
     return [
       {
@@ -247,7 +266,11 @@ function applyVagabondHitDamage(
   ctx: Ctx,
 ): LogEntry[] {
   const allyPieceIds = action.pieceIds ?? []
-  if (action.decline !== true && allyPieceIds.length === 0) {
+  if (
+    action.decline !== true &&
+    allyPieceIds.length === 0 &&
+    action.items === undefined
+  ) {
     throw new RuleError('INVALID_REMOVAL', { action })
   }
   const logs: LogEntry[] = []
@@ -287,7 +310,16 @@ function applyVagabondHitDamage(
   const itemHits = maxHits - allyPieceIds.length
   if (itemHits > 0) {
     const board = vagabondBoardOf(state, victim)
-    damageItems(board, itemHits)
+    if (action.items !== undefined) {
+      if (!isValidItemDamageChoice(board, action.items, itemHits)) {
+        throw new RuleError('INVALID_ITEM_DAMAGE_CHOICE', { items: action.items })
+      }
+      damageChosenItems(board, action.items)
+    } else if (isItemDamageChoiceRequired(board, itemHits) && allyPieceIds.length === 0) {
+      throw new RuleError('MISSING_ITEM_DAMAGE_CHOICE', { itemHits })
+    } else {
+      damageItems(board, itemHits)
+    }
     event.itemHitsTaken = (event.itemHitsTaken ?? 0) + itemHits
   }
   logs.push({
@@ -296,7 +328,9 @@ function applyVagabondHitDamage(
     action:
       allyPieceIds.length > 0
         ? { type: 'resolveEvent', pieceIds: allyPieceIds }
-        : { type: 'resolveEvent', decline: true },
+        : action.items !== undefined
+          ? { type: 'resolveEvent', items: action.items }
+          : { type: 'resolveEvent', decline: true },
   })
   return logs
 }

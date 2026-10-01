@@ -70,8 +70,10 @@ export type OutrageEvent = {
   clearing: ClearingId
 }
 
+/** Rule: 9.2.6 / 9.2.3.I — Vagabond chooses `count` undamaged items to damage. */
 export type VagabondDamageEvent = {
   type: 'vagabondDamage'
+  seat: Seat
   count: number
 }
 

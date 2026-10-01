@@ -53,6 +53,12 @@ export type VagabondMoveChoice = {
   allyCount?: number
 }
 
+/** Rule: 9.2.6 — one undamaged Vagabond item, identified by type and face. */
+export type VagabondItemChoice = {
+  type: ItemType
+  exhausted: boolean
+}
+
 /**
  * Typed UI choice metadata for ActionSpec.
  * Prefer paired fields (`options`, `targets`, `moves`) over parallel arrays
@@ -100,6 +106,10 @@ export type ActionChoiceParams = {
   vbMoves?: VagabondMoveChoice[]
   /** Vagabond Allied warriors treated as own in battle (9.2.9.IIc). */
   alliedSeat?: Seat[]
+  /** Vagabond item damage — undamaged items the player may choose from. */
+  vagabondItems?: VagabondItemChoice[]
+  /** Vagabond item damage — exact number of items to choose. */
+  itemCount?: number[]
 }
 
 export type Action =
@@ -228,6 +238,8 @@ export type ResolveEventAction = {
   leader?: EyrieLeader
   /** Rule: Vagabond > Setup 2 — forest index on Fall map. */
   forest?: number
+  /** Rule: 9.2.6 — undamaged items the Vagabond chooses to damage. */
+  items?: VagabondItemChoice[]
 }
 
 export type ActionSpec = {

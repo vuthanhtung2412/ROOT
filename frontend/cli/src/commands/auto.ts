@@ -551,6 +551,12 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       if (pieceIds && pieceIds.length > 0 && typeof pieceIds[0] === 'string') {
         return { type: 'resolveEvent', pieceIds: readStringList(pieceIds) }
       }
+      // Vagabond item damage: take the first itemCount offered items.
+      const vagabondItems = paramList(params, 'vagabondItems')
+      const itemCount = readNumberList(paramList(params, 'itemCount'))[0]
+      if (vagabondItems && itemCount !== undefined) {
+        return { type: 'resolveEvent', items: vagabondItems.slice(0, itemCount) }
+      }
       // Order stage: params.order is Seat[][]
       const orderList = paramList(params, 'order')
       if (orderList && orderList.length > 0) {

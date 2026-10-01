@@ -10,6 +10,7 @@ import { chooseLeaderResolver } from '#events/chooseLeader.js'
 import { fieldHospitalResolver } from '#events/fieldHospital.js'
 import { outrageResolver } from '#events/outrage.js'
 import { placeStartingBuildingResolver } from '#events/placeStartingBuilding.js'
+import { vagabondDamageResolver } from '#events/vagabondDamage.js'
 import type { Event } from '#events/types.js'
 import {
   isBattleEvent,
@@ -19,6 +20,7 @@ import {
   isFieldHospitalEvent,
   isOutrageEvent,
   isPlaceStartingBuildingEvent,
+  isVagabondDamageEvent,
 } from '#typeGuards.js'
 
 export type EventApply = {
@@ -161,8 +163,21 @@ export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
     },
   },
   vagabondDamage: {
-    legalActions: () => [],
-    apply: () => [],
-    matchesAction: () => false,
+    legalActions(state, event, ctx) {
+      if (!isVagabondDamageEvent(event)) return []
+      return vagabondDamageResolver.legalActions(state, event, ctx)
+    },
+    apply(state, apply, ctx) {
+      if (!isVagabondDamageEvent(apply.event)) return []
+      return vagabondDamageResolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
+    },
+    matchesAction(state, event, action, ctx) {
+      if (!isVagabondDamageEvent(event)) return false
+      return vagabondDamageResolver.matchesAction(state, event, action, ctx)
+    },
   },
 }

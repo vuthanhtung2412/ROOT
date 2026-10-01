@@ -47,6 +47,24 @@ export type ActionChoiceParamsView = {
   rearrangeFrom?: Array<'track' | 'satchel'>
   vbMoves?: Array<{ to: number; allySeat?: number; allyCount?: number }>
   alliedSeat?: number[]
+  vagabondItems?: VagabondItemChoiceView[]
+  itemCount?: number[]
+}
+
+/** One undamaged Vagabond item offered for damage (type + face). */
+export type VagabondItemChoiceView = {
+  type: string
+  exhausted: boolean
+}
+
+function isVagabondItemChoiceView(
+  value: unknown,
+): value is VagabondItemChoiceView {
+  if (typeof value !== 'object' || value === null) return false
+  return (
+    typeof Reflect.get(value, 'type') === 'string' &&
+    typeof Reflect.get(value, 'exhausted') === 'boolean'
+  )
 }
 
 export function readChoiceParams(
@@ -167,6 +185,17 @@ export function readChoiceParams(
   const alliedSeat = asNumberArray(raw.alliedSeat)
   if (alliedSeat !== undefined) {
     view.alliedSeat = alliedSeat
+  }
+  const rawVagabondItems: unknown = Reflect.get(raw, 'vagabondItems')
+  if (
+    Array.isArray(rawVagabondItems) &&
+    rawVagabondItems.every(isVagabondItemChoiceView)
+  ) {
+    view.vagabondItems = rawVagabondItems
+  }
+  const itemCount = asNumberArray(Reflect.get(raw, 'itemCount'))
+  if (itemCount !== undefined) {
+    view.itemCount = itemCount
   }
   return view
 }

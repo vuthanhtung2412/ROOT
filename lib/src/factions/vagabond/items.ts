@@ -1,3 +1,4 @@
+import type { VagabondItemChoice } from '#actions/types.js'
 import type { ItemType, Seat } from '#pieces/types.js'
 import { playerOf } from '#queries/seat.js'
 import type { VagabondBoard, VagabondItem } from '#state/boards.js'
@@ -103,6 +104,69 @@ export function damageItems(board: VagabondBoard, count: number): number {
     damaged += 1
   }
   return damaged
+}
+
+/** Number of items a hit count actually damages (hits beyond undamaged items are ignored). */
+export function damageableItemCount(board: VagabondBoard, count: number): number {
+  return Math.max(0, Math.min(count, allUndamagedItems(board).length))
+}
+
+/** Rule: 9.2.6 — the Vagabond chooses only when some undamaged items survive. */
+export function isItemDamageChoiceRequired(
+  board: VagabondBoard,
+  count: number,
+): boolean {
+  return count > 0 && count < allUndamagedItems(board).length
+}
+
+export function undamagedItemChoices(board: VagabondBoard): VagabondItemChoice[] {
+  return allUndamagedItems(board).map(
+    (item: VagabondItem): VagabondItemChoice => ({
+      type: item.type,
+      exhausted: item.exhausted,
+    }),
+  )
+}
+
+function findUndamagedItem(
+  candidates: readonly VagabondItem[],
+  choice: VagabondItemChoice,
+): VagabondItem | undefined {
+  return candidates.find(
+    (item: VagabondItem): boolean =>
+      item.type === choice.type && item.exhausted === choice.exhausted,
+  )
+}
+
+/** True when `choices` names exactly `count` distinct undamaged items. */
+export function isValidItemDamageChoice(
+  board: VagabondBoard,
+  choices: readonly VagabondItemChoice[],
+  count: number,
+): boolean {
+  if (choices.length !== damageableItemCount(board, count)) return false
+  let remaining: VagabondItem[] = allUndamagedItems(board)
+  for (const choice of choices) {
+    const match = findUndamagedItem(remaining, choice)
+    if (match === undefined) return false
+    remaining = remaining.filter((item: VagabondItem): boolean => item !== match)
+  }
+  return true
+}
+
+/** Rule: 9.2.6 — move the chosen undamaged items to the Damaged box. */
+export function damageChosenItems(
+  board: VagabondBoard,
+  choices: readonly VagabondItemChoice[],
+): void {
+  for (const choice of choices) {
+    const item = findUndamagedItem(allUndamagedItems(board), choice)
+    if (item === undefined) {
+      throw new RuleError('INVALID_ITEM_DAMAGE_CHOICE', { choice })
+    }
+    removeItemFromBoard(board, item)
+    board.damaged.push({ type: item.type, exhausted: item.exhausted })
+  }
 }
 
 function removeItemFromBoard(board: VagabondBoard, target: VagabondItem): void {

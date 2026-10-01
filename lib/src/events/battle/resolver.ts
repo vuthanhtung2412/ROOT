@@ -3,6 +3,10 @@ import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import type { GameState } from '#state/types.js'
 import { hasBattleEffect } from '#effects/partisans.js'
+import {
+  boardOf as vagabondBoardOf,
+  isValidItemDamageChoice,
+} from '#factions/vagabond/items.js'
 import type { BattleEvent } from '#events/types.js'
 import { legalRemovalSpecs } from '#events/battle/removal.js'
 import {
@@ -108,6 +112,13 @@ function matchesBattleAction(
       }
       if (action.useEffect !== undefined && spec.params?.useEffect?.includes(action.useEffect)) {
         return true
+      }
+      if (action.items !== undefined && spec.params?.vagabondItems !== undefined) {
+        return isValidItemDamageChoice(
+          vagabondBoardOf(state, spec.actor),
+          action.items,
+          spec.params.itemCount?.[0] ?? 0,
+        )
       }
     }
     return false

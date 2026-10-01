@@ -78,6 +78,9 @@ function formatActionLabel(
     if (params.leaders !== undefined) {
       return 'choose leader'
     }
+    if (params.vagabondItems !== undefined) {
+      return 'damage items'
+    }
     if (pendingType === 'fieldHospital') {
       if (params.decline !== undefined) {
         return 'Decline Field Hospitals'

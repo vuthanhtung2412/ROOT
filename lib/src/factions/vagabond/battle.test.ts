@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest'
+import type { VagabondItemChoice } from '#actions/types.js'
 import { battleResolver, openBattle } from '#events/battle.js'
 import { boardOf, undamagedSwords } from '#factions/vagabond/items.js'
 import { VAGABOND } from '#factions/Vagabond.js'
@@ -48,6 +49,7 @@ describe('Vagabond battle item damage', () => {
     })
     openBattle(state, { clearing, attacker: 0, defender: 1 }, context)
 
+    let chosenItems: VagabondItemChoice[] = []
     // Skip ambush (forced drain may leave ambush for player)
     let guard = 0
     while (state.pending[0] && isBattleEvent(state.pending[0]) && guard < 20) {
@@ -80,11 +82,16 @@ describe('Vagabond battle item damage', () => {
       if (event.stage === 'removeDefender' || event.stage === 'removeAttacker') {
         const victim =
           event.stage === 'removeDefender' ? event.defender : event.attacker
+        // Rule: 9.2.6 — Vagabond picks the damaged items: choose the last offered.
+        const params = battleResolver.legalActions(state, event, context)[0]?.params
+        const offered = params?.vagabondItems ?? []
+        const count = params?.itemCount?.[0] ?? 0
+        chosenItems = offered.slice(offered.length - count)
         battleResolver.apply(
           state,
           {
             event,
-            action: { type: 'resolveEvent', decline: true },
+            action: { type: 'resolveEvent', items: chosenItems },
             actor: victim,
           },
           context,
@@ -113,7 +120,8 @@ describe('Vagabond battle item damage', () => {
       ),
     ).toBe(true)
     // Die 3 vs swords ≥1 → at least 1 hit → ≥1 damaged item
-    expect(board.damaged.length).toBeGreaterThanOrEqual(1)
+    expect(chosenItems.length).toBeGreaterThanOrEqual(1)
+    expect(board.damaged).toEqual(chosenItems)
     void undamagedBefore
   })
 })

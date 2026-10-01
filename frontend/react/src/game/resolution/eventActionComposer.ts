@@ -7,6 +7,7 @@ import {
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
+  type VagabondItemChoiceView,
 } from '#game/resolution/ActionComposer.ts'
 import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
 
@@ -18,6 +19,24 @@ export {
 } from '#game/eventAutoPromptSelectors.ts'
 
 const FIELD_HOSPITAL_DECLINE_VALUE = 'decline'
+const SELECTED_OPTION_PREFIX = '✓ '
+
+function formatItemDamageLabel(
+  item: VagabondItemChoiceView,
+  isSelected: boolean,
+): string {
+  const face = item.exhausted ? `${item.type} (exhausted)` : item.type
+  return isSelected ? `${SELECTED_OPTION_PREFIX}${face}` : face
+}
+
+function formatItemDamageMessage(count: number, selectedCount: number): string {
+  const noun = count === 1 ? 'item' : 'items'
+  const base = `Vagabond — choose ${String(count)} ${noun} to damage`
+  if (selectedCount === count) {
+    return `${base} — Confirm when ready`
+  }
+  return `${base} (${String(selectedCount)}/${String(count)})`
+}
 
 type EventDraft =
   | { type: 'idle' }
@@ -35,6 +54,12 @@ type EventDraft =
   | { type: 'pickLeader'; leaders: string[] }
   | { type: 'pickForest'; forests: number[] }
   | { type: 'pickRemoval'; choices: BattleRemovalStepperChoice[] }
+  | {
+      type: 'pickItemDamage'
+      items: VagabondItemChoiceView[]
+      count: number
+      selectedIndexes: number[]
+    }
 
 /**
  * Pending resolveEvent composers (Field Hospitals + battle + setup picks).
@@ -64,6 +89,30 @@ export function createEventComposerHooks(): {
     promptOptions = []
     optionPresentation = undefined
     overlayKind = null
+  }
+
+  /** Rule: 9.2.6 — Vagabond toggles items until exactly `count` are chosen. */
+  const itemDamagePrompt = (
+    items: VagabondItemChoiceView[],
+    count: number,
+    selectedIndexes: number[],
+  ): ComposerOutcome => {
+    draft = { type: 'pickItemDamage', items, count, selectedIndexes }
+    optionPresentation = 'buttons'
+    promptOptions = items.map((item, index) => ({
+      label: formatItemDamageLabel(item, selectedIndexes.includes(index)),
+      value: String(index),
+    }))
+    return {
+      kind: 'incomplete',
+      prompt: {
+        message: formatItemDamageMessage(count, selectedIndexes.length),
+        highlightClearings: [],
+        enabledCardIds: null,
+        canConfirm: selectedIndexes.length === count,
+        canCancel: false,
+      },
+    }
   }
 
   const beginBattleRemoval = (
@@ -245,6 +294,11 @@ export function createEventComposerHooks(): {
         }
       }
 
+      const itemDamageCount = params.itemCount?.[0]
+      if (params.vagabondItems !== undefined && itemDamageCount !== undefined) {
+        return itemDamagePrompt(params.vagabondItems, itemDamageCount, [])
+      }
+
       // Ambush/foil skip: decline alone auto-submits.
       if (params.decline !== undefined && params.cardIds === undefined) {
         overlayKind = 'battle'
@@ -388,6 +442,26 @@ export function createEventComposerHooks(): {
     },
 
     chooseColumn: (value: string): ComposerOutcome | null => {
+      if (draft.type === 'pickItemDamage') {
+        const index = Number(value)
+        if (!Number.isInteger(index) || draft.items[index] === undefined) {
+          return null
+        }
+        if (draft.selectedIndexes.includes(index)) {
+          return itemDamagePrompt(
+            draft.items,
+            draft.count,
+            draft.selectedIndexes.filter((selected) => selected !== index),
+          )
+        }
+        if (draft.selectedIndexes.length >= draft.count) {
+          return itemDamagePrompt(draft.items, draft.count, draft.selectedIndexes)
+        }
+        return itemDamagePrompt(draft.items, draft.count, [
+          ...draft.selectedIndexes,
+          index,
+        ])
+      }
       if (draft.type === 'pickAmbush') {
         if (value !== FIELD_HOSPITAL_DECLINE_VALUE) {
           return null
@@ -439,9 +513,28 @@ export function createEventComposerHooks(): {
       return null
     },
 
+    confirm: (): ComposerOutcome | null => {
+      if (
+        draft.type !== 'pickItemDamage' ||
+        draft.selectedIndexes.length !== draft.count
+      ) {
+        return null
+      }
+      const chosenItems = draft.selectedIndexes.flatMap((index) => {
+        const item = draft.type === 'pickItemDamage' ? draft.items[index] : undefined
+        return item === undefined ? [] : [item]
+      })
+      clear()
+      return { kind: 'ready', action: { type: 'resolveEvent', items: chosenItems } }
+    },
+
     cancel: (): ComposerOutcome | null => {
       if (draft.type === 'idle' && overlayKind === null) {
         return null
+      }
+      // Non-skippable: hits must be assigned to items.
+      if (draft.type === 'pickItemDamage') {
+        return itemDamagePrompt(draft.items, draft.count, draft.selectedIndexes)
       }
       if (
         draft.type === 'pickKeep' ||
