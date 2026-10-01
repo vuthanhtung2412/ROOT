@@ -130,6 +130,45 @@ describe('Vagabond items', () => {
     board.tracks.bag.push({ type: 'bag', exhausted: false })
     expect(satchelCapacity(board)).toBe(8)
   })
+
+  it('Rule: 9.6.4 Check Item Capacity — Vagabond chooses which items to remove', () => {
+    const board = createFactionBoard('vagabond')
+    if (board.kind !== 'vagabond') return
+    const itemLimitWithoutBags = 6
+    board.satchel = [
+      { type: 'boot', exhausted: false },
+      { type: 'torch', exhausted: true },
+      { type: 'sword', exhausted: false },
+      { type: 'sword', exhausted: false },
+      { type: 'hammer', exhausted: false },
+      { type: 'crossbow', exhausted: false },
+    ]
+    board.damaged = [{ type: 'boot', exhausted: true }]
+    const state = minimalState({
+      factions: ['marquise', 'vagabond'],
+      players: [player(0, 'marquise'), player(1, 'vagabond', { board })],
+      currentSeat: 1,
+      phase: 'evening',
+      step: 'capacity',
+    })
+    const context = testContext({ state })
+    const specs = VAGABOND.legalActions(state, context)
+    expect(specs.map((spec) => spec.type)).toEqual(['vbRemoveItems'])
+    expect(specs[0]?.params?.itemCount).toEqual([1])
+    expect(specs[0]?.params?.vagabondItems).toHaveLength(itemLimitWithoutBags + 1)
+
+    VAGABOND.apply(
+      state,
+      { type: 'vbRemoveItems', items: [{ type: 'torch', exhausted: true }] },
+      context,
+    )
+    const after = boardOf(state, 1)
+    expect(after.satchel.some((item) => item.type === 'torch')).toBe(false)
+    expect(after.damaged).toEqual([{ type: 'boot', exhausted: true }])
+    expect(
+      VAGABOND.legalActions(state, context).map((spec) => spec.type),
+    ).toEqual(['endPhase'])
+  })
 })
 
 describe('Vagabond slip / move', () => {

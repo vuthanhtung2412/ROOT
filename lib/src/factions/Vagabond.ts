@@ -24,7 +24,10 @@ import {
   faceUpTeaCount,
   pawnClearing,
   placeItemInSatchelOrTrack,
+  capacityItemChoices,
+  overCapacityCount,
   refreshItems,
+  removeChosenCapacityItems,
   restoreRepairedItem,
 } from '#factions/vagabond/items.js'
 import {
@@ -203,6 +206,19 @@ export class Vagabond extends Faction {
     }
 
     if (state.phase === 'evening' && state.step === 'capacity') {
+      const overCapacity = overCapacityCount(board)
+      if (overCapacity > 0) {
+        // Rule: 9.6.4 — the Vagabond chooses which items leave the game.
+        specs.push({
+          type: 'vbRemoveItems',
+          actor: seat,
+          params: {
+            vagabondItems: capacityItemChoices(board),
+            itemCount: [overCapacity],
+          },
+        })
+        return specs
+      }
       specs.push({ type: 'endPhase', actor: seat })
       return specs
     }
@@ -230,6 +246,10 @@ export class Vagabond extends Faction {
           enforceCapacity(board)
         }
         return []
+      }
+      case 'vbRemoveItems': {
+        removeChosenCapacityItems(board, action.items)
+        return [{ t: 'action', actor: seat, action }]
       }
       case 'refresh': {
         state.turnScratch.birdsongWoodDone = true

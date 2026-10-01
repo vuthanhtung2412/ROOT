@@ -169,6 +169,78 @@ export function damageChosenItems(
   }
 }
 
+/** Rule: 9.6.4 — items over the limit across Satchel and Damaged box. */
+export function overCapacityCount(board: VagabondBoard): number {
+  return Math.max(
+    0,
+    board.satchel.length + board.damaged.length - satchelCapacity(board),
+  )
+}
+
+/** Items that count toward the limit: Satchel first, then Damaged box. */
+export function capacityItemChoices(board: VagabondBoard): VagabondItemChoice[] {
+  return [
+    ...board.satchel.map(
+      (item: VagabondItem): VagabondItemChoice => ({
+        type: item.type,
+        exhausted: item.exhausted,
+      }),
+    ),
+    ...board.damaged.map(
+      (item: VagabondItem): VagabondItemChoice => ({
+        type: item.type,
+        exhausted: item.exhausted,
+        damaged: true,
+      }),
+    ),
+  ]
+}
+
+function capacityPool(
+  board: VagabondBoard,
+  choice: VagabondItemChoice,
+): VagabondItem[] {
+  return choice.damaged === true ? board.damaged : board.satchel
+}
+
+/** True when `choices` names exactly the over-limit number of distinct items. */
+export function isValidCapacityRemoval(
+  board: VagabondBoard,
+  choices: readonly VagabondItemChoice[],
+): boolean {
+  if (choices.length !== overCapacityCount(board)) return false
+  const taken: Set<VagabondItem> = new Set()
+  for (const choice of choices) {
+    const match = capacityPool(board, choice).find(
+      (item: VagabondItem): boolean =>
+        !taken.has(item) &&
+        item.type === choice.type &&
+        item.exhausted === choice.exhausted,
+    )
+    if (match === undefined) return false
+    taken.add(match)
+  }
+  return true
+}
+
+/** Rule: 9.6.4 — remove the chosen items from the game permanently. */
+export function removeChosenCapacityItems(
+  board: VagabondBoard,
+  choices: readonly VagabondItemChoice[],
+): void {
+  if (!isValidCapacityRemoval(board, choices)) {
+    throw new RuleError('INVALID_CAPACITY_REMOVAL', { choices })
+  }
+  for (const choice of choices) {
+    const pool = capacityPool(board, choice)
+    const index = pool.findIndex(
+      (item: VagabondItem): boolean =>
+        item.type === choice.type && item.exhausted === choice.exhausted,
+    )
+    pool.splice(index, 1)
+  }
+}
+
 function removeItemFromBoard(board: VagabondBoard, target: VagabondItem): void {
   const satchelIndex = board.satchel.indexOf(target)
   if (satchelIndex >= 0) {

@@ -57,6 +57,8 @@ export type VagabondMoveChoice = {
 export type VagabondItemChoice = {
   type: ItemType
   exhausted: boolean
+  /** Set when the item sits in the Damaged box (item-limit removal only). */
+  damaged?: boolean
 }
 
 /**
@@ -223,6 +225,8 @@ export type Action =
       itemType: 'tea' | 'coin' | 'bag'
       from: 'track' | 'satchel'
     }
+  /** Rule: 9.6.4 Check Item Capacity — items the Vagabond removes from the game. */
+  | { type: 'vbRemoveItems'; items: VagabondItemChoice[] }
   | { type: 'takeDominance'; cardId: string }
   | {
       type: 'activateDominance'

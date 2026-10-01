@@ -57,6 +57,7 @@ export type ActionChoiceParamsView = {
 export type VagabondItemChoiceView = {
   type: string
   exhausted: boolean
+  damaged?: boolean
 }
 
 function isVagabondItemChoiceView(

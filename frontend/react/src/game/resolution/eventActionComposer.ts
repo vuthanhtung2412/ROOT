@@ -21,17 +21,31 @@ export {
 const FIELD_HOSPITAL_DECLINE_VALUE = 'decline'
 const SELECTED_OPTION_PREFIX = '✓ '
 
+/** `damage`: hits / full removal. `remove`: evening item limit (9.6.4). */
+type ItemPickPurpose = 'damage' | 'remove'
+
+const ITEM_REMOVAL_ACTION_TYPE = 'vbRemoveItems'
+
 function formatItemDamageLabel(
   item: VagabondItemChoiceView,
   isSelected: boolean,
 ): string {
-  const face = item.exhausted ? `${item.type} (exhausted)` : item.type
+  const notes: string[] = []
+  if (item.exhausted) notes.push('exhausted')
+  if (item.damaged === true) notes.push('damaged')
+  const face =
+    notes.length > 0 ? `${item.type} (${notes.join(', ')})` : item.type
   return isSelected ? `${SELECTED_OPTION_PREFIX}${face}` : face
 }
 
-function formatItemDamageMessage(count: number, selectedCount: number): string {
+function formatItemDamageMessage(
+  purpose: ItemPickPurpose,
+  count: number,
+  selectedCount: number,
+): string {
   const noun = count === 1 ? 'item' : 'items'
-  const base = `Vagabond — choose ${String(count)} ${noun} to damage`
+  const verb = purpose === 'damage' ? 'to damage' : 'to remove (over item limit)'
+  const base = `Vagabond — choose ${String(count)} ${noun} ${verb}`
   if (selectedCount === count) {
     return `${base} — Confirm when ready`
   }
@@ -56,6 +70,7 @@ type EventDraft =
   | { type: 'pickRemoval'; choices: BattleRemovalStepperChoice[] }
   | {
       type: 'pickItemDamage'
+      purpose: ItemPickPurpose
       items: VagabondItemChoiceView[]
       count: number
       selectedIndexes: number[]
@@ -93,11 +108,15 @@ export function createEventComposerHooks(): {
 
   /** Rule: 9.2.6 — Vagabond toggles items until exactly `count` are chosen. */
   const itemDamagePrompt = (
-    items: VagabondItemChoiceView[],
-    count: number,
+    pick: {
+      purpose: ItemPickPurpose
+      items: VagabondItemChoiceView[]
+      count: number
+    },
     selectedIndexes: number[],
   ): ComposerOutcome => {
-    draft = { type: 'pickItemDamage', items, count, selectedIndexes }
+    const { purpose, items, count } = pick
+    draft = { type: 'pickItemDamage', purpose, items, count, selectedIndexes }
     optionPresentation = 'buttons'
     promptOptions = items.map((item, index) => ({
       label: formatItemDamageLabel(item, selectedIndexes.includes(index)),
@@ -106,7 +125,7 @@ export function createEventComposerHooks(): {
     return {
       kind: 'incomplete',
       prompt: {
-        message: formatItemDamageMessage(count, selectedIndexes.length),
+        message: formatItemDamageMessage(purpose, count, selectedIndexes.length),
         highlightClearings: [],
         enabledCardIds: null,
         canConfirm: selectedIndexes.length === count,
@@ -217,6 +236,25 @@ export function createEventComposerHooks(): {
 
   const hooks: ActionComposerHooks = {
     begin: (spec: ActionSpec): ComposerOutcome | null => {
+      if (spec.type === ITEM_REMOVAL_ACTION_TYPE) {
+        const removalParams = readChoiceParams(spec)
+        const removalCount = removalParams.itemCount?.[0]
+        if (
+          removalParams.vagabondItems === undefined ||
+          removalCount === undefined
+        ) {
+          clear()
+          return null
+        }
+        return itemDamagePrompt(
+          {
+            purpose: 'remove',
+            items: removalParams.vagabondItems,
+            count: removalCount,
+          },
+          [],
+        )
+      }
       if (spec.type !== 'resolveEvent') {
         clear()
         return null
@@ -296,7 +334,14 @@ export function createEventComposerHooks(): {
 
       const itemDamageCount = params.itemCount?.[0]
       if (params.vagabondItems !== undefined && itemDamageCount !== undefined) {
-        return itemDamagePrompt(params.vagabondItems, itemDamageCount, [])
+        return itemDamagePrompt(
+          {
+            purpose: 'damage',
+            items: params.vagabondItems,
+            count: itemDamageCount,
+          },
+          [],
+        )
       }
 
       // Ambush/foil skip: decline alone auto-submits.
@@ -449,18 +494,14 @@ export function createEventComposerHooks(): {
         }
         if (draft.selectedIndexes.includes(index)) {
           return itemDamagePrompt(
-            draft.items,
-            draft.count,
+            draft,
             draft.selectedIndexes.filter((selected) => selected !== index),
           )
         }
         if (draft.selectedIndexes.length >= draft.count) {
-          return itemDamagePrompt(draft.items, draft.count, draft.selectedIndexes)
+          return itemDamagePrompt(draft, draft.selectedIndexes)
         }
-        return itemDamagePrompt(draft.items, draft.count, [
-          ...draft.selectedIndexes,
-          index,
-        ])
+        return itemDamagePrompt(draft, [...draft.selectedIndexes, index])
       }
       if (draft.type === 'pickAmbush') {
         if (value !== FIELD_HOSPITAL_DECLINE_VALUE) {
@@ -524,8 +565,10 @@ export function createEventComposerHooks(): {
         const item = draft.type === 'pickItemDamage' ? draft.items[index] : undefined
         return item === undefined ? [] : [item]
       })
+      const actionType =
+        draft.purpose === 'remove' ? ITEM_REMOVAL_ACTION_TYPE : 'resolveEvent'
       clear()
-      return { kind: 'ready', action: { type: 'resolveEvent', items: chosenItems } }
+      return { kind: 'ready', action: { type: actionType, items: chosenItems } }
     },
 
     cancel: (): ComposerOutcome | null => {
@@ -534,7 +577,7 @@ export function createEventComposerHooks(): {
       }
       // Non-skippable: hits must be assigned to items.
       if (draft.type === 'pickItemDamage') {
-        return itemDamagePrompt(draft.items, draft.count, draft.selectedIndexes)
+        return itemDamagePrompt(draft, draft.selectedIndexes)
       }
       if (
         draft.type === 'pickKeep' ||

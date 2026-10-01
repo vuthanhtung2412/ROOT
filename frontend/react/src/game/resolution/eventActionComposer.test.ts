@@ -331,6 +331,45 @@ describe('eventActionComposer setup picks', () => {
   })
 })
 
+describe('eventActionComposer Vagabond item limit', () => {
+  it('picks the over-limit items and submits vbRemoveItems', () => {
+    const eventComposer = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(eventComposer.hooks)
+
+    const opened = composer.begin(
+      makeActionSpec({
+        type: 'vbRemoveItems',
+        params: {
+          vagabondItems: [
+            { type: 'sword', exhausted: false },
+            { type: 'boot', exhausted: true, damaged: true },
+          ],
+          itemCount: [1],
+        },
+      }),
+    )
+    expect(opened).toMatchObject({
+      kind: 'incomplete',
+      prompt: {
+        message: 'Vagabond — choose 1 item to remove (over item limit) (0/1)',
+      },
+    })
+    expect(eventComposer.getPromptOptions()).toEqual([
+      { label: 'sword', value: '0' },
+      { label: 'boot (exhausted, damaged)', value: '1' },
+    ])
+    composer.chooseColumn('1')
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'vbRemoveItems',
+        items: [{ type: 'boot', exhausted: true, damaged: true }],
+      },
+    })
+  })
+})
+
 describe('eventActionComposer Vagabond item damage', () => {
   const VAGABOND_SEAT = 3
   const OFFERED_ITEMS = [

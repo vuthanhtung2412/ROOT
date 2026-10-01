@@ -185,7 +185,7 @@ export class AutoPromptController {
     }
     const itemDamageSpec = snapshot.legalActions.find(
       (spec: ActionSpec) =>
-        spec.type === 'resolveEvent' &&
+        (spec.type === 'resolveEvent' || spec.type === 'vbRemoveItems') &&
         spec.actor === actorSeat &&
         readChoiceParams(spec).vagabondItems !== undefined,
     )

@@ -517,6 +517,13 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       if (!cardId) return null
       return { type: 'vbCraft', cardId }
     }
+    case 'vbRemoveItems': {
+      // Item limit: remove the first itemCount offered items.
+      const offeredItems = paramList(spec.params, 'vagabondItems') ?? []
+      const removeCount = readNumberList(paramList(spec.params, 'itemCount'))[0]
+      if (removeCount === undefined) return null
+      return { type: 'vbRemoveItems', items: offeredItems.slice(0, removeCount) }
+    }
     case 'steal': {
       const target = pick(readNumberList(paramList(spec.params, 'defender')))
       if (target === undefined) return null
