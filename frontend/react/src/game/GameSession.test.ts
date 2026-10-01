@@ -226,6 +226,32 @@ describe('GameSession', () => {
       expect(session.getRequestPlayerId()).toBe(GUEST_PLAYER_ID)
     })
 
+    it('guest End game only leaves: no delete, join id kept for rejoin', async () => {
+      const playing = {
+        ...makeGameState({ status: 'playing' }),
+        players: lobbyState(['hidden-seat-0', GUEST_PLAYER_ID]).players,
+      }
+      const fetchMock = stubFetchSequence([
+        { body: { state: playing, historyLength: 4, mode: 'online' } },
+      ])
+      const storage = createMemoryStorage()
+      storage.setItem(
+        'root.react.playerIdentity',
+        JSON.stringify({
+          playerId: GUEST_PLAYER_ID,
+          apiBaseUrl: 'http://example.test',
+        }),
+      )
+      const session = createSession({ storage })
+      await session.resumeOnlineGame()
+
+      await session.restart()
+
+      expect(fetchMock.mock.calls.length).toBe(1)
+      expect(session.getSnapshot().state).toBeNull()
+      expect(storage.getItem('root.react.playerIdentity')).toContain(GUEST_PLAYER_ID)
+    })
+
     it('forgets a stored id that no longer owns a seat', async () => {
       stubFetchSequence([
         {

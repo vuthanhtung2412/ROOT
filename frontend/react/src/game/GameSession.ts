@@ -343,6 +343,10 @@ export class GameSession {
     this.setLoading(true)
     this.qaMode = false
     try {
+      // Already seated (left to the menu earlier): take the same seat back.
+      if (await this.resumeOnlineGame()) {
+        return true
+      }
       const lobby = await this.findOnlineLobby()
       if (lobby !== 'joinable') {
         this.setError(
@@ -530,8 +534,31 @@ export class GameSession {
     }
   }
 
-  /** End game: delete server slot, clear identity, close socket. */
+  /** Online: this browser holds a seat that is not the host's. */
+  private isOnlineGuest(): boolean {
+    const localSeat = this.getLocalSeat()
+    return !this.qaMode && localSeat !== null && localSeat !== ONLINE_HOST_SEAT
+  }
+
+  /**
+   * End game: delete server slot, clear identity, close socket.
+   * An online guest only leaves: the game goes on, the stored join id is kept
+   * so "Join online game" or a reload takes the seat back.
+   */
   async restart(): Promise<void> {
+    if (this.isOnlineGuest()) {
+      this.disconnectSocket()
+      this.localPlayerId = null
+      this.publish({
+        state: null,
+        legalActions: [],
+        historyLength: 0,
+        log: [],
+        error: null,
+        loading: false,
+      })
+      return
+    }
     this.setLoading(true)
     try {
       await this.api.deleteGame()
@@ -682,7 +709,15 @@ function actorSeatFromState(
   return buildTurnBannerViewModel(state, legalActions).actorSeat
 }
 
+const FRIENDLY_API_ERRORS: Readonly<Record<string, string>> = {
+  NOT_HOST: 'An online game is running — only its host can end it',
+  NOT_YOUR_SEAT: 'Not your seat',
+}
+
 function errorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return FRIENDLY_API_ERRORS[error.code] ?? error.message
+  }
   if (error instanceof Error) {
     return error.message
   }
