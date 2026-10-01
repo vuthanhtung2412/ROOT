@@ -3,6 +3,7 @@ import type { AllianceSupporterPilePick } from '#game/resolution/allianceActionC
 import { mergeBattleClearingHighlight } from '#game/battleOverlayModel.ts'
 import type { GameState } from '#api/client.ts'
 import type { GameSessionSnapshot } from '#game/GameSession.ts'
+import type { TurnBannerOption } from '#ui/TurnBanner.ts'
 
 export type ComposerOutcomeApplierDeps = {
   getLatestSnapshot: () => GameSessionSnapshot | null
@@ -10,7 +11,7 @@ export type ComposerOutcomeApplierDeps = {
     message: string
     canConfirm: boolean
     canCancel: boolean
-    options: Array<{ label: string; value: string }>
+    options: TurnBannerOption[]
     optionPresentation?: 'stepper' | 'buttons'
   } | null) => void
   syncLeaderPick: (leaders: string[] | null) => void
@@ -25,7 +26,7 @@ export type ComposerOutcomeApplierDeps = {
   submitAction: (action: { type: string; [key: string]: unknown }) => void
   getLeaderPickLeaders: () => string[] | null
   getOptionPresentation: () => 'stepper' | 'buttons' | undefined
-  getPromptOptions: () => Array<{ label: string; value: string }>
+  getPromptOptions: () => TurnBannerOption[]
   getDiscardSelection: () => string[]
   getSupporterPilePick: () => AllianceSupporterPilePick | null
   syncSupporterPilePick: (pick: AllianceSupporterPilePick | null) => void

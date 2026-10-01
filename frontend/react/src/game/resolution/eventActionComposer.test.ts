@@ -356,8 +356,16 @@ describe('eventActionComposer Vagabond item limit', () => {
       },
     })
     expect(eventComposer.getPromptOptions()).toEqual([
-      { label: 'sword', value: '0' },
-      { label: 'boot (exhausted, damaged)', value: '1' },
+      {
+        label: 'sword',
+        value: '0',
+        item: { type: 'sword', exhausted: false, damaged: false, selected: false },
+      },
+      {
+        label: 'boot (exhausted, damaged)',
+        value: '1',
+        item: { type: 'boot', exhausted: true, damaged: true, selected: false },
+      },
     ])
     composer.chooseColumn('1')
     expect(composer.confirm()).toEqual({
@@ -399,12 +407,9 @@ describe('eventActionComposer Vagabond item damage', () => {
         canCancel: false,
       },
     })
-    expect(eventComposer.getPromptOptions()).toEqual([
-      { label: 'boot', value: '0' },
-      { label: 'boot (exhausted)', value: '1' },
-      { label: 'torch', value: '2' },
-      { label: 'sword', value: '3' },
-    ])
+    expect(
+      eventComposer.getPromptOptions().map((option) => option.label),
+    ).toEqual(['boot', 'boot (exhausted)', 'torch', 'sword'])
     expect(composer.confirm().kind).toBe('incomplete')
 
     composer.chooseColumn('0')
@@ -424,6 +429,7 @@ describe('eventActionComposer Vagabond item damage', () => {
     expect(eventComposer.getPromptOptions()[1]).toEqual({
       label: '✓ boot (exhausted)',
       value: '1',
+      item: { type: 'boot', exhausted: true, damaged: false, selected: true },
     })
 
     expect(composer.confirm()).toEqual({

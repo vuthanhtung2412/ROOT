@@ -15,8 +15,10 @@ import {
 } from '#ui/countStepper.ts'
 import type {
   TurnBannerComposerView,
+  TurnBannerOptionItem,
   TurnBannerViewModel,
 } from '#ui/TurnBanner.ts'
+import { imagePathForAssetKey, itemTextureKey } from '#assets/gameAssets.ts'
 
 const BANNER_CANCEL_LABEL = 'X'
 const BANNER_CONFIRM_LABEL = 'OK'
@@ -111,21 +113,85 @@ export function TurnBanner(): JSX.Element | null {
       ) : null}
       {composer !== null && !useStepper && composer.options.length > 0 ? (
         <div className="col-span-full flex flex-row flex-wrap items-center justify-center gap-2.5">
-          {composer.options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className="root-button root-button--quiet px-2 py-1 text-sm"
-              onClick={() => {
-                callbacks.onBannerPickOption(option.value)
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
+          {composer.options.map((option) =>
+            option.item !== undefined ? (
+              <ItemOptionButton
+                key={option.value}
+                label={option.label}
+                item={option.item}
+                onPick={() => {
+                  callbacks.onBannerPickOption(option.value)
+                }}
+              />
+            ) : (
+              <button
+                key={option.value}
+                type="button"
+                className="root-button root-button--quiet px-2 py-1 text-sm"
+                onClick={() => {
+                  callbacks.onBannerPickOption(option.value)
+                }}
+              >
+                {option.label}
+              </button>
+            ),
+          )}
         </div>
       ) : null}
     </div>
+  )
+}
+
+const ITEM_OPTION_BASE_CLASS =
+  'relative m-0 box-border size-14 cursor-pointer border-2 bg-parchment p-0.5 transition-transform duration-75 ease-out md:size-16'
+const ITEM_OPTION_SELECTED_CLASS =
+  'border-gold -translate-y-1 shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-gold)_80%,var(--color-ink))]'
+const ITEM_OPTION_IDLE_CLASS = 'border-ink-soft'
+/** Same dimming as exhausted items on the Vagabond faction board. */
+const ITEM_OPTION_EXHAUSTED_IMAGE_CLASS = 'opacity-40'
+
+/** Vagabond item as faction-board artwork: dim = exhausted, gold = selected. */
+function ItemOptionButton(props: {
+  label: string
+  item: TurnBannerOptionItem
+  onPick: () => void
+}): JSX.Element {
+  const textureKey = itemTextureKey(props.item.type)
+  const imagePath = textureKey !== null ? imagePathForAssetKey(textureKey) : null
+  return (
+    <button
+      type="button"
+      className={`${ITEM_OPTION_BASE_CLASS} ${
+        props.item.selected ? ITEM_OPTION_SELECTED_CLASS : ITEM_OPTION_IDLE_CLASS
+      }`}
+      aria-label={props.label}
+      aria-pressed={props.item.selected}
+      title={props.label}
+      onClick={props.onPick}
+    >
+      {imagePath !== null ? (
+        <img
+          className={`pointer-events-none block size-full object-contain ${
+            props.item.exhausted ? ITEM_OPTION_EXHAUSTED_IMAGE_CLASS : ''
+          }`}
+          src={imagePath}
+          alt={props.item.type}
+          draggable={false}
+        />
+      ) : (
+        <span className="font-mono text-xs text-ink">{props.item.type}</span>
+      )}
+      {props.item.damaged ? (
+        <span className="pointer-events-none absolute right-0 bottom-0 left-0 bg-ink/80 text-center font-mono text-[9px] leading-tight text-parchment">
+          damaged
+        </span>
+      ) : null}
+      {props.item.selected ? (
+        <span className="pointer-events-none absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full border border-ink bg-gold font-mono text-xs text-ink">
+          ✓
+        </span>
+      ) : null}
+    </button>
   )
 }
 

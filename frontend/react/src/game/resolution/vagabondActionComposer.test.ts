@@ -79,8 +79,16 @@ describe('vagabondActionComposer multi-target', () => {
       prompt: { message: 'Aid — pick item to exhaust' },
     })
     expect(vagabond.getPromptOptions()).toEqual([
-      { label: 'boot', value: 'cost:boot' },
-      { label: 'sword', value: 'cost:sword' },
+      {
+        label: 'boot',
+        value: 'cost:boot',
+        item: { type: 'boot', exhausted: false, damaged: false, selected: false },
+      },
+      {
+        label: 'sword',
+        value: 'cost:sword',
+        item: { type: 'sword', exhausted: false, damaged: false, selected: false },
+      },
     ])
     expect(composer.chooseColumn('cost:sword')).toEqual({
       kind: 'ready',
@@ -115,7 +123,11 @@ describe('vagabondActionComposer multi-target', () => {
       prompt: { message: 'Aid — take a crafted item?' },
     })
     expect(vagabond.getPromptOptions()).toEqual([
-      { label: 'take boot', value: 'take:boot' },
+      {
+        label: 'take boot',
+        value: 'take:boot',
+        item: { type: 'boot', exhausted: false, damaged: false, selected: false },
+      },
       { label: 'take nothing', value: 'take-nothing' },
     ])
     expect(composer.chooseColumn('take:boot')).toEqual({
@@ -152,8 +164,16 @@ describe('vagabondActionComposer multi-target', () => {
       prompt: { message: 'Repair — pick damaged item', highlightClearings: [] },
     })
     expect(vagabond.getPromptOptions()).toEqual([
-      { label: 'boot (exhausted)', value: 'repair:0' },
-      { label: 'torch', value: 'repair:1' },
+      {
+        label: 'boot (exhausted)',
+        value: 'repair:0',
+        item: { type: 'boot', exhausted: true, damaged: true, selected: false },
+      },
+      {
+        label: 'torch',
+        value: 'repair:1',
+        item: { type: 'torch', exhausted: false, damaged: true, selected: false },
+      },
     ])
     expect(composer.chooseColumn('repair:1')).toEqual({
       kind: 'ready',

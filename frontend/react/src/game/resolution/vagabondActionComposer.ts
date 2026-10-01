@@ -4,6 +4,7 @@ import {
   type ComposerOutcome,
   readChoiceParams,
 } from '#game/resolution/ActionComposer.ts'
+import type { TurnBannerOption, TurnBannerOptionItem } from '#ui/TurnBanner.ts'
 
 type VagabondDraft =
   | { type: 'idle' }
@@ -37,6 +38,11 @@ type AidDraft = {
   costItem?: string
 }
 
+/** Artwork for a face-up, undamaged, not-yet-picked item option. */
+function faceUpItemArtwork(itemType: string): TurnBannerOptionItem {
+  return { type: itemType, exhausted: false, damaged: false, selected: false }
+}
+
 const REPAIR_VALUE_PREFIX = 'repair:'
 const AID_COST_VALUE_PREFIX = 'cost:'
 const AID_TAKE_VALUE_PREFIX = 'take:'
@@ -57,10 +63,10 @@ function isVbMoveChoice(
 export function createVagabondComposerHooks(): {
   hooks: ActionComposerHooks
   getDraft: () => VagabondDraft
-  getPromptOptions: () => Array<{ label: string; value: string }>
+  getPromptOptions: () => TurnBannerOption[]
 } {
   let draft: VagabondDraft = { type: 'idle' }
-  let promptOptions: Array<{ label: string; value: string }> = []
+  let promptOptions: TurnBannerOption[] = []
 
   function setDefenderPrompt(
     message: string,
@@ -103,6 +109,7 @@ export function createVagabondComposerHooks(): {
       promptOptions = aid.costItemTypes.map((itemType) => ({
         label: itemType,
         value: `${AID_COST_VALUE_PREFIX}${itemType}`,
+        item: faceUpItemArtwork(itemType),
       }))
       return {
         kind: 'incomplete',
@@ -121,6 +128,7 @@ export function createVagabondComposerHooks(): {
         ...aid.takeItemTypes.map((itemType) => ({
           label: `take ${itemType}`,
           value: `${AID_TAKE_VALUE_PREFIX}${itemType}`,
+          item: faceUpItemArtwork(itemType),
         })),
         { label: 'take nothing', value: AID_TAKE_NOTHING_VALUE },
       ]
@@ -262,6 +270,16 @@ export function createVagabondComposerHooks(): {
           return {
             label: item?.exhausted === true ? `${itemName} (exhausted)` : itemName,
             value: `${REPAIR_VALUE_PREFIX}${String(itemIndex)}`,
+            ...(item !== undefined
+              ? {
+                  item: {
+                    type: item.type,
+                    exhausted: item.exhausted,
+                    damaged: true,
+                    selected: false,
+                  },
+                }
+              : {}),
           }
         })
         return {

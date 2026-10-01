@@ -10,6 +10,7 @@ import {
   type VagabondItemChoiceView,
 } from '#game/resolution/ActionComposer.ts'
 import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
+import type { TurnBannerOption } from '#ui/TurnBanner.ts'
 
 export {
   battleAmbushRole,
@@ -82,7 +83,7 @@ type EventDraft =
 export function createEventComposerHooks(): {
   hooks: ActionComposerHooks
   getDraft: () => EventDraft
-  getPromptOptions: () => Array<{ label: string; value: string }>
+  getPromptOptions: () => TurnBannerOption[]
   getOptionPresentation: () => 'stepper' | 'buttons' | undefined
   getOverlayKind: () => 'fieldHospital' | 'battle' | null
   beginBattleRemoval: (
@@ -95,7 +96,7 @@ export function createEventComposerHooks(): {
   ) => ComposerOutcome
 } {
   let draft: EventDraft = { type: 'idle' }
-  let promptOptions: Array<{ label: string; value: string }> = []
+  let promptOptions: TurnBannerOption[] = []
   let optionPresentation: 'stepper' | 'buttons' | undefined
   let overlayKind: 'fieldHospital' | 'battle' | null = null
 
@@ -118,10 +119,19 @@ export function createEventComposerHooks(): {
     const { purpose, items, count } = pick
     draft = { type: 'pickItemDamage', purpose, items, count, selectedIndexes }
     optionPresentation = 'buttons'
-    promptOptions = items.map((item, index) => ({
-      label: formatItemDamageLabel(item, selectedIndexes.includes(index)),
-      value: String(index),
-    }))
+    promptOptions = items.map((item, index) => {
+      const isSelected = selectedIndexes.includes(index)
+      return {
+        label: formatItemDamageLabel(item, isSelected),
+        value: String(index),
+        item: {
+          type: item.type,
+          exhausted: item.exhausted,
+          damaged: item.damaged === true,
+          selected: isSelected,
+        },
+      }
+    })
     return {
       kind: 'incomplete',
       prompt: {
