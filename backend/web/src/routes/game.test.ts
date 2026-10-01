@@ -81,6 +81,66 @@ describe('game routes', () => {
     expect(store.game?.history.length).toBe((historyBeforeAction ?? 0) + 1)
   })
 
+  describe('online mode seat checks', () => {
+    const HOST_PLAYER_ID = 'host-secret'
+    const GUEST_PLAYER_ID = 'guest-secret'
+    const KEEP_CORNER_ACTION = { type: 'resolveEvent', clearing: 0 }
+
+    function asPlayer(playerId: string, method: string, body?: object): RequestInit {
+      return {
+        method,
+        headers: { 'Content-Type': 'application/json', 'X-Player-Id': playerId },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      }
+    }
+
+    async function createOnlineLobby(): Promise<void> {
+      await app.request(
+        '/game',
+        jsonRequest('POST', { factions: ['marquise', 'eyrie'], mode: 'online' }),
+      )
+      await app.request('/game/join', jsonRequest('POST', { playerId: HOST_PLAYER_ID }))
+      await app.request('/game/join', jsonRequest('POST', { playerId: GUEST_PLAYER_ID }))
+    }
+
+    it('only the host may start', async () => {
+      await createOnlineLobby()
+      const guestStart = await app.request('/game/start', asPlayer(GUEST_PLAYER_ID, 'POST'))
+      expect(guestStart.status).toBe(403)
+      expect(await guestStart.json()).toMatchObject({ code: 'NOT_YOUR_SEAT' })
+
+      const anonymousStart = await app.request('/game/start', { method: 'POST' })
+      expect(anonymousStart.status).toBe(403)
+
+      const hostStart = await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
+      expect(hostStart.status).toBe(200)
+    })
+
+    it('rejects an action from a seat that is not the actor', async () => {
+      await createOnlineLobby()
+      await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
+
+      // Setup: Marquise (host, seat 0) must choose the keep corner.
+      const guestAction = await app.request(
+        '/game/actions',
+        asPlayer(GUEST_PLAYER_ID, 'POST', KEEP_CORNER_ACTION),
+      )
+      expect(guestAction.status).toBe(403)
+
+      const anonymousAction = await app.request(
+        '/game/actions',
+        jsonRequest('POST', KEEP_CORNER_ACTION),
+      )
+      expect(anonymousAction.status).toBe(403)
+
+      const hostAction = await app.request(
+        '/game/actions',
+        asPlayer(HOST_PLAYER_ID, 'POST', KEEP_CORNER_ACTION),
+      )
+      expect(hostAction.status).toBe(200)
+    })
+  })
+
   it('defaults to hotseat mode and reports it on GET', async () => {
     const createResponse = await app.request(
       '/game',

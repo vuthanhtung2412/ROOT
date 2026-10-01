@@ -1,5 +1,6 @@
 import { cors } from 'hono/cors'
 import type { MiddlewareHandler } from 'hono'
+import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
 
 /** Capacitor WKWebView / Android WebView origins (no port). */
 const CAPACITOR_APP_ORIGINS: ReadonlySet<string> = new Set([
@@ -44,5 +45,5 @@ export const corsMiddleware: MiddlewareHandler = cors({
     return null
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type'],
+  allowHeaders: ['Content-Type', PLAYER_ID_HEADER],
 })

@@ -9,7 +9,16 @@ import {
 } from '@root/lib'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { logGameEvent } from '#debug/logGame.js'
-import { gameExists, HttpError, noGame } from '#middleware/errors.js'
+import {
+  gameExists,
+  HttpError,
+  noGame,
+  notYourSeat,
+} from '#middleware/errors.js'
+import {
+  mayPlayerSendAction,
+  PLAYER_ID_HEADER,
+} from '#view/actionSeatGuard.js'
 import { errorResponses, ReplaceQuerySchema } from '#schemas/common.js'
 import {
   ActionResultSchema,
@@ -34,6 +43,20 @@ import {
 function requireGame(): Game {
   if (!store.game) noGame()
   return store.game
+}
+
+/** Online mode only: reject callers whose seat may not send this action type. */
+function requireSeatForAction(
+  game: Game,
+  playerId: string | undefined,
+  actionType: string,
+): void {
+  if (store.mode !== 'online') {
+    return
+  }
+  if (!mayPlayerSendAction(game, playerId, actionType)) {
+    notYourSeat()
+  }
 }
 
 export const gameRoutes = new OpenAPIHono()
@@ -125,6 +148,7 @@ const startRoute = createRoute({
 
 gameRoutes.openapi(startRoute, (context) => {
   const game = requireGame()
+  requireSeatForAction(game, context.req.header(PLAYER_ID_HEADER), 'start')
   const result = game.start()
   logGameEvent('START', result.state, { type: 'start' })
   broadcastCurrentGame()
@@ -287,6 +311,7 @@ gameRoutes.openapi(postActionsRoute, async (context) => {
   if (!isAction(body)) {
     throw new HttpError(400, 'BAD_ACTION', 'invalid action shape')
   }
+  requireSeatForAction(game, context.req.header(PLAYER_ID_HEADER), body.type)
   const result = game.apply(body)
   logGameEvent('ACT', result.state, body, result.log)
   broadcastCurrentGame()
