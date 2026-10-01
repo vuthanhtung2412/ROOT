@@ -23,7 +23,7 @@ import {
   LogResponseSchema,
   UndoResponseSchema,
 } from '#schemas/game.js'
-import { store } from '#store/GameStore.js'
+import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
 import { broadcastCurrentGame } from '#ws/GameHub.js'
 import {
   isAction,
@@ -74,9 +74,10 @@ gameRoutes.openapi(createGameRoute, async (context) => {
             throw new HttpError(400, 'BAD_FACTIONS', body.factions)
           })()
   store.game = Game.create({ seed, factions })
+  store.mode = body.mode ?? DEFAULT_LOBBY_MODE
   logGameEvent('CREATE', store.game.state)
   broadcastCurrentGame()
-  return context.json({ state: store.game.state }, 201)
+  return context.json({ state: store.game.state, mode: store.mode }, 201)
 })
 
 const joinRoute = createRoute({
@@ -150,6 +151,7 @@ gameRoutes.openapi(getGameRoute, (context) => {
     {
       state: game.state,
       historyLength: game.history.length,
+      mode: store.mode,
     },
     200,
   )
@@ -234,8 +236,10 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
       err instanceof Error ? err.message : 'fromJSON failed',
     )
   }
+  // Loaded snapshots are QA / dev slots: every seat is driven from one device.
+  store.mode = DEFAULT_LOBBY_MODE
   logGameEvent('LOAD', store.game.state)
-  return context.json({ state: store.game.state }, 200)
+  return context.json({ state: store.game.state, mode: store.mode }, 200)
 })
 
 const getActionsRoute = createRoute({
@@ -401,6 +405,7 @@ const deleteGameRoute = createRoute({
 
 gameRoutes.openapi(deleteGameRoute, (context) => {
   store.game = null
+  store.mode = DEFAULT_LOBBY_MODE
   broadcastCurrentGame()
   return context.body(null, 204)
 })

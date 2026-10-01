@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { app } from '#openapi.js'
-import { store } from '#store/GameStore.js'
+import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
 
 function jsonRequest(method: string, body: object): RequestInit {
   return {
@@ -13,10 +13,12 @@ function jsonRequest(method: string, body: object): RequestInit {
 describe('game routes', () => {
   beforeEach((): void => {
     store.game = null
+    store.mode = DEFAULT_LOBBY_MODE
   })
 
   afterEach((): void => {
     store.game = null
+    store.mode = DEFAULT_LOBBY_MODE
   })
 
   it('supports the game lifecycle, snapshots, undo, and slot conflicts', async () => {
@@ -77,5 +79,33 @@ describe('game routes', () => {
     })
     expect(restoreResponse.status).toBe(200)
     expect(store.game?.history.length).toBe((historyBeforeAction ?? 0) + 1)
+  })
+
+  it('defaults to hotseat mode and reports it on GET', async () => {
+    const createResponse = await app.request(
+      '/game',
+      jsonRequest('POST', { factions: ['marquise', 'eyrie'] }),
+    )
+    expect(await createResponse.json()).toMatchObject({ mode: 'hotseat' })
+    const getResponse = await app.request('/game')
+    expect(await getResponse.json()).toMatchObject({ mode: 'hotseat' })
+  })
+
+  it('creates an online lobby; a loaded snapshot falls back to hotseat', async () => {
+    const createResponse = await app.request(
+      '/game',
+      jsonRequest('POST', { factions: ['marquise', 'eyrie'], mode: 'online' }),
+    )
+    expect(await createResponse.json()).toMatchObject({ mode: 'online' })
+    expect(store.mode).toBe('online')
+
+    const snapshot = await (await app.request('/game/snapshot')).text()
+    const restoreResponse = await app.request('/game/snapshot?replace=1', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: snapshot,
+    })
+    expect(restoreResponse.status).toBe(200)
+    expect(store.mode).toBe('hotseat')
   })
 })
