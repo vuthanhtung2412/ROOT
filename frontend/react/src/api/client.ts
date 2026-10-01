@@ -11,6 +11,7 @@ export {
   type CreateGameInput,
   type GameState,
   type LegalActionsResponse,
+  type LobbyMode,
 } from '@root/web-client/game-api'
 
 const API_REQUEST_TIMEOUT_MILLISECONDS = 10_000
@@ -20,6 +21,8 @@ export type FrontendApiClient = GameApi
 export type CreateFrontendApiOptions = {
   baseUrl?: string
   client?: RootWebClient
+  /** Current join id, sent as a header so the server can check the seat. */
+  playerId?: () => string | null
 }
 
 export function createFrontendApi(
@@ -28,6 +31,7 @@ export function createFrontendApi(
   return createGameApi({
     ...(options.baseUrl === undefined ? {} : { baseUrl: options.baseUrl }),
     ...(options.client === undefined ? {} : { client: options.client }),
+    ...(options.playerId === undefined ? {} : { playerId: options.playerId }),
     requestTimeoutMilliseconds: API_REQUEST_TIMEOUT_MILLISECONDS,
   })
 }

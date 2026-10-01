@@ -39,10 +39,14 @@
         "properties": {
           "state": {
             "$ref": "#/components/schemas/GameState"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/LobbyMode"
           }
         },
         "required": [
-          "state"
+          "state",
+          "mode"
         ]
       },
       "GameState": {
@@ -50,6 +54,13 @@
         "additionalProperties": {
           "nullable": true
         }
+      },
+      "LobbyMode": {
+        "type": "string",
+        "enum": [
+          "hotseat",
+          "online"
+        ]
       },
       "ErrorBody": {
         "type": "object",
@@ -73,6 +84,9 @@
             "items": {
               "$ref": "#/components/schemas/FactionId"
             }
+          },
+          "mode": {
+            "$ref": "#/components/schemas/LobbyMode"
           }
         }
       },
@@ -130,11 +144,15 @@
           "historyLength": {
             "type": "integer",
             "minimum": 0
+          },
+          "mode": {
+            "$ref": "#/components/schemas/LobbyMode"
           }
         },
         "required": [
           "state",
-          "historyLength"
+          "historyLength",
+          "mode"
         ]
       },
       "GameSnapshot": {

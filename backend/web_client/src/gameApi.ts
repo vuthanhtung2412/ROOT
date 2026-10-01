@@ -80,9 +80,15 @@ export type LegalActionsResponse = {
   actions: ActionSpec[]
 }
 
+export type LobbyMode = components['schemas']['LobbyMode']
+
+/** Request header carrying the caller's join id (online mode seat check). */
+export const PLAYER_ID_HEADER = 'X-Player-Id'
+
 export type CreateGameInput = {
   factions?: string[]
   replace?: boolean
+  mode?: LobbyMode
 }
 
 export type CreateGameApiOptions = {
@@ -90,13 +96,21 @@ export type CreateGameApiOptions = {
   client?: RootWebClient
   request?: (request: Request) => Promise<Response>
   requestTimeoutMilliseconds?: number
+  /** Current join id, sent on every request; null while not seated. */
+  playerId?: () => string | null
 }
 
 export type GameApi = {
-  createGame: (input?: CreateGameInput) => Promise<{ state: GameState }>
+  createGame: (
+    input?: CreateGameInput,
+  ) => Promise<{ state: GameState; mode: LobbyMode }>
   join: (playerId: string) => Promise<ActionResult>
   start: () => Promise<ActionResult>
-  getGame: () => Promise<{ state: GameState; historyLength: number }>
+  getGame: () => Promise<{
+    state: GameState
+    historyLength: number
+    mode: LobbyMode
+  }>
   gameView: () => Promise<string>
   getSnapshot: () => Promise<GameSnapshot>
   loadSnapshot: (snapshot: unknown, replace?: boolean) => Promise<{ state: GameState }>
@@ -241,13 +255,38 @@ function timeoutRequest(
   }
 }
 
+/** Wrap a sender so each request carries the caller's join id when known. */
+function withPlayerIdHeader(
+  send: (request: Request) => Promise<Response>,
+  readPlayerId: () => string | null,
+): (request: Request) => Promise<Response> {
+  return async (request: Request): Promise<Response> => {
+    const playerId = readPlayerId()
+    if (playerId === null || playerId === '') {
+      return send(request)
+    }
+    const headers = new Headers(request.headers)
+    headers.set(PLAYER_ID_HEADER, playerId)
+    return send(new Request(request, { headers }))
+  }
+}
+
 function createClient(options: CreateGameApiOptions): RootWebClient {
   if (options.client !== undefined) return options.client
-  const request =
+  const baseRequest =
     options.request ??
     (options.requestTimeoutMilliseconds === undefined
       ? undefined
       : timeoutRequest(options.requestTimeoutMilliseconds))
+  const request =
+    options.playerId === undefined
+      ? baseRequest
+      : withPlayerIdHeader(
+          baseRequest ??
+            ((plainRequest: Request): Promise<Response> =>
+              globalThis.fetch(plainRequest)),
+          options.playerId,
+        )
   return createRootWebClient({
     ...(options.baseUrl === undefined ? {} : { baseUrl: options.baseUrl }),
     ...(request === undefined ? {} : { request }),
@@ -260,18 +299,22 @@ export function createGameApi(
   const client = createClient(options)
 
   return {
-    async createGame(input: CreateGameInput = {}): Promise<{ state: GameState }> {
+    async createGame(
+      input: CreateGameInput = {},
+    ): Promise<{ state: GameState; mode: LobbyMode }> {
       const result = await client.POST('/game', {
         params: {
           query: input.replace === true ? { replace: '1' } : {},
         },
-        body:
-          input.factions === undefined
+        body: {
+          ...(input.factions === undefined
             ? {}
-            : { factions: parseFactionIds(input.factions) },
+            : { factions: parseFactionIds(input.factions) }),
+          ...(input.mode === undefined ? {} : { mode: input.mode }),
+        },
       })
       const data = requireData(result)
-      return { state: parseGameState(data.state) }
+      return { state: parseGameState(data.state), mode: data.mode }
     },
 
     async join(playerId: string): Promise<ActionResult> {
@@ -285,11 +328,16 @@ export function createGameApi(
       return parseActionResult(requireData(await client.POST('/game/start')))
     },
 
-    async getGame(): Promise<{ state: GameState; historyLength: number }> {
+    async getGame(): Promise<{
+      state: GameState
+      historyLength: number
+      mode: LobbyMode
+    }> {
       const data = requireData(await client.GET('/game'))
       return {
         state: parseGameState(data.state),
         historyLength: data.historyLength,
+        mode: data.mode,
       }
     },
 

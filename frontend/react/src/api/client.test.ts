@@ -33,6 +33,29 @@ describe('createFrontendApi', () => {
     expect(requestUrl).toContain('/game')
   })
 
+  it('sends the player id header and the lobby mode', async () => {
+    const state = makeGameState({ status: 'waiting' })
+    const fetchMock = vi.fn().mockResolvedValue(
+      makeFetchResponse({ state, mode: 'online' }, 201),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const api = createFrontendApi({
+      baseUrl: 'http://example.test',
+      playerId: (): string | null => 'seat-secret',
+    })
+    const result = await api.createGame({
+      factions: ['marquise', 'eyrie'],
+      mode: 'online',
+    })
+
+    expect(result.mode).toBe('online')
+    const sentRequest: unknown = fetchMock.mock.calls[0]![0]
+    if (!(sentRequest instanceof Request)) throw new Error('expected Request')
+    expect(sentRequest.headers.get('X-Player-Id')).toBe('seat-secret')
+    expect(await sentRequest.json()).toMatchObject({ mode: 'online' })
+  })
+
   it('throws ApiError with server code on failure', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       makeFetchResponse({ code: 'GAME_EXISTS', detail: null }, 409),
