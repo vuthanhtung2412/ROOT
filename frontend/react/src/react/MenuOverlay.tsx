@@ -24,11 +24,14 @@ import {
   type MenuPlayerCount,
 } from '#game/menuPartySetup.ts'
 
+/** Single-screen "Start game" and QA shortcuts only exist in dev builds. */
+const IS_DEVELOPMENT_BUILD: boolean = import.meta.env.DEV === true
+
 const DEFAULT_MENU: MenuHudState = {
   statusText: '',
   statusColor: '#c44',
   playPending: false,
-  showQaContinue: import.meta.env.DEV === true,
+  showQaContinue: IS_DEVELOPMENT_BUILD,
   lobby: null,
 }
 
@@ -222,19 +225,21 @@ export function MenuOverlay(): JSX.Element | null {
           </ul>
         </fieldset>
 
-        <button
-          type="button"
-          className="root-button root-button--accent min-w-[200px] px-[22px] py-2.5 font-display text-2xl tracking-[0.02em]"
-          disabled={menu.playPending || !validation.ok}
-          onClick={() => {
-            if (!validation.ok) {
-              return
-            }
-            callbacks.onStartParty(validation.factions)
-          }}
-        >
-          Start game
-        </button>
+        {IS_DEVELOPMENT_BUILD ? (
+          <button
+            type="button"
+            className="root-button root-button--accent min-w-[200px] px-[22px] py-2.5 font-display text-2xl tracking-[0.02em]"
+            disabled={menu.playPending || !validation.ok}
+            onClick={() => {
+              if (!validation.ok) {
+                return
+              }
+              callbacks.onStartParty(validation.factions)
+            }}
+          >
+            Start game
+          </button>
+        ) : null}
         <div className="flex flex-row flex-wrap justify-center gap-2">
           <button
             type="button"
