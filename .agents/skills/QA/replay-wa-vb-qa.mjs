@@ -106,7 +106,7 @@ function createDriver(page) {
             caption.id = 'root-qa-caption'
             document.body.appendChild(caption)
           }
-          caption.style.cssText = `position:fixed;z-index:2147483646;pointer-events:none;left:12px;top:505px;width:340px;background:${colors[captionStatus] ?? '#1f2937'};color:#fff;font:600 17px/1.3 system-ui;padding:10px 12px;border-radius:8px;box-shadow:0 2px 8px #0008`
+          caption.style.cssText = `position:fixed;z-index:2147483646;pointer-events:none;left:12px;bottom:130px;width:320px;background:${colors[captionStatus] ?? '#1f2937'};color:#fff;font:600 17px/1.3 system-ui;padding:10px 12px;border-radius:8px;box-shadow:0 2px 8px #0008`
           caption.textContent = captionStatus ? `[${captionStatus}] ${captionText}` : captionText
         },
         { captionText: text, captionStatus: status ?? null },
