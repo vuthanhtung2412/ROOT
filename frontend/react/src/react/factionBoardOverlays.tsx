@@ -211,7 +211,7 @@ function RemainingTrackTokens(props: {
         layout={props.layout}
         imagePath={imagePath}
         alt={props.alt}
-        round={props.round}
+        round={props.round === true}
       />,
     )
   }

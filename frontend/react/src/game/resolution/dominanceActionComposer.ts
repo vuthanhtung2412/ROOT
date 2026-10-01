@@ -130,9 +130,7 @@ export function createDominanceComposerHooks(): {
           }
         }
         if (draft.targets.length === 1) {
-          draft = { type: 'idle' }
-          promptOptions = []
-          return {
+          const outcome: ComposerOutcome = {
             kind: 'ready',
             action: {
               type: 'activateDominance',
@@ -140,6 +138,9 @@ export function createDominanceComposerHooks(): {
               coalitionTarget: draft.targets[0]!,
             },
           }
+          draft = { type: 'idle' }
+          promptOptions = []
+          return outcome
         }
         draft = {
           type: 'activateDominance',
