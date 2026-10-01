@@ -36,6 +36,7 @@ import {
   LogResponseSchema,
   UndoResponseSchema,
 } from '#schemas/game.js'
+import { persistCurrentGame } from '#store/gamePersistence.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
 import {
@@ -53,6 +54,12 @@ import {
 function requireGame(): Game {
   if (!store.game) noGame()
   return store.game
+}
+
+/** After every slot change: save to disk, then push to connected viewers. */
+function publishGameChange(): void {
+  persistCurrentGame()
+  broadcastCurrentGame()
 }
 
 /** Online mode: state as the caller may see it. Hotseat: full state. */
@@ -160,7 +167,7 @@ gameRoutes.openapi(createGameRoute, async (context) => {
   store.game = Game.create({ seed, factions })
   store.mode = body.mode ?? DEFAULT_LOBBY_MODE
   logGameEvent('CREATE', store.game.state)
-  broadcastCurrentGame()
+  publishGameChange()
   return context.json({ state: store.game.state, mode: store.mode }, 201)
 })
 
@@ -189,7 +196,7 @@ gameRoutes.openapi(joinRoute, async (context) => {
   const body = context.req.valid('json')
   const result = game.join(body.playerId)
   logGameEvent('JOIN', result.state, { type: 'join', playerId: body.playerId })
-  broadcastCurrentGame()
+  publishGameChange()
   return context.json(
     { ...result, state: stateForCaller(game, body.playerId) },
     200,
@@ -216,7 +223,7 @@ gameRoutes.openapi(startRoute, (context) => {
   requireSeatForAction(game, playerId, 'start')
   const result = game.start()
   logGameEvent('START', result.state, { type: 'start' })
-  broadcastCurrentGame()
+  publishGameChange()
   return context.json(
     { ...result, state: stateForCaller(game, playerId) },
     200,
@@ -333,6 +340,7 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   }
   // Loaded snapshots are QA / dev slots: every seat is driven from one device.
   store.mode = DEFAULT_LOBBY_MODE
+  persistCurrentGame()
   logGameEvent('LOAD', store.game.state)
   return context.json({ state: store.game.state, mode: store.mode }, 200)
 })
@@ -394,7 +402,7 @@ gameRoutes.openapi(postActionsRoute, async (context) => {
   requireSeatForAction(game, playerId, body.type)
   const result = game.apply(body)
   logGameEvent('ACT', result.state, body, result.log)
-  broadcastCurrentGame()
+  publishGameChange()
   return context.json(
     { ...result, state: stateForCaller(game, playerId) },
     200,
@@ -465,7 +473,7 @@ gameRoutes.openapi(undoRoute, (context) => {
   }
   game.undo()
   logGameEvent('UNDO', game.state)
-  broadcastCurrentGame()
+  publishGameChange()
   return context.json({ state: game.state }, 200)
 })
 
@@ -523,6 +531,6 @@ gameRoutes.openapi(deleteGameRoute, (context) => {
   requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
   store.game = null
   store.mode = DEFAULT_LOBBY_MODE
-  broadcastCurrentGame()
+  publishGameChange()
   return context.body(null, 204)
 })
