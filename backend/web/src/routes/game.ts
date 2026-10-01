@@ -3,6 +3,7 @@ import {
   FALL_LAYOUT,
   Game,
   type GameState,
+  type LogEntry,
   formatGameView,
   formatTurnLog,
   toAscii,
@@ -35,6 +36,10 @@ import {
 } from '#schemas/game.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
+import {
+  redactLogForViewer,
+  type ViewerLogEntry,
+} from '#view/redactLogForViewer.js'
 import { redactStateForViewer } from '#view/redactStateForViewer.js'
 import { broadcastCurrentGame } from '#ws/GameHub.js'
 import {
@@ -54,6 +59,18 @@ function stateForCaller(game: Game, playerId: string | undefined): GameState {
     return game.state
   }
   return redactStateForViewer(game.state, playerId ?? '')
+}
+
+/** Online mode: log entries as the caller may see them. Hotseat: full log. */
+function logForCaller(
+  game: Game,
+  log: readonly LogEntry[],
+  playerId: string | undefined,
+): ViewerLogEntry[] {
+  if (store.mode !== 'online') {
+    return [...log]
+  }
+  return redactLogForViewer(log, game.state, playerId ?? '')
 }
 
 /** Online mode: full-slot dumps would leak hands and join ids. */
@@ -373,7 +390,10 @@ const getLogRoute = createRoute({
 
 gameRoutes.openapi(getLogRoute, (context) => {
   const game = requireGame()
-  return context.json({ log: game.log }, 200)
+  return context.json(
+    { log: logForCaller(game, game.log, context.req.header(PLAYER_ID_HEADER)) },
+    200,
+  )
 })
 
 const getFormattedLogRoute = createRoute({
@@ -392,6 +412,7 @@ const getFormattedLogRoute = createRoute({
 
 gameRoutes.openapi(getFormattedLogRoute, (context) => {
   const game = requireGame()
+  requireHotseatForFullDump()
   return context.text(formatTurnLog(game.log, game.state), 200)
 })
 
