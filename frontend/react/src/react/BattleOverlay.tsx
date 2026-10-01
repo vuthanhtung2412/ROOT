@@ -12,6 +12,8 @@ import {
 } from '#ui/BattleOverlay.ts'
 import '#react/BattleOverlay.css'
 
+const GUERRILLA_WAR_FACTION = 'alliance'
+
 export function BattleOverlay(): JSX.Element | null {
   const viewModel = useSyncExternalStore(
     subscribeHud,
@@ -32,6 +34,13 @@ export function BattleOverlay(): JSX.Element | null {
     ? battleResultFlashPrompt(viewModel.hits)
     : (viewModel.prompt ?? '')
   const callbacks = getHudCallbacks()
+  // Rule: 8.2.2 Guerrilla War — defending Alliance uses the higher die.
+  const defenderUsesHigherDie =
+    viewModel.defenderFaction === GUERRILLA_WAR_FACTION
+  const highDie = viewModel.rolls?.[0] ?? null
+  const lowDie = viewModel.rolls?.[1] ?? null
+  const attackerDie = defenderUsesHigherDie ? lowDie : highDie
+  const defenderDie = defenderUsesHigherDie ? highDie : lowDie
 
   return (
     <div className="battle-overlay">
@@ -65,13 +74,13 @@ export function BattleOverlay(): JSX.Element | null {
           <BattleSide
             roleLabel="ATK"
             faction={viewModel.attackerFaction}
-            roll={viewModel.rolls?.[0] ?? null}
+            roll={attackerDie}
             hits={viewModel.hits.attacker}
           />
           <BattleSide
             roleLabel="DEF"
             faction={viewModel.defenderFaction}
-            roll={viewModel.rolls?.[1] ?? null}
+            roll={defenderDie}
             hits={viewModel.hits.defender}
           />
         </div>
