@@ -77,6 +77,8 @@ export function refreshItems(board: VagabondBoard, count: number): number {
     board.tracks.tea,
     board.tracks.coin,
     board.tracks.bag,
+    // Rule: 9.4.1 Refresh — damaged items can be exhausted and are refreshed too.
+    board.damaged,
   ]
   for (const pool of pools) {
     for (const item of pool) {
