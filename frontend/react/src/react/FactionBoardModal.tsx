@@ -10,6 +10,10 @@ import {
   hideFactionBoard,
   subscribeFactionBoard,
 } from '#game/factionBoardBridge.ts'
+import {
+  logicalViewportSize,
+  readWindowViewportMeasure,
+} from '#game/viewportFit.ts'
 import { FactionBoardOverlays } from '#react/factionBoardOverlays.tsx'
 import { QuestPilePanel } from '#react/QuestPilePanel.tsx'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
@@ -46,17 +50,13 @@ function computeBoardPlacement(
 }
 
 function useViewportSize(): { width: number; height: number } {
-  const [size, setSize] = useState(() => ({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  }))
+  const [size, setSize] = useState(() =>
+    logicalViewportSize(readWindowViewportMeasure()),
+  )
 
   useEffect(() => {
     const onResize = (): void => {
-      setSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
+      setSize(logicalViewportSize(readWindowViewportMeasure()))
     }
     window.addEventListener('resize', onResize)
     return () => {

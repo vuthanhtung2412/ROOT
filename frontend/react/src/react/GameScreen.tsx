@@ -6,6 +6,11 @@ import {
 import type { BoardLayout } from '#game/boardLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import {
+  logicalViewportSize,
+  readWindowViewportMeasure,
+  type ViewportPixelSize,
+} from '#game/viewportFit.ts'
+import {
   landscapeMapHostSize,
   portraitMapHostSize,
   type ViewportLayoutMode,
@@ -26,23 +31,15 @@ export type GameScreenProps = {
   onForestSelected: (forestIndex: number) => void
 }
 
-type ViewportPixelSize = {
-  width: number
-  height: number
-}
-
 function useViewportPixelSize(): ViewportPixelSize {
-  const [size, setSize] = useState<ViewportPixelSize>(() => ({
-    width: typeof window === 'undefined' ? GAME_LOGICAL_WIDTH : window.innerWidth,
-    height:
-      typeof window === 'undefined' ? GAME_LOGICAL_HEIGHT : window.innerHeight,
-  }))
+  const [size, setSize] = useState<ViewportPixelSize>(() =>
+    typeof window === 'undefined'
+      ? { width: GAME_LOGICAL_WIDTH, height: GAME_LOGICAL_HEIGHT }
+      : logicalViewportSize(readWindowViewportMeasure()),
+  )
   useEffect(() => {
     const updateSize = (): void => {
-      setSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
+      setSize(logicalViewportSize(readWindowViewportMeasure()))
     }
     updateSize()
     window.addEventListener('resize', updateSize)

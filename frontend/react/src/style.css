@@ -151,6 +151,6 @@
   --root-landscape-center-percent: 60%;
   --root-player-rail-seat-max-width: 100%;
   /* Card gallery (discard / crafted): half viewport, centered by flex parent */
-  --root-card-gallery-panel-width: 50vw;
-  --root-card-gallery-panel-height: 50vh;
+  --root-card-gallery-panel-width: 50%;
+  --root-card-gallery-panel-height: 50%;
 }
