@@ -40,6 +40,7 @@ Open `http://localhost:3000/` (or `http://<lan-ip>:3000/` from another device). 
 ```bash
 pnpm remote   # Funnel URL — leave API base empty
 # FUNNEL_HTTPS_PORT=10000 pnpm remote   # if 8443 busy (443/8443/10000 only)
+pnpm remote:cloudflare   # Cloudflare quick tunnel — random URL each run, no account
 ```
 
 Needs Tailscale.app + Funnel enabled. Ctrl+C stops.
@@ -111,6 +112,7 @@ pnpm gen:api-client
 | `pnpm dev` | process-compose: web + React |
 | `pnpm serve:game` | build React → serve via `@root/web` |
 | `pnpm remote` | build + web serve + Tailscale Funnel → stable public URL |
+| `pnpm remote:cloudflare` | build + web serve + Cloudflare quick tunnel → random public URL |
 | `pnpm build:ios` | build React → Capacitor sync → open Xcode |
 | `pnpm --filter @root/react test` | Vitest (factories + mocked fetch) |
 | `pnpm --filter @root/react typecheck` | `tsc --noEmit` |

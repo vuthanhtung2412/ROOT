@@ -12,6 +12,7 @@
     "build:phaser": "echo 'deprecated: use pnpm build:react' >&2 && pnpm build:react",
     "serve:game": "pnpm --filter @root/web serve:react",
     "remote": "bash scripts/remote-play.sh",
+    "remote:cloudflare": "bash scripts/remote-play-cloudflare.sh",
     "build:ios": "pnpm --filter @root/react build:ios",
     "gen:api-client": "pnpm --filter @root/web-client gen",
     "typecheck": "pnpm -r typecheck",
