@@ -33,6 +33,7 @@ import {
   syncMenuStatus,
 } from '#react/MenuOverlay.tsx'
 import { ReactHud } from '#react/ReactHud.tsx'
+import { usePhoneLandscapeViewport } from '#react/usePhoneLandscapeViewport.ts'
 import { useViewportLayoutMode } from '#react/useViewportLayoutMode.ts'
 
 /** Lobby rows for the menu: one per faction seat, filled in join order. */
@@ -411,6 +412,7 @@ export function App(): JSX.Element {
   }, [clearLobbyWait, controller, showMenu])
 
   const gameVisible = shell === 'game'
+  usePhoneLandscapeViewport()
   const layoutMode = useViewportLayoutMode()
 
   const gameScreen = useMemo(() => {
