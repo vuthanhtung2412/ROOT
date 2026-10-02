@@ -13,6 +13,7 @@
  */
 import { chromium } from './node_modules/playwright/index.mjs'
 import { copyFile, mkdir, readFile, readdir, rm } from 'node:fs/promises'
+import { pickUnusedVideoName } from './pick-unused-video-name.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -401,8 +402,9 @@ const STEPS = [
 async function convertToMp4() {
   const recorded = (await readdir(rawVideoDirectory)).filter((name) => name.endsWith('.webm'))
   if (recorded.length === 0) throw new Error('no video recorded')
-  const webmPath = path.join(artifactsDirectory, `${VIDEO_NAME}.webm`)
-  const mp4Path = path.join(artifactsDirectory, `${VIDEO_NAME}.mp4`)
+  const unusedVideoName = await pickUnusedVideoName(artifactsDirectory, VIDEO_NAME)
+  const webmPath = path.join(artifactsDirectory, `${unusedVideoName}.webm`)
+  const mp4Path = path.join(artifactsDirectory, `${unusedVideoName}.mp4`)
   await copyFile(path.join(rawVideoDirectory, recorded[0]), webmPath)
   const ffmpeg = spawnSync(
     'ffmpeg',

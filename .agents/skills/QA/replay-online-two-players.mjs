@@ -16,6 +16,7 @@
  */
 import { chromium } from './node_modules/playwright/index.mjs'
 import { copyFile, mkdir, readdir, rm } from 'node:fs/promises'
+import { pickUnusedVideoName } from './pick-unused-video-name.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -293,8 +294,9 @@ async function saveVideo(player) {
   await player.context.close()
   const recorded = (await readdir(player.videoDirectory)).filter((file) => file.endsWith('.webm'))
   if (recorded.length === 0) return null
-  const webmPath = path.join(artifactsDirectory, `${player.name}.webm`)
-  const mp4Path = path.join(artifactsDirectory, `${player.name}.mp4`)
+  const unusedVideoName = await pickUnusedVideoName(artifactsDirectory, player.name)
+  const webmPath = path.join(artifactsDirectory, `${unusedVideoName}.webm`)
+  const mp4Path = path.join(artifactsDirectory, `${unusedVideoName}.mp4`)
   await copyFile(path.join(player.videoDirectory, recorded[0]), webmPath)
   const ffmpeg = spawnSync(
     'ffmpeg',

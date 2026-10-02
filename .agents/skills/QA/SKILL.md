@@ -71,4 +71,5 @@ There a 3 types of backend QA
 2. `pnpm --filter @root/web dev` (http://localhost:3000) + `pnpm --filter @root/react dev` (Vite, often `:5173`/`:5174`).
 3. Open Phaser → **Continue loaded game** (do not New GP2 — that replaces the snapshot). Drive the feature on canvas (action tray, clearings, Confirm). Chrome DevTools MCP OK for screenshots/console; canvas clicks need coords or Playwright.
 4. Evidence under `tmp/artifacts`: screenshots and/or video. Record: `ROOT_REACT_URL=http://localhost:5174 node .cursor/skills/QA/record-ui-scenario.mjs <march|turmoil>`. First time: `cd .cursor/skills/QA && npm i && npx playwright install chromium`. Click highlight: `click-highlight.mjs` (auto red blink). After UI, verify via `GET /game` + `/game/log` (not screenshot alone).
-5. Open PR with evidence + short repro steps.
+5. Never overwrite or delete an existing video in `tmp/artifacts` — a passed video is evidence. Record scripts save re-runs as `<name>-rerun-<timestamp>` via `pick-unused-video-name.mjs`; new record scripts must use it too. No manual `rm`/`mv`/`ffmpeg -y` onto an existing video.
+6. Open PR with evidence + short repro steps.

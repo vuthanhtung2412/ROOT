@@ -11,6 +11,7 @@
  */
 import { chromium } from './node_modules/playwright/index.mjs'
 import { mkdir, readdir, copyFile, rm } from 'node:fs/promises'
+import { pickUnusedVideoName } from './pick-unused-video-name.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -143,8 +144,9 @@ async function recordScenario(videoName, drive) {
   if (recordedFiles.length === 0) {
     throw new Error(`no webm for ${videoName}`)
   }
-  const webmPath = path.join(artifactsDirectory, `${videoName}.webm`)
-  const mp4Path = path.join(artifactsDirectory, `${videoName}.mp4`)
+  const unusedVideoName = await pickUnusedVideoName(artifactsDirectory, videoName)
+  const webmPath = path.join(artifactsDirectory, `${unusedVideoName}.webm`)
+  const mp4Path = path.join(artifactsDirectory, `${unusedVideoName}.mp4`)
   await copyFile(path.join(staging, recordedFiles[0]), webmPath)
 
   const ffmpeg = spawnSync(
