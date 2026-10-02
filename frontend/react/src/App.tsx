@@ -104,6 +104,7 @@ export function App(): JSX.Element {
   )
   const handleJoinOnlineRef = useRef<() => void>(() => undefined)
   const handleStartOnlineRef = useRef<() => void>(() => undefined)
+  const handleLeaveOnlineRef = useRef<() => void>(() => undefined)
   const resumeOnlineGameRef = useRef<() => Promise<void>>(() =>
     Promise.resolve(),
   )
@@ -165,6 +166,9 @@ export function App(): JSX.Element {
       },
       onStartOnline: () => {
         handleStartOnlineRef.current()
+      },
+      onLeaveOnline: () => {
+        handleLeaveOnlineRef.current()
       },
     })
   }, [])
@@ -268,6 +272,29 @@ export function App(): JSX.Element {
     }
   }, [ensureSession])
 
+  /** Leave the lobby screen: the host closes the game, a guest steps out. */
+  const handleLeaveOnline = useCallback(async (): Promise<void> => {
+    if (playPendingRef.current) {
+      return
+    }
+    playPendingRef.current = true
+    syncMenuPlayPending(true)
+    // Stop watching first: our own leave is not "the game was closed".
+    clearLobbyWait()
+    const session = ensureSession()
+    await session.restart()
+    playPendingRef.current = false
+    syncMenuPlayPending(false)
+    const error = session.getSnapshot().error
+    if (error !== null) {
+      syncMenuStatus(error, '#c44')
+      watchOnlineLobby()
+      return
+    }
+    syncMenuLobby(null)
+    syncMenuStatus('', '#9a9a9a')
+  }, [clearLobbyWait, ensureSession, watchOnlineLobby])
+
   const handleStartParty = useCallback(
     async (factions: string[]): Promise<void> => {
       if (playPendingRef.current) {
@@ -345,6 +372,9 @@ export function App(): JSX.Element {
   }
   handleJoinOnlineRef.current = () => {
     void handleJoinOnline()
+  }
+  handleLeaveOnlineRef.current = () => {
+    void handleLeaveOnline()
   }
   handleStartOnlineRef.current = () => {
     void handleStartOnline()

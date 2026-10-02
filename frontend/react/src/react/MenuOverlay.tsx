@@ -45,6 +45,7 @@ function OnlineLobbyPanel(props: {
   lobby: MenuLobbyHudState
   playPending: boolean
   onStart: () => void
+  onLeave: () => void
 }): JSX.Element {
   return (
     <section className="m-0 flex w-full flex-col gap-2" aria-label="Online lobby">
@@ -80,6 +81,19 @@ function OnlineLobbyPanel(props: {
           Waiting for the host to start…
         </p>
       )}
+      <button
+        type="button"
+        className="root-button root-button--quiet self-center px-4 py-2 font-display text-lg tracking-[0.02em]"
+        disabled={props.playPending}
+        title={
+          props.lobby.isHost
+            ? 'Remove this lobby for everyone'
+            : 'Go back to the menu; your seat stays reserved'
+        }
+        onClick={props.onLeave}
+      >
+        {props.lobby.isHost ? 'Close lobby' : 'Leave lobby'}
+      </button>
     </section>
   )
 }
@@ -140,6 +154,9 @@ export function MenuOverlay(): JSX.Element | null {
             playPending={menu.playPending}
             onStart={() => {
               callbacks.onStartOnline()
+            }}
+            onLeave={() => {
+              callbacks.onLeaveOnline()
             }}
           />
         ) : (

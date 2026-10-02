@@ -99,6 +99,8 @@ export type MenuCallbacks = {
   onJoinOnline: () => void
   /** Online host: start once every seat is filled. */
   onStartOnline: () => void
+  /** Online lobby: host closes the lobby, guest steps out of it. */
+  onLeaveOnline: () => void
 }
 
 export type HudCallbacks = {
@@ -198,6 +200,7 @@ const NOOP_MENU_CALLBACKS: MenuCallbacks = {
   onHostOnline: () => undefined,
   onJoinOnline: () => undefined,
   onStartOnline: () => undefined,
+  onLeaveOnline: () => undefined,
 }
 
 let hudState: HudState = INITIAL_HUD_STATE
