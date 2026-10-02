@@ -32,7 +32,8 @@ describe('Game lobby', () => {
 
   it('Game.create rejects factions without implementations', () => {
     expect(() =>
-      Game.create({ seed: 1, factions: ['marquise', 'lizard'] as never }),
+      // @ts-expect-error -- 'lizard' is deliberately not a supported faction
+      Game.create({ seed: 1, factions: ['marquise', 'lizard'] }),
     ).toThrow(expect.objectContaining({ code: 'UNSUPPORTED_FACTION' }))
   })
 

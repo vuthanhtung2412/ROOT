@@ -174,9 +174,11 @@ describe('march workflow', () => {
   })
 
   it('Rule: 4.2.1 — after move into contested clearing, dest not 2nd origin', async () => {
-    const clearings = Array.from({ length: 12 }, () => ({
-      pieces: [] as Array<{ id: string; kind: string; owner: number }>,
-    }))
+    type TestPiece = { id: string; kind: string; owner: number }
+    const clearings = Array.from(
+      { length: 12 },
+      (): { pieces: TestPiece[] } => ({ pieces: [] }),
+    )
     clearings[2] = {
       pieces: [
         { id: 'm1', kind: 'warrior', owner: 0 },

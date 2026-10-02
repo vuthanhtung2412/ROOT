@@ -1,4 +1,4 @@
-import type { ActionSpec, ResolveEventAction } from '#actions/types.js'
+import type { ActionSpec } from '#actions/types.js'
 import {
   boardOf as vagabondBoardOf,
   damageChosenItems,
@@ -229,7 +229,7 @@ export function applyRemovalStage(
   const { event, action, victim, maxHits, scorer } = stage
 
   if (victimIsVagabond(state, victim)) {
-    return applyVagabondHitDamage(state, event, victim, maxHits, action, ctx)
+    return applyVagabondHitDamage(state, stage, ctx)
   }
 
   if (!action.pieceIds) {
@@ -259,12 +259,10 @@ export function applyRemovalStage(
 
 function applyVagabondHitDamage(
   state: GameState,
-  event: BattleEvent,
-  victim: Seat,
-  maxHits: number,
-  action: ResolveEventAction,
+  stage: RemovalStage,
   ctx: Ctx,
 ): LogEntry[] {
+  const { event, action, victim, maxHits } = stage
   const allyPieceIds = action.pieceIds ?? []
   if (
     action.decline !== true &&

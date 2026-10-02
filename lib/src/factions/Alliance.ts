@@ -52,6 +52,13 @@ function discardCardToAvailable(state: GameState, card: Card): void {
   })
 }
 
+/** Supporters a seat spends on one clearing (Revolt, Spread Sympathy). */
+interface SupporterSpend {
+  seat: Seat
+  clearing: number
+  supporterIds: string[]
+}
+
 export class Alliance extends Faction {
   readonly id = 'alliance' as const
   readonly steps = STEPS
@@ -71,7 +78,7 @@ export class Alliance extends Faction {
     return allianceLegalActions(state, ctx)
   }
 
-  validate(state: GameState, action: Action, ctx: Ctx): void {
+  validate(state: GameState, action: Action, _ctx: Ctx): void {
     const seat = state.currentSeat
     switch (action.type) {
       case 'endPhase':
@@ -125,17 +132,13 @@ export class Alliance extends Faction {
       case 'revolt':
         return this.applyRevolt(
           state,
-          seat,
-          action.clearing,
-          action.supporterIds,
+          { seat, clearing: action.clearing, supporterIds: action.supporterIds },
           ctx,
         )
       case 'spreadSympathy':
         return this.applySpread(
           state,
-          seat,
-          action.clearing,
-          action.supporterIds,
+          { seat, clearing: action.clearing, supporterIds: action.supporterIds },
           ctx,
         )
       case 'mobilize':
@@ -156,11 +159,10 @@ export class Alliance extends Faction {
 
   private applyRevolt(
     state: GameState,
-    seat: Seat,
-    clearing: number,
-    supporterIds: string[],
+    spend: SupporterSpend,
     ctx: Ctx,
   ): LogEntry[] {
+    const { seat, clearing, supporterIds } = spend
     // Rule: Alliance Birdsong Revolt 1–3.
     const board = boardOf(state, seat)
     const suit = FALL.clearings[clearing]!.suit
@@ -227,11 +229,10 @@ export class Alliance extends Faction {
 
   private applySpread(
     state: GameState,
-    seat: Seat,
-    clearing: number,
-    supporterIds: string[],
+    spend: SupporterSpend,
     ctx: Ctx,
   ): LogEntry[] {
+    const { seat, clearing, supporterIds } = spend
     // Rule: Alliance Birdsong Spread Sympathy 1–3 + Martial Law.
     const board = boardOf(state, seat)
     if (!isLegalSympathySpreadClearing(state, seat, clearing)) {

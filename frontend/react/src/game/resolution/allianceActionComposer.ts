@@ -85,11 +85,11 @@ function uniqueStrings(values: readonly string[]): string[] {
 
 function isSupporterSpendChoice(value: unknown): value is SupporterSpendChoice {
   if (typeof value !== 'object' || value === null) return false
-  const record = value as Record<string, unknown>
+  const supporterIds: unknown = Reflect.get(value, 'supporterIds')
   return (
-    typeof record.clearing === 'number' &&
-    Array.isArray(record.supporterIds) &&
-    record.supporterIds.every((id) => typeof id === 'string')
+    typeof Reflect.get(value, 'clearing') === 'number' &&
+    Array.isArray(supporterIds) &&
+    supporterIds.every((id) => typeof id === 'string')
   )
 }
 

@@ -286,7 +286,8 @@ describe('Alliance spreadSympathy', () => {
         ) {
           return -1
         }
-        return Reflect.get(choice, 'clearing') as number
+        const clearing: unknown = Reflect.get(choice, 'clearing')
+        return typeof clearing === 'number' ? clearing : -1
       }),
     )
     expect(spreadClearings.has(-1)).toBe(false)

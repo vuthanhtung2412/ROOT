@@ -198,7 +198,7 @@ export function readChoiceParams(
       (entry): entry is { to: number; allySeat?: number; allyCount?: number } =>
         typeof entry === 'object' &&
         entry !== null &&
-        typeof (entry as { to?: unknown }).to === 'number',
+        typeof Reflect.get(entry, 'to') === 'number',
     )
   }
   const alliedSeat = asNumberArray(raw.alliedSeat)

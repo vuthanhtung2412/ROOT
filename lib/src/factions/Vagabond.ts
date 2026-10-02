@@ -432,7 +432,7 @@ export class Vagabond extends Faction {
         const [card] = hand.splice(index, 1)
         if (card === undefined) throw new RuleError('CARD_NOT_IN_HAND')
         playerOf(state, action.target).hand.push(card)
-        improveRelationship(state, seat, action.target, ctx, logs)
+        improveRelationship(state, { seat, target: action.target }, ctx, logs)
         if (action.takeItem !== undefined) {
           const target = playerOf(state, action.target)
           const craftedIndex = target.craftedItems.findIndex(
@@ -471,11 +471,8 @@ export class Vagabond extends Faction {
         )
         maybeHostile(
           state,
-          seat,
-          action.defender,
+          { seat, target: action.defender },
           target.kind === 'warrior',
-          ctx,
-          logs,
         )
         logs.push({ t: 'action', actor: seat, action })
         return logs

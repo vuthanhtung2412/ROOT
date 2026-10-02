@@ -120,14 +120,19 @@ function applyAllianceBaseRemoval(
  * Rule: 9.2.9.IIIa Infamy — in battle on your turn, +1 VP per Hostile piece removed
  * except the warrior that made the faction Hostile.
  */
+interface VagabondRemoval {
+  actor: Seat
+  removed: Piece[]
+  fromBattle: boolean
+}
+
 function applyVagabondHostileAndInfamy(
   state: GameState,
-  actor: Seat,
-  removed: Piece[],
-  fromBattle: boolean,
+  removal: VagabondRemoval,
   ctx: Ctx | undefined,
   logs: LogEntry[],
 ): void {
+  const { actor, removed, fromBattle } = removal
   const board = vagabondBoardOf(state, actor)
   let infamyPoints = 0
   for (const piece of removed) {
@@ -232,9 +237,7 @@ export function removePieces(
   if (playerOf(state, actor).faction === 'vagabond') {
     applyVagabondHostileAndInfamy(
       state,
-      actor,
-      removed,
-      options?.fromBattle === true,
+      { actor, removed, fromBattle: options?.fromBattle === true },
       ctx,
       logs,
     )

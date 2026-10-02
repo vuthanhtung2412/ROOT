@@ -133,6 +133,23 @@ function paramList(
   return Array.isArray(value) ? value : undefined
 }
 
+type SupporterSpendOption = { clearing: number; supporterIds: string[] }
+
+function isSupporterSpendOption(entry: unknown): entry is SupporterSpendOption {
+  if (typeof entry !== 'object' || entry === null) return false
+  return (
+    typeof Reflect.get(entry, 'clearing') === 'number' &&
+    Array.isArray(Reflect.get(entry, 'supporterIds'))
+  )
+}
+
+type VagabondMoveOption = { to: number; allySeat?: number; allyCount?: number }
+
+function isVagabondMoveOption(entry: unknown): entry is VagabondMoveOption {
+  if (typeof entry !== 'object' || entry === null) return false
+  return typeof Reflect.get(entry, 'to') === 'number'
+}
+
 async function tryAct(
   initialState: GameState,
   specs: ActionSpec[],
@@ -344,15 +361,9 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       return null
     }
     case 'revolt': {
-      const options = paramList(spec.params, 'options')
+      const options = paramList(spec.params, 'options') ?? []
       const choice = pick(
-        options.filter(
-          (entry): entry is { clearing: number; supporterIds: string[] } =>
-            typeof entry === 'object' &&
-            entry !== null &&
-            typeof (entry as { clearing?: unknown }).clearing === 'number' &&
-            Array.isArray((entry as { supporterIds?: unknown }).supporterIds),
-        ),
+        options.filter(isSupporterSpendOption),
       )
       if (choice === undefined) return null
       return {
@@ -362,15 +373,9 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       }
     }
     case 'spreadSympathy': {
-      const options = paramList(spec.params, 'options')
+      const options = paramList(spec.params, 'options') ?? []
       const choice = pick(
-        options.filter(
-          (entry): entry is { clearing: number; supporterIds: string[] } =>
-            typeof entry === 'object' &&
-            entry !== null &&
-            typeof (entry as { clearing?: unknown }).clearing === 'number' &&
-            Array.isArray((entry as { supporterIds?: unknown }).supporterIds),
-        ),
+        options.filter(isSupporterSpendOption),
       )
       if (choice !== undefined) {
         return {
@@ -448,12 +453,7 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
     case 'vbMove': {
       const vbMovesRaw = paramList(spec.params, 'vbMoves')
       if (vbMovesRaw !== undefined && vbMovesRaw.length > 0) {
-        const choices = vbMovesRaw.filter(
-          (entry): entry is { to: number; allySeat?: number; allyCount?: number } =>
-            typeof entry === 'object' &&
-            entry !== null &&
-            typeof (entry as { to?: unknown }).to === 'number',
-        )
+        const choices = vbMovesRaw.filter(isVagabondMoveOption)
         const choice = pick(choices)
         if (choice === undefined) return null
         if (choice.allySeat !== undefined && choice.allyCount !== undefined) {

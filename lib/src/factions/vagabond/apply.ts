@@ -1,5 +1,4 @@
 import { Deck, defOf } from '#cards/Deck.js'
-import type { Card } from '#cards/types.js'
 import {
   boardOf,
   exhaustItem,
@@ -51,13 +50,12 @@ export function movePawn(
       (piece) => !(piece.kind === 'pawn' && piece.owner === seat),
     )
   }
-  if (typeof to === 'string' && to.startsWith('forest:')) {
+  if (typeof to === 'string') {
     board.forest = Number(to.slice('forest:'.length))
     return
   }
   board.forest = null
-  const clearingId = to as ClearingId
-  state.clearings[clearingId]!.pieces.push({
+  state.clearings[to]!.pieces.push({
     id: `pawn-${seat}`,
     kind: 'pawn',
     owner: seat,
@@ -109,13 +107,19 @@ export function craftWithHammers(
   return logs
 }
 
+/** Vagabond seat and the seat of the faction its relationship is about. */
+export interface VagabondRelation {
+  seat: Seat
+  target: Seat
+}
+
 export function improveRelationship(
   state: GameState,
-  seat: Seat,
-  target: Seat,
+  relation: VagabondRelation,
   ctx: Ctx,
   logs: LogEntry[],
 ): void {
+  const { seat, target } = relation
   const board = boardOf(state, seat)
   const faction = playerOf(state, target).faction
   const current = board.relationships[faction]
@@ -147,12 +151,10 @@ export function improveRelationship(
 
 export function maybeHostile(
   state: GameState,
-  seat: Seat,
-  target: Seat,
+  relation: VagabondRelation,
   removedWarrior: boolean,
-  _ctx: Ctx,
-  _logs: LogEntry[],
 ): void {
+  const { seat, target } = relation
   // Rule: 9.2.9.III — remove warrior → Hostile. Infamy only in battle (removePieces).
   if (!removedWarrior) return
   const board = boardOf(state, seat)

@@ -310,7 +310,7 @@ export function App(): JSX.Element {
       syncMenuStatus('Starting…', '#9a9a9a')
 
       const session = ensureSession()
-      let started = false
+      let started: boolean
       try {
         started = await session.startLocalParty(factions)
       } catch (error: unknown) {

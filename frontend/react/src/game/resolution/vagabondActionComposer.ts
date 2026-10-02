@@ -71,7 +71,7 @@ function isVbMoveChoice(
   value: unknown,
 ): value is { to: number; allySeat?: number; allyCount?: number } {
   if (typeof value !== 'object' || value === null) return false
-  return typeof (value as { to?: unknown }).to === 'number'
+  return typeof Reflect.get(value, 'to') === 'number'
 }
 
 /** Vagabond daylight / birdsong choice flows. */
