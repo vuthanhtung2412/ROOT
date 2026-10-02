@@ -60,6 +60,19 @@ function restoreStoredGame(filePath: string): void {
   }
 }
 
+/** Forget the saved slot, so the next start comes up with no game. */
+export function clearStoredGame(): void {
+  const filePath = persistenceFilePath
+  if (filePath === null) {
+    return
+  }
+  try {
+    rmSync(filePath, { force: true })
+  } catch (error: unknown) {
+    console.error(`Could not clear stored game at ${filePath}`, error)
+  }
+}
+
 /** Write the current slot (or remove the file when the slot is empty). */
 export function persistCurrentGame(): void {
   const filePath = persistenceFilePath

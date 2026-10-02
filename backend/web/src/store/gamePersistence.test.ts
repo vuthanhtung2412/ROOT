@@ -5,6 +5,7 @@ import type { Game } from '@root/lib'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { app } from '#openapi.js'
 import {
+  clearStoredGame,
   disableGamePersistence,
   enableGamePersistence,
 } from '#store/gamePersistence.js'
@@ -73,6 +74,20 @@ describe('game persistence', () => {
     await app.request('/game', { method: 'DELETE' })
 
     expect(existsSync(storeFile)).toBe(false)
+  })
+
+  it('forgets the saved game when the server is stopped', async () => {
+    enableGamePersistence(storeFile)
+    await app.request('/game', jsonRequest('POST', { factions: ['marquise', 'eyrie'] }))
+    expect(existsSync(storeFile)).toBe(true)
+
+    clearStoredGame()
+    expect(existsSync(storeFile)).toBe(false)
+
+    // Next start: nothing to restore.
+    store.game = null
+    enableGamePersistence(storeFile)
+    expect(store.game).toBeNull()
   })
 
   it('writes nothing while persistence is off', async () => {

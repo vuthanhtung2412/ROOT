@@ -1,6 +1,9 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { enableGamePersistence } from '#store/gamePersistence.js'
+import {
+  clearStoredGame,
+  enableGamePersistence,
+} from '#store/gamePersistence.js'
 import { serve } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
 import { app } from '#openapi.js'
@@ -9,6 +12,9 @@ import { mountReactStatic, reactPublicDirectory } from '#static.js'
 
 const GAME_STORE_FILE_ENV_KEY = 'ROOT_GAME_STORE_FILE'
 const GAME_STORE_DISABLED_VALUE = 'off'
+const STOP_SIGNAL = 'SIGINT'
+/** Shell convention: 128 + signal number (SIGINT = 2). */
+const STOP_SIGNAL_EXIT_CODE = 130
 const DEFAULT_GAME_STORE_FILE = path.resolve(
   import.meta.dirname,
   '../.data/game-slot.json',
@@ -21,6 +27,13 @@ const gameStoreFile: string =
 if (gameStoreFile !== GAME_STORE_DISABLED_VALUE) {
   enableGamePersistence(gameStoreFile)
 }
+
+// Stopping the server by hand (Ctrl+C) ends the game: drop the saved slot.
+// A crash or a dev-watch restart (SIGTERM) keeps it, so those still resume.
+process.once(STOP_SIGNAL, () => {
+  clearStoredGame()
+  process.exit(STOP_SIGNAL_EXIT_CODE)
+})
 
 attachGameWebSocket(app)
 mountReactStatic(app)
