@@ -6,8 +6,16 @@ import {
   type ComposerOutcome,
 } from '#game/resolution/ActionComposer.ts'
 
+/** Law Evening: "discard cards of your choice until you have five". */
+const HAND_LIMIT = 5
+
 function unique(values: number[]): number[] {
   return [...new Set(values)]
+}
+
+/** Exact number of cards to discard; `handCardIds` is the whole hand. */
+function requiredDiscardCount(handCardIds: readonly string[]): number {
+  return Math.max(0, handCardIds.length - HAND_LIMIT)
 }
 
 type OverworkOption = { cardId: string; clearing: number }
@@ -69,7 +77,7 @@ export function createMarquiseCardComposerHooks(): {
         return {
           kind: 'incomplete',
           prompt: {
-            message: 'Discard down to 5 — pick cards, then Confirm',
+            message: `Discard down to 5 — pick ${String(requiredDiscardCount(cardIds))} card(s), then Confirm`,
             highlightClearings: [],
             enabledCardIds: cardIds,
             canConfirm: false,
@@ -103,17 +111,23 @@ export function createMarquiseCardComposerHooks(): {
       }
 
       if (draft.type === 'discardMany') {
-        const selected = draft.selected.includes(cardId)
+        const required = requiredDiscardCount(draft.cardIds)
+        const isSelected = draft.selected.includes(cardId)
+        // Law Evening: discard until five — never below.
+        const isFull = draft.selected.length >= required
+        const selected = isSelected
           ? draft.selected.filter((id) => id !== cardId)
-          : [...draft.selected, cardId]
+          : isFull
+            ? draft.selected
+            : [...draft.selected, cardId]
         draft = { ...draft, selected }
         return {
           kind: 'incomplete',
           prompt: {
-            message: `Discard ${String(selected.length)} card(s) — Confirm when ready`,
+            message: `Discard ${String(selected.length)}/${String(required)} card(s) — Confirm when ready`,
             highlightClearings: [],
             enabledCardIds: draft.cardIds,
-            canConfirm: selected.length > 0,
+            canConfirm: selected.length === required,
             canCancel: true,
           },
         }
@@ -144,7 +158,10 @@ export function createMarquiseCardComposerHooks(): {
     },
 
     confirm: (): ComposerOutcome | null => {
-      if (draft.type !== 'discardMany' || draft.selected.length === 0) {
+      if (
+        draft.type !== 'discardMany' ||
+        draft.selected.length !== requiredDiscardCount(draft.cardIds)
+      ) {
         return null
       }
       const action: ClientAction = {

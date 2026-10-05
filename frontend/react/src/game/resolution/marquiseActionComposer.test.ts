@@ -6,6 +6,9 @@ import {
   createMarquiseCardComposerHooks,
 } from '#game/resolution/marquiseActionComposer.ts'
 
+/** Two over the five-card hand limit. */
+const SEVEN_CARD_HAND = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
 describe('marquiseActionComposer cards', () => {
   it('overwork pairs card then clearing', () => {
     const { hooks } = createMarquiseCardComposerHooks()
@@ -45,10 +48,18 @@ describe('marquiseActionComposer cards', () => {
     composer.begin(
       makeActionSpec({
         type: 'discard',
-        params: { cardIds: ['a', 'b', 'c'] },
+        params: { cardIds: SEVEN_CARD_HAND },
       }),
     )
-    composer.chooseCard('a')
+    const afterFirst = composer.chooseCard('a')
+    expect(afterFirst).toMatchObject({
+      kind: 'incomplete',
+      prompt: {
+        message: 'Discard 1/2 card(s) — Confirm when ready',
+        canConfirm: false,
+      },
+    })
+    expect(composer.confirm().kind).not.toBe('ready')
     const afterSecond = composer.chooseCard('c')
     expect(afterSecond.kind).toBe('incomplete')
     if (afterSecond.kind === 'incomplete') {
@@ -62,6 +73,28 @@ describe('marquiseActionComposer cards', () => {
     expect(composer.confirm()).toEqual({
       kind: 'ready',
       action: { type: 'discard', cardIds: ['a', 'c'] },
+    })
+  })
+
+  it('Law Evening: discard until five — a third card is not picked with 7 in hand', () => {
+    const cards = createMarquiseCardComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(cards.hooks)
+    composer.begin(
+      makeActionSpec({ type: 'discard', params: { cardIds: SEVEN_CARD_HAND } }),
+    )
+    composer.chooseCard('a')
+    composer.chooseCard('b')
+
+    const afterThird = composer.chooseCard('c')
+
+    expect(afterThird).toMatchObject({
+      kind: 'incomplete',
+      prompt: { canConfirm: true },
+    })
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: { type: 'discard', cardIds: ['a', 'b'] },
     })
   })
 
