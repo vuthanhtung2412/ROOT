@@ -1,5 +1,6 @@
 import type { Action, ActionResult, ActionSpec } from '#actions/types.js'
 import { factionFor } from '#factions/index.js'
+import { beginFactionSetup } from '#game/factionSetup.js'
 import { createInitialState, runSharedSetup } from '#game/setup.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
@@ -70,8 +71,15 @@ export class Game {
     })
   }
 
-  static replay(seed: number, actions: Action[]): Game {
-    const game = Game.create({ seed })
+  static replay(
+    seed: number,
+    actions: Action[],
+    factions?: GameState['factions'],
+  ): Game {
+    const game =
+      factions === undefined
+        ? Game.create({ seed })
+        : Game.create({ seed, factions: [...factions] })
     for (const action of actions) {
       game.apply(action)
     }
@@ -205,7 +213,7 @@ export class Game {
     }
     const seed = this.state.seed
     const actions = this.history.slice(0, -1)
-    const restored = Game.replay(seed, actions)
+    const restored = Game.replay(seed, actions, this.state.factions)
     this.state = restored.state
     this.history = restored.history
     this.log = restored.log
@@ -349,11 +357,13 @@ export class Game {
     runSharedSetup(state, this.rng)
     state.status = 'setup'
 
-    const marquise = state.players.find((player) => player.faction === 'marquise')
-    if (!marquise) throw new RuleError('NO_MARQUISE_FOR_SETUP')
-    state.pending.push({ type: 'chooseKeep', seat: marquise.seat })
+    beginFactionSetup(state, this.makeCtx())
 
-    return [{ t: 'start' }]
+    const logs: LogEntry[] = [{ t: 'start' }]
+    if (state.pending.length === 0) {
+      logs.push(...this.beginPlaying())
+    }
+    return logs
   }
 
   private beginPlaying(): LogEntry[] {
