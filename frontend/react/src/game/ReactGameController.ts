@@ -12,6 +12,7 @@ import {
   showCardPile,
 } from '#game/cardGalleryBridge.ts'
 import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
+import { hideFactionBoard } from '#game/factionBoardBridge.ts'
 import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
@@ -268,6 +269,11 @@ export class ReactGameController {
         this.handleSelectAction(spec)
       },
       onRearrangeItem: (spec) => {
+        this.applyComposerOutcome(this.composer.begin(spec))
+      },
+      onQuestPicked: (spec) => {
+        // The reward is picked on the turn banner, behind the board.
+        hideFactionBoard()
         this.applyComposerOutcome(this.composer.begin(spec))
       },
       onBannerConfirm: () => {

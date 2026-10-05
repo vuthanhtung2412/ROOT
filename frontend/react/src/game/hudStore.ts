@@ -115,6 +115,8 @@ export type HudCallbacks = {
   onSelectAction: (spec: ActionSpec) => void
   /** Vagabond board: item clicked to move between its track and the Satchel. */
   onRearrangeItem: (spec: ActionSpec) => void
+  /** Vagabond board: face-up quest clicked to claim it. */
+  onQuestPicked: (spec: ActionSpec) => void
   onBannerConfirm: () => void
   onBannerCancel: () => void
   onBannerPickOption: (value: string) => void
@@ -189,6 +191,7 @@ const NOOP_CALLBACKS: HudCallbacks = {
   onSupportersClick: () => undefined,
   onSelectAction: () => undefined,
   onRearrangeItem: () => undefined,
+  onQuestPicked: () => undefined,
   onBannerConfirm: () => undefined,
   onBannerCancel: () => undefined,
   onBannerPickOption: () => undefined,

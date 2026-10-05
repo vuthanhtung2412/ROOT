@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   collapseTrayActionsByLabel,
   filterTrayActions,
-  questTrayChoices,
   withoutBoardOnlyActions,
   formatActionLabel,
   partitionTrayActionRegions,
 } from '#ui/ActionTray.ts'
 import { makeActionSpec, makeGameState } from '#test/factories.ts'
+import { questViewsFromState } from '#ui/factionBoardViewModel.ts'
 
 describe('formatActionLabel setup', () => {
   it('labels keep vs starting buildings distinctly', () => {
@@ -287,50 +287,39 @@ describe('partitionTrayActionRegions', () => {
 })
 
 describe('withoutBoardOnlyActions', () => {
-  it('keeps Vagabond item moves off the tray', () => {
+  it('keeps Vagabond board actions (item moves, quests) off the tray', () => {
     const move = makeActionSpec({ type: 'vbMove', actor: 3 })
     const rearrange = makeActionSpec({
       type: 'vbRearrange',
       actor: 3,
       params: { itemTypes: ['tea'], rearrangeFrom: ['track'] },
     })
+    const quest = makeActionSpec({
+      type: 'quest',
+      actor: 3,
+      params: { questIds: ['QUEST-M-ESCORT#1'], rewards: ['vp', 'draw'] },
+    })
 
-    expect(withoutBoardOnlyActions([move, rearrange])).toEqual([move])
+    expect(withoutBoardOnlyActions([move, rearrange, quest])).toEqual([move])
   })
 })
 
-describe('questTrayChoices', () => {
-  const VAGABOND_SEAT = 3
-  const fundraising = { id: 'QUEST-F-FUNDS#1', defId: 'QUEST-F-FUNDS' }
-  const escort = { id: 'QUEST-M-ESCORT#1', defId: 'QUEST-M-ESCORT' }
-  // `questsAvailable` is not in the generated client type yet.
-  const state = Object.assign(makeGameState(), {
-    questsAvailable: [fundraising, escort],
-  })
-
-  it('Rule: 9.5.5 Quest — one card per completable quest, spec narrowed to it', () => {
-    const questSpec = makeActionSpec({
-      type: 'quest',
-      actor: VAGABOND_SEAT,
-      params: { questIds: [fundraising.id], rewards: ['vp', 'draw'] },
+describe('questViewsFromState', () => {
+  it('names each face-up quest and points at its card face', () => {
+    // `questsAvailable` is not in the generated client type yet.
+    const state = Object.assign(makeGameState(), {
+      questsAvailable: [{ id: 'QUEST-F-FUNDS#1', defId: 'QUEST-F-FUNDS' }],
     })
 
-    const choices = questTrayChoices(questSpec, state)
-
-    expect(choices).toHaveLength(1)
-    expect(choices[0]?.quest.name).toBe('Fundraising')
-    expect(choices[0]?.quest.imagePath).toBe(
-      '/assets/quests/quest-fundraising.png',
-    )
-    expect(choices[0]?.spec.params).toEqual({
-      questIds: [fundraising.id],
-      rewards: ['vp', 'draw'],
-    })
-  })
-
-  it('offers no quest card for other actions', () => {
-    expect(
-      questTrayChoices(makeActionSpec({ type: 'vbMove' }), state),
-    ).toEqual([])
+    expect(questViewsFromState(state)).toEqual([
+      {
+        id: 'QUEST-F-FUNDS#1',
+        defId: 'QUEST-F-FUNDS',
+        name: 'Fundraising',
+        suit: 'fox',
+        items: ['coin', 'tea'],
+        imagePath: '/assets/quests/quest-fundraising.png',
+      },
+    ])
   })
 })
