@@ -7,6 +7,7 @@ import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId, Suit } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
+import { battleWarriorCount } from '#queries/mercenaries.js'
 import { warriors } from '#queries/pieces.js'
 import { playerOf } from '#queries/seat.js'
 import { RuleError } from '#rules/RuleError.js'
@@ -37,7 +38,13 @@ function attackerPresent(state: GameState, event: BattleEvent): boolean {
       (piece) => piece.kind === 'pawn' && piece.owner === event.attacker,
     )
   }
-  return warriors(state, event.clearing, event.attacker) > 0
+  return (
+    battleWarriorCount(state, {
+      clearing: event.clearing,
+      seat: event.attacker,
+      opponent: event.defender,
+    }) > 0
+  )
 }
 
 /** Rule: Battle — max rolled hits = warriors, or undamaged swords for Vagabond. */
@@ -54,7 +61,10 @@ function hitCap(state: GameState, clearing: ClearingId, seat: Seat, event?: Batt
     }
     return swords
   }
-  return warriors(state, clearing, seat)
+  if (event === undefined) return warriors(state, clearing, seat)
+  // Rule: 11.2.7.III — hired mercenaries count as the buyer's own warriors.
+  const opponent = seat === event.attacker ? event.defender : event.attacker
+  return battleWarriorCount(state, { clearing, seat, opponent })
 }
 
 function sideOf(seat: Seat, event: BattleEvent): 'attacker' | 'defender' | null {

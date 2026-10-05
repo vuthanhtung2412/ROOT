@@ -19,6 +19,7 @@ import type { ClearingId } from '#map/types.js'
 import type { ItemType, Seat } from '#pieces/types.js'
 import { enemySeatsInClearing } from '#queries/enemySeats.js'
 import { warriors } from '#queries/pieces.js'
+import { moveNeighbors } from '#queries/rivers.js'
 import { playerOf } from '#queries/seat.js'
 import {
   VAGABOND_TRACK_ITEM_CAP,
@@ -176,7 +177,7 @@ export function pushDaylightActions(
 
   if (hasExhaustible(board, 'boot')) {
     const vbMoves: VagabondMoveChoice[] = []
-    for (const to of FALL.adjacent(clearing)) {
+    for (const to of moveNeighbors(state, seat, clearing)) {
       const needsExtraBoot = destinationHasHostile(state, seat, to)
       if (needsExtraBoot) {
         const boots = [

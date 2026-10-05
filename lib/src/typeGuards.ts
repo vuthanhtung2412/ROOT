@@ -1,5 +1,6 @@
 import type {
   BattleEvent,
+  BuyServicesEvent,
   ChooseCharacterEvent,
   ChooseCultCornerEvent,
   ChooseForestEvent,
@@ -102,6 +103,10 @@ export function isChooseCultCornerEvent(
 
 export function isChooseOutcastEvent(event: Event): event is ChooseOutcastEvent {
   return event.type === 'chooseOutcast'
+}
+
+export function isBuyServicesEvent(event: Event): event is BuyServicesEvent {
+  return event.type === 'buyServices'
 }
 
 export function isPlaceRiverfolkWarriorEvent(

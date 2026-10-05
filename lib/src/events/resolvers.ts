@@ -4,6 +4,7 @@ import type { LogEntry } from '#log/types.js'
 import type { Seat } from '#pieces/types.js'
 import type { GameState } from '#state/types.js'
 import { battleResolver } from '#events/battle.js'
+import { buyServicesResolver } from '#events/buyServices.js'
 import { chooseCharacterResolver } from '#events/chooseCharacter.js'
 import { chooseCultCornerResolver } from '#events/chooseCultCorner.js'
 import { chooseForestResolver } from '#events/chooseForest.js'
@@ -19,6 +20,7 @@ import { vagabondDamageResolver } from '#events/vagabondDamage.js'
 import type { Event } from '#events/types.js'
 import {
   isBattleEvent,
+  isBuyServicesEvent,
   isChooseCharacterEvent,
   isChooseCultCornerEvent,
   isChooseForestEvent,
@@ -86,6 +88,7 @@ function guardedResolver<SpecificEvent extends Event>(
 }
 
 export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
+  buyServices: guardedResolver(isBuyServicesEvent, buyServicesResolver),
   chooseCultCorner: guardedResolver(
     isChooseCultCornerEvent,
     chooseCultCornerResolver,

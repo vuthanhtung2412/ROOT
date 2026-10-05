@@ -347,6 +347,8 @@ export type ResolveEventAction = {
   suit?: Suit
   /** Rule: 11.3.5 — starting cost of one Riverfolk service. */
   cost?: number
+  /** Rule: 11.2.6 — Riverfolk service bought (`cardId` names the Hand Card). */
+  service?: RiverfolkService
 }
 
 export type ActionSpec = {

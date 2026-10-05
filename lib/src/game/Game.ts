@@ -23,6 +23,7 @@ import type { Seat } from '#pieces/types.js'
 import type { GameState, Phase } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import '#effects/register.js'
+import { offerRiverfolkServices } from '#events/buyServices.js'
 import { RESOLVERS } from '#events/resolvers.js'
 import { EFFECTS, effectForAction } from '#triggers/effects.js'
 import type { Listener } from '#triggers/effects.js'
@@ -377,6 +378,7 @@ export class Game {
 
     const ctx = this.makeCtx()
     ctx.emit({ s: 'phase.start', actor: 0, phase: 'birdsong' })
+    offerRiverfolkServices(state)
 
     const autoLogs = this.runAutoActions()
     return [
@@ -406,7 +408,12 @@ export class Game {
     if (idx < steps.length - 1) {
       state.step = steps[idx + 1]!
       if (state.phase === 'daylight' && state.step === 'actions') {
-        state.turnScratch = createTurnScratch({ actionsLeft: 3 })
+        // Services bought in Birdsong last until the end of the turn (11.2.7).
+        state.turnScratch = createTurnScratch({
+          actionsLeft: 3,
+          riverboats: state.turnScratch.riverboats,
+          mercenaries: state.turnScratch.mercenaries,
+        })
       }
       if (state.phase === 'daylight' && state.step === 'decree') {
         state.turnScratch.decree = null
@@ -458,6 +465,7 @@ export class Game {
 
     ctx.emit({ s: 'phase.start', actor: nextSeat, phase: 'birdsong' })
     logs.push({ t: 'phase', actor: nextSeat, phase: 'birdsong', step: state.step })
+    offerRiverfolkServices(state)
 
     return logs
   }
@@ -466,6 +474,8 @@ export class Game {
     const logs: LogEntry[] = []
     let guard = 0
     while (guard++ < 50) {
+      // A pending choice (e.g. buying services at the start of Birdsong) comes first.
+      if (this.state.pending.length > 0) break
       const faction = factionFor(factionOf(this.state, this.state.currentSeat))
       const autos = faction
         .autoActions(this.state, this.state.phase, this.state.step)
@@ -524,6 +534,10 @@ export class Game {
         return true
       }
       if (action.cost !== undefined && s.params?.costs?.includes(action.cost)) {
+        return true
+      }
+      // Riverfolk service — the resolver's matchesAction validated the purchase.
+      if (action.service !== undefined && s.params?.options !== undefined) {
         return true
       }
       if (action.pieceIds && s.params?.pieceIds) {

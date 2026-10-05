@@ -111,7 +111,16 @@ export type SetStartingCostEvent = {
   service: RiverfolkService
 }
 
+/** Rule: 11.2.6 — at the start of their Birdsong, a player may buy services. */
+export type BuyServicesEvent = {
+  type: 'buyServices'
+  buyer: Seat
+  /** Services already bought this turn. Rule: 11.2.6.II. */
+  bought: number
+}
+
 export type Event =
+  | BuyServicesEvent
   | ChooseCultCornerEvent
   | ChooseOutcastEvent
   | PlaceRiverfolkWarriorEvent

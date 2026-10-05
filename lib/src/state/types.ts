@@ -77,6 +77,10 @@ export type TurnScratch = {
   crusadeFollowUpClearing: ClearingId | null
   /** Riverfolk Birdsong — Protectionism, dividends and gathering done. */
   fundsGathered: boolean
+  /** Riverboats bought this turn: rivers are paths. Rule: 11.2.7.II. */
+  riverboats: boolean
+  /** Mercenaries bought this turn. Rule: 11.2.7.III. */
+  mercenaries: boolean
 }
 
 export type GameState = {

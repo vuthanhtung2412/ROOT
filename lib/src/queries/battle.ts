@@ -2,7 +2,7 @@ import type { BattleTargetChoice } from '#actions/types.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { enemySeatsInClearing } from '#queries/enemySeats.js'
-import { warriors } from '#queries/pieces.js'
+import { battleWarriorCount } from '#queries/mercenaries.js'
 import type { GameState } from '#state/types.js'
 
 export function canBattle(
@@ -12,7 +12,10 @@ export function canBattle(
   defender: Seat,
 ): boolean {
   if (defender === seat) return false
-  if (warriors(state, clearing, seat) < 1) return false
+  // Rule: 11.2.7.III — hired mercenaries battle as the buyer's own warriors.
+  if (battleWarriorCount(state, { clearing, seat, opponent: defender }) < 1) {
+    return false
+  }
   return enemySeatsInClearing(state, clearing, seat).includes(defender)
 }
 

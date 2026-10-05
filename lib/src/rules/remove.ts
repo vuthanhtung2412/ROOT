@@ -39,6 +39,8 @@ export type PieceRemoval = {
     fromBattle?: boolean
     /** The removed pieces belong to the defender of the battle. */
     defendingInBattle?: boolean
+    /** Seat taking these hits with hired Riverfolk warriors among them. */
+    mercenaryBuyer?: Seat
   }
 }
 
@@ -130,6 +132,8 @@ interface VagabondRemoval {
   actor: Seat
   removed: Piece[]
   fromBattle: boolean
+  /** Rule: 11.2.7.IIIb — a removed mercenary makes its buyer Hostile. */
+  mercenaryBuyer: Seat | undefined
 }
 
 function applyVagabondHostileAndInfamy(
@@ -143,7 +147,12 @@ function applyVagabondHostileAndInfamy(
   let infamyPoints = 0
   for (const piece of removed) {
     if (piece.owner === actor) continue
-    const faction = playerOf(state, piece.owner).faction
+    const blamedSeat =
+      removal.mercenaryBuyer !== undefined &&
+      playerOf(state, piece.owner).faction === 'riverfolk'
+        ? removal.mercenaryBuyer
+        : piece.owner
+    const faction = playerOf(state, blamedSeat).faction
     if (faction === 'vagabond') continue
     const wasHostile = board.relationships[faction] === 'hostile'
     if (piece.kind === 'warrior' && !wasHostile) {
@@ -251,7 +260,12 @@ export function removePieces(
   if (playerOf(state, actor).faction === 'vagabond') {
     applyVagabondHostileAndInfamy(
       state,
-      { actor, removed, fromBattle: options?.fromBattle === true },
+      {
+        actor,
+        removed,
+        fromBattle: options?.fromBattle === true,
+        mercenaryBuyer: options?.mercenaryBuyer,
+      },
       ctx,
       logs,
     )

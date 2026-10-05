@@ -28,6 +28,8 @@ export function createTurnScratch(
     ritualScoredSuits: [],
     crusadeFollowUpClearing: null,
     fundsGathered: false,
+    riverboats: false,
+    mercenaries: false,
     ...overrides,
   }
 }
