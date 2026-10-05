@@ -3,6 +3,57 @@ import { makeActionSpec } from '#test/factories.ts'
 import { ActionComposer } from '#game/resolution/ActionComposer.ts'
 import { createVagabondComposerHooks } from '#game/resolution/vagabondActionComposer.ts'
 
+describe('vagabondActionComposer Day Labor', () => {
+  const DISCARD_CARD_IDS = ['ROOT-72#1', 'ROOT-205#1']
+
+  function beginDayLabor(): {
+    vagabond: ReturnType<typeof createVagabondComposerHooks>
+    composer: ActionComposer
+  } {
+    const vagabond = createVagabondComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(vagabond.hooks)
+    composer.begin(
+      makeActionSpec({
+        type: 'dayLabor',
+        params: { cardIds: DISCARD_CARD_IDS },
+      }),
+    )
+    return { vagabond, composer }
+  }
+
+  it('shows the matching discard cards in the card gallery', () => {
+    const { vagabond } = beginDayLabor()
+
+    expect(vagabond.getDiscardPilePick()).toEqual({
+      title: 'Day Labor — take a card from the discard pile',
+      cards: [
+        { id: 'ROOT-72#1', defId: 'ROOT-72' },
+        { id: 'ROOT-205#1', defId: 'ROOT-205' },
+      ],
+      selectedCardIds: [],
+    })
+  })
+
+  it('submits the picked card and closes the gallery', () => {
+    const { vagabond, composer } = beginDayLabor()
+
+    expect(composer.chooseCard('ROOT-205#1')).toEqual({
+      kind: 'ready',
+      action: { type: 'dayLabor', cardId: 'ROOT-205#1' },
+    })
+    expect(vagabond.getDiscardPilePick()).toBeNull()
+  })
+
+  it('ignores a card that is not offered and closes on cancel', () => {
+    const { vagabond, composer } = beginDayLabor()
+
+    expect(composer.chooseCard('ROOT-1#1').kind).not.toBe('ready')
+    expect(composer.cancel()).toEqual({ kind: 'idle' })
+    expect(vagabond.getDiscardPilePick()).toBeNull()
+  })
+})
+
 describe('vagabondActionComposer multi-target', () => {
   it('battle merges defenders then picks via column', () => {
     const vagabond = createVagabondComposerHooks()

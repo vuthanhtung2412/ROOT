@@ -406,6 +406,58 @@ describe('eventActionComposer Vagabond item limit', () => {
   })
 })
 
+describe('eventActionComposer Ranger Hideout', () => {
+  const DAMAGED_ITEMS = [
+    { type: 'sword', exhausted: false, damaged: true },
+    { type: 'boot', exhausted: true, damaged: true },
+    { type: 'hammer', exhausted: false, damaged: true },
+    { type: 'tea', exhausted: false, damaged: true },
+  ]
+
+  function beginHideout(): ActionComposer {
+    const composer = new ActionComposer()
+    composer.setHooks(createEventComposerHooks().hooks)
+    composer.begin(
+      makeActionSpec({
+        type: 'hideout',
+        params: { vagabondItems: DAMAGED_ITEMS, itemCount: [3] },
+      }),
+    )
+    return composer
+  }
+
+  it('picks three damaged items and submits hideout', () => {
+    const composer = beginHideout()
+
+    composer.chooseColumn('0')
+    composer.chooseColumn('1')
+    const lastPick = composer.chooseColumn('3')
+
+    expect(lastPick).toMatchObject({
+      kind: 'incomplete',
+      prompt: {
+        message:
+          'Vagabond — choose 3 items to repair (Hideout ends Daylight) — Confirm when ready',
+        canConfirm: true,
+        canCancel: true,
+      },
+    })
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'hideout',
+        items: [DAMAGED_ITEMS[0], DAMAGED_ITEMS[1], DAMAGED_ITEMS[3]],
+      },
+    })
+  })
+
+  it('can be cancelled, unlike forced item damage', () => {
+    const composer = beginHideout()
+
+    expect(composer.cancel()).toEqual({ kind: 'idle' })
+  })
+})
+
 describe('eventActionComposer Vagabond item damage', () => {
   const VAGABOND_SEAT = 3
   const OFFERED_ITEMS = [

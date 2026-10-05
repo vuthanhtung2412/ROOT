@@ -60,6 +60,8 @@ function formatActionLabel(
   if (spec.type === 'repair') return 'repair'
   if (spec.type === 'vbCraft') return 'craft'
   if (spec.type === 'steal') return 'steal'
+  if (spec.type === 'dayLabor') return 'day labor'
+  if (spec.type === 'hideout') return 'hideout'
   if (spec.type === 'vbRemoveItems') return 'remove items'
   if (spec.type === 'rest') return 'rest'
   if (spec.type === 'spendBird') return 'spend bird'

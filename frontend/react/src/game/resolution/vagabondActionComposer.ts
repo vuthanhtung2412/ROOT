@@ -8,7 +8,13 @@ import {
   fallbackSeatLabel,
   readChoiceParams,
 } from '#game/resolution/ActionComposer.ts'
+import {
+  cardFaceFromId,
+  type AllianceSupporterPilePick,
+} from '#game/resolution/allianceActionComposer.ts'
 import type { TurnBannerOption, TurnBannerOptionItem } from '#ui/TurnBanner.ts'
+
+const DAY_LABOR_PROMPT = 'Day Labor — take a card from the discard pile'
 
 type VagabondDraft =
   | { type: 'idle' }
@@ -28,6 +34,7 @@ type VagabondDraft =
   | { type: 'repair'; indexes: number[] }
   | { type: 'vbCraft'; cardIds: string[] }
   | { type: 'steal'; defenders: number[] }
+  | { type: 'dayLabor'; cardIds: string[] }
   | { type: 'quest'; questIds: string[]; questId?: string }
 
 /** Aid picks in order: card → target → item to exhaust. */
@@ -81,6 +88,8 @@ export function createVagabondComposerHooks(
   hooks: ActionComposerHooks
   getDraft: () => VagabondDraft
   getPromptOptions: () => TurnBannerOption[]
+  /** Day Labor: discard-pile cards shown in the selectable card gallery. */
+  getDiscardPilePick: () => AllianceSupporterPilePick | null
 } {
   let draft: VagabondDraft = { type: 'idle' }
   let promptOptions: TurnBannerOption[] = []
@@ -337,6 +346,20 @@ export function createVagabondComposerHooks(
         }
         return setDefenderPrompt('Steal — pick target', defenders)
       }
+      if (spec.type === 'dayLabor') {
+        // Law D.2.2 — cards are in the discard pile: picked in a card gallery.
+        draft = { type: 'dayLabor', cardIds: params.cardIds ?? [] }
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: DAY_LABOR_PROMPT,
+            highlightClearings: [],
+            enabledCardIds: [],
+            canConfirm: false,
+            canCancel: true,
+          },
+        }
+      }
       if (spec.type === 'quest') {
         const questIds = params.questIds ?? []
         draft = { type: 'quest', questIds }
@@ -484,6 +507,11 @@ export function createVagabondComposerHooks(
         promptOptions = []
         return { kind: 'ready', action: { type: 'vbCraft', cardId } }
       }
+      if (draft.type === 'dayLabor' && draft.cardIds.includes(cardId)) {
+        draft = { type: 'idle' }
+        promptOptions = []
+        return { kind: 'ready', action: { type: 'dayLabor', cardId } }
+      }
       return null
     },
 
@@ -630,5 +658,15 @@ export function createVagabondComposerHooks(
     hooks,
     getDraft: (): VagabondDraft => draft,
     getPromptOptions: () => promptOptions,
+    getDiscardPilePick: (): AllianceSupporterPilePick | null => {
+      if (draft.type !== 'dayLabor') {
+        return null
+      }
+      return {
+        title: DAY_LABOR_PROMPT,
+        cards: draft.cardIds.map(cardFaceFromId),
+        selectedCardIds: [],
+      }
+    },
   }
 }

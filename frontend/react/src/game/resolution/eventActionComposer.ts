@@ -26,10 +26,29 @@ export {
 const FIELD_HOSPITAL_DECLINE_VALUE = 'decline'
 const SELECTED_OPTION_PREFIX = '✓ '
 
-/** `damage`: hits / full removal. `remove`: evening item limit (9.6.4). */
-type ItemPickPurpose = 'damage' | 'remove'
+/**
+ * `damage`: hits / full removal. `remove`: evening item limit (9.6.4).
+ * `repair`: Ranger Hideout (D.3.2) — optional, so it can be cancelled.
+ */
+type ItemPickPurpose = 'damage' | 'remove' | 'repair'
 
-const ITEM_REMOVAL_ACTION_TYPE = 'vbRemoveItems'
+/** Turn actions (not pending events) that carry chosen Vagabond items. */
+const ITEM_ACTION_PURPOSES: Readonly<Record<string, ItemPickPurpose>> = {
+  vbRemoveItems: 'remove',
+  hideout: 'repair',
+}
+
+const ITEM_PICK_ACTION_TYPES: Readonly<Record<ItemPickPurpose, string>> = {
+  damage: 'resolveEvent',
+  remove: 'vbRemoveItems',
+  repair: 'hideout',
+}
+
+const ITEM_PICK_VERBS: Readonly<Record<ItemPickPurpose, string>> = {
+  damage: 'to damage',
+  remove: 'to remove (over item limit)',
+  repair: 'to repair (Hideout ends Daylight)',
+}
 
 function formatItemDamageLabel(
   item: VagabondItemChoiceView,
@@ -49,7 +68,7 @@ function formatItemDamageMessage(
   selectedCount: number,
 ): string {
   const noun = count === 1 ? 'item' : 'items'
-  const verb = purpose === 'damage' ? 'to damage' : 'to remove (over item limit)'
+  const verb = ITEM_PICK_VERBS[purpose]
   const base = `Vagabond — choose ${String(count)} ${noun} ${verb}`
   if (selectedCount === count) {
     return `${base} — Confirm when ready`
@@ -144,7 +163,7 @@ export function createEventComposerHooks(): {
         highlightClearings: [],
         enabledCardIds: null,
         canConfirm: selectedIndexes.length === count,
-        canCancel: false,
+        canCancel: purpose === 'repair',
       },
     }
   }
@@ -251,7 +270,8 @@ export function createEventComposerHooks(): {
 
   const hooks: ActionComposerHooks = {
     begin: (spec: ActionSpec): ComposerOutcome | null => {
-      if (spec.type === ITEM_REMOVAL_ACTION_TYPE) {
+      const itemActionPurpose = ITEM_ACTION_PURPOSES[spec.type]
+      if (itemActionPurpose !== undefined) {
         const removalParams = readChoiceParams(spec)
         const removalCount = removalParams.itemCount?.[0]
         if (
@@ -263,7 +283,7 @@ export function createEventComposerHooks(): {
         }
         return itemDamagePrompt(
           {
-            purpose: 'remove',
+            purpose: itemActionPurpose,
             items: removalParams.vagabondItems,
             count: removalCount,
           },
@@ -609,8 +629,7 @@ export function createEventComposerHooks(): {
         const item = draft.type === 'pickItemDamage' ? draft.items[index] : undefined
         return item === undefined ? [] : [item]
       })
-      const actionType =
-        draft.purpose === 'remove' ? ITEM_REMOVAL_ACTION_TYPE : 'resolveEvent'
+      const actionType = ITEM_PICK_ACTION_TYPES[draft.purpose]
       clear()
       return { kind: 'ready', action: { type: actionType, items: chosenItems } }
     },
@@ -619,8 +638,8 @@ export function createEventComposerHooks(): {
       if (draft.type === 'idle' && overlayKind === null) {
         return null
       }
-      // Non-skippable: hits must be assigned to items.
-      if (draft.type === 'pickItemDamage') {
+      // Non-skippable: hits must be assigned to items. Hideout is optional.
+      if (draft.type === 'pickItemDamage' && draft.purpose !== 'repair') {
         return itemDamagePrompt(draft, draft.selectedIndexes)
       }
       if (

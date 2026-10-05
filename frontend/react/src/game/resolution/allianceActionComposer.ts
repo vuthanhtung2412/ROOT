@@ -54,7 +54,7 @@ function parseDefIdFromCardId(cardId: string): string | null {
   return cardId.slice(0, hashIndex)
 }
 
-function cardFaceFromId(cardId: string): CardGalleryFace {
+export function cardFaceFromId(cardId: string): CardGalleryFace {
   const defId = parseDefIdFromCardId(cardId)
   return { id: cardId, defId: defId ?? cardId }
 }

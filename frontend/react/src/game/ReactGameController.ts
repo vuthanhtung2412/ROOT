@@ -445,7 +445,9 @@ export class ReactGameController {
         const discardDraft = this.marquiseCards.getDraft()
         return discardDraft.type === 'discardMany' ? discardDraft.selected : []
       },
-      getSupporterPilePick: () => this.allianceComposer.getSupporterPilePick(),
+      getSupporterPilePick: () =>
+        this.allianceComposer.getSupporterPilePick() ??
+        this.vagabondComposer.getDiscardPilePick(),
       syncSupporterPilePick: (pick) => {
         if (pick === null) {
           hideSelectableCardPile()
@@ -454,7 +456,7 @@ export class ReactGameController {
         showCardPile({
           title: pick.title,
           cards: pick.cards,
-          emptyMessage: 'No matching supporters',
+          emptyMessage: 'No matching cards',
           selectable: true,
           selectedCardIds: pick.selectedCardIds,
         })
