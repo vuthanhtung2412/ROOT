@@ -1,11 +1,20 @@
-import type { CSSProperties, JSX } from 'react'
+import { useSyncExternalStore, type CSSProperties, type JSX } from 'react'
+import type { ActionSpec } from '#api/client.ts'
 import {
   findBoardLayoutRegion,
   trackCellRegion,
   type BoardLayoutRegion,
   type FactionBoardPixelLayout,
 } from '#assets/factionBoardLayout.ts'
-import { getHudCallbacks } from '#game/hudStore.ts'
+import {
+  getHudCallbacks,
+  getHudSnapshot,
+  subscribeHud,
+} from '#game/hudStore.ts'
+import {
+  findRearrangeSpec,
+  type RearrangeOrigin,
+} from '#game/vagabondRearrange.ts'
 import {
   allianceBaseTextureKey,
   cardImagePublicPath,
@@ -28,6 +37,7 @@ import {
   type FactionBoardViewModel,
   type VagabondRelationshipMarkerView,
 } from '#ui/factionBoardViewModel.ts'
+import { filterTrayActions } from '#ui/ActionTray.ts'
 
 type OverlayBaseProps = {
   view: FactionBoardViewModel
@@ -63,6 +73,11 @@ const DECREE_CLASS_NAME =
   'absolute flex items-center overflow-hidden px-2 py-1 font-mono text-[clamp(10px,2vh,14px)]'
 const DECREE_ACTIVE_CLASS_NAME = 'bg-[rgb(255_224_138/0.87)] text-[#1a1408]'
 const LEADER_CLASS_NAME = 'absolute object-contain object-left-top select-none'
+/** Vagabond tea/coin/bag the acting player may click to move. */
+const REARRANGEABLE_CLASS_NAME =
+  'pointer-events-auto cursor-pointer rounded-md ring-[3px] ring-rust transition-transform hover:scale-110'
+const MOVE_TO_SATCHEL_HINT = 'Move to Satchel'
+const MOVE_TO_TRACK_HINT = 'Move to its track'
 const RELATIONSHIP_PACK_CLASS_NAME =
   'pointer-events-none absolute z-2 flex flex-col flex-nowrap items-center justify-center overflow-visible'
 
@@ -117,13 +132,54 @@ function CraftedItemsOverlay(props: OverlayBaseProps): JSX.Element | null {
   )
 }
 
+type RearrangeSpecFinder = (
+  itemType: string,
+  from: RearrangeOrigin,
+) => ActionSpec | null
+
+/** Legal track <-> Satchel moves the acting player may take on this board. */
+function useRearrangeSpecFinder(seat: number): RearrangeSpecFinder {
+  const tray = useSyncExternalStore(
+    subscribeHud,
+    () => getHudSnapshot().actionTray,
+    () => getHudSnapshot().actionTray,
+  )
+  const actions =
+    tray === null
+      ? []
+      : filterTrayActions(tray.actions, tray.actorSeat, tray.options)
+  return (itemType, from) => findRearrangeSpec(actions, { seat, itemType, from })
+}
+
 function CraftedItemIcon(props: {
   item: CraftedItemView
   sizeClassName: string
+  rearrangeSpec?: ActionSpec | null
 }): JSX.Element {
   const textureKey = itemTextureKey(props.item.type)
   const imagePath =
     textureKey !== null ? imagePathForAssetKey(textureKey) : null
+  const rearrangeSpec = props.rearrangeSpec ?? null
+  if (rearrangeSpec !== null && imagePath !== null) {
+    return (
+      <button
+        type="button"
+        className={`relative aspect-square flex-none ${props.sizeClassName} ${REARRANGEABLE_CLASS_NAME}`}
+        title={MOVE_TO_TRACK_HINT}
+        aria-label={`${props.item.type}: ${MOVE_TO_TRACK_HINT}`}
+        onClick={() => {
+          getHudCallbacks().onRearrangeItem(rearrangeSpec)
+        }}
+      >
+        <img
+          className="block size-full object-contain"
+          src={imagePath}
+          alt=""
+          draggable={false}
+        />
+      </button>
+    )
+  }
   return (
     <div
       className={`relative aspect-square flex-none ${props.sizeClassName} ${
@@ -459,6 +515,7 @@ function VagabondTrackItemOverlays(props: {
     { trackId: 'coin', items: props.view.tracks.coin },
     { trackId: 'bag', items: props.view.tracks.bag },
   ]
+  const findRearrange = useRearrangeSpecFinder(props.view.seat)
   return (
     <>
       {trackRows.map((row) =>
@@ -476,6 +533,31 @@ function VagabondTrackItemOverlays(props: {
             textureKey !== null ? imagePathForAssetKey(textureKey) : null
           if (imagePath === null) {
             return null
+          }
+          const rearrangeSpec = item.exhausted
+            ? null
+            : findRearrange(row.trackId, 'track')
+          if (rearrangeSpec !== null) {
+            return (
+              <button
+                key={`${row.trackId}-${item.type}-${String(cellIndex)}`}
+                type="button"
+                className={`${TOKEN_CLASS_NAME} ${REARRANGEABLE_CLASS_NAME}`}
+                style={layoutRegionStyle(region, props.layout)}
+                title={MOVE_TO_SATCHEL_HINT}
+                aria-label={`${item.type}: ${MOVE_TO_SATCHEL_HINT}`}
+                onClick={() => {
+                  getHudCallbacks().onRearrangeItem(rearrangeSpec)
+                }}
+              >
+                <img
+                  className="block size-full object-fill"
+                  src={imagePath}
+                  alt=""
+                  draggable={false}
+                />
+              </button>
+            )
           }
           // Fill layout cell (tea/coin/bag slots) — not crafted-strip sizing.
           return (
@@ -620,6 +702,7 @@ function VagabondItemOverlays(props: {
 }): JSX.Element {
   const satchelRegion = findBoardLayoutRegion(props.layout, 'satchel')
   const damagedRegion = findBoardLayoutRegion(props.layout, 'damaged')
+  const findRearrange = useRearrangeSpecFinder(props.view.seat)
   return (
     <>
       <VagabondCharacterOverlay layout={props.layout} />
@@ -635,6 +718,9 @@ function VagabondItemOverlays(props: {
               key={`satchel-${item.type}-${String(index)}`}
               item={{ type: item.type, exhausted: item.exhausted, count: 1 }}
               sizeClassName={ITEM_PACK_ITEM_SIZE_CLASS_NAME}
+              rearrangeSpec={
+                item.exhausted ? null : findRearrange(item.type, 'satchel')
+              }
             />
           ))}
         </div>
