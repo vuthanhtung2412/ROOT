@@ -73,6 +73,8 @@ const SUPPLY_BADGE_CLASS_NAME =
 const DECREE_CLASS_NAME =
   'absolute flex items-center overflow-hidden px-2 py-1 font-mono text-[clamp(10px,2vh,14px)]'
 const DECREE_ACTIVE_CLASS_NAME = 'bg-[rgb(255_224_138/0.87)] text-[#1a1408]'
+/** Not the resolving column: suit icons sit straight on the board art. */
+const DECREE_IDLE_CLASS_NAME = 'text-[#1a1408]'
 const LEADER_CLASS_NAME = 'absolute object-contain object-left-top select-none'
 const MOVE_TO_SATCHEL_HINT = 'Move to Satchel'
 const MOVE_TO_TRACK_HINT = 'Move to its track'
@@ -389,7 +391,7 @@ function EyrieDecreeOverlays(props: {
           <div
             key={column.columnId}
             className={`${DECREE_CLASS_NAME} ${
-              active ? DECREE_ACTIVE_CLASS_NAME : DARK_LABEL_CLASS_NAME
+              active ? DECREE_ACTIVE_CLASS_NAME : DECREE_IDLE_CLASS_NAME
             }`}
             style={layoutRegionStyle(region, props.layout)}
           >
