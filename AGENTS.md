@@ -93,3 +93,4 @@ const velocity = time * EARTH_GRAVITY_ACCELERATION
 
 + Always import with absolute path
 + A file should have max 500 line and ideally around 200 - 300 lines. if the number of lines exceed limit consider consider splitting component or adding helper function.
++ Frontend styling: Tailwind utility classes in TSX. No new `.css` files or BEM classes; theme tokens live in `frontend/react/src/style.css` `@theme`. Repeated class sets become named constants. Keep bare hook class names that QA scripts select on.
