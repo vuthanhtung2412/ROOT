@@ -104,20 +104,10 @@ function FitToken(props: {
 
 function CraftedItemsOverlay(props: OverlayBaseProps): JSX.Element | null {
   const region = findBoardLayoutRegion(props.layout, 'crafted-items')
-  if (region === null) {
+  if (region === null || props.view.crafted.items.length === 0) {
     return null
   }
   const style = layoutRegionStyle(region, props.layout)
-  if (props.view.crafted.items.length === 0) {
-    return (
-      <div
-        className={`${CRAFTED_STRIP_CLASS_NAME} items-start font-mono text-[clamp(10px,2.2vh,14px)] text-[#1a1408]`}
-        style={style}
-      >
-        Items (none)
-      </div>
-    )
-  }
 
   return (
     <div className={`${CRAFTED_STRIP_CLASS_NAME} items-center`} style={style}>
