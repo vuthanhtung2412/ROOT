@@ -12,7 +12,7 @@ import {
   subscribeCraftedCards,
 } from '#game/cardGalleryBridge.ts'
 import { getHudCallbacks } from '#game/hudStore.ts'
-import { QuestCardFace } from '#react/QuestPilePanel.tsx'
+import { questCardLabel } from '#react/QuestPilePanel.tsx'
 import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
 import '#react/CardGalleryModal.css'
 
@@ -200,9 +200,15 @@ export function CompletedQuestsModal(): JSX.Element | null {
       {content.quests.length === 0 ? (
         <p className="card-gallery-modal__empty">{EMPTY_COMPLETED_QUESTS_MESSAGE}</p>
       ) : (
-        <div className="card-gallery-modal__quest-strip *:w-40 *:flex-none">
+        <div className="card-gallery-modal__strip">
           {content.quests.map((quest) => (
-            <QuestCardFace key={quest.id} quest={quest} />
+            <img
+              key={quest.id}
+              className="card-gallery-modal__card"
+              src={quest.imagePath}
+              alt={questCardLabel(quest)}
+              draggable={false}
+            />
           ))}
         </div>
       )}
