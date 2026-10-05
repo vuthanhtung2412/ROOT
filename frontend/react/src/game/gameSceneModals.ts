@@ -23,6 +23,7 @@ import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
 import {
   buildFactionBoardViewModel,
   completedQuestViewsFromBoard,
+  hideSupportersFromOtherSeats,
 } from '#ui/factionBoardViewModel.ts'
 
 const SUPPORTERS_PILE_TITLE_PREFIX = 'Supporters ('
@@ -60,6 +61,13 @@ function allianceSupportersFromBoard(board: unknown): CardGalleryFace[] | null {
 
 /** Open / refresh faction board, crafted cards, and discard pile modals. */
 export class GameSceneModals {
+  /** Seat whose secrets this screen may show; null = nobody's. */
+  private readonly getViewerSeat: () => number | null
+
+  constructor(getViewerSeat: () => number | null) {
+    this.getViewerSeat = getViewerSeat
+  }
+
   openFactionBoard(state: GameState, seat: number): void {
     if (isFactionBoardOpen() === true && factionBoardOpenSeat() === seat) {
       hideFactionBoard()
@@ -69,7 +77,7 @@ export class GameSceneModals {
     if (view === null) {
       return
     }
-    showFactionBoard(view)
+    showFactionBoard(hideSupportersFromOtherSeats(view, this.getViewerSeat()))
   }
 
   openCraftedCards(state: GameState, seat: number): void {
@@ -133,6 +141,10 @@ export class GameSceneModals {
       hideCardPile()
       return
     }
+    // Rule: 8.2.3 — only the Alliance may inspect its supporters.
+    if (seat !== this.getViewerSeat()) {
+      return
+    }
     const player = state.players.find((entry) => entry.seat === seat)
     if (player === undefined) {
       return
@@ -170,7 +182,7 @@ export class GameSceneModals {
       hideFactionBoard()
       return
     }
-    showFactionBoard(view)
+    showFactionBoard(hideSupportersFromOtherSeats(view, this.getViewerSeat()))
   }
 
   refreshCraftedCards(state: GameState | null | undefined): void {

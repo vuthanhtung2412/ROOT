@@ -333,7 +333,12 @@ function SupportersPileOverlay(props: {
       type="button"
       className="faction-board-modal__supporters-hit"
       style={layoutRegionStyle(props.region, props.layout)}
-      aria-label={`Observe supporters (${String(props.view.supporters)})`}
+      aria-label={
+        props.view.supportersFaceDown
+          ? `Supporters face down (${String(props.view.supporters)})`
+          : `Observe supporters (${String(props.view.supporters)})`
+      }
+      disabled={props.view.supportersFaceDown}
       onClick={() => {
         getHudCallbacks().onSupportersClick(props.view.seat)
       }}
@@ -346,9 +351,11 @@ function SupportersPileOverlay(props: {
           draggable={false}
         />
       ) : null}
-      <span className="faction-board-modal__supporters-suits">
-        {formatDecreeSuitCounts(props.view.supporterSuits)}
-      </span>
+      {props.view.supportersFaceDown ? null : (
+        <span className="faction-board-modal__supporters-suits">
+          {formatDecreeSuitCounts(props.view.supporterSuits)}
+        </span>
+      )}
       <span className="faction-board-modal__supply-badge">
         {String(props.view.supporters)}
       </span>

@@ -3,6 +3,8 @@ import {
   buildFactionBoardViewModelFromPlayer,
   formatDecreeSuitCounts,
   groupCraftedItems,
+  hideSupportersFromOtherSeats,
+  type FactionBoardViewModel,
 } from '#ui/factionBoardViewModel.ts'
 
 describe('groupCraftedItems', () => {
@@ -285,5 +287,57 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
         hand: [],
       }),
     ).toBeNull()
+  })
+})
+
+describe('hideSupportersFromOtherSeats', () => {
+  const ALLIANCE_SEAT = 2
+  const OTHER_SEAT = 0
+
+  function makeAllianceView(): FactionBoardViewModel {
+    const view = buildFactionBoardViewModelFromPlayer({
+      seat: ALLIANCE_SEAT,
+      faction: 'alliance',
+      vp: 0,
+      hand: [],
+      board: {
+        kind: 'alliance',
+        supply: { warriors: 8 },
+        supporters: [
+          { id: 's1', defId: 'ROOT-200' },
+          { id: 's2', defId: 'ROOT-205' },
+        ],
+        officers: 0,
+        bases: [],
+        sympathyTrack: { placed: 10 },
+      },
+    })
+    if (view === null) {
+      throw new Error('expected alliance view')
+    }
+    return view
+  }
+
+  it('Alliance seat still sees its own supporters', () => {
+    const view = hideSupportersFromOtherSeats(makeAllianceView(), ALLIANCE_SEAT)
+    if (view.kind !== 'alliance') {
+      throw new Error('expected alliance view')
+    }
+    expect(view.supportersFaceDown).toBe(false)
+    expect(view.topSupporterDefId).toBe('ROOT-205')
+    expect(view.supporterSuits.length).toBe(2)
+  })
+
+  it('other seats only learn the pile size', () => {
+    for (const viewerSeat of [OTHER_SEAT, null]) {
+      const view = hideSupportersFromOtherSeats(makeAllianceView(), viewerSeat)
+      if (view.kind !== 'alliance') {
+        throw new Error('expected alliance view')
+      }
+      expect(view.supportersFaceDown).toBe(true)
+      expect(view.supporters).toBe(2)
+      expect(view.topSupporterDefId).toBeNull()
+      expect(view.supporterSuits).toEqual([])
+    }
   })
 })

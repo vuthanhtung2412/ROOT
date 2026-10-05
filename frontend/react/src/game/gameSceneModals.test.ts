@@ -6,13 +6,16 @@ import {
 import { GameSceneModals } from '#game/gameSceneModals.ts'
 import { makeGameState } from '#test/factories.ts'
 
+const ALLIANCE_SEAT = 2
+const OTHER_SEAT = 0
+
 describe('GameSceneModals.openSupporters', () => {
   beforeEach(() => {
     hideCardPile()
   })
 
   it('opens supporter faces in card pile gallery', () => {
-    const modals = new GameSceneModals()
+    const modals = new GameSceneModals(() => ALLIANCE_SEAT)
     const state = makeGameState({
       players: [
         {
@@ -49,7 +52,7 @@ describe('GameSceneModals.openSupporters', () => {
   })
 
   it('toggles closed when supporters pile already open', () => {
-    const modals = new GameSceneModals()
+    const modals = new GameSceneModals(() => ALLIANCE_SEAT)
     const state = makeGameState({
       players: [
         {
@@ -72,6 +75,33 @@ describe('GameSceneModals.openSupporters', () => {
 
     modals.openSupporters(state, 2)
     modals.openSupporters(state, 2)
+
+    expect(getCardPileSnapshot()).toBeNull()
+  })
+
+  it('keeps supporters face down for any seat but the Alliance', () => {
+    const modals = new GameSceneModals(() => OTHER_SEAT)
+    const state = makeGameState({
+      players: [
+        {
+          playerId: 'alliance',
+          seat: ALLIANCE_SEAT,
+          faction: 'alliance',
+          vp: 0,
+          hand: [],
+          board: {
+            kind: 'alliance',
+            supply: { warriors: 8 },
+            supporters: [{ id: 's1', defId: 'ROOT-1' }],
+            officers: 0,
+            bases: [],
+            sympathyTrack: { placed: 10 },
+          },
+        },
+      ],
+    })
+
+    modals.openSupporters(state, ALLIANCE_SEAT)
 
     expect(getCardPileSnapshot()).toBeNull()
   })

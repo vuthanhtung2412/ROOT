@@ -205,7 +205,7 @@ export class ReactGameController {
         this.localPlayerControlsSeat(actorSeat),
       )
     })
-    this.modals = new GameSceneModals()
+    this.modals = new GameSceneModals(() => this.viewerSeat())
     this.composer.setHooks(
       mergeComposerHooks(
         this.marquiseCards.hooks,
@@ -590,6 +590,18 @@ export class ReactGameController {
         }
       },
     })
+  }
+
+  /** Seat whose secrets this screen may show: own seat online, actor in hotseat. */
+  private viewerSeat(): number | null {
+    const snapshot = this.latestSnapshot
+    if (this.session === null || snapshot === null || snapshot.state === null) {
+      return null
+    }
+    return (
+      this.session.getLocalSeat() ??
+      buildTurnBannerViewModel(snapshot.state, snapshot.legalActions).actorSeat
+    )
   }
 
   private localPlayerControlsSeat(actorSeat: number): boolean {

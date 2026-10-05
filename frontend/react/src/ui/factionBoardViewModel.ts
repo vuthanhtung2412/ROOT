@@ -116,6 +116,8 @@ export type AllianceBoardViewModel = {
   topSupporterDefId: string | null
   /** Suit of each supporter card (for decree-style summary). */
   supporterSuits: readonly string[]
+  /** True for every seat but the Alliance: only the pile size is shown. */
+  supportersFaceDown: boolean
   handSize: number
   crafted: CraftedLookup
   abilities: readonly AllianceAbilityInfo[]
@@ -442,6 +444,25 @@ export const CHARACTER_BOARD_TEXTURE_KEYS = {
   vagabond: GAME_ASSET_KEYS.characterBoardVagabond,
 } as const
 
+/**
+ * Rule: 8.2.3 — supporters are face down; only the Alliance may inspect them.
+ * Does not mutate `view`.
+ */
+export function hideSupportersFromOtherSeats(
+  view: FactionBoardViewModel,
+  viewerSeat: number | null,
+): FactionBoardViewModel {
+  if (view.kind !== 'alliance' || view.seat === viewerSeat) {
+    return view
+  }
+  return {
+    ...view,
+    topSupporterDefId: null,
+    supporterSuits: [],
+    supportersFaceDown: true,
+  }
+}
+
 export function buildFactionBoardViewModel(
   state: GameState,
   seat: number,
@@ -587,6 +608,7 @@ export function buildFactionBoardViewModelFromPlayer(
       topSupporterDefId:
         topSupporter === undefined ? null : topSupporter.defId,
       supporterSuits: supporterCards.map((card) => suitForDecreeCard(card.defId)),
+      supportersFaceDown: false,
       handSize: player.hand.length,
       crafted: craftedLookup(player),
       abilities: ALLIANCE_ABILITIES,
