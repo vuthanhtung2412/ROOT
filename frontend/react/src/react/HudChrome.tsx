@@ -87,6 +87,13 @@ export function WinnerOverlay(): JSX.Element | null {
   )
 }
 
+/**
+ * Setup pick card: as wide as four cards across (Eyrie leaders) and the
+ * viewport height allow; never smaller than the old fixed 150px card.
+ */
+const SETUP_CARD_WIDTH_CLASS_NAME = 'w-[min(21vw,36vh,300px)] min-w-[150px]'
+const SETUP_CARD_SIZE_CLASS_NAME = `${SETUP_CARD_WIDTH_CLASS_NAME} aspect-[5/7]`
+
 export function LeaderPickOverlay(): JSX.Element | null {
   const leaderPick = useSyncExternalStore(
     subscribeHud,
@@ -98,15 +105,15 @@ export function LeaderPickOverlay(): JSX.Element | null {
   }
   return (
     <div
-      className="fixed inset-0 z-[250] flex flex-col items-center pt-14"
+      className="fixed inset-0 z-[250] flex flex-col items-center overflow-y-auto pt-14 pb-4"
       role="dialog"
       aria-modal="true"
     >
-      <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-forest-deep)_72%,transparent)]" />
+      <div className="fixed inset-0 bg-[color-mix(in_srgb,var(--color-forest-deep)_72%,transparent)]" />
       <h2 className="root-panel relative z-[1] m-0 px-3.5 py-1.5 font-display text-[22px] font-normal text-ink">
         {setupCardPickTitle(leaderPick.kind)}
       </h2>
-      <div className="relative z-[1] mt-12 flex max-w-[96vw] flex-row flex-wrap items-start justify-center gap-4">
+      <div className="relative z-[1] mt-6 flex max-w-[96vw] flex-row flex-wrap items-start justify-center gap-4">
         {setupCardPickOptions(leaderPick.kind, leaderPick.leaderIds).map((option) => {
           return (
             <button
@@ -119,17 +126,19 @@ export function LeaderPickOverlay(): JSX.Element | null {
             >
               {option.imagePath !== null ? (
                 <img
-                  className="h-[210px] w-[150px] border-2 border-ink object-fill shadow-[2px_3px_0_color-mix(in_srgb,var(--color-ink)_35%,transparent)] select-none"
+                  className={`${SETUP_CARD_SIZE_CLASS_NAME} border-2 border-ink object-fill shadow-[2px_3px_0_color-mix(in_srgb,var(--color-ink)_35%,transparent)] select-none`}
                   src={option.imagePath}
                   alt={option.name}
                   draggable={false}
                 />
               ) : (
-                <div className="flex h-[210px] w-[150px] items-center justify-center border-2 border-ink bg-forest font-display text-parchment">
+                <div
+                  className={`${SETUP_CARD_SIZE_CLASS_NAME} flex items-center justify-center border-2 border-ink bg-forest font-display text-parchment`}
+                >
                   {option.name}
                 </div>
               )}
-              <span className="max-w-[170px] border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_94%,#1a1410)] px-1.5 py-1 text-center font-mono text-[11px] whitespace-pre-line text-ink [background-blend-mode:multiply] [background-image:var(--root-paper-grain)]">
+              <span className={`${SETUP_CARD_WIDTH_CLASS_NAME} border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_94%,#1a1410)] px-1.5 py-1 text-center font-mono text-[clamp(11px,1.6vh,13px)] whitespace-pre-line text-ink [background-blend-mode:multiply] [background-image:var(--root-paper-grain)]`}>
                 {option.caption.join('\n')}
               </span>
             </button>
