@@ -529,6 +529,18 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       if (target === undefined) return null
       return { type: 'steal', target }
     }
+    case 'dayLabor': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      if (!cardId) return null
+      return { type: 'dayLabor', cardId }
+    }
+    case 'hideout': {
+      // Repair the first itemCount offered damaged items.
+      const offeredItems = paramList(spec.params, 'vagabondItems') ?? []
+      const repairCount = readNumberList(paramList(spec.params, 'itemCount'))[0]
+      if (repairCount === undefined) return null
+      return { type: 'hideout', items: offeredItems.slice(0, repairCount) }
+    }
     case 'resolveEvent': {
       const params = spec.params
       const clearingList = paramList(params, 'clearing')
@@ -546,6 +558,16 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       if (forests && forests.length > 0 && typeof forests[0] === 'number') {
         const forest = pick(readNumberList(forests))
         if (forest !== undefined) return { type: 'resolveEvent', forest }
+      }
+      // Setup chooseCharacter: params.characters = Vagabond characters
+      const characters = paramList(params, 'characters')
+      if (
+        characters &&
+        characters.length > 0 &&
+        typeof characters[0] === 'string'
+      ) {
+        const character = pick(readStringList(characters))
+        if (character) return { type: 'resolveEvent', character }
       }
       // Setup / depose chooseLeader
       const leaders = paramList(params, 'leaders')
