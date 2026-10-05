@@ -53,6 +53,9 @@ function finishSetup(game: Game): void {
   if (game.state.pending[0]?.type === 'chooseLeader') {
     game.apply({ type: 'resolveEvent', leader: 'builder' })
   }
+  if (game.state.pending[0]?.type === 'chooseCharacter') {
+    game.apply({ type: 'resolveEvent', character: 'thief' })
+  }
   if (game.state.pending[0]?.type === 'chooseForest') {
     game.apply({ type: 'resolveEvent', forest: FALL.vagabondForest })
   }

@@ -34,6 +34,10 @@ function lobbyTwoPlaying(seed: number): Game {
       game.apply({ type: 'resolveEvent', leader: 'builder' })
       continue
     }
+    if (pending.type === 'chooseCharacter') {
+      game.apply({ type: 'resolveEvent', character: 'thief' })
+      continue
+    }
     if (pending.type === 'chooseForest') {
       game.apply({ type: 'resolveEvent', forest: FALL.vagabondForest })
       continue
