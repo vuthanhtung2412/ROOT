@@ -20,6 +20,9 @@ import {
 } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
 
+/** Craft cost any crafting piece pays, whatever its suit. */
+const WILD_COST_SUIT = 'wild'
+
 export function hasExhaustible(board: VagabondBoard, type: ItemType): boolean {
   return exhaustibleCount(board, type) > 0
 }
@@ -127,6 +130,13 @@ export function canCraftWithHammers(
   if (def.cost.length === 0) return false
   const board = boardOf(state, seat)
   if (undamagedHammerCount(board) < def.cost.length) return false
+  // Rule: 9.5.8 — all hammers match the suit of the Vagabond's clearing.
+  const clearing = pawnClearing(state, seat)
+  if (clearing === null) return false
+  const hammerSuit = FALL.clearings[clearing]!.suit
+  if (!def.cost.every((need) => need === WILD_COST_SUIT || need === hammerSuit)) {
+    return false
+  }
   if (def.type === 'item') {
     if (def.item === undefined) return false
     if ((state.itemSupply[def.item] ?? 0) < 1) return false
