@@ -69,12 +69,12 @@ const ITEM_PACK_ITEM_SIZE_CLASS_NAME = 'size-16'
 const ITEM_PACK_CLASS_NAME =
   'pointer-events-auto absolute z-2 flex flex-wrap content-start items-start justify-start gap-1 overflow-x-hidden overflow-y-auto p-1'
 const SUPPLY_BADGE_CLASS_NAME =
-  'absolute top-[2%] right-[2%] z-2 bg-parchment/93 px-1.5 py-0.5 font-mono text-[clamp(12px,2.4vh,18px)] text-[#1a1408]'
+  'absolute top-[2%] right-[2%] z-2 bg-parchment/93 px-1.5 py-0.5 font-mono text-[clamp(12px,2.4vh,18px)] text-ink-deep'
 const DECREE_CLASS_NAME =
   'absolute flex items-center overflow-hidden px-2 py-1 font-mono text-[clamp(10px,2vh,14px)]'
-const DECREE_ACTIVE_CLASS_NAME = 'bg-[rgb(255_224_138/0.87)] text-[#1a1408]'
+const DECREE_ACTIVE_CLASS_NAME = 'bg-[rgb(255_224_138/0.87)] text-ink-deep'
 /** Not the resolving column: suit icons sit straight on the board art. */
-const DECREE_IDLE_CLASS_NAME = 'text-[#1a1408]'
+const DECREE_IDLE_CLASS_NAME = 'text-ink-deep'
 const LEADER_CLASS_NAME = 'absolute object-contain object-left-top select-none'
 const MOVE_TO_SATCHEL_HINT = 'Move to Satchel'
 const MOVE_TO_TRACK_HINT = 'Move to its track'
@@ -181,7 +181,7 @@ function CraftedItemIcon(props: {
         </span>
       )}
       {props.item.count > 1 ? (
-        <span className="absolute -top-1 -right-1 bg-parchment px-[3px] py-px font-mono text-[9px] font-bold text-ink">
+        <span className="absolute -top-1 -right-1 bg-parchment px-0.75 py-px font-mono text-[9px] font-bold text-ink">
           {String(props.item.count)}
         </span>
       ) : null}

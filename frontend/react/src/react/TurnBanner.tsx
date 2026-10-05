@@ -61,8 +61,8 @@ export function TurnBanner(): JSX.Element | null {
     <div
       className={
         hasOptionRow
-          ? 'root-panel fixed top-2 left-1/2 z-[130] box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[48px_minmax(0,1fr)_48px] grid-rows-[auto_auto] items-center gap-x-2 gap-y-1.5 px-2 py-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[56px_minmax(0,1fr)_56px] md:gap-x-3 md:gap-y-2 md:px-3 md:py-2'
-          : 'root-panel fixed top-2 left-1/2 z-[130] box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[48px_minmax(0,1fr)_48px] grid-rows-[auto] items-center gap-x-2 gap-y-1.5 px-2 py-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[56px_minmax(0,1fr)_56px] md:gap-x-3 md:gap-y-2 md:px-3 md:py-2'
+          ? 'root-panel fixed top-2 left-1/2 z-130 box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[48px_minmax(0,1fr)_48px] grid-rows-[auto_auto] items-center gap-x-2 gap-y-1.5 px-2 py-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[56px_minmax(0,1fr)_56px] md:gap-x-3 md:gap-y-2 md:px-3 md:py-2'
+          : 'root-panel fixed top-2 left-1/2 z-130 box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[48px_minmax(0,1fr)_48px] grid-rows-[auto] items-center gap-x-2 gap-y-1.5 px-2 py-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[56px_minmax(0,1fr)_56px] md:gap-x-3 md:gap-y-2 md:px-3 md:py-2'
       }
     >
       {showCancel ? (
@@ -78,7 +78,7 @@ export function TurnBanner(): JSX.Element | null {
       ) : (
         <span className="size-px" />
       )}
-      <p className="m-0 text-center font-display text-base leading-[1.25] text-ink md:text-xl">
+      <p className="m-0 text-center font-display text-base leading-tight text-ink md:text-xl">
         {statusText}
       </p>
       {showConfirm ? (
@@ -145,7 +145,7 @@ export function TurnBanner(): JSX.Element | null {
 const ITEM_OPTION_BASE_CLASS =
   'relative m-0 box-border size-14 cursor-pointer border-2 bg-parchment p-0.5 transition-transform duration-75 ease-out md:size-16'
 const ITEM_OPTION_SELECTED_CLASS =
-  'border-gold -translate-y-1 shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-gold)_80%,var(--color-ink))]'
+  'border-gold -translate-y-1 shadow-gold-ring'
 const ITEM_OPTION_IDLE_CLASS = 'border-ink-soft'
 /** Same dimming as exhausted items on the Vagabond faction board. */
 const ITEM_OPTION_EXHAUSTED_IMAGE_CLASS = 'opacity-40'
@@ -221,7 +221,7 @@ function CountStepperRow(props: {
       >
         {'<'}
       </button>
-      <span className="border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment-deep)_80%,transparent)] px-3.5 py-1.5 font-mono text-base text-ink">
+      <span className="border border-ink-soft bg-parchment-deep/80 px-3.5 py-1.5 font-mono text-base text-ink">
         {formatCountStepperLabel(selected)}
       </span>
       <button

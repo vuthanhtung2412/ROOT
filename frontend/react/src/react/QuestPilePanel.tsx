@@ -39,7 +39,7 @@ export function QuestPilePanel(props: {
       className="pointer-events-auto relative z-2 flex size-full flex-col gap-2 overflow-y-auto rounded border border-[rgb(230_220_190/0.35)] bg-[rgb(20_24_18/0.72)] p-2 font-body text-[#f3ecd8]"
       aria-label={`Quests (${String(props.view.questsAvailable.length)} face up, ${String(props.view.questDeckCount)} in deck)`}
     >
-      <div className="flex items-baseline justify-between text-[12px] tracking-[0.04em] uppercase opacity-90">
+      <div className="flex items-baseline justify-between text-[12px] tracking-heading uppercase opacity-90">
         Quests
         <span className={QUEST_FOOTNOTE_CLASS_NAME}>
           deck {String(props.view.questDeckCount)}

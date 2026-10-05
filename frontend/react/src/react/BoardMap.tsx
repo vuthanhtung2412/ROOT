@@ -183,7 +183,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
       {metrics !== null ? (
         <>
           <div
-            className="pointer-events-none absolute z-[0] bg-parchment shadow-[inset_0_0_0_1px_var(--color-ink-soft)]"
+            className="pointer-events-none absolute z-0 bg-parchment shadow-inset-line-ink"
             style={{
               left: metrics.mapLeft - MAP_BORDER_WIDTH_PIXELS,
               top: metrics.mapTop - MAP_BORDER_WIDTH_PIXELS,
@@ -192,7 +192,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
             }}
           />
           <img
-            className="pointer-events-none absolute z-[1] block select-none"
+            className="pointer-events-none absolute z-1 block select-none"
             src={mapPath}
             alt="Autumn map"
             draggable={false}
@@ -203,7 +203,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               height: metrics.mapDisplayHeight,
             }}
           />
-          <div className="pointer-events-none absolute inset-0 z-[3]">
+          <div className="pointer-events-none absolute inset-0 z-3">
             {forestPawns.length > 0 ? (
               <ForestPawnLayer
                 forestLayouts={forestLayouts}
@@ -212,7 +212,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
             ) : null}
             {highlightedForests.size > 0 ? (
               <svg
-                className="pointer-events-none absolute inset-0 z-[2] overflow-visible"
+                className="pointer-events-none absolute inset-0 z-2 overflow-visible"
                 width="100%"
                 height="100%"
                 aria-hidden
@@ -256,7 +256,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
                   <button
                     key={`forest-hit-${String(layout.forestIndex)}`}
                     type="button"
-                    className="pointer-events-auto absolute inset-0 z-[5] m-0 cursor-pointer border-0 bg-transparent p-0"
+                    className="pointer-events-auto absolute inset-0 z-5 m-0 cursor-pointer border-0 bg-transparent p-0"
                     aria-label={`Forest ${String(layout.forestIndex)}`}
                     onClick={() => {
                       handleForestClick(layout.forestIndex)
@@ -283,7 +283,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
             let ringExtraClass = ''
             if (isHighlighted) {
               ringExtraClass =
-                'shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-gold)_75%,transparent)]'
+                'shadow-gold-glow'
               ringColor = '#c9a04a'
               ringWidth = 3
             } else if (hasAnyHighlight) {
@@ -304,7 +304,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               <button
                 key={target.clearingId}
                 type="button"
-                className="pointer-events-auto absolute z-[4] m-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
+                className="pointer-events-auto absolute z-4 m-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
                 aria-label={`Clearing ${String(target.clearingId)}`}
                 onClick={() => {
                   handleClearingClick(target.clearingId)

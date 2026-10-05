@@ -78,10 +78,10 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
     ) : null
 
   return (
-    <div className="fixed inset-0 z-[0] overflow-hidden bg-forest-deep">
+    <div className="fixed inset-0 z-0 overflow-hidden bg-forest-deep">
       {wallpaperPath !== null ? (
         <img
-          className="pointer-events-none absolute inset-0 size-full object-cover select-none brightness-[0.92] contrast-[1.03] saturate-90"
+          className="pointer-events-none absolute inset-0 size-full object-cover select-none brightness-92 contrast-103 saturate-90"
           src={wallpaperPath}
           alt=""
           draggable={false}
@@ -90,7 +90,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
         <div className="absolute inset-0 bg-forest-deep" />
       )}
       {isPortrait ? (
-        <div className="absolute top-[var(--root-portrait-map-top-inset)] right-0 bottom-[var(--root-portrait-map-bottom-inset)] left-0 z-[1] box-border flex items-center justify-center overflow-hidden px-2.5">
+        <div className="absolute top-(--root-portrait-map-top-inset) right-0 bottom-(--root-portrait-map-bottom-inset) left-0 z-1 box-border flex items-center justify-center overflow-hidden px-2.5">
           <div
             className="relative max-h-full max-w-full shrink-0"
             style={{
@@ -102,7 +102,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
           </div>
         </div>
       ) : (
-        <div className="absolute inset-y-0 left-[var(--root-landscape-side-percent)] z-[1] box-border flex w-[var(--root-landscape-center-percent)] items-center justify-center overflow-hidden">
+        <div className="absolute inset-y-0 left-(--root-landscape-side-percent) z-1 box-border flex w-(--root-landscape-center-percent) items-center justify-center overflow-hidden">
           <div
             className="relative max-h-full max-w-full shrink-0"
             style={{

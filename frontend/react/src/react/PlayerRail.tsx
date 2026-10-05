@@ -13,6 +13,13 @@ import {
 import { factionColorForSeat } from '#game/theme.ts'
 
 const VAGABOND_FACTION_ID = 'vagabond'
+const SEAT_PANEL_CLASS_NAME =
+  'root-panel box-border flex h-18 w-[min(260px,calc(50vw-14px))] flex-row items-center gap-2 px-2.5 py-2 md:h-28 md:w-full md:max-w-(--root-player-rail-seat-max-width) md:gap-3 md:px-3 md:py-3'
+/** Seat whose turn it is: gold ring, warmer parchment. */
+const SEAT_PANEL_ACTIVE_CLASS_NAME =
+  'shadow-seat-active bg-[color-mix(in_srgb,var(--color-parchment)_96%,var(--color-gold))]'
+const SEAT_BUTTON_CLASS_NAME =
+  'root-button root-button--quiet px-2 py-1 font-mono text-[12px] md:text-[14px]'
 
 function colorToCss(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`
@@ -29,7 +36,7 @@ export function PlayerRail(): JSX.Element | null {
   }
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed top-16 right-2 left-2 z-[100] box-border flex w-auto flex-row flex-wrap items-stretch justify-center gap-1.5 px-0 md:top-10 md:right-auto md:bottom-3 md:left-0 md:w-[var(--root-landscape-side-percent)] md:flex-col md:flex-nowrap md:items-center md:justify-start md:gap-3.5 md:overflow-x-hidden md:overflow-y-auto md:px-2">
+    <div className="fixed top-16 right-2 left-2 z-100 box-border flex w-auto flex-row flex-wrap items-stretch justify-center gap-1.5 px-0 md:top-10 md:right-auto md:bottom-3 md:left-0 md:w-(--root-landscape-side-percent) md:flex-col md:flex-nowrap md:items-center md:justify-start md:gap-3.5 md:overflow-x-hidden md:overflow-y-auto md:px-2">
       {rail.state.players.map((player) => {
         const isActive = player.seat === rail.activeSeat
         const color = factionColorForSeat(player.seat, rail.state.factions)
@@ -42,8 +49,8 @@ export function PlayerRail(): JSX.Element | null {
             key={player.seat}
             className={
               isActive
-                ? 'root-panel box-border flex h-[4.5rem] w-[min(260px,calc(50vw-14px))] flex-row items-center gap-2 px-2.5 py-2 shadow-[inset_0_0_0_1px_var(--color-parchment-shadow),0_0_0_2px_color-mix(in_srgb,var(--color-gold)_70%,var(--color-ink)),2px_2px_0_color-mix(in_srgb,var(--color-ink)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-parchment)_96%,var(--color-gold))] md:h-28 md:w-full md:max-w-[var(--root-player-rail-seat-max-width)] md:gap-3 md:px-3 md:py-3'
-                : 'root-panel box-border flex h-[4.5rem] w-[min(260px,calc(50vw-14px))] flex-row items-center gap-2 px-2.5 py-2 md:h-28 md:w-full md:max-w-[var(--root-player-rail-seat-max-width)] md:gap-3 md:px-3 md:py-3'
+                ? `${SEAT_PANEL_CLASS_NAME} ${SEAT_PANEL_ACTIVE_CLASS_NAME}`
+                : SEAT_PANEL_CLASS_NAME
             }
             style={{
               borderColor: isActive ? '#ffe08a' : colorToCss(color),
@@ -58,13 +65,13 @@ export function PlayerRail(): JSX.Element | null {
             >
               {iconPath !== null ? (
                 <img
-                  className="size-12 shrink-0 object-contain drop-shadow-[1px_1px_0_color-mix(in_srgb,var(--color-ink)_25%,transparent)] md:size-[4.5rem]"
+                  className="size-12 shrink-0 object-contain drop-shadow-stamp md:size-18"
                   src={iconPath}
                   alt={player.faction}
                   draggable={false}
                 />
               ) : (
-                <div className="size-12 shrink-0 bg-ink-soft md:size-[4.5rem]" />
+                <div className="size-12 shrink-0 bg-ink-soft md:size-18" />
               )}
               <span className="min-w-0 flex-1 overflow-hidden font-body text-[15px] leading-[1.2] break-words whitespace-pre-line text-ink md:text-[18px]">
                 {`${player.faction}\n${String(player.vp)} VP`}
@@ -74,7 +81,7 @@ export function PlayerRail(): JSX.Element | null {
               {isVagabond ? (
                 <button
                   type="button"
-                  className="root-button root-button--quiet px-2 py-1 font-mono text-[12px] md:text-[14px]"
+                  className={SEAT_BUTTON_CLASS_NAME}
                   onClick={() => {
                     callbacks.onCompletedQuestsClick(player.seat)
                   }}
@@ -84,7 +91,7 @@ export function PlayerRail(): JSX.Element | null {
               ) : null}
               <button
                 type="button"
-                className="root-button root-button--quiet px-2 py-1 font-mono text-[12px] md:text-[14px]"
+                className={SEAT_BUTTON_CLASS_NAME}
                 onClick={() => {
                   callbacks.onCraftedCardsClick(player.seat)
                 }}

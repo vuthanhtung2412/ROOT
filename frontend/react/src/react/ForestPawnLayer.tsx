@@ -31,7 +31,7 @@ export function ForestPawnLayer(props: ForestPawnLayerProps): JSX.Element {
     nodes.push(
       <svg
         key={`forest-area-${String(marker.forestIndex)}-${String(marker.seat)}`}
-        className="pointer-events-none absolute inset-0 z-[2] overflow-visible"
+        className="pointer-events-none absolute inset-0 z-2 overflow-visible"
         width="100%"
         height="100%"
         aria-hidden
@@ -49,7 +49,7 @@ export function ForestPawnLayer(props: ForestPawnLayerProps): JSX.Element {
       nodes.push(
         <img
           key={`forest-pawn-${String(marker.seat)}`}
-          className="pointer-events-none absolute z-[3] -translate-x-1/2 -translate-y-1/2 object-fill select-none"
+          className="pointer-events-none absolute z-3 -translate-x-1/2 -translate-y-1/2 object-fill select-none"
           src={pawnPath}
           alt={`Vagabond in forest ${String(marker.forestIndex)}`}
           draggable={false}

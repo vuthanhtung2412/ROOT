@@ -11,6 +11,9 @@ import {
   type SetupCardPickKind,
 } from '#ui/setupCardPick.ts'
 
+/** Dims the game behind a full-screen overlay. */
+const VEIL_CLASS_NAME = 'inset-0 bg-forest-deep/72'
+
 export function GameDrawer(): JSX.Element | null {
   const drawer = useSyncExternalStore(
     subscribeHud,
@@ -23,7 +26,7 @@ export function GameDrawer(): JSX.Element | null {
   const callbacks = getHudCallbacks()
 
   return (
-    <div className="pointer-events-none fixed right-2 bottom-[var(--root-portrait-drawer-bottom)] left-2 z-[112] flex justify-between md:right-3 md:bottom-[90px] md:left-3">
+    <div className="pointer-events-none fixed right-2 bottom-(--root-portrait-drawer-bottom) left-2 z-112 flex justify-between md:right-3 md:bottom-22.5 md:left-3">
       <button
         type="button"
         className="root-button root-button--danger pointer-events-auto px-2.5 py-1.5 font-mono text-sm"
@@ -66,17 +69,17 @@ export function WinnerOverlay(): JSX.Element | null {
   }
   return (
     <div
-      className="fixed inset-0 z-[320] flex flex-col items-center justify-center gap-4"
+      className="fixed inset-0 z-320 flex flex-col items-center justify-center gap-4"
       role="dialog"
       aria-modal="true"
     >
-      <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-forest-deep)_72%,transparent)]" />
-      <p className="root-panel relative z-[1] m-0 px-5 py-3 text-center font-display text-4xl text-ink">
+      <div className={`absolute ${VEIL_CLASS_NAME}`} />
+      <p className="root-panel relative z-1 m-0 px-5 py-3 text-center font-display text-4xl text-ink">
         {`${winner.winnerFaction} wins`}
       </p>
       <button
         type="button"
-        className="root-button root-button--accent relative z-[1] px-3.5 py-2 text-base"
+        className="root-button root-button--accent relative z-1 px-3.5 py-2 text-base"
         onClick={() => {
           getHudCallbacks().onReturnToMenu()
         }}
@@ -91,8 +94,8 @@ export function WinnerOverlay(): JSX.Element | null {
  * Setup pick card: as wide as four cards across (Eyrie leaders) and the
  * viewport height allow; never smaller than the old fixed 150px card.
  */
-const SETUP_CARD_WIDTH_CLASS_NAME = 'w-[min(21vw,36vh,300px)] min-w-[150px]'
-const SETUP_CARD_SIZE_CLASS_NAME = `${SETUP_CARD_WIDTH_CLASS_NAME} aspect-[5/7]`
+const SETUP_CARD_WIDTH_CLASS_NAME = 'w-[min(21vw,36vh,300px)] min-w-37.5'
+const SETUP_CARD_SIZE_CLASS_NAME = `${SETUP_CARD_WIDTH_CLASS_NAME} aspect-5/7`
 
 export function LeaderPickOverlay(): JSX.Element | null {
   const leaderPick = useSyncExternalStore(
@@ -105,15 +108,15 @@ export function LeaderPickOverlay(): JSX.Element | null {
   }
   return (
     <div
-      className="fixed inset-0 z-[250] flex flex-col items-center overflow-y-auto pt-14 pb-4"
+      className="fixed inset-0 z-250 flex flex-col items-center overflow-y-auto pt-14 pb-4"
       role="dialog"
       aria-modal="true"
     >
-      <div className="fixed inset-0 bg-[color-mix(in_srgb,var(--color-forest-deep)_72%,transparent)]" />
-      <h2 className="root-panel relative z-[1] m-0 px-3.5 py-1.5 font-display text-[22px] font-normal text-ink">
+      <div className={`fixed ${VEIL_CLASS_NAME}`} />
+      <h2 className="root-panel relative z-1 m-0 px-3.5 py-1.5 font-display text-[22px] font-normal text-ink">
         {setupCardPickTitle(leaderPick.kind)}
       </h2>
-      <div className="relative z-[1] mt-6 flex max-w-[96vw] flex-row flex-wrap items-start justify-center gap-4">
+      <div className="relative z-1 mt-6 flex max-w-[96vw] flex-row flex-wrap items-start justify-center gap-4">
         {setupCardPickOptions(leaderPick.kind, leaderPick.leaderIds).map((option) => {
           return (
             <button
@@ -126,7 +129,7 @@ export function LeaderPickOverlay(): JSX.Element | null {
             >
               {option.imagePath !== null ? (
                 <img
-                  className={`${SETUP_CARD_SIZE_CLASS_NAME} border-2 border-ink object-fill shadow-[2px_3px_0_color-mix(in_srgb,var(--color-ink)_35%,transparent)] select-none`}
+                  className={`${SETUP_CARD_SIZE_CLASS_NAME} border-2 border-ink object-fill shadow-card select-none`}
                   src={option.imagePath}
                   alt={option.name}
                   draggable={false}
@@ -138,7 +141,7 @@ export function LeaderPickOverlay(): JSX.Element | null {
                   {option.name}
                 </div>
               )}
-              <span className={`${SETUP_CARD_WIDTH_CLASS_NAME} border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_94%,#1a1410)] px-1.5 py-1 text-center font-mono text-[clamp(11px,1.6vh,13px)] whitespace-pre-line text-ink [background-blend-mode:multiply] [background-image:var(--root-paper-grain)]`}>
+              <span className={`${SETUP_CARD_WIDTH_CLASS_NAME} border border-ink-soft bg-parchment-aged px-1.5 py-1 text-center font-mono text-[clamp(11px,1.6vh,13px)] whitespace-pre-line text-ink paper-grain`}>
                 {option.caption.join('\n')}
               </span>
             </button>

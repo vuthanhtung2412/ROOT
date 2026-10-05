@@ -27,6 +27,15 @@ import {
 /** Single-screen "Start game" and QA shortcuts only exist in dev builds. */
 const IS_DEVELOPMENT_BUILD: boolean = import.meta.env.DEV === true
 
+/** Start / Start online: the one big call to action. */
+const PRIMARY_BUTTON_CLASS_NAME =
+  'root-button root-button--accent min-w-50 px-5.5 py-2.5 font-display text-2xl tracking-display'
+/** Host / Join / Leave. */
+const SECONDARY_BUTTON_CLASS_NAME =
+  'root-button root-button--quiet px-4 py-2 font-display text-lg tracking-display'
+const PLAYER_COUNT_BUTTON_CLASS_NAME =
+  'root-button min-w-18 px-3 py-1.5 font-display text-xl'
+
 const DEFAULT_MENU: MenuHudState = {
   statusText: '',
   statusColor: '#c44',
@@ -49,14 +58,14 @@ function OnlineLobbyPanel(props: {
 }): JSX.Element {
   return (
     <section className="m-0 flex w-full flex-col gap-2" aria-label="Online lobby">
-      <h2 className="m-0 font-display text-lg tracking-[0.02em] text-ink">
+      <h2 className="m-0 font-display text-lg tracking-display text-ink">
         Online lobby
       </h2>
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {props.lobby.seats.map((seat, seatIndex) => (
           <li
             key={`lobby-seat-${String(seatIndex)}`}
-            className="flex flex-row items-center justify-between gap-3 border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_55%,transparent)] px-3 py-2 font-body text-base text-ink"
+            className="flex flex-row items-center justify-between gap-3 border border-ink-soft bg-parchment/55 px-3 py-2 font-body text-base text-ink"
           >
             <span>
               Seat {seatIndex + 1} · {seat.faction}
@@ -70,7 +79,7 @@ function OnlineLobbyPanel(props: {
       {props.lobby.isHost ? (
         <button
           type="button"
-          className="root-button root-button--accent min-w-[200px] self-center px-[22px] py-2.5 font-display text-2xl tracking-[0.02em]"
+          className={`${PRIMARY_BUTTON_CLASS_NAME} self-center`}
           disabled={props.playPending || !props.lobby.canStart}
           onClick={props.onStart}
         >
@@ -83,7 +92,7 @@ function OnlineLobbyPanel(props: {
       )}
       <button
         type="button"
-        className="root-button root-button--quiet self-center px-4 py-2 font-display text-lg tracking-[0.02em]"
+        className={`${SECONDARY_BUTTON_CLASS_NAME} self-center`}
         disabled={props.playPending}
         title={
           props.lobby.isHost
@@ -123,10 +132,10 @@ export function MenuOverlay(): JSX.Element | null {
   const validation = validatePartyFactions(seatFactions)
 
   return (
-    <div className="fixed inset-0 z-[450] flex items-center justify-center overflow-hidden bg-forest-deep">
+    <div className="fixed inset-0 z-450 flex items-center justify-center overflow-hidden bg-forest-deep">
       {wallpaperPath !== null ? (
         <img
-          className="pointer-events-none absolute inset-0 size-full object-cover select-none contrast-[1.04] saturate-[0.92]"
+          className="pointer-events-none absolute inset-0 size-full object-cover select-none contrast-104 saturate-92"
           src={wallpaperPath}
           alt=""
           draggable={false}
@@ -134,16 +143,16 @@ export function MenuOverlay(): JSX.Element | null {
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,color-mix(in_srgb,var(--color-moss)_55%,transparent),transparent_60%),var(--color-forest-deep)]" />
       )}
-      <div className="relative z-[1] flex max-w-[min(92vw,560px)] flex-col items-center gap-4 border-2 border-ink bg-[color-mix(in_srgb,var(--color-parchment)_82%,transparent)] px-7 py-6 [background-blend-mode:multiply] [background-image:var(--root-paper-grain)] shadow-[inset_0_0_0_1px_var(--color-parchment-shadow),0_0_0_6px_color-mix(in_srgb,var(--color-ink)_18%,transparent),4px_6px_0_color-mix(in_srgb,var(--color-ink)_28%,transparent)]">
+      <div className="relative z-1 flex max-w-[min(92vw,560px)] flex-col items-center gap-4 border-2 border-ink bg-parchment/82 px-7 py-6 paper-grain shadow-menu-panel">
         {bannerPath !== null ? (
           <img
-            className="block h-auto w-[min(42vw,380px)] select-none drop-shadow-[0_2px_0_color-mix(in_srgb,var(--color-ink)_25%,transparent)]"
+            className="block h-auto w-[min(42vw,380px)] select-none drop-shadow-banner"
             src={bannerPath}
             alt="ROOT"
             draggable={false}
           />
         ) : (
-          <h1 className="m-0 font-display text-[56px] tracking-[0.04em] text-ink">
+          <h1 className="m-0 font-display text-[56px] tracking-heading text-ink">
             ROOT
           </h1>
         )}
@@ -165,7 +174,7 @@ export function MenuOverlay(): JSX.Element | null {
           className="m-0 flex w-full flex-col gap-2 border-0 p-0"
           disabled={menu.playPending}
         >
-          <legend className="mb-1 font-display text-lg tracking-[0.02em] text-ink">
+          <legend className="mb-1 font-display text-lg tracking-display text-ink">
             Players
           </legend>
           <div className="flex flex-row flex-wrap gap-2">
@@ -177,8 +186,8 @@ export function MenuOverlay(): JSX.Element | null {
                   type="button"
                   className={
                     selected
-                      ? 'root-button root-button--accent min-w-[4.5rem] px-3 py-1.5 font-display text-xl'
-                      : 'root-button root-button--quiet min-w-[4.5rem] px-3 py-1.5 font-display text-xl'
+                      ? `${PLAYER_COUNT_BUTTON_CLASS_NAME} root-button--accent`
+                      : `${PLAYER_COUNT_BUTTON_CLASS_NAME} root-button--quiet`
                   }
                   aria-pressed={selected}
                   onClick={() => {
@@ -197,16 +206,16 @@ export function MenuOverlay(): JSX.Element | null {
           className="m-0 flex w-full flex-col gap-2 border-0 p-0"
           disabled={menu.playPending}
         >
-          <legend className="mb-1 font-display text-lg tracking-[0.02em] text-ink">
+          <legend className="mb-1 font-display text-lg tracking-display text-ink">
             Factions
           </legend>
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {seatFactions.map((factionId, seatIndex) => (
               <li
                 key={`seat-${String(seatIndex)}`}
-                className="flex flex-row items-center gap-3 border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_55%,transparent)] px-3 py-2"
+                className="flex flex-row items-center gap-3 border border-ink-soft bg-parchment/55 px-3 py-2"
               >
-                <span className="min-w-[4.5rem] font-body text-sm text-ink-soft">
+                <span className="min-w-18 font-body text-sm text-ink-soft">
                   Seat {seatIndex + 1}
                 </span>
                 <label className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -245,7 +254,7 @@ export function MenuOverlay(): JSX.Element | null {
         {IS_DEVELOPMENT_BUILD ? (
           <button
             type="button"
-            className="root-button root-button--accent min-w-[200px] px-[22px] py-2.5 font-display text-2xl tracking-[0.02em]"
+            className={PRIMARY_BUTTON_CLASS_NAME}
             disabled={menu.playPending || !validation.ok}
             onClick={() => {
               if (!validation.ok) {
@@ -260,7 +269,7 @@ export function MenuOverlay(): JSX.Element | null {
         <div className="flex flex-row flex-wrap justify-center gap-2">
           <button
             type="button"
-            className="root-button root-button--quiet px-4 py-2 font-display text-lg tracking-[0.02em]"
+            className={SECONDARY_BUTTON_CLASS_NAME}
             disabled={menu.playPending || !validation.ok}
             title="One browser per player: you take seat 1, others join"
             onClick={() => {
@@ -274,7 +283,7 @@ export function MenuOverlay(): JSX.Element | null {
           </button>
           <button
             type="button"
-            className="root-button root-button--quiet px-4 py-2 font-display text-lg tracking-[0.02em]"
+            className={SECONDARY_BUTTON_CLASS_NAME}
             disabled={menu.playPending}
             title="Take the next free seat of the host's lobby"
             onClick={() => {
@@ -287,7 +296,7 @@ export function MenuOverlay(): JSX.Element | null {
         {menu.showQaContinue ? (
           <button
             type="button"
-            className="root-button root-button--quiet min-w-[200px] px-[22px] py-2.5 font-display text-xl tracking-[0.02em]"
+            className="root-button root-button--quiet min-w-50 px-5.5 py-2.5 font-display text-xl tracking-display"
             disabled={menu.playPending}
             onClick={() => {
               callbacks.onQaContinue()
@@ -300,7 +309,7 @@ export function MenuOverlay(): JSX.Element | null {
         )}
         {menu.statusText.length > 0 ? (
           <p
-            className="m-0 max-w-[70vw] border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_70%,transparent)] px-3 py-1.5 text-center font-body text-[15px] text-ink-soft italic"
+            className="m-0 max-w-[70vw] border border-ink-soft bg-parchment/70 px-3 py-1.5 text-center font-body text-[15px] text-ink-soft italic"
             style={{ color: menu.statusColor }}
             role="status"
           >

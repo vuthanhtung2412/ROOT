@@ -44,7 +44,7 @@ function TrayActionButtons(props: {
           <button
             key={key}
             type="button"
-            className="root-button px-2.5 py-[7px] text-center text-sm md:px-3 md:py-2 md:text-[17px]"
+            className="root-button px-2.5 py-1.75 text-center text-sm md:px-3 md:py-2 md:text-[17px]"
             onClick={() => {
               props.onSelectAction(spec)
             }}
@@ -86,13 +86,13 @@ export function ActionTray(): JSX.Element | null {
   }
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed bottom-[var(--root-portrait-tray-bottom)] left-1/2 z-[115] box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-3 px-0 md:top-16 md:right-0 md:bottom-3 md:left-auto md:z-[110] md:w-[var(--root-landscape-side-percent)] md:translate-x-0 md:overflow-x-hidden md:overflow-y-auto md:px-2">
+    <div className="fixed bottom-(--root-portrait-tray-bottom) left-1/2 z-115 box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-3 px-0 md:top-16 md:right-0 md:bottom-3 md:left-auto md:z-110 md:w-(--root-landscape-side-percent) md:translate-x-0 md:overflow-x-hidden md:overflow-y-auto md:px-2">
       {regions.map((region) => (
         <div
           key={region.id}
           className="flex w-full flex-col items-center gap-2"
         >
-          <div className="root-panel px-3 py-1.5 font-display text-base tracking-[0.02em] text-ink md:text-xl">
+          <div className="root-panel px-3 py-1.5 font-display text-base tracking-display text-ink md:text-xl">
             {region.title}
           </div>
           <TrayActionButtons

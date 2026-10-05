@@ -16,12 +16,54 @@
   --color-rust: #b55238;
   --color-gold: #c9a04a;
   --color-sky-mist: #8aa39a;
+  /* Text printed straight on faction board art. */
+  --color-ink-deep: #1a1408;
+  /* Parchment darkened like `.root-panel`. */
+  --color-parchment-aged: color-mix(in srgb, #f0e6d3 94%, #1a1410);
+  --tracking-display: 0.02em;
+  --tracking-heading: 0.04em;
   --font-display: 'IM Fell English', 'Palatino Linotype', Palatino, Georgia,
     'Times New Roman', serif;
   --font-body: Georgia, 'Times New Roman', serif;
   --font-mono: 'Courier New', Courier, monospace;
   --shadow-stamp: 2px 2px 0 color-mix(in srgb, #2c2118 40%, transparent);
   --shadow-stamp-lg: 2px 3px 0 color-mix(in srgb, #2c2118 28%, transparent);
+  /* Cards: hand, setup pick. */
+  --shadow-card: 2px 3px 0 color-mix(in srgb, #2c2118 35%, transparent);
+  --shadow-card-sm: 1px 2px 0 color-mix(in srgb, #2c2118 35%, transparent);
+  --shadow-card-selected:
+    0 0 0 2px color-mix(in srgb, #c9a04a 80%, #2c2118),
+    2px 4px 0 color-mix(in srgb, #2c2118 35%, transparent);
+  /* Gold outline: picked option / highlighted clearing. */
+  --shadow-gold-ring: 0 0 0 2px color-mix(in srgb, #c9a04a 80%, #2c2118);
+  --shadow-gold-glow: 0 0 0 2px color-mix(in srgb, #c9a04a 75%, transparent);
+  /* Hairline inside a border. */
+  --shadow-inset-line: inset 0 0 0 1px #cbb892;
+  --shadow-inset-line-ink: inset 0 0 0 1px #4a3a2c;
+  --shadow-hand-tray:
+    inset 0 0 0 1px #cbb892,
+    2px 3px 0 color-mix(in srgb, #2c2118 25%, transparent);
+  --shadow-menu-panel:
+    inset 0 0 0 1px #cbb892,
+    0 0 0 6px color-mix(in srgb, #2c2118 18%, transparent),
+    4px 6px 0 color-mix(in srgb, #2c2118 28%, transparent);
+  --shadow-seat-active:
+    inset 0 0 0 1px #cbb892,
+    0 0 0 2px color-mix(in srgb, #c9a04a 70%, #2c2118),
+    2px 2px 0 color-mix(in srgb, #2c2118 30%, transparent);
+  --drop-shadow-stamp: 1px 1px 0 color-mix(in srgb, #2c2118 25%, transparent);
+  --drop-shadow-banner: 0 2px 0 color-mix(in srgb, #2c2118 25%, transparent);
+  --text-shadow-ink: 1px 1px 0 color-mix(in srgb, #2c2118 55%, transparent);
+  /* Piece count digits readable on any map art. */
+  --text-shadow-outline:
+    -1px -1px 0 #1a1a1a, 1px -1px 0 #1a1a1a, -1px 1px 0 #1a1a1a,
+    1px 1px 0 #1a1a1a;
+}
+
+/* Paper grain multiplied over the element's background colour. */
+@utility paper-grain {
+  background-image: var(--root-paper-grain);
+  background-blend-mode: multiply;
 }
 
 @layer base {

@@ -79,7 +79,7 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
   const imagePath = imagePathForAssetKey(textureKey)
   return (
     <div
-      className="pointer-events-none absolute z-[3] -translate-x-1/2 -translate-y-1/2"
+      className="pointer-events-none absolute z-3 -translate-x-1/2 -translate-y-1/2"
       style={{
         left: props.left,
         top: props.top,
@@ -110,7 +110,7 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
         />
       )}
       <span
-        className="pointer-events-none absolute inset-0 flex items-center justify-center font-body font-bold text-white [text-shadow:-1px_-1px_0_#1a1a1a,1px_-1px_0_#1a1a1a,-1px_1px_0_#1a1a1a,1px_1px_0_#1a1a1a]"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center font-body font-bold text-white text-shadow-outline"
         style={{ fontSize: Math.round(size * 0.55) }}
       >
         {String(props.stack.count)}
@@ -185,7 +185,7 @@ export function ClearingPieceLayer(
       nodes.push(
         <img
           key={`ruin-${String(clearingId)}`}
-          className="pointer-events-none absolute z-[2] -translate-x-1/2 -translate-y-1/2 object-fill select-none"
+          className="pointer-events-none absolute z-2 -translate-x-1/2 -translate-y-1/2 object-fill select-none"
           src={ruinPath}
           alt=""
           draggable={false}
@@ -204,7 +204,7 @@ export function ClearingPieceLayer(
       nodes.push(
         <span
           key={`slots-${String(clearingId)}`}
-          className="pointer-events-none absolute z-[2] -translate-x-1/2 -translate-y-full bg-[#1a2438cc] px-1 py-0.5 font-mono text-[11px] font-bold text-parchment"
+          className="pointer-events-none absolute z-2 -translate-x-1/2 -translate-y-full bg-[#1a2438cc] px-1 py-0.5 font-mono text-[11px] font-bold text-parchment"
           style={{
             left: center.centerX,
             top: center.centerY + center.radius - 2,
