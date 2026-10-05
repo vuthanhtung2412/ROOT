@@ -205,6 +205,33 @@ describe('evening discard validation', () => {
     ).toThrow(expect.objectContaining({ code: 'DISCARD_TOO_FEW' }))
   })
 
+  it('Rule: Evening — discard until you have five: rejects discarding below five (DISCARD_TOO_MANY)', () => {
+    const game = startPlaying(1)
+    const s = game.state
+    s.phase = 'evening'
+    s.step = 'discard'
+    s.currentSeat = 0
+    s.players[0]!.hand = Array.from({ length: 7 }, (_, i) => card('ROOT-72', i))
+    expect(() =>
+      game.apply({
+        type: 'discard',
+        cardIds: ['ROOT-72#0', 'ROOT-72#1', 'ROOT-72#2'],
+      }),
+    ).toThrow(expect.objectContaining({ code: 'DISCARD_TOO_MANY' }))
+    expect(s.players[0]!.hand).toHaveLength(7)
+  })
+
+  it('Rule: Evening — discard until you have five: accepts the exact count', () => {
+    const game = startPlaying(1)
+    const s = game.state
+    s.phase = 'evening'
+    s.step = 'discard'
+    s.currentSeat = 0
+    s.players[0]!.hand = Array.from({ length: 7 }, (_, i) => card('ROOT-72', i))
+    game.apply({ type: 'discard', cardIds: ['ROOT-72#0', 'ROOT-72#1'] })
+    expect(s.players[0]!.hand).toHaveLength(5)
+  })
+
   it('omits endPhase from legal actions until hand at limit', () => {
     const game = startPlaying(1)
     const s = game.state

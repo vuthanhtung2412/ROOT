@@ -68,6 +68,13 @@ export function validateDiscard(
       discarded: cardIds.length,
     })
   }
+  // Rule: Evening — "discard cards of your choice until you have five".
+  if (hand.length - cardIds.length < HAND_LIMIT) {
+    throw new RuleError('DISCARD_TOO_MANY', {
+      hand: hand.length,
+      discarded: cardIds.length,
+    })
+  }
 }
 
 export function applyDiscard(
