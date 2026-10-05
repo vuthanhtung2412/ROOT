@@ -164,7 +164,11 @@ export class Game {
       logs.push(...this.checkWin())
     }
 
-    if (action.type === 'endPhase' && this.state.status === 'playing') {
+    // Rule: D.3.2 Hideout — "immediately end Daylight and begin Evening".
+    if (
+      (action.type === 'endPhase' || action.type === 'hideout') &&
+      this.state.status === 'playing'
+    ) {
       logs.push(...this.advanceStepOrPhase())
       logs.push(...checkActivatedDominanceWin(this.state, this.makeCtx()))
       if (this.state.status === 'playing') {

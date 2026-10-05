@@ -232,6 +232,10 @@ export type Action =
   | { type: 'repair'; itemIndex: number }
   | { type: 'vbCraft'; cardId: string }
   | { type: 'steal'; target: Seat }
+  /** Rule: D.2.2 Day Labor — Tinker takes this card from the discard pile. */
+  | { type: 'dayLabor'; cardId: string }
+  /** Rule: D.3.2 Hideout — damaged items the Ranger repairs; ends Daylight. */
+  | { type: 'hideout'; items: VagabondItemChoice[] }
   | {
       type: 'vbRearrange'
       itemType: 'tea' | 'coin' | 'bag'

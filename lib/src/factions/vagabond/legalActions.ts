@@ -8,6 +8,12 @@ import {
   boardOf,
   pawnClearing,
 } from '#factions/vagabond/items.js'
+import {
+  dayLaborCards,
+  hideoutItemChoices,
+  hideoutRepairCount,
+  vagabondCharacterOf,
+} from '#factions/vagabond/specials.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import type { ItemType, Seat } from '#pieces/types.js'
@@ -328,7 +334,34 @@ export function pushDaylightActions(
     })
   }
 
-  if (hasExhaustible(board, 'torch')) {
+  const character = vagabondCharacterOf(board)
+
+  // Rule: D.2.2 Day Labor — Tinker takes a matching discard-pile card.
+  if (character === 'tinker' && hasExhaustible(board, 'torch')) {
+    const cardIds = dayLaborCards(state, clearing).map((card) => card.id)
+    if (cardIds.length > 0) {
+      specs.push({ type: 'dayLabor', actor: seat, params: { cardIds } })
+    }
+  }
+
+  // Rule: D.3.2 Hideout — Ranger repairs three items, then Daylight ends.
+  if (
+    character === 'ranger' &&
+    hasExhaustible(board, 'torch') &&
+    board.damaged.length > 0
+  ) {
+    specs.push({
+      type: 'hideout',
+      actor: seat,
+      params: {
+        vagabondItems: hideoutItemChoices(board),
+        itemCount: [hideoutRepairCount(board)],
+      },
+    })
+  }
+
+  // Rule: D.1.2 Steal — Thief takes a random card from a player here.
+  if (character === 'thief' && hasExhaustible(board, 'torch')) {
     for (const player of state.players) {
       if (player.seat === seat) continue
       if (player.hand.length === 0) continue

@@ -30,6 +30,7 @@ import {
   removeChosenCapacityItems,
   restoreRepairedItem,
 } from '#factions/vagabond/items.js'
+import { applyDayLabor, applyHideout } from '#factions/vagabond/specials.js'
 import {
   destinationHasHostile,
   pushDaylightActions,
@@ -507,6 +508,15 @@ export class Vagabond extends Faction {
         const [stolen] = targetHand.splice(index, 1)
         if (stolen === undefined) throw new RuleError('EMPTY_HAND')
         playerOf(state, seat).hand.push(stolen)
+        return [{ t: 'action', actor: seat, action }]
+      }
+      case 'dayLabor': {
+        applyDayLabor(state, seat, action.cardId)
+        return [{ t: 'action', actor: seat, action }]
+      }
+      case 'hideout': {
+        // Game ends Daylight after this action, like endPhase.
+        applyHideout(board, action.items)
         return [{ t: 'action', actor: seat, action }]
       }
       case 'rest': {

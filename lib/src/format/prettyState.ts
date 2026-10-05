@@ -301,6 +301,10 @@ export function describeAction(action: Action, state: GameState): string {
       return `VB CRAFT ${findCard(action.cardId)}`
     case 'steal':
       return `STEAL from ${playerRefBySeat(state, action.target)}`
+    case 'dayLabor':
+      return `DAY LABOR take ${findCard(action.cardId)}`
+    case 'hideout':
+      return `HIDEOUT repair ${action.items.map((item) => item.type).join(', ')}`
     case 'refresh':
       return 'REFRESH items'
     case 'rest':
