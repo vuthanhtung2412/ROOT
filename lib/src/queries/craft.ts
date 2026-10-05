@@ -18,11 +18,21 @@ const CRAFTABLE_TYPES = new Set(['item', 'persistent', 'partisan'])
 
 /** Rule: Craft 1–4 — unused crafters, suit match, supply item, no dup persistent. */
 export function canCraft(state: GameState, seat: Seat, card: Card): boolean {
-  const def = defOf(card)
-  // Ambush/dominance have empty cost; must not pass as craftable.
-  if (!CRAFTABLE_TYPES.has(def.type)) return false
+  if (!isCraftableCard(card)) return false
 
-  if (assignCraftSources(state, seat, def.cost) === null) return false
+  if (assignCraftSources(state, seat, defOf(card).cost) === null) return false
+
+  return craftBenefitAvailable(state, card)
+}
+
+/** Ambush/dominance have empty cost; must not pass as craftable. */
+export function isCraftableCard(card: Card): boolean {
+  return CRAFTABLE_TYPES.has(defOf(card).type)
+}
+
+/** Rule: Craft 4.1.2 / 4.1.4 — item still in supply; no duplicate persistent. */
+export function craftBenefitAvailable(state: GameState, card: Card): boolean {
+  const def = defOf(card)
 
   if (def.type === 'item') {
     if (!def.item) return false

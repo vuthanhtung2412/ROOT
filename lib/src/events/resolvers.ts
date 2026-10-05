@@ -12,7 +12,9 @@ import { chooseKeepResolver } from '#events/chooseKeep.js'
 import { chooseLeaderResolver } from '#events/chooseLeader.js'
 import { fieldHospitalResolver } from '#events/fieldHospital.js'
 import { outrageResolver } from '#events/outrage.js'
+import { placeRiverfolkWarriorResolver } from '#events/placeRiverfolkWarrior.js'
 import { placeStartingBuildingResolver } from '#events/placeStartingBuilding.js'
+import { setStartingCostResolver } from '#events/setStartingCost.js'
 import { vagabondDamageResolver } from '#events/vagabondDamage.js'
 import type { Event } from '#events/types.js'
 import {
@@ -25,7 +27,9 @@ import {
   isChooseLeaderEvent,
   isFieldHospitalEvent,
   isOutrageEvent,
+  isPlaceRiverfolkWarriorEvent,
   isPlaceStartingBuildingEvent,
+  isSetStartingCostEvent,
   isVagabondDamageEvent,
 } from '#typeGuards.js'
 
@@ -87,6 +91,14 @@ export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
     chooseCultCornerResolver,
   ),
   chooseOutcast: guardedResolver(isChooseOutcastEvent, chooseOutcastResolver),
+  placeRiverfolkWarrior: guardedResolver(
+    isPlaceRiverfolkWarriorEvent,
+    placeRiverfolkWarriorResolver,
+  ),
+  setStartingCost: guardedResolver(
+    isSetStartingCostEvent,
+    setStartingCostResolver,
+  ),
   battle: {
     legalActions(state, event, ctx) {
       if (!isBattleEvent(event)) return []

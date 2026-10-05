@@ -10,7 +10,9 @@ import type {
   FieldHospitalEvent,
   OutrageEvent,
   VagabondDamageEvent,
+  PlaceRiverfolkWarriorEvent,
   PlaceStartingBuildingEvent,
+  SetStartingCostEvent,
 } from '#events/types.js'
 import type { ClearingId, Suit } from '#map/types.js'
 import type { LizardBoard } from '#state/lizardBoard.js'
@@ -100,6 +102,18 @@ export function isChooseCultCornerEvent(
 
 export function isChooseOutcastEvent(event: Event): event is ChooseOutcastEvent {
   return event.type === 'chooseOutcast'
+}
+
+export function isPlaceRiverfolkWarriorEvent(
+  event: Event,
+): event is PlaceRiverfolkWarriorEvent {
+  return event.type === 'placeRiverfolkWarrior'
+}
+
+export function isSetStartingCostEvent(
+  event: Event,
+): event is SetStartingCostEvent {
+  return event.type === 'setStartingCost'
 }
 
 export function isMarquiseBoard(board: FactionBoard): board is MarquiseBoard {

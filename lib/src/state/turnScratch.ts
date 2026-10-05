@@ -27,6 +27,7 @@ export function createTurnScratch(
     outcastAdjusted: false,
     ritualScoredSuits: [],
     crusadeFollowUpClearing: null,
+    fundsGathered: false,
     ...overrides,
   }
 }

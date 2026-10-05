@@ -2,6 +2,10 @@ import { placeEyrieRoostSetup } from '#factions/Eyrie.js'
 import { factionFor } from '#factions/index.js'
 import type { Ctx } from '#game/ctx.js'
 import type { FactionId } from '#pieces/types.js'
+import {
+  RIVERFOLK_SERVICES,
+  RIVERFOLK_STARTING_WARRIORS,
+} from '#state/riverfolkBoard.js'
 import type { GameState, PlayerState } from '#state/types.js'
 
 /** Rule: 5.1.7 — factions set up in setup order (A, B, C, ...). */
@@ -68,6 +72,21 @@ export function setUpFactionsAfterMarquise(state: GameState, ctx: Ctx): void {
       // Rule: 10.3.2, 10.3.3 — starting corner, then the Outcast suit.
       state.pending.push({ type: 'chooseCultCorner', seat: player.seat })
       state.pending.push({ type: 'chooseOutcast', seat: player.seat })
+    }
+    if (player.faction === 'riverfolk') {
+      // Rule: 11.3.2, 11.3.5 — starting warriors, then starting prices.
+      state.pending.push({
+        type: 'placeRiverfolkWarrior',
+        seat: player.seat,
+        remaining: RIVERFOLK_STARTING_WARRIORS,
+      })
+      for (const service of RIVERFOLK_SERVICES) {
+        state.pending.push({
+          type: 'setStartingCost',
+          seat: player.seat,
+          service,
+        })
+      }
     }
   }
 }

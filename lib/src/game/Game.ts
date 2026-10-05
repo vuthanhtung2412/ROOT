@@ -523,6 +523,9 @@ export class Game {
       if (action.suit !== undefined && s.params?.suits?.includes(action.suit)) {
         return true
       }
+      if (action.cost !== undefined && s.params?.costs?.includes(action.cost)) {
+        return true
+      }
       if (action.pieceIds && s.params?.pieceIds) {
         const domain = s.params.pieceIds
         if (JSON.stringify(action.pieceIds) === JSON.stringify(domain)) return true

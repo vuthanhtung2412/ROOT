@@ -75,6 +75,8 @@ export type TurnScratch = {
   ritualScoredSuits: Suit[]
   /** Lizard Cult — clearing where a crusade move may end in a free battle. */
   crusadeFollowUpClearing: ClearingId | null
+  /** Riverfolk Birdsong — Protectionism, dividends and gathering done. */
+  fundsGathered: boolean
 }
 
 export type GameState = {

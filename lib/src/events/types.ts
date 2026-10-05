@@ -1,5 +1,6 @@
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
+import type { RiverfolkService } from '#state/riverfolkBoard.js'
 
 export type BattleStage =
   | 'ambush'
@@ -95,9 +96,26 @@ export type ChooseOutcastEvent = {
   seat: Seat
 }
 
+/** Rule: 11.3.2 — Riverfolk place starting warriors, one clearing at a time. */
+export type PlaceRiverfolkWarriorEvent = {
+  type: 'placeRiverfolkWarrior'
+  seat: Seat
+  /** Warriors still to place, this one included. */
+  remaining: number
+}
+
+/** Rule: 11.3.5 — Riverfolk set the starting cost of one service. */
+export type SetStartingCostEvent = {
+  type: 'setStartingCost'
+  seat: Seat
+  service: RiverfolkService
+}
+
 export type Event =
   | ChooseCultCornerEvent
   | ChooseOutcastEvent
+  | PlaceRiverfolkWarriorEvent
+  | SetStartingCostEvent
   | BattleEvent
   | FieldHospitalEvent
   | ChooseKeepEvent

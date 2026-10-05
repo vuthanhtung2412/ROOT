@@ -6,6 +6,7 @@ import type {
   EyrieLeader,
   VagabondCharacter,
 } from '#state/boards.js'
+import type { RiverfolkService } from '#state/riverfolkBoard.js'
 
 export type MarchMove = {
   from: ClearingId
@@ -136,6 +137,10 @@ export type ActionChoiceParams = {
   itemCount?: number[]
   /** Lizard Cult setup — suits the outcast marker may start on. */
   suits?: Suit[]
+  /** Riverfolk setup — costs a service marker may start on. */
+  costs?: number[]
+  /** Riverfolk setup — the service whose starting cost is being set. */
+  services?: RiverfolkService[]
 }
 
 export type Action =
@@ -260,7 +265,38 @@ export type Action =
   | { type: 'refresh' }
   | { type: 'rest' }
   | LizardAction
+  | RiverfolkAction
   | ResolveEventAction
+
+/** Rule: 11.4–11.6 — Riverfolk Company turn actions. */
+export type RiverfolkAction =
+  /** Rule: 11.4 — Protectionism, Score Dividends, Gather Funds. */
+  | { type: 'gatherFunds' }
+  /** Rule: 11.5.1 Move — commit one fund (owned by `fundOwner`). */
+  | {
+      type: 'riverfolkMove'
+      from: ClearingId
+      to: ClearingId
+      count: number
+      fundOwner: Seat
+    }
+  /** Rule: 11.5.2 Battle — commit one fund. */
+  | {
+      type: 'riverfolkBattle'
+      clearing: ClearingId
+      defender: Seat
+      fundOwner: Seat
+    }
+  /** Rule: 11.5.3 Craft — commit funds; `exportCard` takes the Export instead. */
+  | { type: 'riverfolkCraft'; cardId: string; exportCard: boolean }
+  /** Rule: 11.5.4 Draw — commit one fund. */
+  | { type: 'riverfolkDraw'; fundOwner: Seat }
+  /** Rule: 11.5.5 Recruit — spend one fund. */
+  | { type: 'riverfolkRecruit'; clearing: ClearingId; fundOwner: Seat }
+  /** Rule: 11.5.6 Establish Trade Post with Garrison — spend two ruler funds. */
+  | { type: 'establishTradePost'; clearing: ClearingId }
+  /** Rule: 11.6.2 Set Costs — move one service marker. */
+  | { type: 'setServiceCost'; service: RiverfolkService; cost: number }
 
 /** Rule: 10.4–10.6 — Lizard Cult turn actions. */
 export type LizardAction =
@@ -309,6 +345,8 @@ export type ResolveEventAction = {
   items?: VagabondItemChoice[]
   /** Rule: 10.3.3 — suit the Lizard Cult outcast marker starts on. */
   suit?: Suit
+  /** Rule: 11.3.5 — starting cost of one Riverfolk service. */
+  cost?: number
 }
 
 export type ActionSpec = {

@@ -17,6 +17,11 @@ import {
 } from '#state/boards.js'
 import { ITEM_SUPPLY } from '#state/constants.js'
 import { createLizardBoard, type LizardBoard } from '#state/lizardBoard.js'
+import {
+  createRiverfolkBoard,
+  RIVERFOLK_DEFAULT_SERVICE_COST,
+  type RiverfolkBoard,
+} from '#state/riverfolkBoard.js'
 import type { ClearingState, GameState, PlayerState } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import { buildRuleHooks } from '#triggers/buildHooks.js'
@@ -116,6 +121,12 @@ export function eyrieBoard(overrides?: Partial<EyrieBoard>): EyrieBoard {
 /** Lizard Cult board after setup: Outcast chosen, nothing on the map yet. */
 export function lizardBoard(overrides?: Partial<LizardBoard>): LizardBoard {
   return { ...createLizardBoard(), outcast: 'fox', ...overrides }
+}
+
+export function riverfolkBoard(
+  overrides?: Partial<RiverfolkBoard>,
+): RiverfolkBoard {
+  return { ...createRiverfolkBoard(), ...overrides }
 }
 
 export function player(
@@ -222,6 +233,8 @@ export type FinishSetupOptions = {
   forest?: number
   cultCorner?: ClearingId
   outcast?: Suit
+  /** Starting cost of every Riverfolk service. */
+  serviceCost?: number
 }
 
 export function finishSetup(
@@ -262,6 +275,16 @@ export function finishSetup(
   }
   if (game.state.pending[0]?.type === 'chooseOutcast') {
     game.apply({ type: 'resolveEvent', suit: options.outcast ?? 'fox' })
+  }
+  while (game.state.pending[0]?.type === 'placeRiverfolkWarrior') {
+    const clearings = game.legalActions()[0]?.params?.clearing ?? []
+    game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
+  }
+  while (game.state.pending[0]?.type === 'setStartingCost') {
+    game.apply({
+      type: 'resolveEvent',
+      cost: options.serviceCost ?? RIVERFOLK_DEFAULT_SERVICE_COST,
+    })
   }
 }
 

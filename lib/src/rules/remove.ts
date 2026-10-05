@@ -19,6 +19,7 @@ import {
   lizardBoardOf,
   returnGardenToTrack,
 } from '#factions/lizard/rules.js'
+import { applyTradeDisruption } from '#factions/riverfolk/rules.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { warriorSupplyOf } from '#queries/supply.js'
@@ -215,6 +216,9 @@ export function removePieces(
       returnGardenToTrack(state, piece.owner, clearing)
       // Rule: 10.2.5 Fear of the Faithful — discard a random card.
       discardRandomCultCard(state, piece.owner, ctx?.rng)
+    }
+    if (piece.kind === 'token' && piece.type === 'tradePost') {
+      applyTradeDisruption(state, piece.owner)
     }
     if (
       piece.kind === 'building' &&
