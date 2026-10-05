@@ -47,6 +47,25 @@ function layoutRegionStyle(
   }
 }
 
+const DARK_LABEL_CLASS_NAME = 'bg-[rgb(10_10_10/0.8)] font-mono text-[#f7f0e4]'
+const TOKEN_CLASS_NAME = 'absolute z-1 block select-none'
+const EXHAUSTED_CLASS_NAME = 'opacity-40'
+const CRAFTED_STRIP_CLASS_NAME = 'absolute flex flex-row gap-1 overflow-hidden px-1.5 py-1'
+/** Crafted strip: icons follow the strip height. */
+const CRAFTED_STRIP_ITEM_SIZE_CLASS_NAME = 'h-[72%]'
+/** Satchel / damaged: fixed size matching tea/coin/bag track tokens. */
+const ITEM_PACK_ITEM_SIZE_CLASS_NAME = 'size-16'
+const ITEM_PACK_CLASS_NAME =
+  'pointer-events-auto absolute z-2 flex flex-wrap content-start items-start justify-start gap-1 overflow-x-hidden overflow-y-auto p-1'
+const SUPPLY_BADGE_CLASS_NAME =
+  'absolute top-[2%] right-[2%] z-2 bg-parchment/93 px-1.5 py-0.5 font-mono text-[clamp(12px,2.4vh,18px)] text-[#1a1408]'
+const DECREE_CLASS_NAME =
+  'absolute flex items-center overflow-hidden px-2 py-1 font-mono text-[clamp(10px,2vh,14px)]'
+const DECREE_ACTIVE_CLASS_NAME = 'bg-[rgb(255_224_138/0.87)] text-[#1a1408]'
+const LEADER_CLASS_NAME = 'absolute object-contain object-left-top select-none'
+const RELATIONSHIP_PACK_CLASS_NAME =
+  'pointer-events-none absolute z-2 flex flex-col flex-nowrap items-center justify-center overflow-visible'
+
 function FitToken(props: {
   region: BoardLayoutRegion
   layout: FactionBoardPixelLayout
@@ -55,8 +74,8 @@ function FitToken(props: {
   round?: boolean
 }): JSX.Element {
   const className = props.round
-    ? 'faction-board-modal__token faction-board-modal__token--round'
-    : 'faction-board-modal__token'
+    ? `${TOKEN_CLASS_NAME} rounded-full object-cover`
+    : `${TOKEN_CLASS_NAME} object-fill`
   return (
     <img
       className={className}
@@ -77,7 +96,7 @@ function CraftedItemsOverlay(props: OverlayBaseProps): JSX.Element | null {
   if (props.view.crafted.items.length === 0) {
     return (
       <div
-        className="faction-board-modal__crafted faction-board-modal__crafted--empty"
+        className={`${CRAFTED_STRIP_CLASS_NAME} ${DARK_LABEL_CLASS_NAME} items-start text-[clamp(10px,2.2vh,14px)]`}
         style={style}
       >
         Items (none)
@@ -86,35 +105,45 @@ function CraftedItemsOverlay(props: OverlayBaseProps): JSX.Element | null {
   }
 
   return (
-    <div className="faction-board-modal__crafted" style={style}>
+    <div className={`${CRAFTED_STRIP_CLASS_NAME} items-center`} style={style}>
       {props.view.crafted.items.map((item) => (
-        <CraftedItemIcon key={item.type} item={item} />
+        <CraftedItemIcon
+          key={item.type}
+          item={item}
+          sizeClassName={CRAFTED_STRIP_ITEM_SIZE_CLASS_NAME}
+        />
       ))}
     </div>
   )
 }
 
-function CraftedItemIcon(props: { item: CraftedItemView }): JSX.Element {
+function CraftedItemIcon(props: {
+  item: CraftedItemView
+  sizeClassName: string
+}): JSX.Element {
   const textureKey = itemTextureKey(props.item.type)
   const imagePath =
     textureKey !== null ? imagePathForAssetKey(textureKey) : null
   return (
     <div
-      className={
-        props.item.exhausted
-          ? 'faction-board-modal__crafted-item faction-board-modal__crafted-item--exhausted'
-          : 'faction-board-modal__crafted-item'
-      }
+      className={`relative aspect-square flex-none ${props.sizeClassName} ${
+        props.item.exhausted ? EXHAUSTED_CLASS_NAME : ''
+      }`}
     >
       {imagePath !== null ? (
-        <img src={imagePath} alt={props.item.type} draggable={false} />
+        <img
+          className="block size-full object-contain"
+          src={imagePath}
+          alt={props.item.type}
+          draggable={false}
+        />
       ) : (
-        <span className="faction-board-modal__crafted-fallback">
+        <span className={`${DARK_LABEL_CLASS_NAME} block px-1 py-0.5 text-[10px]`}>
           {props.item.type}
         </span>
       )}
       {props.item.count > 1 ? (
-        <span className="faction-board-modal__crafted-count">
+        <span className="absolute -top-1 -right-1 bg-parchment px-[3px] py-px font-mono text-[9px] font-bold text-ink">
           {String(props.item.count)}
         </span>
       ) : null}
@@ -132,16 +161,16 @@ function SupplyCell(props: {
   const imagePath = imagePathForAssetKey(props.textureKey)
   const style = layoutRegionStyle(props.region, props.layout)
   return (
-    <div className="faction-board-modal__supply" style={style}>
+    <div className="absolute" style={style}>
       {imagePath !== null ? (
         <img
-          className="faction-board-modal__supply-token"
+          className="block size-full object-contain select-none"
           src={imagePath}
           alt={props.alt}
           draggable={false}
         />
       ) : null}
-      <span className="faction-board-modal__supply-badge">{props.countLabel}</span>
+      <span className={SUPPLY_BADGE_CLASS_NAME}>{props.countLabel}</span>
     </div>
   )
 }
@@ -279,11 +308,9 @@ function EyrieDecreeOverlays(props: {
         return (
           <div
             key={column.columnId}
-            className={
-              active
-                ? 'faction-board-modal__decree faction-board-modal__decree--active'
-                : 'faction-board-modal__decree'
-            }
+            className={`${DECREE_CLASS_NAME} ${
+              active ? DECREE_ACTIVE_CLASS_NAME : DARK_LABEL_CLASS_NAME
+            }`}
             style={layoutRegionStyle(region, props.layout)}
           >
             {formatDecreeSuitCounts(column.suits)}
@@ -311,7 +338,7 @@ function EyrieLeaderOverlay(props: {
   }
   return (
     <img
-      className="faction-board-modal__leader"
+      className={LEADER_CLASS_NAME}
       style={layoutRegionStyle(region, props.layout)}
       src={leaderAsset.imagePath}
       alt={props.view.leader.name}
@@ -331,7 +358,7 @@ function SupportersPileOverlay(props: {
   return (
     <button
       type="button"
-      className="faction-board-modal__supporters-hit"
+      className="faction-board-modal__supporters-hit pointer-events-auto absolute cursor-pointer overflow-hidden disabled:cursor-not-allowed"
       style={layoutRegionStyle(props.region, props.layout)}
       aria-label={
         props.view.supportersFaceDown
@@ -345,18 +372,20 @@ function SupportersPileOverlay(props: {
     >
       {topCardImagePath !== null ? (
         <img
-          className="faction-board-modal__supporters-top-card"
+          className="pointer-events-none absolute inset-0 z-0 block size-full object-fill select-none"
           src={topCardImagePath}
           alt=""
           draggable={false}
         />
       ) : null}
       {props.view.supportersFaceDown ? null : (
-        <span className="faction-board-modal__supporters-suits">
+        <span
+          className={`${DARK_LABEL_CLASS_NAME} pointer-events-none absolute inset-x-0 top-0 z-1 px-2 py-1 text-center text-[clamp(10px,2vh,14px)] leading-[1.2]`}
+        >
           {formatDecreeSuitCounts(props.view.supporterSuits)}
         </span>
       )}
-      <span className="faction-board-modal__supply-badge">
+      <span className={SUPPLY_BADGE_CLASS_NAME}>
         {String(props.view.supporters)}
       </span>
     </button>
@@ -452,11 +481,9 @@ function VagabondTrackItemOverlays(props: {
           return (
             <img
               key={`${row.trackId}-${item.type}-${String(cellIndex)}`}
-              className={
-                item.exhausted
-                  ? 'faction-board-modal__token faction-board-modal__token--exhausted'
-                  : 'faction-board-modal__token'
-              }
+              className={`${TOKEN_CLASS_NAME} object-fill ${
+                item.exhausted ? EXHAUSTED_CLASS_NAME : ''
+              }`}
               style={layoutRegionStyle(region, props.layout)}
               src={imagePath}
               alt={item.type}
@@ -484,7 +511,7 @@ function VagabondCharacterOverlay(props: {
   }
   return (
     <img
-      className="faction-board-modal__leader"
+      className={LEADER_CLASS_NAME}
       style={layoutRegionStyle(region, props.layout)}
       src={imagePath}
       alt="Thief"
@@ -525,7 +552,7 @@ function VagabondRelationshipOverlays(props: {
           region={hostileRegion}
           layout={props.layout}
           markers={hostileMarkers}
-          packClassName="faction-board-modal__relationship-pack faction-board-modal__relationship-pack--hostile"
+          packClassName={`${RELATIONSHIP_PACK_CLASS_NAME} gap-1`}
         />
       ) : null}
       {developmentSlots.map((markers, cellIndex) => {
@@ -546,7 +573,7 @@ function VagabondRelationshipOverlays(props: {
             region={region}
             layout={props.layout}
             markers={markers}
-            packClassName="faction-board-modal__relationship-pack"
+            packClassName={`${RELATIONSHIP_PACK_CLASS_NAME} gap-0.5`}
           />
         )
       })}
@@ -576,7 +603,7 @@ function RelationshipMarkerPack(props: {
         return (
           <img
             key={marker.faction}
-            className="faction-board-modal__relationship-marker"
+            className="size-16 flex-none object-contain object-center select-none"
             src={imagePath}
             alt={`${marker.faction} relationship`}
             draggable={false}
@@ -600,26 +627,28 @@ function VagabondItemOverlays(props: {
       <VagabondTrackItemOverlays view={props.view} layout={props.layout} />
       {satchelRegion !== null ? (
         <div
-          className="faction-board-modal__item-pack"
+          className={ITEM_PACK_CLASS_NAME}
           style={layoutRegionStyle(satchelRegion, props.layout)}
         >
           {props.view.satchel.map((item, index) => (
             <CraftedItemIcon
               key={`satchel-${item.type}-${String(index)}`}
               item={{ type: item.type, exhausted: item.exhausted, count: 1 }}
+              sizeClassName={ITEM_PACK_ITEM_SIZE_CLASS_NAME}
             />
           ))}
         </div>
       ) : null}
       {damagedRegion !== null && props.view.damaged.length > 0 ? (
         <div
-          className="faction-board-modal__item-pack"
+          className={ITEM_PACK_CLASS_NAME}
           style={layoutRegionStyle(damagedRegion, props.layout)}
         >
           {props.view.damaged.map((item, index) => (
             <CraftedItemIcon
               key={`damaged-${item.type}-${String(index)}`}
               item={{ type: item.type, exhausted: true, count: 1 }}
+              sizeClassName={ITEM_PACK_ITEM_SIZE_CLASS_NAME}
             />
           ))}
         </div>
@@ -631,7 +660,7 @@ function VagabondItemOverlays(props: {
 /** Layout-baked tokens/supply/decree/leader — coords from *.layout.json. */
 export function FactionBoardOverlays(props: OverlayBaseProps): JSX.Element {
   return (
-    <div className="faction-board-modal__overlays">
+    <div className="absolute inset-0 z-1">
       <CraftedItemsOverlay {...props} />
       {props.view.kind !== 'vagabond' ? <SupplyOverlays {...props} /> : null}
       {props.view.kind === 'marquise' ? (

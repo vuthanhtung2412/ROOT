@@ -15,7 +15,6 @@ import { getHudCallbacks } from '#game/hudStore.ts'
 import { QuestCardFace } from '#react/QuestPilePanel.tsx'
 import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
 import '#react/CardGalleryModal.css'
-import '#react/FactionBoardModal.css'
 
 const EMPTY_CRAFTED_MESSAGE = 'No permanent crafted cards'
 const EMPTY_COMPLETED_QUESTS_MESSAGE = 'No completed quests'
@@ -201,7 +200,7 @@ export function CompletedQuestsModal(): JSX.Element | null {
       {content.quests.length === 0 ? (
         <p className="card-gallery-modal__empty">{EMPTY_COMPLETED_QUESTS_MESSAGE}</p>
       ) : (
-        <div className="card-gallery-modal__quest-strip">
+        <div className="card-gallery-modal__quest-strip *:w-40 *:flex-none">
           {content.quests.map((quest) => (
             <QuestCardFace key={quest.id} quest={quest} />
           ))}

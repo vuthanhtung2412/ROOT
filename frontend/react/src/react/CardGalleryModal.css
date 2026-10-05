@@ -102,11 +102,6 @@
   padding: 4px 0;
 }
 
-.card-gallery-modal__quest-strip .faction-board-modal__quest-card {
-  width: 160px;
-  flex: 0 0 auto;
-}
-
 .card-gallery-modal__card {
   flex: 0 0 auto;
   height: 100%;

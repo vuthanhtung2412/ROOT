@@ -17,7 +17,6 @@ import {
 import { FactionBoardOverlays } from '#react/factionBoardOverlays.tsx'
 import { QuestPilePanel } from '#react/QuestPilePanel.tsx'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
-import '#react/FactionBoardModal.css'
 
 const BOARD_MAX_WIDTH_RATIO = 0.96
 const BOARD_MAX_HEIGHT_RATIO = 0.94
@@ -25,6 +24,9 @@ const BOARD_TOP_RATIO = 0.02
 const QUEST_SIDE_PANEL_WIDTH_PIXELS = 220
 const QUEST_SIDE_PANEL_GAP_PIXELS = 12
 const STAGE_HORIZONTAL_INSET_PIXELS = 24
+const ART_FALLBACK_CLASS_NAME = 'absolute inset-0 z-0 border-2 border-parchment/70'
+const ART_FALLBACK_MARQUISE_CLASS_NAME = 'bg-[rgb(184_90_26/0.95)]'
+const ART_FALLBACK_EYRIE_CLASS_NAME = 'bg-[rgb(26_42_74/0.95)]'
 
 function computeBoardPlacement(
   view: FactionBoardViewModel,
@@ -95,10 +97,14 @@ export function FactionBoardModal(): JSX.Element | null {
   )
 
   return (
-    <div className="faction-board-modal" role="dialog" aria-modal="true">
+    <div
+      className="faction-board-modal pointer-events-auto fixed inset-0 z-360"
+      role="dialog"
+      aria-modal="true"
+    >
       <button
         type="button"
-        className="faction-board-modal__veil"
+        className="absolute inset-0 cursor-pointer bg-forest-deep/72"
         aria-label="Close faction board"
         onClick={() => {
           hideFactionBoard()
@@ -106,7 +112,7 @@ export function FactionBoardModal(): JSX.Element | null {
       />
       <button
         type="button"
-        className="faction-board-modal__close"
+        className="faction-board-modal__close absolute top-2.5 right-3 z-2 cursor-pointer bg-parchment px-2 py-1 font-display text-[16px] text-ink"
         aria-label="Close"
         onClick={() => {
           hideFactionBoard()
@@ -115,7 +121,7 @@ export function FactionBoardModal(): JSX.Element | null {
         ✕
       </button>
       <div
-        className="faction-board-modal__stage"
+        className="pointer-events-none absolute z-1 flex flex-row items-stretch gap-3"
         style={{
           left: stageLeft,
           top: placement.top,
@@ -124,7 +130,7 @@ export function FactionBoardModal(): JSX.Element | null {
         }}
       >
         <div
-          className="faction-board-modal__board"
+          className="pointer-events-auto relative z-1 flex-none"
           style={{
             width: placement.displayWidth,
             height: placement.displayHeight,
@@ -132,25 +138,25 @@ export function FactionBoardModal(): JSX.Element | null {
         >
           {boardImagePath !== null ? (
             <img
-              className="faction-board-modal__art"
+              className="absolute inset-0 z-0 block size-full object-fill select-none"
               src={boardImagePath}
               alt={`${view.factionName} faction board`}
               draggable={false}
             />
           ) : (
             <div
-              className={
+              className={`${ART_FALLBACK_CLASS_NAME} ${
                 view.kind === 'marquise'
-                  ? 'faction-board-modal__art-fallback faction-board-modal__art-fallback--marquise'
-                  : 'faction-board-modal__art-fallback faction-board-modal__art-fallback--eyrie'
-              }
+                  ? ART_FALLBACK_MARQUISE_CLASS_NAME
+                  : ART_FALLBACK_EYRIE_CLASS_NAME
+              }`}
             />
           )}
           <FactionBoardOverlays view={view} layout={layout} />
         </div>
         {showQuestSidePanel ? (
           <aside
-            className="faction-board-modal__quest-side"
+            className="pointer-events-auto min-h-0 flex-none"
             style={{
               width: QUEST_SIDE_PANEL_WIDTH_PIXELS,
               height: placement.displayHeight,
