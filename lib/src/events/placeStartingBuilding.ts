@@ -75,7 +75,8 @@ function finishMarquiseSetupAfterBuildings(
 
   const vagabond = state.players.find((player) => player.faction === 'vagabond')
   if (vagabond) {
-    // Rule: Vagabond > Setup 2 — interactive forest after earlier factions.
+    // Rule: Vagabond > Setup 1, 2 — character, then forest, after earlier factions.
+    state.pending.push({ type: 'chooseCharacter', seat: vagabond.seat })
     state.pending.push({ type: 'chooseForest', seat: vagabond.seat })
   }
 }

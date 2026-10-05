@@ -129,6 +129,7 @@ describe('dominance take / activate', () => {
     state.players[1]!.faction = 'vagabond'
     state.players[1]!.board = {
       kind: 'vagabond',
+      character: 'thief',
       satchel: [],
       tracks: { tea: [], coin: [], bag: [] },
       damaged: [],

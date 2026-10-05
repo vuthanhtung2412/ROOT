@@ -48,9 +48,10 @@ import { randomIndex } from '#rules/Rng.js'
 import { addVictoryPoints } from '#rules/dominance.js'
 import {
   FACE_UP_QUEST_COUNT,
-  THIEF_START_ITEMS,
+  VAGABOND_START_ITEMS,
   VAGABOND_TRACK_ITEM_CAP,
 } from '#state/boards.js'
+import type { VagabondCharacter } from '#state/boards.js'
 import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 
@@ -64,6 +65,19 @@ function shuffleWithRng<T>(items: T[], rng: Ctx['rng']): T[] {
     ]
   }
   return shuffled
+}
+
+/** Rule: Vagabond > Setup 1, 5 — take the character and its starting items. */
+export function assignVagabondCharacter(
+  state: GameState,
+  seat: Seat,
+  character: VagabondCharacter,
+): void {
+  const board = boardOf(state, seat)
+  board.character = character
+  for (const type of VAGABOND_START_ITEMS[character]) {
+    placeItemInSatchelOrTrack(board, type)
+  }
 }
 
 /** Rule: Vagabond > Setup 2 — place pawn in chosen forest. */
@@ -109,13 +123,10 @@ export class Vagabond extends Faction {
   readonly id = 'vagabond' as const
   readonly steps = STEPS
 
-  setup(state: GameState, seat: Seat, context: Ctx): void {
-    // Rule: Vagabond > Setup 5, 6 — Thief items; relationships Indifferent.
-    // Setup 2 (forest) is interactive via chooseForest pending after Marquise/Eyrie.
-    const board = boardOf(state, seat)
-    for (const type of THIEF_START_ITEMS) {
-      placeItemInSatchelOrTrack(board, type)
-    }
+  setup(state: GameState, _seat: Seat, context: Ctx): void {
+    // Rule: Vagabond > Setup 6 — relationships Indifferent (board default).
+    // Setup 1, 5 (character + items) and 2 (forest) are interactive, via the
+    // chooseCharacter / chooseForest pending events after Marquise/Eyrie.
     // Rule: Vagabond > Setup 3 — shuffle quests; draw 3 face up (shared).
     ensureFaceUpQuests(state, context)
   }

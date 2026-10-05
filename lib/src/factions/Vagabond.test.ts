@@ -1,5 +1,9 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { VAGABOND, placeVagabondForest } from '#factions/Vagabond.js'
+import {
+  VAGABOND,
+  assignVagabondCharacter,
+  placeVagabondForest,
+} from '#factions/Vagabond.js'
 import {
   boardOf,
   exhaustItem,
@@ -45,6 +49,32 @@ describe('Vagabond setup', () => {
     expect(board.completedQuests).toHaveLength(0)
   })
 
+  it.each([
+    ['thief', ['boot', 'sword', 'tea', 'torch']],
+    ['tinker', ['bag', 'boot', 'hammer', 'torch']],
+    ['ranger', ['boot', 'crossbow', 'sword', 'torch']],
+  ] as const)(
+    'Rule: D.%s Starting Items — satchel and tracks hold the start items',
+    (character, expectedItemTypes) => {
+      const state = minimalState({
+        factions: ['marquise', 'vagabond'],
+        players: [player(0, 'marquise'), player(1, 'vagabond')],
+      })
+
+      assignVagabondCharacter(state, 1, character)
+
+      const board = boardOf(state, 1)
+      const itemTypes = [
+        ...board.satchel.map((item) => item.type),
+        ...board.tracks.tea.map((item) => item.type),
+        ...board.tracks.coin.map((item) => item.type),
+        ...board.tracks.bag.map((item) => item.type),
+      ].sort()
+      expect(board.character).toBe(character)
+      expect(itemTypes).toEqual(expectedItemTypes)
+    },
+  )
+
   it('Rule: Vagabond > Setup 2, 5 — Thief start items; forest via place helper', () => {
     const state = minimalState({
       factions: ['marquise', 'eyrie', 'alliance', 'vagabond'],
@@ -57,6 +87,9 @@ describe('Vagabond setup', () => {
     })
     VAGABOND.setup(state, 3, setupContext(state))
     const board = boardOf(state, 3)
+    expect(board.character).toBeNull()
+    assignVagabondCharacter(state, 3, 'thief')
+    expect(board.character).toBe('thief')
     expect(board.forest).toBeNull()
     placeVagabondForest(state, 3, FALL.vagabondForest)
     expect(board.forest).toBe(FALL.vagabondForest)

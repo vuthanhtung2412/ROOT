@@ -1,5 +1,6 @@
 import type {
   BattleEvent,
+  ChooseCharacterEvent,
   ChooseForestEvent,
   ChooseKeepEvent,
   ChooseLeaderEvent,
@@ -11,12 +12,14 @@ import type {
 } from '#events/types.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
+import { VAGABOND_CHARACTERS } from '#state/boards.js'
 import type {
   AllianceBoard,
   EyrieBoard,
   FactionBoard,
   MarquiseBoard,
   VagabondBoard,
+  VagabondCharacter,
 } from '#state/boards.js'
 
 const FALL_CLEARING_COUNT = 12
@@ -61,6 +64,16 @@ export function isPlaceStartingBuildingEvent(
 
 export function isChooseLeaderEvent(event: Event): event is ChooseLeaderEvent {
   return event.type === 'chooseLeader'
+}
+
+export function isChooseCharacterEvent(
+  event: Event,
+): event is ChooseCharacterEvent {
+  return event.type === 'chooseCharacter'
+}
+
+export function isVagabondCharacter(value: string): value is VagabondCharacter {
+  return VAGABOND_CHARACTERS.some((character) => character === value)
 }
 
 export function isChooseForestEvent(event: Event): event is ChooseForestEvent {

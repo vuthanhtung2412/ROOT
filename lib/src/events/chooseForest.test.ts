@@ -25,6 +25,7 @@ describe('chooseForest', () => {
     }
     expect(game.state.pending[0]?.type).toBe('chooseLeader')
     game.apply({ type: 'resolveEvent', leader: 'builder' })
+    game.apply({ type: 'resolveEvent', character: 'thief' })
     expect(game.state.pending[0]?.type).toBe('chooseForest')
     const forests = game.legalActions()[0]?.params?.forests
     expect(forests).toEqual(FALL.forests.map((_, index) => index))

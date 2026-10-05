@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { questDefOf } from '#cards/quests.js'
-import { VAGABOND } from '#factions/Vagabond.js'
+import { VAGABOND, assignVagabondCharacter } from '#factions/Vagabond.js'
 import { boardOf, placeItemInSatchelOrTrack } from '#factions/vagabond/items.js'
 import { FALL } from '#map/fall.js'
 import { resetPlaceIds } from '#rules/place.js'
@@ -35,6 +35,7 @@ describe('Vagabond quest action', () => {
       rng: new SeededRng({ seed: 2, cursor: 0 }),
     })
     VAGABOND.setup(state, 1, context)
+    assignVagabondCharacter(state, 1, 'thief')
     const board = boardOf(state, 1)
     board.forest = null
     // Fundraising = coin + tea (fox).
@@ -104,6 +105,7 @@ describe('Vagabond quest action', () => {
       1,
       testContext({ state, rng: new SeededRng({ seed: 3, cursor: 0 }) }),
     )
+    assignVagabondCharacter(state, 1, 'thief')
     const board = boardOf(state, 1)
     board.forest = null
     placeItemInSatchelOrTrack(board, 'coin')

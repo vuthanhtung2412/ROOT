@@ -6,12 +6,14 @@ import type { ClearingId } from '#map/types.js'
 import type { FactionId, Piece, Seat } from '#pieces/types.js'
 import type { Rng } from '#rules/Rng.js'
 import {
+  DEFAULT_VAGABOND_CHARACTER,
   EYRIE_LEADERS,
   eyrieLeaderPools,
   createFactionBoard,
   type EyrieBoard,
   type EyrieLeader,
   type MarquiseBoard,
+  type VagabondCharacter,
 } from '#state/boards.js'
 import { ITEM_SUPPLY } from '#state/constants.js'
 import type { ClearingState, GameState, PlayerState } from '#state/types.js'
@@ -212,6 +214,7 @@ export function resolveStartingBuildings(game: Game): void {
 export type FinishSetupOptions = {
   keep?: ClearingId
   leader?: EyrieLeader
+  character?: VagabondCharacter
   forest?: number
 }
 
@@ -230,6 +233,12 @@ export function finishSetup(
     game.apply({
       type: 'resolveEvent',
       leader: options.leader ?? 'builder',
+    })
+  }
+  if (game.state.pending[0]?.type === 'chooseCharacter') {
+    game.apply({
+      type: 'resolveEvent',
+      character: options.character ?? DEFAULT_VAGABOND_CHARACTER,
     })
   }
   if (game.state.pending[0]?.type === 'chooseForest') {

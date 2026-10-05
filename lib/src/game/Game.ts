@@ -494,6 +494,12 @@ export class Game {
       if (action.clearing !== undefined && s.params?.clearing?.includes(action.clearing)) {
         return true
       }
+      if (
+        action.character !== undefined &&
+        s.params?.characters?.includes(action.character)
+      ) {
+        return true
+      }
       if (action.leader !== undefined && s.params?.leaders?.includes(action.leader)) {
         return true
       }

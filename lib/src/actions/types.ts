@@ -1,6 +1,10 @@
 import type { ClearingId } from '#map/types.js'
 import type { BuildingType, ItemType, Seat } from '#pieces/types.js'
-import type { DecreeColumn, EyrieLeader } from '#state/boards.js'
+import type {
+  DecreeColumn,
+  EyrieLeader,
+  VagabondCharacter,
+} from '#state/boards.js'
 
 export type MarchMove = {
   from: ClearingId
@@ -98,6 +102,8 @@ export type ActionChoiceParams = {
   useEffect?: boolean[]
   column?: DecreeColumn[]
   leaders?: EyrieLeader[]
+  /** Vagabond setup — characters to choose from. */
+  characters?: VagabondCharacter[]
   supporterIds?: string[]
   op?: Array<'move' | 'battle' | 'recruit' | 'organize'>
   /** Vagabond slip — forest destination indices. */
@@ -252,6 +258,8 @@ export type ResolveEventAction = {
   useEffect?: boolean
   clearing?: ClearingId
   leader?: EyrieLeader
+  /** Rule: Vagabond > Setup 1 — chosen character. */
+  character?: VagabondCharacter
   /** Rule: Vagabond > Setup 2 — forest index on Fall map. */
   forest?: number
   /** Rule: 9.2.6 — undamaged items the Vagabond chooses to damage. */

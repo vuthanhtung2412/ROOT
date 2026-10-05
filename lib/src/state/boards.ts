@@ -109,8 +109,31 @@ export const THIEF_START_ITEMS: readonly ItemType[] = [
   'sword',
 ]
 
+/** Rule: Appendix D — base game Vagabond characters. */
+export const VAGABOND_CHARACTERS = ['thief', 'tinker', 'ranger'] as const
+
+export type VagabondCharacter = (typeof VAGABOND_CHARACTERS)[number]
+
+/** Snapshots saved before characters existed have no character: Thief. */
+export const DEFAULT_VAGABOND_CHARACTER: VagabondCharacter = 'thief'
+
+/** Rule: D.1.1 / D.2.1 / D.3.1 Starting Items. */
+export const VAGABOND_START_ITEMS: Record<
+  VagabondCharacter,
+  readonly ItemType[]
+> = {
+  thief: THIEF_START_ITEMS,
+  tinker: ['boot', 'torch', 'bag', 'hammer'],
+  ranger: ['boot', 'torch', 'crossbow', 'sword'],
+}
+
+/** Rule: D.3.2 Hideout — repair up to this many items. */
+export const HIDEOUT_REPAIR_COUNT = 3
+
 export type VagabondBoard = {
   kind: 'vagabond'
+  /** Null until chosen in setup. Rule: Vagabond > Setup 1. */
+  character: VagabondCharacter | null
   satchel: VagabondItem[]
   tracks: { tea: VagabondItem[]; coin: VagabondItem[]; bag: VagabondItem[] }
   damaged: VagabondItem[]
@@ -158,6 +181,7 @@ export function createFactionBoard(faction: FactionId): FactionBoard {
     case 'vagabond':
       return {
         kind: 'vagabond',
+        character: null,
         satchel: [],
         tracks: { tea: [], coin: [], bag: [] },
         damaged: [],

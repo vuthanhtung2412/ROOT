@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import type { VagabondItemChoice } from '#actions/types.js'
 import { battleResolver, openBattle } from '#events/battle.js'
 import { boardOf, undamagedSwords } from '#factions/vagabond/items.js'
-import { VAGABOND } from '#factions/Vagabond.js'
+import { VAGABOND, assignVagabondCharacter } from '#factions/Vagabond.js'
 import { FALL } from '#map/fall.js'
 import { resetPlaceIds } from '#rules/place.js'
 import { SeededRng } from '#rules/Rng.js'
@@ -30,6 +30,7 @@ describe('Vagabond battle item damage', () => {
       1,
       testContext({ state, rng: new SeededRng({ seed: 1, cursor: 0 }) }),
     )
+    assignVagabondCharacter(state, 1, 'thief')
     const board = boardOf(state, 1)
     board.forest = null
     const clearing = FALL.forests[FALL.vagabondForest]![0]!
