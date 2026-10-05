@@ -57,9 +57,12 @@ import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 import { syncTurnBannerComposer } from '#react/TurnBanner.tsx'
 import type { BoardClearingPieces } from '#react/PieceStack.tsx'
 import {
-  isVagabondBoardWithForest,
   type ForestPawnMarker,
 } from '#game/forestLayout.ts'
+import {
+  forestPawnsFromPlayers,
+  stampPawnCharacters,
+} from '#game/vagabondPawn.ts'
 
 export type ReactGameBoardSnapshot = {
   layout: BoardLayout | null
@@ -643,25 +646,9 @@ export class ReactGameController {
       snapshot.state.currentSeat,
       this.marquiseMarch.getMarchPreviewMove(),
     )
-    this.boardClearings = clearings
+    this.boardClearings = stampPawnCharacters(clearings, snapshot.state.players)
     this.boardFactions = snapshot.state.factions
-    this.forestPawns = forestPawnsFromState(snapshot.state)
+    this.forestPawns = forestPawnsFromPlayers(snapshot.state.players)
     this.notifyBoard()
   }
-}
-
-function forestPawnsFromState(state: {
-  players: Array<{ seat: number; faction: string; board?: unknown }>
-  factions: string[]
-}): ForestPawnMarker[] {
-  const markers: ForestPawnMarker[] = []
-  for (const player of state.players) {
-    if (!isVagabondBoardWithForest(player.board)) continue
-    markers.push({
-      forestIndex: player.board.forest,
-      seat: player.seat,
-      factionId: player.faction,
-    })
-  }
-  return markers
 }

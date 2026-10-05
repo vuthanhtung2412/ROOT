@@ -28,6 +28,7 @@ describe('ForestPawnMarker shape', () => {
       forestIndex: 3,
       seat: 1,
       factionId: 'vagabond',
+      character: 'tinker',
     }
     expect(marker.forestIndex).toBe(3)
   })

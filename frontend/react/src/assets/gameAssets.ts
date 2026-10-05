@@ -40,7 +40,10 @@ export const GAME_ASSET_KEYS = {
   tokenAllianceBaseMouse: 'token-alliance-base-mouse',
   tokenAllianceBaseRabbit: 'token-alliance-base-rabbit',
   tokenAllianceWarrior: 'token-alliance-warrior',
+  /** Thief meeple; also the default before a character is chosen. */
   tokenVagabondPawn: 'token-vagabond-pawn',
+  tokenVagabondPawnTinker: 'token-vagabond-pawn-tinker',
+  tokenVagabondPawnRanger: 'token-vagabond-pawn-ranger',
   markerRuin: 'marker-ruin',
   itemBoot: 'item-boot',
   itemBag: 'item-bag',
@@ -96,13 +99,26 @@ export type GameImageAsset = {
   path: string
 }
 
+/** Pawn meeple of a Vagabond character; unknown / not chosen = Thief. */
+export function vagabondPawnTextureKey(
+  character: string | null | undefined,
+): string {
+  if (character === 'tinker') {
+    return GAME_ASSET_KEYS.tokenVagabondPawnTinker
+  }
+  if (character === 'ranger') {
+    return GAME_ASSET_KEYS.tokenVagabondPawnRanger
+  }
+  return GAME_ASSET_KEYS.tokenVagabondPawn
+}
+
 /** Map piece kind+type → token texture (Marquise / Eyrie / Alliance / Vagabond). */
 export function pieceTokenTextureKey(
   kind: string,
   pieceType: string | undefined,
 ): string | null {
   if (kind === 'pawn') {
-    return GAME_ASSET_KEYS.tokenVagabondPawn
+    return vagabondPawnTextureKey(pieceType)
   }
   if (pieceType === undefined) {
     return null
@@ -341,6 +357,14 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.tokenVagabondPawn,
     path: 'assets/tokens/vagabond/pawn.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenVagabondPawnTinker,
+    path: 'assets/tokens/vagabond/pawn-tinker.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.tokenVagabondPawnRanger,
+    path: 'assets/tokens/vagabond/pawn-ranger.png',
   },
   {
     key: GAME_ASSET_KEYS.markerRuin,

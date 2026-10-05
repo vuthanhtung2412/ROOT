@@ -16,6 +16,8 @@ export type ForestPawnMarker = {
   forestIndex: number
   seat: number
   factionId: string
+  /** Vagabond character id — picks the meeple art; null = default. */
+  character: string | null
 }
 
 /** Pixel polygon + centroid for one Autumn forest (corners = bordering clearings). */

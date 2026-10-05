@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import {
-  GAME_ASSET_KEYS,
   imagePathForAssetKey,
+  vagabondPawnTextureKey,
 } from '#assets/gameAssets.ts'
 import type {
   ForestPawnMarker,
@@ -15,7 +15,6 @@ export type ForestPawnLayerProps = {
 }
 
 export function ForestPawnLayer(props: ForestPawnLayerProps): JSX.Element {
-  const pawnPath = imagePathForAssetKey(GAME_ASSET_KEYS.tokenVagabondPawn)
   const size = PIECE_DRAW.buildingIconSize
   const nodes: JSX.Element[] = []
 
@@ -45,6 +44,9 @@ export function ForestPawnLayer(props: ForestPawnLayerProps): JSX.Element {
       </svg>,
     )
 
+    const pawnPath = imagePathForAssetKey(
+      vagabondPawnTextureKey(marker.character),
+    )
     if (pawnPath !== null) {
       nodes.push(
         <img
