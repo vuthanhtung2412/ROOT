@@ -24,6 +24,9 @@ export function createTurnScratch(
     sympathyCraftedIds: [],
     slipDone: false,
     aidsThisTurn: {},
+    outcastAdjusted: false,
+    ritualScoredSuits: [],
+    crusadeFollowUpClearing: null,
     ...overrides,
   }
 }

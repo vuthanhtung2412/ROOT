@@ -64,5 +64,10 @@ export function setUpFactionsAfterMarquise(state: GameState, ctx: Ctx): void {
       state.pending.push({ type: 'chooseCharacter', seat: player.seat })
       state.pending.push({ type: 'chooseForest', seat: player.seat })
     }
+    if (player.faction === 'lizard') {
+      // Rule: 10.3.2, 10.3.3 — starting corner, then the Outcast suit.
+      state.pending.push({ type: 'chooseCultCorner', seat: player.seat })
+      state.pending.push({ type: 'chooseOutcast', seat: player.seat })
+    }
   }
 }

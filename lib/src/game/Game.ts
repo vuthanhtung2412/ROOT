@@ -520,6 +520,9 @@ export class Game {
       if (action.forest !== undefined && s.params?.forests?.includes(action.forest)) {
         return true
       }
+      if (action.suit !== undefined && s.params?.suits?.includes(action.suit)) {
+        return true
+      }
       if (action.pieceIds && s.params?.pieceIds) {
         const domain = s.params.pieceIds
         if (JSON.stringify(action.pieceIds) === JSON.stringify(domain)) return true

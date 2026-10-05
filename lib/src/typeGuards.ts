@@ -1,7 +1,9 @@
 import type {
   BattleEvent,
   ChooseCharacterEvent,
+  ChooseCultCornerEvent,
   ChooseForestEvent,
+  ChooseOutcastEvent,
   ChooseKeepEvent,
   ChooseLeaderEvent,
   Event,
@@ -88,6 +90,16 @@ export function isOutrageEvent(event: Event): event is OutrageEvent {
 
 export function isVagabondDamageEvent(event: Event): event is VagabondDamageEvent {
   return event.type === 'vagabondDamage'
+}
+
+export function isChooseCultCornerEvent(
+  event: Event,
+): event is ChooseCultCornerEvent {
+  return event.type === 'chooseCultCorner'
+}
+
+export function isChooseOutcastEvent(event: Event): event is ChooseOutcastEvent {
+  return event.type === 'chooseOutcast'
 }
 
 export function isMarquiseBoard(board: FactionBoard): board is MarquiseBoard {

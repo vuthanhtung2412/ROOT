@@ -2,7 +2,7 @@ import type { Card } from '#cards/types.js'
 import { Game } from '#game/Game.js'
 import type { Ctx } from '#game/ctx.js'
 import { FALL } from '#map/fall.js'
-import type { ClearingId } from '#map/types.js'
+import type { ClearingId, Suit } from '#map/types.js'
 import type { FactionId, Piece, Seat } from '#pieces/types.js'
 import type { Rng } from '#rules/Rng.js'
 import {
@@ -16,6 +16,7 @@ import {
   type VagabondCharacter,
 } from '#state/boards.js'
 import { ITEM_SUPPLY } from '#state/constants.js'
+import { createLizardBoard, type LizardBoard } from '#state/lizardBoard.js'
 import type { ClearingState, GameState, PlayerState } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import { buildRuleHooks } from '#triggers/buildHooks.js'
@@ -112,6 +113,11 @@ export function eyrieBoard(overrides?: Partial<EyrieBoard>): EyrieBoard {
   }
 }
 
+/** Lizard Cult board after setup: Outcast chosen, nothing on the map yet. */
+export function lizardBoard(overrides?: Partial<LizardBoard>): LizardBoard {
+  return { ...createLizardBoard(), outcast: 'fox', ...overrides }
+}
+
 export function player(
   seat: Seat,
   faction: FactionId,
@@ -120,11 +126,9 @@ export function player(
   const board =
     faction === 'eyrie'
       ? eyrieBoard()
-      : faction === 'alliance'
-        ? createFactionBoard('alliance')
-        : faction === 'vagabond'
-          ? createFactionBoard('vagabond')
-          : marquiseBoard()
+      : faction === 'marquise'
+        ? marquiseBoard()
+        : createFactionBoard(faction)
   return {
     playerId: `p${seat}`,
     seat,
@@ -216,6 +220,8 @@ export type FinishSetupOptions = {
   leader?: EyrieLeader
   character?: VagabondCharacter
   forest?: number
+  cultCorner?: ClearingId
+  outcast?: Suit
 }
 
 export function finishSetup(
@@ -246,6 +252,16 @@ export function finishSetup(
       type: 'resolveEvent',
       forest: options.forest ?? FALL.vagabondForest,
     })
+  }
+  if (game.state.pending[0]?.type === 'chooseCultCorner') {
+    const corners = game.legalActions()[0]?.params?.clearing ?? []
+    game.apply({
+      type: 'resolveEvent',
+      clearing: options.cultCorner ?? corners[0]!,
+    })
+  }
+  if (game.state.pending[0]?.type === 'chooseOutcast') {
+    game.apply({ type: 'resolveEvent', suit: options.outcast ?? 'fox' })
   }
 }
 

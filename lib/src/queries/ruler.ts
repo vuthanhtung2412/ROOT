@@ -1,4 +1,5 @@
 import type { RuleHooks } from '#triggers/hooks.js'
+import { pilgrimRuler } from '#factions/lizard/rules.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
@@ -13,6 +14,10 @@ export function ruler(
   hooks: RuleHooks,
 ): Seat | null {
   if (clearing < 0 || clearing >= FALL.clearings.length) return null
+
+  // Rule: 10.2.4 Pilgrims — gardens rule; overrides Lords of the Forest.
+  const pilgrim = pilgrimRuler(state, clearing)
+  if (pilgrim !== null) return pilgrim
 
   const strengths = new Map<Seat, number>()
   for (const player of state.players) {

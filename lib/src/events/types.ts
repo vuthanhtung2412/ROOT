@@ -83,7 +83,21 @@ export type VagabondDamageEvent = {
   count: number
 }
 
+/** Rule: 10.3.2 — Lizard Cult chooses its starting corner clearing. */
+export type ChooseCultCornerEvent = {
+  type: 'chooseCultCorner'
+  seat: Seat
+}
+
+/** Rule: 10.3.3 — Lizard Cult places the outcast marker on a suit. */
+export type ChooseOutcastEvent = {
+  type: 'chooseOutcast'
+  seat: Seat
+}
+
 export type Event =
+  | ChooseCultCornerEvent
+  | ChooseOutcastEvent
   | BattleEvent
   | FieldHospitalEvent
   | ChooseKeepEvent

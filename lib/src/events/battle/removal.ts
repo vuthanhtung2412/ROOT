@@ -251,7 +251,10 @@ export function applyRemovalStage(
       clearing: event.clearing,
       pieceIds: action.pieceIds,
       scorer,
-      options: { fromBattle: true },
+      options: {
+        fromBattle: true,
+        defendingInBattle: victim === event.defender,
+      },
     },
     ctx,
   )

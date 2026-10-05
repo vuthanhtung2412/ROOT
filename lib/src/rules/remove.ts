@@ -14,6 +14,11 @@ import {
 } from '#factions/alliance/rules.js'
 import { enqueueVagabondDamage } from '#events/vagabondDamage.js'
 import { boardOf as vagabondBoardOf } from '#factions/vagabond/items.js'
+import {
+  discardRandomCultCard,
+  lizardBoardOf,
+  returnGardenToTrack,
+} from '#factions/lizard/rules.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { warriorSupplyOf } from '#queries/supply.js'
@@ -28,7 +33,12 @@ export type PieceRemoval = {
   clearing: ClearingId
   pieceIds: string[]
   scorer?: Seat
-  options?: { skipFieldHospital?: boolean; fromBattle?: boolean }
+  options?: {
+    skipFieldHospital?: boolean
+    fromBattle?: boolean
+    /** The removed pieces belong to the defender of the battle. */
+    defendingInBattle?: boolean
+  }
 }
 
 export function returnWarriorsToSupply(state: GameState, seat: Seat, count: number): void {
@@ -201,6 +211,11 @@ export function removePieces(
     } else {
       returnPieceToOwner(state, piece)
     }
+    if (piece.kind === 'building' && piece.type === 'garden') {
+      returnGardenToTrack(state, piece.owner, clearing)
+      // Rule: 10.2.5 Fear of the Faithful — discard a random card.
+      discardRandomCultCard(state, piece.owner, ctx?.rng)
+    }
     if (
       piece.kind === 'building' &&
       piece.type === 'base' &&
@@ -270,9 +285,14 @@ export function removePieces(
       !hasKeep(state, victim) || options?.skipFieldHospital === true
     const canOfferHospital =
       !skipHospital && victimHasFieldHospitalCard(state, victim, clearing)
-    const sentToSupply = !canOfferHospital
+    // Rule: 10.2.3 Revenge — Cult warriors removed while defending become acolytes.
+    const becomeAcolytes =
+      faction === 'lizard' && options?.defendingInBattle === true
+    const sentToSupply = !canOfferHospital && !becomeAcolytes
 
-    if (sentToSupply) {
+    if (becomeAcolytes) {
+      lizardBoardOf(state, victim).acolytes += count
+    } else if (sentToSupply) {
       returnWarriorsToSupply(state, victim, count)
     } else {
       state.pending.push({

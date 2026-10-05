@@ -1,6 +1,7 @@
 import { defOf } from '#cards/Deck.js'
 import type { Card } from '#cards/types.js'
 import type { CostSuit } from '#cards/types.js'
+import { gardenCraftsInSuit } from '#factions/lizard/rules.js'
 import type { Suit } from '#map/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -44,6 +45,10 @@ function craftingSources(state: GameState, seat: Seat): CraftSource[] {
     for (const piece of state.clearings[clearingId]!.pieces) {
       if (piece.owner !== seat) continue
       if (isCraftingBuilding(piece) && !piece.used) {
+        // Rule: 10.2.1 — gardens craft only in the Outcast suit.
+        if (piece.type === 'garden' && !gardenCraftsInSuit(state, seat, suit)) {
+          continue
+        }
         out.push({ piece, suit, clearingId })
       }
       if (piece.kind === 'token' && piece.type === 'sympathy') {
