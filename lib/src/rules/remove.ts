@@ -16,6 +16,7 @@ import { enqueueVagabondDamage } from '#events/vagabondDamage.js'
 import { boardOf as vagabondBoardOf } from '#factions/vagabond/items.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
+import { warriorSupplyOf } from '#queries/supply.js'
 import { addVictoryPoints } from '#rules/dominance.js'
 import { EYRIE_TOTAL_ROOSTS } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
@@ -32,14 +33,8 @@ export type PieceRemoval = {
 
 export function returnWarriorsToSupply(state: GameState, seat: Seat, count: number): void {
   if (count <= 0) return
-  const board = playerOf(state, seat).board
-  if (board.kind === 'marquise') {
-    board.supply.warriors += count
-  } else if (board.kind === 'eyrie') {
-    board.supply.warriors += count
-  } else if (board.kind === 'alliance') {
-    board.supply.warriors += count
-  }
+  const supply = warriorSupplyOf(playerOf(state, seat).board)
+  if (supply !== null) supply.warriors += count
 }
 
 function returnPieceToOwner(state: GameState, piece: Piece): void {

@@ -10,7 +10,9 @@ import type {
   VagabondDamageEvent,
   PlaceStartingBuildingEvent,
 } from '#events/types.js'
-import type { ClearingId } from '#map/types.js'
+import type { ClearingId, Suit } from '#map/types.js'
+import type { LizardBoard } from '#state/lizardBoard.js'
+import type { RiverfolkBoard } from '#state/riverfolkBoard.js'
 import type { Seat } from '#pieces/types.js'
 import { VAGABOND_CHARACTERS } from '#state/boards.js'
 import type {
@@ -102,4 +104,16 @@ export function isAllianceBoard(board: FactionBoard): board is AllianceBoard {
 
 export function isVagabondBoard(board: FactionBoard): board is VagabondBoard {
   return board.kind === 'vagabond'
+}
+
+export function isLizardBoard(board: FactionBoard): board is LizardBoard {
+  return board.kind === 'lizard'
+}
+
+export function isRiverfolkBoard(board: FactionBoard): board is RiverfolkBoard {
+  return board.kind === 'riverfolk'
+}
+
+export function isSuit(value: string): value is Suit {
+  return value === 'fox' || value === 'rabbit' || value === 'mouse'
 }

@@ -139,6 +139,8 @@ describe('dominance take / activate', () => {
         eyrie: 0,
         alliance: 0,
         vagabond: 0,
+        lizard: 0,
+        riverfolk: 0,
       },
       forest: null,
     }

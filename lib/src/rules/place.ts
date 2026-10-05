@@ -10,6 +10,7 @@ import {
 import type { ClearingId } from '#map/types.js'
 import { canPlace } from '#queries/place.js'
 import { openSlots } from '#queries/slots.js'
+import { warriorSupplyOf } from '#queries/supply.js'
 import type { GameState } from '#state/types.js'
 import { playerOf } from '#queries/seat.js'
 
@@ -100,19 +101,10 @@ function takeFromSupply(state: GameState, seat: Seat, spec: PlaceSpec): boolean 
   const board = playerOf(state, seat).board
   switch (spec.kind) {
     case 'warrior': {
-      if (board.kind === 'marquise' && board.supply.warriors > 0) {
-        board.supply.warriors -= 1
-        return true
-      }
-      if (board.kind === 'eyrie' && board.supply.warriors > 0) {
-        board.supply.warriors -= 1
-        return true
-      }
-      if (board.kind === 'alliance' && board.supply.warriors > 0) {
-        board.supply.warriors -= 1
-        return true
-      }
-      return false
+      const supply = warriorSupplyOf(board)
+      if (supply === null || supply.warriors < 1) return false
+      supply.warriors -= 1
+      return true
     }
     case 'token': {
       if (spec.type === 'wood' && board.kind === 'marquise' && board.supply.wood > 0) {
