@@ -277,9 +277,13 @@ export class GameSession {
   /**
    * QA-only: REST full slot (hands unredacted) + listen WS as wake signal.
    * Does not save/clear Play `playerIdentity` storage.
+   * `snapshotToLoad` replaces the server slot first (QA snapshot autoload).
    */
-  async continueQaLoadedGame(): Promise<void> {
+  async continueQaLoadedGame(snapshotToLoad?: unknown): Promise<void> {
     this.qaMode = true
+    if (snapshotToLoad !== undefined) {
+      await this.api.loadSnapshot(snapshotToLoad)
+    }
     await this.refresh()
     this.syncQaViewerToActor()
   }

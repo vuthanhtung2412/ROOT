@@ -20,6 +20,10 @@ import {
   subscribeHud,
   type MenuLobbyHudState,
 } from '#game/hudStore.ts'
+import {
+  fetchQaSnapshot,
+  readQaSnapshotPath,
+} from '#game/qaSnapshotAutoload.ts'
 import { ReactGameController } from '#game/ReactGameController.ts'
 import {
   clearBootLoading,
@@ -345,8 +349,25 @@ export function App(): JSX.Element {
   const handleQaContinue = useCallback(async (): Promise<void> => {
     const session = ensureSession()
     rebindSessionApi(apiBaseUrlInput)
-    syncMenuStatus('QA loading slot…', '#9a9a9a')
-    await session.continueQaLoadedGame()
+    const qaSnapshotPath: string | null = readQaSnapshotPath(
+      window.location.search,
+      import.meta.env.ROOT_QA_SNAPSHOT_PATH,
+    )
+    if (qaSnapshotPath === null) {
+      syncMenuStatus('QA loading slot…', '#9a9a9a')
+      await session.continueQaLoadedGame()
+    } else {
+      syncMenuStatus(`QA loading ${qaSnapshotPath}…`, '#9a9a9a')
+      try {
+        await session.continueQaLoadedGame(await fetchQaSnapshot(qaSnapshotPath))
+      } catch (error: unknown) {
+        syncMenuStatus(
+          error instanceof Error ? error.message : String(error),
+          '#c44',
+        )
+        return
+      }
+    }
     const snapshot = session.getSnapshot()
     if (snapshot.error !== null) {
       syncMenuStatus(snapshot.error, '#c44')

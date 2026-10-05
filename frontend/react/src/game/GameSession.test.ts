@@ -588,6 +588,39 @@ describe('GameSession', () => {
     expect(storage.getItem('root.react.playerIdentity')).toContain('marquise')
   })
 
+  it('continueQaLoadedGame loads the given snapshot into the slot first', async () => {
+    const state = makeGameState({ currentSeat: 1 })
+    const snapshot = {
+      state,
+      history: [],
+      log: [],
+      rng: { seed: 1, cursor: 0 },
+    }
+    const fetchMock = stubFetchSequence([
+      { body: { state } },
+      { body: { state, historyLength: 0 } },
+      { body: { actions: [] } },
+      { body: { log: [] } },
+    ])
+    const session = new GameSession({
+      api: createFrontendApi({ baseUrl: 'http://example.test' }),
+      apiBaseUrl: 'http://example.test',
+      identityStorage: createMemoryStorage(),
+      connectSocket: () => ({ close: vi.fn() }),
+      resolveSocketUrl: (_base, playerId) => `ws://example/ws?playerId=${playerId}`,
+    })
+
+    await session.continueQaLoadedGame(snapshot)
+
+    const loadRequest: unknown = fetchMock.mock.calls[0]?.[0]
+    expect(loadRequest).toBeInstanceOf(Request)
+    if (loadRequest instanceof Request) {
+      expect(loadRequest.method).toBe('PUT')
+      expect(loadRequest.url).toBe('http://example.test/game/snapshot?replace=1')
+    }
+    expect(session.getLocalSeat()).toBe(1)
+  })
+
   it('qaMode socket push wakes REST refresh (not applySocketPush)', async () => {
     const before = makeGameState({ currentSeat: 1, step: 'decree' })
     const after = makeGameState({

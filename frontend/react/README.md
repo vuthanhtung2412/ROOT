@@ -19,7 +19,7 @@ Open Vite URL **twice** (two tabs or windows):
 3. Play; waiting window cannot submit
 4. **Play** after refresh resumes stored seat when still in the API slot (`sessionStorage`, per tab)
 5. **End game** (drawer, two-click) → clears slot; peers return to menu
-6. **QA: Continue loaded game** — REST full-slot refresh + WS wake (live after CLI/UI acts); does **not** touch stored Play identity
+6. **QA: Continue loaded game** — REST full-slot refresh + WS wake (live after CLI/UI acts); does **not** touch stored Play identity. Dev autoload: open `/?qaSnapshot=tmp/qa/snapshots/x.json` (or set `ROOT_QA_SNAPSHOT_PATH`) and the button first loads that repository file into the slot (replaces the game)
 
 Same on two machines: B sets API base to `http://<A-ip>:3000`.
 
