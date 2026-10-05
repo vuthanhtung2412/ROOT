@@ -8,6 +8,27 @@ import {
   type FactionBoardViewModel,
 } from '#ui/factionBoardViewModel.ts'
 
+/** Vagabond seat 1; `character` undefined = board saved before characters. */
+function makeVagabondPlayer(
+  character: string | undefined,
+): Parameters<typeof buildFactionBoardViewModelFromPlayer>[0] {
+  return {
+    seat: 1,
+    faction: 'vagabond',
+    vp: 0,
+    hand: [],
+    board: {
+      kind: 'vagabond',
+      ...(character === undefined ? {} : { character }),
+      satchel: [],
+      tracks: { tea: [], coin: [], bag: [] },
+      damaged: [],
+      relationships: { marquise: 0, eyrie: 0, alliance: 0, vagabond: 0 },
+      forest: null,
+    },
+  }
+}
+
 describe('groupCraftedItems', () => {
   it('groups by type and exhausted with counts', () => {
     expect(
@@ -264,6 +285,28 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       { faction: 'alliance', space: 3 },
     ])
   })
+
+  it.each([
+    [undefined, 'Vagabond (Thief)', 'Steal', ['boot', 'torch', 'tea', 'sword']],
+    ['tinker', 'Vagabond (Tinker)', 'Day Labor', ['boot', 'torch', 'bag', 'hammer']],
+    ['ranger', 'Vagabond (Ranger)', 'Hideout', ['boot', 'torch', 'crossbow', 'sword']],
+  ] as const)(
+    'Vagabond: character %s shows its card, special and starting items',
+    (character, factionName, specialName, startingItems) => {
+      const view = buildFactionBoardViewModelFromPlayer(
+        makeVagabondPlayer(character),
+        ['marquise', 'vagabond'],
+      )
+
+      if (view === null || view.kind !== 'vagabond') {
+        throw new Error('expected vagabond view')
+      }
+      expect(view.factionName).toBe(factionName)
+      expect(view.character.special.name).toBe(specialName)
+      expect(view.abilities.map((ability) => ability.name)).toContain(specialName)
+      expect(view.startingItems).toEqual(startingItems)
+    },
+  )
 
   it('Vagabond: relationship markers only for factions in game', () => {
     const view = buildFactionBoardViewModelFromPlayer(

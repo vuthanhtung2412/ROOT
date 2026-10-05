@@ -261,6 +261,34 @@ describe('eventActionComposer setup picks', () => {
     })
   })
 
+  it('chooseCharacter lists Vagabond characters then submits', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+
+    const mid = composer.begin(
+      makeActionSpec({
+        type: 'resolveEvent',
+        params: { characters: ['thief', 'tinker', 'ranger'] },
+      }),
+    )
+
+    expect(mid.kind).toBe('incomplete')
+    if (mid.kind !== 'incomplete') throw new Error('expected incomplete')
+    expect(mid.prompt.message).toBe('Choose Vagabond character')
+    expect(mid.prompt.canCancel).toBe(false)
+    expect(events.getPromptOptions()).toEqual([
+      { label: 'Thief — Steal', value: 'thief' },
+      { label: 'Tinker — Day Labor', value: 'tinker' },
+      { label: 'Ranger — Hideout', value: 'ranger' },
+    ])
+    expect(composer.chooseColumn('unknown').kind).not.toBe('ready')
+    expect(composer.chooseColumn('ranger')).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', character: 'ranger' },
+    })
+  })
+
   it('chooseLeader lists leaders then submits', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()

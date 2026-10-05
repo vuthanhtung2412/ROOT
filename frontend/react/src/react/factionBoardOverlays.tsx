@@ -595,15 +595,14 @@ function VagabondTrackItemOverlays(props: {
 }
 
 function VagabondCharacterOverlay(props: {
+  view: Extract<FactionBoardViewModel, { kind: 'vagabond' }>
   layout: FactionBoardPixelLayout
 }): JSX.Element | null {
   const region = findBoardLayoutRegion(props.layout, 'character-slot')
   if (region === null) {
     return null
   }
-  const imagePath = imagePathForAssetKey(
-    GAME_ASSET_KEYS.characterCardVagabondThief,
-  )
+  const imagePath = imagePathForAssetKey(props.view.character.cardAssetKey)
   if (imagePath === null) {
     return null
   }
@@ -612,7 +611,7 @@ function VagabondCharacterOverlay(props: {
       className={LEADER_CLASS_NAME}
       style={layoutRegionStyle(region, props.layout)}
       src={imagePath}
-      alt="Thief"
+      alt={props.view.character.name}
       draggable={false}
     />
   )
@@ -721,7 +720,7 @@ function VagabondItemOverlays(props: {
   const findRearrange = useRearrangeSpecFinder(props.view.seat)
   return (
     <>
-      <VagabondCharacterOverlay layout={props.layout} />
+      <VagabondCharacterOverlay view={props.view} layout={props.layout} />
       <VagabondRelationshipOverlays view={props.view} layout={props.layout} />
       <VagabondTrackItemOverlays view={props.view} layout={props.layout} />
       {satchelRegion !== null ? (

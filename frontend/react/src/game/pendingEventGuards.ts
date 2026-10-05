@@ -39,6 +39,11 @@ export type ChooseLeaderPendingEvent = {
   seat: number
 }
 
+export type ChooseCharacterPendingEvent = {
+  type: 'chooseCharacter'
+  seat: number
+}
+
 export type ChooseForestPendingEvent = {
   type: 'chooseForest'
   seat: number
@@ -50,6 +55,7 @@ export type KnownPendingEvent =
   | ChooseKeepPendingEvent
   | PlaceStartingBuildingPendingEvent
   | ChooseLeaderPendingEvent
+  | ChooseCharacterPendingEvent
   | ChooseForestPendingEvent
 
 const BATTLE_STAGES = new Set<string>([
@@ -101,6 +107,15 @@ export function isChooseLeaderPendingEvent(
   pending: unknown,
 ): pending is ChooseLeaderPendingEvent {
   if (!isRecord(pending) || pending.type !== 'chooseLeader') {
+    return false
+  }
+  return typeof pending.seat === 'number'
+}
+
+export function isChooseCharacterPendingEvent(
+  pending: unknown,
+): pending is ChooseCharacterPendingEvent {
+  if (!isRecord(pending) || pending.type !== 'chooseCharacter') {
     return false
   }
   return typeof pending.seat === 'number'
@@ -176,6 +191,9 @@ export function parseKnownPendingEvent(
     return pending
   }
   if (isChooseLeaderPendingEvent(pending)) {
+    return pending
+  }
+  if (isChooseCharacterPendingEvent(pending)) {
     return pending
   }
   if (isChooseForestPendingEvent(pending)) {

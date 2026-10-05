@@ -80,6 +80,9 @@ function formatActionLabel(
     if (params.leaders !== undefined) {
       return 'choose leader'
     }
+    if (params.characters !== undefined) {
+      return 'choose character'
+    }
     if (params.vagabondItems !== undefined) {
       return 'damage items'
     }

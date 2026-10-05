@@ -27,12 +27,13 @@ import {
   type AllianceSympathyTrackColumn,
 } from '#assets/allianceBoardCatalog.ts'
 import {
-  THIEF_STARTING_ITEM_LABELS,
+  lookupVagabondCharacter,
   VAGABOND_ABILITIES,
   VAGABOND_RELATIONSHIP_ALLIED_SPACE,
   VAGABOND_RELATIONSHIP_MARKER_FACTIONS,
   VAGABOND_TURN_CHEAT,
   type VagabondAbilityInfo,
+  type VagabondCharacterInfo,
 } from '#assets/vagabondBoardCatalog.ts'
 import type { GameState } from '#api/client.ts'
 import { questDefOf, type QuestCard } from '@root/lib/quests'
@@ -151,6 +152,8 @@ export type VagabondBoardViewModel = {
   kind: 'vagabond'
   seat: number
   factionName: string
+  /** Law Appendix D — card in the character slot. */
+  character: VagabondCharacterInfo
   victoryPoints: number
   warriors: number
   handSize: number
@@ -219,6 +222,8 @@ type VagabondItemData = { type: string; exhausted: boolean }
 
 type VagabondBoardData = {
   kind: 'vagabond'
+  /** Missing on boards saved before characters existed. */
+  character?: string | null
   satchel: VagabondItemData[]
   tracks: {
     tea: VagabondItemData[]
@@ -643,17 +648,19 @@ export function buildFactionBoardViewModelFromPlayer(
 
   if (player.faction === 'vagabond' && isVagabondBoardData(player.board)) {
     const board = player.board
+    const character = lookupVagabondCharacter(board.character)
     return {
       kind: 'vagabond',
       seat: player.seat,
-      factionName: 'Vagabond (Thief)',
+      factionName: `Vagabond (${character.name})`,
+      character,
       victoryPoints: player.vp,
       warriors: 0,
       handSize: player.hand.length,
       crafted: craftedLookup(player),
-      abilities: VAGABOND_ABILITIES,
+      abilities: [...VAGABOND_ABILITIES, character.special],
       turnCheat: VAGABOND_TURN_CHEAT,
-      startingItems: [...THIEF_STARTING_ITEM_LABELS],
+      startingItems: [...character.startingItems],
       satchel: board.satchel.map((item) => ({
         type: item.type,
         exhausted: item.exhausted,

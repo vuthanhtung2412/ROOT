@@ -3,6 +3,10 @@ import {
   formatEyrieLeaderOptionLabel,
 } from '#assets/eyrieLeaderCatalog.ts'
 import {
+  CHOOSE_CHARACTER_PROMPT,
+  formatVagabondCharacterOptionLabel,
+} from '#assets/vagabondBoardCatalog.ts'
+import {
   readChoiceParams,
   type ActionComposerHooks,
   type ClientAction,
@@ -67,6 +71,7 @@ type EventDraft =
       building: string
     }
   | { type: 'pickLeader'; leaders: string[] }
+  | { type: 'pickCharacter'; characters: string[] }
   | { type: 'pickForest'; forests: number[] }
   | { type: 'pickRemoval'; choices: BattleRemovalStepperChoice[] }
   | {
@@ -342,6 +347,25 @@ export function createEventComposerHooks(): {
         }
       }
 
+      if (params.characters !== undefined) {
+        draft = { type: 'pickCharacter', characters: params.characters }
+        optionPresentation = 'buttons'
+        promptOptions = params.characters.map((character) => ({
+          label: formatVagabondCharacterOptionLabel(character),
+          value: character,
+        }))
+        return {
+          kind: 'incomplete',
+          prompt: {
+            message: CHOOSE_CHARACTER_PROMPT,
+            highlightClearings: [],
+            enabledCardIds: null,
+            canConfirm: false,
+            canCancel: false,
+          },
+        }
+      }
+
       const itemDamageCount = params.itemCount?.[0]
       if (params.vagabondItems !== undefined && itemDamageCount !== undefined) {
         return itemDamagePrompt(
@@ -534,6 +558,16 @@ export function createEventComposerHooks(): {
         clear()
         return { kind: 'ready', action: { type: 'resolveEvent', leader: value } }
       }
+      if (draft.type === 'pickCharacter') {
+        if (!draft.characters.includes(value)) {
+          return null
+        }
+        clear()
+        return {
+          kind: 'ready',
+          action: { type: 'resolveEvent', character: value },
+        }
+      }
       if (draft.type === 'pickEffect') {
         clear()
         return {
@@ -592,6 +626,7 @@ export function createEventComposerHooks(): {
       if (
         draft.type === 'pickKeep' ||
         draft.type === 'pickLeader' ||
+        draft.type === 'pickCharacter' ||
         draft.type === 'pickStartingBuilding'
       ) {
         return null

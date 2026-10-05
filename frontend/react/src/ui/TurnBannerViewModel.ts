@@ -1,5 +1,7 @@
 import type { ActionSpec, GameState } from '#api/client.ts'
+import { CHOOSE_CHARACTER_PROMPT } from '#assets/vagabondBoardCatalog.ts'
 import {
+  isChooseCharacterPendingEvent,
   isChooseForestPendingEvent,
   isChooseKeepPendingEvent,
   isChooseLeaderPendingEvent,
@@ -66,6 +68,7 @@ function readPendingActorFromEvent(event: unknown): number | null {
     pending.type === 'chooseKeep' ||
     pending.type === 'chooseLeader' ||
     pending.type === 'placeStartingBuilding' ||
+    pending.type === 'chooseCharacter' ||
     pending.type === 'chooseForest'
   ) {
     return pending.seat
@@ -167,6 +170,9 @@ function pendingEventPrompt(pending: unknown, actorSeat: number): string | null 
   if (event.type === 'chooseLeader') {
     return 'Choose Eyrie leader'
   }
+  if (event.type === 'chooseCharacter') {
+    return CHOOSE_CHARACTER_PROMPT
+  }
   if (event.type === 'chooseForest') {
     return 'Choose starting forest'
   }
@@ -182,6 +188,9 @@ function setupPrompt(pending: unknown): string | null {
   }
   if (isChooseLeaderPendingEvent(pending)) {
     return 'Choose Eyrie leader'
+  }
+  if (isChooseCharacterPendingEvent(pending)) {
+    return CHOOSE_CHARACTER_PROMPT
   }
   if (isChooseForestPendingEvent(pending)) {
     return 'Choose starting forest'
