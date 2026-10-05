@@ -111,7 +111,7 @@ function CraftedItemsOverlay(props: OverlayBaseProps): JSX.Element | null {
   if (props.view.crafted.items.length === 0) {
     return (
       <div
-        className={`${CRAFTED_STRIP_CLASS_NAME} ${DARK_LABEL_CLASS_NAME} items-start text-[clamp(10px,2.2vh,14px)]`}
+        className={`${CRAFTED_STRIP_CLASS_NAME} items-start font-mono text-[clamp(10px,2.2vh,14px)] text-[#1a1408]`}
         style={style}
       >
         Items (none)
