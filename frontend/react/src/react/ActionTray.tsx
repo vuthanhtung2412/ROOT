@@ -17,6 +17,7 @@ import {
   filterTrayActions,
   formatActionLabel,
   partitionTrayActionRegions,
+  withoutBoardOnlyActions,
 } from '#ui/ActionTray.ts'
 
 function isBlockingHudModalOpen(): boolean {
@@ -73,7 +74,9 @@ export function ActionTray(): JSX.Element | null {
     return null
   }
   const forActor = collapseTrayActionsByLabel(
-    filterTrayActions(tray.actions, tray.actorSeat, tray.options),
+    withoutBoardOnlyActions(
+      filterTrayActions(tray.actions, tray.actorSeat, tray.options),
+    ),
     tray.pending,
     tray.state,
   )

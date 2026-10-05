@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   collapseTrayActionsByLabel,
   filterTrayActions,
+  withoutBoardOnlyActions,
   formatActionLabel,
   partitionTrayActionRegions,
 } from '#ui/ActionTray.ts'
-import { makeGameState } from '#test/factories.ts'
+import { makeActionSpec, makeGameState } from '#test/factories.ts'
 
 describe('formatActionLabel setup', () => {
   it('labels keep vs starting buildings distinctly', () => {
@@ -281,5 +282,18 @@ describe('partitionTrayActionRegions', () => {
         actions: [{ type: 'endPhase', actor: 0 }],
       },
     ])
+  })
+})
+
+describe('withoutBoardOnlyActions', () => {
+  it('keeps Vagabond item moves off the tray', () => {
+    const move = makeActionSpec({ type: 'vbMove', actor: 3 })
+    const rearrange = makeActionSpec({
+      type: 'vbRearrange',
+      actor: 3,
+      params: { itemTypes: ['tea'], rearrangeFrom: ['track'] },
+    })
+
+    expect(withoutBoardOnlyActions([move, rearrange])).toEqual([move])
   })
 })

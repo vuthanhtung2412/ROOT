@@ -1,6 +1,7 @@
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { lookupCardCatalog } from '#assets/gameAssets.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
+import { REARRANGE_ACTION_TYPE } from '#game/vagabondRearrange.ts'
 
 export type ActionTraySyncOptions = {
   lockToActionTypes?: readonly string[]
@@ -49,7 +50,6 @@ function formatActionLabel(
   if (spec.type === 'slip') return 'slip'
   if (spec.type === 'vbMove') return 'move'
   if (spec.type === 'vbBattle') return 'battle'
-  if (spec.type === 'vbRearrange') return 'rearrange items'
   if (spec.type === 'explore') return 'explore'
   if (spec.type === 'quest') return 'quest'
   if (spec.type === 'takeDominance') return 'take dominance'
@@ -190,6 +190,16 @@ function findCardDefIdOnEyrieDecree(board: unknown, cardId: string): string | nu
     }
   }
   return null
+}
+
+/**
+ * Actions taken on the faction board, not from a tray button
+ * (Vagabond moves items by clicking them).
+ */
+export function withoutBoardOnlyActions(
+  actions: readonly ActionSpec[],
+): ActionSpec[] {
+  return actions.filter((spec) => spec.type !== REARRANGE_ACTION_TYPE)
 }
 
 export function filterTrayActions(

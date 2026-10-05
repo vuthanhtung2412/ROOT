@@ -52,7 +52,6 @@ import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { syncActionTray } from '#react/ActionTray.tsx'
 import { syncBattleOverlayView } from '#react/BattleOverlay.tsx'
 import type { BattleOverlaySyncTarget } from '#game/battleOverlayController.ts'
-import { REARRANGE_ACTION_TYPE } from '#game/vagabondRearrange.ts'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 import { syncTurnBannerComposer } from '#react/TurnBanner.tsx'
 import type { BoardClearingPieces } from '#react/PieceStack.tsx'
@@ -369,14 +368,6 @@ export class ReactGameController {
   }
 
   private handleSelectAction(spec: ActionSpec): void {
-    if (spec.type === REARRANGE_ACTION_TYPE) {
-      // Items are moved by clicking them on the Vagabond board.
-      const state = this.latestSnapshot?.state
-      if (state !== null && state !== undefined) {
-        this.modals?.openFactionBoard(state, spec.actor)
-      }
-      return
-    }
     if (isPieceIdsRemovalSpec(spec)) {
       const snapshot = this.latestSnapshot
       if (snapshot === null || snapshot.state === null) {
