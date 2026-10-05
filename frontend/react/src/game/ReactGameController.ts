@@ -398,7 +398,12 @@ export class ReactGameController {
         syncTurnBannerComposer(input)
       },
       syncLeaderPick: (leaders) => {
-        syncLeaderPickOverlay(leaders)
+        syncLeaderPickOverlay(
+          leaders,
+          this.eventComposer.getDraft().type === 'pickCharacter'
+            ? 'character'
+            : 'leader',
+        )
       },
       setHighlightedClearings: (clearingIds) => {
         this.setHighlightedClearings(clearingIds)
@@ -429,6 +434,10 @@ export class ReactGameController {
       },
       getLeaderPickLeaders: () => {
         const leaderDraft = this.eventComposer.getDraft()
+        // Vagabond characters reuse the leader card overlay.
+        if (leaderDraft.type === 'pickCharacter') {
+          return leaderDraft.characters
+        }
         return leaderDraft.type === 'pickLeader' ? leaderDraft.leaders : null
       },
       getOptionPresentation: () => this.eventComposer.getOptionPresentation(),

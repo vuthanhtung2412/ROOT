@@ -9,6 +9,7 @@ import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { TurnBannerComposerView, TurnBannerViewModel } from '#ui/TurnBanner.ts'
 import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
+import type { SetupCardPickKind } from '#ui/setupCardPick.ts'
 
 export type HudListener = () => void
 
@@ -22,7 +23,9 @@ export type WinnerHudState = {
 } | null
 
 export type LeaderPickHudState = {
+  /** Offered card ids: Eyrie leaders, or Vagabond characters. */
   leaderIds: readonly string[]
+  kind: SetupCardPickKind
 } | null
 
 export type GameDrawerHudState = {

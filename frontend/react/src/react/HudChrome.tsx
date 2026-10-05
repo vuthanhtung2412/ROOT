@@ -1,11 +1,15 @@
 import { useSyncExternalStore, type JSX } from 'react'
-import { lookupEyrieLeader } from '#assets/eyrieLeaderCatalog.ts'
 import {
   getHudCallbacks,
   getHudSnapshot,
   patchHud,
   subscribeHud,
 } from '#game/hudStore.ts'
+import {
+  setupCardPickOptions,
+  setupCardPickTitle,
+  type SetupCardPickKind,
+} from '#ui/setupCardPick.ts'
 
 export function GameDrawer(): JSX.Element | null {
   const drawer = useSyncExternalStore(
@@ -100,46 +104,33 @@ export function LeaderPickOverlay(): JSX.Element | null {
     >
       <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-forest-deep)_72%,transparent)]" />
       <h2 className="root-panel relative z-[1] m-0 px-3.5 py-1.5 font-display text-[22px] font-normal text-ink">
-        Choose Eyrie leader
+        {setupCardPickTitle(leaderPick.kind)}
       </h2>
       <div className="relative z-[1] mt-12 flex max-w-[96vw] flex-row flex-wrap items-start justify-center gap-4">
-        {leaderPick.leaderIds.map((leaderId) => {
-          const info = lookupEyrieLeader(leaderId)
-          const imagePath =
-            info === null
-              ? null
-              : info.imagePath.startsWith('/')
-                ? info.imagePath
-                : `/${info.imagePath}`
+        {setupCardPickOptions(leaderPick.kind, leaderPick.leaderIds).map((option) => {
           return (
             <button
-              key={leaderId}
+              key={option.id}
               type="button"
               className="m-0 flex cursor-pointer flex-col items-center gap-2 border-0 bg-transparent p-0 text-parchment"
               onClick={() => {
-                getHudCallbacks().onLeaderPicked(leaderId)
+                getHudCallbacks().onLeaderPicked(option.id)
               }}
             >
-              {imagePath !== null ? (
+              {option.imagePath !== null ? (
                 <img
                   className="h-[210px] w-[150px] border-2 border-ink object-fill shadow-[2px_3px_0_color-mix(in_srgb,var(--color-ink)_35%,transparent)] select-none"
-                  src={imagePath}
-                  alt={info?.name ?? leaderId}
+                  src={option.imagePath}
+                  alt={option.name}
                   draggable={false}
                 />
               ) : (
                 <div className="flex h-[210px] w-[150px] items-center justify-center border-2 border-ink bg-forest font-display text-parchment">
-                  {leaderId}
+                  {option.name}
                 </div>
               )}
               <span className="max-w-[170px] border border-ink-soft bg-[color-mix(in_srgb,var(--color-parchment)_94%,#1a1410)] px-1.5 py-1 text-center font-mono text-[11px] whitespace-pre-line text-ink [background-blend-mode:multiply] [background-image:var(--root-paper-grain)]">
-                {[
-                  info?.name ?? leaderId,
-                  info !== null ? `Viziers: ${info.decree}` : '',
-                  info?.ability ?? '',
-                ]
-                  .filter((line) => line.length > 0)
-                  .join('\n')}
+                {option.caption.join('\n')}
               </span>
             </button>
           )
@@ -179,12 +170,14 @@ export function syncWinnerOverlay(winnerFaction: string | null): void {
   patchHud({ winner: { winnerFaction } })
 }
 
+/** Full-screen card pick: Eyrie leaders, or Vagabond characters in setup. */
 export function syncLeaderPickOverlay(
   leaderIds: readonly string[] | null,
+  kind: SetupCardPickKind = 'leader',
 ): void {
   if (leaderIds === null || leaderIds.length === 0) {
     patchHud({ leaderPick: null })
     return
   }
-  patchHud({ leaderPick: { leaderIds } })
+  patchHud({ leaderPick: { leaderIds, kind } })
 }
