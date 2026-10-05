@@ -141,7 +141,11 @@ export type VagabondQuestView = {
   name: string
   suit: string
   items: readonly [string, string]
+  /** Public URL of the card face. */
+  imagePath: string
 }
+
+const QUEST_IMAGE_PUBLIC_DIRECTORY = '/assets/quests'
 
 export type VagabondBoardViewModel = {
   kind: 'vagabond'
@@ -379,6 +383,17 @@ function suitForDecreeCard(defId: string): string {
 
 const DECREE_SUIT_ORDER = ['bird', 'fox', 'mouse', 'rabbit'] as const
 
+/** One entry per card, grouped bird → fox → mouse → rabbit, unknown suits last. */
+export function sortDecreeSuits(suits: readonly string[]): string[] {
+  const rank = (suit: string): number => {
+    const index = DECREE_SUIT_ORDER.findIndex((known) => known === suit)
+    return index < 0 ? DECREE_SUIT_ORDER.length : index
+  }
+  return [...suits].sort(
+    (left, right) => rank(left) - rank(right) || left.localeCompare(right),
+  )
+}
+
 /** Compact decree label: `bird x2, fox x1` (skips zero counts). */
 export function formatDecreeSuitCounts(suits: readonly string[]): string {
   if (suits.length === 0) {
@@ -518,6 +533,7 @@ function questViewsFromRawList(raw: unknown): VagabondQuestView[] {
         name: definition.name,
         suit: definition.suit,
         items: definition.items,
+        imagePath: `${QUEST_IMAGE_PUBLIC_DIRECTORY}/${definition.image}`,
       })
     } catch {
       continue
@@ -526,7 +542,8 @@ function questViewsFromRawList(raw: unknown): VagabondQuestView[] {
   return views
 }
 
-function questViewsFromState(state: GameState): VagabondQuestView[] {
+/** Face-up quests near the map. Rule: Vagabond > Setup 3. */
+export function questViewsFromState(state: GameState): VagabondQuestView[] {
   return questViewsFromRawList(Reflect.get(state, 'questsAvailable'))
 }
 

@@ -11,12 +11,14 @@ import {
   patchHud,
   subscribeHud,
 } from '#game/hudStore.ts'
-import type { ActionTrayState } from '#ui/ActionTray.ts'
+import { questCardLabel } from '#react/QuestPilePanel.tsx'
+import type { ActionTrayState, QuestTrayChoice } from '#ui/ActionTray.ts'
 import {
   collapseTrayActionsByLabel,
   filterTrayActions,
   formatActionLabel,
   partitionTrayActionRegions,
+  questTrayChoices,
   withoutBoardOnlyActions,
 } from '#ui/ActionTray.ts'
 
@@ -29,6 +31,36 @@ function isBlockingHudModalOpen(): boolean {
   return pile !== null && pile.selectable !== true
 }
 
+/** Completable quests as their card faces; click starts that quest. */
+function TrayQuestCards(props: {
+  choices: readonly QuestTrayChoice[]
+  onSelectAction: (spec: ActionSpec) => void
+}): JSX.Element {
+  return (
+    <div className="col-span-full flex flex-row flex-wrap justify-center gap-1.5">
+      {props.choices.map((choice) => (
+        <button
+          key={choice.quest.id}
+          type="button"
+          className="w-28 cursor-pointer rounded-md shadow-stamp transition-transform hover:-translate-y-0.5 md:w-[calc(50%-3px)]"
+          aria-label={`Quest: ${questCardLabel(choice.quest)}`}
+          title={`Quest: ${choice.quest.name}`}
+          onClick={() => {
+            props.onSelectAction(choice.spec)
+          }}
+        >
+          <img
+            className="block h-auto w-full rounded-md select-none"
+            src={choice.quest.imagePath}
+            alt=""
+            draggable={false}
+          />
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function TrayActionButtons(props: {
   actions: readonly ActionSpec[]
   pending: unknown
@@ -38,6 +70,16 @@ function TrayActionButtons(props: {
   return (
     <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5">
       {props.actions.map((spec, index) => {
+        const questChoices = questTrayChoices(spec, props.state)
+        if (questChoices.length > 0) {
+          return (
+            <TrayQuestCards
+              key={`${spec.type}-${String(spec.actor)}-${String(index)}`}
+              choices={questChoices}
+              onSelectAction={props.onSelectAction}
+            />
+          )
+        }
         const label = formatActionLabel(spec, props.pending, props.state)
         const key = `${spec.type}-${String(spec.actor)}-${String(index)}-${label}`
         return (

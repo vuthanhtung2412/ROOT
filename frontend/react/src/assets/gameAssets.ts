@@ -24,6 +24,7 @@ export const GAME_ASSET_KEYS = {
   suitFox: 'suit-fox',
   suitMouse: 'suit-mouse',
   suitRabbit: 'suit-rabbit',
+  suitBird: 'suit-bird',
   tokenMarquiseSawmill: 'token-marquise-sawmill',
   tokenMarquiseWorkshop: 'token-marquise-workshop',
   tokenMarquiseRecruiter: 'token-marquise-recruiter',
@@ -176,6 +177,18 @@ export function allianceBaseTextureKey(suit: string): string {
   return GAME_ASSET_KEYS.tokenAllianceBaseFox
 }
 
+const SUIT_TEXTURE_KEYS: Readonly<Record<string, string>> = {
+  fox: GAME_ASSET_KEYS.suitFox,
+  mouse: GAME_ASSET_KEYS.suitMouse,
+  rabbit: GAME_ASSET_KEYS.suitRabbit,
+  bird: GAME_ASSET_KEYS.suitBird,
+}
+
+/** Suit icon (fox / mouse / rabbit / bird); null for an unknown suit. */
+export function suitTextureKey(suit: string): string | null {
+  return SUIT_TEXTURE_KEYS[suit] ?? null
+}
+
 export type CardCatalogEntry = {
   image: string
   name: string
@@ -258,6 +271,10 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.suitRabbit,
     path: 'assets/suits/rabbit.png',
+  },
+  {
+    key: GAME_ASSET_KEYS.suitBird,
+    path: 'assets/suits/bird.png',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseSawmill,

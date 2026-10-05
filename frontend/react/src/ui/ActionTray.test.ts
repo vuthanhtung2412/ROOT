@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   collapseTrayActionsByLabel,
   filterTrayActions,
+  questTrayChoices,
   withoutBoardOnlyActions,
   formatActionLabel,
   partitionTrayActionRegions,
@@ -295,5 +296,41 @@ describe('withoutBoardOnlyActions', () => {
     })
 
     expect(withoutBoardOnlyActions([move, rearrange])).toEqual([move])
+  })
+})
+
+describe('questTrayChoices', () => {
+  const VAGABOND_SEAT = 3
+  const fundraising = { id: 'QUEST-F-FUNDS#1', defId: 'QUEST-F-FUNDS' }
+  const escort = { id: 'QUEST-M-ESCORT#1', defId: 'QUEST-M-ESCORT' }
+  // `questsAvailable` is not in the generated client type yet.
+  const state = Object.assign(makeGameState(), {
+    questsAvailable: [fundraising, escort],
+  })
+
+  it('Rule: 9.5.5 Quest — one card per completable quest, spec narrowed to it', () => {
+    const questSpec = makeActionSpec({
+      type: 'quest',
+      actor: VAGABOND_SEAT,
+      params: { questIds: [fundraising.id], rewards: ['vp', 'draw'] },
+    })
+
+    const choices = questTrayChoices(questSpec, state)
+
+    expect(choices).toHaveLength(1)
+    expect(choices[0]?.quest.name).toBe('Fundraising')
+    expect(choices[0]?.quest.imagePath).toBe(
+      '/assets/quests/quest-fundraising.png',
+    )
+    expect(choices[0]?.spec.params).toEqual({
+      questIds: [fundraising.id],
+      rewards: ['vp', 'draw'],
+    })
+  })
+
+  it('offers no quest card for other actions', () => {
+    expect(
+      questTrayChoices(makeActionSpec({ type: 'vbMove' }), state),
+    ).toEqual([])
   })
 })

@@ -4,6 +4,7 @@ import {
   formatDecreeSuitCounts,
   groupCraftedItems,
   hideSupportersFromOtherSeats,
+  sortDecreeSuits,
   type FactionBoardViewModel,
 } from '#ui/factionBoardViewModel.ts'
 
@@ -43,6 +44,24 @@ describe('formatDecreeSuitCounts', () => {
 
   it('empty is em dash', () => {
     expect(formatDecreeSuitCounts([])).toBe('—')
+  })
+})
+
+describe('sortDecreeSuits', () => {
+  it('keeps one entry per card, grouped bird, fox, mouse, rabbit', () => {
+    expect(sortDecreeSuits(['rabbit', 'fox', 'bird', 'fox', 'mouse'])).toEqual([
+      'bird',
+      'fox',
+      'fox',
+      'mouse',
+      'rabbit',
+    ])
+  })
+
+  it('puts unknown suits last without mutating the input', () => {
+    const suits = ['?', 'bird']
+    expect(sortDecreeSuits(suits)).toEqual(['bird', '?'])
+    expect(suits).toEqual(['?', 'bird'])
   })
 })
 

@@ -2,6 +2,10 @@ import type { ActionSpec, GameState } from '#api/client.ts'
 import { lookupCardCatalog } from '#assets/gameAssets.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 import { REARRANGE_ACTION_TYPE } from '#game/vagabondRearrange.ts'
+import {
+  questViewsFromState,
+  type VagabondQuestView,
+} from '#ui/factionBoardViewModel.ts'
 
 export type ActionTraySyncOptions = {
   lockToActionTypes?: readonly string[]
@@ -190,6 +194,34 @@ function findCardDefIdOnEyrieDecree(board: unknown, cardId: string): string | nu
     }
   }
   return null
+}
+
+export const QUEST_ACTION_TYPE = 'quest'
+
+export interface QuestTrayChoice {
+  quest: VagabondQuestView
+  /** The quest action narrowed to this one quest. */
+  spec: ActionSpec
+}
+
+/**
+ * Rule: 9.5.5 Quest — one tray card per quest the Vagabond can complete now.
+ * Empty when the spec is not a quest or its quests are not face up.
+ */
+export function questTrayChoices(
+  spec: ActionSpec,
+  state?: GameState,
+): QuestTrayChoice[] {
+  if (spec.type !== QUEST_ACTION_TYPE || state === undefined) {
+    return []
+  }
+  const completableQuestIds = readChoiceParams(spec).questIds ?? []
+  return questViewsFromState(state)
+    .filter((quest) => completableQuestIds.includes(quest.id))
+    .map((quest) => ({
+      quest,
+      spec: { ...spec, params: { ...spec.params, questIds: [quest.id] } },
+    }))
 }
 
 /**

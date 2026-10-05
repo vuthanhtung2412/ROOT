@@ -22,6 +22,7 @@ import {
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
   itemTextureKey,
+  suitTextureKey,
   warriorTokenTextureKey,
 } from '#assets/gameAssets.ts'
 import { lookupEyrieLeader } from '#assets/eyrieLeaderCatalog.ts'
@@ -33,6 +34,7 @@ import {
 } from '#assets/vagabondBoardCatalog.ts'
 import {
   formatDecreeSuitCounts,
+  sortDecreeSuits,
   type CraftedItemView,
   type FactionBoardViewModel,
   type VagabondRelationshipMarkerView,
@@ -349,6 +351,40 @@ function MarquiseTrackOverlays(props: {
   )
 }
 
+/** One suit icon per card; the text summary stays for screen readers and hover. */
+function SuitIconRow(props: { suits: readonly string[] }): JSX.Element {
+  const summary = formatDecreeSuitCounts(props.suits)
+  if (props.suits.length === 0) {
+    return <span>{summary}</span>
+  }
+  return (
+    <span
+      className="flex h-full flex-row items-center gap-1"
+      role="img"
+      aria-label={summary}
+      title={summary}
+    >
+      {sortDecreeSuits(props.suits).map((suit, index) => {
+        const textureKey = suitTextureKey(suit)
+        const imagePath =
+          textureKey !== null ? imagePathForAssetKey(textureKey) : null
+        if (imagePath === null) {
+          return <span key={`${suit}-${String(index)}`}>{suit}</span>
+        }
+        return (
+          <img
+            key={`${suit}-${String(index)}`}
+            className="block h-full w-auto object-contain select-none"
+            src={imagePath}
+            alt=""
+            draggable={false}
+          />
+        )
+      })}
+    </span>
+  )
+}
+
 function EyrieDecreeOverlays(props: {
   view: Extract<FactionBoardViewModel, { kind: 'eyrie' }>
   layout: FactionBoardPixelLayout
@@ -369,7 +405,7 @@ function EyrieDecreeOverlays(props: {
             }`}
             style={layoutRegionStyle(region, props.layout)}
           >
-            {formatDecreeSuitCounts(column.suits)}
+            <SuitIconRow suits={column.suits} />
           </div>
         )
       })}
