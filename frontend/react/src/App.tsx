@@ -15,6 +15,12 @@ import {
 } from '#assets/gameAssets.ts'
 import { GameSession } from '#game/GameSession.ts'
 import {
+  clearHotseatGameOpen,
+  isHotseatGameOpen,
+  markHotseatGameOpen,
+  reloadHotseatSlot,
+} from '#game/hotseatResume.ts'
+import {
   getHudSnapshot,
   setMenuCallbacks,
   subscribeHud,
@@ -113,6 +119,9 @@ export function App(): JSX.Element {
   const resumeOnlineGameRef = useRef<() => Promise<void>>(() =>
     Promise.resolve(),
   )
+  const resumeHotseatGameRef = useRef<() => Promise<void>>(() =>
+    Promise.resolve(),
+  )
 
   if (controllerRef.current === null) {
     controllerRef.current = new ReactGameController()
@@ -182,6 +191,7 @@ export function App(): JSX.Element {
     clearLobbyWait()
     const session = ensureSession()
     void controller.start(session, () => {
+      clearHotseatGameOpen()
       showMenu()
     })
   }, [clearLobbyWait, controller, ensureSession, showMenu])
@@ -338,6 +348,7 @@ export function App(): JSX.Element {
         snapshot.state?.status === 'playing' ||
         snapshot.state?.status === 'setup'
       ) {
+        markHotseatGameOpen()
         enterGame()
         return
       }
@@ -380,6 +391,7 @@ export function App(): JSX.Element {
       syncMenuStatus('No playing game on API — load a snapshot first', '#c44')
       return
     }
+    markHotseatGameOpen()
     enterGame()
   }, [apiBaseUrlInput, ensureSession, enterGame, rebindSessionApi])
 
@@ -407,6 +419,16 @@ export function App(): JSX.Element {
       watchOnlineLobby()
     }
   }
+  resumeHotseatGameRef.current = async (): Promise<void> => {
+    if (!isHotseatGameOpen()) {
+      return
+    }
+    if (await reloadHotseatSlot(ensureSession())) {
+      enterGame()
+      return
+    }
+    clearHotseatGameOpen()
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -424,6 +446,8 @@ export function App(): JSX.Element {
       showMenu()
       // Reload in an online game: take the stored seat back.
       await resumeOnlineGameRef.current()
+      // Reload in a hotseat / QA game (dev code edit): go straight back in.
+      await resumeHotseatGameRef.current()
     })()
     return () => {
       cancelled = true
