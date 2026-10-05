@@ -6,11 +6,14 @@ import type { ClearingId } from '#map/types.js'
 import type { FactionId, Piece, Seat } from '#pieces/types.js'
 import type { Rng } from '#rules/Rng.js'
 import {
+  DEFAULT_VAGABOND_CHARACTER,
   EYRIE_LEADERS,
   eyrieLeaderPools,
+  createFactionBoard,
   type EyrieBoard,
   type EyrieLeader,
   type MarquiseBoard,
+  type VagabondCharacter,
 } from '#state/boards.js'
 import { ITEM_SUPPLY } from '#state/constants.js'
 import type { ClearingState, GameState, PlayerState } from '#state/types.js'
@@ -52,12 +55,14 @@ export function testContext(options?: {
   state?: GameState
   /** Imposed battle die faces (0–3) in roll order. Required if the test path rolls. */
   dice?: DieFace[]
+  /** Override RNG (e.g. SeededRng for shuffles). Defaults to createTestRng(dice). */
+  rng?: Rng
   onSignal?: (signal: GameSignal) => void
 }): Ctx {
   const state = options?.state ?? minimalState()
   return {
     map: FALL,
-    rng: createTestRng(options?.dice ?? []),
+    rng: options?.rng ?? createTestRng(options?.dice ?? []),
     emit: (signal) => options?.onSignal?.(signal),
     hooks: buildRuleHooks(state, FALL),
     grantedActions: () => [],
@@ -112,15 +117,26 @@ export function player(
   faction: FactionId,
   overrides?: Partial<Omit<PlayerState, 'seat' | 'faction'>>,
 ): PlayerState {
+  const board =
+    faction === 'eyrie'
+      ? eyrieBoard()
+      : faction === 'alliance'
+        ? createFactionBoard('alliance')
+        : faction === 'vagabond'
+          ? createFactionBoard('vagabond')
+          : marquiseBoard()
   return {
     playerId: `p${seat}`,
     seat,
     faction,
     vp: 0,
+    scoresVictoryPoints: true,
     hand: [],
     playArea: [],
+    activatedDominance: null,
+    coalitionWith: null,
     craftedItems: [],
-    board: faction === 'eyrie' ? eyrieBoard() : marquiseBoard(),
+    board,
     ...overrides,
   }
 }
@@ -144,6 +160,8 @@ export function minimalState(overrides?: Partial<GameState>): GameState {
     clearings: emptyClearings(),
     deck: { draw: [], discard: [] },
     dominanceAvailable: [],
+    questDeck: [],
+    questsAvailable: [],
     itemSupply: { ...ITEM_SUPPLY },
     pending: [],
     turnScratch: createTurnScratch({ actionsLeft: 3 }),
@@ -196,6 +214,8 @@ export function resolveStartingBuildings(game: Game): void {
 export type FinishSetupOptions = {
   keep?: ClearingId
   leader?: EyrieLeader
+  character?: VagabondCharacter
+  forest?: number
 }
 
 export function finishSetup(
@@ -213,6 +233,18 @@ export function finishSetup(
     game.apply({
       type: 'resolveEvent',
       leader: options.leader ?? 'builder',
+    })
+  }
+  if (game.state.pending[0]?.type === 'chooseCharacter') {
+    game.apply({
+      type: 'resolveEvent',
+      character: options.character ?? DEFAULT_VAGABOND_CHARACTER,
+    })
+  }
+  if (game.state.pending[0]?.type === 'chooseForest') {
+    game.apply({
+      type: 'resolveEvent',
+      forest: options.forest ?? FALL.vagabondForest,
     })
   }
 }

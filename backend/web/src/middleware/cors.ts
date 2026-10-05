@@ -1,5 +1,6 @@
 import { cors } from 'hono/cors'
 import type { MiddlewareHandler } from 'hono'
+import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
 
 /** Capacitor WKWebView / Android WebView origins (no port). */
 const CAPACITOR_APP_ORIGINS: ReadonlySet<string> = new Set([
@@ -14,7 +15,7 @@ const LAN_HTTP_ORIGIN_PATTERN =
 
 /**
  * Whether a browser/WebView Origin may call the REST API.
- * Phaser Vite (localhost + LAN) + Capacitor native shells.
+ * React Vite (localhost + LAN) + Capacitor native shells.
  */
 export function isAllowedCorsOrigin(origin: string): boolean {
   if (CAPACITOR_APP_ORIGINS.has(origin)) {
@@ -30,7 +31,7 @@ export function isAllowedCorsOrigin(origin: string): boolean {
 }
 
 /**
- * Allow Phaser Vite + Capacitor origins to call REST.
+ * Allow React Vite + Capacitor origins to call REST.
  * WebSocket upgrade is same-host or proxied; CORS covers browser fetch.
  */
 export const corsMiddleware: MiddlewareHandler = cors({
@@ -44,5 +45,5 @@ export const corsMiddleware: MiddlewareHandler = cors({
     return null
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type'],
+  allowHeaders: ['Content-Type', PLAYER_ID_HEADER],
 })

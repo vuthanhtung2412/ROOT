@@ -603,5 +603,6 @@ Documented choices where this engine differs from Law-exact play (GP1+):
 | Marquise starting buildings | Any split among keep + adjacent | Interactive `placeStartingBuilding` (sawmill → workshop → recruiter) |
 | Eyrie starting clearing | Free corner; prefer diagonal opposite | **Always** `opposite(marquise keep)` |
 | Eyrie leaders | Four leaders with specials | All four; setup `chooseLeader`; turmoil depose flips leader face-down then choose from face-up (**A New Clutch** if none) |
-| Vagabond characters | Thief / Tinker / Ranger | **Thief only** until later GP |
-| Dominance / quests / coalitions | Full rules | **Deferred** (2p strips dominance from deck at start) |
+| Vagabond starting forest | Any forest | Interactive `chooseForest` pending during `status: 'setup'` |
+| Vagabond characters | Thief / Tinker / Ranger | All three; setup `chooseCharacter` pending before `chooseForest`. Hideout offered only with ≥1 damaged item |
+| Dominance / quests / coalitions | Full rules | **Implemented** (2p still strips dominance from deck at start) |

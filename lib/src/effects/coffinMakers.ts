@@ -1,3 +1,4 @@
+import { addVictoryPoints } from '#rules/dominance.js'
 import type { CardEffect } from '#triggers/effects.js'
 import type { Card } from '#cards/types.js'
 import type { GameState } from '#state/types.js'
@@ -49,8 +50,8 @@ export const coffinMakersEffect: CardEffect = {
       const held = found.playCard.heldWarriors ?? 0
       const victoryPoints = Math.floor(held / WARRIORS_PER_VICTORY_POINT)
       if (victoryPoints > 0) {
-        playerOf(state, found.ownerSeat).vp += victoryPoints
-        ctx.emit({ s: 'vp', actor: found.ownerSeat, delta: victoryPoints })
+        const scored = addVictoryPoints(state, found.ownerSeat, victoryPoints)
+        if (scored > 0) ctx.emit({ s: 'vp', actor: found.ownerSeat, delta: scored })
       }
       found.playCard.heldWarriors = 0
     }

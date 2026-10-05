@@ -13,6 +13,7 @@ import { craftCard, resetCraftingBuildingUsed } from '#rules/craft.js'
 import { moveWarriors } from '#rules/move.js'
 import { placeUpTo } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
+import { addVictoryPoints } from '#rules/dominance.js'
 import { MARQUISE_BUILD_COST } from '#state/boards.js'
 import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
@@ -62,6 +63,7 @@ export {
 } from '#factions/marquise/setup.js'
 export {
   buildColumn,
+  placeBirdsongWood,
   recruiterDrawBonus,
   trackColumnOccupied,
 } from '#factions/marquise/rules.js'
@@ -336,9 +338,11 @@ export class Marquise extends Faction {
         placeUpTo(state, { seat, clearing: action.clearing, spec: { kind: 'building', type: action.building }, count: 1 })
         const vp = buildVictoryPoints(action.building, column)
         if (vp > 0) {
-          playerOf(state, seat).vp += vp
-          logs.push({ t: 'vp', actor: seat, delta: vp, reason: 'build' })
-          ctx.emit({ s: 'vp', actor: seat, delta: vp })
+          const scored = addVictoryPoints(state, seat, vp)
+          if (scored > 0) {
+            logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'build' })
+            ctx.emit({ s: 'vp', actor: seat, delta: scored })
+          }
         }
         logs.push({ t: 'action', actor: seat, action })
         return logs

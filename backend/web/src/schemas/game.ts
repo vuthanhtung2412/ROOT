@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi'
 import { FactionIdSchema, JsonObjectSchema } from '#schemas/common.js'
+import { LOBBY_MODES } from '#store/GameStore.js'
 
 export const GameStateSchema = JsonObjectSchema.openapi('GameState')
 
@@ -25,15 +26,19 @@ export const ActionResultSchema = z
   })
   .openapi('ActionResult')
 
+export const LobbyModeSchema = z.enum(LOBBY_MODES).openapi('LobbyMode')
+
 export const CreateGameBodySchema = z
   .object({
     factions: z.array(FactionIdSchema).optional(),
+    mode: LobbyModeSchema.optional(),
   })
   .openapi('CreateGameBody')
 
 export const CreateGameResponseSchema = z
   .object({
     state: GameStateSchema,
+    mode: LobbyModeSchema,
   })
   .openapi('CreateGameResponse')
 
@@ -47,6 +52,7 @@ export const GetGameResponseSchema = z
   .object({
     state: GameStateSchema,
     historyLength: z.number().int().nonnegative(),
+    mode: LobbyModeSchema,
   })
   .openapi('GetGameResponse')
 

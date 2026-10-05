@@ -133,6 +133,23 @@ function paramList(
   return Array.isArray(value) ? value : undefined
 }
 
+type SupporterSpendOption = { clearing: number; supporterIds: string[] }
+
+function isSupporterSpendOption(entry: unknown): entry is SupporterSpendOption {
+  if (typeof entry !== 'object' || entry === null) return false
+  return (
+    typeof Reflect.get(entry, 'clearing') === 'number' &&
+    Array.isArray(Reflect.get(entry, 'supporterIds'))
+  )
+}
+
+type VagabondMoveOption = { to: number; allySeat?: number; allyCount?: number }
+
+function isVagabondMoveOption(entry: unknown): entry is VagabondMoveOption {
+  if (typeof entry !== 'object' || entry === null) return false
+  return typeof Reflect.get(entry, 'to') === 'number'
+}
+
 async function tryAct(
   initialState: GameState,
   specs: ActionSpec[],
@@ -343,6 +360,187 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       }
       return null
     }
+    case 'revolt': {
+      const options = paramList(spec.params, 'options') ?? []
+      const choice = pick(
+        options.filter(isSupporterSpendOption),
+      )
+      if (choice === undefined) return null
+      return {
+        type: 'revolt',
+        clearing: choice.clearing,
+        supporterIds: choice.supporterIds,
+      }
+    }
+    case 'spreadSympathy': {
+      const options = paramList(spec.params, 'options') ?? []
+      const choice = pick(
+        options.filter(isSupporterSpendOption),
+      )
+      if (choice !== undefined) {
+        return {
+          type: 'spreadSympathy',
+          clearing: choice.clearing,
+          supporterIds: choice.supporterIds,
+        }
+      }
+      const clearings = readNumberList(paramList(spec.params, 'clearings'))
+      const clearing = pick(clearings)
+      const supporterIds = readStringList(paramList(spec.params, 'supporterIds'))
+      if (clearing === undefined || supporterIds.length === 0) return null
+      return { type: 'spreadSympathy', clearing, supporterIds }
+    }
+    case 'mobilize': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      if (!cardId) return null
+      return { type: 'mobilize', cardId }
+    }
+    case 'train': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      if (!cardId) return null
+      return { type: 'train', cardId }
+    }
+    case 'militaryOp': {
+      const op = pick(readStringList(paramList(spec.params, 'op')))
+      if (op === 'move') {
+        const move = pick(readMarchMoves(paramList(spec.params, 'moves')))
+        if (!move) return null
+        return {
+          type: 'militaryOp',
+          op: 'move',
+          from: move.from,
+          to: move.to,
+          count: move.count,
+        }
+      }
+      if (op === 'battle') {
+        const choice = pick(readBattleTargets(paramList(spec.params, 'targets')))
+        if (!choice) return null
+        return {
+          type: 'militaryOp',
+          op: 'battle',
+          clearing: choice.clearing,
+          defender: choice.defender,
+        }
+      }
+      if (op === 'recruit' || op === 'organize') {
+        const clearing = pick(readNumberList(paramList(spec.params, 'clearings')))
+        if (clearing === undefined) return null
+        return { type: 'militaryOp', op, clearing }
+      }
+      return null
+    }
+    case 'refresh':
+      return { type: 'refresh' }
+    case 'rest':
+      return { type: 'rest' }
+    case 'explore':
+      return { type: 'explore' }
+    case 'slip': {
+      const forests = readNumberList(paramList(spec.params, 'forests'))
+      const clearings = readNumberList(paramList(spec.params, 'clearings'))
+      if (forests.length > 0 && Math.random() < 0.5) {
+        const forest = pick(forests)
+        if (forest === undefined) return null
+        return { type: 'slip', to: `forest:${forest}` }
+      }
+      const clearing = pick(clearings)
+      if (clearing !== undefined) return { type: 'slip', to: clearing }
+      const forest = pick(forests)
+      if (forest === undefined) return null
+      return { type: 'slip', to: `forest:${forest}` }
+    }
+    case 'vbMove': {
+      const vbMovesRaw = paramList(spec.params, 'vbMoves')
+      if (vbMovesRaw !== undefined && vbMovesRaw.length > 0) {
+        const choices = vbMovesRaw.filter(isVagabondMoveOption)
+        const choice = pick(choices)
+        if (choice === undefined) return null
+        if (choice.allySeat !== undefined && choice.allyCount !== undefined) {
+          return {
+            type: 'vbMove',
+            to: choice.to,
+            allySeat: choice.allySeat,
+            allyCount: choice.allyCount,
+          }
+        }
+        return { type: 'vbMove', to: choice.to }
+      }
+      const to = pick(readNumberList(paramList(spec.params, 'clearings')))
+      if (to === undefined) return null
+      return { type: 'vbMove', to }
+    }
+    case 'vbBattle': {
+      const choice = pick(readBattleTargets(paramList(spec.params, 'targets')))
+      if (!choice) return null
+      const allied = readNumberList(paramList(spec.params, 'alliedSeat'))
+      if (allied[0] !== undefined) {
+        return {
+          type: 'vbBattle',
+          defender: choice.defender,
+          alliedSeat: allied[0],
+        }
+      }
+      return { type: 'vbBattle', defender: choice.defender }
+    }
+    case 'vbRearrange': {
+      const itemTypes = readStringList(paramList(spec.params, 'itemTypes'))
+      const fromList = readStringList(paramList(spec.params, 'rearrangeFrom'))
+      const itemType = pick(itemTypes)
+      const from = pick(fromList)
+      if (
+        (itemType !== 'tea' && itemType !== 'coin' && itemType !== 'bag') ||
+        (from !== 'track' && from !== 'satchel')
+      ) {
+        return null
+      }
+      return { type: 'vbRearrange', itemType, from }
+    }
+    case 'aid': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      const target = pick(readNumberList(paramList(spec.params, 'defender')))
+      if (!cardId || target === undefined) return null
+      return { type: 'aid', cardId, target }
+    }
+    case 'strike': {
+      const choice = pick(readBattleTargets(paramList(spec.params, 'targets')))
+      if (!choice) return null
+      return { type: 'strike', defender: choice.defender }
+    }
+    case 'repair': {
+      const itemIndex = pick(readNumberList(paramList(spec.params, 'clearings')))
+      if (itemIndex === undefined) return null
+      return { type: 'repair', itemIndex }
+    }
+    case 'vbCraft': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      if (!cardId) return null
+      return { type: 'vbCraft', cardId }
+    }
+    case 'vbRemoveItems': {
+      // Item limit: remove the first itemCount offered items.
+      const offeredItems = paramList(spec.params, 'vagabondItems') ?? []
+      const removeCount = readNumberList(paramList(spec.params, 'itemCount'))[0]
+      if (removeCount === undefined) return null
+      return { type: 'vbRemoveItems', items: offeredItems.slice(0, removeCount) }
+    }
+    case 'steal': {
+      const target = pick(readNumberList(paramList(spec.params, 'defender')))
+      if (target === undefined) return null
+      return { type: 'steal', target }
+    }
+    case 'dayLabor': {
+      const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
+      if (!cardId) return null
+      return { type: 'dayLabor', cardId }
+    }
+    case 'hideout': {
+      // Repair the first itemCount offered damaged items.
+      const offeredItems = paramList(spec.params, 'vagabondItems') ?? []
+      const repairCount = readNumberList(paramList(spec.params, 'itemCount'))[0]
+      if (repairCount === undefined) return null
+      return { type: 'hideout', items: offeredItems.slice(0, repairCount) }
+    }
     case 'resolveEvent': {
       const params = spec.params
       const clearingList = paramList(params, 'clearing')
@@ -355,6 +553,22 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
         const clearing = pick(readNumberList(clearingList))
         if (clearing !== undefined) return { type: 'resolveEvent', clearing }
       }
+      // Setup chooseForest: params.forests = forest indexes
+      const forests = paramList(params, 'forests')
+      if (forests && forests.length > 0 && typeof forests[0] === 'number') {
+        const forest = pick(readNumberList(forests))
+        if (forest !== undefined) return { type: 'resolveEvent', forest }
+      }
+      // Setup chooseCharacter: params.characters = Vagabond characters
+      const characters = paramList(params, 'characters')
+      if (
+        characters &&
+        characters.length > 0 &&
+        typeof characters[0] === 'string'
+      ) {
+        const character = pick(readStringList(characters))
+        if (character) return { type: 'resolveEvent', character }
+      }
       // Setup / depose chooseLeader
       const leaders = paramList(params, 'leaders')
       if (leaders && leaders.length > 0 && typeof leaders[0] === 'string') {
@@ -365,6 +579,12 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       const pieceIds = paramList(params, 'pieceIds')
       if (pieceIds && pieceIds.length > 0 && typeof pieceIds[0] === 'string') {
         return { type: 'resolveEvent', pieceIds: readStringList(pieceIds) }
+      }
+      // Vagabond item damage: take the first itemCount offered items.
+      const vagabondItems = paramList(params, 'vagabondItems')
+      const itemCount = readNumberList(paramList(params, 'itemCount'))[0]
+      if (vagabondItems && itemCount !== undefined) {
+        return { type: 'resolveEvent', items: vagabondItems.slice(0, itemCount) }
       }
       // Order stage: params.order is Seat[][]
       const orderList = paramList(params, 'order')

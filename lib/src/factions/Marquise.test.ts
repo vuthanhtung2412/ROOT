@@ -6,6 +6,7 @@ import { warriors } from '#queries/pieces.js'
 import { keepOwner } from '#queries/place.js'
 import { resetPlaceIds } from '#rules/place.js'
 import { HAND_LIMIT } from '#state/constants.js'
+import { createTurnScratch } from '#state/turnScratch.js'
 import {
   card,
   createPlayingGame,
@@ -18,6 +19,7 @@ import {
   buildColumn,
   keepCornerFor,
   MARQUISE,
+  placeBirdsongWood,
   recruiterDrawBonus,
 } from '#factions/Marquise.js'
 
@@ -135,6 +137,32 @@ describe('Marquise turn', () => {
         ),
       ).toBe(true)
     }
+  })
+
+  it('Rule: 6.4 Birdsong — one wood per sawmill in same clearing', () => {
+    const seat = 0 as const
+    const state = withPieces(
+      minimalState({
+        phase: 'birdsong',
+        step: 'wood',
+        players: [player(seat, 'marquise')],
+      }),
+      4,
+      [
+        { id: 'saw-a', kind: 'building', type: 'sawmill', owner: seat },
+        { id: 'saw-b', kind: 'building', type: 'sawmill', owner: seat },
+      ],
+    )
+    const board = state.players[seat]!.board
+    expect(board.kind).toBe('marquise')
+    if (board.kind !== 'marquise') return
+    board.supply.wood = 8
+    placeBirdsongWood(state, seat)
+    const woodCount = state.clearings[4]!.pieces.filter(
+      (piece) => piece.kind === 'token' && piece.type === 'wood' && piece.owner === seat,
+    ).length
+    expect(woodCount).toBe(2)
+    expect(board.supply.wood).toBe(6)
   })
 
   it('Rule: Marquise > Daylight — craft step then actions step', () => {
@@ -386,24 +414,17 @@ describe('Marquise turn', () => {
     const state = withPieces(minimalState(), 0, [
       { id: 'ws', kind: 'building', owner: 0, type: 'workshop', used: true },
     ])
-    state.turnScratch = {
+    state.turnScratch = createTurnScratch({
       actionsLeft: 0,
       extraActions: 1,
       recruited: true,
       birdsongWoodDone: true,
       eveningDrawDone: true,
       swapMeetUsed: true,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
       emergencyOrdersDone: true,
       eveningScoreDone: true,
-      decree: null,
       decreeDone: true,
-    }
+    })
     MARQUISE.endTurn(state)
     const workshop = state.clearings[0]!.pieces[0]
     expect(workshop?.kind).toBe('building')
@@ -412,24 +433,9 @@ describe('Marquise turn', () => {
     } else {
       throw new Error('expected workshop')
     }
-    expect(state.turnScratch).toEqual({
-      actionsLeft: 3,
-      extraActions: 0,
-      recruited: false,
-      birdsongWoodDone: false,
-      eveningDrawDone: false,
-      swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-      emergencyOrdersDone: false,
-      eveningScoreDone: false,
-      decree: null,
-      decreeDone: false,
-    })
+    expect(state.turnScratch).toEqual(
+      createTurnScratch({ actionsLeft: 3 }),
+    )
   })
 })
 

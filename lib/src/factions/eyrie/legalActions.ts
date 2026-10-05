@@ -72,12 +72,15 @@ export function eyrieLegalActions(
       roostsOnMap(state, seat) === 0 &&
       boardOf(state, seat).roostTrack.placed > 0
     ) {
-      specs.push({
-        type: 'newRoost',
-        actor: seat,
-        params: { clearings: fewestWarriorClearings(state, seat) },
-      })
-      return specs
+      const clearings = fewestWarriorClearings(state, seat)
+      if (clearings.length > 0) {
+        specs.push({
+          type: 'newRoost',
+          actor: seat,
+          params: { clearings },
+        })
+        return specs
+      }
     }
     specs.push({ type: 'endPhase', actor: seat })
     return specs

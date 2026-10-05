@@ -42,4 +42,19 @@ describe('Fall graph', () => {
   it('has 4 ruin slots', () => {
     expect(FALL.clearings.filter((c) => c.ruinSlot)).toHaveLength(4)
   })
+
+  // Rule: Board > Forests > Adjacency (2.4.1) — path or river edge.
+  it('forest adjacency is symmetric via shared path or river edge', () => {
+    expect(FALL.forests).toHaveLength(11)
+    for (let forestIndex = 0; forestIndex < FALL.forests.length; forestIndex++) {
+      for (const neighbor of FALL.adjacentForests(forestIndex)) {
+        expect(FALL.isForestAdjacent(neighbor, forestIndex)).toBe(true)
+        expect(neighbor).not.toBe(forestIndex)
+      }
+    }
+    // Human F5 (index 4) touches F3, F4, F10.
+    expect(FALL.adjacentForests(FALL.vagabondForest)).toEqual([2, 3, 9])
+    // F2–F3 share river 4–9 (not a path).
+    expect(FALL.isForestAdjacent(1, 2)).toBe(true)
+  })
 })

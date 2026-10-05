@@ -1,0 +1,136 @@
+.card-gallery-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 380;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* Supporter pick: pass clicks to map + TurnBanner OK/X. */
+.card-gallery-modal--nonblocking {
+  z-index: 125;
+  pointer-events: none;
+  background: transparent;
+}
+
+.card-gallery-modal--nonblocking .card-gallery-modal__panel {
+  pointer-events: auto;
+}
+
+.card-gallery-modal__veil {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: color-mix(in srgb, var(--color-forest-deep) 72%, transparent);
+  pointer-events: none;
+}
+
+.card-gallery-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--color-ink);
+  background: var(--color-parchment);
+  cursor: pointer;
+}
+
+.card-gallery-modal__panel {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: var(--root-card-gallery-panel-width);
+  height: var(--root-card-gallery-panel-height);
+  padding: 10px 16px;
+  border: 2px solid rgba(240, 230, 211, 0.9);
+  background: rgba(31, 26, 20, 0.98);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-gallery-modal__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: normal;
+  color: var(--color-parchment);
+  background: rgba(31, 26, 20, 0.8);
+  padding: 4px 8px;
+  align-self: flex-start;
+}
+
+.card-gallery-modal__empty {
+  margin: auto;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: #9a9a9a;
+}
+
+.card-gallery-modal__strip {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: safe center;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.card-gallery-modal__card {
+  flex: 0 0 auto;
+  height: 100%;
+  width: auto;
+  aspect-ratio: 195 / 273;
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.card-gallery-modal__card--fallback {
+  background: #444;
+  border: 2px solid rgba(240, 230, 211, 0.7);
+}
+
+.card-gallery-modal__card--selectable {
+  margin: 0;
+  padding: 0;
+  border: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.card-gallery-modal__card--selectable:hover {
+  border-color: color-mix(in srgb, var(--color-parchment) 55%, transparent);
+}
+
+.card-gallery-modal__card--selected {
+  border-color: var(--color-gold);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-gold) 80%, var(--color-ink)),
+    2px 4px 0 color-mix(in srgb, var(--color-ink) 35%, transparent);
+  transform: translateY(-8px);
+}
+
+.card-gallery-modal__card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}

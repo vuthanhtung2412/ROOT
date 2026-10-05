@@ -32,19 +32,21 @@ describe('Game lobby', () => {
 
   it('Game.create rejects factions without implementations', () => {
     expect(() =>
-      Game.create({ seed: 1, factions: ['marquise', 'alliance'] }),
-    ).toThrow(expect.objectContaining({ code: 'UNSUPPORTED_FACTION' }))
-    expect(() =>
-      Game.create({ seed: 1, factions: ['marquise', 'vagabond'] }),
+      // @ts-expect-error -- 'lizard' is deliberately not a supported faction
+      Game.create({ seed: 1, factions: ['marquise', 'lizard'] }),
     ).toThrow(expect.objectContaining({ code: 'UNSUPPORTED_FACTION' }))
   })
 
-  it('Game.join assigns factions[seat] — marquise then eyrie', () => {
+  it('Game.join assigns factions[seat] — marquise, eyrie, alliance, vagabond', () => {
     const game = Game.create({ seed: 1 })
     game.join('p0')
     game.join('p1')
+    game.join('p2')
+    game.join('p3')
     expect(game.state.players[0]!.faction).toBe('marquise')
     expect(game.state.players[1]!.faction).toBe('eyrie')
+    expect(game.state.players[2]!.faction).toBe('alliance')
+    expect(game.state.players[3]!.faction).toBe('vagabond')
   })
 
   it('Game.join rejects when full', () => {
@@ -115,7 +117,7 @@ describe('Game.legalActions', () => {
     game.join('a')
     expect(game.legalActions().map((a) => a.type)).toEqual(['join'])
     game.join('b')
-    expect(game.legalActions().map((a) => a.type)).toEqual(['start'])
+    expect(game.legalActions().map((a) => a.type)).toEqual(['join', 'start'])
   })
 })
 
@@ -201,6 +203,33 @@ describe('evening discard validation', () => {
     expect(() =>
       game.apply({ type: 'discard', cardIds: ['ROOT-72#0'] }),
     ).toThrow(expect.objectContaining({ code: 'DISCARD_TOO_FEW' }))
+  })
+
+  it('Rule: Evening — discard until you have five: rejects discarding below five (DISCARD_TOO_MANY)', () => {
+    const game = startPlaying(1)
+    const s = game.state
+    s.phase = 'evening'
+    s.step = 'discard'
+    s.currentSeat = 0
+    s.players[0]!.hand = Array.from({ length: 7 }, (_, i) => card('ROOT-72', i))
+    expect(() =>
+      game.apply({
+        type: 'discard',
+        cardIds: ['ROOT-72#0', 'ROOT-72#1', 'ROOT-72#2'],
+      }),
+    ).toThrow(expect.objectContaining({ code: 'DISCARD_TOO_MANY' }))
+    expect(s.players[0]!.hand).toHaveLength(7)
+  })
+
+  it('Rule: Evening — discard until you have five: accepts the exact count', () => {
+    const game = startPlaying(1)
+    const s = game.state
+    s.phase = 'evening'
+    s.step = 'discard'
+    s.currentSeat = 0
+    s.players[0]!.hand = Array.from({ length: 7 }, (_, i) => card('ROOT-72', i))
+    game.apply({ type: 'discard', cardIds: ['ROOT-72#0', 'ROOT-72#1'] })
+    expect(s.players[0]!.hand).toHaveLength(5)
   })
 
   it('omits endPhase from legal actions until hand at limit', () => {

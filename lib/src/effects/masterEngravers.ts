@@ -1,3 +1,4 @@
+import { addVictoryPoints } from '#rules/dominance.js'
 import type { CardEffect } from '#triggers/effects.js'
 
 export const masterEngraversEffect: CardEffect = {
@@ -8,7 +9,7 @@ export const masterEngraversEffect: CardEffect = {
       p.playArea.some((c) => c.defId === 'ROOT-82'),
     )
     if (!owner || owner.seat !== signal.actor) return
-    owner.vp += 1
-    ctx.emit({ s: 'vp', actor: owner.seat, delta: 1 })
+    const scored = addVictoryPoints(state, owner.seat, 1)
+    if (scored > 0) ctx.emit({ s: 'vp', actor: owner.seat, delta: scored })
   },
 }

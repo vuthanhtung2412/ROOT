@@ -1,0 +1,198 @@
+@import 'tailwindcss';
+
+/*
+ * Root visual tokens from branding art
+ * (root-banner parchment + ks-pooneac woodland).
+ */
+@theme {
+  --color-ink: #2c2118;
+  --color-ink-soft: #4a3a2c;
+  --color-parchment: #f0e6d3;
+  --color-parchment-deep: #e4d4b8;
+  --color-parchment-shadow: #cbb892;
+  --color-forest: #3d5348;
+  --color-forest-deep: #24362e;
+  --color-moss: #5a7a6e;
+  --color-rust: #b55238;
+  --color-gold: #c9a04a;
+  --color-sky-mist: #8aa39a;
+  /* Text printed straight on faction board art. */
+  --color-ink-deep: #1a1408;
+  /* Parchment darkened like `.root-panel`. */
+  --color-parchment-aged: color-mix(in srgb, #f0e6d3 94%, #1a1410);
+  --tracking-display: 0.02em;
+  --tracking-heading: 0.04em;
+  --font-display: 'IM Fell English', 'Palatino Linotype', Palatino, Georgia,
+    'Times New Roman', serif;
+  --font-body: Georgia, 'Times New Roman', serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  --shadow-stamp: 2px 2px 0 color-mix(in srgb, #2c2118 40%, transparent);
+  --shadow-stamp-lg: 2px 3px 0 color-mix(in srgb, #2c2118 28%, transparent);
+  /* Cards: hand, setup pick. */
+  --shadow-card: 2px 3px 0 color-mix(in srgb, #2c2118 35%, transparent);
+  --shadow-card-sm: 1px 2px 0 color-mix(in srgb, #2c2118 35%, transparent);
+  --shadow-card-selected:
+    0 0 0 2px color-mix(in srgb, #c9a04a 80%, #2c2118),
+    2px 4px 0 color-mix(in srgb, #2c2118 35%, transparent);
+  /* Gold outline: picked option / highlighted clearing. */
+  --shadow-gold-ring: 0 0 0 2px color-mix(in srgb, #c9a04a 80%, #2c2118);
+  --shadow-gold-glow: 0 0 0 2px color-mix(in srgb, #c9a04a 75%, transparent);
+  /* Hairline inside a border. */
+  --shadow-inset-line: inset 0 0 0 1px #cbb892;
+  --shadow-inset-line-ink: inset 0 0 0 1px #4a3a2c;
+  --shadow-hand-tray:
+    inset 0 0 0 1px #cbb892,
+    2px 3px 0 color-mix(in srgb, #2c2118 25%, transparent);
+  --shadow-menu-panel:
+    inset 0 0 0 1px #cbb892,
+    0 0 0 6px color-mix(in srgb, #2c2118 18%, transparent),
+    4px 6px 0 color-mix(in srgb, #2c2118 28%, transparent);
+  --shadow-seat-active:
+    inset 0 0 0 1px #cbb892,
+    0 0 0 2px color-mix(in srgb, #c9a04a 70%, #2c2118),
+    2px 2px 0 color-mix(in srgb, #2c2118 30%, transparent);
+  --drop-shadow-stamp: 1px 1px 0 color-mix(in srgb, #2c2118 25%, transparent);
+  --drop-shadow-banner: 0 2px 0 color-mix(in srgb, #2c2118 25%, transparent);
+  --text-shadow-ink: 1px 1px 0 color-mix(in srgb, #2c2118 55%, transparent);
+  /* Piece count digits readable on any map art. */
+  --text-shadow-outline:
+    -1px -1px 0 #1a1a1a, 1px -1px 0 #1a1a1a, -1px 1px 0 #1a1a1a,
+    1px 1px 0 #1a1a1a;
+}
+
+/* Paper grain multiplied over the element's background colour. */
+@utility paper-grain {
+  background-image: var(--root-paper-grain);
+  background-blend-mode: multiply;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--color-forest-deep);
+    color: var(--color-parchment);
+    font-family: var(--font-body);
+  }
+
+  #app {
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  #game-container {
+    display: flex;
+    width: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #game-container canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
+@layer components {
+  .root-panel {
+    border: 2px solid var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-parchment) 94%, #1a1410);
+    background-image: var(--root-paper-grain);
+    background-blend-mode: multiply;
+    color: var(--color-ink);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-parchment-shadow) 55%, transparent),
+      var(--shadow-stamp-lg);
+  }
+
+  .root-button {
+    margin: 0;
+    cursor: pointer;
+    border: 2px solid var(--color-ink);
+    background-color: var(--color-parchment);
+    background-image: var(--root-paper-grain);
+    background-blend-mode: multiply;
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    box-shadow:
+      inset 0 0 0 1px var(--color-parchment-shadow),
+      var(--shadow-stamp);
+    transition:
+      filter 80ms ease-out,
+      transform 80ms ease-out;
+  }
+
+  .root-button:hover:not(:disabled) {
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+  }
+
+  .root-button:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow:
+      inset 0 0 0 1px var(--color-parchment-shadow),
+      1px 1px 0 color-mix(in srgb, var(--color-ink) 40%, transparent);
+  }
+
+  .root-button:disabled {
+    cursor: default;
+    opacity: 0.55;
+    transform: none;
+  }
+
+  .root-button--accent {
+    background-color: color-mix(
+      in srgb,
+      var(--color-gold) 45%,
+      var(--color-parchment)
+    );
+  }
+
+  .root-button--danger {
+    background-color: color-mix(
+      in srgb,
+      var(--color-rust) 38%,
+      var(--color-parchment)
+    );
+  }
+
+  .root-button--quiet {
+    background-color: color-mix(
+      in srgb,
+      var(--color-sky-mist) 35%,
+      var(--color-parchment)
+    );
+  }
+}
+
+/* Paper grain shared by panels/buttons (SVG noise). */
+:root {
+  --root-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Narrow (< md) map insets — values feed GameScreen host */
+  --root-portrait-map-top-inset: 128px;
+  --root-portrait-map-bottom-inset: 200px;
+  /* Narrow bottom chrome: end/discard flank hand; tray above */
+  --root-portrait-drawer-bottom: 12px;
+  --root-portrait-tray-bottom: 118px;
+  /* Wide (md+) playfield 1-3-1: VP | map | actions — keep in sync with viewportLayout.ts */
+  --root-landscape-side-percent: 20%;
+  --root-landscape-center-percent: 60%;
+  --root-player-rail-seat-max-width: 100%;
+  /* Card gallery (discard / crafted): half viewport, centered by flex parent */
+  --root-card-gallery-panel-width: 50%;
+  --root-card-gallery-panel-height: 50%;
+}

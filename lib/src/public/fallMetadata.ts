@@ -42,6 +42,51 @@ export const FALL_PATHS: ReadonlyArray<readonly [number, number]> = [
   [10, 11],
 ]
 
+/** Rivers link clearings but are not paths. They still divide forests. */
+export const FALL_RIVERS: ReadonlyArray<readonly [number, number]> = [
+  [3, 6],
+  [4, 9],
+  [6, 10],
+  [9, 10],
+]
+
+/**
+ * Forests as bordering clearing ids (polygon corners).
+ * Array index 0 = human F1 … index 10 = human F11.
+ * Rule: Board > Forests (2.4)
+ */
+export const FALL_FORESTS: ReadonlyArray<readonly number[]> = [
+  [0, 8, 9, 11], // F1
+  [0, 4, 9], // F2
+  [1, 4, 9], // F3
+  [9, 10, 11], // F4
+  [1, 5, 9, 10], // F5
+  [3, 8, 11], // F6
+  [3, 6, 11], // F7
+  [6, 10, 11], // F8
+  [2, 6, 10], // F9
+  [2, 5, 10], // F10
+  [3, 6, 7], // F11
+]
+
+/** Human-facing forest id (F1…F11). Internal index is 0-based. */
+export function fallForestDisplayId(forestIndex: number): number {
+  return forestIndex + 1
+}
+
+export type FallLayoutPoint2d = {
+  x: number
+  y: number
+}
+
+export type FallForestLayout = {
+  forestIndex: number
+  /** Border clearings in angular order around the centroid (polygon corners). */
+  cornerClearingIds: readonly number[]
+  corners: readonly FallLayoutPoint2d[]
+  centroid: FallLayoutPoint2d
+}
+
 export const FALL_LAYOUT_CLEARINGS: Readonly<
   Record<number, FallLayoutPoint>
 > = {
@@ -69,4 +114,44 @@ export function fallAdjacentClearings(clearingId: number): number[] {
     }
   }
   return neighbors
+}
+
+/**
+ * Forest covered area = polygon whose corners are the bordering clearing centers,
+ * ordered around the centroid.
+ */
+export function fallForestLayout(forestIndex: number): FallForestLayout | null {
+  const border = FALL_FORESTS[forestIndex]
+  if (border === undefined) return null
+  const points: Array<{ clearingId: number; x: number; y: number }> = []
+  for (const clearingId of border) {
+    const point = FALL_LAYOUT_CLEARINGS[clearingId]
+    if (point === undefined) continue
+    points.push({ clearingId, x: point.x, y: point.y })
+  }
+  if (points.length === 0) return null
+  const centroidX =
+    points.reduce((sum, point) => sum + point.x, 0) / points.length
+  const centroidY =
+    points.reduce((sum, point) => sum + point.y, 0) / points.length
+  const ordered = [...points].sort((left, right) => {
+    const angleLeft = Math.atan2(left.y - centroidY, left.x - centroidX)
+    const angleRight = Math.atan2(right.y - centroidY, right.x - centroidX)
+    return angleLeft - angleRight
+  })
+  return {
+    forestIndex,
+    cornerClearingIds: ordered.map((point) => point.clearingId),
+    corners: ordered.map((point) => ({ x: point.x, y: point.y })),
+    centroid: { x: centroidX, y: centroidY },
+  }
+}
+
+export function fallForestLayouts(): FallForestLayout[] {
+  const layouts: FallForestLayout[] = []
+  for (let forestIndex = 0; forestIndex < FALL_FORESTS.length; forestIndex++) {
+    const layout = fallForestLayout(forestIndex)
+    if (layout !== null) layouts.push(layout)
+  }
+  return layouts
 }

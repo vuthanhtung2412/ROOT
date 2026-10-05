@@ -1,6 +1,7 @@
 import { defOf, Deck } from '#cards/Deck.js'
 import { matchesSuit } from '#cards/suit.js'
 import type { Card } from '#cards/types.js'
+import { undamagedSwords, boardOf as vagabondBoardOf } from '#factions/vagabond/items.js'
 import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
@@ -26,8 +27,34 @@ export function ambushCards(state: GameState, seat: Seat, clearing: ClearingId):
   )
 }
 
+function seatIsVagabond(state: GameState, seat: Seat): boolean {
+  return playerOf(state, seat).faction === 'vagabond'
+}
+
 function attackerPresent(state: GameState, event: BattleEvent): boolean {
+  if (seatIsVagabond(state, event.attacker)) {
+    return state.clearings[event.clearing]!.pieces.some(
+      (piece) => piece.kind === 'pawn' && piece.owner === event.attacker,
+    )
+  }
   return warriors(state, event.clearing, event.attacker) > 0
+}
+
+/** Rule: Battle — max rolled hits = warriors, or undamaged swords for Vagabond. */
+function hitCap(state: GameState, clearing: ClearingId, seat: Seat, event?: BattleEvent): number {
+  if (seatIsVagabond(state, seat)) {
+    const swords = undamagedSwords(vagabondBoardOf(state, seat))
+    if (
+      event !== undefined &&
+      event.attacker === seat &&
+      event.alliedSeat !== undefined
+    ) {
+      // Rule: 9.2.9.IIc — max hits = Allied warriors + undamaged S.
+      return swords + warriors(state, clearing, event.alliedSeat)
+    }
+    return swords
+  }
+  return warriors(state, clearing, seat)
 }
 
 function sideOf(seat: Seat, event: BattleEvent): 'attacker' | 'defender' | null {
@@ -49,6 +76,15 @@ function rollBattleDice(ctx: Ctx): [number, number] {
 function finishBattle(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   const eventIndex: number = state.pending.indexOf(event)
   if (eventIndex >= 0) state.pending.splice(eventIndex, 1)
+  // Rule: 9.2.9.IId — more ally hits than item damage → Allied becomes Hostile.
+  if (
+    event.alliedSeat !== undefined &&
+    (event.alliedHitsTaken ?? 0) > (event.itemHitsTaken ?? 0)
+  ) {
+    const board = vagabondBoardOf(state, event.attacker)
+    const faction = playerOf(state, event.alliedSeat).faction
+    board.relationships[faction] = 'hostile'
+  }
   ctx.emit({ s: 'battle.end', ev: event })
   return [{ t: 'event', event: { ...event, stage: 'removeAttacker' } }]
 }
@@ -69,8 +105,19 @@ function rollStage(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   const rolls: [number, number] = rollBattleDice(ctx)
   event.rolls = rolls
   const [high, low] = rolls
-  event.hits.attacker += capHits(high, warriors(state, event.clearing, event.attacker))
-  event.hits.defender += capHits(low, warriors(state, event.clearing, event.defender))
+  // Rule: Alliance Guerrilla War — as defender, deal higher die; attacker deals lower.
+  const defenderIsAlliance =
+    playerOf(state, event.defender).faction === 'alliance'
+  const attackerDie = defenderIsAlliance ? low : high
+  const defenderDie = defenderIsAlliance ? high : low
+  event.hits.attacker += capHits(
+    attackerDie,
+    hitCap(state, event.clearing, event.attacker, event),
+  )
+  event.hits.defender += capHits(
+    defenderDie,
+    hitCap(state, event.clearing, event.defender, event),
+  )
   return enterEffectsPipeline(state, event, ctx)
 }
 
@@ -107,6 +154,12 @@ export function nextEffectSeat(event: BattleEvent): Seat | null {
 
 /** Rule: Battle 3 — defenseless defender gives attacker +1 hit. */
 export function applyDefenseless(state: GameState, event: BattleEvent): void {
+  if (seatIsVagabond(state, event.defender)) {
+    if (undamagedSwords(vagabondBoardOf(state, event.defender)) === 0) {
+      event.hits.attacker += 1
+    }
+    return
+  }
   if (warriors(state, event.clearing, event.defender) === 0) {
     event.hits.attacker += 1
   }

@@ -5,6 +5,7 @@ import type { Event } from '#events/types.js'
 import { FALL } from '#map/fall.js'
 import { FALL_LAYOUT } from '#layout/fall.js'
 import { toAscii } from '#layout/render/ascii.js'
+import { fallForestDisplayId } from '#public/fallMetadata.js'
 import type { LogEntry } from '#log/types.js'
 import type { Seat } from '#pieces/types.js'
 import { DECREE_COLUMNS } from '#state/boards.js'
@@ -126,7 +127,11 @@ export function formatDecreeColumn(cards: Card[]): string {
     .join(', ')
 }
 
-function boardLines(board: GameState['players'][number]['board']): string[] {
+function boardLines(
+  state: GameState,
+  player: GameState['players'][number],
+): string[] {
+  const board = player.board
   if (board.kind === 'marquise') {
     const t = board.tracks
     return [
@@ -142,17 +147,48 @@ function boardLines(board: GameState['players'][number]['board']): string[] {
       ...DECREE_COLUMNS.map((col) => `      ${col}: ${formatDecreeColumn(d[col])}`),
     ]
   }
+  if (board.kind === 'vagabond') {
+    let pawn = 'pawn: (missing)'
+    if (board.forest !== null) {
+      pawn = `pawn: FOREST ${fallForestDisplayId(board.forest)}`
+    } else {
+      for (let clearingId = 0; clearingId < state.clearings.length; clearingId++) {
+        const hasPawn = state.clearings[clearingId]?.pieces.some(
+          (piece) => piece.kind === 'pawn' && piece.owner === player.seat,
+        )
+        if (hasPawn === true) {
+          pawn = `pawn: C${clearingId}`
+          break
+        }
+      }
+    }
+    return [
+      `    ${pawn}`,
+      `    satchel: ${board.satchel.length} damaged=${board.damaged.length}`,
+      `    tracks: tea=${board.tracks.tea.length} coin=${board.tracks.coin.length} bag=${board.tracks.bag.length}`,
+    ]
+  }
   return [`    board: ${JSON.stringify(board)}`]
 }
 
-function playerBlock(p: GameState['players'][number]): string[] {
+function playerBlock(state: GameState, p: GameState['players'][number]): string[] {
   return [
     `  ${playerRef(p)} VP=${p.vp}`,
     ...cardsBlock('    ', 'hand', p.hand),
     ...cardsBlock('    ', 'crafted', p.playArea, { effect: true }),
     `    items: ${p.craftedItems.length ? p.craftedItems.map((item) => `${item.type}${item.exhausted ? ' (exhausted)' : ''}`).join(', ') : '(none)'}`,
-    ...boardLines(p.board),
+    ...boardLines(state, p),
   ]
+}
+
+function describePawnDestination(
+  to: number | `forest:${number}`,
+): string {
+  if (typeof to === 'string' && to.startsWith('forest:')) {
+    const forestIndex = Number(to.slice('forest:'.length))
+    return `FOREST ${fallForestDisplayId(forestIndex)}`
+  }
+  return `C${to}`
 }
 
 /** Human-readable action line (no card ids). */
@@ -247,6 +283,32 @@ export function describeAction(action: Action, state: GameState): string {
       if (action.useEffect !== undefined) bits.push(`useEffect=${action.useEffect}`)
       return bits.join(' ')
     }
+    case 'slip':
+      return `SLIP → ${describePawnDestination(action.to)}`
+    case 'vbMove':
+      return `VB MOVE → C${action.to}`
+    case 'vbBattle':
+      return `VB BATTLE vs ${playerRefBySeat(state, action.defender)}`
+    case 'explore':
+      return 'EXPLORE ruin'
+    case 'aid':
+      return `AID ${playerRefBySeat(state, action.target)} ${findCard(action.cardId)}`
+    case 'strike':
+      return `STRIKE vs ${playerRefBySeat(state, action.defender)}`
+    case 'repair':
+      return `REPAIR item#${action.itemIndex}`
+    case 'vbCraft':
+      return `VB CRAFT ${findCard(action.cardId)}`
+    case 'steal':
+      return `STEAL from ${playerRefBySeat(state, action.target)}`
+    case 'dayLabor':
+      return `DAY LABOR take ${findCard(action.cardId)}`
+    case 'hideout':
+      return `HIDEOUT repair ${action.items.map((item) => item.type).join(', ')}`
+    case 'refresh':
+      return 'REFRESH items'
+    case 'rest':
+      return 'REST (forest repair damaged)'
     default:
       return JSON.stringify(action)
   }
@@ -324,7 +386,7 @@ export function formatTurnLog(log: LogEntry[], state: GameState): string {
 }
 
 function playersSection(state: GameState): string[] {
-  return ['players:', ...state.players.flatMap((p) => playerBlock(p))]
+  return ['players:', ...state.players.flatMap((p) => playerBlock(state, p))]
 }
 
 function clearingsSection(state: GameState): string[] {
@@ -333,6 +395,40 @@ function clearingsSection(state: GameState): string[] {
     lines.push(...clearingBlock(state, id))
   }
   return lines
+}
+
+/**
+ * Where each Vagabond pawn sits (forest only — skip empty forest catalog).
+ * Rule: Board > Forests (2.4); Vagabond pawn may be in a forest.
+ */
+function forestsSection(state: GameState): string[] {
+  const lines: string[] = ['forests:']
+  let any = false
+  for (const player of state.players) {
+    if (player.board.kind !== 'vagabond') continue
+    if (player.board.forest === null) continue
+    any = true
+    lines.push(
+      `  ${playerRef(player)} @ F${fallForestDisplayId(player.board.forest)}`,
+    )
+  }
+  if (!any) {
+    lines.push('  (no vagabond in forest)')
+  }
+  return lines
+}
+
+function asciiMapBlock(_state: GameState): string[] {
+  return [
+    'map (clearing=id+suit; path=·; river=~; forest=[fN]):',
+    toAscii(FALL, FALL_LAYOUT, {
+      width: 64,
+      height: 26,
+      showSuit: true,
+      showForests: true,
+      showRivers: true,
+    }),
+  ]
 }
 
 /** Classic line LCS → markdown diff body lines (` `/`-`/`+`). */
@@ -379,17 +475,21 @@ function fenceDiff(before: string[] | null, after: string[]): string[] {
 }
 
 /**
- * Markdown ```diff``` of hierarchical players + clearings blocks
+ * Markdown ```diff``` of hierarchical players + forests + clearings blocks
  * (same layout as formatGameView, with -/+ on changed lines).
  */
 export function formatPlayersClearingsDiff(
   before: GameState | null,
   after: GameState,
-): { players: string; clearings: string } {
+): { players: string; forests: string; clearings: string } {
   return {
     players: fenceDiff(
       before ? playersSection(before) : null,
       playersSection(after),
+    ).join('\n'),
+    forests: fenceDiff(
+      before ? forestsSection(before) : null,
+      forestsSection(after),
     ).join('\n'),
     clearings: fenceDiff(
       before ? clearingsSection(before) : null,
@@ -400,8 +500,8 @@ export function formatPlayersClearingsDiff(
 
 /** @deprecated keyed fact diff — prefer formatPlayersClearingsDiff */
 export function formatStateDiff(before: GameState | null, after: GameState): string {
-  const { players, clearings } = formatPlayersClearingsDiff(before, after)
-  return `${players}\n${clearings}`
+  const { players, forests, clearings } = formatPlayersClearingsDiff(before, after)
+  return `${players}\n${forests}\n${clearings}`
 }
 
 export type PrettyGameOpts = {
@@ -415,9 +515,11 @@ export type FormatGameLogOpts = PrettyGameOpts & {
   prev?: GameState | null
   /** Force plain players/clearings (no ```diff), e.g. CREATE / LOAD / START. */
   full?: boolean
+  /** Turn-log entries from this apply (includes autoActions). */
+  turnLog?: LogEntry[]
 }
 
-function gameHeader(state: GameState, opts: PrettyGameOpts): string[] {
+function gameHeader(state: GameState, opts: PrettyGameOpts & { turnLog?: LogEntry[] }): string[] {
   const lines: string[] = ['', '──────── game ────────']
   const current = playerRefBySeat(state, state.currentSeat)
   const head =
@@ -429,6 +531,12 @@ function gameHeader(state: GameState, opts: PrettyGameOpts): string[] {
     lines.push(`winner: ${playerRefBySeat(state, state.winner)}`)
   }
   if (opts.action) lines.push(`action: ${describeAction(opts.action, state)}`)
+  if (opts.turnLog !== undefined && opts.turnLog.length > 0) {
+    lines.push('log:')
+    for (const entry of opts.turnLog) {
+      lines.push(`  ${describeLogEntry(entry, state)}`)
+    }
+  }
   return lines
 }
 
@@ -441,15 +549,18 @@ export function formatGameLogEntry(state: GameState, opts: FormatGameLogOpts = {
   const useDiff = !opts.full && opts.prev !== undefined
 
   if (useDiff) {
-    const { players, clearings } = formatPlayersClearingsDiff(opts.prev ?? null, state)
+    const { players, forests, clearings } = formatPlayersClearingsDiff(
+      opts.prev ?? null,
+      state,
+    )
     lines.push(players)
-    lines.push('map (id+suit F=fox R=rabbit M=mouse):')
-    lines.push(toAscii(FALL, FALL_LAYOUT, { width: 56, height: 22, showSuit: true }))
+    lines.push(...asciiMapBlock(state))
+    lines.push(forests)
     lines.push(clearings)
   } else {
     lines.push(...playersSection(state))
-    lines.push('map (id+suit F=fox R=rabbit M=mouse):')
-    lines.push(toAscii(FALL, FALL_LAYOUT, { width: 56, height: 22, showSuit: true }))
+    lines.push(...asciiMapBlock(state))
+    lines.push(...forestsSection(state))
     lines.push(...clearingsSection(state))
   }
 

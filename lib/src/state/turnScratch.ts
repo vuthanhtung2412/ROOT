@@ -20,6 +20,10 @@ export function createTurnScratch(
     eveningScoreDone: false,
     decree: null,
     decreeDone: false,
+    militaryOpsLeft: 0,
+    sympathyCraftedIds: [],
+    slipDone: false,
+    aidsThisTurn: {},
     ...overrides,
   }
 }

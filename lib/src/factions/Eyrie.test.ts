@@ -10,6 +10,7 @@ import { craftCard } from '#rules/craft.js'
 import { HAND_LIMIT } from '#state/constants.js'
 import { DECREE_COLUMNS, EYRIE_LEADERS, type DecreeColumn, type EyrieLeader } from '#state/boards.js'
 import type { DecreeCursor } from '#state/types.js'
+import { createTurnScratch } from '#state/turnScratch.js'
 import { defaultRuleHooks } from '#triggers/hooks.js'
 import {
   card,
@@ -37,24 +38,7 @@ function setupCtx() {
 }
 
 function scratch(decree: DecreeCursor | null = null, decreeDone = false) {
-  return {
-    actionsLeft: 0,
-    extraActions: 0,
-    recruited: false,
-    birdsongWoodDone: false,
-    eveningDrawDone: false,
-    swapMeetUsed: false,
-      charmOffensiveUsed: false,
-      leagueUsed: false,
-      propagandaUsed: false,
-      saboteursUsed: false,
-      falseOrdersUsed: false,
-      eyrieEmigreCompleted: false,
-    emergencyOrdersDone: false,
-    eveningScoreDone: false,
-    decree,
-    decreeDone,
-  }
+  return createTurnScratch({ decree, decreeDone })
 }
 
 /** Fox suit card (not bird) for decree / craft. */
@@ -936,6 +920,30 @@ describe('Law 7 extras / integration', () => {
     const board = state.players[1]!.board
     expect(board.kind).toBe('eyrie')
     if (board.kind === 'eyrie') expect(board.roostTrack.placed).toBe(6)
+  })
+
+  it('Rule: 7.3.5 — all seven roosts can return to track', () => {
+    const state = withPieces(
+      eyrieState({ board: eyrieBoard({ roostTrack: { placed: 6 } }) }),
+      4,
+      [{ id: 'last-roost', kind: 'building', type: 'roost', owner: 1, used: false }],
+    )
+    removePieces(state, { clearing: 4, pieceIds: ['last-roost'], scorer: 0 })
+    const board = state.players[1]!.board
+    expect(board.kind).toBe('eyrie')
+    if (board.kind === 'eyrie') expect(board.roostTrack.placed).toBe(7)
+  })
+
+  it('Rule: 7.4.3 — A New Roost illegal when warrior supply < 3', () => {
+    const state = eyrieState({
+      phase: 'birdsong',
+      step: 'newRoost',
+      board: eyrieBoard({ roostTrack: { placed: 7 }, supply: { warriors: 2 } }),
+    })
+    const spec = EYRIE.legalActions(state, setupCtx()).find(
+      (action) => action.type === 'newRoost',
+    )
+    expect(spec).toBeUndefined()
   })
 
   it('Game lobby marquise+eyrie starts on birdsong', () => {

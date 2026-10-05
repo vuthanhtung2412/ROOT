@@ -12,9 +12,29 @@ describe('toAscii', () => {
   })
 
   it('showSuit appends F/R/M to clearing ids', () => {
-    const ascii = toAscii(FALL, FALL_LAYOUT, { width: 56, height: 22, showSuit: true })
+    const ascii = toAscii(FALL, FALL_LAYOUT, {
+      width: 56,
+      height: 22,
+      showSuit: true,
+    })
     expect(ascii).toContain('0F')
     expect(ascii).toContain('1M')
     expect(ascii).toContain('2R')
+  })
+
+  it('showForests labels [fN]; showRivers marks ~', () => {
+    const ascii = toAscii(FALL, FALL_LAYOUT, {
+      width: 64,
+      height: 26,
+      showSuit: true,
+      showForests: true,
+      showRivers: true,
+    })
+    expect(ascii).toContain('[f1]')
+    expect(ascii).toContain('[f5]')
+    expect(ascii).toContain('[f11]')
+    expect(ascii).toContain('~')
+    expect(ascii).not.toContain(':')
+    expect(ascii).not.toContain('*')
   })
 })

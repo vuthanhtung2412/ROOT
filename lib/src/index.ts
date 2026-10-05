@@ -1,7 +1,20 @@
 export { Game } from '#game/Game.js'
 export type { Ctx } from '#game/ctx.js'
 
-export { Faction, FACTIONS, Marquise, MARQUISE, keepCornerFor, placeMarquiseSetup, Eyrie, EYRIE } from '#factions/index.js'
+export {
+  Faction,
+  FACTIONS,
+  Marquise,
+  MARQUISE,
+  keepCornerFor,
+  placeMarquiseSetup,
+  Eyrie,
+  EYRIE,
+  Alliance,
+  ALLIANCE,
+  Vagabond,
+  VAGABOND,
+} from '#factions/index.js'
 
 export type { LogEntry } from '#log/types.js'
 

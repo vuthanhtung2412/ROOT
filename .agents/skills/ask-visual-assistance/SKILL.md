@@ -47,7 +47,7 @@ If helper **missing**: create **one** minimal `index.html` (+ tiny inline JS/CSS
 4. **Collect JSON** after user finishes:
    - Prefer `evaluate_script` reading `window.__layoutExport` (or `#export-json` text).
    - Else accept pasted JSON from chat.
-5. **Wire** regions into Phaser/CSS. Do not re-derive from the image unless verifying a mismatch.
+5. **Wire** regions into the React UI (`*.layout.json` regions / Tailwind classes). Do not re-derive from the image unless verifying a mismatch.
 6. **Fallback** only if chrome-devtools MCP unavailable/broken: tell user to open helper manually; still same JSON contract. Screenshot markup / % bands last resort — store as explicit rects.
 
 ## Helper app requirements (keep minimal)

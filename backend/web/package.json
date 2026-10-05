@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "gen:openapi": "tsx scripts/export-openapi.ts",
-    "serve:phaser": "tsx scripts/serve-phaser.ts",
+    "serve:react": "tsx scripts/serve-react.ts",
+    "serve:phaser": "echo 'deprecated: use serve:react' >&2 && tsx scripts/serve-react.ts",
     "lint": "eslint src scripts"
   },
   "dependencies": {

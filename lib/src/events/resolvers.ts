@@ -4,17 +4,25 @@ import type { LogEntry } from '#log/types.js'
 import type { Seat } from '#pieces/types.js'
 import type { GameState } from '#state/types.js'
 import { battleResolver } from '#events/battle.js'
+import { chooseCharacterResolver } from '#events/chooseCharacter.js'
+import { chooseForestResolver } from '#events/chooseForest.js'
 import { chooseKeepResolver } from '#events/chooseKeep.js'
 import { chooseLeaderResolver } from '#events/chooseLeader.js'
 import { fieldHospitalResolver } from '#events/fieldHospital.js'
+import { outrageResolver } from '#events/outrage.js'
 import { placeStartingBuildingResolver } from '#events/placeStartingBuilding.js'
+import { vagabondDamageResolver } from '#events/vagabondDamage.js'
 import type { Event } from '#events/types.js'
 import {
   isBattleEvent,
+  isChooseCharacterEvent,
+  isChooseForestEvent,
   isChooseKeepEvent,
   isChooseLeaderEvent,
   isFieldHospitalEvent,
+  isOutrageEvent,
   isPlaceStartingBuildingEvent,
+  isVagabondDamageEvent,
 } from '#typeGuards.js'
 
 export type EventApply = {
@@ -120,14 +128,76 @@ export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
       return chooseLeaderResolver.matchesAction(state, event, action, ctx)
     },
   },
+  chooseCharacter: {
+    legalActions(state, event, ctx) {
+      if (!isChooseCharacterEvent(event)) return []
+      return chooseCharacterResolver.legalActions(state, event, ctx)
+    },
+    apply(state, apply, ctx) {
+      if (!isChooseCharacterEvent(apply.event)) return []
+      return chooseCharacterResolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
+    },
+    matchesAction(state, event, action, ctx) {
+      if (!isChooseCharacterEvent(event)) return false
+      return chooseCharacterResolver.matchesAction(state, event, action, ctx)
+    },
+  },
+  chooseForest: {
+    legalActions(state, event, ctx) {
+      if (!isChooseForestEvent(event)) return []
+      return chooseForestResolver.legalActions(state, event, ctx)
+    },
+    apply(state, apply, ctx) {
+      if (!isChooseForestEvent(apply.event)) return []
+      return chooseForestResolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
+    },
+    matchesAction(state, event, action, ctx) {
+      if (!isChooseForestEvent(event)) return false
+      return chooseForestResolver.matchesAction(state, event, action, ctx)
+    },
+  },
   outrage: {
-    legalActions: () => [],
-    apply: () => [],
-    matchesAction: () => false,
+    legalActions(state, event, ctx) {
+      if (!isOutrageEvent(event)) return []
+      return outrageResolver.legalActions(state, event, ctx)
+    },
+    apply(state, apply, ctx) {
+      if (!isOutrageEvent(apply.event)) return []
+      return outrageResolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
+    },
+    matchesAction(state, event, action, ctx) {
+      if (!isOutrageEvent(event)) return false
+      return outrageResolver.matchesAction(state, event, action, ctx)
+    },
   },
   vagabondDamage: {
-    legalActions: () => [],
-    apply: () => [],
-    matchesAction: () => false,
+    legalActions(state, event, ctx) {
+      if (!isVagabondDamageEvent(event)) return []
+      return vagabondDamageResolver.legalActions(state, event, ctx)
+    },
+    apply(state, apply, ctx) {
+      if (!isVagabondDamageEvent(apply.event)) return []
+      return vagabondDamageResolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
+    },
+    matchesAction(state, event, action, ctx) {
+      if (!isVagabondDamageEvent(event)) return false
+      return vagabondDamageResolver.matchesAction(state, event, action, ctx)
+    },
   },
 }

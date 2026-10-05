@@ -10,6 +10,7 @@ import {
   formatGameLogEntry,
   type Action,
   type GameState,
+  type LogEntry,
 } from '@root/lib'
 
 /** Repo root `./logs` (…/Root/logs), not cwd. */
@@ -97,6 +98,7 @@ export function logGameEvent(
   label: GameLogEventLabel,
   state: GameState,
   action?: Action,
+  turnLog?: LogEntry[],
 ): void {
   if (label === 'CREATE') {
     const dir = beginGameLog()
@@ -109,6 +111,7 @@ export function logGameEvent(
   const text = formatGameLogEntry(state, {
     label,
     ...(action ? { action } : {}),
+    ...(turnLog !== undefined && turnLog.length > 0 ? { turnLog } : {}),
     prev: full ? undefined : prevLogState,
     full,
   })

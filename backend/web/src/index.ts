@@ -1,12 +1,42 @@
 import { existsSync } from 'node:fs'
+import path from 'node:path'
+import {
+  clearStoredGame,
+  enableGamePersistence,
+} from '#store/gamePersistence.js'
 import { serve } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
 import { app } from '#openapi.js'
 import { attachGameWebSocket } from '#routes/ws.js'
-import { mountPhaserStatic, phaserPublicDirectory } from '#static.js'
+import { mountReactStatic, reactPublicDirectory } from '#static.js'
+
+const GAME_STORE_FILE_ENV_KEY = 'ROOT_GAME_STORE_FILE'
+const GAME_STORE_DISABLED_VALUE = 'off'
+const STOP_SIGNAL = 'SIGINT'
+/** Shell convention: 128 + signal number (SIGINT = 2). */
+const STOP_SIGNAL_EXIT_CODE = 130
+const DEFAULT_GAME_STORE_FILE = path.resolve(
+  import.meta.dirname,
+  '../.data/game-slot.json',
+)
+
+// Survive restarts: reload the saved game slot, keep it saved on every change.
+// ROOT_GAME_STORE_FILE=<path> moves the file; =off keeps the slot in memory only.
+const gameStoreFile: string =
+  process.env[GAME_STORE_FILE_ENV_KEY] ?? DEFAULT_GAME_STORE_FILE
+if (gameStoreFile !== GAME_STORE_DISABLED_VALUE) {
+  enableGamePersistence(gameStoreFile)
+}
+
+// Stopping the server by hand (Ctrl+C) ends the game: drop the saved slot.
+// A crash or a dev-watch restart (SIGTERM) keeps it, so those still resume.
+process.once(STOP_SIGNAL, () => {
+  clearStoredGame()
+  process.exit(STOP_SIGNAL_EXIT_CODE)
+})
 
 attachGameWebSocket(app)
-mountPhaserStatic(app)
+mountReactStatic(app)
 
 const webSocketServer = new WebSocketServer({ noServer: true })
 
@@ -21,8 +51,8 @@ serve(
     console.log(`Health: http://localhost:${info.port}/health`)
     console.log(`OpenAPI doc: http://localhost:${info.port}/doc`)
     console.log(`WebSocket: ws://localhost:${info.port}/ws?playerId=…`)
-    if (existsSync(phaserPublicDirectory)) {
-      console.log(`Phaser game: http://localhost:${info.port}/`)
+    if (existsSync(reactPublicDirectory)) {
+      console.log(`React game: http://localhost:${info.port}/`)
     }
   },
 )

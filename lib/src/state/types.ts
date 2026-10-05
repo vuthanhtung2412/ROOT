@@ -1,4 +1,5 @@
 import type { DeckState } from '#cards/Deck.js'
+import type { QuestCard } from '#cards/quests.js'
 import type { Card } from '#cards/types.js'
 import type { Event } from '#events/types.js'
 import type { FactionId, ItemType, Piece, Seat } from '#pieces/types.js'
@@ -20,8 +21,14 @@ export type PlayerState = {
   seat: Seat
   faction: FactionId
   vp: number
+  /** False after activating dominance / forming coalition. Rule: Dominance 3.3.1. */
+  scoresVictoryPoints: boolean
   hand: Card[]
   playArea: Card[]
+  /** Activated dominance card in play area (non-null = alt win / coalition). */
+  activatedDominance: Card | null
+  /** Vagabond coalition partner seat. Rule: Vagabond 9.2.8. */
+  coalitionWith: Seat | null
   craftedItems: CraftedItem[]
   board: FactionBoard
 }
@@ -53,6 +60,14 @@ export type TurnScratch = {
   eveningScoreDone: boolean
   decree: DecreeCursor | null
   decreeDone: boolean
+  /** Alliance Evening — military ops remaining (≤ officers). */
+  militaryOpsLeft: number
+  /** Sympathy token piece ids activated for craft this turn. */
+  sympathyCraftedIds: string[]
+  /** Vagabond Birdsong — slip already used this turn. */
+  slipDone: boolean
+  /** Vagabond — aid counts toward relationship this turn per seat. */
+  aidsThisTurn: Partial<Record<Seat, number>>
 }
 
 export type GameState = {
@@ -69,8 +84,15 @@ export type GameState = {
   clearings: ClearingState[]
   deck: DeckState
   dominanceAvailable: Card[]
+  /** Shared Vagabond quest draw pile. Rule: Vagabond > Setup 3; Share Quests 9.7.2. */
+  questDeck: QuestCard[]
+  /** Face-up quests near the map (3 after setup). */
+  questsAvailable: QuestCard[]
   itemSupply: Record<ItemType, number>
   pending: Event[]
+  /** Seat that won (VP / dominance). */
   winner?: Seat
+  /** Vagabond seats in coalition with `winner`. Rule: Vagabond 9.2.8. */
+  coWinners?: Seat[]
   turnScratch: TurnScratch
 }

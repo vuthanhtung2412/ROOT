@@ -16,6 +16,7 @@ Clearing suit glyphs (fox / mouse / rabbit). Prefer **filled-color animal heads*
 | `fox.png` | `onefox.png` (Crafting Icons) | Filled fox head; pentagon frame + white fringe stripped |
 | `mouse.png` | `onemouse.png` (Crafting Icons) | Filled mouse head; same |
 | `rabbit.png` | `onerabbit.png` (Crafting Icons) | Filled rabbit head; same |
+| `bird.png` | `Icon - Bird.png` (Suits/) | Teal wing glyph, unmodified; Crafting Icons has no bird |
 | `board-fox.png` | `Board - Fox.png` (Suits/) | Map blob; outer white canvas stripped → transparent |
 | `board-mouse.png` | `Board - Mouse.png` (Suits/) | Same |
 | `board-rabbit.png` | `Board - Rabbit.png` (Suits/) | Same |

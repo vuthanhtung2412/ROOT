@@ -1,0 +1,168 @@
+{
+  "image": "resources/reference/character-boards/vagabond/vagabond-front.webp",
+  "unit": "px",
+  "naturalWidth": 1600,
+  "naturalHeight": 1242,
+  "tracks": [
+    {
+      "id": "relationship-development",
+      "cells": 4,
+      "cellSize": 119,
+      "gaps": [0, 0, 0],
+      "x": 1030,
+      "y": 278
+    },
+    {
+      "id": "tea",
+      "cells": 3,
+      "cellSize": 89,
+      "gaps": [3, 3],
+      "x": 332,
+      "y": 327
+    },
+    {
+      "id": "coin",
+      "cells": 3,
+      "cellSize": 89,
+      "gaps": [6, 5],
+      "x": 327,
+      "y": 972
+    },
+    {
+      "id": "bag",
+      "cells": 3,
+      "cellSize": 90,
+      "gaps": [5, 5],
+      "x": 326,
+      "y": 1083
+    }
+  ],
+  "regions": [
+    {
+      "id": "relationship-hostile",
+      "x": 676,
+      "y": 409,
+      "width": 314,
+      "height": 160
+    },
+    {
+      "id": "satchel",
+      "x": 666,
+      "y": 761,
+      "width": 460,
+      "height": 274
+    },
+    {
+      "id": "damaged",
+      "x": 687,
+      "y": 1051,
+      "width": 422,
+      "height": 126
+    },
+    {
+      "id": "character-slot",
+      "x": 1176,
+      "y": 694,
+      "width": 353,
+      "height": 492
+    },
+    {
+      "id": "quests",
+      "x": 40,
+      "y": 220,
+      "width": 260,
+      "height": 520
+    },
+    {
+      "id": "relationship-development-0",
+      "x": 1030,
+      "y": 278,
+      "width": 119,
+      "height": 289
+    },
+    {
+      "id": "relationship-development-1",
+      "x": 1149,
+      "y": 278,
+      "width": 119,
+      "height": 289
+    },
+    {
+      "id": "relationship-development-2",
+      "x": 1268,
+      "y": 278,
+      "width": 119,
+      "height": 289
+    },
+    {
+      "id": "relationship-development-3",
+      "x": 1387,
+      "y": 278,
+      "width": 119,
+      "height": 289
+    },
+    {
+      "id": "tea-0",
+      "x": 332,
+      "y": 327,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "tea-1",
+      "x": 424,
+      "y": 328,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "tea-2",
+      "x": 516,
+      "y": 328,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "coin-0",
+      "x": 327,
+      "y": 972,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "coin-1",
+      "x": 422,
+      "y": 972,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "coin-2",
+      "x": 516,
+      "y": 972,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "id": "bag-0",
+      "x": 326,
+      "y": 1083,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "bag-1",
+      "x": 421,
+      "y": 1083,
+      "width": 90,
+      "height": 90
+    },
+    {
+      "id": "bag-2",
+      "x": 516,
+      "y": 1083,
+      "width": 90,
+      "height": 90
+    }
+  ]
+}

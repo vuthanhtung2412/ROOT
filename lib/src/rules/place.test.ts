@@ -75,7 +75,7 @@ describe('syncPlaceIdsFromState', () => {
     const state = withPieces(minimalState(), keep, [
       { id: 't-1', kind: 'token', owner: 0, type: 'keep' },
       { id: 'w-2', kind: 'warrior', owner: 0 },
-      { id: 'b-13', kind: 'building', owner: 0, type: 'sawmill', used: false },
+      { id: 'b-13', kind: 'building', owner: 0, type: 'sawmill' },
     ])
     syncPlaceIdsFromState(state)
     placeReturning(state, {

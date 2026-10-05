@@ -7,6 +7,7 @@ import { isCraftingBuilding, type Seat } from '#pieces/types.js'
 import { assignCraftSources, canCraft } from '#queries/craft.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
+import { addVictoryPoints } from '#rules/dominance.js'
 import { RuleError } from '#rules/RuleError.js'
 
 function removeFromHand(player: ReturnType<typeof playerOf>, cardId: string): Card {
@@ -39,14 +40,19 @@ export function craftCard(
     if (isCraftingBuilding(src.piece)) {
       src.piece.used = true
     }
+    if (src.piece.kind === 'token' && src.piece.type === 'sympathy') {
+      state.turnScratch.sympathyCraftedIds.push(src.piece.id)
+    }
   }
 
   const logs: LogEntry[] = []
   const vp = ctx.hooks.craftVp(state, seat, card)
   if (vp > 0) {
-    player.vp += vp
-    logs.push({ t: 'vp', actor: seat, delta: vp, reason: 'craft' })
-    ctx.emit({ s: 'vp', actor: seat, delta: vp })
+    const scored = addVictoryPoints(state, seat, vp)
+    if (scored > 0) {
+      logs.push({ t: 'vp', actor: seat, delta: scored, reason: 'craft' })
+      ctx.emit({ s: 'vp', actor: seat, delta: scored })
+    }
   }
 
   removeFromHand(player, cardId)

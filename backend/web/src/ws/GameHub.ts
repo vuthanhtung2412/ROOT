@@ -1,4 +1,5 @@
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
+import { redactLogForViewer } from '#view/redactLogForViewer.js'
 import { redactStateForViewer } from '#view/redactStateForViewer.js'
 import { store } from '#store/GameStore.js'
 
@@ -36,12 +37,12 @@ export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
       game.state,
       playerId,
     ),
-    log: game.log,
+    log: redactLogForViewer(game.log, game.state, playerId),
   }
 }
 
 /**
- * Tracks Phaser WS clients by join `playerId`.
+ * Tracks game WS clients by join `playerId`.
  * Broadcast sends JSON; dead sockets are dropped.
  */
 export class GameHub {

@@ -111,16 +111,19 @@ export function payWood(state: GameState, payment: WoodPayment, ctx: Ctx): void 
   if (remaining > 0) throw new RuleError('NOT_ENOUGH_WOOD', { amount, remaining })
 }
 
+/** Rule: 6.4 Birdsong — one wood per sawmill (multi-sawmill clearing repeats). */
 export function sawmillClearings(state: GameState, seat: Seat): ClearingId[] {
   const clearings: ClearingId[] = []
   for (let clearing = 0; clearing < state.clearings.length; clearing++) {
-    const hasSawmill = state.clearings[clearing]!.pieces.some(
-      (piece) =>
+    for (const piece of state.clearings[clearing]!.pieces) {
+      if (
         piece.kind === 'building' &&
         piece.type === 'sawmill' &&
-        piece.owner === seat,
-    )
-    if (hasSawmill) clearings.push(clearing)
+        piece.owner === seat
+      ) {
+        clearings.push(clearing)
+      }
+    }
   }
   return clearings
 }
@@ -228,6 +231,8 @@ export function validateMarchMoves(
     clearings: state.clearings.map((clearing) => ({
       pieces: [...clearing.pieces],
     })),
+    // Simulated moves must not leak pending events (Outrage) into the real state.
+    pending: [...state.pending],
   }
   const silentContext: Ctx = {
     ...ctx,

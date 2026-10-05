@@ -2,6 +2,8 @@ import {
   FALL,
   FALL_LAYOUT,
   Game,
+  type GameState,
+  type LogEntry,
   formatGameView,
   formatTurnLog,
   toAscii,
@@ -9,7 +11,18 @@ import {
 } from '@root/lib'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { logGameEvent } from '#debug/logGame.js'
-import { gameExists, HttpError, noGame } from '#middleware/errors.js'
+import {
+  gameExists,
+  HttpError,
+  noGame,
+  notYourSeat,
+} from '#middleware/errors.js'
+import {
+  mayPlayerSendAction,
+  ONLINE_HOST_SEAT,
+  PLAYER_ID_HEADER,
+  seatForPlayerId,
+} from '#view/actionSeatGuard.js'
 import { errorResponses, ReplaceQuerySchema } from '#schemas/common.js'
 import {
   ActionResultSchema,
@@ -23,7 +36,14 @@ import {
   LogResponseSchema,
   UndoResponseSchema,
 } from '#schemas/game.js'
-import { store } from '#store/GameStore.js'
+import { persistCurrentGame } from '#store/gamePersistence.js'
+import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
+import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
+import {
+  redactLogForViewer,
+  type ViewerLogEntry,
+} from '#view/redactLogForViewer.js'
+import { redactStateForViewer } from '#view/redactStateForViewer.js'
 import { broadcastCurrentGame } from '#ws/GameHub.js'
 import {
   isAction,
@@ -34,6 +54,76 @@ import {
 function requireGame(): Game {
   if (!store.game) noGame()
   return store.game
+}
+
+/** After every slot change: save to disk, then push to connected viewers. */
+function publishGameChange(): void {
+  persistCurrentGame()
+  broadcastCurrentGame()
+}
+
+/** Online mode: state as the caller may see it. Hotseat: full state. */
+function stateForCaller(game: Game, playerId: string | undefined): GameState {
+  if (store.mode !== 'online') {
+    return game.state
+  }
+  return redactStateForViewer(game.state, playerId ?? '')
+}
+
+/** Online mode: log entries as the caller may see them. Hotseat: full log. */
+function logForCaller(
+  game: Game,
+  log: readonly LogEntry[],
+  playerId: string | undefined,
+): ViewerLogEntry[] {
+  if (store.mode !== 'online') {
+    return [...log]
+  }
+  return redactLogForViewer(log, game.state, playerId ?? '')
+}
+
+/** Online mode: full-slot dumps would leak hands and join ids. */
+function requireHotseatForFullDump(): void {
+  if (store.mode === 'online') {
+    throw new HttpError(403, 'ONLINE_MODE', 'full game dump is hotseat-only')
+  }
+}
+
+/**
+ * A live online game belongs to its players: only the host (seat 0) may
+ * replace or remove it. Free slot, hotseat games and finished games are open.
+ */
+function requireHostToReplaceOnlineGame(playerId: string | undefined): void {
+  const game = store.game
+  if (
+    game === null ||
+    store.mode !== 'online' ||
+    game.state.status === 'finished' ||
+    // Lobby nobody joined yet has no host to ask.
+    game.state.players.length === 0
+  ) {
+    return
+  }
+  const isHost =
+    playerId !== undefined &&
+    seatForPlayerId(game.state, playerId) === ONLINE_HOST_SEAT
+  if (!isHost) {
+    throw new HttpError(403, 'NOT_HOST', 'only the host may end an online game')
+  }
+}
+
+/** Online mode only: reject callers whose seat may not send this action type. */
+function requireSeatForAction(
+  game: Game,
+  playerId: string | undefined,
+  actionType: string,
+): void {
+  if (store.mode !== 'online') {
+    return
+  }
+  if (!mayPlayerSendAction(game, playerId, actionType)) {
+    notYourSeat()
+  }
 }
 
 export const gameRoutes = new OpenAPIHono()
@@ -63,6 +153,7 @@ gameRoutes.openapi(createGameRoute, async (context) => {
   if (store.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
+  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
   const body = context.req.valid('json') ?? {}
   const seed = Math.floor(Math.random() * 1_000_000_000)
   const factions =
@@ -74,9 +165,10 @@ gameRoutes.openapi(createGameRoute, async (context) => {
             throw new HttpError(400, 'BAD_FACTIONS', body.factions)
           })()
   store.game = Game.create({ seed, factions })
+  store.mode = body.mode ?? DEFAULT_LOBBY_MODE
   logGameEvent('CREATE', store.game.state)
-  broadcastCurrentGame()
-  return context.json({ state: store.game.state }, 201)
+  publishGameChange()
+  return context.json({ state: store.game.state, mode: store.mode }, 201)
 })
 
 const joinRoute = createRoute({
@@ -104,8 +196,11 @@ gameRoutes.openapi(joinRoute, async (context) => {
   const body = context.req.valid('json')
   const result = game.join(body.playerId)
   logGameEvent('JOIN', result.state, { type: 'join', playerId: body.playerId })
-  broadcastCurrentGame()
-  return context.json(result, 200)
+  publishGameChange()
+  return context.json(
+    { ...result, state: stateForCaller(game, body.playerId) },
+    200,
+  )
 })
 
 const startRoute = createRoute({
@@ -124,10 +219,15 @@ const startRoute = createRoute({
 
 gameRoutes.openapi(startRoute, (context) => {
   const game = requireGame()
+  const playerId = context.req.header(PLAYER_ID_HEADER)
+  requireSeatForAction(game, playerId, 'start')
   const result = game.start()
   logGameEvent('START', result.state, { type: 'start' })
-  broadcastCurrentGame()
-  return context.json(result, 200)
+  publishGameChange()
+  return context.json(
+    { ...result, state: stateForCaller(game, playerId) },
+    200,
+  )
 })
 
 const getGameRoute = createRoute({
@@ -148,8 +248,9 @@ gameRoutes.openapi(getGameRoute, (context) => {
   const game = requireGame()
   return context.json(
     {
-      state: game.state,
+      state: stateForCaller(game, context.req.header(PLAYER_ID_HEADER)),
       historyLength: game.history.length,
+      mode: store.mode,
     },
     200,
   )
@@ -171,6 +272,7 @@ const getGameViewRoute = createRoute({
 
 gameRoutes.openapi(getGameViewRoute, (context) => {
   const game = requireGame()
+  requireHotseatForFullDump()
   return context.text(
     formatGameView(game.state, { historyLength: game.history.length }),
     200,
@@ -193,6 +295,7 @@ const getSnapshotRoute = createRoute({
 
 gameRoutes.openapi(getSnapshotRoute, (context) => {
   const game = requireGame()
+  requireHotseatForFullDump()
   return context.json(game.toJSON(), 200)
 })
 
@@ -221,6 +324,7 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   if (store.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
+  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
   const body = context.req.valid('json')
   if (!isGameSnapshot(body)) {
     throw new HttpError(400, 'BAD_SNAPSHOT', 'invalid snapshot shape')
@@ -234,8 +338,11 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
       err instanceof Error ? err.message : 'fromJSON failed',
     )
   }
+  // Loaded snapshots are QA / dev slots: every seat is driven from one device.
+  store.mode = DEFAULT_LOBBY_MODE
+  persistCurrentGame()
   logGameEvent('LOAD', store.game.state)
-  return context.json({ state: store.game.state }, 200)
+  return context.json({ state: store.game.state, mode: store.mode }, 200)
 })
 
 const getActionsRoute = createRoute({
@@ -254,7 +361,15 @@ const getActionsRoute = createRoute({
 
 gameRoutes.openapi(getActionsRoute, (context) => {
   const game = requireGame()
-  return context.json({ actions: game.legalActions() }, 200)
+  const actions =
+    store.mode === 'online'
+      ? redactLegalActionsForViewer(
+          game.legalActions(),
+          game.state,
+          context.req.header(PLAYER_ID_HEADER) ?? '',
+        )
+      : game.legalActions()
+  return context.json({ actions }, 200)
 })
 
 const postActionsRoute = createRoute({
@@ -283,10 +398,15 @@ gameRoutes.openapi(postActionsRoute, async (context) => {
   if (!isAction(body)) {
     throw new HttpError(400, 'BAD_ACTION', 'invalid action shape')
   }
+  const playerId = context.req.header(PLAYER_ID_HEADER)
+  requireSeatForAction(game, playerId, body.type)
   const result = game.apply(body)
-  logGameEvent('ACT', result.state, body)
-  broadcastCurrentGame()
-  return context.json(result, 200)
+  logGameEvent('ACT', result.state, body, result.log)
+  publishGameChange()
+  return context.json(
+    { ...result, state: stateForCaller(game, playerId) },
+    200,
+  )
 })
 
 const getLogRoute = createRoute({
@@ -305,7 +425,10 @@ const getLogRoute = createRoute({
 
 gameRoutes.openapi(getLogRoute, (context) => {
   const game = requireGame()
-  return context.json({ log: game.log }, 200)
+  return context.json(
+    { log: logForCaller(game, game.log, context.req.header(PLAYER_ID_HEADER)) },
+    200,
+  )
 })
 
 const getFormattedLogRoute = createRoute({
@@ -324,6 +447,7 @@ const getFormattedLogRoute = createRoute({
 
 gameRoutes.openapi(getFormattedLogRoute, (context) => {
   const game = requireGame()
+  requireHotseatForFullDump()
   return context.text(formatTurnLog(game.log, game.state), 200)
 })
 
@@ -343,9 +467,13 @@ const undoRoute = createRoute({
 
 gameRoutes.openapi(undoRoute, (context) => {
   const game = requireGame()
+  if (store.mode === 'online') {
+    // Undo would rewind draws and reveals other players have already seen.
+    throw new HttpError(403, 'ONLINE_MODE', 'undo is hotseat-only')
+  }
   game.undo()
   logGameEvent('UNDO', game.state)
-  broadcastCurrentGame()
+  publishGameChange()
   return context.json({ state: game.state }, 200)
 })
 
@@ -400,7 +528,9 @@ const deleteGameRoute = createRoute({
 })
 
 gameRoutes.openapi(deleteGameRoute, (context) => {
+  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
   store.game = null
-  broadcastCurrentGame()
+  store.mode = DEFAULT_LOBBY_MODE
+  publishGameChange()
   return context.body(null, 204)
 })

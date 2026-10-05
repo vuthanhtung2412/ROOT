@@ -34,6 +34,14 @@ function lobbyTwoPlaying(seed: number): Game {
       game.apply({ type: 'resolveEvent', leader: 'builder' })
       continue
     }
+    if (pending.type === 'chooseCharacter') {
+      game.apply({ type: 'resolveEvent', character: 'thief' })
+      continue
+    }
+    if (pending.type === 'chooseForest') {
+      game.apply({ type: 'resolveEvent', forest: FALL.vagabondForest })
+      continue
+    }
     const legal = game.legalActions()[0]
     const clearing = legal?.params?.clearing?.[0]
     const building = legal?.params?.building?.[0]

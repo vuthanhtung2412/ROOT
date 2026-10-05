@@ -1,11 +1,22 @@
 import type { GameMap } from '#map/GameMap.js'
 import type { MapLayout } from '#layout/types.js'
+import {
+  fallForestDisplayId,
+  fallForestLayouts,
+} from '#public/fallMetadata.js'
 
 export type AsciiOpts = {
   width?: number
   height?: number
   /** Append suit letter: fox=F rabbit=R mouse=M (e.g. `0F`, `10R`). */
   showSuit?: boolean
+  /**
+   * Draw `[fN]` at forest centroids (human F1…F11).
+   * Rule: Board > Forests (2.4)
+   */
+  showForests?: boolean
+  /** Draw rivers with `~` (paths stay `·`). */
+  showRivers?: boolean
 }
 
 const SUIT_LETTER: Record<string, string> = {
@@ -14,7 +25,7 @@ const SUIT_LETTER: Record<string, string> = {
   mouse: 'M',
 }
 
-/** Project clearings onto a coarse ASCII grid for terminal preview. */
+/** Project clearings (+ optional forests/rivers) onto a coarse ASCII grid. */
 export function toAscii(
   map: GameMap,
   layout: MapLayout,
@@ -28,6 +39,8 @@ export function toAscii(
   const width = opts.width ?? 40
   const height = opts.height ?? 20
   const showSuit = opts.showSuit ?? false
+  const showForests = opts.showForests ?? false
+  const showRivers = opts.showRivers ?? false
 
   const cells: string[][] = Array.from({ length: height }, () =>
     Array.from({ length: width }, () => ' '),
@@ -51,14 +64,39 @@ export function toAscii(
     }
   }
 
+  const drawLink = (
+    leftId: number,
+    rightId: number,
+    ch: string,
+    steps: number,
+  ): void => {
+    const left = layout.clearings[leftId]
+    const right = layout.clearings[rightId]
+    if (!left || !right) return
+    for (let step = 1; step < steps; step++) {
+      const t = step / steps
+      placeChar(
+        left.x + (right.x - left.x) * t,
+        left.y + (right.y - left.y) * t,
+        ch,
+      )
+    }
+  }
+
   for (const [a, b] of map.paths) {
-    const pa = layout.clearings[a]
-    const pb = layout.clearings[b]
-    if (!pa || !pb) continue
-    const steps = 8
-    for (let i = 1; i < steps; i++) {
-      const t = i / steps
-      placeChar(pa.x + (pb.x - pa.x) * t, pa.y + (pb.y - pa.y) * t, '·')
+    drawLink(a, b, '·', 8)
+  }
+
+  if (showRivers) {
+    for (const [a, b] of map.rivers) {
+      drawLink(a, b, '~', 10)
+    }
+  }
+
+  if (showForests) {
+    for (const forest of fallForestLayouts()) {
+      const label = `[f${fallForestDisplayId(forest.forestIndex)}]`
+      placeText(forest.centroid.x, forest.centroid.y, label)
     }
   }
 

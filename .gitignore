@@ -22,6 +22,19 @@ coverage/
 !.vscode/launch.json
 !.vscode/*.code-snippets
 
+# saved game slot (web server persistence)
+backend/web/.data/
+
 # misc
 *.local
 /tmp
+
+# 3D assets (Blender sources, exports, renders)
+resources/models/
+*.blend
+*.blend1
+*.glb
+*.gltf
+*.fbx
+*.obj
+*.stl

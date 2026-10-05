@@ -10,6 +10,8 @@ description: >
 
 Rules SoT: `resources/rules/Law_of_Root.md` (PDF twin same folder).  
 Implementable summary (non-SoT): `resources/notes/root-base-rules.md`.  
+Manual WA + Vagabond scenarios: `resources/notes/QA-plan-woodland-vagabond.md`  
+(one snapshot: `tmp/qa/snapshots/wa-vb-qa-run.json`, regen via `.cursor/skills/QA/make-wa-vb-qa-run.ts`).  
 Cite fixes `// Rule: Section > Subsection`. Name tests after rule lines.
 
 ## Backend QA
@@ -66,7 +68,8 @@ There a 3 types of backend QA
 ## Frontend QA
 
 1. Create desired state: dump via `GET /game/snapshot` (or craft `GameSnapshot` JSON), then `pnpm --filter @root/cli start -- load path/to.json` (`PUT /game/snapshot?replace=1`). Or build via CLI `new`/`join`/`start`/`act` / lib fixtures. Helper: `pnpm --filter @root/lib exec tsx ../../.cursor/skills/QA/make-snapshots.ts` (writes `tmp/qa/snapshots/`).
-2. `pnpm --filter @root/web dev` (http://localhost:3000) + `pnpm --filter @root/phaser dev` (Vite, often `:5173`/`:5174`).
-3. Open Phaser → **Continue loaded game** (do not New GP2 — that replaces the snapshot). Drive the feature on canvas (action tray, clearings, Confirm). Chrome DevTools MCP OK for screenshots/console; canvas clicks need coords or Playwright.
-4. Evidence under `tmp/artifacts`: screenshots and/or video. Record: `ROOT_PHASER_URL=http://localhost:5174 node .cursor/skills/QA/record-ui-scenario.mjs <march|turmoil>`. First time: `cd .cursor/skills/QA && npm i && npx playwright install chromium`. Click highlight: `click-highlight.mjs` (auto red blink). After UI, verify via `GET /game` + `/game/log` (not screenshot alone).
-5. Open PR with evidence + short repro steps.
+2. `pnpm --filter @root/web dev` (http://localhost:3000) + `pnpm --filter @root/react dev` (Vite, often `:5173`/`:5174`).
+3. Open the React UI → **QA: Continue loaded game** (not **Start game** — that replaces the snapshot). Autoload shortcut (Vite dev only, skips the CLI `load`): open `/?qaSnapshot=tmp/qa/snapshots/<name>.json` (repository-relative, or env `ROOT_QA_SNAPSHOT_PATH`) → the button first loads that file into the slot. Every click reloads the file, so progress is lost; a page reload alone re-enters the game and keeps progress. Drive the feature in the DOM (action tray, clearings, Confirm) — the UI is React, no canvas: click by role/name or the bare hook class names (Chrome DevTools MCP snapshot + click, or Playwright `getByRole`).
+4. Evidence under `tmp/artifacts`: screenshots and/or video. Record: `ROOT_REACT_URL=http://localhost:5173 node .cursor/skills/QA/record-fe-qa-scenarios.mjs [scenario]` (template for new record scripts). Stale, Phaser-era (drive `window.__ROOT_PHASER_GAME__` / canvas coords, gone from the React UI): `record-ui-scenario.mjs`, `record-bug-scenarios.mjs`, `qa-crafted-cards-modal.mjs` — port to DOM selectors before use. First time: `cd .cursor/skills/QA && npm i && npx playwright install chromium`. Click highlight: `click-highlight.mjs` (auto red blink). After UI, verify via `GET /game` + `/game/log` (not screenshot alone).
+5. Never overwrite or delete an existing video in `tmp/artifacts` — a passed video is evidence. Record scripts save re-runs as `<name>-rerun-<timestamp>` via `pick-unused-video-name.mjs`; new record scripts must use it too. No manual `rm`/`mv`/`ffmpeg -y` onto an existing video.
+6. Open PR with evidence + short repro steps.

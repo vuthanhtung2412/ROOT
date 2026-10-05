@@ -72,6 +72,13 @@ function finishMarquiseSetupAfterBuildings(
   if (eyrie) {
     state.pending.push({ type: 'chooseLeader', seat: eyrie.seat, reason: 'setup' })
   }
+
+  const vagabond = state.players.find((player) => player.faction === 'vagabond')
+  if (vagabond) {
+    // Rule: Vagabond > Setup 1, 2 — character, then forest, after earlier factions.
+    state.pending.push({ type: 'chooseCharacter', seat: vagabond.seat })
+    state.pending.push({ type: 'chooseForest', seat: vagabond.seat })
+  }
 }
 
 export const placeStartingBuildingResolver: PlaceStartingBuildingResolver = {

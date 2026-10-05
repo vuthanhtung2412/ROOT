@@ -19,7 +19,8 @@ export default tseslint.config(
       'backend/web/src/**/*.ts',
       'backend/web/scripts/**/*.ts',
       'frontend/cli/src/**/*.ts',
-      'frontend/phaser/src/**/*.ts',
+      'frontend/react/src/**/*.ts',
+      'frontend/react/src/**/*.tsx',
     ],
     languageOptions: {
       parserOptions: {

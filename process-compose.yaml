@@ -1,6 +1,6 @@
-# Local GP2: web API + Phaser Vite. TUI: / filter procs, F3 search logs.
+# Local GP2: web API + React Vite. TUI: / filter procs, F3 search logs.
 processes:
   web:
     command: pnpm --filter @root/web dev
-  phaser:
-    command: pnpm --filter @root/phaser dev
+  react:
+    command: pnpm --filter @root/react dev

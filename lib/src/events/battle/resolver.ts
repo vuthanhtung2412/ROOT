@@ -3,6 +3,10 @@ import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import type { GameState } from '#state/types.js'
 import { hasBattleEffect } from '#effects/partisans.js'
+import {
+  boardOf as vagabondBoardOf,
+  isValidItemDamageChoice,
+} from '#factions/vagabond/items.js'
 import type { BattleEvent } from '#events/types.js'
 import { legalRemovalSpecs } from '#events/battle/removal.js'
 import {
@@ -109,6 +113,13 @@ function matchesBattleAction(
       if (action.useEffect !== undefined && spec.params?.useEffect?.includes(action.useEffect)) {
         return true
       }
+      if (action.items !== undefined && spec.params?.vagabondItems !== undefined) {
+        return isValidItemDamageChoice(
+          vagabondBoardOf(state, spec.actor),
+          action.items,
+          spec.params.itemCount?.[0] ?? 0,
+        )
+      }
     }
     return false
   })
@@ -147,6 +158,14 @@ function soleForcedBattleResolve(
   }
 
   if (event.stage === 'removeDefender' || event.stage === 'removeAttacker') {
+    // Rule: Vagabond hits → sole decline acknowledges item damage.
+    if (spec.params?.decline?.[0] === true) {
+      return {
+        event,
+        actor,
+        action: { type: 'resolveEvent', decline: true },
+      }
+    }
     const pieceIds = spec.params?.pieceIds
     if (!isStringIdList(pieceIds)) {
       return null
@@ -197,7 +216,7 @@ export const battleResolver: EventResolver = {
 }
 
 export function openBattle(state: GameState, open: OpenBattle, ctx: Ctx): LogEntry[] {
-  const { clearing, attacker, defender } = open
+  const { clearing, attacker, defender, alliedSeat } = open
   const event: BattleEvent = {
     type: 'battle',
     clearing,
@@ -205,6 +224,11 @@ export function openBattle(state: GameState, open: OpenBattle, ctx: Ctx): LogEnt
     defender,
     stage: 'ambush',
     hits: { attacker: 0, defender: 0 },
+    alliedHitsTaken: 0,
+    itemHitsTaken: 0,
+  }
+  if (alliedSeat !== undefined) {
+    event.alliedSeat = alliedSeat
   }
   state.pending.push(event)
   ctx.emit({ s: 'battle.start', ev: event })

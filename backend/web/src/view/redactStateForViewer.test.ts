@@ -32,6 +32,46 @@ describe('redactStateForViewer', () => {
     expect(state.players[1]?.hand).toHaveLength(2)
   })
 
+  it('hides other seats join ids so they cannot be reused', () => {
+    const state = createTwoPlayerGameState([
+      { playerId: 'marquise-secret', hand: [] },
+      { playerId: 'eyrie-secret', hand: [] },
+    ])
+
+    const forMarquise = redactStateForViewer(state, 'marquise-secret')
+
+    expect(forMarquise.players[0]?.playerId).toBe('marquise-secret')
+    expect(forMarquise.players[1]?.playerId).toBe('hidden-seat-1')
+    expect(JSON.stringify(forMarquise)).not.toContain('eyrie-secret')
+  })
+
+  it('hides draw pile order, quest deck order and seed but keeps pile sizes', () => {
+    const state = createTwoPlayerGameState([
+      { playerId: 'marquise-secret', hand: [] },
+      { playerId: 'eyrie-secret', hand: [] },
+    ])
+    const withDeck: GameState = {
+      ...state,
+      seed: 4242,
+      deck: {
+        ...state.deck,
+        draw: [
+          { id: 'ROOT-1#1', defId: 'ROOT-1' },
+          { id: 'ROOT-2#1', defId: 'ROOT-2' },
+        ],
+      },
+    }
+
+    const redacted = redactStateForViewer(withDeck, 'eyrie-secret')
+
+    expect(redacted.seed).toBe(0)
+    expect(redacted.deck.draw).toHaveLength(2)
+    expect(JSON.stringify(redacted.deck.draw)).not.toContain('ROOT-')
+    expect(redacted.questDeck).toHaveLength(withDeck.questDeck.length)
+    expect(redacted.deck.discard).toBe(withDeck.deck.discard)
+    expect(withDeck.deck.draw[0]?.defId).toBe('ROOT-1')
+  })
+
   it('does not mutate clearing pieces', () => {
     const state = createTwoPlayerGameState([
       {

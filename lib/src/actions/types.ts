@@ -1,6 +1,10 @@
 import type { ClearingId } from '#map/types.js'
-import type { BuildingType, Seat } from '#pieces/types.js'
-import type { DecreeColumn, EyrieLeader } from '#state/boards.js'
+import type { BuildingType, ItemType, Seat } from '#pieces/types.js'
+import type {
+  DecreeColumn,
+  EyrieLeader,
+  VagabondCharacter,
+} from '#state/boards.js'
 
 export type MarchMove = {
   from: ClearingId
@@ -37,6 +41,36 @@ export type BattleTargetChoice = {
   defender: Seat
 }
 
+/** Paired Alliance revolt / spread: clearing × supporter ids. */
+export type RevoltChoice = {
+  clearing: ClearingId
+  supporterIds: string[]
+}
+
+/** Alias — same shape as revolt spend choice. */
+export type SpreadSympathyChoice = RevoltChoice
+
+/** Rule: 9.2.9.IIb — optional Allied warriors dragged with pawn move. */
+export type VagabondMoveChoice = {
+  to: ClearingId
+  allySeat?: Seat
+  allyCount?: number
+}
+
+/** Rule: 9.2.6 — one undamaged Vagabond item, identified by type and face. */
+export type VagabondItemChoice = {
+  type: ItemType
+  exhausted: boolean
+  /** Set when the item sits in the Damaged box (item-limit removal only). */
+  damaged?: boolean
+}
+
+/** Rule: 9.5.6 Aid — crafted items one target seat can hand over. */
+export type AidTakeOption = {
+  target: Seat
+  itemTypes: ItemType[]
+}
+
 /**
  * Typed UI choice metadata for ActionSpec.
  * Prefer paired fields (`options`, `targets`, `moves`) over parallel arrays
@@ -59,7 +93,7 @@ export type ActionChoiceParams = {
    * Correlated choices: overwork pairs, build pairs, or addToDecree card×column.
    * Emitter picks one element shape per action type.
    */
-  options?: OverworkChoice[] | BuildChoice[] | AddToDecreeCard[]
+  options?: OverworkChoice[] | BuildChoice[] | AddToDecreeCard[] | RevoltChoice[]
   /** Correlated battle / decree-battle targets. */
   targets?: BattleTargetChoice[]
   decline?: true[]
@@ -68,6 +102,32 @@ export type ActionChoiceParams = {
   useEffect?: boolean[]
   column?: DecreeColumn[]
   leaders?: EyrieLeader[]
+  /** Vagabond setup — characters to choose from. */
+  characters?: VagabondCharacter[]
+  supporterIds?: string[]
+  op?: Array<'move' | 'battle' | 'recruit' | 'organize'>
+  /** Vagabond slip — forest destination indices. */
+  forests?: number[]
+  /** Vagabond quest — face-up quest card ids. */
+  questIds?: string[]
+  /** Vagabond quest reward choice. */
+  rewards?: Array<'vp' | 'draw'>
+  /** Vagabond rearrange — track item types that can move. */
+  itemTypes?: Array<'tea' | 'coin' | 'bag'>
+  /** Vagabond rearrange direction. */
+  rearrangeFrom?: Array<'track' | 'satchel'>
+  /** Vagabond Allied escort choices for move. */
+  vbMoves?: VagabondMoveChoice[]
+  /** Vagabond Allied warriors treated as own in battle (9.2.9.IIc). */
+  alliedSeat?: Seat[]
+  /** Vagabond aid — item types that can be exhausted as the cost. */
+  costItemTypes?: ItemType[]
+  /** Vagabond aid — crafted item types each target can hand over. */
+  aidTakeOptions?: AidTakeOption[]
+  /** Vagabond item damage — undamaged items the player may choose from. */
+  vagabondItems?: VagabondItemChoice[]
+  /** Vagabond item damage — exact number of items to choose. */
+  itemCount?: number[]
 }
 
 export type Action =
@@ -133,6 +193,64 @@ export type Action =
       defender?: Seat
       moves?: MarchMove[]
     }
+  | { type: 'revolt'; clearing: ClearingId; supporterIds: string[] }
+  | { type: 'spreadSympathy'; clearing: ClearingId; supporterIds: string[] }
+  | { type: 'mobilize'; cardId: string }
+  | { type: 'train'; cardId: string }
+  | {
+      type: 'militaryOp'
+      op: 'move' | 'battle' | 'recruit' | 'organize'
+      from?: ClearingId
+      to?: ClearingId
+      count?: number
+      clearing?: ClearingId
+      defender?: Seat
+    }
+  | { type: 'slip'; to: ClearingId | `forest:${number}` }
+  | {
+      type: 'vbMove'
+      to: ClearingId
+      allySeat?: Seat
+      allyCount?: number
+    }
+  | { type: 'vbBattle'; defender: Seat; alliedSeat?: Seat }
+  | { type: 'explore' }
+  | {
+      type: 'quest'
+      questId: string
+      reward: 'vp' | 'draw'
+    }
+  | {
+      type: 'aid'
+      target: Seat
+      cardId: string
+      takeItem?: ItemType
+      /** Rule: 9.5.6 Aid — which item the Vagabond exhausts as the cost. */
+      costItem?: ItemType
+    }
+  | { type: 'strike'; defender: Seat; pieceId?: string }
+  | { type: 'repair'; itemIndex: number }
+  | { type: 'vbCraft'; cardId: string }
+  | { type: 'steal'; target: Seat }
+  /** Rule: D.2.2 Day Labor — Tinker takes this card from the discard pile. */
+  | { type: 'dayLabor'; cardId: string }
+  /** Rule: D.3.2 Hideout — damaged items the Ranger repairs; ends Daylight. */
+  | { type: 'hideout'; items: VagabondItemChoice[] }
+  | {
+      type: 'vbRearrange'
+      itemType: 'tea' | 'coin' | 'bag'
+      from: 'track' | 'satchel'
+    }
+  /** Rule: 9.6.4 Check Item Capacity — items the Vagabond removes from the game. */
+  | { type: 'vbRemoveItems'; items: VagabondItemChoice[] }
+  | { type: 'takeDominance'; cardId: string }
+  | {
+      type: 'activateDominance'
+      cardId: string
+      coalitionTarget?: Seat
+    }
+  | { type: 'refresh' }
+  | { type: 'rest' }
   | ResolveEventAction
 
 export type ResolveEventAction = {
@@ -144,6 +262,12 @@ export type ResolveEventAction = {
   useEffect?: boolean
   clearing?: ClearingId
   leader?: EyrieLeader
+  /** Rule: Vagabond > Setup 1 — chosen character. */
+  character?: VagabondCharacter
+  /** Rule: Vagabond > Setup 2 — forest index on Fall map. */
+  forest?: number
+  /** Rule: 9.2.6 — undamaged items the Vagabond chooses to damage. */
+  items?: VagabondItemChoice[]
 }
 
 export type ActionSpec = {

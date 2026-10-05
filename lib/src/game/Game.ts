@@ -3,10 +3,18 @@ import { factionFor } from '#factions/index.js'
 import { createInitialState, runSharedSetup } from '#game/setup.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
-import { factionOf } from '#queries/seat.js'
+import { factionOf, playerOf } from '#queries/seat.js'
 import { syncPlaceIdsFromState } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
 import { SeededRng } from '#rules/Rng.js'
+import {
+  applyActivateDominance,
+  applyTakeDominance,
+  checkActivatedDominanceWin,
+  finishGameWithWinner,
+  pushActivateDominanceActions,
+  pushTakeDominanceActions,
+} from '#rules/dominance.js'
 import { DEFAULT_FACTIONS } from '#state/constants.js'
 import { createFactionBoard } from '#state/boards.js'
 import type { GameSnapshot } from '#state/snapshot.js'
@@ -124,7 +132,13 @@ export class Game {
     }
 
     const ctx = this.makeCtx()
-    return factionFor(factionOf(state, state.currentSeat)).legalActions(state, ctx)
+    const specs = factionFor(factionOf(state, state.currentSeat)).legalActions(
+      state,
+      ctx,
+    )
+    pushTakeDominanceActions(state, state.currentSeat, specs)
+    pushActivateDominanceActions(state, state.currentSeat, specs)
+    return specs
   }
 
   apply(action: Action): ActionResult {
@@ -150,9 +164,16 @@ export class Game {
       logs.push(...this.checkWin())
     }
 
-    if (action.type === 'endPhase' && this.state.status === 'playing') {
+    // Rule: D.3.2 Hideout — "immediately end Daylight and begin Evening".
+    if (
+      (action.type === 'endPhase' || action.type === 'hideout') &&
+      this.state.status === 'playing'
+    ) {
       logs.push(...this.advanceStepOrPhase())
-      logs.push(...this.runAutoActions())
+      logs.push(...checkActivatedDominanceWin(this.state, this.makeCtx()))
+      if (this.state.status === 'playing') {
+        logs.push(...this.runAutoActions())
+      }
     }
 
     if (
@@ -257,6 +278,10 @@ export class Game {
 
     if (effectForAction(action) !== undefined) return
 
+    if (action.type === 'takeDominance' || action.type === 'activateDominance') {
+      return
+    }
+
     const ctx = this.makeCtx()
     const faction = factionFor(factionOf(this.state, this.state.currentSeat))
     faction.validate(this.state, action, ctx)
@@ -272,6 +297,10 @@ export class Game {
         return this.applyEndPhase()
       case 'resolveEvent':
         return this.applyResolveEvent(action)
+      case 'takeDominance':
+        return applyTakeDominance(this.state, this.state.currentSeat, action.cardId)
+      case 'activateDominance':
+        return applyActivateDominance(this.state, this.state.currentSeat, action)
       default: {
         const ctx = this.makeCtx()
         const effect = effectForAction(action)
@@ -300,8 +329,11 @@ export class Game {
       seat,
       faction,
       vp: 0,
+      scoresVictoryPoints: true,
       hand: [],
       playArea: [],
+      activatedDominance: null,
+      coalitionWith: null,
       craftedItems: [],
       board: createFactionBoard(faction),
     })
@@ -337,7 +369,11 @@ export class Game {
     ctx.emit({ s: 'phase.start', actor: 0, phase: 'birdsong' })
 
     const autoLogs = this.runAutoActions()
-    return [{ t: 'phase', actor: 0, phase: 'birdsong', step: state.step }, ...autoLogs]
+    return [
+      { t: 'phase', actor: 0, phase: 'birdsong', step: state.step },
+      ...checkActivatedDominanceWin(state, ctx),
+      ...autoLogs,
+    ]
   }
 
   private applyEndPhase(): LogEntry[] {
@@ -366,6 +402,12 @@ export class Game {
         state.turnScratch.decree = null
         state.turnScratch.decreeDone = false
       }
+      if (state.phase === 'evening' && state.step === 'military') {
+        const board = playerOf(state, state.currentSeat).board
+        if (board.kind === 'alliance') {
+          state.turnScratch.militaryOpsLeft = board.officers
+        }
+      }
       logs.push({
         t: 'phase',
         actor: state.currentSeat,
@@ -382,6 +424,12 @@ export class Game {
       const nextPhase = PHASES[pi + 1]!
       state.phase = nextPhase
       state.step = faction.steps[nextPhase][0]!
+      if (nextPhase === 'evening' && state.step === 'military') {
+        const board = playerOf(state, state.currentSeat).board
+        if (board.kind === 'alliance') {
+          state.turnScratch.militaryOpsLeft = board.officers
+        }
+      }
       ctx.emit({ s: 'phase.start', actor: state.currentSeat, phase: nextPhase })
       logs.push(
         { t: 'phase', actor: state.currentSeat, phase: state.phase, step: state.step },
@@ -450,7 +498,16 @@ export class Game {
       if (action.clearing !== undefined && s.params?.clearing?.includes(action.clearing)) {
         return true
       }
+      if (
+        action.character !== undefined &&
+        s.params?.characters?.includes(action.character)
+      ) {
+        return true
+      }
       if (action.leader !== undefined && s.params?.leaders?.includes(action.leader)) {
+        return true
+      }
+      if (action.forest !== undefined && s.params?.forests?.includes(action.forest)) {
         return true
       }
       if (action.pieceIds && s.params?.pieceIds) {
@@ -460,6 +517,10 @@ export class Game {
           (ids) =>
             Array.isArray(ids) && JSON.stringify(ids) === JSON.stringify(action.pieceIds),
         )
+      }
+      // Vagabond item choice — the resolver's matchesAction validated the items.
+      if (action.items !== undefined && s.params?.vagabondItems !== undefined) {
+        return true
       }
       return false
     })
@@ -479,7 +540,7 @@ export class Game {
 
   private checkWin(): LogEntry[] {
     const { state } = this
-    const contenders = state.players.filter((p) => p.vp >= 30)
+    const contenders = state.players.filter((player) => player.vp >= 30)
     if (contenders.length === 0) return []
 
     let winner: Seat
@@ -490,8 +551,6 @@ export class Game {
       winner = state.currentSeat
     }
 
-    state.winner = winner
-    state.status = 'finished'
-    return [{ t: 'win', winner }]
+    return finishGameWithWinner(state, winner)
   }
 }

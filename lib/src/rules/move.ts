@@ -2,6 +2,8 @@ import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
+import { enqueueOutrage } from '#events/outrage.js'
+import { allianceSeat, clearingHasSympathy } from '#factions/alliance/rules.js'
 import { canMove } from '#queries/move.js'
 import { warriors } from '#queries/pieces.js'
 import type { GameState } from '#state/types.js'
@@ -46,6 +48,16 @@ export function moveWarriors(
 
   toClearing.pieces.push(...moved)
   ctx.emit({ s: 'move', actor: seat, from, to, count })
+
+  // Rule: Outrage — move warriors into sympathetic clearing.
+  const alliance = allianceSeat(state)
+  if (
+    alliance !== null &&
+    seat !== alliance &&
+    clearingHasSympathy(state, to, alliance)
+  ) {
+    enqueueOutrage(state, seat, to)
+  }
 
   return [
     { t: 'pieces', clearing: from, removed: moved },

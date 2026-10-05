@@ -23,6 +23,12 @@ export type BattleEvent = {
   ambushCardId?: string
   /** Attacker/Defender opted into optional battle effects. */
   effectsUsed?: Partial<Record<'attacker' | 'defender', boolean>>
+  /** Rule: 9.2.9.IIc — Allied seat treated as own by Vagabond attacker. */
+  alliedSeat?: Seat
+  /** Rule: 9.2.9.IId — ally warriors removed as hits this battle. */
+  alliedHitsTaken?: number
+  /** Rule: 9.2.9.IId — items damaged as hits this battle. */
+  itemHitsTaken?: number
 }
 
 export type FieldHospitalEvent = {
@@ -52,14 +58,28 @@ export type ChooseLeaderEvent = {
   reason: 'setup' | 'depose'
 }
 
+/** Rule: Vagabond > Setup 1 — choose a character. */
+export type ChooseCharacterEvent = {
+  type: 'chooseCharacter'
+  seat: Seat
+}
+
+/** Rule: Vagabond > Setup 2 — place pawn in any forest. */
+export type ChooseForestEvent = {
+  type: 'chooseForest'
+  seat: Seat
+}
+
 export type OutrageEvent = {
   type: 'outrage'
   offender: Seat
   clearing: ClearingId
 }
 
+/** Rule: 9.2.6 / 9.2.3.I — Vagabond chooses `count` undamaged items to damage. */
 export type VagabondDamageEvent = {
   type: 'vagabondDamage'
+  seat: Seat
   count: number
 }
 
@@ -69,5 +89,7 @@ export type Event =
   | ChooseKeepEvent
   | PlaceStartingBuildingEvent
   | ChooseLeaderEvent
+  | ChooseCharacterEvent
+  | ChooseForestEvent
   | OutrageEvent
   | VagabondDamageEvent

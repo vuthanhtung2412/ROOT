@@ -4,12 +4,13 @@
  * Each drive plays a full reviewable flow (setup → action → resolve → result),
  * not a mid-pending freeze-frame.
  *
- * Usage (web :3000 + phaser :5174 running):
- *   ROOT_PHASER_URL=http://localhost:5174 node .agents/skills/QA/record-bug-scenarios.mjs
- *   ROOT_PHASER_URL=http://localhost:5174 node .agents/skills/QA/record-bug-scenarios.mjs 03-field-hospital
+ * Usage (web :3000 + React UI :5174 running):
+ *   ROOT_REACT_URL=http://localhost:5174 node .agents/skills/QA/record-bug-scenarios.mjs
+ *   ROOT_REACT_URL=http://localhost:5174 node .agents/skills/QA/record-bug-scenarios.mjs 03-field-hospital
  */
 import { chromium } from './node_modules/playwright/index.mjs'
 import { mkdir, readdir, copyFile, rm } from 'node:fs/promises'
+import { pickUnusedVideoName } from './pick-unused-video-name.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -21,7 +22,7 @@ const skillDirectory = path.dirname(fileURLToPath(import.meta.url))
 const rootDirectory = path.resolve(skillDirectory, '../../..')
 const artifactsDirectory = path.join(rootDirectory, 'tmp/artifacts/bugs')
 const snapshotsDirectory = path.join(rootDirectory, 'tmp/qa/snapshots/bugs')
-const phaserUrl = process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
+const reactUiUrl = process.env.ROOT_REACT_URL ?? process.env.ROOT_PHASER_URL ?? 'http://localhost:5174'
 const apiUrl = process.env.ROOT_DEV_API ?? 'http://localhost:3000'
 
 const VIEW_WIDTH = 1280
@@ -754,7 +755,7 @@ async function recordScenario(scenario) {
   })
 
   await installAutonomousClickHighlight(page)
-  await page.goto(phaserUrl, { waitUntil: 'networkidle' })
+  await page.goto(reactUiUrl, { waitUntil: 'networkidle' })
   await page.waitForSelector('canvas', { timeout: 20_000 })
   await page.waitForTimeout(1200)
   const canvas = page.locator('canvas').first()
@@ -797,8 +798,9 @@ async function recordScenario(scenario) {
   if (recordedFiles.length === 0) {
     throw new Error('no webm recorded')
   }
-  const webmPath = path.join(artifactsDirectory, `${scenario.videoName}.webm`)
-  const mp4Path = path.join(artifactsDirectory, `${scenario.videoName}.mp4`)
+  const unusedVideoName = await pickUnusedVideoName(artifactsDirectory, scenario.videoName)
+  const webmPath = path.join(artifactsDirectory, `${unusedVideoName}.webm`)
+  const mp4Path = path.join(artifactsDirectory, `${unusedVideoName}.mp4`)
   await copyFile(path.join(videoStagingDirectory, recordedFiles[0]), webmPath)
 
   const ffmpeg = spawnSync(

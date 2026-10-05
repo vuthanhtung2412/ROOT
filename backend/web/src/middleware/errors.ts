@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { RuleError } from '@root/lib'
 
-export type HttpErrorStatus = 400 | 404 | 409
+export type HttpErrorStatus = 400 | 403 | 404 | 409
 
 export class HttpError extends Error {
   readonly status: HttpErrorStatus
@@ -23,6 +23,11 @@ export function noGame(): never {
 
 export function gameExists(): never {
   throw new HttpError(409, 'GAME_EXISTS')
+}
+
+/** Online mode: caller's player id does not own the seat that may act. */
+export function notYourSeat(): never {
+  throw new HttpError(403, 'NOT_YOUR_SEAT')
 }
 
 export function onError(err: Error, context: Context): Response {
