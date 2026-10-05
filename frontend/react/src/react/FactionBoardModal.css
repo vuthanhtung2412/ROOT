@@ -324,6 +324,11 @@
   overflow: hidden;
 }
 
+/* Face down for other seats: the pile cannot be opened. */
+.faction-board-modal__supporters-hit:disabled {
+  cursor: not-allowed;
+}
+
 .faction-board-modal__supporters-top-card {
   position: absolute;
   inset: 0;
