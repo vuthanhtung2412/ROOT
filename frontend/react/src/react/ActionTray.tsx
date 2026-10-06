@@ -11,7 +11,9 @@ import {
   patchHud,
   subscribeHud,
 } from '#game/hudStore.ts'
-import type { ActionTrayState } from '#ui/ActionTray.ts'
+import type { IconType } from 'react-icons'
+import type { ActionTrayState, TrayActionRegion } from '#ui/ActionTray.ts'
+import { actionIconFor } from '#ui/actionIcons.ts'
 import {
   collapseTrayActionsByLabel,
   filterTrayActions,
@@ -29,26 +31,71 @@ function isBlockingHudModalOpen(): boolean {
   return pile !== null && pile.selectable !== true
 }
 
+const META_REGION_ID: TrayActionRegion['id'] = 'meta'
+
+/** Narrow: one row of chips. Wide: medallions in the side column. */
+const ACTION_GRID_CLASS_NAME =
+  'grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 md:grid-cols-[repeat(auto-fit,minmax(68px,1fr))] md:gap-x-1 md:gap-y-3'
+const META_GRID_CLASS_NAME =
+  'grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 md:gap-2.5'
+/** Narrow: a paper chip. Wide: the chip paper is dropped, the icon sits on a medallion. */
+const ACTION_BUTTON_CLASS_NAME =
+  'action-tray__action root-paper root-paper-fine root-paper-press m-0 flex min-w-0 flex-row items-center justify-center gap-1.5 px-2.5 py-1.5 text-center font-display text-sm text-ink capitalize md:flex-col md:gap-1 md:p-0 md:text-[15px] md:leading-tight md:[--root-paper-color:transparent] md:[--root-paper-edge:transparent] md:[--root-paper-texture:none]'
+const ACTION_ICON_CLASS_NAME =
+  'flex shrink-0 items-center justify-center text-lg text-ink md:root-paper md:root-medallion md:size-12 md:text-2xl md:text-parchment'
+/** Turn control (end phase, draw): a wide paper button, icon after the label. */
+const META_BUTTON_CLASS_NAME =
+  'action-tray__action root-paper root-paper-fine root-paper-press m-0 flex min-w-0 flex-row-reverse items-center justify-center gap-2 px-2.5 py-1.5 text-center font-display text-sm text-ink capitalize [--root-paper-color:var(--color-parchment-deep)] md:py-2 md:text-[17px]'
+const META_ICON_CLASS_NAME = 'flex shrink-0 items-center justify-center text-lg'
+/** Wide: the main actions sit on one sheet of paper. */
+const ACTION_REGION_CLASS_NAME =
+  'flex w-full flex-col items-center gap-2 md:root-paper md:px-2 md:pt-2 md:pb-3'
+const META_REGION_CLASS_NAME = 'flex w-full flex-col items-center gap-2'
+const ACTION_REGION_TITLE_CLASS_NAME =
+  'font-display text-base tracking-display text-parchment text-shadow-ink md:text-xl md:text-ink md:text-shadow-none'
+/** The turn-control buttons need no title; kept for screen readers. */
+const META_REGION_TITLE_CLASS_NAME = 'sr-only'
+
 function TrayActionButtons(props: {
   actions: readonly ActionSpec[]
   pending: unknown
   state: ActionTrayState['state']
+  isMetaRegion: boolean
   onSelectAction: (spec: ActionSpec) => void
 }): JSX.Element {
   return (
-    <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5">
+    <div
+      className={
+        props.isMetaRegion ? META_GRID_CLASS_NAME : ACTION_GRID_CLASS_NAME
+      }
+    >
       {props.actions.map((spec, index) => {
         const label = formatActionLabel(spec, props.pending, props.state)
         const key = `${spec.type}-${String(spec.actor)}-${String(index)}-${label}`
+        const ActionIcon: IconType = actionIconFor(spec.type)
         return (
           <button
             key={key}
             type="button"
-            className="root-button px-2.5 py-1.75 text-center text-sm md:px-3 md:py-2 md:text-[17px]"
+            className={
+              props.isMetaRegion
+                ? META_BUTTON_CLASS_NAME
+                : ACTION_BUTTON_CLASS_NAME
+            }
             onClick={() => {
               props.onSelectAction(spec)
             }}
           >
+            <span
+              className={
+                props.isMetaRegion
+                  ? META_ICON_CLASS_NAME
+                  : ACTION_ICON_CLASS_NAME
+              }
+              aria-hidden="true"
+            >
+              <ActionIcon />
+            </span>
             {label}
           </button>
         )
@@ -87,22 +134,34 @@ export function ActionTray(): JSX.Element | null {
   const callbacks = getHudCallbacks()
   return (
     <div className="fixed bottom-(--root-portrait-tray-bottom) left-1/2 z-115 box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-3 px-0 md:top-16 md:right-0 md:bottom-3 md:left-auto md:z-110 md:w-(--root-landscape-side-percent) md:translate-x-0 md:overflow-x-hidden md:overflow-y-auto md:px-2">
-      {regions.map((region) => (
-        <div
-          key={region.id}
-          className="flex w-full flex-col items-center gap-2"
-        >
-          <div className="root-panel px-3 py-1.5 font-display text-base tracking-display text-ink md:text-xl">
-            {region.title}
+      {regions.map((region) => {
+        const isMetaRegion: boolean = region.id === META_REGION_ID
+        return (
+          <div
+            key={region.id}
+            className={
+              isMetaRegion ? META_REGION_CLASS_NAME : ACTION_REGION_CLASS_NAME
+            }
+          >
+            <div
+              className={
+                isMetaRegion
+                  ? META_REGION_TITLE_CLASS_NAME
+                  : ACTION_REGION_TITLE_CLASS_NAME
+              }
+            >
+              {region.title}
+            </div>
+            <TrayActionButtons
+              actions={region.actions}
+              pending={tray.pending}
+              state={tray.state}
+              isMetaRegion={isMetaRegion}
+              onSelectAction={callbacks.onSelectAction}
+            />
           </div>
-          <TrayActionButtons
-            actions={region.actions}
-            pending={tray.pending}
-            state={tray.state}
-            onSelectAction={callbacks.onSelectAction}
-          />
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

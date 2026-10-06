@@ -106,7 +106,7 @@ async function closeFactionBoard(page) {
  */
 async function clickTrayAction(page, label) {
   const pattern = typeof label === 'string' ? new RegExp(label, 'i') : label
-  const button = page.locator('button.root-button').filter({ hasText: pattern })
+  const button = page.locator('button.action-tray__action').filter({ hasText: pattern })
   await button.first().waitFor({ timeout: 10_000 })
   await button.first().click()
   await page.waitForTimeout(900)

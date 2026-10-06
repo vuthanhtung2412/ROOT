@@ -75,7 +75,8 @@
 /*
  * Hand-inked torn paper (Steam digital edition look). The paper is a displaced
  * `::before` layer, so text and children stay crisp. Needs <PaperFilters />.
- * Paper colour: `--root-paper-color`; ink edge: `--root-paper-edge`.
+ * Paper colour: `--root-paper-color`; ink edge: `--root-paper-edge`;
+ * grain: `--root-paper-texture` (`none` with a transparent colour hides the paper).
  */
 @utility root-paper {
   position: relative;
@@ -91,7 +92,7 @@
     border: 3px solid var(--root-paper-edge, var(--color-ink-deep));
     border-radius: var(--root-paper-radius, 0);
     background-color: var(--root-paper-color, var(--color-parchment));
-    background-image: var(--root-paper-grain);
+    background-image: var(--root-paper-texture, var(--root-paper-grain));
     background-blend-mode: multiply;
     filter: var(--root-paper-filter, url(#root-torn-edge))
       drop-shadow(1px 2px 0 color-mix(in srgb, #1a1408 40%, transparent));
@@ -107,6 +108,8 @@
 /* Round wooden token holding an icon or a digit. Use with `root-paper`. */
 @utility root-medallion {
   --root-paper-color: var(--color-wood);
+  --root-paper-edge: var(--color-ink-deep);
+  --root-paper-texture: var(--root-paper-grain);
   --root-paper-filter: url(#root-torn-edge-fine);
   --root-paper-radius: 9999px;
 }
