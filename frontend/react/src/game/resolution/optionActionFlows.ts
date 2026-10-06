@@ -9,9 +9,16 @@ export type OptionValue = ActionOptionView[string]
 /**
  * How the player picks one field of the payload:
  * hand card, card from a shown pile, clearing on the map, warrior count on
- * the stepper, or a labelled button.
+ * the stepper, or a labelled button. A `grid` step picks several fields at
+ * once in one modal: a row of values per field, then Confirm.
  */
-export type OptionStepKind = 'card' | 'pileCard' | 'clearing' | 'count' | 'choice'
+export type OptionStepKind =
+  | 'card'
+  | 'pileCard'
+  | 'clearing'
+  | 'count'
+  | 'choice'
+  | 'grid'
 
 export type OptionStep = {
   field: string
@@ -19,6 +26,12 @@ export type OptionStep = {
   prompt: string
   /** Button text for a `choice` value; defaults to the value itself. */
   label?: (value: OptionValue, labels: OptionLabels) => string
+  /** `grid`: the payload fields picked together, one row each. */
+  gridFields?: readonly string[]
+  /** `grid`: title of a field's row; defaults to the field name. */
+  groupLabel?: (field: string) => string
+  /** `grid`: value a row starts on; null starts on the row's first value. */
+  initialValue?: (field: string, labels: OptionLabels) => OptionValue | null
 }
 
 export type OptionLabels = {
@@ -61,22 +74,18 @@ function serviceLabel(value: OptionValue): string {
   return SERVICE_LABELS[String(value)] ?? String(value)
 }
 
-const CURRENT_COST_SUFFIX = ' (current)'
-
 /**
- * Rule: 11.6.2 Set Costs — one cost pick per service, in a single action;
- * the cost a marker already stands on is tagged so it is easy to keep.
+ * Rule: 11.6.2 Set Costs — one modal shows the Services track: a row of costs
+ * per service, each starting on the cost its marker stands on.
  */
-function serviceCostStep(service: string): OptionStep {
-  return {
-    field: service,
-    kind: 'choice',
-    prompt: `${serviceLabel(service)} cost`,
-    label: (value: OptionValue, labels: OptionLabels): string => {
-      const isCurrent: boolean = value === labels.currentServiceCost(service)
-      return `Cost ${String(value)}${isCurrent ? CURRENT_COST_SUFFIX : ''}`
-    },
-  }
+const SERVICE_COSTS_STEP: OptionStep = {
+  field: 'serviceCosts',
+  kind: 'grid',
+  prompt: 'pick the cost of each service',
+  gridFields: Object.keys(SERVICE_LABELS),
+  groupLabel: serviceLabel,
+  initialValue: (service: string, labels: OptionLabels): OptionValue | null =>
+    labels.currentServiceCost(service),
 }
 
 const FROM_STEP: OptionStep = {
@@ -178,7 +187,7 @@ const TURN_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
   establishTradePost: { title: 'Trade post', steps: [CLEARING_STEP] },
   setServiceCosts: {
     title: 'Set costs',
-    steps: Object.keys(SERVICE_LABELS).map(serviceCostStep),
+    steps: [SERVICE_COSTS_STEP],
   },
 }
 

@@ -16,6 +16,7 @@ import {
   WinnerOverlay,
 } from '#react/HudChrome.tsx'
 import { MenuOverlay } from '#react/MenuOverlay.tsx'
+import { OptionGridModal } from '#react/OptionGridModal.tsx'
 import { PlayerRail } from '#react/PlayerRail.tsx'
 import { StatusMessage } from '#react/StatusMessage.tsx'
 import { TurnBanner } from '#react/TurnBanner.tsx'
@@ -33,6 +34,7 @@ export function ReactHud(): JSX.Element {
       <CardHand />
       <StatusMessage />
       <FactionBoardModal />
+      <OptionGridModal />
       <CraftedCardsModal />
       <CompletedQuestsModal />
       <CardPileModal />

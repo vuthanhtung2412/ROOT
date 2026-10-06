@@ -17,10 +17,16 @@ import {
   type OptionStep,
   type OptionValue,
 } from '#game/resolution/optionActionFlows.ts'
-import type { TurnBannerOption } from '#ui/TurnBanner.ts'
+import type {
+  TurnBannerOption,
+  TurnBannerOptionPresentation,
+} from '#ui/TurnBanner.ts'
 
 /** Banner value prefix that keeps a choice off the numeric count stepper. */
 const CHOICE_VALUE_PREFIX = 'choice:'
+/** Grid cell value: `grid:<row index>:<value index>`. */
+const GRID_VALUE_PREFIX = 'grid:'
+const GRID_VALUE_SEPARATOR = ':'
 
 type OptionDraft =
   | { type: 'idle' }
@@ -70,10 +76,12 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
   getDraft: () => OptionDraft
   getPromptOptions: () => TurnBannerOption[]
   getCardPilePick: () => AllianceSupporterPilePick | null
+  getOptionPresentation: () => TurnBannerOptionPresentation | undefined
 } {
   let draft: OptionDraft = { type: 'idle' }
   let promptOptions: TurnBannerOption[] = []
   let cardPilePick: AllianceSupporterPilePick | null = null
+  let optionPresentation: TurnBannerOptionPresentation | undefined = undefined
 
   const labels: OptionLabels = {
     seatName: (seat: number): string =>
@@ -86,6 +94,51 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
     draft = { type: 'idle' }
     promptOptions = []
     cardPilePick = null
+    optionPresentation = undefined
+  }
+
+  /** One modal: a row of values per grid field, the chosen one marked. */
+  const promptForGrid = (
+    active: ActiveDraft,
+    step: OptionStep,
+  ): ComposerOutcome => {
+    cardPilePick = null
+    optionPresentation = 'grid'
+    promptOptions = (step.gridFields ?? []).flatMap(
+      (field: string, fieldIndex: number): TurnBannerOption[] =>
+        distinctValues(active.flow.options, field).map(
+          (value: OptionValue, valueIndex: number): TurnBannerOption => ({
+            label: step.label?.(value, labels) ?? String(value),
+            value: `${GRID_VALUE_PREFIX}${String(fieldIndex)}${GRID_VALUE_SEPARATOR}${String(valueIndex)}`,
+            group: step.groupLabel?.(field) ?? field,
+            selected: active.chosen[field] === value,
+          }),
+        ),
+    )
+    return {
+      kind: 'incomplete',
+      prompt: {
+        message: `${active.flow.title} — ${step.prompt}`,
+        highlightClearings: [],
+        enabledCardIds: null,
+        canConfirm: true,
+        canCancel: active.flow.cancellable,
+      },
+    }
+  }
+
+  /** Start every grid row on its initial value (or its first value). */
+  const withGridDefaults = (active: ActiveDraft, step: OptionStep): ActiveDraft => {
+    const defaults: ActionOptionView = {}
+    for (const field of step.gridFields ?? []) {
+      const start: OptionValue | undefined =
+        step.initialValue?.(field, labels) ??
+        distinctValues(active.flow.options, field)[0]
+      if (start !== undefined) {
+        defaults[field] = start
+      }
+    }
+    return { ...active, chosen: { ...defaults, ...active.chosen } }
   }
 
   const promptFor = (
@@ -95,6 +148,7 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
   ): ComposerOutcome => {
     promptOptions = []
     cardPilePick = null
+    optionPresentation = undefined
     const message = `${active.flow.title} — ${step.prompt}`
     const cardIds = values.filter(
       (value: OptionValue): value is string => typeof value === 'string',
@@ -145,6 +199,10 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
     let current = active
     while (current.stepIndex < current.flow.steps.length) {
       const step = current.flow.steps[current.stepIndex]!
+      if (step.kind === 'grid') {
+        draft = withGridDefaults(current, step)
+        return promptForGrid(draft, step)
+      }
       const values = distinctValues(current.remaining, step.field)
       const onlyValue = values.length === 1 ? values[0] : undefined
       if (values.length === 0) {
@@ -216,12 +274,45 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
         const count = Number(value)
         return Number.isInteger(count) ? choose('count', count) : null
       }
+      if (step.kind === 'grid') {
+        if (!value.startsWith(GRID_VALUE_PREFIX)) return null
+        const [fieldIndex, valueIndex]: number[] = value
+          .slice(GRID_VALUE_PREFIX.length)
+          .split(GRID_VALUE_SEPARATOR)
+          .map(Number)
+        const field: string | undefined = step.gridFields?.[fieldIndex ?? -1]
+        if (field === undefined) return null
+        const cell: OptionValue | undefined = distinctValues(
+          draft.flow.options,
+          field,
+        )[valueIndex ?? -1]
+        if (cell === undefined) return null
+        draft = { ...draft, chosen: { ...draft.chosen, [field]: cell } }
+        return promptForGrid(draft, step)
+      }
       if (step.kind !== 'choice' || !value.startsWith(CHOICE_VALUE_PREFIX)) {
         return null
       }
       const index = Number(value.slice(CHOICE_VALUE_PREFIX.length))
       const picked = distinctValues(draft.remaining, step.field)[index]
       return picked === undefined ? null : choose('choice', picked)
+    },
+
+    /** Grid step: the rows as they stand must form one legal payload. */
+    confirm: (): ComposerOutcome | null => {
+      if (draft.type !== 'optionAction') return null
+      const active: ActiveDraft = draft
+      const step = active.flow.steps[active.stepIndex]
+      if (step === undefined || step.kind !== 'grid') return null
+      const gridFields: readonly string[] = step.gridFields ?? []
+      const remaining = active.remaining.filter(
+        (option: ActionOptionView): boolean =>
+          gridFields.every(
+            (field: string): boolean => option[field] === active.chosen[field],
+          ),
+      )
+      if (remaining.length === 0) return null
+      return advance({ ...active, remaining, stepIndex: active.stepIndex + 1 })
     },
 
     cancel: (): ComposerOutcome | null => {
@@ -242,5 +333,7 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
     getDraft: (): OptionDraft => draft,
     getPromptOptions: (): TurnBannerOption[] => promptOptions,
     getCardPilePick: (): AllianceSupporterPilePick | null => cardPilePick,
+    getOptionPresentation: (): TurnBannerOptionPresentation | undefined =>
+      optionPresentation,
   }
 }

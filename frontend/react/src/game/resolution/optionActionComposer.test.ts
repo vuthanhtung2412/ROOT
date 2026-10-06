@@ -105,19 +105,32 @@ describe('optionActionComposer turn actions', () => {
         }),
       ),
     )
-    expect(begun.prompt.message).toBe('Set costs — Hand Card cost')
-    expect(option.getPromptOptions()).toEqual([
-      { label: 'Cost 1 (current)', value: 'choice:0' },
-      { label: 'Cost 2', value: 'choice:1' },
-      { label: 'Cost 3', value: 'choice:2' },
-      { label: 'Cost 4', value: 'choice:3' },
+    // One grid for the modal: a row per service, starting on the current costs
+    // (Hand Card 1, Riverboats 3, Mercenaries 2).
+    expect(begun.prompt.message).toBe('Set costs — pick the cost of each service')
+    expect(begun.prompt.canConfirm).toBe(true)
+    expect(option.getOptionPresentation()).toBe('grid')
+    const grid = option.getPromptOptions()
+    expect(grid).toHaveLength(12)
+    expect(grid.slice(0, 4)).toEqual([
+      { label: '1', value: 'grid:0:0', group: 'Hand Card', selected: true },
+      { label: '2', value: 'grid:0:1', group: 'Hand Card', selected: false },
+      { label: '3', value: 'grid:0:2', group: 'Hand Card', selected: false },
+      { label: '4', value: 'grid:0:3', group: 'Hand Card', selected: false },
     ])
+    const selectedValues = (): string[] =>
+      option
+        .getPromptOptions()
+        .filter((cell) => cell.selected === true)
+        .map((cell) => cell.value)
+    expect(selectedValues()).toEqual(['grid:0:0', 'grid:1:2', 'grid:2:1'])
 
-    const afterHandCard = expectIncomplete(composer.chooseColumn('choice:1'))
-    expect(afterHandCard.prompt.message).toBe('Set costs — Riverboats cost')
-    const afterRiverboats = expectIncomplete(composer.chooseColumn('choice:2'))
-    expect(afterRiverboats.prompt.message).toBe('Set costs — Mercenaries cost')
-    expect(composer.chooseColumn('choice:3')).toEqual({
+    // Clicking a cell only moves that row's marker; nothing is sent yet.
+    expectIncomplete(composer.chooseColumn('grid:0:1'))
+    expectIncomplete(composer.chooseColumn('grid:2:3'))
+    expect(selectedValues()).toEqual(['grid:0:1', 'grid:1:2', 'grid:2:3'])
+
+    expect(composer.confirm()).toEqual({
       kind: 'ready',
       action: {
         type: 'setServiceCosts',
@@ -126,6 +139,7 @@ describe('optionActionComposer turn actions', () => {
         mercenaries: 4,
       },
     })
+    expect(option.getOptionPresentation()).toBeUndefined()
   })
 
   it('move: origin, destination, count on the stepper, then the fund', () => {

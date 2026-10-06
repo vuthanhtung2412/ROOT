@@ -491,7 +491,9 @@ export class ReactGameController {
         }
         return leaderDraft.type === 'pickLeader' ? leaderDraft.leaders : null
       },
-      getOptionPresentation: () => this.eventComposer.getOptionPresentation(),
+      getOptionPresentation: () =>
+        this.optionComposer.getOptionPresentation() ??
+        this.eventComposer.getOptionPresentation(),
       getPromptOptions: () => [
         ...this.marquiseMarch.getPromptOptions(),
         ...this.marquiseBoard.getPromptOptions(),
