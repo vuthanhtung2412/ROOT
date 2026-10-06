@@ -53,11 +53,13 @@ const LOST_SOULS_SUIT_TRAILING_CLASS_NAME = 'bg-parchment/93 text-ink-deep'
 /** Rule: 10.4.1 — the suit that would become the Outcast. */
 const LOST_SOULS_SUIT_LEADING_CLASS_NAME =
   'bg-gold font-bold text-ink-deep ring-2 ring-ink-deep'
-const FUND_BOX_CLASS_NAME =
-  'absolute z-2 flex flex-wrap content-start items-start gap-0.5 overflow-hidden p-1'
+const FUND_BOX_CLASS_NAME = 'absolute z-2'
+const FUND_WARRIORS_CLASS_NAME =
+  'flex size-full flex-wrap content-start items-start gap-0.5 overflow-hidden p-1'
 const FUND_WARRIOR_CLASS_NAME = 'block h-[30%] max-h-10 w-auto select-none'
+/** Sits astride the top-right corner of the box, taking no room inside it. */
 const FUND_COUNT_CLASS_NAME =
-  'absolute right-[2%] bottom-[2%] bg-parchment/93 px-1.5 py-0.5 font-mono text-[clamp(11px,2.2vh,16px)] text-ink-deep'
+  'absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-parchment/93 px-1 font-mono text-[clamp(10px,1.8vh,13px)] leading-tight text-ink-deep'
 const SERVICE_MARKER_CLASS_NAME =
   'absolute z-2 rounded-full border-[3px] border-riverfolk bg-riverfolk/28'
 
@@ -231,23 +233,28 @@ function FundBox(
       className={`riverfolk-${props.regionId} ${FUND_BOX_CLASS_NAME}`}
       style={layoutRegionStyle(region, props.layout)}
     >
-      {props.factions.map((factionId: string, index: number) => {
-        const imagePath = warriorImagePath(factionId)
-        if (imagePath === null) {
-          return null
-        }
-        return (
-          <img
-            key={`${factionId}-${String(index)}`}
-            className={FUND_WARRIOR_CLASS_NAME}
-            src={imagePath}
-            alt={`${factionId} warrior`}
-            draggable={false}
-          />
-        )
-      })}
-      <span className={FUND_COUNT_CLASS_NAME}>
-        {`${props.label}: ${String(props.factions.length)}`}
+      <div className={FUND_WARRIORS_CLASS_NAME}>
+        {props.factions.map((factionId: string, index: number) => {
+          const imagePath = warriorImagePath(factionId)
+          if (imagePath === null) {
+            return null
+          }
+          return (
+            <img
+              key={`${factionId}-${String(index)}`}
+              className={FUND_WARRIOR_CLASS_NAME}
+              src={imagePath}
+              alt={`${factionId} warrior`}
+              draggable={false}
+            />
+          )
+        })}
+      </div>
+      <span
+        className={FUND_COUNT_CLASS_NAME}
+        title={`${props.label}: ${String(props.factions.length)}`}
+      >
+        {String(props.factions.length)}
       </span>
     </div>
   )
