@@ -3,7 +3,9 @@
  * Source twin: resources/reference/character-boards/{faction}/*.layout.json
  */
 import eyrieDynastiesFrontLayoutJson from '#assets/layouts/eyrie-dynasties-front.layout.json'
+import lizardCultFrontLayoutJson from '#assets/layouts/lizard-cult-front.layout.json'
 import marquiseDeCatFrontLayoutJson from '#assets/layouts/marquise-de-cat-front.layout.json'
+import riverfolkCompanyFrontLayoutJson from '#assets/layouts/riverfolk-company-front.layout.json'
 import woodlandAllianceFrontLayoutJson from '#assets/layouts/woodland-alliance-front.layout.json'
 import vagabondFrontLayoutJson from '#assets/layouts/vagabond-front.layout.json'
 
@@ -169,11 +171,23 @@ export const VAGABOND_BOARD_LAYOUT: FactionBoardPixelLayout = requireLayout(
   'vagabond',
 )
 
+export const LIZARD_BOARD_LAYOUT: FactionBoardPixelLayout = requireLayout(
+  lizardCultFrontLayoutJson,
+  'lizard',
+)
+
+export const RIVERFOLK_BOARD_LAYOUT: FactionBoardPixelLayout = requireLayout(
+  riverfolkCompanyFrontLayoutJson,
+  'riverfolk',
+)
+
 export type FactionBoardLayoutKind =
   | 'marquise'
   | 'eyrie'
   | 'alliance'
   | 'vagabond'
+  | 'lizard'
+  | 'riverfolk'
 
 export function factionBoardLayoutForKind(
   kind: FactionBoardLayoutKind,
@@ -186,6 +200,12 @@ export function factionBoardLayoutForKind(
   }
   if (kind === 'alliance') {
     return ALLIANCE_BOARD_LAYOUT
+  }
+  if (kind === 'lizard') {
+    return LIZARD_BOARD_LAYOUT
+  }
+  if (kind === 'riverfolk') {
+    return RIVERFOLK_BOARD_LAYOUT
   }
   return VAGABOND_BOARD_LAYOUT
 }

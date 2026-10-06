@@ -14,6 +14,7 @@ import {
   logicalViewportSize,
   readWindowViewportMeasure,
 } from '#game/viewportFit.ts'
+import { ExpansionBoardOverlays } from '#react/expansionBoardOverlays.tsx'
 import { FactionBoardOverlays } from '#react/factionBoardOverlays.tsx'
 import { QuestPilePanel } from '#react/QuestPilePanel.tsx'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
@@ -153,6 +154,7 @@ export function FactionBoardModal(): JSX.Element | null {
             />
           )}
           <FactionBoardOverlays view={view} layout={layout} />
+          <ExpansionBoardOverlays view={view} layout={layout} />
         </div>
         {showQuestSidePanel ? (
           <aside

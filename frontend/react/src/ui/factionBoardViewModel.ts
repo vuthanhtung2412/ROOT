@@ -36,6 +36,11 @@ import {
   type VagabondCharacterInfo,
 } from '#assets/vagabondBoardCatalog.ts'
 import type { GameState } from '#api/client.ts'
+import {
+  buildExpansionBoardViewModel,
+  lostSoulsCountFromDeck,
+  type ExpansionBoardViewModel,
+} from '#ui/expansionBoardViewModel.ts'
 import { questDefOf, type QuestCard } from '@root/lib/quests'
 
 export type CraftedItemView = {
@@ -183,6 +188,7 @@ export type FactionBoardViewModel =
   | EyrieBoardViewModel
   | AllianceBoardViewModel
   | VagabondBoardViewModel
+  | ExpansionBoardViewModel
 
 type MarquiseBoardData = {
   kind: 'marquise'
@@ -509,6 +515,12 @@ export function buildFactionBoardViewModel(
       completedQuests: completedQuestViewsFromBoard(player.board),
     }
   }
+  if (view.kind === 'lizard') {
+    return {
+      ...view,
+      lostSoulsCount: lostSoulsCountFromDeck(Reflect.get(state, 'deck')),
+    }
+  }
   return view
 }
 
@@ -695,5 +707,8 @@ export function buildFactionBoardViewModelFromPlayer(
     }
   }
 
-  return null
+  return buildExpansionBoardViewModel(player, {
+    crafted: craftedLookup(player),
+    factions: presentFactions,
+  })
 }

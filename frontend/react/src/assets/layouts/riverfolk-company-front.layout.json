@@ -1,0 +1,63 @@
+{
+  "image": "resources/reference/character-boards/riverfolk-company/riverfolk-company-front.webp",
+  "unit": "px",
+  "naturalWidth": 950,
+  "naturalHeight": 737,
+  "tracks": [
+    {
+      "id": "service-handCard",
+      "cells": 4,
+      "cellSize": 40,
+      "gaps": [4, 4, 4],
+      "x": 739,
+      "y": 246
+    },
+    {
+      "id": "service-riverboats",
+      "cells": 4,
+      "cellSize": 40,
+      "gaps": [4, 4, 4],
+      "x": 739,
+      "y": 291
+    },
+    {
+      "id": "service-mercenaries",
+      "cells": 4,
+      "cellSize": 40,
+      "gaps": [4, 4, 4],
+      "x": 739,
+      "y": 335
+    },
+    {
+      "id": "trade-post-fox",
+      "cells": 3,
+      "cellSize": 56,
+      "gaps": [16, 14],
+      "x": 715,
+      "y": 512
+    },
+    {
+      "id": "trade-post-rabbit",
+      "cells": 3,
+      "cellSize": 56,
+      "gaps": [16, 14],
+      "x": 715,
+      "y": 577
+    },
+    {
+      "id": "trade-post-mouse",
+      "cells": 3,
+      "cellSize": 56,
+      "gaps": [16, 14],
+      "x": 715,
+      "y": 640
+    }
+  ],
+  "regions": [
+    { "id": "crafted-items", "x": 650, "y": 130, "width": 225, "height": 40 },
+    { "id": "supply-warriors", "x": 12, "y": 6, "width": 40, "height": 38 },
+    { "id": "payments", "x": 434, "y": 228, "width": 208, "height": 96 },
+    { "id": "funds", "x": 434, "y": 376, "width": 208, "height": 186 },
+    { "id": "committed", "x": 434, "y": 608, "width": 208, "height": 96 }
+  ]
+}
