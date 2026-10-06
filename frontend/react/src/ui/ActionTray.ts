@@ -20,6 +20,26 @@ export interface ActionTrayState {
 
 const VIZIER_DEF_ID = 'VIZIER'
 
+/** Tray labels for Lizard Cult and Riverfolk Company actions. */
+const EXPANSION_ACTION_LABELS: Readonly<Record<string, string>> = {
+  crusadeBattle: 'crusade: battle',
+  crusadeMove: 'crusade: move',
+  skipCrusadeBattle: 'skip battle',
+  convert: 'convert',
+  sanctify: 'sanctify',
+  ritualBuild: 'build garden',
+  ritualRecruit: 'recruit',
+  ritualScore: 'score',
+  ritualSacrifice: 'sacrifice',
+  riverfolkMove: 'move',
+  riverfolkBattle: 'battle',
+  riverfolkCraft: 'craft',
+  riverfolkDraw: 'draw',
+  riverfolkRecruit: 'recruit',
+  establishTradePost: 'trade post',
+  setServiceCost: 'set costs',
+}
+
 function formatActionLabel(
   spec: ActionSpec,
   pending?: unknown,
@@ -68,7 +88,12 @@ function formatActionLabel(
   if (spec.type === 'eveningDraw') return 'draw'
   if (spec.type === 'endPhase') return 'end phase'
   if (spec.type === 'overwork') return 'overwork'
+  const expansionLabel = EXPANSION_ACTION_LABELS[spec.type]
+  if (expansionLabel !== undefined) return expansionLabel
   if (spec.type === 'resolveEvent') {
+    if (pendingType === 'buyServices') {
+      return params.decline !== undefined ? 'no service' : 'buy service'
+    }
     const startingBuilding = params.building?.[0]
     if (startingBuilding !== undefined) {
       return `place ${startingBuilding}`

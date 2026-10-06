@@ -41,6 +41,8 @@ import { createMarchWorkflowHooks } from '#game/resolution/marchWorkflowHooks.ts
 import { createVagabondComposerHooks } from '#game/resolution/vagabondActionComposer.ts'
 import { createDominanceComposerHooks } from '#game/resolution/dominanceActionComposer.ts'
 import { createAllianceComposerHooks } from '#game/resolution/allianceActionComposer.ts'
+import { createOptionComposerHooks } from '#game/resolution/optionActionComposer.ts'
+import { pendingEventType } from '#game/expansionPendingPrompts.ts'
 import { readBattleClearingId } from '#game/battleOverlayModel.ts'
 import {
   applyMarchPreview,
@@ -110,6 +112,7 @@ export class ReactGameController {
   private vagabondComposer = createVagabondComposerHooks()
   private dominanceComposer = createDominanceComposerHooks()
   private allianceComposer = createAllianceComposerHooks()
+  private optionComposer = createOptionComposerHooks()
   private eventComposer = createEventComposerHooks()
   private unsubscribe: (() => void) | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -171,6 +174,11 @@ export class ReactGameController {
     this.vagabondComposer = createVagabondComposerHooks(seatLabelOptions)
     this.dominanceComposer = createDominanceComposerHooks()
     this.allianceComposer = createAllianceComposerHooks(seatLabelOptions)
+    this.optionComposer = createOptionComposerHooks({
+      ...seatLabelOptions,
+      pendingType: (): string | null =>
+        pendingEventType(this.latestSnapshot?.state?.pending[0]),
+    })
     this.eventComposer = createEventComposerHooks()
     this.autoPrompts = new AutoPromptController({
       applyComposerOutcome: (outcome) => this.applyComposerOutcome(outcome),
@@ -212,6 +220,8 @@ export class ReactGameController {
     this.modals = new GameSceneModals(() => this.viewerSeat())
     this.composer.setHooks(
       mergeComposerHooks(
+        // First: claims its pending events before the generic event composer.
+        this.optionComposer.hooks,
         this.marquiseCards.hooks,
         this.marquiseMarch.hooks,
         this.marquiseBoard.hooks,
@@ -451,6 +461,7 @@ export class ReactGameController {
         ...this.allianceComposer.getPromptOptions(),
         ...this.vagabondComposer.getPromptOptions(),
         ...this.dominanceComposer.getPromptOptions(),
+        ...this.optionComposer.getPromptOptions(),
         ...this.eventComposer.getPromptOptions(),
       ],
       getDiscardSelection: () => {
@@ -459,7 +470,8 @@ export class ReactGameController {
       },
       getSupporterPilePick: () =>
         this.allianceComposer.getSupporterPilePick() ??
-        this.vagabondComposer.getDiscardPilePick(),
+        this.vagabondComposer.getDiscardPilePick() ??
+        this.optionComposer.getCardPilePick(),
       syncSupporterPilePick: (pick) => {
         if (pick === null) {
           hideSelectableCardPile()
@@ -527,6 +539,7 @@ export class ReactGameController {
         this.allianceComposer.getDraft(),
         this.vagabondComposer.getDraft(),
         this.dominanceComposer.getDraft(),
+        this.optionComposer.getDraft(),
         this.eventComposer.getDraft(),
       ])
     )
