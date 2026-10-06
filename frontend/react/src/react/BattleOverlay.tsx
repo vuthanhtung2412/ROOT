@@ -1,5 +1,5 @@
 import { useSyncExternalStore, type JSX } from 'react'
-import { LuSwords } from 'react-icons/lu'
+import { LuShield, LuSword, LuSwords } from 'react-icons/lu'
 import {
   factionTextureKey,
   imagePathForAssetKey,
@@ -48,6 +48,11 @@ const DIE_CLASS_NAME =
 const DIE_UNROLLED_CLASS_NAME = 'opacity-60'
 const ATTACKER_DIE_CLASS_NAME = `${DIE_CLASS_NAME} -right-9 rotate-4 md:-right-11`
 const DEFENDER_DIE_CLASS_NAME = `${DIE_CLASS_NAME} -left-9 -rotate-6 md:-left-11`
+/** Role badge on the tile's outer top corner: sword = attacker, shield = defender. */
+const ROLE_BADGE_CLASS_NAME =
+  'root-paper root-medallion absolute -top-3.5 z-1 flex size-9 items-center justify-center text-xl text-parchment md:size-10 md:text-2xl'
+const ATTACKER_ROLE_BADGE_CLASS_NAME = `${ROLE_BADGE_CLASS_NAME} -left-3.5`
+const DEFENDER_ROLE_BADGE_CLASS_NAME = `${ROLE_BADGE_CLASS_NAME} -right-3.5`
 /** Rust diamond holding the suit of the clearing fought over. */
 const CLEARING_MARK_CLASS_NAME =
   'root-paper root-paper-fine absolute bottom-7 left-1/2 flex size-12 -translate-x-1/2 rotate-45 items-center justify-center text-2xl text-parchment [--root-paper-color:var(--color-rust)] md:bottom-8 md:size-16'
@@ -80,13 +85,11 @@ export function BattleOverlay(): JSX.Element | null {
   if (viewModel === null) {
     return null
   }
-  const outcomeMessage: string | null = viewModel.outcomeMessage
-  const isOutcomeFlash = outcomeMessage !== null
-  const flashDetail: string = battleResultFlashPrompt(viewModel.hits)
+  const isOutcomeFlash = viewModel.outcomeMessage !== null
+  // Result flash: the dice and hit marks tell the outcome; the strap only
+  // speaks when nothing was removed.
   const strapText: string = isOutcomeFlash
-    ? flashDetail.length > 0
-      ? `${outcomeMessage} · ${flashDetail}`
-      : outcomeMessage
+    ? battleResultFlashPrompt(viewModel.hits)
     : battleStrapText(viewModel)
   const callbacks = getHudCallbacks()
   // Rule: 8.2.2 Guerrilla War — defending Alliance uses the higher die.
@@ -153,15 +156,17 @@ export function BattleOverlay(): JSX.Element | null {
               }}
             />
           </div>
-          <p
-            className={
-              isOutcomeFlash
-                ? `${STRAP_CLASS_NAME} ${STRAP_FLASH_CLASS_NAME}`
-                : STRAP_CLASS_NAME
-            }
-          >
-            {strapText}
-          </p>
+          {strapText.length > 0 ? (
+            <p
+              className={
+                isOutcomeFlash
+                  ? `${STRAP_CLASS_NAME} ${STRAP_FLASH_CLASS_NAME}`
+                  : STRAP_CLASS_NAME
+              }
+            >
+              {strapText}
+            </p>
+          ) : null}
         </div>
       </div>
     </>
@@ -178,8 +183,10 @@ function BattleSide(props: { side: BattleSideView }): JSX.Element {
     { length: side.hits },
     (_: undefined, index: number): number => index,
   )
-  const dieClassName: string =
-    side.role === 'attacker' ? ATTACKER_DIE_CLASS_NAME : DEFENDER_DIE_CLASS_NAME
+  const isAttacker: boolean = side.role === 'attacker'
+  const dieClassName: string = isAttacker
+    ? ATTACKER_DIE_CLASS_NAME
+    : DEFENDER_DIE_CLASS_NAME
   return (
     <div
       className={SIDE_CLASS_NAME}
@@ -204,6 +211,16 @@ function BattleSide(props: { side: BattleSideView }): JSX.Element {
             draggable={false}
           />
         ) : null}
+        <span
+          className={
+            isAttacker
+              ? ATTACKER_ROLE_BADGE_CLASS_NAME
+              : DEFENDER_ROLE_BADGE_CLASS_NAME
+          }
+          aria-hidden="true"
+        >
+          {isAttacker ? <LuSword /> : <LuShield />}
+        </span>
         <span
           className={
             waiting ? `${dieClassName} ${DIE_UNROLLED_CLASS_NAME}` : dieClassName
