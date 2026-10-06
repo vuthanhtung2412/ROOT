@@ -11,11 +11,11 @@ import { getHudSnapshot, subscribeHud } from '#game/hudStore.ts'
 import { factionColorCss } from '#game/theme.ts'
 
 /**
- * Above the dimming behind a battle (same layer, drawn after it), under the
- * rest of the HUD.
+ * Part of the board: above the map, under the dimming behind a battle (z-50),
+ * so the battle panel and its backdrop dim it like the rest of the board.
  */
 const BADGE_CLASS_NAME =
-  'battle-clearing-badge root-paper root-paper-fine pointer-events-none fixed z-50 flex -translate-x-1/2 -translate-y-1/2 flex-row items-center gap-1.5 px-2 py-1.5 text-2xl text-rust [--root-paper-color:var(--color-paper-bright)] md:gap-2 md:text-3xl'
+  'battle-clearing-badge root-paper root-paper-fine pointer-events-none fixed z-10 flex -translate-x-1/2 -translate-y-1/2 flex-row items-center gap-1.5 px-2 py-1.5 text-2xl text-rust [--root-paper-color:var(--color-paper-bright)] md:gap-2 md:text-3xl'
 /** Head of one side, framed in its faction colour. */
 const SIDE_HEAD_CLASS_NAME =
   'block size-10 rounded-sm border-2 object-cover select-none md:size-12'
