@@ -1,6 +1,7 @@
 import type { IconType } from 'react-icons'
 import {
   LuAnvil,
+  LuBan,
   LuBedDouble,
   LuBird,
   LuChurch,
@@ -21,6 +22,7 @@ import {
   LuScrollText,
   LuSearch,
   LuShield,
+  LuShoppingCart,
   LuSkipForward,
   LuSkull,
   LuSparkles,
@@ -52,6 +54,10 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   takeDominance: LuCrown,
   activateDominance: LuCrown,
   resolveEvent: LuCircleDot,
+  // Answers to a pending event (keys from `trayActionArt`)
+  declineEvent: LuBan,
+  buyService: LuShoppingCart,
+  removeHits: LuSkull,
   // Turn control
   endPhase: LuPlay,
   eveningDraw: LuLayers,

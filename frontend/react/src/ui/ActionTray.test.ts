@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  BUY_SERVICE_ICON_KEY,
+  DECLINE_ICON_KEY,
+  trayActionArt,
   collapseTrayActionsByLabel,
   filterTrayActions,
   withoutBoardOnlyActions,
@@ -301,6 +304,47 @@ describe('withoutBoardOnlyActions', () => {
     })
 
     expect(withoutBoardOnlyActions([move, rearrange, quest])).toEqual([move])
+  })
+})
+
+describe('trayActionArt', () => {
+  const buyServicesPending = { type: 'buyServices', buyer: 0, bought: 0 }
+
+  it('tells buying a service from declining it', () => {
+    const buy = makeActionSpec({
+      type: 'resolveEvent',
+      params: { options: [{ service: 'riverboats' }] },
+    })
+    const decline = makeActionSpec({
+      type: 'resolveEvent',
+      params: { decline: [true] },
+    })
+
+    expect(trayActionArt(buy, makeGameState(), buyServicesPending)).toEqual({
+      iconKey: BUY_SERVICE_ICON_KEY,
+      suit: null,
+    })
+    expect(
+      trayActionArt(decline, makeGameState(), buyServicesPending),
+    ).toEqual({ iconKey: DECLINE_ICON_KEY, suit: null })
+  })
+
+  it('draws a Decree action as its column', () => {
+    const decree = makeActionSpec({
+      type: 'decree',
+      params: { column: ['recruit'] },
+    })
+
+    expect(trayActionArt(decree, makeGameState())).toEqual({
+      iconKey: 'recruit',
+      suit: null,
+    })
+  })
+
+  it('keeps the action type for any other action', () => {
+    const march = makeActionSpec({ type: 'march' })
+
+    expect(trayActionArt(march).iconKey).toBe('march')
   })
 })
 

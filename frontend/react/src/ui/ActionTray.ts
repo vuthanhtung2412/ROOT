@@ -1,5 +1,6 @@
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { lookupCardCatalog } from '#assets/gameAssets.ts'
+import { pendingEventType } from '#game/expansionPendingPrompts.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 import { QUEST_ACTION_TYPE } from '#game/vagabondQuest.ts'
 import { REARRANGE_ACTION_TYPE } from '#game/vagabondRearrange.ts'
@@ -165,11 +166,40 @@ export type TrayActionArt = {
   suit: string | null
 }
 
-/** Decree: icon of the column, suit of the card. Others: icon of the type. */
+const RESOLVE_EVENT_ACTION_TYPE = 'resolveEvent'
+const BUY_SERVICES_PENDING_TYPE = 'buyServices'
+/** Icon keys of the answers to a pending event (all are `resolveEvent`). */
+export const DECLINE_ICON_KEY = 'declineEvent'
+export const BUY_SERVICE_ICON_KEY = 'buyService'
+export const REMOVE_HITS_ICON_KEY = 'removeHits'
+
+/** Answers to one pending event share a type: tell them apart by what they send. */
+function resolveEventIconKey(spec: ActionSpec, pending: unknown): string {
+  const params = readChoiceParams(spec)
+  if (params.decline !== undefined) {
+    return DECLINE_ICON_KEY
+  }
+  if (pendingEventType(pending) === BUY_SERVICES_PENDING_TYPE) {
+    return BUY_SERVICE_ICON_KEY
+  }
+  if (params.pieceIds !== undefined) {
+    return REMOVE_HITS_ICON_KEY
+  }
+  return spec.type
+}
+
+/**
+ * Decree: icon of the column, suit of the card. Pending event: icon of the
+ * answer. Others: icon of the type.
+ */
 export function trayActionArt(
   spec: ActionSpec,
   state?: GameState,
+  pending?: unknown,
 ): TrayActionArt {
+  if (spec.type === RESOLVE_EVENT_ACTION_TYPE) {
+    return { iconKey: resolveEventIconKey(spec, pending), suit: null }
+  }
   if (spec.type !== DECREE_ACTION_TYPE) {
     return { iconKey: spec.type, suit: null }
   }

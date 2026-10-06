@@ -27,8 +27,8 @@ const PUBLIC_HAND_LABEL = 'hand'
  */
 const SEAT_TILE_CLASS_NAME =
   'root-paper relative box-border size-16 shrink-0 [--root-paper-color:currentColor] md:size-20'
-/** Seat whose turn it is: gold edge. */
-const SEAT_TILE_ACTIVE_CLASS_NAME = '[--root-paper-edge:var(--color-gold)]'
+/** Seat whose turn it is: a little bigger, under the sun badge. */
+const SEAT_TILE_ACTIVE_CLASS_NAME = 'scale-110'
 const SEAT_PORTRAIT_BUTTON_CLASS_NAME =
   'm-0 box-border flex size-full cursor-pointer items-center justify-center border-0 bg-transparent p-2'
 /** Faction colour softened toward parchment so the head icon stays readable. */
