@@ -167,6 +167,8 @@ describe('pieceEffectsBetween', () => {
       {
         kind: 'place',
         clearing: 0,
+        step: 0,
+        pieceIds: ['garden'],
         slot: { index: 0, total: 2 },
         stackCount: 1,
         owner: CULT_SEAT,
@@ -177,6 +179,8 @@ describe('pieceEffectsBetween', () => {
       {
         kind: 'place',
         clearing: 0,
+        step: 0,
+        pieceIds: ['w'],
         slot: { index: 1, total: 2 },
         stackCount: 1,
         owner: CULT_SEAT,
@@ -192,6 +196,28 @@ describe('pieceEffectsBetween', () => {
       board([warrior('a', CAT_SEAT), warrior('b', CAT_SEAT), warrior('c', CAT_SEAT)]),
     )
     expect(effects).toMatchObject([{ kind: 'place', count: 1, stackCount: 3 }])
+  })
+
+  it('places wood one clearing after the other, other pieces at once', () => {
+    const wood = (id: string): BoardEffectPiece => ({
+      id,
+      kind: 'token',
+      owner: CAT_SEAT,
+      type: 'wood',
+    })
+    const effects = pieceEffectsBetween(
+      board([]),
+      board(
+        [wood('wood-a')],
+        [warrior('recruit', CAT_SEAT)],
+        [wood('wood-b'), wood('wood-c')],
+      ),
+    )
+    expect(effects).toMatchObject([
+      { kind: 'place', clearing: 0, step: 0, pieceIds: ['wood-a'] },
+      { kind: 'place', clearing: 1, step: 0, pieceKind: 'warrior' },
+      { kind: 'place', clearing: 2, step: 1, pieceIds: ['wood-b', 'wood-c'] },
+    ])
   })
 
   it('reports nothing when the board did not change', () => {

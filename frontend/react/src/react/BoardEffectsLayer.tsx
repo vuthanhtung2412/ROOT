@@ -9,14 +9,18 @@ import type {
   BoardRemoveEffect,
   BoardStackSlot,
 } from '#game/boardEffects.ts'
+import {
+  batchLifetime,
+  EFFECT_LIFETIME_MS,
+  MOVE_LIFETIME_MS,
+  MOVE_SLIDE_MS,
+  moveStartDelay,
+  placeStartDelay,
+} from '#react/boardEffectTiming.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import { PieceStack, type ClearingHitCenter } from '#react/PieceStack.tsx'
 import { stackOffsets, type PieceStackViewModel } from '#ui/PieceView.ts'
 
-/** How long an effect stays on the map, slide and fade included. */
-const EFFECT_LIFETIME_MS = 2800
-const MOVE_SLIDE_MS = 700
-const MOVE_LIFETIME_MS = 1200
 const MOVE_TRAIL_WIDTH_PIXELS = 2
 const MOVE_TRAIL_OPACITY = 0.9
 /** Dark line under the trail so it reads on any part of the map. */
@@ -125,24 +129,9 @@ const FADE_OUT_OPTIONS: KeyframeAnimationOptions = {
   fill: 'forwards',
 }
 /** A move waiting for the moves before it stays out of sight. */
-const WAITING_MOVE_CLASS_NAME = 'absolute inset-0 opacity-0'
-const STARTED_MOVE_CLASS_NAME = 'absolute inset-0'
+const WAITING_EFFECT_CLASS_NAME = 'absolute inset-0 opacity-0'
+const STARTED_EFFECT_CLASS_NAME = 'absolute inset-0'
 
-/** When a move starts: once every earlier move of its update has landed. */
-function moveStartDelay(effect: BoardMoveEffect): number {
-  return effect.step * MOVE_SLIDE_MS
-}
-
-/** How long a batch stays on the map: long enough for its last move. */
-function batchLifetime(batch: BoardEffectBatch): number {
-  return batch.effects.reduce(
-    (lifetime: number, effect: BoardEffect): number =>
-      effect.kind === 'move'
-        ? Math.max(lifetime, moveStartDelay(effect) + MOVE_LIFETIME_MS)
-        : lifetime,
-    EFFECT_LIFETIME_MS,
-  )
-}
 
 type MoveEnd = {
   clearing: number
@@ -201,7 +190,9 @@ function MoveEffectView(
   return (
     <div
       ref={fadeRef}
-      className={delay > 0 ? WAITING_MOVE_CLASS_NAME : STARTED_MOVE_CLASS_NAME}
+      className={
+        delay > 0 ? WAITING_EFFECT_CLASS_NAME : STARTED_EFFECT_CLASS_NAME
+      }
     >
       <svg
         className="absolute inset-0 overflow-visible"
@@ -251,20 +242,29 @@ function PlaceEffectView(
   props: EffectContext & { effect: BoardPlaceEffect },
 ): JSX.Element | null {
   const center = props.hitCenters.get(props.effect.clearing)
-  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, FADE_OUT_OPTIONS)
+  const delay = placeStartDelay(props.effect)
+  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, {
+    ...FADE_OUT_OPTIONS,
+    delay,
+  })
   const popRef = useKeyframes(
     [
       { transform: 'scale(0)' },
       { transform: 'scale(1.5)', offset: 0.7 },
       { transform: 'scale(1.2)' },
     ],
-    { duration: POP_MS, easing: 'ease-out', fill: 'forwards' },
+    { duration: POP_MS, delay, easing: 'ease-out', fill: 'forwards' },
   )
   if (center === undefined) {
     return null
   }
   return (
-    <div ref={fadeRef} className="absolute inset-0">
+    <div
+      ref={fadeRef}
+      className={
+        delay > 0 ? WAITING_EFFECT_CLASS_NAME : STARTED_EFFECT_CLASS_NAME
+      }
+    >
       <div
         ref={popRef}
         className="absolute"
