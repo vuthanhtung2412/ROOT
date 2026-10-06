@@ -46,6 +46,20 @@ export class GameMap {
     return this.adjacent(a).includes(b)
   }
 
+  /** Two clearings joined by a river (not a path). Rule: 2.3 */
+  isRiverAdjacent(a: ClearingId, b: ClearingId): boolean {
+    return this.rivers.some(
+      ([left, right]: Path): boolean =>
+        (left === a && right === b) || (left === b && right === a),
+    )
+  }
+
+  /** Clearings touching the river, ascending. Rule: 2.3 */
+  riverClearings(): ClearingId[] {
+    const touching = new Set<ClearingId>(this.rivers.flat())
+    return [...touching].sort((left, right) => left - right)
+  }
+
   /**
    * Forests separated by one printed path or river.
    * Rule: Board > Forests > Adjacency (2.4.1); rivers divide forests.

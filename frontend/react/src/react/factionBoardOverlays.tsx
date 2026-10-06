@@ -46,7 +46,7 @@ type OverlayBaseProps = {
 }
 
 /** Map layout.json px → % of board image (naturalWidth × naturalHeight). */
-function layoutRegionStyle(
+export function layoutRegionStyle(
   region: BoardLayoutRegion,
   layout: FactionBoardPixelLayout,
 ): CSSProperties {
@@ -81,7 +81,7 @@ const MOVE_TO_TRACK_HINT = 'Move to its track'
 const RELATIONSHIP_PACK_CLASS_NAME =
   'pointer-events-none absolute z-2 flex flex-col flex-nowrap items-center justify-center overflow-visible'
 
-function FitToken(props: {
+export function FitToken(props: {
   region: BoardLayoutRegion
   layout: FactionBoardPixelLayout
   imagePath: string
@@ -189,7 +189,7 @@ function CraftedItemIcon(props: {
   )
 }
 
-function SupplyCell(props: {
+export function SupplyCell(props: {
   region: BoardLayoutRegion
   layout: FactionBoardPixelLayout
   countLabel: string
@@ -249,7 +249,7 @@ function SupplyOverlays(props: OverlayBaseProps): JSX.Element {
   )
 }
 
-function RemainingTrackTokens(props: {
+export function RemainingTrackTokens(props: {
   layout: FactionBoardPixelLayout
   trackId: string
   cellCount: number

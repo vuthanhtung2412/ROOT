@@ -5,6 +5,8 @@ export const FACTION_COLORS = {
   eyrie: 0x3a5f8a,
   alliance: 0x3d7a4a,
   vagabond: 0x5a5a5a,
+  lizard: 0xc9b530,
+  riverfolk: 0x2f9a94,
   neutral: 0xb8a078,
 } as const
 
@@ -27,7 +29,22 @@ export function factionColorForSeat(
   if (factionId === 'vagabond') {
     return FACTION_COLORS.vagabond
   }
+  if (factionId === 'lizard') {
+    return FACTION_COLORS.lizard
+  }
+  if (factionId === 'riverfolk') {
+    return FACTION_COLORS.riverfolk
+  }
   return FACTION_COLORS.neutral
+}
+
+const HEX_RADIX = 16
+const HEX_COLOR_DIGIT_COUNT = 6
+
+/** CSS colour of a faction, e.g. for the menu rows where no seat exists yet. */
+export function factionColorCss(factionId: string): string {
+  const color: number = factionColorForSeat(0, [factionId])
+  return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
 }
 
 export const PIECE_DRAW = {

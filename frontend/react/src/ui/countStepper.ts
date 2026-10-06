@@ -1,3 +1,5 @@
+import type { TurnBannerOptionPresentation } from '#ui/TurnBanner.ts'
+
 export type CountStepperOption = {
   label: string
   value: string
@@ -38,12 +40,12 @@ export function isContiguousNumericOptionDomain(
 
 export function shouldPresentAsCountStepper(
   options: readonly CountStepperOption[],
-  presentation: 'stepper' | 'buttons' | undefined,
+  presentation: TurnBannerOptionPresentation | undefined,
 ): boolean {
   if (options.length === 0) {
     return false
   }
-  if (presentation === 'buttons') {
+  if (presentation === 'buttons' || presentation === 'grid') {
     return false
   }
   if (presentation === 'stepper') {

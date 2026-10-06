@@ -3,6 +3,7 @@ import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import type { GameState } from '#state/types.js'
 import { warriors } from '#queries/pieces.js'
+import { swimsAlongRiver } from '#queries/rivers.js'
 import { rules } from '#queries/ruler.js'
 
 export type MovePath = {
@@ -19,6 +20,7 @@ export function canMove(state: GameState, path: MovePath, hooks: RuleHooks): boo
 
   if (!hooks.isAdjacent(state, seat, from, to)) return false
 
+  if (swimsAlongRiver(state, seat, from, to)) return true
   if (!hooks.needsRuleToMove(state, seat)) return true
   return rules(state, from, seat, hooks) || rules(state, to, seat, hooks)
 }

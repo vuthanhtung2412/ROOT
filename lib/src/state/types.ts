@@ -2,6 +2,7 @@ import type { DeckState } from '#cards/Deck.js'
 import type { QuestCard } from '#cards/quests.js'
 import type { Card } from '#cards/types.js'
 import type { Event } from '#events/types.js'
+import type { ClearingId, Suit } from '#map/types.js'
 import type { FactionId, ItemType, Piece, Seat } from '#pieces/types.js'
 import type { DecreeColumn, FactionBoard } from '#state/boards.js'
 
@@ -68,6 +69,18 @@ export type TurnScratch = {
   slipDone: boolean
   /** Vagabond — aid counts toward relationship this turn per seat. */
   aidsThisTurn: Partial<Record<Seat, number>>
+  /** Lizard Cult Birdsong — Outcast adjusted and Lost Souls discarded. */
+  outcastAdjusted: boolean
+  /** Lizard Cult — suits already scored by ritual this turn. Rule: 10.5.3. */
+  ritualScoredSuits: Suit[]
+  /** Lizard Cult — clearing where a crusade move may end in a free battle. */
+  crusadeFollowUpClearing: ClearingId | null
+  /** Riverfolk Birdsong — Protectionism, dividends and gathering done. */
+  fundsGathered: boolean
+  /** Riverboats bought this turn: rivers are paths. Rule: 11.2.7.II. */
+  riverboats: boolean
+  /** Mercenaries bought this turn. Rule: 11.2.7.III. */
+  mercenaries: boolean
 }
 
 export type GameState = {

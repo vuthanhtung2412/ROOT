@@ -42,7 +42,7 @@ export function moveWarriors(
 )
 ```
 
-+ All variable, function signature must have an explicit type, ban `any`
++ All variable, function signature must have an explicit type, ban `any` and `unknown`
 
 + Don't use unsafe `as` use explicit typeguard instead
 ```typescript

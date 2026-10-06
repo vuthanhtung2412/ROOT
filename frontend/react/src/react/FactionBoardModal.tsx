@@ -14,19 +14,26 @@ import {
   logicalViewportSize,
   readWindowViewportMeasure,
 } from '#game/viewportFit.ts'
+import { ExpansionBoardOverlays } from '#react/expansionBoardOverlays.tsx'
 import { FactionBoardOverlays } from '#react/factionBoardOverlays.tsx'
 import { QuestPilePanel } from '#react/QuestPilePanel.tsx'
+import { RevealedCardsPanel } from '#react/RevealedCardsPanel.tsx'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 
 const BOARD_MAX_WIDTH_RATIO = 0.96
 const BOARD_MAX_HEIGHT_RATIO = 0.94
 const BOARD_TOP_RATIO = 0.02
-const QUEST_SIDE_PANEL_WIDTH_PIXELS = 220
-const QUEST_SIDE_PANEL_GAP_PIXELS = 12
+const SIDE_PANEL_WIDTH_PIXELS = 220
+const SIDE_PANEL_GAP_PIXELS = 12
 const STAGE_HORIZONTAL_INSET_PIXELS = 24
 const ART_FALLBACK_CLASS_NAME = 'absolute inset-0 z-0 border-2 border-parchment/70'
 const ART_FALLBACK_MARQUISE_CLASS_NAME = 'bg-[rgb(184_90_26/0.95)]'
 const ART_FALLBACK_EYRIE_CLASS_NAME = 'bg-[rgb(26_42_74/0.95)]'
+
+/** Boards with a card panel beside the art: Vagabond quests, Cult revealed cards. */
+function hasSidePanel(view: FactionBoardViewModel): boolean {
+  return view.kind === 'vagabond' || view.kind === 'lizard'
+}
 
 function computeBoardPlacement(
   view: FactionBoardViewModel,
@@ -34,12 +41,11 @@ function computeBoardPlacement(
   viewHeight: number,
 ): BoardImagePlacement {
   const layout = factionBoardLayoutForKind(view.kind)
-  const reservedSideWidth =
-    view.kind === 'vagabond'
-      ? QUEST_SIDE_PANEL_WIDTH_PIXELS +
-        QUEST_SIDE_PANEL_GAP_PIXELS +
-        STAGE_HORIZONTAL_INSET_PIXELS
-      : 0
+  const reservedSideWidth = hasSidePanel(view)
+    ? SIDE_PANEL_WIDTH_PIXELS +
+      SIDE_PANEL_GAP_PIXELS +
+      STAGE_HORIZONTAL_INSET_PIXELS
+    : 0
   return placeBoardImage({
     viewWidth: Math.max(1, viewWidth - reservedSideWidth),
     viewHeight,
@@ -85,12 +91,9 @@ export function FactionBoardModal(): JSX.Element | null {
   const layout = factionBoardLayoutForKind(view.kind)
   const placement = computeBoardPlacement(view, viewport.width, viewport.height)
   const boardImagePath = imagePathForAssetKey(view.boardTextureKey)
-  const showQuestSidePanel = view.kind === 'vagabond'
   const stageWidth =
     placement.displayWidth +
-    (showQuestSidePanel
-      ? QUEST_SIDE_PANEL_WIDTH_PIXELS + QUEST_SIDE_PANEL_GAP_PIXELS
-      : 0)
+    (hasSidePanel(view) ? SIDE_PANEL_WIDTH_PIXELS + SIDE_PANEL_GAP_PIXELS : 0)
   const stageLeft = Math.max(
     STAGE_HORIZONTAL_INSET_PIXELS / 2,
     (viewport.width - stageWidth) / 2,
@@ -153,16 +156,18 @@ export function FactionBoardModal(): JSX.Element | null {
             />
           )}
           <FactionBoardOverlays view={view} layout={layout} />
+          <ExpansionBoardOverlays view={view} layout={layout} />
         </div>
-        {showQuestSidePanel ? (
+        {hasSidePanel(view) ? (
           <aside
             className="pointer-events-auto min-h-0 flex-none"
             style={{
-              width: QUEST_SIDE_PANEL_WIDTH_PIXELS,
+              width: SIDE_PANEL_WIDTH_PIXELS,
               height: placement.displayHeight,
             }}
           >
-            <QuestPilePanel view={view} />
+            {view.kind === 'vagabond' ? <QuestPilePanel view={view} /> : null}
+            {view.kind === 'lizard' ? <RevealedCardsPanel view={view} /> : null}
           </aside>
         ) : null}
       </div>

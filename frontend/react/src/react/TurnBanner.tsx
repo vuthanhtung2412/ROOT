@@ -47,8 +47,10 @@ export function TurnBanner(): JSX.Element | null {
 
   const callbacks = getHudCallbacks()
   const useStepper = countStepper !== null
+  // A grid is picked in its own modal (OptionGridModal), not in the banner.
+  const isGrid = composer !== null && composer.optionPresentation === 'grid'
   const hasOptionRow =
-    composer !== null && (useStepper || composer.options.length > 0)
+    composer !== null && !isGrid && (useStepper || composer.options.length > 0)
   const statusText =
     composer === null
       ? `${turn.actorFaction} · ${turn.phase}/${turn.step} — ${turn.prompt}`
@@ -111,7 +113,7 @@ export function TurnBanner(): JSX.Element | null {
           }}
         />
       ) : null}
-      {composer !== null && !useStepper && composer.options.length > 0 ? (
+      {composer !== null && !isGrid && !useStepper && composer.options.length > 0 ? (
         <div className="col-span-full flex flex-row flex-wrap items-center justify-center gap-2.5">
           {composer.options.map((option) =>
             option.item !== undefined ? (

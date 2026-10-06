@@ -41,12 +41,20 @@ import { createMarchWorkflowHooks } from '#game/resolution/marchWorkflowHooks.ts
 import { createVagabondComposerHooks } from '#game/resolution/vagabondActionComposer.ts'
 import { createDominanceComposerHooks } from '#game/resolution/dominanceActionComposer.ts'
 import { createAllianceComposerHooks } from '#game/resolution/allianceActionComposer.ts'
+import { createOptionComposerHooks } from '#game/resolution/optionActionComposer.ts'
+import { pendingEventType } from '#game/expansionPendingPrompts.ts'
+import { riverfolkServiceCost } from '#ui/expansionBoardViewModel.ts'
 import { readBattleClearingId } from '#game/battleOverlayModel.ts'
 import {
   applyMarchPreview,
   buildCurrentSeatWarriorCounts,
   loadGameSceneBoardLayout,
 } from '#game/gameSceneBoardState.ts'
+import {
+  boardEffectsBetween,
+  EMPTY_BOARD_EFFECT_BATCH,
+  type BoardEffectBatch,
+} from '#game/boardEffects.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
@@ -71,6 +79,8 @@ export type ReactGameBoardSnapshot = {
   forestPawns: readonly ForestPawnMarker[]
   highlightedClearingIds: readonly number[]
   highlightedForestIndexes: readonly number[]
+  /** What the last server update changed on the map (animated for everyone). */
+  effects: BoardEffectBatch
 }
 
 type BoardListener = () => void
@@ -94,7 +104,11 @@ export class ReactGameController {
     forestPawns: [],
     highlightedClearingIds: [],
     highlightedForestIndexes: [],
+    effects: EMPTY_BOARD_EFFECT_BATCH,
   }
+  /** Last committed server state the board effects were read from. */
+  private effectState: GameState | null = null
+  private boardEffects: BoardEffectBatch = EMPTY_BOARD_EFFECT_BATCH
   private readonly boardListeners = new Set<BoardListener>()
 
   private readonly battleOverlayTarget: BattleOverlaySyncTarget = {
@@ -110,6 +124,7 @@ export class ReactGameController {
   private vagabondComposer = createVagabondComposerHooks()
   private dominanceComposer = createDominanceComposerHooks()
   private allianceComposer = createAllianceComposerHooks()
+  private optionComposer = createOptionComposerHooks()
   private eventComposer = createEventComposerHooks()
   private unsubscribe: (() => void) | null = null
   private latestSnapshot: GameSessionSnapshot | null = null
@@ -138,6 +153,7 @@ export class ReactGameController {
       forestPawns: this.forestPawns,
       highlightedClearingIds: this.highlightedClearingIds,
       highlightedForestIndexes: this.highlightedForestIndexes,
+      effects: this.boardEffects,
     }
     for (const listener of this.boardListeners) {
       listener()
@@ -162,15 +178,22 @@ export class ReactGameController {
     this.marquiseMarch.setOnOutcome((outcome) => {
       this.applyComposerOutcome(outcome)
     })
-    this.marquiseBoard = createMarquiseBoardComposerHooks()
-    this.eyrieComposer = createEyrieComposerHooks()
     const seatLabelOptions: SeatLabelOptions = {
       factionNameForSeat: (seat: number): string | null =>
         this.latestSnapshot?.state?.factions[seat] ?? null,
     }
+    this.marquiseBoard = createMarquiseBoardComposerHooks(seatLabelOptions)
+    this.eyrieComposer = createEyrieComposerHooks(seatLabelOptions)
     this.vagabondComposer = createVagabondComposerHooks(seatLabelOptions)
     this.dominanceComposer = createDominanceComposerHooks()
     this.allianceComposer = createAllianceComposerHooks(seatLabelOptions)
+    this.optionComposer = createOptionComposerHooks({
+      ...seatLabelOptions,
+      pendingType: (): string | null =>
+        pendingEventType(this.latestSnapshot?.state?.pending[0]),
+      currentServiceCost: (service: string): number | null =>
+        riverfolkServiceCost(this.latestSnapshot?.state?.players ?? [], service),
+    })
     this.eventComposer = createEventComposerHooks()
     this.autoPrompts = new AutoPromptController({
       applyComposerOutcome: (outcome) => this.applyComposerOutcome(outcome),
@@ -202,7 +225,12 @@ export class ReactGameController {
       if (snapshot === null || snapshot.state === null) {
         return
       }
-      const actorSeat = snapshot.state.currentSeat
+      // Same actor as paintHud: a pending event may belong to another seat
+      // (Field Hospitals of the defender during the attacker's turn).
+      const actorSeat = buildTurnBannerViewModel(
+        snapshot.state,
+        snapshot.legalActions,
+      ).actorSeat
       this.autoPrompts?.runAfterHudPaint(
         snapshot,
         actorSeat,
@@ -212,6 +240,8 @@ export class ReactGameController {
     this.modals = new GameSceneModals(() => this.viewerSeat())
     this.composer.setHooks(
       mergeComposerHooks(
+        // First: claims its pending events before the generic event composer.
+        this.optionComposer.hooks,
         this.marquiseCards.hooks,
         this.marquiseMarch.hooks,
         this.marquiseBoard.hooks,
@@ -268,6 +298,20 @@ export class ReactGameController {
           this.syncActionTrayFromLatestSnapshot()
         }
       },
+      onPublicHandClick: (seat) => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openPublicHand(state, seat)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
+      onLostSoulsClick: () => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openLostSouls(state)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
       onSelectAction: (spec) => {
         this.handleSelectAction(spec)
       },
@@ -309,10 +353,12 @@ export class ReactGameController {
     this.unsubscribe = session.subscribe((snapshot) => {
       this.latestSnapshot = snapshot
       this.paintHud(snapshot)
+      this.syncBoardEffects(snapshot)
       this.syncBoardPieces(snapshot)
     })
     this.latestSnapshot = session.getSnapshot()
     this.paintHud(this.latestSnapshot)
+    this.syncBoardEffects(this.latestSnapshot)
     this.syncBoardPieces(this.latestSnapshot)
     const outcome = this.composer.getOutcome()
     if (outcome.kind === 'incomplete') {
@@ -334,6 +380,8 @@ export class ReactGameController {
     this.layout = null
     this.boardClearings = null
     this.boardFactions = null
+    this.effectState = null
+    this.boardEffects = EMPTY_BOARD_EFFECT_BATCH
     this.forestPawns = []
     this.highlightedClearingIds = []
     this.highlightedForestIndexes = []
@@ -443,7 +491,9 @@ export class ReactGameController {
         }
         return leaderDraft.type === 'pickLeader' ? leaderDraft.leaders : null
       },
-      getOptionPresentation: () => this.eventComposer.getOptionPresentation(),
+      getOptionPresentation: () =>
+        this.optionComposer.getOptionPresentation() ??
+        this.eventComposer.getOptionPresentation(),
       getPromptOptions: () => [
         ...this.marquiseMarch.getPromptOptions(),
         ...this.marquiseBoard.getPromptOptions(),
@@ -451,15 +501,19 @@ export class ReactGameController {
         ...this.allianceComposer.getPromptOptions(),
         ...this.vagabondComposer.getPromptOptions(),
         ...this.dominanceComposer.getPromptOptions(),
+        ...this.optionComposer.getPromptOptions(),
         ...this.eventComposer.getPromptOptions(),
       ],
       getDiscardSelection: () => {
         const discardDraft = this.marquiseCards.getDraft()
-        return discardDraft.type === 'discardMany' ? discardDraft.selected : []
+        return discardDraft.type === 'discardMany'
+          ? discardDraft.selected
+          : this.allianceComposer.getSelectedHandCardIds()
       },
       getSupporterPilePick: () =>
         this.allianceComposer.getSupporterPilePick() ??
-        this.vagabondComposer.getDiscardPilePick(),
+        this.vagabondComposer.getDiscardPilePick() ??
+        this.optionComposer.getCardPilePick(),
       syncSupporterPilePick: (pick) => {
         if (pick === null) {
           hideSelectableCardPile()
@@ -527,6 +581,7 @@ export class ReactGameController {
         this.allianceComposer.getDraft(),
         this.vagabondComposer.getDraft(),
         this.dominanceComposer.getDraft(),
+        this.optionComposer.getDraft(),
         this.eventComposer.getDraft(),
       ])
     )
@@ -635,6 +690,25 @@ export class ReactGameController {
       return true
     }
     return this.session.getLocalSeat() === actorSeat
+  }
+
+  /**
+   * Read the map changes of a server update. A repaint of the same state
+   * (e.g. a local march preview) carries the same state object and adds none.
+   */
+  private syncBoardEffects(snapshot: GameSessionSnapshot): void {
+    const state = snapshot.state
+    if (state === null || state === this.effectState) {
+      return
+    }
+    const effects = boardEffectsBetween(this.effectState, state)
+    this.effectState = state
+    if (effects.length > 0) {
+      this.boardEffects = {
+        sequence: this.boardEffects.sequence + 1,
+        effects,
+      }
+    }
   }
 
   private syncBoardPieces(snapshot: GameSessionSnapshot): void {

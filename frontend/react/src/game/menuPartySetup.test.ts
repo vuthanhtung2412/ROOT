@@ -21,8 +21,12 @@ describe('menuPartySetup', () => {
     ])
   })
 
-  it('rejects missing marquise and duplicates', () => {
-    expect(validatePartyFactions(['eyrie', 'alliance']).ok).toBe(false)
+  it('rejects duplicates and unknown factions; the Marquise is optional', () => {
+    expect(validatePartyFactions(['lizard', 'riverfolk'])).toEqual({
+      ok: true,
+      factions: ['lizard', 'riverfolk'],
+    })
+    expect(validatePartyFactions(['marquise', 'duchy']).ok).toBe(false)
     expect(validatePartyFactions(['marquise', 'marquise']).ok).toBe(false)
     expect(validatePartyFactions(['marquise', 'eyrie'])).toEqual({
       ok: true,

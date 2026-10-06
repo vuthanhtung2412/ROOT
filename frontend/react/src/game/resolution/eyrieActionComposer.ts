@@ -1,9 +1,12 @@
 import type { ActionSpec } from '#api/client.ts'
 import {
+  SEAT_VALUE_PREFIX,
+  fallbackSeatLabel,
   readChoiceParams,
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
+  type SeatLabelOptions,
 } from '#game/resolution/ActionComposer.ts'
 import {
   isDecreeCardOption,
@@ -15,7 +18,7 @@ import {
 /**
  * Eyrie birdsong + decree: forced addToDecree, newRoost, decree L→R, turmoil.
  */
-export function createEyrieComposerHooks(): {
+export function createEyrieComposerHooks(options?: SeatLabelOptions): {
   hooks: ActionComposerHooks
   getDraft: () => EyrieDraft
   getPromptOptions: () => Array<{ label: string; value: string }>
@@ -247,7 +250,10 @@ export function createEyrieComposerHooks(): {
         draft.picking === 'defender' &&
         draft.from !== null
       ) {
-        const defender = Number(column)
+        if (!column.startsWith(SEAT_VALUE_PREFIX)) {
+          return null
+        }
+        const defender = Number(column.slice(SEAT_VALUE_PREFIX.length))
         const clearing = draft.from
         const match = draft.targets.find(
           (target) =>
@@ -361,8 +367,11 @@ export function createEyrieComposerHooks(): {
         }
         draft = { ...draft, from: clearingId, picking: 'defender' }
         promptOptions = matches.map((target) => ({
-          label: `seat ${String(target.defender)}`,
-          value: String(target.defender),
+          label:
+            options?.factionNameForSeat?.(target.defender) ??
+            fallbackSeatLabel(target.defender),
+          // Prefixed so the banner shows buttons, not a numeric count stepper.
+          value: `${SEAT_VALUE_PREFIX}${String(target.defender)}`,
         }))
         return {
           kind: 'incomplete',

@@ -1,92 +1,71 @@
 ### Goal
-- 2–4 humans play one game, each from their own browser, one seat each.
-- Each player sees only their own hand and can act only for their own seat.
-- Hotseat ("Start game") and QA flows keep working unchanged.
+- Lizard Cult (Law 10) and Riverfolk Company (Law 11) playable end to end:
+  rules in `@root/lib`, accepted by the web server, playable in the React UI.
+- Existing factions, hotseat, online and QA flows keep working unchanged.
 
 ### Approach
-- **Two lobby modes**, chosen at create: `hotseat` (today's behaviour, default) and `online`.
-  Mode lives in the web server store, not in `@root/lib`.
-- **Player id = secret.** Each browser generates a random id, keeps it in `sessionStorage`
-  (already per-tab), joins with it, and sends it as `X-Player-Id` on every request.
-- **Server enforces seats in online mode**: an action is accepted only if a legal action
-  with that type has `actor` = the caller's seat. Otherwise `403 NOT_YOUR_SEAT`.
-- **No leaks in online mode**: REST `GET /game` and `GET /game/actions` return the same
-  per-viewer redaction the WebSocket already uses; other players' `playerId` is blanked
-  so ids cannot be copied to impersonate a seat.
-- **Seats by join order** (lib rule today: seat = join order, faction = `factions[seat]`).
-  Host picks the faction list; joiners take the next free seat.
-- **Host starts** once every seat is filled.
-- **Reload = resume**: stored id still in the slot → reconnect to the same seat.
-- Replace the hard-coded 2-player `joinMatch` (`first-player` / `second-player` ids).
+- **Follow the existing faction shape**: `factions/<Name>.ts` class + `factions/<name>/`
+  helpers (`rules`, `legalActions`, `setup`), board type in `state/boards.ts`.
+- **Legal actions carry full payloads**: every new action spec lists complete legal
+  payloads in `params.options`; validation = payload is one of the options. One generic
+  React composer walks the option fields (card → clearing → seat → count → choice).
+- **Setup no longer needs the Marquise**: setup events are queued per faction in setup
+  order (Marquise, Eyrie, Alliance, Vagabond, Lizard Cult, Riverfolk Company).
+- **Lost Souls** live on the deck (`deck.lostSouls`), so every existing discard is
+  routed there while the Cult is in the game, without touching each call site.
+- **Riverfolk services** are a pending event at the start of each other player's
+  Birdsong (`buyServices`); Riverboats and Mercenaries are turn flags read by the
+  adjacency, rule and battle queries.
+- Seats stay 0–3 (max four players); the host picks any 2–4 of the six factions.
 
-Assumptions (say if wrong):
-- Start only when the lobby is full; no bots or empty seats.
-- Joiners do not pick a faction; join order decides.
-- Undo, snapshot load and delete stay open (dev tools), not locked per seat.
-- Still one game slot, in memory; a server restart drops the game.
-- Game log is not redacted (may show card ids of other players' plays).
-
-### Files to change
-- `backend/web/src/store/GameStore.ts`: add lobby mode next to the game.
-- `backend/web/src/schemas/game.ts`: `mode` on create body and game responses.
-- `backend/web/src/routes/game.ts`: store mode; seat check on `POST /actions` and
-  `POST /start`; viewer redaction on `GET /` and `GET /actions`.
-- `backend/web/src/view/actionSeatGuard.ts` (new): "may this player send this action".
-- `backend/web/src/view/redactStateForViewer.ts`: blank other players' `playerId`.
-- `backend/web/src/middleware/cors.ts`: allow `X-Player-Id` header.
-- `backend/web_client/src/gameApi.ts`, `schema.d.ts`: `mode` on create, player-id header
-  (regenerate with `pnpm gen:api-client`).
-- `frontend/react/src/game/playerIdentity.ts`: generate random player id.
-- `frontend/react/src/game/GameSession.ts`: `hostOnlineGame`, `joinOnlineGame`, resume;
-  drop `joinMatch` constants.
-- `frontend/react/src/game/hudStore.ts`, `frontend/react/src/react/MenuOverlay.tsx`,
-  `frontend/react/src/App.tsx`: Host / Join buttons, lobby panel (seats joined, Start).
-- `.agents/skills/QA/replay-online-two-players.mjs` (new): two browser contexts, one game.
+Simplifications (say if wrong):
+- Riverfolk craft picks which funds and which Trade Posts spaces to use automatically.
+- Trade Disruption removes funds in box order (no choice of which funds).
+- The Vagabond pays for services with automatically chosen items.
+- Lizard Cult starting corner follows Law 10.3.2; the garden suit is the clearing suit
+  (no Lost City landmark).
 
 ### Test plan
-- Web unit (`routes/game.test.ts`, new guard test):
-  - online: wrong seat → 403; right seat → 200; missing header → 403.
-  - online: pending event (Field Hospitals, Outrage, ambush) accepted only from the
-    responding seat, not the current turn seat.
-  - hotseat: no header still works (QA scripts unchanged).
-  - online `GET /game`: own hand present, other hands empty, other `playerId` blank.
-- React unit (`GameSession.test.ts`): host creates + joins + waits; joiner joins next seat;
-  resume with stored id; header sent on submit; "Not your seat" surfaced.
-- Menu unit: Start disabled until lobby full; only host sees Start.
-- End to end: `replay-online-two-players.mjs` — two contexts host/join, play a few turns,
-  assert each page shows only its own hand and the off-turn page has no action tray.
-- Regression: `replay-wa-vb-qa.mjs` still 17/17; lib and React suites green.
+- Lib unit tests per rule, fixture factories only: `Lizard.test.ts`, `Riverfolk.test.ts`,
+  `buyServices.test.ts`, setup events, Lost Souls routing, Pilgrims rule, Revenge,
+  Swimmers, Mercenaries rule and hit split, Trade Disruption.
+- Web: create game with new factions; Riverfolk hand stays public in online mode.
+- React: generic option composer unit tests; faction board view model tests.
+- Regression: lib, web and React suites green; `pnpm typecheck` and `pnpm lint` clean.
 
 ### Commit plan
-- done: `feat(web): add online lobby mode to game slot`
-  - `backend/web/src/store/GameStore.ts`
-  - `backend/web/src/schemas/game.ts`
-  - `backend/web/src/routes/game.ts`
-  - `backend/web/src/routes/game.test.ts`
-- done: `feat(web): enforce player seat on actions in online mode`
-  - `backend/web/src/view/actionSeatGuard.ts`
-  - `backend/web/src/view/actionSeatGuard.test.ts`
-  - `backend/web/src/routes/game.ts`
-  - `backend/web/src/routes/game.test.ts`
-  - `backend/web/src/middleware/cors.ts`
-  - `backend/web/src/middleware/cors.test.ts`
-- done: `fix(web): redact REST game views per player in online mode`
+- done: `docs(plan): Lizard Cult and Riverfolk Company`
+  - `PLAN.md`
+- done: `feat(lib): Lizard Cult and Riverfolk boards, pieces and Lost Souls`
+  - `lib/src/pieces/types.ts`, `lib/src/state/boards.ts`, `lib/src/cards/Deck.ts`
+  - `lib/src/queries/supply.ts`, `lib/src/rules/place.ts`, `lib/src/rules/remove.ts`
+  - `lib/src/queries/craft.ts`, `lib/src/queries/ruler.ts`, `lib/src/typeGuards.ts`
+- done: `refactor(lib): queue faction setup without requiring the Marquise`
+  - `lib/src/game/Game.ts`, `lib/src/game/factionSetup.ts`
+  - `lib/src/events/placeStartingBuilding.ts`
+- done: `feat(lib): Lizard Cult faction`
+  - `lib/src/factions/Lizard.ts`, `lib/src/factions/lizard/*`
+  - `lib/src/events/chooseCultCorner.ts`, `lib/src/events/chooseOutcast.ts`
+  - `lib/src/actions/types.ts`, `lib/src/events/types.ts`, `lib/src/events/resolvers.ts`
+- done: `feat(lib): Riverfolk Company faction`
+  - `lib/src/factions/Riverfolk.ts`, `lib/src/factions/riverfolk/*`
+  - `lib/src/events/placeRiverfolkWarrior.ts`, `lib/src/events/setStartingCosts.ts`
+- done: `feat(lib): Riverfolk services for other players`
+  - `lib/src/events/buyServices.ts`, `lib/src/queries/mercenaries.ts`
+  - `lib/src/queries/pieces.ts`, `lib/src/queries/move.ts`, `lib/src/triggers/hooks.ts`
+  - `lib/src/events/battle/stages.ts`, `lib/src/events/battle/removal.ts`
+- done: `feat(web): accept Lizard Cult and Riverfolk Company`
+  - `backend/web/src/schemas/common.ts`, `backend/web/src/typeGuards.ts`
   - `backend/web/src/view/redactStateForViewer.ts`
-  - `backend/web/src/view/redactStateForViewer.test.ts`
-  - `backend/web/src/routes/game.ts`
-  - `backend/web/src/routes/game.test.ts`
-- done: `feat(web-client): send player id and lobby mode`
-  - `backend/web_client/src/gameApi.ts`
-  - `backend/web_client/src/schema.d.ts`
-  - `frontend/react/src/api/client.ts`
-- done: `feat(ui): host, join and resume online game in session`
-  - `frontend/react/src/game/playerIdentity.ts`
-  - `frontend/react/src/game/playerIdentity.test.ts`
-  - `frontend/react/src/game/GameSession.ts`
-  - `frontend/react/src/game/GameSession.test.ts`
-- done: `feat(ui): online lobby in menu`
-  - `frontend/react/src/game/hudStore.ts`
-  - `frontend/react/src/react/MenuOverlay.tsx`
-  - `frontend/react/src/App.tsx`
-- done: `test(qa): two-browser online replay`
-  - `.agents/skills/QA/replay-online-two-players.mjs`
+  - `backend/web_client/src/gameApi.ts`, `backend/web_client/src/schema.d.ts`
+- done: `feat(ui): Lizard Cult and Riverfolk assets, menu and pieces`
+  - `frontend/react/public/assets/**`, `frontend/react/src/assets/gameAssets.ts`
+  - `frontend/react/src/game/menuPartySetup.ts`, `frontend/react/src/game/theme.ts`
+- done: `feat(ui): play Lizard Cult and Riverfolk actions`
+  - `frontend/react/src/game/resolution/optionActionComposer.ts`
+  - `frontend/react/src/game/resolution/eventActionComposer.ts`
+  - `frontend/react/src/ui/ActionTray.ts`
+- done: `feat(ui): Lizard Cult and Riverfolk faction boards`
+  - `frontend/react/src/ui/factionBoardViewModel.ts`
+  - `frontend/react/src/react/factionBoardOverlays.tsx`
+  - `frontend/react/src/assets/layouts/*.layout.json`

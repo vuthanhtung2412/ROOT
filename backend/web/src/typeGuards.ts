@@ -9,6 +9,8 @@ const FACTION_IDS: ReadonlySet<string> = new Set([
   'eyrie',
   'alliance',
   'vagabond',
+  'lizard',
+  'riverfolk',
 ])
 
 export function isFactionId(value: unknown): value is FactionId {

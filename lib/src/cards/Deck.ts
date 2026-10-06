@@ -6,6 +6,11 @@ import { VIZIER_DEF, VIZIER_DEF_ID } from '#factions/eyrie/viziers.js'
 export type DeckState = {
   draw: Card[]
   discard: Card[]
+  /**
+   * Present only while the Lizard Cult is in the game: every spent or
+   * discarded card lands here instead of the discard pile. Rule: 10.2.6.
+   */
+  lostSouls?: Card[]
 }
 
 export function defOf(card: Card): CardDef {
@@ -45,6 +50,11 @@ export class Deck {
     card: Card,
     opts?: { onDominance?: (card: Card) => void },
   ): void {
+    // Rule: 10.2.6 The Lost Souls Pile — even dominance cards go there first.
+    if (deck.lostSouls !== undefined) {
+      deck.lostSouls.push(card)
+      return
+    }
     if (defOf(card).type === 'dominance') {
       opts?.onDominance?.(card)
       return

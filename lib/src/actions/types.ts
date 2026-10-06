@@ -1,10 +1,12 @@
-import type { ClearingId } from '#map/types.js'
+import type { ActionOption } from '#actions/options.js'
+import type { ClearingId, Suit } from '#map/types.js'
 import type { BuildingType, ItemType, Seat } from '#pieces/types.js'
 import type {
   DecreeColumn,
   EyrieLeader,
   VagabondCharacter,
 } from '#state/boards.js'
+import type { RiverfolkService } from '#state/riverfolkBoard.js'
 
 export type MarchMove = {
   from: ClearingId
@@ -93,7 +95,12 @@ export type ActionChoiceParams = {
    * Correlated choices: overwork pairs, build pairs, or addToDecree card×column.
    * Emitter picks one element shape per action type.
    */
-  options?: OverworkChoice[] | BuildChoice[] | AddToDecreeCard[] | RevoltChoice[]
+  options?:
+    | OverworkChoice[]
+    | BuildChoice[]
+    | AddToDecreeCard[]
+    | RevoltChoice[]
+    | ActionOption[]
   /** Correlated battle / decree-battle targets. */
   targets?: BattleTargetChoice[]
   decline?: true[]
@@ -128,6 +135,12 @@ export type ActionChoiceParams = {
   vagabondItems?: VagabondItemChoice[]
   /** Vagabond item damage — exact number of items to choose. */
   itemCount?: number[]
+  /** Lizard Cult setup — suits the outcast marker may start on. */
+  suits?: Suit[]
+  /** Riverfolk setup — costs a service marker may start on. */
+  costs?: number[]
+  /** Riverfolk setup — the service whose starting cost is being set. */
+  services?: RiverfolkService[]
 }
 
 export type Action =
@@ -195,7 +208,7 @@ export type Action =
     }
   | { type: 'revolt'; clearing: ClearingId; supporterIds: string[] }
   | { type: 'spreadSympathy'; clearing: ClearingId; supporterIds: string[] }
-  | { type: 'mobilize'; cardId: string }
+  | { type: 'mobilize'; cardIds: string[] }
   | { type: 'train'; cardId: string }
   | {
       type: 'militaryOp'
@@ -251,7 +264,74 @@ export type Action =
     }
   | { type: 'refresh' }
   | { type: 'rest' }
+  | LizardAction
+  | RiverfolkAction
   | ResolveEventAction
+
+/** Rule: 11.4–11.6 — Riverfolk Company turn actions. */
+export type RiverfolkAction =
+  /** Rule: 11.4 — Protectionism, Score Dividends, Gather Funds. */
+  | { type: 'gatherFunds' }
+  /** Rule: 11.5.1 Move — commit one fund (owned by `fundOwner`). */
+  | {
+      type: 'riverfolkMove'
+      from: ClearingId
+      to: ClearingId
+      count: number
+      fundOwner: Seat
+    }
+  /** Rule: 11.5.2 Battle — commit one fund. */
+  | {
+      type: 'riverfolkBattle'
+      clearing: ClearingId
+      defender: Seat
+      fundOwner: Seat
+    }
+  /** Rule: 11.5.3 Craft — commit funds; `exportCard` takes the Export instead. */
+  | { type: 'riverfolkCraft'; cardId: string; exportCard: boolean }
+  /** Rule: 11.5.4 Draw — commit one fund. */
+  | { type: 'riverfolkDraw'; fundOwner: Seat }
+  /** Rule: 11.5.5 Recruit — spend one fund. */
+  | { type: 'riverfolkRecruit'; clearing: ClearingId; fundOwner: Seat }
+  /** Rule: 11.5.6 Establish Trade Post with Garrison — spend two ruler funds. */
+  | { type: 'establishTradePost'; clearing: ClearingId }
+  /** Rule: 11.6.2 Set Costs — the new cost of every service marker. */
+  | {
+      type: 'setServiceCosts'
+      handCard: number
+      riverboats: number
+      mercenaries: number
+    }
+
+/** Rule: 10.4–10.6 — Lizard Cult turn actions. */
+export type LizardAction =
+  /** Rule: 10.4.1–10.4.2 — adjust the Outcast, then discard the Lost Souls. */
+  | { type: 'adjustOutcast' }
+  /** Rule: 10.4.3.I Crusade — battle in an Outcast clearing (or after a crusade move). */
+  | { type: 'crusadeBattle'; clearing: ClearingId; defender: Seat }
+  /** Rule: 10.4.3.I Crusade — move from an Outcast clearing. */
+  | { type: 'crusadeMove'; from: ClearingId; to: ClearingId; count: number }
+  /** Rule: 10.4.3.I Crusade — decline the battle offered after a crusade move. */
+  | { type: 'skipCrusadeBattle' }
+  /** Rule: 10.4.3.II Convert — replace an enemy warrior with a Cult warrior. */
+  | { type: 'convert'; clearing: ClearingId; target: Seat }
+  /** Rule: 10.4.3.III Sanctify — replace an enemy building with a garden. */
+  | {
+      type: 'sanctify'
+      clearing: ClearingId
+      target: Seat
+      building: BuildingType
+    }
+  /** Rule: 10.5.1 Build — reveal a card, place a matching garden. */
+  | { type: 'ritualBuild'; cardId: string; clearing: ClearingId }
+  /** Rule: 10.5.2 Recruit — reveal a card, place a warrior. */
+  | { type: 'ritualRecruit'; cardId: string; clearing: ClearingId }
+  /** Rule: 10.5.3 Score — spend a card for Gardens track victory points. */
+  | { type: 'ritualScore'; cardId: string }
+  /** Rule: 10.5.4 Sacrifice — reveal a bird card, warrior to Acolytes. */
+  | { type: 'ritualSacrifice'; cardId: string }
+  /** Rule: 10.6.1 — return revealed cards to hand. */
+  | { type: 'returnRevealed' }
 
 export type ResolveEventAction = {
   type: 'resolveEvent'
@@ -268,6 +348,12 @@ export type ResolveEventAction = {
   forest?: number
   /** Rule: 9.2.6 — undamaged items the Vagabond chooses to damage. */
   items?: VagabondItemChoice[]
+  /** Rule: 10.3.3 — suit the Lizard Cult outcast marker starts on. */
+  suit?: Suit
+  /** Rule: 11.3.5 — starting cost of one Riverfolk service. */
+  cost?: number
+  /** Rule: 11.2.6 — Riverfolk service bought (`cardId` names the Hand Card). */
+  service?: RiverfolkService
 }
 
 export type ActionSpec = {

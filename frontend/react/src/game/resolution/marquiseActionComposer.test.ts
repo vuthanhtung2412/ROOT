@@ -143,12 +143,38 @@ describe('marquiseActionComposer board', () => {
     const mid = composer.chooseClearing(5)
     expect(mid.kind).toBe('incomplete')
     expect(board.getPromptOptions()).toEqual([
-      { label: 'seat 1', value: '1' },
-      { label: 'seat 2', value: '2' },
+      { label: 'seat 1', value: 'seat:1' },
+      { label: 'seat 2', value: 'seat:2' },
     ])
-    expect(composer.chooseColumn('1')).toEqual({
+    expect(composer.chooseColumn('seat:1')).toEqual({
       kind: 'ready',
       action: { type: 'battle', clearing: 5, defender: 1 },
     })
+  })
+
+  it('battle names each defender by faction', () => {
+    const factions: readonly string[] = ['marquise', 'riverfolk', 'lizard']
+    const board = createMarquiseBoardComposerHooks({
+      factionNameForSeat: (seat: number): string | null => factions[seat] ?? null,
+    })
+    const composer = new ActionComposer()
+    composer.setHooks(board.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'battle',
+        params: {
+          targets: [
+            { clearing: 4, defender: 2 },
+            { clearing: 4, defender: 1 },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(4)
+    expect(board.getPromptOptions()).toEqual([
+      { label: 'lizard', value: 'seat:2' },
+      { label: 'riverfolk', value: 'seat:1' },
+    ])
   })
 })

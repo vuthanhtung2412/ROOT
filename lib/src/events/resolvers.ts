@@ -4,24 +4,34 @@ import type { LogEntry } from '#log/types.js'
 import type { Seat } from '#pieces/types.js'
 import type { GameState } from '#state/types.js'
 import { battleResolver } from '#events/battle.js'
+import { buyServicesResolver } from '#events/buyServices.js'
 import { chooseCharacterResolver } from '#events/chooseCharacter.js'
+import { chooseCultCornerResolver } from '#events/chooseCultCorner.js'
 import { chooseForestResolver } from '#events/chooseForest.js'
+import { chooseOutcastResolver } from '#events/chooseOutcast.js'
 import { chooseKeepResolver } from '#events/chooseKeep.js'
 import { chooseLeaderResolver } from '#events/chooseLeader.js'
 import { fieldHospitalResolver } from '#events/fieldHospital.js'
 import { outrageResolver } from '#events/outrage.js'
+import { placeRiverfolkWarriorResolver } from '#events/placeRiverfolkWarrior.js'
 import { placeStartingBuildingResolver } from '#events/placeStartingBuilding.js'
+import { setStartingCostResolver } from '#events/setStartingCost.js'
 import { vagabondDamageResolver } from '#events/vagabondDamage.js'
 import type { Event } from '#events/types.js'
 import {
   isBattleEvent,
+  isBuyServicesEvent,
   isChooseCharacterEvent,
+  isChooseCultCornerEvent,
   isChooseForestEvent,
+  isChooseOutcastEvent,
   isChooseKeepEvent,
   isChooseLeaderEvent,
   isFieldHospitalEvent,
   isOutrageEvent,
+  isPlaceRiverfolkWarriorEvent,
   isPlaceStartingBuildingEvent,
+  isSetStartingCostEvent,
   isVagabondDamageEvent,
 } from '#typeGuards.js'
 
@@ -37,7 +47,61 @@ export type AnyEventResolver = {
   matchesAction(state: GameState, event: Event, action: Action, ctx: Ctx): boolean
 }
 
+type TypedEventResolver<SpecificEvent extends Event> = {
+  legalActions(state: GameState, event: SpecificEvent, ctx: Ctx): ActionSpec[]
+  apply(
+    state: GameState,
+    apply: { event: SpecificEvent; action: ResolveEventAction; actor: Seat },
+    ctx: Ctx,
+  ): LogEntry[]
+  matchesAction(
+    state: GameState,
+    event: SpecificEvent,
+    action: Action,
+    ctx: Ctx,
+  ): boolean
+}
+
+/** Wrap a resolver of one event type so it ignores every other event. */
+function guardedResolver<SpecificEvent extends Event>(
+  isSpecificEvent: (event: Event) => event is SpecificEvent,
+  resolver: TypedEventResolver<SpecificEvent>,
+): AnyEventResolver {
+  return {
+    legalActions(state, event, ctx) {
+      if (!isSpecificEvent(event)) return []
+      return resolver.legalActions(state, event, ctx)
+    },
+    apply(state, apply, ctx) {
+      if (!isSpecificEvent(apply.event)) return []
+      return resolver.apply(
+        state,
+        { event: apply.event, action: apply.action, actor: apply.actor },
+        ctx,
+      )
+    },
+    matchesAction(state, event, action, ctx) {
+      if (!isSpecificEvent(event)) return false
+      return resolver.matchesAction(state, event, action, ctx)
+    },
+  }
+}
+
 export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
+  buyServices: guardedResolver(isBuyServicesEvent, buyServicesResolver),
+  chooseCultCorner: guardedResolver(
+    isChooseCultCornerEvent,
+    chooseCultCornerResolver,
+  ),
+  chooseOutcast: guardedResolver(isChooseOutcastEvent, chooseOutcastResolver),
+  placeRiverfolkWarrior: guardedResolver(
+    isPlaceRiverfolkWarriorEvent,
+    placeRiverfolkWarriorResolver,
+  ),
+  setStartingCost: guardedResolver(
+    isSetStartingCostEvent,
+    setStartingCostResolver,
+  ),
   battle: {
     legalActions(state, event, ctx) {
       if (!isBattleEvent(event)) return []

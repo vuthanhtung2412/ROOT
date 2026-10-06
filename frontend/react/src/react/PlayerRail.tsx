@@ -10,6 +10,7 @@ import {
   patchHud,
   subscribeHud,
 } from '#game/hudStore.ts'
+import { PUBLIC_HAND_FACTION_ID } from '#game/gameSceneModals.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 
 const VAGABOND_FACTION_ID = 'vagabond'
@@ -87,6 +88,17 @@ export function PlayerRail(): JSX.Element | null {
                   }}
                 >
                   quests
+                </button>
+              ) : null}
+              {player.faction === PUBLIC_HAND_FACTION_ID ? (
+                <button
+                  type="button"
+                  className={`player-rail__public-hand ${SEAT_BUTTON_CLASS_NAME}`}
+                  onClick={() => {
+                    callbacks.onPublicHandClick(player.seat)
+                  }}
+                >
+                  hand
                 </button>
               ) : null}
               <button

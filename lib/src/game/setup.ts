@@ -86,6 +86,10 @@ export function runSharedSetup(state: GameState, rng: Rng): void {
     draw: shuffleWithRng(deckCards, rng),
     discard: [],
   }
+  // Rule: 10.2.6 — the Lost Souls pile exists only with the Lizard Cult.
+  if (state.players.some((player): boolean => player.faction === 'lizard')) {
+    state.deck.lostSouls = []
+  }
   state.dominanceAvailable = []
 
   for (const player of state.players) {

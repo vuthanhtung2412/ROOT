@@ -89,7 +89,7 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 
 | # | Do | Expect | Hits | ☐ |
 |---|----|--------|------|---|
-| 8 | **Mobilize** → mouse hand card | Card → Supporters | **W13** | ☐ |
+| 8 | **Mobilize** → mouse hand card (any number of cards) → **OK** | Card → Supporters | **W13** | ☐ |
 | 9 | **Train** → fox hand card | +1 officer (base on map) | **W13** | ☐ |
 | 10 | **Craft** → Anvil (`ROOT-204`) | Crafted via fox sympathy | **W13** | ☐ |
 | 11 | **End phase** → Evening military | `militaryOpsLeft` = officers | | ☐ |

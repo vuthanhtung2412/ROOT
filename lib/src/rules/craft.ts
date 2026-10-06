@@ -45,6 +45,24 @@ export function craftCard(
     }
   }
 
+  const logs = gainCraftedCard(state, seat, card, ctx)
+  logs.push({ t: 'action', actor: seat, action: { type: 'craft', cardId } })
+  return logs
+}
+
+/**
+ * Rule: Craft 4.1.2–4.1.3 — the benefit of a crafted card once its cost is
+ * paid: score, then take the item or put the persistent effect in play.
+ */
+export function gainCraftedCard(
+  state: GameState,
+  seat: Seat,
+  card: Card,
+  ctx: Ctx,
+): LogEntry[] {
+  const player = playerOf(state, seat)
+  const def = defOf(card)
+  const cardId = card.id
   const logs: LogEntry[] = []
   const vp = ctx.hooks.craftVp(state, seat, card)
   if (vp > 0) {
@@ -68,14 +86,12 @@ export function craftCard(
     Deck.discard(state.deck, card, {
       onDominance: (c) => state.dominanceAvailable.push(c),
     })
-    logs.push({ t: 'action', actor: seat, action: { type: 'craft', cardId } })
     return logs
   }
 
   // persistent | partisan
   player.playArea.push(card)
   ctx.emit({ s: 'craft.persistent', actor: seat, cardId })
-  logs.push({ t: 'action', actor: seat, action: { type: 'craft', cardId } })
   return logs
 }
 

@@ -1,6 +1,5 @@
 import type { Action, ActionSpec, ResolveEventAction } from '#actions/types.js'
-import { placeEyrieRoostSetup } from '#factions/Eyrie.js'
-import { factionFor } from '#factions/index.js'
+import { setUpFactionsAfterMarquise } from '#game/factionSetup.js'
 import {
   fillMarquiseSetupTracks,
   legalStartingBuildingClearings,
@@ -57,28 +56,7 @@ function finishMarquiseSetupAfterBuildings(
   ctx: Ctx,
 ): void {
   fillMarquiseSetupTracks(state, seat)
-
-  const seats = [...state.players].sort((a, b) => a.seat - b.seat)
-  for (const player of seats) {
-    if (player.seat === seat) continue
-    if (player.faction === 'eyrie') {
-      placeEyrieRoostSetup(state, player.seat)
-    } else {
-      factionFor(player.faction).setup(state, player.seat, ctx)
-    }
-  }
-
-  const eyrie = state.players.find((player) => player.faction === 'eyrie')
-  if (eyrie) {
-    state.pending.push({ type: 'chooseLeader', seat: eyrie.seat, reason: 'setup' })
-  }
-
-  const vagabond = state.players.find((player) => player.faction === 'vagabond')
-  if (vagabond) {
-    // Rule: Vagabond > Setup 1, 2 — character, then forest, after earlier factions.
-    state.pending.push({ type: 'chooseCharacter', seat: vagabond.seat })
-    state.pending.push({ type: 'chooseForest', seat: vagabond.seat })
-  }
+  setUpFactionsAfterMarquise(state, ctx)
 }
 
 export const placeStartingBuildingResolver: PlaceStartingBuildingResolver = {

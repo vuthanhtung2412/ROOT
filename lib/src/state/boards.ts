@@ -2,6 +2,11 @@ import type { QuestCard } from '#cards/quests.js'
 import type { Card } from '#cards/types.js'
 import type { Suit } from '#map/types.js'
 import type { FactionId, ItemType } from '#pieces/types.js'
+import { createLizardBoard, type LizardBoard } from '#state/lizardBoard.js'
+import {
+  createRiverfolkBoard,
+  type RiverfolkBoard,
+} from '#state/riverfolkBoard.js'
 
 /** Face-up quests drawn at Vagabond setup. Rule: Vagabond > Setup 3. */
 export const FACE_UP_QUEST_COUNT = 3
@@ -145,7 +150,13 @@ export type VagabondBoard = {
   forest: number | null
 }
 
-export type FactionBoard = MarquiseBoard | EyrieBoard | AllianceBoard | VagabondBoard
+export type FactionBoard =
+  | MarquiseBoard
+  | EyrieBoard
+  | AllianceBoard
+  | VagabondBoard
+  | LizardBoard
+  | RiverfolkBoard
 
 export function createFactionBoard(faction: FactionId): FactionBoard {
   switch (faction) {
@@ -191,8 +202,14 @@ export function createFactionBoard(faction: FactionId): FactionBoard {
           eyrie: 0,
           alliance: 0,
           vagabond: 0,
+          lizard: 0,
+          riverfolk: 0,
         },
         forest: null,
       }
+    case 'lizard':
+      return createLizardBoard()
+    case 'riverfolk':
+      return createRiverfolkBoard()
   }
 }

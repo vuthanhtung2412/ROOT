@@ -436,3 +436,60 @@ describe('Alliance spreadSympathy', () => {
     expect(board.sympathyTrack.placed).toBe(ALLIANCE_SYMPATHY_TRACK_SIZE - 1)
   })
 })
+
+describe('Alliance mobilize', () => {
+  const ALLIANCE_SEAT = 2
+
+  function daylightState(): ReturnType<typeof minimalState> {
+    return minimalState({
+      factions: ['marquise', 'eyrie', 'alliance'],
+      players: [
+        player(0, 'marquise'),
+        player(1, 'eyrie'),
+        player(ALLIANCE_SEAT, 'alliance', {
+          hand: [card('ROOT-72'), card('ROOT-57'), card('ROOT-72', 2)],
+        }),
+      ],
+      currentSeat: ALLIANCE_SEAT,
+      phase: 'daylight',
+      step: 'actions',
+    })
+  }
+
+  it('Rule: 8.5.2 Mobilize — one action adds every chosen card to Supporters', () => {
+    const state = daylightState()
+    const hand = state.players[ALLIANCE_SEAT]!.hand
+    const chosenIds = [hand[0]!.id, hand[2]!.id]
+    const keptId = hand[1]!.id
+
+    ALLIANCE.apply(
+      state,
+      { type: 'mobilize', cardIds: chosenIds },
+      testContext({ state }),
+    )
+
+    const supporterIds = boardOf(state, ALLIANCE_SEAT).supporters.map(
+      (supporter) => supporter.id,
+    )
+    expect(supporterIds).toEqual(chosenIds)
+    expect(state.players[ALLIANCE_SEAT]!.hand.map((kept) => kept.id)).toEqual([
+      keptId,
+    ])
+  })
+
+  it('Rule: 8.5.2 Mobilize — a card not in hand moves nothing', () => {
+    const state = daylightState()
+    const hand = state.players[ALLIANCE_SEAT]!.hand
+    const handSize = hand.length
+
+    expect(() =>
+      ALLIANCE.apply(
+        state,
+        { type: 'mobilize', cardIds: [hand[0]!.id, 'ROOT-1#9'] },
+        testContext({ state }),
+      ),
+    ).toThrow(/CARD_NOT_IN_HAND/)
+    expect(hand).toHaveLength(handSize)
+    expect(boardOf(state, ALLIANCE_SEAT).supporters).toHaveLength(0)
+  })
+})

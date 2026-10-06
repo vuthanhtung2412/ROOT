@@ -1,4 +1,10 @@
-export type FactionId = 'marquise' | 'eyrie' | 'alliance' | 'vagabond'
+export type FactionId =
+  | 'marquise'
+  | 'eyrie'
+  | 'alliance'
+  | 'vagabond'
+  | 'lizard'
+  | 'riverfolk'
 
 export type Seat = 0 | 1 | 2 | 3
 
@@ -13,14 +19,14 @@ export type ItemType =
   | 'torch'
 
 /** Buildings that can craft cards (activate once per turn). */
-export type CraftingBuildingType = 'workshop' | 'roost'
+export type CraftingBuildingType = 'workshop' | 'roost' | 'garden'
 
 /** Buildings that never craft. */
 export type NonCraftingBuildingType = 'sawmill' | 'recruiter' | 'base'
 
 export type BuildingType = CraftingBuildingType | NonCraftingBuildingType
 
-export type TokenType = 'wood' | 'keep' | 'sympathy'
+export type TokenType = 'wood' | 'keep' | 'sympathy' | 'tradePost'
 
 type PieceBase = {
   id: string
@@ -32,7 +38,8 @@ export type Pawn = PieceBase & { kind: 'pawn' }
 
 /**
  * Rule: Craft — each crafting piece activates once per turn.
- * Only workshop (Marquise) / roost (Eyrie) carry `used`; reset on endTurn.
+ * Workshop (Marquise) / roost (Eyrie) / garden (Lizard Cult) carry `used`;
+ * reset on endTurn.
  */
 export type CraftingBuilding = PieceBase & {
   kind: 'building'
@@ -57,7 +64,7 @@ export type Piece = Warrior | Pawn | Building | Token
 export function isCraftingBuildingType(
   type: BuildingType,
 ): type is CraftingBuildingType {
-  return type === 'workshop' || type === 'roost'
+  return type === 'workshop' || type === 'roost' || type === 'garden'
 }
 
 export function isCraftingBuilding(piece: Piece): piece is CraftingBuilding {

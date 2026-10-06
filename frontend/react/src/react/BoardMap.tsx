@@ -29,6 +29,8 @@ import {
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import type { ViewportLayoutMode } from '#game/viewportLayout.ts'
+import type { BoardEffectBatch } from '#game/boardEffects.ts'
+import { BoardEffectsLayer } from '#react/BoardEffectsLayer.tsx'
 import { ForestPawnLayer } from '#react/ForestPawnLayer.tsx'
 import {
   ClearingPieceLayer,
@@ -65,6 +67,8 @@ export type BoardMapProps = {
   clearings?: readonly BoardClearingPieces[]
   factions?: readonly string[]
   forestPawns?: readonly ForestPawnMarker[]
+  /** What the last server update changed on the map. */
+  effects?: BoardEffectBatch
   onClearingSelected?: ClearingSelectedHandler
   onForestSelected?: ForestSelectedHandler
 }
@@ -274,6 +278,13 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
                 )
               })
             : null}
+          {props.effects !== undefined && props.factions !== undefined ? (
+            <BoardEffectsLayer
+              batch={props.effects}
+              factions={props.factions}
+              hitCenters={hitCenters}
+            />
+          ) : null}
           {targets.map((target) => {
             const isHighlighted = highlighted.has(target.clearingId)
             const hasAnyHighlight = highlighted.size > 0

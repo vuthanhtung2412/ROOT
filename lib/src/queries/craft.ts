@@ -1,6 +1,7 @@
 import { defOf } from '#cards/Deck.js'
 import type { Card } from '#cards/types.js'
 import type { CostSuit } from '#cards/types.js'
+import { gardenCraftsInSuit } from '#factions/lizard/rules.js'
 import type { Suit } from '#map/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -17,11 +18,21 @@ const CRAFTABLE_TYPES = new Set(['item', 'persistent', 'partisan'])
 
 /** Rule: Craft 1–4 — unused crafters, suit match, supply item, no dup persistent. */
 export function canCraft(state: GameState, seat: Seat, card: Card): boolean {
-  const def = defOf(card)
-  // Ambush/dominance have empty cost; must not pass as craftable.
-  if (!CRAFTABLE_TYPES.has(def.type)) return false
+  if (!isCraftableCard(card)) return false
 
-  if (assignCraftSources(state, seat, def.cost) === null) return false
+  if (assignCraftSources(state, seat, defOf(card).cost) === null) return false
+
+  return craftBenefitAvailable(state, card)
+}
+
+/** Ambush/dominance have empty cost; must not pass as craftable. */
+export function isCraftableCard(card: Card): boolean {
+  return CRAFTABLE_TYPES.has(defOf(card).type)
+}
+
+/** Rule: Craft 4.1.2 / 4.1.4 — item still in supply; no duplicate persistent. */
+export function craftBenefitAvailable(state: GameState, card: Card): boolean {
+  const def = defOf(card)
 
   if (def.type === 'item') {
     if (!def.item) return false
@@ -44,6 +55,10 @@ function craftingSources(state: GameState, seat: Seat): CraftSource[] {
     for (const piece of state.clearings[clearingId]!.pieces) {
       if (piece.owner !== seat) continue
       if (isCraftingBuilding(piece) && !piece.used) {
+        // Rule: 10.2.1 — gardens craft only in the Outcast suit.
+        if (piece.type === 'garden' && !gardenCraftsInSuit(state, seat, suit)) {
+          continue
+        }
         out.push({ piece, suit, clearingId })
       }
       if (piece.kind === 'token' && piece.type === 'sympathy') {

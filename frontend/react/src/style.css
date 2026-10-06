@@ -18,6 +18,8 @@
   --color-sky-mist: #8aa39a;
   /* Text printed straight on faction board art. */
   --color-ink-deep: #1a1408;
+  /* Riverfolk Company faction color (FACTION_COLORS.riverfolk). */
+  --color-riverfolk: #2f9a94;
   /* Parchment darkened like `.root-panel`. */
   --color-parchment-aged: color-mix(in srgb, #f0e6d3 94%, #1a1410);
   --tracking-display: 0.02em;

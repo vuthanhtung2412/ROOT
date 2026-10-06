@@ -142,7 +142,7 @@ export class Alliance extends Faction {
           ctx,
         )
       case 'mobilize':
-        return this.applyMobilize(state, seat, action.cardId)
+        return this.applyMobilize(state, seat, action.cardIds)
       case 'train':
         return this.applyTrain(state, seat, action.cardId)
       case 'militaryOp':
@@ -292,18 +292,29 @@ export class Alliance extends Faction {
   private applyMobilize(
     state: GameState,
     seat: Seat,
-    cardId: string,
+    cardIds: string[],
   ): LogEntry[] {
+    // Rule: 8.5.2 Mobilize — may be taken any number of times: one action adds
+    // every chosen card.
     const board = boardOf(state, seat)
     const hand = playerOf(state, seat).hand
-    const index = hand.findIndex((card) => card.id === cardId)
-    if (index < 0) throw new RuleError('CARD_NOT_IN_HAND', { cardId })
-    const card = hand.splice(index, 1)[0]!
-    const overflow = addSupporter(board, card)
-    for (const discarded of overflow) {
-      discardCardToAvailable(state, discarded)
+    if (cardIds.length === 0) throw new RuleError('NO_CARD_CHOSEN', {})
+    for (const cardId of cardIds) {
+      const isInHand = hand.some((card) => card.id === cardId)
+      const isChosenOnce = cardIds.indexOf(cardId) === cardIds.lastIndexOf(cardId)
+      if (!isInHand || !isChosenOnce) {
+        throw new RuleError('CARD_NOT_IN_HAND', { cardId })
+      }
     }
-    return [{ t: 'action', actor: seat, action: { type: 'mobilize', cardId } }]
+    for (const cardId of cardIds) {
+      const index = hand.findIndex((card) => card.id === cardId)
+      const card = hand.splice(index, 1)[0]!
+      const overflow = addSupporter(board, card)
+      for (const discarded of overflow) {
+        discardCardToAvailable(state, discarded)
+      }
+    }
+    return [{ t: 'action', actor: seat, action: { type: 'mobilize', cardIds } }]
   }
 
   private applyTrain(

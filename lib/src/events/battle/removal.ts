@@ -17,6 +17,11 @@ import { removePieces } from '#rules/remove.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
 import type { BattleEvent } from '#events/types.js'
+import {
+  isValidMercenaryRemoval,
+  legalMercenaryRemovalSpecs,
+  mercenaryRemovalFor,
+} from '#events/battle/mercenaryRemoval.js'
 import type { RemovalSelection, RemovalStage } from '#events/battle/types.js'
 
 function victimPieces(state: GameState, clearing: ClearingId, victim: Seat): Piece[] {
@@ -111,6 +116,16 @@ export function legalRemovalSpecs(
         params: { decline: [true] },
       },
     ]
+  }
+
+  // Rule: 11.2.7.IIIa — a Mercenaries buyer splits hits with hired warriors.
+  const mercenaryRemoval = mercenaryRemovalFor(state, {
+    event,
+    victim,
+    maxHits,
+  })
+  if (mercenaryRemoval !== null) {
+    return legalMercenaryRemovalSpecs(victim, mercenaryRemoval)
   }
 
   const pieces: Piece[] = victimPieces(state, event.clearing, victim)
@@ -235,6 +250,30 @@ export function applyRemovalStage(
   if (!action.pieceIds) {
     throw new RuleError('INVALID_REMOVAL', { action })
   }
+  const mercenaryRemoval = mercenaryRemovalFor(state, {
+    event,
+    victim,
+    maxHits,
+  })
+  if (mercenaryRemoval !== null) {
+    if (!isValidMercenaryRemoval(mercenaryRemoval, action.pieceIds)) {
+      throw new RuleError('INVALID_REMOVAL_ORDER', { pieceIds: action.pieceIds })
+    }
+    return removePieces(
+      state,
+      {
+        clearing: event.clearing,
+        pieceIds: action.pieceIds,
+        scorer,
+        options: {
+          fromBattle: true,
+          defendingInBattle: victim === event.defender,
+          mercenaryBuyer: victim,
+        },
+      },
+      ctx,
+    )
+  }
   if (
     !isValidRemoval(state, {
       clearing: event.clearing,
@@ -251,7 +290,10 @@ export function applyRemovalStage(
       clearing: event.clearing,
       pieceIds: action.pieceIds,
       scorer,
-      options: { fromBattle: true },
+      options: {
+        fromBattle: true,
+        defendingInBattle: victim === event.defender,
+      },
     },
     ctx,
   )

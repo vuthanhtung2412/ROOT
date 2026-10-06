@@ -10,6 +10,7 @@ Layout: one subdirectory per faction id (`marquise-de-cat/`, `eyrie-dynasties/`,
 | Faction pages | https://www.therootdatabase.com/faction/{id}/ | front/back boards |
 | Faction decks | https://www.therootdatabase.com/post/{id}/en/decks/ | leaders, viziers, ministers, moods, captains |
 | Vagabond pages | https://www.therootdatabase.com/vagabond/{id}/ | character cards |
+| Decimator85 Root Assets (Drive) | https://drive.google.com/drive/folders/1MFx-NK40quaThNRBovrjISwbuQdUddkJ | Riverfolk Company + Lizard Cult boards (higher resolution, PNG → webp) |
 | Leder Games | https://ledergames.com | publisher / © |
 
 ## Coverage

@@ -1,6 +1,7 @@
 import type { RuleHooks } from '#triggers/hooks.js'
 import type { ClearingId } from '#map/types.js'
 import type { Piece, Seat } from '#pieces/types.js'
+import { ruleOwnerOf } from '#queries/mercenaries.js'
 import type { GameState } from '#state/types.js'
 
 export function piecesIn(state: GameState, clearing: ClearingId): Piece[] {
@@ -39,7 +40,8 @@ export function ruleStrength(
 ): number {
   let total = 0
   for (const piece of piecesIn(state, clearing)) {
-    if (piece.owner !== seat) continue
+    // Rule: 11.2.7.III — hired mercenaries count toward the buyer's rule.
+    if (ruleOwnerOf(state, piece) !== seat) continue
     total += ruleWeightForPiece(state, piece, hooks)
   }
   return total

@@ -32,8 +32,8 @@ describe('Game lobby', () => {
 
   it('Game.create rejects factions without implementations', () => {
     expect(() =>
-      // @ts-expect-error -- 'lizard' is deliberately not a supported faction
-      Game.create({ seed: 1, factions: ['marquise', 'lizard'] }),
+      // @ts-expect-error -- 'duchy' is deliberately not a supported faction
+      Game.create({ seed: 1, factions: ['marquise', 'duchy'] }),
     ).toThrow(expect.objectContaining({ code: 'UNSUPPORTED_FACTION' }))
   })
 
@@ -289,6 +289,45 @@ describe('Game replay and undo', () => {
     game.undo()
     expect(game.state).toEqual(before)
     expect(game.history).toHaveLength(8) // join×2 start keep sawmill workshop recruiter leader
+  })
+
+  it('undo keeps the factions the game was created with', () => {
+    const game = Game.create({ seed: 11, factions: ['eyrie', 'alliance'] })
+    game.join('first')
+    game.join('second')
+    game.start()
+    game.undo()
+    expect(game.state.factions).toEqual(['eyrie', 'alliance'])
+    expect(game.state.players.map((player) => player.faction)).toEqual([
+      'eyrie',
+      'alliance',
+    ])
+  })
+})
+
+describe('Game setup without the Marquise', () => {
+  it('Rule: 5.1.7 — other factions set up in order when no Marquise plays', () => {
+    const game = Game.create({ seed: 11, factions: ['eyrie', 'alliance'] })
+    game.join('first')
+    game.join('second')
+    game.start()
+    expect(game.state.status).toBe('setup')
+    expect(game.state.pending[0]).toEqual({
+      type: 'chooseLeader',
+      seat: 0,
+      reason: 'setup',
+    })
+    finishSetup(game)
+    expect(game.state.status).toBe('playing')
+  })
+
+  it('starts playing at once when no faction has a setup choice', () => {
+    const game = Game.create({ seed: 11, factions: ['alliance', 'alliance'] })
+    game.join('first')
+    game.join('second')
+    game.start()
+    expect(game.state.status).toBe('playing')
+    expect(game.state.pending).toHaveLength(0)
   })
 })
 

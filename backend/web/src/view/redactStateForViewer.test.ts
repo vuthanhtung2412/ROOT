@@ -32,6 +32,20 @@ describe('redactStateForViewer', () => {
     expect(state.players[1]?.hand).toHaveLength(2)
   })
 
+  it('Rule: 11.2.3 Public Hand — the Riverfolk hand stays visible to others', () => {
+    const riverfolkHand = [{ id: 'c3', defId: 'mouse_ambush' }]
+    const state = createTwoPlayerGameState([
+      { playerId: 'marquise', hand: [] },
+      { playerId: 'riverfolk', hand: riverfolkHand },
+    ])
+    state.players[1]!.faction = 'riverfolk'
+
+    const forMarquise = redactStateForViewer(state, 'marquise')
+
+    expect(forMarquise.players[1]?.hand).toEqual(riverfolkHand)
+    expect(forMarquise.players[1]?.playerId).toBe('hidden-seat-1')
+  })
+
   it('hides other seats join ids so they cannot be reused', () => {
     const state = createTwoPlayerGameState([
       { playerId: 'marquise-secret', hand: [] },

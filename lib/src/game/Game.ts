@@ -1,5 +1,6 @@
 import type { Action, ActionResult, ActionSpec } from '#actions/types.js'
 import { factionFor } from '#factions/index.js'
+import { beginFactionSetup } from '#game/factionSetup.js'
 import { createInitialState, runSharedSetup } from '#game/setup.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
@@ -22,6 +23,7 @@ import type { Seat } from '#pieces/types.js'
 import type { GameState, Phase } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import '#effects/register.js'
+import { offerRiverfolkServices } from '#events/buyServices.js'
 import { RESOLVERS } from '#events/resolvers.js'
 import { EFFECTS, effectForAction } from '#triggers/effects.js'
 import type { Listener } from '#triggers/effects.js'
@@ -70,8 +72,15 @@ export class Game {
     })
   }
 
-  static replay(seed: number, actions: Action[]): Game {
-    const game = Game.create({ seed })
+  static replay(
+    seed: number,
+    actions: Action[],
+    factions?: GameState['factions'],
+  ): Game {
+    const game =
+      factions === undefined
+        ? Game.create({ seed })
+        : Game.create({ seed, factions: [...factions] })
     for (const action of actions) {
       game.apply(action)
     }
@@ -205,7 +214,7 @@ export class Game {
     }
     const seed = this.state.seed
     const actions = this.history.slice(0, -1)
-    const restored = Game.replay(seed, actions)
+    const restored = Game.replay(seed, actions, this.state.factions)
     this.state = restored.state
     this.history = restored.history
     this.log = restored.log
@@ -349,11 +358,13 @@ export class Game {
     runSharedSetup(state, this.rng)
     state.status = 'setup'
 
-    const marquise = state.players.find((player) => player.faction === 'marquise')
-    if (!marquise) throw new RuleError('NO_MARQUISE_FOR_SETUP')
-    state.pending.push({ type: 'chooseKeep', seat: marquise.seat })
+    beginFactionSetup(state, this.makeCtx())
 
-    return [{ t: 'start' }]
+    const logs: LogEntry[] = [{ t: 'start' }]
+    if (state.pending.length === 0) {
+      logs.push(...this.beginPlaying())
+    }
+    return logs
   }
 
   private beginPlaying(): LogEntry[] {
@@ -367,6 +378,7 @@ export class Game {
 
     const ctx = this.makeCtx()
     ctx.emit({ s: 'phase.start', actor: 0, phase: 'birdsong' })
+    offerRiverfolkServices(state)
 
     const autoLogs = this.runAutoActions()
     return [
@@ -396,7 +408,12 @@ export class Game {
     if (idx < steps.length - 1) {
       state.step = steps[idx + 1]!
       if (state.phase === 'daylight' && state.step === 'actions') {
-        state.turnScratch = createTurnScratch({ actionsLeft: 3 })
+        // Services bought in Birdsong last until the end of the turn (11.2.7).
+        state.turnScratch = createTurnScratch({
+          actionsLeft: 3,
+          riverboats: state.turnScratch.riverboats,
+          mercenaries: state.turnScratch.mercenaries,
+        })
       }
       if (state.phase === 'daylight' && state.step === 'decree') {
         state.turnScratch.decree = null
@@ -448,6 +465,7 @@ export class Game {
 
     ctx.emit({ s: 'phase.start', actor: nextSeat, phase: 'birdsong' })
     logs.push({ t: 'phase', actor: nextSeat, phase: 'birdsong', step: state.step })
+    offerRiverfolkServices(state)
 
     return logs
   }
@@ -456,6 +474,8 @@ export class Game {
     const logs: LogEntry[] = []
     let guard = 0
     while (guard++ < 50) {
+      // A pending choice (e.g. buying services at the start of Birdsong) comes first.
+      if (this.state.pending.length > 0) break
       const faction = factionFor(factionOf(this.state, this.state.currentSeat))
       const autos = faction
         .autoActions(this.state, this.state.phase, this.state.step)
@@ -508,6 +528,16 @@ export class Game {
         return true
       }
       if (action.forest !== undefined && s.params?.forests?.includes(action.forest)) {
+        return true
+      }
+      if (action.suit !== undefined && s.params?.suits?.includes(action.suit)) {
+        return true
+      }
+      if (action.cost !== undefined && s.params?.costs?.includes(action.cost)) {
+        return true
+      }
+      // Riverfolk service — the resolver's matchesAction validated the purchase.
+      if (action.service !== undefined && s.params?.options !== undefined) {
         return true
       }
       if (action.pieceIds && s.params?.pieceIds) {

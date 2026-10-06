@@ -1,5 +1,6 @@
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
+import type { RiverfolkService } from '#state/riverfolkBoard.js'
 
 export type BattleStage =
   | 'ambush'
@@ -83,7 +84,47 @@ export type VagabondDamageEvent = {
   count: number
 }
 
+/** Rule: 10.3.2 — Lizard Cult chooses its starting corner clearing. */
+export type ChooseCultCornerEvent = {
+  type: 'chooseCultCorner'
+  seat: Seat
+}
+
+/** Rule: 10.3.3 — Lizard Cult places the outcast marker on a suit. */
+export type ChooseOutcastEvent = {
+  type: 'chooseOutcast'
+  seat: Seat
+}
+
+/** Rule: 11.3.2 — Riverfolk place starting warriors, one clearing at a time. */
+export type PlaceRiverfolkWarriorEvent = {
+  type: 'placeRiverfolkWarrior'
+  seat: Seat
+  /** Warriors still to place, this one included. */
+  remaining: number
+}
+
+/** Rule: 11.3.5 — Riverfolk set the starting cost of one service. */
+export type SetStartingCostEvent = {
+  type: 'setStartingCost'
+  seat: Seat
+  service: RiverfolkService
+}
+
+/** Rule: 11.2.6 — at the start of their Birdsong, a player may buy services. */
+export type BuyServicesEvent = {
+  type: 'buyServices'
+  buyer: Seat
+  /** Services already bought this turn. Rule: 11.2.6.II. */
+  bought: number
+}
+
 export type Event =
+  | BuyServicesEvent
+  | ChooseCultCornerEvent
+  | ChooseOutcastEvent
+  | PlaceRiverfolkWarriorEvent
+  | SetStartingCostEvent
   | BattleEvent
   | FieldHospitalEvent
   | ChooseKeepEvent

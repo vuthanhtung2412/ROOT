@@ -14,8 +14,15 @@ import {
 } from '#factions/alliance/rules.js'
 import { enqueueVagabondDamage } from '#events/vagabondDamage.js'
 import { boardOf as vagabondBoardOf } from '#factions/vagabond/items.js'
+import {
+  discardRandomCultCard,
+  lizardBoardOf,
+  returnGardenToTrack,
+} from '#factions/lizard/rules.js'
+import { applyTradeDisruption } from '#factions/riverfolk/rules.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
+import { warriorSupplyOf } from '#queries/supply.js'
 import { addVictoryPoints } from '#rules/dominance.js'
 import { EYRIE_TOTAL_ROOSTS } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
@@ -27,19 +34,20 @@ export type PieceRemoval = {
   clearing: ClearingId
   pieceIds: string[]
   scorer?: Seat
-  options?: { skipFieldHospital?: boolean; fromBattle?: boolean }
+  options?: {
+    skipFieldHospital?: boolean
+    fromBattle?: boolean
+    /** The removed pieces belong to the defender of the battle. */
+    defendingInBattle?: boolean
+    /** Seat taking these hits with hired Riverfolk warriors among them. */
+    mercenaryBuyer?: Seat
+  }
 }
 
 export function returnWarriorsToSupply(state: GameState, seat: Seat, count: number): void {
   if (count <= 0) return
-  const board = playerOf(state, seat).board
-  if (board.kind === 'marquise') {
-    board.supply.warriors += count
-  } else if (board.kind === 'eyrie') {
-    board.supply.warriors += count
-  } else if (board.kind === 'alliance') {
-    board.supply.warriors += count
-  }
+  const supply = warriorSupplyOf(playerOf(state, seat).board)
+  if (supply !== null) supply.warriors += count
 }
 
 function returnPieceToOwner(state: GameState, piece: Piece): void {
@@ -124,6 +132,8 @@ interface VagabondRemoval {
   actor: Seat
   removed: Piece[]
   fromBattle: boolean
+  /** Rule: 11.2.7.IIIb — a removed mercenary makes its buyer Hostile. */
+  mercenaryBuyer: Seat | undefined
 }
 
 function applyVagabondHostileAndInfamy(
@@ -137,7 +147,12 @@ function applyVagabondHostileAndInfamy(
   let infamyPoints = 0
   for (const piece of removed) {
     if (piece.owner === actor) continue
-    const faction = playerOf(state, piece.owner).faction
+    const blamedSeat =
+      removal.mercenaryBuyer !== undefined &&
+      playerOf(state, piece.owner).faction === 'riverfolk'
+        ? removal.mercenaryBuyer
+        : piece.owner
+    const faction = playerOf(state, blamedSeat).faction
     if (faction === 'vagabond') continue
     const wasHostile = board.relationships[faction] === 'hostile'
     if (piece.kind === 'warrior' && !wasHostile) {
@@ -206,6 +221,14 @@ export function removePieces(
     } else {
       returnPieceToOwner(state, piece)
     }
+    if (piece.kind === 'building' && piece.type === 'garden') {
+      returnGardenToTrack(state, piece.owner, clearing)
+      // Rule: 10.2.5 Fear of the Faithful — discard a random card.
+      discardRandomCultCard(state, piece.owner, ctx?.rng)
+    }
+    if (piece.kind === 'token' && piece.type === 'tradePost') {
+      applyTradeDisruption(state, piece.owner)
+    }
     if (
       piece.kind === 'building' &&
       piece.type === 'base' &&
@@ -237,7 +260,12 @@ export function removePieces(
   if (playerOf(state, actor).faction === 'vagabond') {
     applyVagabondHostileAndInfamy(
       state,
-      { actor, removed, fromBattle: options?.fromBattle === true },
+      {
+        actor,
+        removed,
+        fromBattle: options?.fromBattle === true,
+        mercenaryBuyer: options?.mercenaryBuyer,
+      },
       ctx,
       logs,
     )
@@ -275,9 +303,14 @@ export function removePieces(
       !hasKeep(state, victim) || options?.skipFieldHospital === true
     const canOfferHospital =
       !skipHospital && victimHasFieldHospitalCard(state, victim, clearing)
-    const sentToSupply = !canOfferHospital
+    // Rule: 10.2.3 Revenge — Cult warriors removed while defending become acolytes.
+    const becomeAcolytes =
+      faction === 'lizard' && options?.defendingInBattle === true
+    const sentToSupply = !canOfferHospital && !becomeAcolytes
 
-    if (sentToSupply) {
+    if (becomeAcolytes) {
+      lizardBoardOf(state, victim).acolytes += count
+    } else if (sentToSupply) {
       returnWarriorsToSupply(state, victim, count)
     } else {
       state.pending.push({

@@ -1,0 +1,41 @@
+{
+  "image": "resources/reference/character-boards/lizard-cult/lizard-cult-front.webp",
+  "unit": "px",
+  "naturalWidth": 950,
+  "naturalHeight": 737,
+  "tracks": [
+    {
+      "id": "garden-mouse",
+      "cells": 5,
+      "cellSize": 61.7,
+      "gaps": [11.3, 3.2, 9.5, 10.9],
+      "x": 334.4,
+      "y": 501.1
+    },
+    {
+      "id": "garden-rabbit",
+      "cells": 5,
+      "cellSize": 61.7,
+      "gaps": [11.3, 3.2, 9.5, 10.9],
+      "x": 334.4,
+      "y": 569
+    },
+    {
+      "id": "garden-fox",
+      "cells": 5,
+      "cellSize": 61.7,
+      "gaps": [11.3, 3.2, 9.5, 10.9],
+      "x": 334.4,
+      "y": 636.1
+    }
+  ],
+  "regions": [
+    { "id": "crafted-items", "x": 668, "y": 130, "width": 222, "height": 40 },
+    { "id": "supply-warriors", "x": 0.7, "y": 0, "width": 56.2, "height": 52.9 },
+    { "id": "acolytes", "x": 482, "y": 339.1, "width": 56.2, "height": 52.9 },
+    { "id": "outcast-mouse", "x": 708.8, "y": 324.5, "width": 50, "height": 50 },
+    { "id": "outcast-rabbit", "x": 780.8, "y": 324.5, "width": 50, "height": 50 },
+    { "id": "outcast-fox", "x": 855, "y": 324.5, "width": 50, "height": 50 },
+    { "id": "lost-souls", "x": 696.8, "y": 403.6, "width": 225.2, "height": 304.5 }
+  ]
+}

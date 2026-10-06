@@ -1,6 +1,5 @@
 /**
  * Menu party setup — player count + unique faction seats.
- * Law setup needs Marquise for chooseKeep (Game.applyStart).
  */
 
 export const MENU_FACTION_IDS = [
@@ -8,6 +7,8 @@ export const MENU_FACTION_IDS = [
   'eyrie',
   'alliance',
   'vagabond',
+  'lizard',
+  'riverfolk',
 ] as const
 
 export type MenuFactionId = (typeof MENU_FACTION_IDS)[number]
@@ -40,7 +41,7 @@ export type PartySetupValidation =
   | { ok: true; factions: MenuFactionId[] }
   | { ok: false; reason: string }
 
-/** Unique seats, length 2–4, must include marquise. */
+/** Unique seats, length 2–4. */
 export function validatePartyFactions(
   factions: readonly string[],
 ): PartySetupValidation {
@@ -62,9 +63,6 @@ export function validatePartyFactions(
     }
     seen.add(faction)
     resolved.push(faction)
-  }
-  if (!resolved.includes('marquise')) {
-    return { ok: false, reason: 'Marquise must be in the game (setup keep)' }
   }
   return { ok: true, factions: resolved }
 }
@@ -98,5 +96,9 @@ export function factionDisplayName(factionId: MenuFactionId): string {
       return 'Woodland Alliance'
     case 'vagabond':
       return 'Vagabond'
+    case 'lizard':
+      return 'Lizard Cult'
+    case 'riverfolk':
+      return 'Riverfolk Company'
   }
 }

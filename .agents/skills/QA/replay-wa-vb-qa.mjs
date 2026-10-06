@@ -168,6 +168,8 @@ const STEPS = [
   {
     title: '6 · Spread Sympathy on 3 with Martial Law (W4 W5)',
     play: async (ui) => {
+      // Plan step 5: a second revolt (keep clearing) is still legal, so pass.
+      await ui.button('end phase')
       await ui.button('spread sympathy')
       await ui.clearing(3)
       await ui.supporter('ROOT-201', 0)
@@ -186,9 +188,10 @@ const STEPS = [
   {
     title: '7–10 · Daylight: Mobilize, Train, Craft Anvil (W13)',
     play: async (ui) => {
-      await ui.button('end phase')
+      // Birdsong ends by itself: nothing is left to spread.
       await ui.button('mobilize')
       await ui.handCard('ROOT-203')
+      await ui.button('OK')
       await ui.button('train')
       await ui.handCard('ROOT-202')
       await ui.button('craft')

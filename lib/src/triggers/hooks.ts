@@ -4,6 +4,7 @@ import type { BattleEvent } from '#events/types.js'
 import type { GameMap } from '#map/GameMap.js'
 import type { ClearingId } from '#map/types.js'
 import type { Piece, Seat } from '#pieces/types.js'
+import { treatsRiversAsPaths } from '#queries/rivers.js'
 import { playerOf } from '#queries/seat.js'
 import type { GameState } from '#state/types.js'
 
@@ -22,7 +23,9 @@ export type RuleHooks = {
 /** Base hooks before card-effect overrides. */
 export function defaultRuleHooks(map: GameMap): RuleHooks {
   return {
-    isAdjacent: (_state, _seat, a, b) => map.isAdjacent(a, b),
+    isAdjacent: (state, seat, a, b) =>
+      map.isAdjacent(a, b) ||
+      (treatsRiversAsPaths(state, seat) && map.isRiverAdjacent(a, b)),
     ruleWeight: (_state, piece) => (piece.kind === 'token' ? 0 : 1),
     needsRuleToMove: () => true,
     extraHits: () => 0,

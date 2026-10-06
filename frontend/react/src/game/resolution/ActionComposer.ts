@@ -381,6 +381,7 @@ const IMMEDIATE_TYPES = new Set([
   'refresh',
   'rest',
   'explore',
+  'skipCrusadeBattle',
 ])
 
 /** Players are shown by faction name; null when the seat is unknown. */

@@ -1,5 +1,6 @@
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { CHOOSE_CHARACTER_PROMPT } from '#assets/vagabondBoardCatalog.ts'
+import { expansionPendingPrompt } from '#game/expansionPendingPrompts.ts'
 import {
   isChooseCharacterPendingEvent,
   isChooseForestPendingEvent,
@@ -152,7 +153,10 @@ const BATTLE_STAGE_PROMPTS: Record<BattleStage, string> = {
 function pendingEventPrompt(pending: unknown, actorSeat: number): string | null {
   const event = parseKnownPendingEvent(pending)
   if (event === null) {
-    return `Pending choice · seat ${String(actorSeat)}`
+    return (
+      expansionPendingPrompt(pending) ??
+      `Pending choice · seat ${String(actorSeat)}`
+    )
   }
   // Field Hospitals: forced prompt — banner + hand (like Ambush).
   if (event.type === 'fieldHospital') {
@@ -195,5 +199,5 @@ function setupPrompt(pending: unknown): string | null {
   if (isChooseForestPendingEvent(pending)) {
     return 'Choose starting forest'
   }
-  return null
+  return expansionPendingPrompt(pending)
 }

@@ -1,16 +1,23 @@
 import type {
   BattleEvent,
+  BuyServicesEvent,
   ChooseCharacterEvent,
+  ChooseCultCornerEvent,
   ChooseForestEvent,
+  ChooseOutcastEvent,
   ChooseKeepEvent,
   ChooseLeaderEvent,
   Event,
   FieldHospitalEvent,
   OutrageEvent,
   VagabondDamageEvent,
+  PlaceRiverfolkWarriorEvent,
   PlaceStartingBuildingEvent,
+  SetStartingCostEvent,
 } from '#events/types.js'
-import type { ClearingId } from '#map/types.js'
+import type { ClearingId, Suit } from '#map/types.js'
+import type { LizardBoard } from '#state/lizardBoard.js'
+import type { RiverfolkBoard } from '#state/riverfolkBoard.js'
 import type { Seat } from '#pieces/types.js'
 import { VAGABOND_CHARACTERS } from '#state/boards.js'
 import type {
@@ -88,6 +95,32 @@ export function isVagabondDamageEvent(event: Event): event is VagabondDamageEven
   return event.type === 'vagabondDamage'
 }
 
+export function isChooseCultCornerEvent(
+  event: Event,
+): event is ChooseCultCornerEvent {
+  return event.type === 'chooseCultCorner'
+}
+
+export function isChooseOutcastEvent(event: Event): event is ChooseOutcastEvent {
+  return event.type === 'chooseOutcast'
+}
+
+export function isBuyServicesEvent(event: Event): event is BuyServicesEvent {
+  return event.type === 'buyServices'
+}
+
+export function isPlaceRiverfolkWarriorEvent(
+  event: Event,
+): event is PlaceRiverfolkWarriorEvent {
+  return event.type === 'placeRiverfolkWarrior'
+}
+
+export function isSetStartingCostEvent(
+  event: Event,
+): event is SetStartingCostEvent {
+  return event.type === 'setStartingCost'
+}
+
 export function isMarquiseBoard(board: FactionBoard): board is MarquiseBoard {
   return board.kind === 'marquise'
 }
@@ -102,4 +135,16 @@ export function isAllianceBoard(board: FactionBoard): board is AllianceBoard {
 
 export function isVagabondBoard(board: FactionBoard): board is VagabondBoard {
   return board.kind === 'vagabond'
+}
+
+export function isLizardBoard(board: FactionBoard): board is LizardBoard {
+  return board.kind === 'lizard'
+}
+
+export function isRiverfolkBoard(board: FactionBoard): board is RiverfolkBoard {
+  return board.kind === 'riverfolk'
+}
+
+export function isSuit(value: string): value is Suit {
+  return value === 'fox' || value === 'rabbit' || value === 'mouse'
 }

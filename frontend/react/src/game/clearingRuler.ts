@@ -3,10 +3,13 @@
  * Eyrie wins ties (Lords of the Forest). Tokens/pawns do not count.
  */
 
+const GARDEN_PIECE_TYPE = 'garden'
+
 export type ClearingPiecesForRule = {
   pieces: ReadonlyArray<{
     kind: string
     owner: number
+    type?: string
   }>
 }
 
@@ -30,6 +33,13 @@ export function clearingRuler(
   clearing: ClearingPiecesForRule,
   factions: readonly string[],
 ): number | null {
+  // Rule: 10.2.4 Pilgrims — the Lizard Cult rules wherever it has a garden.
+  const garden = clearing.pieces.find(
+    (piece) => piece.kind === 'building' && piece.type === GARDEN_PIECE_TYPE,
+  )
+  if (garden !== undefined) {
+    return garden.owner
+  }
   const strengths = new Map<number, number>()
   for (let seat = 0; seat < factions.length; seat += 1) {
     const strength = ruleStrengthForSeat(clearing, seat)
