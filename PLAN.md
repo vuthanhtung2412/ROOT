@@ -60,3 +60,8 @@ Simplifications (say if wrong):
   - `frontend/react/src/game/resolution/optionActionFlows.ts`
   - `frontend/react/src/game/expansionPendingPrompts.ts`
   - `.agents/skills/QA/lizard-riverfolk-qa-later-steps.mjs`, `.agents/skills/QA/make-lizard-riverfolk-qa-run.ts`
+- done: `feat(ui): labelled tray medallions, own icons for event answers`
+  - `frontend/react/src/react/ActionTray.tsx`, `frontend/react/src/ui/ActionTray.ts`
+  - `frontend/react/src/ui/actionIcons.ts`, `frontend/react/src/react/PlayerRail.tsx`
+- done: `feat(ui): cart for the Riverfolk hand, axe for overwork`
+  - `frontend/react/src/react/PlayerRail.tsx`, `frontend/react/src/ui/actionIcons.ts`
