@@ -137,10 +137,6 @@ export type ActionChoiceParams = {
   itemCount?: number[]
   /** Lizard Cult setup — suits the outcast marker may start on. */
   suits?: Suit[]
-  /** Riverfolk setup — costs a service marker may start on. */
-  costs?: number[]
-  /** Riverfolk setup — the service whose starting cost is being set. */
-  services?: RiverfolkService[]
 }
 
 export type Action =
@@ -350,8 +346,10 @@ export type ResolveEventAction = {
   items?: VagabondItemChoice[]
   /** Rule: 10.3.3 — suit the Lizard Cult outcast marker starts on. */
   suit?: Suit
-  /** Rule: 11.3.5 — starting cost of one Riverfolk service. */
-  cost?: number
+  /** Rule: 11.3.5 — starting cost of each Riverfolk service (all three together). */
+  handCard?: number
+  riverboats?: number
+  mercenaries?: number
   /** Rule: 11.2.6 — Riverfolk service bought (`cardId` names the Hand Card). */
   service?: RiverfolkService
 }

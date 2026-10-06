@@ -1,6 +1,5 @@
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
-import type { RiverfolkService } from '#state/riverfolkBoard.js'
 
 export type BattleStage =
   | 'ambush'
@@ -104,11 +103,10 @@ export type PlaceRiverfolkWarriorEvent = {
   remaining: number
 }
 
-/** Rule: 11.3.5 — Riverfolk set the starting cost of one service. */
-export type SetStartingCostEvent = {
-  type: 'setStartingCost'
+/** Rule: 11.3.5 — Riverfolk set the starting cost of all three services. */
+export type SetStartingCostsEvent = {
+  type: 'setStartingCosts'
   seat: Seat
-  service: RiverfolkService
 }
 
 /** Rule: 11.2.6 — at the start of their Birdsong, a player may buy services. */
@@ -124,7 +122,7 @@ export type Event =
   | ChooseCultCornerEvent
   | ChooseOutcastEvent
   | PlaceRiverfolkWarriorEvent
-  | SetStartingCostEvent
+  | SetStartingCostsEvent
   | BattleEvent
   | FieldHospitalEvent
   | ChooseKeepEvent

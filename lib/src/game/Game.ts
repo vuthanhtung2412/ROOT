@@ -533,11 +533,12 @@ export class Game {
       if (action.suit !== undefined && s.params?.suits?.includes(action.suit)) {
         return true
       }
-      if (action.cost !== undefined && s.params?.costs?.includes(action.cost)) {
-        return true
-      }
       // Riverfolk service — the resolver's matchesAction validated the purchase.
       if (action.service !== undefined && s.params?.options !== undefined) {
+        return true
+      }
+      // Riverfolk starting costs — matchesAction validated the three costs.
+      if (action.handCard !== undefined && s.params?.options !== undefined) {
         return true
       }
       if (action.pieceIds && s.params?.pieceIds) {

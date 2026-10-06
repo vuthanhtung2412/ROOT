@@ -1,3 +1,4 @@
+import type { ActionOption } from '#actions/options.js'
 import { riverfolkBoardOf } from '#factions/riverfolk/rules.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -8,7 +9,7 @@ import { RuleError } from '#rules/RuleError.js'
 import {
   RIVERFOLK_SERVICE_COSTS,
   RIVERFOLK_STARTING_PAYMENTS,
-  type RiverfolkService,
+  type RiverfolkServiceCosts,
 } from '#state/riverfolkBoard.js'
 import type { GameState } from '#state/types.js'
 
@@ -54,14 +55,32 @@ export function isServiceCost(cost: number): boolean {
   )
 }
 
-/** Rule: 11.3.5 — place one service marker on any space of its track. */
-export function setStartingServiceCost(
+/**
+ * Rule: 11.3.5, 11.6.2 — each marker may stand on any space of its track.
+ * One option per combination, so a single action sets all three services.
+ */
+export function serviceCostOptions(): ActionOption[] {
+  const options: ActionOption[] = []
+  for (const handCard of RIVERFOLK_SERVICE_COSTS) {
+    for (const riverboats of RIVERFOLK_SERVICE_COSTS) {
+      for (const mercenaries of RIVERFOLK_SERVICE_COSTS) {
+        options.push({ handCard, riverboats, mercenaries })
+      }
+    }
+  }
+  return options
+}
+
+/** Rule: 11.3.5 — place each service marker on any space of its track. */
+export function setStartingServiceCosts(
   state: GameState,
   seat: Seat,
-  choice: { service: RiverfolkService; cost: number },
+  costs: RiverfolkServiceCosts,
 ): void {
-  if (!isServiceCost(choice.cost)) {
-    throw new RuleError('ILLEGAL_SERVICE_COST', { cost: choice.cost })
+  for (const cost of Object.values(costs)) {
+    if (!isServiceCost(cost)) {
+      throw new RuleError('ILLEGAL_SERVICE_COST', { cost })
+    }
   }
-  riverfolkBoardOf(state, seat).serviceCosts[choice.service] = choice.cost
+  riverfolkBoardOf(state, seat).serviceCosts = { ...costs }
 }
