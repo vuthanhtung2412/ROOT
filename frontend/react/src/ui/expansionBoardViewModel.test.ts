@@ -79,10 +79,15 @@ describe('Lizard Cult board view model', () => {
     Reflect.set(state, 'deck', {
       draw: [],
       discard: [],
-      lostSouls: [{ id: 'ROOT-204#1', defId: 'ROOT-204' }],
+      lostSouls: [
+        { id: 'ROOT-204#1', defId: 'ROOT-204' },
+        { id: 'ROOT-206#1', defId: 'ROOT-206' },
+      ],
     })
     const view = buildFactionBoardViewModel(state, 1)
-    expect(view?.kind === 'lizard' && view.lostSoulsCount).toBe(1)
+    expect(view?.kind === 'lizard' && view.lostSoulsCount).toBe(2)
+    // The last card discarded is the top of the pile.
+    expect(view?.kind === 'lizard' && view.topLostSoulDefId).toBe('ROOT-206')
   })
 })
 
@@ -118,7 +123,6 @@ describe('expansion board layouts', () => {
       'crafted-items',
       'supply-warriors',
       'acolytes',
-      'revealed',
       'outcast-fox',
       'outcast-rabbit',
       'outcast-mouse',

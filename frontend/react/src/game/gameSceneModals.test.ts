@@ -107,6 +107,45 @@ describe('GameSceneModals.openSupporters', () => {
   })
 })
 
+describe('GameSceneModals.openLostSouls', () => {
+  const lostSouls = [
+    { id: 'ROOT-204#1', defId: 'ROOT-204' },
+    { id: 'ROOT-206#1', defId: 'ROOT-206' },
+  ]
+
+  function stateWithLostSouls(): ReturnType<typeof makeGameState> {
+    const state = makeGameState({ factions: ['marquise', 'lizard'] })
+    Reflect.set(state, 'deck', { draw: [], discard: [], lostSouls })
+    return state
+  }
+
+  beforeEach(() => {
+    hideCardPile()
+  })
+
+  it('Rule: 10.2.6 Lost Souls — any viewer opens the pile', () => {
+    const modals = new GameSceneModals(() => OTHER_SEAT)
+
+    modals.openLostSouls(stateWithLostSouls())
+
+    expect(getCardPileSnapshot()).toEqual({
+      title: 'Lost Souls (2)',
+      cards: lostSouls,
+      emptyMessage: 'Lost Souls empty',
+    })
+  })
+
+  it('toggles closed on a second click', () => {
+    const modals = new GameSceneModals(() => OTHER_SEAT)
+    const state = stateWithLostSouls()
+
+    modals.openLostSouls(state)
+    modals.openLostSouls(state)
+
+    expect(getCardPileSnapshot()).toBeNull()
+  })
+})
+
 describe('GameSceneModals.openPublicHand', () => {
   const riverfolkHand = [{ id: 'ROOT-204#1', defId: 'ROOT-204' }]
 

@@ -39,6 +39,7 @@ import type { GameState } from '#api/client.ts'
 import {
   buildExpansionBoardViewModel,
   lostSoulsCountFromDeck,
+  topLostSoulDefIdFromDeck,
   type ExpansionBoardViewModel,
 } from '#ui/expansionBoardViewModel.ts'
 import { questDefOf, type QuestCard } from '@root/lib/quests'
@@ -519,6 +520,7 @@ export function buildFactionBoardViewModel(
     return {
       ...view,
       lostSoulsCount: lostSoulsCountFromDeck(Reflect.get(state, 'deck')),
+      topLostSoulDefId: topLostSoulDefIdFromDeck(Reflect.get(state, 'deck')),
     }
   }
   return view

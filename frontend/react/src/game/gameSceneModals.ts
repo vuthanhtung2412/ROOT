@@ -30,6 +30,7 @@ const SUPPORTERS_PILE_TITLE_PREFIX = 'Supporters ('
 const VAGABOND_FACTION_ID = 'vagabond'
 export const PUBLIC_HAND_FACTION_ID = 'riverfolk'
 const PUBLIC_HAND_PILE_TITLE_PREFIX = 'Riverfolk hand ('
+const LOST_SOULS_PILE_TITLE_PREFIX = 'Lost Souls ('
 
 function isCardGalleryFace(value: unknown): value is CardGalleryFace {
   if (typeof value !== 'object' || value === null) {
@@ -59,6 +60,14 @@ function allianceSupportersFromBoard(board: unknown): CardGalleryFace[] | null {
     faces.push(entry)
   }
   return faces
+}
+
+function lostSoulsFromDeck(deck: unknown): CardGalleryFace[] {
+  if (typeof deck !== 'object' || deck === null) {
+    return []
+  }
+  const lostSouls: unknown = Reflect.get(deck, 'lostSouls')
+  return Array.isArray(lostSouls) ? lostSouls.filter(isCardGalleryFace) : []
 }
 
 /** Open / refresh faction board, crafted cards, and discard pile modals. */
@@ -180,6 +189,24 @@ export class GameSceneModals {
       title: `${PUBLIC_HAND_PILE_TITLE_PREFIX}${String(player.hand.length)})`,
       cards: player.hand,
       emptyMessage: 'Riverfolk hand empty',
+    })
+  }
+
+  /** Rule: 10.2.6 The Lost Souls Pile — a public pile, anyone may look. */
+  openLostSouls(state: GameState): void {
+    const openPile = getCardPileSnapshot()
+    if (
+      openPile !== null &&
+      openPile.title.startsWith(LOST_SOULS_PILE_TITLE_PREFIX)
+    ) {
+      hideCardPile()
+      return
+    }
+    const cards = lostSoulsFromDeck(state.deck)
+    showCardPile({
+      title: `${LOST_SOULS_PILE_TITLE_PREFIX}${String(cards.length)})`,
+      cards,
+      emptyMessage: 'Lost Souls empty',
     })
   }
 

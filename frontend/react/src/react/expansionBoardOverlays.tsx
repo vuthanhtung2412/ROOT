@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import {
   findBoardLayoutRegion,
   trackCellRegion,
+  type BoardLayoutRegion,
   type FactionBoardPixelLayout,
 } from '#assets/factionBoardLayout.ts'
 import {
@@ -16,6 +17,7 @@ import {
   RIVERFOLK_EXPANSION_ASSET_KEYS,
   tradePostTextureKey,
 } from '#assets/riverfolkExpansionAssets.ts'
+import { getHudCallbacks } from '#game/hudStore.ts'
 import {
   FitToken,
   layoutRegionStyle,
@@ -34,17 +36,18 @@ import {
 } from '#ui/expansionBoardViewModel.ts'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 
-const BOARD_LABEL_CLASS_NAME =
-  'absolute z-2 flex items-center justify-center bg-parchment/93 px-1.5 font-mono text-[clamp(10px,2vh,14px)] text-ink-deep'
-const CARD_STRIP_CLASS_NAME =
-  'absolute z-2 flex flex-row items-stretch gap-1 overflow-hidden'
+/** An empty pile shows the printed Lost Souls art; a card covers it otherwise. */
+const LOST_SOULS_PILE_CLASS_NAME =
+  'pointer-events-auto absolute z-2 cursor-pointer p-[3%] hover:brightness-110'
+const LOST_SOULS_COUNT_CLASS_NAME =
+  'absolute inset-x-0 bottom-[3%] mx-auto w-fit bg-parchment/93 px-1.5 py-0.5 font-mono text-[clamp(10px,2vh,14px)] text-ink-deep'
 const FUND_BOX_CLASS_NAME =
   'absolute z-2 flex flex-wrap content-start items-start gap-0.5 overflow-hidden p-1'
 const FUND_WARRIOR_CLASS_NAME = 'block h-[30%] max-h-10 w-auto select-none'
 const FUND_COUNT_CLASS_NAME =
   'absolute right-[2%] bottom-[2%] bg-parchment/93 px-1.5 py-0.5 font-mono text-[clamp(11px,2.2vh,16px)] text-ink-deep'
 const SERVICE_MARKER_CLASS_NAME =
-  'absolute z-2 rounded-full border-[3px] border-[#7a1f1f] bg-[rgb(122_31_31/0.28)]'
+  'absolute z-2 rounded-full border-[3px] border-riverfolk bg-riverfolk/28'
 
 const FUND_BOX_REGIONS: ReadonlyArray<{
   regionId: string
@@ -93,35 +96,41 @@ function OutcastMarker(
   )
 }
 
-/** Rule: 10.5 — cards revealed this turn sit in the play area. */
-function RevealedCards(
-  props: LayoutProps & { view: LizardBoardViewModel },
-): JSX.Element | null {
-  const region = findBoardLayoutRegion(props.layout, 'revealed')
-  if (region === null || props.view.revealedDefIds.length === 0) {
-    return null
-  }
+/**
+ * Rule: 10.2.6 The Lost Souls Pile — a public pile: top card face up with the
+ * pile size; click to look through it.
+ */
+function LostSoulsPile(
+  props: LayoutProps & {
+    view: LizardBoardViewModel
+    region: BoardLayoutRegion
+  },
+): JSX.Element {
+  const topDefId: string | null = props.view.topLostSoulDefId
+  const topCardImagePath: string | null =
+    topDefId === null ? null : cardImagePublicPath(topDefId)
   return (
-    <div
-      className={`lizard-revealed ${CARD_STRIP_CLASS_NAME}`}
-      style={layoutRegionStyle(region, props.layout)}
+    <button
+      type="button"
+      className={`lizard-lost-souls ${LOST_SOULS_PILE_CLASS_NAME}`}
+      style={layoutRegionStyle(props.region, props.layout)}
+      aria-label={`Observe Lost Souls (${String(props.view.lostSoulsCount)})`}
+      onClick={() => {
+        getHudCallbacks().onLostSoulsClick()
+      }}
     >
-      {props.view.revealedDefIds.map((defId: string, index: number) => {
-        const imagePath = cardImagePublicPath(defId)
-        if (imagePath === null) {
-          return null
-        }
-        return (
-          <img
-            key={`${defId}-${String(index)}`}
-            className="block h-full w-auto select-none"
-            src={imagePath}
-            alt="Revealed card"
-            draggable={false}
-          />
-        )
-      })}
-    </div>
+      {topCardImagePath !== null ? (
+        <img
+          className="pointer-events-none block size-full object-contain select-none"
+          src={topCardImagePath}
+          alt=""
+          draggable={false}
+        />
+      ) : null}
+      <span className={LOST_SOULS_COUNT_CLASS_NAME}>
+        {`Lost Souls: ${String(props.view.lostSoulsCount)}`}
+      </span>
+    </button>
   )
 }
 
@@ -142,7 +151,6 @@ function LizardBoardOverlays(
         />
       ) : null}
       <OutcastMarker view={props.view} layout={props.layout} />
-      <RevealedCards view={props.view} layout={props.layout} />
       {BOARD_SUITS.map((suit: BoardSuit) => (
         <RemainingTrackTokens
           key={suit}
@@ -157,12 +165,11 @@ function LizardBoardOverlays(
         />
       ))}
       {lostSoulsRegion !== null ? (
-        <span
-          className={`lizard-lost-souls ${BOARD_LABEL_CLASS_NAME}`}
-          style={layoutRegionStyle(lostSoulsRegion, props.layout)}
-        >
-          {`Lost Souls: ${String(props.view.lostSoulsCount)}`}
-        </span>
+        <LostSoulsPile
+          view={props.view}
+          layout={props.layout}
+          region={lostSoulsRegion}
+        />
       ) : null}
     </>
   )

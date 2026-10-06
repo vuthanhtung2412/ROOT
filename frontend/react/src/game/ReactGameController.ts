@@ -285,6 +285,13 @@ export class ReactGameController {
           this.syncActionTrayFromLatestSnapshot()
         }
       },
+      onLostSoulsClick: () => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openLostSouls(state)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
       onSelectAction: (spec) => {
         this.handleSelectAction(spec)
       },

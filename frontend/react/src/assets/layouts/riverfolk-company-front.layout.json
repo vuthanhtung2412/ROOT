@@ -7,57 +7,57 @@
     {
       "id": "service-handCard",
       "cells": 4,
-      "cellSize": 40,
-      "gaps": [4, 4, 4],
-      "x": 739,
-      "y": 246
+      "cellSize": 41.8,
+      "gaps": [2.3, 1.6, 3.2],
+      "x": 738.5,
+      "y": 245.8
     },
     {
       "id": "service-riverboats",
       "cells": 4,
-      "cellSize": 40,
-      "gaps": [4, 4, 4],
-      "x": 739,
-      "y": 291
+      "cellSize": 41.8,
+      "gaps": [2.3, 1.6, 3.2],
+      "x": 738.5,
+      "y": 290.8
     },
     {
       "id": "service-mercenaries",
       "cells": 4,
-      "cellSize": 40,
-      "gaps": [4, 4, 4],
-      "x": 739,
-      "y": 335
+      "cellSize": 41.8,
+      "gaps": [2.3, 1.6, 3.2],
+      "x": 738.5,
+      "y": 337.4
     },
     {
       "id": "trade-post-fox",
       "cells": 3,
-      "cellSize": 56,
-      "gaps": [16, 14],
-      "x": 715,
-      "y": 512
+      "cellSize": 60.4,
+      "gaps": [6.4, 9],
+      "x": 715.4,
+      "y": 509.8
     },
     {
       "id": "trade-post-rabbit",
       "cells": 3,
-      "cellSize": 56,
-      "gaps": [16, 14],
-      "x": 715,
-      "y": 577
+      "cellSize": 60.4,
+      "gaps": [6.4, 9],
+      "x": 715.4,
+      "y": 576.7
     },
     {
       "id": "trade-post-mouse",
       "cells": 3,
-      "cellSize": 56,
-      "gaps": [16, 14],
-      "x": 715,
-      "y": 640
+      "cellSize": 60.4,
+      "gaps": [6.4, 9],
+      "x": 715.4,
+      "y": 642
     }
   ],
   "regions": [
-    { "id": "crafted-items", "x": 650, "y": 130, "width": 225, "height": 40 },
-    { "id": "supply-warriors", "x": 12, "y": 6, "width": 40, "height": 38 },
-    { "id": "payments", "x": 434, "y": 228, "width": 208, "height": 96 },
-    { "id": "funds", "x": 434, "y": 376, "width": 208, "height": 186 },
-    { "id": "committed", "x": 434, "y": 608, "width": 208, "height": 96 }
+    { "id": "crafted-items", "x": 644.1, "y": 117.3, "width": 233.3, "height": 55.1 },
+    { "id": "supply-warriors", "x": 0.2, "y": 0.2, "width": 57.2, "height": 55 },
+    { "id": "payments", "x": 427.4, "y": 209.9, "width": 218.7, "height": 118.6 },
+    { "id": "funds", "x": 428.9, "y": 359.3, "width": 216.8, "height": 199.2 },
+    { "id": "committed", "x": 428.5, "y": 589.9, "width": 217.2, "height": 119.1 }
   ]
 }

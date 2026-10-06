@@ -40,6 +40,8 @@ export type LizardBoardViewModel = {
   revealedDefIds: string[]
   /** Size of the Lost Souls pile. Rule: 10.2.6. */
   lostSoulsCount: number
+  /** Card on top of the Lost Souls pile (last discarded); null when empty. */
+  topLostSoulDefId: string | null
   boardTextureKey: string
 }
 
@@ -143,6 +145,7 @@ function lizardViewModel(
     gardensOnTrack: readSuitCounts(board.gardens),
     revealedDefIds: readDefIds(board.revealed),
     lostSoulsCount: 0,
+    topLostSoulDefId: null,
     boardTextureKey: RIVERFOLK_EXPANSION_ASSET_KEYS.characterBoardLizard,
   }
 }
@@ -205,4 +208,10 @@ export function lostSoulsCountFromDeck(deck: unknown): number {
   if (!isRecord(deck)) return 0
   const lostSouls: unknown = deck.lostSouls
   return Array.isArray(lostSouls) ? lostSouls.length : 0
+}
+
+/** Card definition on top of the Lost Souls pile (the last card discarded). */
+export function topLostSoulDefIdFromDeck(deck: unknown): string | null {
+  if (!isRecord(deck)) return null
+  return readDefIds(deck.lostSouls).at(-1) ?? null
 }
