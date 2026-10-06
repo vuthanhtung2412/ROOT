@@ -31,29 +31,6 @@ export function battleResultFlashPrompt(hits: {
   return ''
 }
 
-/** One step of the progress track shown under the battle headline. */
-export type BattleStep = {
-  label: string
-  /** Battle stages that belong to this step. */
-  stages: readonly string[]
-}
-
-export const BATTLE_FINISHED_STAGE = 'finished'
-
-export const BATTLE_STEPS: readonly BattleStep[] = [
-  { label: 'Roll', stages: ['roll'] },
-  { label: 'Effects', stages: ['effectsOrder', 'effects'] },
-  { label: 'Remove', stages: ['removeDefender', 'removeAttacker'] },
-  { label: 'Done', stages: [BATTLE_FINISHED_STAGE] },
-]
-
-/** Index of the step a stage belongs to; -1 for a stage off the track. */
-export function battleStepIndex(stage: string): number {
-  return BATTLE_STEPS.findIndex((step: BattleStep): boolean =>
-    step.stages.includes(stage),
-  )
-}
-
 export type BattleRole = 'attacker' | 'defender'
 
 /** The side removing its pieces right now; null outside the removal stages. */
@@ -65,4 +42,30 @@ export function battleRoleRemovingPieces(stage: string): BattleRole | null {
     return 'attacker'
   }
   return null
+}
+
+export type BattleStrapInput = {
+  stage: string
+  attackerFaction: string
+  defenderFaction: string
+  hits: { attacker: number; defender: number }
+}
+
+/**
+ * One line under the battle: who removes how many pieces (the hits the other
+ * side dealt), otherwise what the stage is waiting for.
+ */
+export function battleStrapText(battle: BattleStrapInput): string {
+  const removingRole: BattleRole | null = battleRoleRemovingPieces(battle.stage)
+  if (removingRole === null) {
+    return BATTLE_STAGE_LABELS[battle.stage] ?? battle.stage
+  }
+  const faction: string =
+    removingRole === 'defender'
+      ? battle.defenderFaction
+      : battle.attackerFaction
+  const pieceCount: number =
+    removingRole === 'defender' ? battle.hits.attacker : battle.hits.defender
+  const pieces: string = pieceCount === 1 ? '1 piece' : `${String(pieceCount)} pieces`
+  return `${faction} — remove ${pieces}`
 }
