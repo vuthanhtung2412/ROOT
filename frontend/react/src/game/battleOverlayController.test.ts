@@ -4,6 +4,7 @@ import {
   BattleOverlayController,
   type BattleOverlaySyncTarget,
 } from '#game/battleOverlayController.ts'
+import { ZERO_HIT_BATTLE_MESSAGE } from '#game/battleOverlayModel.ts'
 import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
 
 function makeState(pending: unknown[]): GameState {
@@ -79,6 +80,58 @@ describe('BattleOverlayController', () => {
     expect(onEnded).toHaveBeenCalledTimes(1)
     expect(overlaySync).toHaveBeenLastCalledWith(null)
     expect(timers[0]?.remove).toHaveBeenCalledWith(false)
+  })
+
+  it('shows the result of a battle that opened and ended in one update', () => {
+    const shown: Array<BattleOverlayViewModel | null> = []
+    const overlay: BattleOverlaySyncTarget = {
+      sync: (viewModel: BattleOverlayViewModel | null): void => {
+        shown.push(viewModel)
+      },
+    }
+    const state: GameState = makeState([])
+    const earlierLog: unknown[] = [{ t: 'start' }]
+    let log: unknown[] = earlierLog
+    const controller = new BattleOverlayController(
+      { delayedCall: () => ({ remove: vi.fn() }) },
+      () => overlay,
+      () => state,
+      () => log,
+    )
+
+    controller.sync()
+    expect(controller.isResultFlashActive()).toBe(false)
+
+    // Nobody had a choice: the battle is only ever in the log, already over.
+    log = [
+      ...earlierLog,
+      {
+        t: 'event',
+        event: {
+          type: 'battle',
+          clearing: 3,
+          stage: 'removeAttacker',
+          attacker: 0,
+          defender: 1,
+          rolls: [0, 0],
+          hits: { attacker: 0, defender: 0 },
+        },
+      },
+    ]
+    controller.sync()
+
+    expect(controller.isResultFlashActive()).toBe(true)
+    expect(shown.at(-1)).toMatchObject({
+      clearing: 3,
+      rolls: [0, 0],
+      hits: { attacker: 0, defender: 0 },
+      outcomeMessage: ZERO_HIT_BATTLE_MESSAGE,
+    })
+
+    // The same log again is old news once the result was dismissed.
+    controller.dismissResultFlash()
+    controller.sync()
+    expect(controller.isResultFlashActive()).toBe(false)
   })
 
   it('dismissResultFlash no-ops when flash inactive', () => {

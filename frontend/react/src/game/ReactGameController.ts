@@ -228,6 +228,7 @@ export class ReactGameController {
       },
       () => this.battleOverlayTarget,
       () => this.latestSnapshot?.state,
+      () => this.latestSnapshot?.log ?? [],
     )
     this.battleOverlayController.setOnResultFlashEnded(() => {
       const snapshot = this.latestSnapshot
