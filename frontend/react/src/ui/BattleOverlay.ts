@@ -30,3 +30,39 @@ export function battleResultFlashPrompt(hits: {
   }
   return ''
 }
+
+/** One step of the progress track shown under the battle headline. */
+export type BattleStep = {
+  label: string
+  /** Battle stages that belong to this step. */
+  stages: readonly string[]
+}
+
+export const BATTLE_FINISHED_STAGE = 'finished'
+
+export const BATTLE_STEPS: readonly BattleStep[] = [
+  { label: 'Roll', stages: ['roll'] },
+  { label: 'Effects', stages: ['effectsOrder', 'effects'] },
+  { label: 'Remove', stages: ['removeDefender', 'removeAttacker'] },
+  { label: 'Done', stages: [BATTLE_FINISHED_STAGE] },
+]
+
+/** Index of the step a stage belongs to; -1 for a stage off the track. */
+export function battleStepIndex(stage: string): number {
+  return BATTLE_STEPS.findIndex((step: BattleStep): boolean =>
+    step.stages.includes(stage),
+  )
+}
+
+export type BattleRole = 'attacker' | 'defender'
+
+/** The side removing its pieces right now; null outside the removal stages. */
+export function battleRoleRemovingPieces(stage: string): BattleRole | null {
+  if (stage === 'removeDefender') {
+    return 'defender'
+  }
+  if (stage === 'removeAttacker') {
+    return 'attacker'
+  }
+  return null
+}
