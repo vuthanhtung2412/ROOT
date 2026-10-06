@@ -21,9 +21,15 @@ const GUERRILLA_WAR_FACTION = 'alliance'
 const ATTACKER_ROLE_LABEL = 'ATK'
 const DEFENDER_ROLE_LABEL = 'DEF'
 
-/** Below the turn banner and its option row; no box, so the board shows through. */
+/** Middle of the screen; clicks pass through to the board under it. */
 const PANEL_CLASS_NAME =
-  'pointer-events-auto absolute top-29.5 left-1/2 flex w-max max-w-[calc(100vw-24px)] -translate-x-1/2 flex-col items-center gap-2'
+  'pointer-events-none absolute top-1/2 left-1/2 flex w-max max-w-[calc(100vw-24px)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2'
+/**
+ * Dims the board behind the battle. Sits under the HUD (rail, tray, hand,
+ * banner) so the buttons that answer the battle stay bright and clickable.
+ */
+const BACKDROP_CLASS_NAME =
+  'battle-overlay__backdrop pointer-events-none fixed inset-0 z-50 bg-forest-deep/72'
 const STRAP_CLASS_NAME =
   'battle-overlay__headline root-paper root-paper-fine m-0 px-4 py-1 text-center font-display text-base leading-tight text-ink md:text-lg'
 const STRAP_FLASH_CLASS_NAME = '[--root-paper-color:var(--color-gold)]'
@@ -88,6 +94,8 @@ export function BattleOverlay(): JSX.Element | null {
   const defenderDie = defenderUsesHigherDie ? highDie : lowDie
 
   return (
+    <>
+    <div className={BACKDROP_CLASS_NAME} aria-hidden="true" />
     <div className="battle-overlay pointer-events-none fixed inset-0 z-201">
       {isOutcomeFlash ? (
         <button
@@ -137,6 +145,7 @@ export function BattleOverlay(): JSX.Element | null {
         {prompt.length > 0 ? <p className={PROMPT_CLASS_NAME}>{prompt}</p> : null}
       </div>
     </div>
+    </>
   )
 }
 
