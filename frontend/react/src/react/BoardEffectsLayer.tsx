@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState, type JSX, type RefObject } from 'react'
-import { factionTextureKey, imagePathForAssetKey } from '#assets/gameAssets.ts'
 import type {
-  BoardBattleEffect,
   BoardEffect,
   BoardEffectBatch,
   BoardMoveEffect,
@@ -42,8 +40,6 @@ const SIGN_BADGE_BASE_CLASS_NAME =
 const PLACED_SIGN_BADGE_CLASS_NAME = `${SIGN_BADGE_BASE_CLASS_NAME} -top-4 left-2.5 size-3 text-[10px]`
 /** Off the top-left corner of the removed piece. */
 const REMOVED_SIGN_BADGE_CLASS_NAME = `${SIGN_BADGE_BASE_CLASS_NAME} -top-6 -left-6 size-4 text-[13px]`
-const BATTLE_BADGE_CLASS_NAME =
-  'absolute flex -translate-x-1/2 -translate-y-1/2 flex-row items-center gap-1 rounded bg-ink-deep/85 px-1.5 py-0.5 text-[16px] text-white'
 
 type ActiveEffect = {
   key: string
@@ -330,47 +326,6 @@ function RemoveEffectView(
   )
 }
 
-function FactionIcon(props: {
-  seat: number
-  factions: readonly string[]
-}): JSX.Element | null {
-  const factionId = props.factions[props.seat] ?? FALLBACK_FACTION_ID
-  const imagePath = imagePathForAssetKey(factionTextureKey(factionId))
-  if (imagePath === null) {
-    return null
-  }
-  return (
-    <img
-      className="block size-6 object-contain select-none"
-      src={imagePath}
-      alt={factionId}
-      draggable={false}
-    />
-  )
-}
-
-function BattleEffectView(
-  props: EffectContext & { effect: BoardBattleEffect },
-): JSX.Element | null {
-  const center = props.hitCenters.get(props.effect.clearing)
-  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, FADE_OUT_OPTIONS)
-  if (center === undefined) {
-    return null
-  }
-  return (
-    <div ref={fadeRef} className="absolute inset-0">
-      <div
-        className={BATTLE_BADGE_CLASS_NAME}
-        style={{ left: center.centerX, top: center.centerY }}
-      >
-        <FactionIcon seat={props.effect.attacker} factions={props.factions} />
-        ⚔
-        <FactionIcon seat={props.effect.defender} factions={props.factions} />
-      </div>
-    </div>
-  )
-}
-
 function activate(batch: BoardEffectBatch): ActiveEffect[] {
   return batch.effects.map(
     (effect: BoardEffect, index: number): ActiveEffect => ({
@@ -386,7 +341,7 @@ export type BoardEffectsLayerProps = EffectContext & {
 
 /**
  * Plays what the last server update did on the map: pieces slide along their
- * move, placed pieces pop in, removed pieces drift away, a battle names its two sides.
+ * move, placed pieces pop in, removed pieces drift away.
  */
 export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
   const [active, setActive] = useState<ActiveEffect[]>([])
@@ -446,9 +401,8 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
             <RemoveEffectView key={entry.key} {...context} effect={entry.effect} />
           )
         }
-        return (
-          <BattleEffectView key={entry.key} {...context} effect={entry.effect} />
-        )
+        // A battle is told by the badge on its clearing (BattleClearingBadge).
+        return null
       })}
     </div>
   )

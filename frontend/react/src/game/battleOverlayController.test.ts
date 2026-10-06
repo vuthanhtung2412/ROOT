@@ -4,7 +4,10 @@ import {
   BattleOverlayController,
   type BattleOverlaySyncTarget,
 } from '#game/battleOverlayController.ts'
-import { ZERO_HIT_BATTLE_MESSAGE } from '#game/battleOverlayModel.ts'
+import {
+  ZERO_HIT_BATTLE_MESSAGE,
+  type BattleMark,
+} from '#game/battleOverlayModel.ts'
 import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
 
 function makeState(pending: unknown[]): GameState {
@@ -80,6 +83,53 @@ describe('BattleOverlayController', () => {
     expect(onEnded).toHaveBeenCalledTimes(1)
     expect(overlaySync).toHaveBeenLastCalledWith(null)
     expect(timers[0]?.remove).toHaveBeenCalledWith(false)
+  })
+
+  it('marks the battle clearing from the ambush step until the result leaves', () => {
+    const marks: Array<BattleMark | null> = []
+    const overlay: BattleOverlaySyncTarget = {
+      sync: (): void => undefined,
+      syncMark: (mark: BattleMark | null): void => {
+        marks.push(mark)
+      },
+    }
+    const battle = (stage: string, rolls?: [number, number]): unknown => ({
+      type: 'battle',
+      clearing: 3,
+      stage,
+      attacker: 0,
+      defender: 1,
+      rolls,
+      hits: { attacker: 0, defender: 0 },
+    })
+    let state: GameState = makeState([battle('ambush')])
+    const controller = new BattleOverlayController(
+      { delayedCall: () => ({ remove: vi.fn() }) },
+      () => overlay,
+      () => state,
+    )
+    const expectedMark: BattleMark = {
+      clearing: 3,
+      attackerFaction: 'marquise',
+      defenderFaction: 'eyrie',
+    }
+
+    // Ambush step: no battle panel yet, the clearing is marked already.
+    controller.sync()
+    expect(marks.at(-1)).toEqual(expectedMark)
+
+    state = makeState([battle('removeDefender', [2, 1])])
+    controller.sync()
+    expect(marks.at(-1)).toEqual(expectedMark)
+
+    // Battle over: the mark stays for as long as the result shows.
+    state = makeState([])
+    controller.sync()
+    expect(controller.isResultFlashActive()).toBe(true)
+    expect(marks.at(-1)).toEqual(expectedMark)
+
+    controller.dismissResultFlash()
+    expect(marks.at(-1)).toBeNull()
   })
 
   it('shows the result of a battle that opened and ended in one update', () => {

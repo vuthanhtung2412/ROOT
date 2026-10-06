@@ -85,6 +85,30 @@ export function buildFinishedBattleOverlayViewModel(
   }
 }
 
+/** The two sides of a battle, worn by its clearing for as long as it lasts. */
+export type BattleMark = {
+  clearing: number
+  attackerFaction: string
+  defenderFaction: string
+}
+
+type BattleSides = {
+  clearing: number
+  attacker: number
+  defender: number
+}
+
+export function buildBattleMark(
+  state: GameState,
+  battle: BattleSides,
+): BattleMark {
+  return {
+    clearing: battle.clearing,
+    attackerFaction: factionLabel(state, battle.attacker),
+    defenderFaction: factionLabel(state, battle.defender),
+  }
+}
+
 export function readBattleClearingId(state: GameState): number | null {
   const battle = readBattlePending(state.pending[0])
   return battle?.clearing ?? null

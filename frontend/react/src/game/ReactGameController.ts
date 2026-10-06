@@ -130,6 +130,17 @@ export class ReactGameController {
     sync: (viewModel) => {
       syncBattleOverlayView(viewModel)
     },
+    syncMark: (mark) => {
+      // Synced on every repaint: only a change is worth a HUD update.
+      const shown = getHudSnapshot().battleMark
+      const unchanged =
+        shown?.clearing === mark?.clearing &&
+        shown?.attackerFaction === mark?.attackerFaction &&
+        shown?.defenderFaction === mark?.defenderFaction
+      if (!unchanged) {
+        patchHud({ battleMark: mark })
+      }
+    },
   }
   private readonly composer = new ActionComposer()
   private marquiseMarch = createMarchWorkflowHooks()

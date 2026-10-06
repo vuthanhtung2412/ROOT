@@ -2,6 +2,8 @@ import type { GameState } from '#api/client.ts'
 import { logEntriesAddedSince } from '#game/boardEffects.ts'
 import {
   battleResultFlashDurationMs,
+  buildBattleMark,
+  type BattleMark,
   buildBattleOverlayViewModel,
   buildFinishedBattleOverlayViewModel,
   finishedBattleOutcomeFromLog,
@@ -14,6 +16,8 @@ import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
 
 export type BattleOverlaySyncTarget = {
   sync: (viewModel: BattleOverlayViewModel | null) => void
+  /** The two sides shown on the battle clearing; null when no battle is on. */
+  syncMark?: (mark: BattleMark | null) => void
 }
 
 export type BattleOverlaySyncClock = {
@@ -63,6 +67,7 @@ export class BattleOverlayController {
     const state = this.getState()
     if (state === null || state === undefined) {
       overlay?.sync(null)
+      overlay?.syncMark?.(null)
       return
     }
     const previousTracker = this.battleTracker
@@ -78,6 +83,12 @@ export class BattleOverlayController {
     if (finishedOutcome !== null) {
       this.beginResultFlash(finishedOutcome)
     }
+    // The clearing wears the two sides from the first step of the battle
+    // (ambush included) until its result leaves the screen.
+    const markedBattle = this.resultFlashOutcome ?? this.battleTracker
+    overlay?.syncMark?.(
+      markedBattle === null ? null : buildBattleMark(state, markedBattle),
+    )
     if (this.resultFlashOutcome !== null) {
       overlay?.sync(
         buildFinishedBattleOverlayViewModel(state, this.resultFlashOutcome),
