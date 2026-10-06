@@ -71,3 +71,8 @@ Simplifications (say if wrong):
   - `frontend/react/src/react/PlayerRail.tsx`
 - done: `feat(ui): larger board in the wide layout`
   - `frontend/react/src/game/boardMapLayout.ts`, `frontend/react/src/game/boardMapLayout.test.ts`
+- done: `feat(ui): laurel wreath around the victory points`
+  - `frontend/react/src/react/PlayerRail.tsx`
+- done: `feat(ui): suit and slot markers above the bottom clearings`
+  - `frontend/react/src/game/clearingIndicators.ts`, `frontend/react/src/game/clearingIndicators.test.ts`
+  - `frontend/react/src/react/BoardMap.tsx`, `frontend/react/src/react/PieceStack.tsx`

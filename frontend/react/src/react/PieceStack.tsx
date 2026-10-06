@@ -151,10 +151,19 @@ function pieceViewModelsForClearing(
   })
 }
 
+/** Open building slots: a count just inside the clearing ring. */
+const OPEN_SLOTS_CLASS_NAME =
+  'pointer-events-none absolute z-2 -translate-x-1/2 bg-[#1a2438cc] px-1 py-0.5 font-mono text-[11px] font-bold text-parchment'
+const OPEN_SLOTS_BELOW_CLASS_NAME = `${OPEN_SLOTS_CLASS_NAME} -translate-y-full`
+const OPEN_SLOTS_ABOVE_CLASS_NAME = OPEN_SLOTS_CLASS_NAME
+const OPEN_SLOTS_RING_INSET_PIXELS = 2
+
 export type ClearingHitCenter = {
   centerX: number
   centerY: number
   radius: number
+  /** Bottom clearings: suit and open-slot markers go above, clear of the hand. */
+  markersAbove?: boolean
 }
 
 export type ClearingPieceLayerProps = {
@@ -216,10 +225,17 @@ export function ClearingPieceLayer(
       nodes.push(
         <span
           key={`slots-${String(clearingId)}`}
-          className="pointer-events-none absolute z-2 -translate-x-1/2 -translate-y-full bg-[#1a2438cc] px-1 py-0.5 font-mono text-[11px] font-bold text-parchment"
+          className={
+            center.markersAbove === true
+              ? OPEN_SLOTS_ABOVE_CLASS_NAME
+              : OPEN_SLOTS_BELOW_CLASS_NAME
+          }
           style={{
             left: center.centerX,
-            top: center.centerY + center.radius - 2,
+            top:
+              center.markersAbove === true
+                ? center.centerY - center.radius + OPEN_SLOTS_RING_INSET_PIXELS
+                : center.centerY + center.radius - OPEN_SLOTS_RING_INSET_PIXELS,
           }}
         >
           {String(openSlots)}

@@ -36,12 +36,16 @@ import {
   ClearingPieceLayer,
   computeRulerByClearing,
   type BoardClearingPieces,
+  type ClearingHitCenter,
 } from '#react/PieceStack.tsx'
+import { clearingMarkersGoAbove } from '#game/clearingIndicators.ts'
 
 export type ClearingSelectedHandler = (clearingId: number) => void
 export type ForestSelectedHandler = (forestIndex: number) => void
 
 const MAP_BORDER_WIDTH_PIXELS = 4
+/** Gap between the clearing ring and its suit marker. */
+const SUIT_MARKER_GAP_PIXELS = 2
 
 function suitTextureKey(suit: ClearingSuit): string {
   if (suit === 'fox') {
@@ -105,19 +109,22 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
   }, [layout, metrics])
 
   const hitCenters = useMemo(() => {
-    const map = new Map<
-      number,
-      { centerX: number; centerY: number; radius: number }
-    >()
+    const map = new Map<number, ClearingHitCenter>()
     for (const target of targets) {
       map.set(target.clearingId, {
         centerX: target.centerX,
         centerY: target.centerY,
         radius: target.radius,
+        markersAbove:
+          metrics !== null &&
+          clearingMarkersGoAbove(target.centerY, {
+            top: metrics.mapTop,
+            height: metrics.mapDisplayHeight,
+          }),
       })
     }
     return map
-  }, [targets])
+  }, [targets, metrics])
 
   const rulerByClearing = useMemo(() => {
     if (props.clearings === undefined || props.factions === undefined) {
@@ -341,7 +348,10 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
                     alt=""
                     draggable={false}
                     style={{
-                      top: diameter + 2,
+                      ...(hitCenters.get(target.clearingId)?.markersAbove ===
+                      true
+                        ? { bottom: diameter + SUIT_MARKER_GAP_PIXELS }
+                        : { top: diameter + SUIT_MARKER_GAP_PIXELS }),
                       maxWidth: target.radius * 0.45,
                       maxHeight: target.radius * 0.45,
                     }}
