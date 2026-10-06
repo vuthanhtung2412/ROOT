@@ -26,6 +26,7 @@ import {
   factionTextureKey,
   imagePathForAssetKey,
   itemTextureKey,
+  suitTextureKey,
 } from '#assets/gameAssets.ts'
 
 /** Accessible names: the buttons show an icon only. */
@@ -179,11 +180,20 @@ export function TurnBanner(): JSX.Element | null {
                   callbacks.onBannerPickOption(option.value)
                 }}
               />
+            ) : option.suit !== undefined ? (
+              <SuitOptionButton
+                key={option.value}
+                label={option.label}
+                suit={option.suit}
+                onPick={() => {
+                  callbacks.onBannerPickOption(option.value)
+                }}
+              />
             ) : (
               <button
                 key={option.value}
                 type="button"
-                className="root-paper root-paper-fine root-paper-press m-0 px-3 py-1 font-display text-sm text-ink"
+                className={TEXT_OPTION_BUTTON_CLASS_NAME}
                 onClick={() => {
                   callbacks.onBannerPickOption(option.value)
                 }}
@@ -200,6 +210,51 @@ export function TurnBanner(): JSX.Element | null {
 
 const ITEM_OPTION_BASE_CLASS =
   'relative m-0 box-border size-14 cursor-pointer border-2 bg-parchment p-0.5 transition-transform duration-75 ease-out md:size-16'
+const TEXT_OPTION_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press m-0 px-3 py-1 font-display text-sm text-ink'
+/** Square paper tile holding a suit icon. */
+const SUIT_OPTION_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press m-0 flex size-11 items-center justify-center p-1.5 md:size-12'
+
+/** A suit to pick, drawn as its icon; the label stays for screen readers. */
+function SuitOptionButton(props: {
+  label: string
+  suit: string
+  onPick: () => void
+}): JSX.Element {
+  const textureKey: string | null = suitTextureKey(props.suit)
+  const imagePath: string | null =
+    textureKey !== null ? imagePathForAssetKey(textureKey) : null
+  if (imagePath === null) {
+    return (
+      <button
+        type="button"
+        className={TEXT_OPTION_BUTTON_CLASS_NAME}
+        onClick={props.onPick}
+      >
+        {props.label}
+      </button>
+    )
+  }
+  return (
+    <Tooltip label={props.label}>
+      <button
+        type="button"
+        className={SUIT_OPTION_BUTTON_CLASS_NAME}
+        aria-label={props.label}
+        onClick={props.onPick}
+      >
+        <img
+          className="pointer-events-none block size-full object-contain"
+          src={imagePath}
+          alt=""
+          draggable={false}
+        />
+      </button>
+    </Tooltip>
+  )
+}
+
 const ITEM_OPTION_SELECTED_CLASS =
   'border-gold -translate-y-1 shadow-gold-ring'
 const ITEM_OPTION_IDLE_CLASS = 'border-ink-soft'

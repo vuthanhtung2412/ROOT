@@ -215,6 +215,11 @@ describe('optionActionComposer pending events', () => {
         params: { suits: ['fox', 'rabbit', 'mouse'] },
       }),
     )
+    expect(outcast.option.getPromptOptions()).toEqual([
+      { label: 'fox', value: 'choice:0', suit: 'fox' },
+      { label: 'rabbit', value: 'choice:1', suit: 'rabbit' },
+      { label: 'mouse', value: 'choice:2', suit: 'mouse' },
+    ])
     expect(outcast.composer.chooseColumn('choice:1')).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', suit: 'rabbit' },

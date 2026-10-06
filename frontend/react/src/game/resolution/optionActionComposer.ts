@@ -170,10 +170,15 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
     }
     if (step.kind === 'choice') {
       promptOptions = values.map(
-        (value: OptionValue, index: number): TurnBannerOption => ({
-          label: step.label?.(value, labels) ?? String(value),
-          value: `${CHOICE_VALUE_PREFIX}${String(index)}`,
-        }),
+        (value: OptionValue, index: number): TurnBannerOption => {
+          const option: TurnBannerOption = {
+            label: step.label?.(value, labels) ?? String(value),
+            value: `${CHOICE_VALUE_PREFIX}${String(index)}`,
+          }
+          return step.valuesAreSuits === true
+            ? { ...option, suit: String(value) }
+            : option
+        },
       )
     }
     return {

@@ -26,6 +26,8 @@ export type OptionStep = {
   prompt: string
   /** Button text for a `choice` value; defaults to the value itself. */
   label?: (value: OptionValue, labels: OptionLabels) => string
+  /** `choice`: the values are suits, drawn as their icons. */
+  valuesAreSuits?: boolean
   /** `grid`: the payload fields picked together, one row each. */
   gridFields?: readonly string[]
   /** `grid`: title of a field's row; defaults to the field name. */
@@ -276,7 +278,12 @@ function resolveEventFlow(
   if (pendingType === 'chooseOutcast') {
     return setupFlow(
       'Lizard Cult',
-      { field: 'suit', kind: 'choice', prompt: 'choose the Outcast suit' },
+      {
+        field: 'suit',
+        kind: 'choice',
+        prompt: 'choose the Outcast suit',
+        valuesAreSuits: true,
+      },
       singleFieldOptions(spec, 'suits', 'suit'),
     )
   }

@@ -13,6 +13,8 @@ export type TurnBannerOption = {
   label: string
   value: string
   item?: TurnBannerOptionItem
+  /** Suit drawn as its icon in place of the label (fox / mouse / rabbit / bird). */
+  suit?: string
   /** Grid presentation: the row this option belongs to (one pick per row). */
   group?: string
   /** Grid presentation: the option picked in its row. */
