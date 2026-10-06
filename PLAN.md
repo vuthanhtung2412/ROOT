@@ -1,71 +1,48 @@
 ### Goal
-- Lizard Cult (Law 10) and Riverfolk Company (Law 11) playable end to end:
-  rules in `@root/lib`, accepted by the web server, playable in the React UI.
-- Existing factions, hotseat, online and QA flows keep working unchanged.
+- The in-game HUD reads closer to the Steam digital edition: hand-inked torn paper,
+  round icon medallions, portrait tiles — on the components seen every turn.
+- No layout change (wide 20/60/20, narrow insets) and no rule or view model change.
+- New elements cover no more of the game board than the ones they replace.
 
 ### Approach
-- **Follow the existing faction shape**: `factions/<Name>.ts` class + `factions/<name>/`
-  helpers (`rules`, `legalActions`, `setup`), board type in `state/boards.ts`.
-- **Legal actions carry full payloads**: every new action spec lists complete legal
-  payloads in `params.options`; validation = payload is one of the options. One generic
-  React composer walks the option fields (card → clearing → seat → count → choice).
-- **Setup no longer needs the Marquise**: setup events are queued per faction in setup
-  order (Marquise, Eyrie, Alliance, Vagabond, Lizard Cult, Riverfolk Company).
-- **Lost Souls** live on the deck (`deck.lostSouls`), so every existing discard is
-  routed there while the Cult is in the game, without touching each call site.
-- **Riverfolk services** are a pending event at the start of each other player's
-  Birdsong (`buyServices`); Riverboats and Mercenaries are turn flags read by the
-  adjacency, rule and battle queries.
-- Seats stay 0–3 (max four players); the host picks any 2–4 of the six factions.
+- **One paper kit** in `style.css`: `root-paper` (torn edge on a `::before` layer so text
+  stays crisp), `root-medallion`, colour tokens. The torn edge is one inline SVG filter.
+- **Neutral paper**: panels stay parchment; only portrait tiles carry a faction tint.
+- **Icons** from `react-icons/lu` (Lucide), one icon per action type with a fallback.
+- **Scope**: action tray, turn banner + count stepper, battle overlay, option grid modal,
+  player rail. Menu, faction board, card gallery and hand are untouched.
+- Accessible button names stay as they are (`OK`, `X`, action labels, `cards`), so the
+  QA replay scripts keep finding them.
+- Fonts stay (`IM Fell English`); no new font download.
 
 Simplifications (say if wrong):
-- Riverfolk craft picks which funds and which Trade Posts spaces to use automatically.
-- Trade Disruption removes funds in box order (no choice of which funds).
-- The Vagabond pays for services with automatically chosen items.
-- Lizard Cult starting corner follows Law 10.3.2; the garden suit is the clearing suit
-  (no Lost City landmark).
+- Banner keeps X left / OK right of the prompt (not a row below) to stay as short as today.
+- Option grid modal keeps confirming through the banner's OK and X.
+- Battle overlay shows the clearing number, not its suit (suit is not in the view model).
+- Unavailable actions are not listed dimmed (legal actions only, as today).
 
 ### Test plan
-- Lib unit tests per rule, fixture factories only: `Lizard.test.ts`, `Riverfolk.test.ts`,
-  `buyServices.test.ts`, setup events, Lost Souls routing, Pilgrims rule, Revenge,
-  Swimmers, Mercenaries rule and hit split, Trade Disruption.
-- Web: create game with new factions; Riverfolk hand stays public in online mode.
-- React: generic option composer unit tests; faction board view model tests.
-- Regression: lib, web and React suites green; `pnpm typecheck` and `pnpm lint` clean.
+- Unit: `actionIcons.test.ts` — every labelled action type has an icon, unknown types
+  fall back.
+- Regression: React suite green; `pnpm typecheck` and `pnpm lint` clean.
+- Manual: QA snapshots `march-ready`, `battle-remove-ready`, `riverfolk-set-costs` at
+  1280×720 and a narrow viewport; screenshots in `tmp/ui-mockups/`.
 
 ### Commit plan
-- done: `docs(plan): Lizard Cult and Riverfolk Company`
+- `docs(plan): Steam-style HUD paper kit`
   - `PLAN.md`
-- done: `feat(lib): Lizard Cult and Riverfolk boards, pieces and Lost Souls`
-  - `lib/src/pieces/types.ts`, `lib/src/state/boards.ts`, `lib/src/cards/Deck.ts`
-  - `lib/src/queries/supply.ts`, `lib/src/rules/place.ts`, `lib/src/rules/remove.ts`
-  - `lib/src/queries/craft.ts`, `lib/src/queries/ruler.ts`, `lib/src/typeGuards.ts`
-- done: `refactor(lib): queue faction setup without requiring the Marquise`
-  - `lib/src/game/Game.ts`, `lib/src/game/factionSetup.ts`
-  - `lib/src/events/placeStartingBuilding.ts`
-- done: `feat(lib): Lizard Cult faction`
-  - `lib/src/factions/Lizard.ts`, `lib/src/factions/lizard/*`
-  - `lib/src/events/chooseCultCorner.ts`, `lib/src/events/chooseOutcast.ts`
-  - `lib/src/actions/types.ts`, `lib/src/events/types.ts`, `lib/src/events/resolvers.ts`
-- done: `feat(lib): Riverfolk Company faction`
-  - `lib/src/factions/Riverfolk.ts`, `lib/src/factions/riverfolk/*`
-  - `lib/src/events/placeRiverfolkWarrior.ts`, `lib/src/events/setStartingCosts.ts`
-- done: `feat(lib): Riverfolk services for other players`
-  - `lib/src/events/buyServices.ts`, `lib/src/queries/mercenaries.ts`
-  - `lib/src/queries/pieces.ts`, `lib/src/queries/move.ts`, `lib/src/triggers/hooks.ts`
-  - `lib/src/events/battle/stages.ts`, `lib/src/events/battle/removal.ts`
-- done: `feat(web): accept Lizard Cult and Riverfolk Company`
-  - `backend/web/src/schemas/common.ts`, `backend/web/src/typeGuards.ts`
-  - `backend/web/src/view/redactStateForViewer.ts`
-  - `backend/web_client/src/gameApi.ts`, `backend/web_client/src/schema.d.ts`
-- done: `feat(ui): Lizard Cult and Riverfolk assets, menu and pieces`
-  - `frontend/react/public/assets/**`, `frontend/react/src/assets/gameAssets.ts`
-  - `frontend/react/src/game/menuPartySetup.ts`, `frontend/react/src/game/theme.ts`
-- done: `feat(ui): play Lizard Cult and Riverfolk actions`
-  - `frontend/react/src/game/resolution/optionActionComposer.ts`
-  - `frontend/react/src/game/resolution/eventActionComposer.ts`
-  - `frontend/react/src/ui/ActionTray.ts`
-- done: `feat(ui): Lizard Cult and Riverfolk faction boards`
-  - `frontend/react/src/ui/factionBoardViewModel.ts`
-  - `frontend/react/src/react/factionBoardOverlays.tsx`
-  - `frontend/react/src/assets/layouts/*.layout.json`
+- `feat(ui): torn paper kit and Lucide icons`
+  - `frontend/react/package.json`, `frontend/react/src/style.css`
+  - `frontend/react/src/react/PaperFilters.tsx`, `frontend/react/src/react/ReactHud.tsx`
+- `feat(ui): action tray as icon medallions`
+  - `frontend/react/src/ui/actionIcons.ts`, `frontend/react/src/ui/actionIcons.test.ts`
+  - `frontend/react/src/react/ActionTray.tsx`
+  - `.agents/skills/QA/record-fe-qa-scenarios.mjs`
+- `feat(ui): turn banner as a torn paper strip`
+  - `frontend/react/src/react/TurnBanner.tsx`
+- `feat(ui): battle overlay as floating portrait tiles`
+  - `frontend/react/src/react/BattleOverlay.tsx`, `frontend/react/src/react/BattleOverlay.css` (removed)
+- `feat(ui): option grid modal on paper`
+  - `frontend/react/src/react/OptionGridModal.tsx`
+- `feat(ui): player rail seats on paper`
+  - `frontend/react/src/react/PlayerRail.tsx`
