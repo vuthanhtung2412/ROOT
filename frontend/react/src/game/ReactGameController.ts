@@ -24,6 +24,7 @@ import {
   setHudCallbacks,
 } from '#game/hudStore.ts'
 import { cardFlightsFromLog, type CardFlight } from '#game/cardFlights.ts'
+import { withPawnForestMoves } from '#game/pawnForestMoves.ts'
 import { showCardDetail } from '#react/CardDetailOverlay.tsx'
 import { syncLeaderPickOverlay } from '#react/HudChrome.tsx'
 import {
@@ -716,7 +717,11 @@ export class ReactGameController {
       this.effectLogLength,
       snapshot.log,
     )
-    const effects = boardEffectsBetween(this.effectState, state, newLogEntries)
+    const effects = withPawnForestMoves(
+      boardEffectsBetween(this.effectState, state, newLogEntries),
+      this.effectState,
+      state,
+    )
     // Same guard as the board effects: nothing flies for another game.
     if (this.effectState?.id === state.id) {
       this.syncCardFlights(cardFlightsFromLog(newLogEntries))

@@ -49,9 +49,16 @@ type ActiveEffect = {
   effect: BoardEffect
 }
 
+export type BoardEffectPosition = {
+  left: number
+  top: number
+}
+
 type EffectContext = {
   factions: readonly string[]
   hitCenters: ReadonlyMap<number, ClearingHitCenter>
+  /** Where a pawn stands in each forest (forest index → position). */
+  forestCenters: ReadonlyMap<number, BoardEffectPosition>
 }
 
 function colorToCss(color: number): string {
@@ -137,19 +144,38 @@ function batchLifetime(batch: BoardEffectBatch): number {
   )
 }
 
+type MoveEnd = {
+  clearing: number
+  /** Set when the end is a forest: the clearing is then unused. */
+  forest: number | undefined
+  slot: BoardStackSlot
+}
+
+/** Where one end of a move is drawn: a forest centre, else a clearing stack. */
+function moveEndPosition(
+  context: EffectContext,
+  end: MoveEnd,
+): BoardEffectPosition | undefined {
+  if (end.forest !== undefined) {
+    return context.forestCenters.get(end.forest)
+  }
+  const center = context.hitCenters.get(end.clearing)
+  return center === undefined ? undefined : stackPosition(center, end.slot)
+}
+
 function MoveEffectView(
   props: EffectContext & { effect: BoardMoveEffect },
 ): JSX.Element | null {
-  const fromCenter = props.hitCenters.get(props.effect.from)
-  const toCenter = props.hitCenters.get(props.effect.to)
-  const from =
-    fromCenter === undefined
-      ? undefined
-      : stackPosition(fromCenter, props.effect.fromSlot)
-  const to =
-    toCenter === undefined
-      ? undefined
-      : stackPosition(toCenter, props.effect.toSlot)
+  const from = moveEndPosition(props, {
+    clearing: props.effect.from,
+    forest: props.effect.fromForest,
+    slot: props.effect.fromSlot,
+  })
+  const to = moveEndPosition(props, {
+    clearing: props.effect.to,
+    forest: props.effect.toForest,
+    slot: props.effect.toSlot,
+  })
   const deltaX = (to?.left ?? 0) - (from?.left ?? 0)
   const deltaY = (to?.top ?? 0) - (from?.top ?? 0)
   const delay = moveStartDelay(props.effect)
@@ -426,6 +452,7 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
         const context: EffectContext = {
           factions: props.factions,
           hitCenters: props.hitCenters,
+          forestCenters: props.forestCenters,
         }
         if (entry.effect.kind === 'move') {
           return (

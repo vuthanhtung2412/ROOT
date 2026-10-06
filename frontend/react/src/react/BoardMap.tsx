@@ -25,12 +25,16 @@ import {
 import {
   allForestPixelLayouts,
   type ForestPawnMarker,
+  type ForestPixelLayout,
 } from '#game/forestLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import type { ViewportLayoutMode } from '#game/viewportLayout.ts'
 import type { BoardEffectBatch } from '#game/boardEffects.ts'
-import { BoardEffectsLayer } from '#react/BoardEffectsLayer.tsx'
+import {
+  BoardEffectsLayer,
+  type BoardEffectPosition,
+} from '#react/BoardEffectsLayer.tsx'
 import { ForestPawnLayer } from '#react/ForestPawnLayer.tsx'
 import {
   ClearingPieceLayer,
@@ -151,6 +155,20 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
     if (metrics === null) return []
     return allForestPixelLayouts(metrics)
   }, [metrics])
+
+  /** Where a forest pawn is drawn, so a move into or out of a forest lands on it. */
+  const forestCenters = useMemo(
+    () =>
+      new Map<number, BoardEffectPosition>(
+        forestLayouts.map(
+          (layout: ForestPixelLayout): [number, BoardEffectPosition] => [
+            layout.forestIndex,
+            { left: layout.centroid.x, top: layout.centroid.y },
+          ],
+        ),
+      ),
+    [forestLayouts],
+  )
 
   const forestPawns = props.forestPawns ?? []
 
@@ -290,6 +308,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               batch={props.effects}
               factions={props.factions}
               hitCenters={hitCenters}
+              forestCenters={forestCenters}
             />
           ) : null}
           {targets.map((target) => {

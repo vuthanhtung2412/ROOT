@@ -42,6 +42,10 @@ export type BoardMoveEffect = PieceGroup & {
   kind: 'move'
   from: number
   to: number
+  /** Forest the piece left instead of a clearing (`from` is then unused). */
+  fromForest?: number
+  /** Forest the piece entered instead of a clearing (`to` is then unused). */
+  toForest?: number
   /**
    * Position of the move among the moves of its update: moves play one after
    * the other, the first at 0.
@@ -152,12 +156,12 @@ function stackCountIn(
   ).length
 }
 
-const NO_STACK_SLOT: BoardStackSlot = { index: 0, total: 1 }
+export const NO_STACK_SLOT: BoardStackSlot = { index: 0, total: 1 }
 /** Moves read from a board comparison have no order: they all play first. */
 const FIRST_MOVE_STEP = 0
 
 /** Slot of the piece's group among the stacks of a clearing; null if absent. */
-function stackSlotIn(
+export function stackSlotIn(
   clearing: BoardEffectClearing | undefined,
   piece: BoardEffectPiece,
 ): BoardStackSlot | null {
