@@ -10,9 +10,11 @@ import type {
 } from '#ui/TurnBanner.ts'
 
 const CELL_CLASS_NAME =
-  'flex size-12 cursor-pointer items-center justify-center rounded-full font-display text-xl text-ink'
-const CELL_IDLE_CLASS_NAME = 'border-2 border-ink bg-parchment hover:brightness-95'
-const CELL_SELECTED_CLASS_NAME = 'border-4 border-riverfolk bg-moss/45 font-bold'
+  'root-paper root-medallion root-paper-press m-0 flex size-11 items-center justify-center p-0 font-display text-xl'
+const CELL_IDLE_CLASS_NAME =
+  'text-ink [--root-paper-color:var(--color-paper-bright)]'
+/** Picked value: wooden medallion, a little bigger than its row. */
+const CELL_SELECTED_CLASS_NAME = 'scale-115 font-bold text-parchment'
 
 type OptionGridRow = {
   group: string
@@ -59,12 +61,12 @@ export function OptionGridModal(): JSX.Element | null {
       aria-label={composer.message}
     >
       <div className="absolute inset-0 bg-forest-deep/72" />
-      <div className="root-panel relative z-1 px-7 py-5">
-        <div className="flex flex-col gap-3">
+      <div className="root-paper z-1 mx-3 px-6 py-2">
+        <div className="flex flex-col">
           {rowsOf(composer.options).map((row: OptionGridRow) => (
             <div
               key={row.group}
-              className="option-grid-modal__row flex flex-row items-center justify-between gap-6"
+              className="option-grid-modal__row flex flex-row items-center justify-between gap-6 border-dashed border-ink/35 py-2.5 not-first:border-t-2"
             >
               <span className="font-display text-lg font-bold text-ink">
                 {row.group}
