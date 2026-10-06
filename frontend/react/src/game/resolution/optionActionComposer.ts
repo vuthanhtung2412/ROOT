@@ -38,6 +38,8 @@ type ActiveDraft = Extract<OptionDraft, { type: 'optionAction' }>
 export type OptionComposerOptions = SeatLabelOptions & {
   /** Type of the pending event at the head of the queue, if any. */
   pendingType?: () => string | null
+  /** Cost a Riverfolk service marker stands on; null when not known. */
+  currentServiceCost?: (service: string) => number | null
 }
 
 function distinctValues(
@@ -76,6 +78,8 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
   const labels: OptionLabels = {
     seatName: (seat: number): string =>
       options?.factionNameForSeat?.(seat) ?? fallbackSeatLabel(seat),
+    currentServiceCost: (service: string): number | null =>
+      options?.currentServiceCost?.(service) ?? null,
   }
 
   const clear = (): void => {

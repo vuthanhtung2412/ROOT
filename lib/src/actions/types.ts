@@ -141,8 +141,6 @@ export type ActionChoiceParams = {
   costs?: number[]
   /** Riverfolk setup — the service whose starting cost is being set. */
   services?: RiverfolkService[]
-  /** Riverfolk Set Costs — where each service marker stands now (one entry). */
-  serviceCosts?: Array<Record<RiverfolkService, number>>
 }
 
 export type Action =

@@ -185,14 +185,7 @@ export function riverfolkLegalActions(state: GameState, ctx: Ctx): ActionSpec[] 
     return specs
   }
   if (state.phase === 'evening' && state.step === 'costs') {
-    specs.push({
-      type: 'setServiceCosts',
-      actor: seat,
-      params: {
-        options: serviceCostOptions(),
-        serviceCosts: [{ ...riverfolkBoardOf(state, seat).serviceCosts }],
-      },
-    })
+    pushOptions(specs, 'setServiceCosts', seat, serviceCostOptions())
   }
   specs.push({ type: 'endPhase', actor: seat })
   return specs

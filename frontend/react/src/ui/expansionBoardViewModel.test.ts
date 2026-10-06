@@ -10,6 +10,7 @@ import {
   lostSoulSuitCounts,
   RIVERFOLK_SERVICE_IDS,
   RIVERFOLK_TRADE_POST_TRACK_SLOT_COUNT,
+  riverfolkServiceCost,
 } from '#ui/expansionBoardViewModel.ts'
 import {
   buildFactionBoardViewModel,
@@ -134,6 +135,13 @@ describe('Riverfolk Company board view model', () => {
   it('rejects a board that does not match the faction', () => {
     const player = { ...makeRiverfolkPlayer(), faction: 'lizard' }
     expect(buildFactionBoardViewModelFromPlayer(player)).toBeNull()
+  })
+
+  it('Rule: 11.6.2 Set Costs — reads where a service marker stands', () => {
+    const players: BoardPlayer[] = [makeLizardPlayer(), makeRiverfolkPlayer()]
+    expect(riverfolkServiceCost(players, 'riverboats')).toBe(3)
+    expect(riverfolkServiceCost(players, 'ferry')).toBeNull()
+    expect(riverfolkServiceCost([makeLizardPlayer()], 'riverboats')).toBeNull()
   })
 })
 

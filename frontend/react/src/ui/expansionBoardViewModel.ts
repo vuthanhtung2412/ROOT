@@ -202,6 +202,26 @@ function riverfolkViewModel(
 }
 
 /** View model of a Lizard Cult or Riverfolk board; null for any other board. */
+/**
+ * Rule: 11.6.2 Set Costs — cost the Riverfolk marker of `service` stands on;
+ * null without a Riverfolk seat or for an unknown service.
+ */
+export function riverfolkServiceCost(
+  players: readonly ExpansionBoardPlayer[],
+  service: string,
+): number | null {
+  const isService: boolean = RIVERFOLK_SERVICE_IDS.some(
+    (serviceId: RiverfolkServiceId): boolean => serviceId === service,
+  )
+  for (const player of players) {
+    const board = player.board
+    if (isService && player.faction === 'riverfolk' && isRecord(board)) {
+      return readNumber(board.serviceCosts, service)
+    }
+  }
+  return null
+}
+
 export function buildExpansionBoardViewModel(
   player: ExpansionBoardPlayer,
   context: { crafted: CraftedLookup; factions: readonly string[] },

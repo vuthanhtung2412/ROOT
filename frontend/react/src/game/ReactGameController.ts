@@ -43,6 +43,7 @@ import { createDominanceComposerHooks } from '#game/resolution/dominanceActionCo
 import { createAllianceComposerHooks } from '#game/resolution/allianceActionComposer.ts'
 import { createOptionComposerHooks } from '#game/resolution/optionActionComposer.ts'
 import { pendingEventType } from '#game/expansionPendingPrompts.ts'
+import { riverfolkServiceCost } from '#ui/expansionBoardViewModel.ts'
 import { readBattleClearingId } from '#game/battleOverlayModel.ts'
 import {
   applyMarchPreview,
@@ -190,6 +191,8 @@ export class ReactGameController {
       ...seatLabelOptions,
       pendingType: (): string | null =>
         pendingEventType(this.latestSnapshot?.state?.pending[0]),
+      currentServiceCost: (service: string): number | null =>
+        riverfolkServiceCost(this.latestSnapshot?.state?.players ?? [], service),
     })
     this.eventComposer = createEventComposerHooks()
     this.autoPrompts = new AutoPromptController({

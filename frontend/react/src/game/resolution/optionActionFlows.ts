@@ -23,6 +23,8 @@ export type OptionStep = {
 
 export type OptionLabels = {
   seatName: (seat: number) => string
+  /** Cost a Riverfolk service marker stands on; null when not known. */
+  currentServiceCost: (service: string) => number | null
 }
 
 /** A staged action: its legal payloads and the order their fields are picked. */
@@ -39,8 +41,6 @@ export type OptionFlow = {
 type FlowDefinition = {
   title: string
   steps: readonly OptionStep[]
-  /** Steps that depend on the spec (labels built from its params). */
-  stepsForSpec?: (spec: ActionSpec) => readonly OptionStep[]
 }
 
 function seatLabel(value: OptionValue, labels: OptionLabels): string {
@@ -62,33 +62,21 @@ function serviceLabel(value: OptionValue): string {
 }
 
 const CURRENT_COST_SUFFIX = ' (current)'
-const SERVICE_COSTS_PARAM = 'serviceCosts'
-
-/** Where a service marker stands now, from the Set Costs spec; null if unknown. */
-function currentServiceCost(spec: ActionSpec, service: string): number | null {
-  const costs: unknown = spec.params?.[SERVICE_COSTS_PARAM]?.[0]
-  if (typeof costs !== 'object' || costs === null) return null
-  const cost: unknown = Reflect.get(costs, service)
-  return typeof cost === 'number' ? cost : null
-}
 
 /**
  * Rule: 11.6.2 Set Costs — one cost pick per service, in a single action;
  * the cost a marker already stands on is tagged so it is easy to keep.
  */
-function serviceCostSteps(spec: ActionSpec): OptionStep[] {
-  return Object.entries(SERVICE_LABELS).map(
-    ([service, label]: [string, string]): OptionStep => {
-      const currentCost = currentServiceCost(spec, service)
-      return {
-        field: service,
-        kind: 'choice',
-        prompt: `${label} cost`,
-        label: (value: OptionValue): string =>
-          `Cost ${String(value)}${value === currentCost ? CURRENT_COST_SUFFIX : ''}`,
-      }
+function serviceCostStep(service: string): OptionStep {
+  return {
+    field: service,
+    kind: 'choice',
+    prompt: `${serviceLabel(service)} cost`,
+    label: (value: OptionValue, labels: OptionLabels): string => {
+      const isCurrent: boolean = value === labels.currentServiceCost(service)
+      return `Cost ${String(value)}${isCurrent ? CURRENT_COST_SUFFIX : ''}`
     },
-  )
+  }
 }
 
 const FROM_STEP: OptionStep = {
@@ -190,8 +178,7 @@ const TURN_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
   establishTradePost: { title: 'Trade post', steps: [CLEARING_STEP] },
   setServiceCosts: {
     title: 'Set costs',
-    steps: [],
-    stepsForSpec: serviceCostSteps,
+    steps: Object.keys(SERVICE_LABELS).map(serviceCostStep),
   },
 }
 
@@ -339,7 +326,7 @@ export function optionFlowForSpec(
   return {
     actionType: spec.type,
     title: definition.title,
-    steps: definition.stepsForSpec?.(spec) ?? definition.steps,
+    steps: definition.steps,
     options,
     cancellable: true,
     autoPickSingle: true,

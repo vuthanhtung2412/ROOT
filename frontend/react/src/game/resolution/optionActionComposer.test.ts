@@ -18,11 +18,19 @@ type ComposerUnderTest = {
   option: ReturnType<typeof createOptionComposerHooks>
 }
 
+const CURRENT_SERVICE_COSTS: Readonly<Record<string, number>> = {
+  handCard: 1,
+  riverboats: 3,
+  mercenaries: 2,
+}
+
 function composerFor(pendingType: string | null = null): ComposerUnderTest {
   const option = createOptionComposerHooks({
     factionNameForSeat: (seat: number): string | null =>
       ['marquise', 'riverfolk', 'eyrie'][seat] ?? null,
     pendingType: (): string | null => pendingType,
+    currentServiceCost: (service: string): number | null =>
+      CURRENT_SERVICE_COSTS[service] ?? null,
   })
   const composer = new ActionComposer()
   composer.setHooks(
@@ -93,10 +101,7 @@ describe('optionActionComposer turn actions', () => {
       composer.begin(
         makeActionSpec({
           type: 'setServiceCosts',
-          params: {
-            options,
-            serviceCosts: [{ handCard: 1, riverboats: 3, mercenaries: 2 }],
-          },
+          params: { options },
         }),
       ),
     )
