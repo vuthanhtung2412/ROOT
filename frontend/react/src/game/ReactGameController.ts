@@ -17,7 +17,13 @@ import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
-import { patchHud, resetHud, setHudCallbacks } from '#game/hudStore.ts'
+import {
+  getHudSnapshot,
+  patchHud,
+  resetHud,
+  setHudCallbacks,
+} from '#game/hudStore.ts'
+import { cardFlightsFromLog, type CardFlight } from '#game/cardFlights.ts'
 import { showCardDetail } from '#react/CardDetailOverlay.tsx'
 import { syncLeaderPickOverlay } from '#react/HudChrome.tsx'
 import {
@@ -705,11 +711,15 @@ export class ReactGameController {
     if (state === null || state === this.effectState) {
       return
     }
-    const effects = boardEffectsBetween(
-      this.effectState,
-      state,
-      logEntriesAddedSince(this.effectLogLength, snapshot.log),
+    const newLogEntries: readonly unknown[] = logEntriesAddedSince(
+      this.effectLogLength,
+      snapshot.log,
     )
+    const effects = boardEffectsBetween(this.effectState, state, newLogEntries)
+    // Same guard as the board effects: nothing flies for another game.
+    if (this.effectState?.id === state.id) {
+      this.syncCardFlights(cardFlightsFromLog(newLogEntries))
+    }
     this.effectState = state
     this.effectLogLength = snapshot.log.length
     if (effects.length > 0) {
@@ -718,6 +728,19 @@ export class ReactGameController {
         effects,
       }
     }
+  }
+
+  /** Crafted / revealed cards of one server update fly out of the rail. */
+  private syncCardFlights(flights: readonly CardFlight[]): void {
+    if (flights.length === 0) {
+      return
+    }
+    patchHud({
+      cardFlights: {
+        sequence: getHudSnapshot().cardFlights.sequence + 1,
+        flights,
+      },
+    })
   }
 
   private syncBoardPieces(snapshot: GameSessionSnapshot): void {

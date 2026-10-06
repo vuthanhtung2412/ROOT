@@ -128,6 +128,7 @@ export function PlayerRail(): JSX.Element | null {
         return (
           <div
             key={player.seat}
+            data-rail-seat={player.seat}
             className={
               isActive
                 ? `${SEAT_TILE_CLASS_NAME} ${SEAT_TILE_ACTIVE_CLASS_NAME}`
