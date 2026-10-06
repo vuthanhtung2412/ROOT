@@ -35,3 +35,23 @@ export function clearingHasRuin(clearing: ClearingIndicatorSource | undefined): 
   const items = clearing.ruin?.items
   return items !== undefined && items.length > 0
 }
+
+/**
+ * Clearings this low on the map sit behind the fanned hand: their suit and
+ * open-slot markers are drawn above the clearing instead of below it.
+ */
+export const BOTTOM_CLEARING_BAND_START_RATIO = 0.75
+
+export type MapVerticalSpan = {
+  top: number
+  height: number
+}
+
+export function clearingMarkersGoAbove(
+  clearingCenterY: number,
+  map: MapVerticalSpan,
+): boolean {
+  return (
+    clearingCenterY > map.top + map.height * BOTTOM_CLEARING_BAND_START_RATIO
+  )
+}

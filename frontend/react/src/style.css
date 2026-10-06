@@ -16,6 +16,12 @@
   --color-rust: #b55238;
   --color-gold: #c9a04a;
   --color-sky-mist: #8aa39a;
+  /* Paper kit: medallion wood, confirm tile, die face. */
+  --color-wood: #5b3d26;
+  --color-confirm: #7da453;
+  --color-paper-bright: #fff8e6;
+  /* Warm cream sheet behind cards (card detail, discard pile, crafted cards). */
+  --color-cream: #f6e7bd;
   /* Text printed straight on faction board art. */
   --color-ink-deep: #1a1408;
   /* Riverfolk Company faction color (FACTION_COLORS.riverfolk). */
@@ -66,6 +72,69 @@
 @utility paper-grain {
   background-image: var(--root-paper-grain);
   background-blend-mode: multiply;
+}
+
+/*
+ * Hand-inked torn paper (Steam digital edition look). The paper is a displaced
+ * `::before` layer, so text and children stay crisp. Needs <PaperFilters />.
+ * Paper colour: `--root-paper-color`; ink edge: `--root-paper-edge`;
+ * grain: `--root-paper-texture` (`none` with a transparent colour hides the paper).
+ */
+@utility root-paper {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: transparent;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border: 3px solid var(--root-paper-edge, var(--color-ink-deep));
+    border-radius: var(--root-paper-radius, 0);
+    background-color: var(--root-paper-color, var(--color-parchment));
+    background-image: var(--root-paper-texture, var(--root-paper-grain));
+    background-blend-mode: multiply;
+    filter: var(--root-paper-filter, url(#root-torn-edge))
+      drop-shadow(1px 2px 0 color-mix(in srgb, #1a1408 40%, transparent));
+    pointer-events: none;
+  }
+}
+
+/* Smaller tear for small pieces (tiles, buttons, medallions). */
+@utility root-paper-fine {
+  --root-paper-filter: url(#root-torn-edge-fine);
+}
+
+/* Round wooden token holding an icon or a digit. Use with `root-paper`. */
+@utility root-medallion {
+  --root-paper-color: var(--color-wood);
+  --root-paper-edge: var(--color-ink-deep);
+  --root-paper-texture: var(--root-paper-grain);
+  --root-paper-filter: url(#root-torn-edge-fine);
+  --root-paper-radius: 9999px;
+}
+
+/* Press feedback for paper pieces that are buttons. */
+@utility root-paper-press {
+  cursor: pointer;
+  transition:
+    filter 80ms ease-out,
+    transform 80ms ease-out;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.07);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
 }
 
 @layer base {

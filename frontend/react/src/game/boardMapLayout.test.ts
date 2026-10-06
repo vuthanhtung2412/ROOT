@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { FALL_BOARD_LAYOUT } from '#game/boardLayout.ts'
 import {
+  BOARD_MAP_CENTER_Y_RATIO_LANDSCAPE,
+  BOARD_MAP_HEIGHT_RATIO_LANDSCAPE,
+  BOARD_MAP_WIDTH_RATIO_LANDSCAPE,
   clearingHitTargetsForMap,
   computeBoardMapDisplayMetrics,
 } from '#game/boardMapLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
+
+const ROUNDING_SLACK = 0.01
 
 describe('boardMapLayout', () => {
   it('fits map inside board band like Phaser BoardView', () => {
@@ -15,13 +20,15 @@ describe('boardMapLayout', () => {
       naturalHeight: 1500,
     })
     expect(metrics.mapDisplayWidth).toBeLessThanOrEqual(
-      GAME_LOGICAL_WIDTH * 0.96 + 0.01,
+      GAME_LOGICAL_WIDTH * BOARD_MAP_WIDTH_RATIO_LANDSCAPE + ROUNDING_SLACK,
     )
     expect(metrics.mapDisplayHeight).toBeLessThanOrEqual(
-      GAME_LOGICAL_HEIGHT * 0.82 + 0.01,
+      GAME_LOGICAL_HEIGHT * BOARD_MAP_HEIGHT_RATIO_LANDSCAPE + ROUNDING_SLACK,
     )
     expect(metrics.mapCenterX).toBe(GAME_LOGICAL_WIDTH * 0.5)
-    expect(metrics.mapCenterY).toBe(GAME_LOGICAL_HEIGHT * 0.44)
+    expect(metrics.mapCenterY).toBe(
+      GAME_LOGICAL_HEIGHT * BOARD_MAP_CENTER_Y_RATIO_LANDSCAPE,
+    )
   })
 
   it('uses a wider band in portrait', () => {

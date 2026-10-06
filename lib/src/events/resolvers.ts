@@ -15,7 +15,7 @@ import { fieldHospitalResolver } from '#events/fieldHospital.js'
 import { outrageResolver } from '#events/outrage.js'
 import { placeRiverfolkWarriorResolver } from '#events/placeRiverfolkWarrior.js'
 import { placeStartingBuildingResolver } from '#events/placeStartingBuilding.js'
-import { setStartingCostResolver } from '#events/setStartingCost.js'
+import { setStartingCostsResolver } from '#events/setStartingCosts.js'
 import { vagabondDamageResolver } from '#events/vagabondDamage.js'
 import type { Event } from '#events/types.js'
 import {
@@ -31,7 +31,7 @@ import {
   isOutrageEvent,
   isPlaceRiverfolkWarriorEvent,
   isPlaceStartingBuildingEvent,
-  isSetStartingCostEvent,
+  isSetStartingCostsEvent,
   isVagabondDamageEvent,
 } from '#typeGuards.js'
 
@@ -98,9 +98,9 @@ export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
     isPlaceRiverfolkWarriorEvent,
     placeRiverfolkWarriorResolver,
   ),
-  setStartingCost: guardedResolver(
-    isSetStartingCostEvent,
-    setStartingCostResolver,
+  setStartingCosts: guardedResolver(
+    isSetStartingCostsEvent,
+    setStartingCostsResolver,
   ),
   battle: {
     legalActions(state, event, ctx) {

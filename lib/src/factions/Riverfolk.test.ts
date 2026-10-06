@@ -34,6 +34,8 @@ const BUYER: Seat = 1
 const RIVER_CLEARING = 4
 const DOWNRIVER_CLEARING = 9
 const PATH_CLEARING = 0
+/** One past the last space of a Services track. */
+const ILLEGAL_SERVICE_COST = 5
 const MOUSE_RIVER_CLEARING = 6
 const RABBIT_CARD = card('ROOT-206')
 const MARQUISE_STARTING_SUPPLY = 25
@@ -127,6 +129,41 @@ describe('Riverfolk Company setup', () => {
     expect(() =>
       game.apply({ type: 'resolveEvent', clearing: PATH_CLEARING }),
     ).toThrow(expect.objectContaining({ code: 'ILLEGAL_ACTION' }))
+  })
+
+  it('Rule: 11.3.5 — one setup choice sets a different cost on each service', () => {
+    const game = Game.create({ seed: 7, factions: ['eyrie', 'riverfolk'] })
+    game.join('first')
+    game.join('second')
+    game.start()
+    game.apply({ type: 'resolveEvent', leader: 'builder' })
+    while (game.state.pending[0]?.type === 'placeRiverfolkWarrior') {
+      const clearings = game.legalActions()[0]?.params?.clearing ?? []
+      game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
+    }
+
+    expect(game.state.pending).toEqual([{ type: 'setStartingCosts', seat: 1 }])
+    expect(() =>
+      game.apply({
+        type: 'resolveEvent',
+        handCard: 2,
+        riverboats: 1,
+        mercenaries: ILLEGAL_SERVICE_COST,
+      }),
+    ).toThrow(expect.objectContaining({ code: 'ILLEGAL_ACTION' }))
+
+    game.apply({
+      type: 'resolveEvent',
+      handCard: 2,
+      riverboats: 1,
+      mercenaries: 4,
+    })
+    expect(riverfolkBoardOf(game.state, 1).serviceCosts).toEqual({
+      handCard: 2,
+      riverboats: 1,
+      mercenaries: 4,
+    })
+    expect(game.state.status).toBe('playing')
   })
 })
 

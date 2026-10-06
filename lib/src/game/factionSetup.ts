@@ -2,10 +2,7 @@ import { placeEyrieRoostSetup } from '#factions/Eyrie.js'
 import { factionFor } from '#factions/index.js'
 import type { Ctx } from '#game/ctx.js'
 import type { FactionId } from '#pieces/types.js'
-import {
-  RIVERFOLK_SERVICES,
-  RIVERFOLK_STARTING_WARRIORS,
-} from '#state/riverfolkBoard.js'
+import { RIVERFOLK_STARTING_WARRIORS } from '#state/riverfolkBoard.js'
 import type { GameState, PlayerState } from '#state/types.js'
 
 /** Rule: 5.1.7 — factions set up in setup order (A, B, C, ...). */
@@ -80,13 +77,7 @@ export function setUpFactionsAfterMarquise(state: GameState, ctx: Ctx): void {
         seat: player.seat,
         remaining: RIVERFOLK_STARTING_WARRIORS,
       })
-      for (const service of RIVERFOLK_SERVICES) {
-        state.pending.push({
-          type: 'setStartingCost',
-          seat: player.seat,
-          service,
-        })
-      }
+      state.pending.push({ type: 'setStartingCosts', seat: player.seat })
     }
   }
 }

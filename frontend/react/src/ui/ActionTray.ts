@@ -1,5 +1,6 @@
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { lookupCardCatalog } from '#assets/gameAssets.ts'
+import { pendingEventType } from '#game/expansionPendingPrompts.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 import { QUEST_ACTION_TYPE } from '#game/vagabondQuest.ts'
 import { REARRANGE_ACTION_TYPE } from '#game/vagabondRearrange.ts'
@@ -59,6 +60,7 @@ function formatActionLabel(
     }
     return column !== undefined ? column : 'decree'
   }
+  if (spec.type === 'addToDecree') return 'add to decree'
   if (spec.type === 'revolt') return 'revolt'
   if (spec.type === 'spreadSympathy') return 'spread sympathy'
   if (spec.type === 'mobilize') return 'mobilize'
@@ -154,6 +156,63 @@ function formatActionLabel(
     return 'resolveEvent'
   }
   return spec.type
+}
+
+const DECREE_ACTION_TYPE = 'decree'
+
+/** What a tray medallion draws: an icon key and, for a card play, its suit. */
+export type TrayActionArt = {
+  /** Key for `actionIconFor`: the action type, or the Decree column. */
+  iconKey: string
+  suit: string | null
+}
+
+const RESOLVE_EVENT_ACTION_TYPE = 'resolveEvent'
+const BUY_SERVICES_PENDING_TYPE = 'buyServices'
+/** Icon keys of the answers to a pending event (all are `resolveEvent`). */
+export const DECLINE_ICON_KEY = 'declineEvent'
+export const BUY_SERVICE_ICON_KEY = 'buyService'
+export const DECLINE_SERVICE_ICON_KEY = 'declineService'
+export const REMOVE_HITS_ICON_KEY = 'removeHits'
+
+/** Answers to one pending event share a type: tell them apart by what they send. */
+function resolveEventIconKey(spec: ActionSpec, pending: unknown): string {
+  const params = readChoiceParams(spec)
+  const isBuyingServices: boolean =
+    pendingEventType(pending) === BUY_SERVICES_PENDING_TYPE
+  if (params.decline !== undefined) {
+    return isBuyingServices ? DECLINE_SERVICE_ICON_KEY : DECLINE_ICON_KEY
+  }
+  if (isBuyingServices) {
+    return BUY_SERVICE_ICON_KEY
+  }
+  if (params.pieceIds !== undefined) {
+    return REMOVE_HITS_ICON_KEY
+  }
+  return spec.type
+}
+
+/**
+ * Decree: icon of the column, suit of the card. Pending event: icon of the
+ * answer. Others: icon of the type.
+ */
+export function trayActionArt(
+  spec: ActionSpec,
+  state?: GameState,
+  pending?: unknown,
+): TrayActionArt {
+  if (spec.type === RESOLVE_EVENT_ACTION_TYPE) {
+    return { iconKey: resolveEventIconKey(spec, pending), suit: null }
+  }
+  if (spec.type !== DECREE_ACTION_TYPE) {
+    return { iconKey: spec.type, suit: null }
+  }
+  const params = readChoiceParams(spec)
+  const cardId: string | undefined = params.cardIds?.[0]
+  return {
+    iconKey: params.column?.[0] ?? spec.type,
+    suit: cardId !== undefined ? decreeCardSuit(cardId, state) : null,
+  }
 }
 
 function decreeCardSuit(cardId: string, state?: GameState): string | null {
@@ -309,6 +368,21 @@ export function partitionTrayActionRegions(
     })
   }
   return regions
+}
+
+/**
+ * Short count beside the phase name in the tray header: the Marquise
+ * Daylight budget left, otherwise the number of buttons.
+ */
+export function trayActionCountLabel(
+  buttonCount: number,
+  state: GameState | undefined,
+): string {
+  const actionsLeft = marquiseDaylightActionsLeft(state)
+  if (actionsLeft !== null) {
+    return `${String(actionsLeft)} left`
+  }
+  return buttonCount === 1 ? '1 action' : `${String(buttonCount)} actions`
 }
 
 function primaryActionsRegionTitle(

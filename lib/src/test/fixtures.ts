@@ -280,10 +280,14 @@ export function finishSetup(
     const clearings = game.legalActions()[0]?.params?.clearing ?? []
     game.apply({ type: 'resolveEvent', clearing: clearings[0]! })
   }
-  while (game.state.pending[0]?.type === 'setStartingCost') {
+  if (game.state.pending[0]?.type === 'setStartingCosts') {
+    const serviceCost: number =
+      options.serviceCost ?? RIVERFOLK_DEFAULT_SERVICE_COST
     game.apply({
       type: 'resolveEvent',
-      cost: options.serviceCost ?? RIVERFOLK_DEFAULT_SERVICE_COST,
+      handCard: serviceCost,
+      riverboats: serviceCost,
+      mercenaries: serviceCost,
     })
   }
 }

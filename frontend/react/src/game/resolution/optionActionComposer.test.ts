@@ -207,7 +207,7 @@ describe('optionActionComposer pending events', () => {
     })
   })
 
-  it('Outcast suit and starting cost are picked from banner buttons', () => {
+  it('Outcast suit is picked from banner buttons', () => {
     const outcast = composerFor('chooseOutcast')
     outcast.composer.begin(
       makeActionSpec({
@@ -220,23 +220,35 @@ describe('optionActionComposer pending events', () => {
       action: { type: 'resolveEvent', suit: 'rabbit' },
     })
 
-    const cost = composerFor('setStartingCost')
-    const begun = expectIncomplete(
-      cost.composer.begin(
-        makeActionSpec({
-          type: 'resolveEvent',
-          params: { services: ['riverboats'], costs: [1, 2, 3, 4] },
-        }),
+  })
+
+  it('Rule: 11.3.5 — starting costs are set in the Services track modal', () => {
+    const { composer, option } = composerFor('setStartingCosts')
+    const costs = [1, 2, 3, 4]
+    const options = costs.flatMap((handCard) =>
+      costs.flatMap((riverboats) =>
+        costs.map((mercenaries) => ({ handCard, riverboats, mercenaries })),
       ),
     )
-    expect(begun.prompt.message).toContain('Riverboats')
-    expect(cost.option.getPromptOptions()[3]).toEqual({
-      label: 'Cost 4',
-      value: 'choice:3',
-    })
-    expect(cost.composer.chooseColumn('choice:3')).toEqual({
-      kind: 'ready',
-      action: { type: 'resolveEvent', cost: 4 },
+    const begun = expectIncomplete(
+      composer.begin(
+        makeActionSpec({ type: 'resolveEvent', params: { options } }),
+      ),
+    )
+    expect(begun.prompt.message).toBe(
+      'Starting costs — pick the cost of each service',
+    )
+    expect(begun.prompt.canConfirm).toBe(true)
+    expect(begun.prompt.canCancel).toBe(false)
+    expect(option.getOptionPresentation()).toBe('grid')
+    expect(option.getPromptOptions()).toHaveLength(12)
+
+    expectIncomplete(composer.chooseColumn('grid:0:1'))
+    expectIncomplete(composer.chooseColumn('grid:2:3'))
+    const confirmed = composer.confirm()
+    expect(confirmed.kind).toBe('ready')
+    expect(confirmed).toMatchObject({
+      action: { type: 'resolveEvent', handCard: 2, mercenaries: 4 },
     })
   })
 

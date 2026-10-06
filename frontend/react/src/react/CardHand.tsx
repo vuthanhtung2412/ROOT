@@ -20,6 +20,33 @@ import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 
 const CARD_HOLD_MILLISECONDS = 350
 
+/**
+ * Cards held like a fan, no tray behind them. Wide: the fan peeks over the
+ * bottom edge so it covers less of the board; hover lifts a card clear.
+ */
+const HAND_CLASS_NAME =
+  'pointer-events-none fixed bottom-3 left-1/2 z-120 box-border flex max-w-[calc(100vw-16px)] -translate-x-1/2 flex-row items-end overflow-x-auto px-3 pt-4 md:-bottom-14 md:max-w-none md:overflow-x-visible md:px-0 md:pt-0'
+const HAND_CARD_CLASS_NAME =
+  'pointer-events-auto relative -mx-1 box-border h-22 w-16 shrink-0 origin-bottom cursor-pointer overflow-hidden rounded-md border-2 border-ink-deep bg-ink p-0 shadow-card transition-[translate] duration-100 ease-out hover:z-1 md:-mx-2.5 md:h-39 md:w-28 md:shrink md:border-3 md:hover:-translate-y-12'
+const HAND_CARD_SELECTED_CLASS_NAME =
+  'z-1 border-gold -translate-y-3 shadow-card-selected md:-translate-y-12'
+/** Tilt between neighbouring cards, and the widest the whole fan may open. */
+const FAN_STEP_DEGREES = 5
+const FAN_MAX_SPREAD_DEGREES = 24
+
+/** Tilt of one card: the middle of the hand stands upright. */
+function fanDegreesOf(cardIndex: number, cardCount: number): number {
+  if (cardCount <= 1) {
+    return 0
+  }
+  const lastCardIndex: number = cardCount - 1
+  const stepDegrees: number = Math.min(
+    FAN_STEP_DEGREES,
+    FAN_MAX_SPREAD_DEGREES / lastCardIndex,
+  )
+  return (cardIndex - lastCardIndex / 2) * stepDegrees
+}
+
 export function CardHand(): JSX.Element | null {
   const hand = useSyncExternalStore(
     subscribeHud,
@@ -43,8 +70,8 @@ export function CardHand(): JSX.Element | null {
   const callbacks = getHudCallbacks()
 
   return (
-    <div className="pointer-events-none fixed bottom-3 left-1/2 z-120 box-border flex max-w-[calc(100vw-16px)] -translate-x-1/2 flex-row items-end gap-1.5 overflow-x-auto border-2 border-ink bg-parchment/55 px-2 py-1.5 paper-grain shadow-hand-tray md:bottom-6 md:max-w-none md:gap-2.5 md:overflow-x-visible md:px-2.5 md:pt-2 md:pb-1.5">
-      {cards.map((card) => {
+    <div className={HAND_CLASS_NAME}>
+      {cards.map((card, cardIndex: number) => {
         const isSelected = selected.has(card.id)
         const isDimmed = enabled !== null && !enabled.has(card.id)
         return (
@@ -54,6 +81,7 @@ export function CardHand(): JSX.Element | null {
             defId={card.defId}
             selected={isSelected}
             dimmed={isDimmed}
+            fanDegrees={fanDegreesOf(cardIndex, cards.length)}
             onSelect={() => {
               callbacks.onCardSelected(card.id)
             }}
@@ -79,6 +107,7 @@ function HandCard(props: {
   defId: string
   selected: boolean
   dimmed: boolean
+  fanDegrees: number
   onSelect: () => void
   onHold: () => void
 }): JSX.Element {
@@ -117,14 +146,13 @@ function HandCard(props: {
     <button
       type="button"
       className={[
-        'pointer-events-auto m-0 box-border h-22 w-16 shrink-0 cursor-pointer border-2 border-ink bg-ink p-0 shadow-card-sm transition-transform duration-75 ease-out md:h-29 md:w-21 md:shrink md:border-3',
-        props.selected
-          ? 'border-gold -translate-y-3 shadow-card-selected md:-translate-y-4.5'
-          : '',
+        HAND_CARD_CLASS_NAME,
+        props.selected ? HAND_CARD_SELECTED_CLASS_NAME : '',
         props.dimmed ? 'opacity-45' : '',
       ]
         .filter((part) => part.length > 0)
         .join(' ')}
+      style={{ rotate: `${String(props.fanDegrees)}deg` }}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerLeave}

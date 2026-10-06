@@ -7,6 +7,7 @@ import {
   hasTradePost,
   riverfolkBoardOf,
 } from '#factions/riverfolk/rules.js'
+import { serviceCostOptions } from '#factions/riverfolk/setup.js'
 import { handLimitLegalAction } from '#factions/sharedTurn.js'
 import type { Ctx } from '#game/ctx.js'
 import { FALL } from '#map/fall.js'
@@ -20,7 +21,6 @@ import { canPlace } from '#queries/place.js'
 import { ruler } from '#queries/ruler.js'
 import { playerOf } from '#queries/seat.js'
 import {
-  RIVERFOLK_SERVICE_COSTS,
   RIVERFOLK_TRADE_POST_FUND_COST,
   type RiverfolkBoard,
 } from '#state/riverfolkBoard.js'
@@ -154,22 +154,6 @@ function daylightLegalActions(
   )
   specs.push({ type: 'endPhase', actor: seat })
   return specs
-}
-
-/**
- * Rule: 11.6.2 Set Costs — each marker may move to any space of its track.
- * One option per combination, so a single action sets all three services.
- */
-function serviceCostOptions(): ActionOption[] {
-  const options: ActionOption[] = []
-  for (const handCard of RIVERFOLK_SERVICE_COSTS) {
-    for (const riverboats of RIVERFOLK_SERVICE_COSTS) {
-      for (const mercenaries of RIVERFOLK_SERVICE_COSTS) {
-        options.push({ handCard, riverboats, mercenaries })
-      }
-    }
-  }
-  return options
 }
 
 export function riverfolkLegalActions(state: GameState, ctx: Ctx): ActionSpec[] {
