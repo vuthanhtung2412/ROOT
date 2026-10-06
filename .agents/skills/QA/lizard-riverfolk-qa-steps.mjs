@@ -253,7 +253,8 @@ export const RIVERFOLK_TURN_TO_CULT_DAYLIGHT_STEPS = [
     title: '11–12 · Set Mercenaries to cost 2, end turn (R11)',
     play: async (ui) => {
       await ui.button('set costs')
-      await ui.button('Mercenaries')
+      await ui.button('Cost 1 (current)')
+      await ui.button('Cost 1 (current)')
       await ui.button('Cost 2')
       await ui.button('end phase')
       await ui.waitForButton('buy service')

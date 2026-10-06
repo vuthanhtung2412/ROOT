@@ -52,7 +52,7 @@ const OPTION_ACTION_TYPES: ReadonlySet<string> = new Set([
   'riverfolkDraw',
   'riverfolkRecruit',
   'establishTradePost',
-  'setServiceCost',
+  'setServiceCosts',
 ])
 
 /** Rule: 11.5.4 Draw — one card per committed fund. */
@@ -128,7 +128,7 @@ export class Riverfolk extends Faction {
       case 'riverfolkDraw':
       case 'riverfolkRecruit':
       case 'establishTradePost':
-      case 'setServiceCost':
+      case 'setServiceCosts':
         return [
           ...this.applyCompanyAction(state, action, ctx),
           { t: 'action', actor: seat, action },
@@ -200,8 +200,12 @@ export class Riverfolk extends Faction {
         return []
       case 'establishTradePost':
         return this.applyEstablishTradePost(state, seat, action.clearing, ctx)
-      case 'setServiceCost':
-        board.serviceCosts[action.service] = action.cost
+      case 'setServiceCosts':
+        board.serviceCosts = {
+          handCard: action.handCard,
+          riverboats: action.riverboats,
+          mercenaries: action.mercenaries,
+        }
         return []
     }
   }

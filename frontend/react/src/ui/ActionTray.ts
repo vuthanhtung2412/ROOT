@@ -37,7 +37,7 @@ const EXPANSION_ACTION_LABELS: Readonly<Record<string, string>> = {
   riverfolkDraw: 'draw',
   riverfolkRecruit: 'recruit',
   establishTradePost: 'trade post',
-  setServiceCost: 'set costs',
+  setServiceCosts: 'set costs',
 }
 
 function formatActionLabel(

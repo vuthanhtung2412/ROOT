@@ -141,6 +141,8 @@ export type ActionChoiceParams = {
   costs?: number[]
   /** Riverfolk setup — the service whose starting cost is being set. */
   services?: RiverfolkService[]
+  /** Riverfolk Set Costs — where each service marker stands now (one entry). */
+  serviceCosts?: Array<Record<RiverfolkService, number>>
 }
 
 export type Action =
@@ -295,8 +297,13 @@ export type RiverfolkAction =
   | { type: 'riverfolkRecruit'; clearing: ClearingId; fundOwner: Seat }
   /** Rule: 11.5.6 Establish Trade Post with Garrison — spend two ruler funds. */
   | { type: 'establishTradePost'; clearing: ClearingId }
-  /** Rule: 11.6.2 Set Costs — move one service marker. */
-  | { type: 'setServiceCost'; service: RiverfolkService; cost: number }
+  /** Rule: 11.6.2 Set Costs — the new cost of every service marker. */
+  | {
+      type: 'setServiceCosts'
+      handCard: number
+      riverboats: number
+      mercenaries: number
+    }
 
 /** Rule: 10.4–10.6 — Lizard Cult turn actions. */
 export type LizardAction =

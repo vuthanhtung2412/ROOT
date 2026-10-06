@@ -81,6 +81,48 @@ describe('optionActionComposer turn actions', () => {
     ).toEqual({ kind: 'ready', action: { type: 'riverfolkDraw', fundOwner: 1 } })
   })
 
+  it('Rule: 11.6.2 Set Costs — one action picks the cost of all three services', () => {
+    const { composer, option } = composerFor()
+    const costs = [1, 2, 3, 4]
+    const options = costs.flatMap((handCard) =>
+      costs.flatMap((riverboats) =>
+        costs.map((mercenaries) => ({ handCard, riverboats, mercenaries })),
+      ),
+    )
+    const begun = expectIncomplete(
+      composer.begin(
+        makeActionSpec({
+          type: 'setServiceCosts',
+          params: {
+            options,
+            serviceCosts: [{ handCard: 1, riverboats: 3, mercenaries: 2 }],
+          },
+        }),
+      ),
+    )
+    expect(begun.prompt.message).toBe('Set costs — Hand Card cost')
+    expect(option.getPromptOptions()).toEqual([
+      { label: 'Cost 1 (current)', value: 'choice:0' },
+      { label: 'Cost 2', value: 'choice:1' },
+      { label: 'Cost 3', value: 'choice:2' },
+      { label: 'Cost 4', value: 'choice:3' },
+    ])
+
+    const afterHandCard = expectIncomplete(composer.chooseColumn('choice:1'))
+    expect(afterHandCard.prompt.message).toBe('Set costs — Riverboats cost')
+    const afterRiverboats = expectIncomplete(composer.chooseColumn('choice:2'))
+    expect(afterRiverboats.prompt.message).toBe('Set costs — Mercenaries cost')
+    expect(composer.chooseColumn('choice:3')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'setServiceCosts',
+        handCard: 2,
+        riverboats: 3,
+        mercenaries: 4,
+      },
+    })
+  })
+
   it('move: origin, destination, count on the stepper, then the fund', () => {
     const { composer, option } = composerFor()
     const options = [1, 2].flatMap((count) =>

@@ -39,6 +39,8 @@ export type OptionFlow = {
 type FlowDefinition = {
   title: string
   steps: readonly OptionStep[]
+  /** Steps that depend on the spec (labels built from its params). */
+  stepsForSpec?: (spec: ActionSpec) => readonly OptionStep[]
 }
 
 function seatLabel(value: OptionValue, labels: OptionLabels): string {
@@ -57,6 +59,36 @@ const SERVICE_LABELS: Readonly<Record<string, string>> = {
 
 function serviceLabel(value: OptionValue): string {
   return SERVICE_LABELS[String(value)] ?? String(value)
+}
+
+const CURRENT_COST_SUFFIX = ' (current)'
+const SERVICE_COSTS_PARAM = 'serviceCosts'
+
+/** Where a service marker stands now, from the Set Costs spec; null if unknown. */
+function currentServiceCost(spec: ActionSpec, service: string): number | null {
+  const costs: unknown = spec.params?.[SERVICE_COSTS_PARAM]?.[0]
+  if (typeof costs !== 'object' || costs === null) return null
+  const cost: unknown = Reflect.get(costs, service)
+  return typeof cost === 'number' ? cost : null
+}
+
+/**
+ * Rule: 11.6.2 Set Costs — one cost pick per service, in a single action;
+ * the cost a marker already stands on is tagged so it is easy to keep.
+ */
+function serviceCostSteps(spec: ActionSpec): OptionStep[] {
+  return Object.entries(SERVICE_LABELS).map(
+    ([service, label]: [string, string]): OptionStep => {
+      const currentCost = currentServiceCost(spec, service)
+      return {
+        field: service,
+        kind: 'choice',
+        prompt: `${label} cost`,
+        label: (value: OptionValue): string =>
+          `Cost ${String(value)}${value === currentCost ? CURRENT_COST_SUFFIX : ''}`,
+      }
+    },
+  )
 }
 
 const FROM_STEP: OptionStep = {
@@ -156,22 +188,10 @@ const TURN_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
   riverfolkDraw: { title: 'Draw', steps: [FUND_STEP] },
   riverfolkRecruit: { title: 'Recruit', steps: [CLEARING_STEP, FUND_STEP] },
   establishTradePost: { title: 'Trade post', steps: [CLEARING_STEP] },
-  setServiceCost: {
+  setServiceCosts: {
     title: 'Set costs',
-    steps: [
-      {
-        field: 'service',
-        kind: 'choice',
-        prompt: 'pick service',
-        label: serviceLabel,
-      },
-      {
-        field: 'cost',
-        kind: 'choice',
-        prompt: 'pick cost',
-        label: (value: OptionValue): string => `Cost ${String(value)}`,
-      },
-    ],
+    steps: [],
+    stepsForSpec: serviceCostSteps,
   },
 }
 
@@ -319,7 +339,7 @@ export function optionFlowForSpec(
   return {
     actionType: spec.type,
     title: definition.title,
-    steps: definition.steps,
+    steps: definition.stepsForSpec?.(spec) ?? definition.steps,
     options,
     cancellable: true,
     autoPickSingle: true,

@@ -357,19 +357,25 @@ describe('Riverfolk Company Daylight', () => {
 })
 
 describe('Riverfolk Company Evening', () => {
-  it('Rule: 11.6.2 Set Costs — move a service marker to any space', () => {
+  it('Rule: 11.6.2 Set Costs — one action moves every service marker to any space', () => {
     const state = companyState({ phase: 'evening', step: 'costs' })
     applyCompany(state, {
-      type: 'setServiceCost',
-      service: 'mercenaries',
-      cost: 4,
+      type: 'setServiceCosts',
+      handCard: 2,
+      riverboats: 1,
+      mercenaries: 4,
     })
-    expect(riverfolkBoardOf(state, COMPANY).serviceCosts.mercenaries).toBe(4)
+    expect(riverfolkBoardOf(state, COMPANY).serviceCosts).toEqual({
+      handCard: 2,
+      riverboats: 1,
+      mercenaries: 4,
+    })
     expect(() =>
       applyCompany(state, {
-        type: 'setServiceCost',
-        service: 'mercenaries',
-        cost: 5,
+        type: 'setServiceCosts',
+        handCard: 2,
+        riverboats: 1,
+        mercenaries: 5,
       }),
     ).toThrow(expect.objectContaining({ code: 'ILLEGAL_ACTION' }))
   })
