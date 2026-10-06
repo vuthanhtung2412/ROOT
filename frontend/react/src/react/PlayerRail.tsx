@@ -1,5 +1,6 @@
 import { useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
+import { GiLaurels } from 'react-icons/gi'
 import { LuLayers, LuScrollText, LuShoppingCart, LuSun } from 'react-icons/lu'
 import {
   factionTextureKey,
@@ -38,7 +39,14 @@ const SEAT_BADGE_CLASS_NAME =
 /** Top left: whose turn it is. */
 const ACTIVE_SEAT_MARK_CLASS_NAME = `${SEAT_BADGE_CLASS_NAME} -top-2.5 -left-2.5 size-6 text-sm text-ink [--root-paper-color:var(--color-gold)] md:size-7 md:text-base`
 /** Bottom left: victory points. */
-const SEAT_VICTORY_POINTS_CLASS_NAME = `${SEAT_BADGE_CLASS_NAME} pointer-events-none -bottom-2.5 -left-2.5 size-7 font-mono text-sm font-bold text-ink [--root-paper-color:var(--color-gold)] md:size-9 md:text-lg`
+const SEAT_VICTORY_POINTS_CLASS_NAME =
+  'pointer-events-none absolute -bottom-3.5 -left-3.5 flex size-10 items-center justify-center md:-bottom-4 md:-left-4 md:size-13'
+/** Laurel wreath around the score: gold leaves with an ink outline. */
+const SEAT_VICTORY_WREATH_CLASS_NAME =
+  'absolute inset-0 size-full text-gold [filter:drop-shadow(1px_0_0_var(--color-ink-deep))_drop-shadow(-1px_0_0_var(--color-ink-deep))_drop-shadow(0_1px_0_var(--color-ink-deep))_drop-shadow(0_-1px_0_var(--color-ink-deep))]'
+/** Gold coin holding the score, set in the middle of the wreath. */
+const SEAT_VICTORY_COIN_CLASS_NAME =
+  'root-paper root-medallion -mt-1 flex size-6 items-center justify-center font-mono text-sm font-bold text-ink [--root-paper-color:var(--color-gold)] md:size-8 md:text-lg'
 const SEAT_BUTTON_CLASS_NAME =
   'root-paper root-medallion root-paper-press m-0 flex size-7 items-center justify-center p-0 text-sm text-ink [--root-paper-color:var(--color-parchment-deep)] md:size-8 md:text-base'
 /** Right corners, bottom first: crafted cards, then the faction's own button. */
@@ -85,7 +93,7 @@ export function PlayerRail(): JSX.Element | null {
   }
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed top-16 right-2 left-2 z-100 box-border flex w-auto flex-row flex-wrap items-start justify-center gap-5 px-0 pt-1 md:top-10 md:right-auto md:bottom-3 md:left-0 md:w-(--root-landscape-side-percent) md:flex-col md:flex-nowrap md:items-center md:justify-start md:gap-6 md:overflow-x-hidden md:overflow-y-auto md:px-4 md:pt-4">
+    <div className="fixed top-16 right-2 left-2 z-100 box-border flex w-auto flex-row flex-wrap items-start justify-center gap-5 px-0 pt-1 md:top-10 md:right-auto md:bottom-3 md:left-0 md:w-(--root-landscape-side-percent) md:flex-col md:flex-nowrap md:items-center md:justify-start md:gap-8 md:overflow-x-hidden md:overflow-y-auto md:px-4 md:pt-4">
       {rail.state.players.map((player) => {
         const isActive = player.seat === rail.activeSeat
         const factionColor: string = factionColorCss(player.faction)
@@ -156,7 +164,13 @@ export function PlayerRail(): JSX.Element | null {
                   className={SEAT_VICTORY_POINTS_CLASS_NAME}
                   aria-label={`${String(player.vp)} VP`}
                 >
-                  {String(player.vp)}
+                  <GiLaurels
+                    className={SEAT_VICTORY_WREATH_CLASS_NAME}
+                    aria-hidden="true"
+                  />
+                  <span className={SEAT_VICTORY_COIN_CLASS_NAME}>
+                    {String(player.vp)}
+                  </span>
                 </span>
               </button>
             </Tooltip>
