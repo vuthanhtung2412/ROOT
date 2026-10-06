@@ -1,6 +1,6 @@
 import { useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
-import { LuHand, LuLayers, LuScrollText, LuSun } from 'react-icons/lu'
+import { LuLayers, LuScrollText, LuStore, LuSun } from 'react-icons/lu'
 import {
   factionTextureKey,
   imagePathForAssetKey,
@@ -115,7 +115,7 @@ export function PlayerRail(): JSX.Element | null {
         if (player.faction === PUBLIC_HAND_FACTION_ID) {
           seatButtons.push({
             label: PUBLIC_HAND_LABEL,
-            Icon: LuHand,
+            Icon: LuStore,
             hookClassName: 'player-rail__public-hand',
             onClick: () => {
               callbacks.onPublicHandClick(player.seat)
