@@ -80,7 +80,10 @@ const CARD_FACE_CLASS_NAME =
 /** The back art has its own rounded shape: an ink line follows it, no frame. */
 const CARD_BACK_CLASS_NAME =
   'absolute inset-0 block size-full rotate-y-180 object-fill backface-hidden [filter:drop-shadow(0_0_1.5px_var(--color-ink-deep))_drop-shadow(2px_3px_0_color-mix(in_srgb,var(--color-ink-deep)_35%,transparent))]'
-/** Back of the shared deck (base game art). */
+/**
+ * Back of the shared deck (Exiles & Partisans). The base game back sits
+ * beside it as `card-back-base.png`.
+ */
 const CARD_BACK_IMAGE_PATH = '/assets/cards/card-back.png'
 const ANVIL_CLASS_NAME = `card-flight__anvil ${FLIGHT_BASE_CLASS_NAME} root-paper root-medallion flex size-36 items-end justify-center pb-4 text-8xl text-parchment`
 /** The anvil itself, squashed from its foot by each blow. */
