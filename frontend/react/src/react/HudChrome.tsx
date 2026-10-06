@@ -1,4 +1,5 @@
 import { useSyncExternalStore, type JSX } from 'react'
+import { LuFlag, LuLayers } from 'react-icons/lu'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -13,6 +14,9 @@ import {
 
 /** Dims the game behind a full-screen overlay. */
 const VEIL_CLASS_NAME = 'inset-0 bg-forest-deep/72'
+/** End game / discard pile: torn paper chips in the bottom corners. */
+const DRAWER_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press pointer-events-auto m-0 flex flex-row items-center gap-1.5 px-3 py-1.5 font-display text-sm text-ink md:text-base'
 
 export function GameDrawer(): JSX.Element | null {
   const drawer = useSyncExternalStore(
@@ -29,7 +33,7 @@ export function GameDrawer(): JSX.Element | null {
     <div className="pointer-events-none fixed right-2 bottom-(--root-portrait-drawer-bottom) left-2 z-112 flex justify-between md:right-3 md:bottom-22.5 md:left-3">
       <button
         type="button"
-        className="root-button root-button--danger pointer-events-auto px-2.5 py-1.5 font-mono text-sm"
+        className={`${DRAWER_BUTTON_CLASS_NAME} [--root-paper-color:color-mix(in_srgb,var(--color-rust)_45%,var(--color-parchment))]`}
         onClick={() => {
           if (!drawer.endGameArmed) {
             patchHud({
@@ -43,15 +47,17 @@ export function GameDrawer(): JSX.Element | null {
           callbacks.onEndGame()
         }}
       >
+        <LuFlag aria-hidden="true" />
         {drawer.endGameArmed ? 'Confirm end?' : 'End game'}
       </button>
       <button
         type="button"
-        className="root-button root-button--quiet pointer-events-auto ml-auto px-2.5 py-1.5 font-mono text-sm"
+        className={`${DRAWER_BUTTON_CLASS_NAME} ml-auto`}
         onClick={() => {
           callbacks.onOpenDiscardPile()
         }}
       >
+        <LuLayers aria-hidden="true" />
         {`Discard (${String(drawer.discardCount)})`}
       </button>
     </div>

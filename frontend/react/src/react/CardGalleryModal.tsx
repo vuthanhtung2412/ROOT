@@ -1,4 +1,5 @@
 import { useSyncExternalStore, type JSX, type MouseEvent } from 'react'
+import { LuX } from 'react-icons/lu'
 import { cardImagePublicPath } from '#assets/gameAssets.ts'
 import {
   getCardPileSnapshot,
@@ -93,6 +94,10 @@ function CardStrip(props: {
   )
 }
 
+/** Rust paper tile, same as the banner's cancel. */
+const CLOSE_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press m-0 flex size-10 items-center justify-center p-0 text-2xl text-parchment [--root-paper-color:var(--color-rust)]'
+
 function CardGalleryShell(props: {
   title: string
   closeAriaLabel: string
@@ -123,18 +128,18 @@ function CardGalleryShell(props: {
       {props.blocksBackground ? (
         <button
           type="button"
-          className="card-gallery-modal__close"
+          className={`card-gallery-modal__close ${CLOSE_BUTTON_CLASS_NAME}`}
           aria-label={props.closeAriaLabel}
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation()
             props.onClose()
           }}
         >
-          ✕
+          <LuX aria-hidden="true" />
         </button>
       ) : null}
       <div
-        className="card-gallery-modal__panel"
+        className="card-gallery-modal__panel root-paper"
         onClick={
           props.blocksBackground
             ? (event: MouseEvent<HTMLDivElement>) => {

@@ -34,14 +34,6 @@
   top: 10px;
   right: 12px;
   z-index: 2;
-  margin: 0;
-  padding: 4px 8px;
-  border: none;
-  font-family: var(--font-display);
-  font-size: 16px;
-  color: var(--color-ink);
-  background: var(--color-parchment);
-  cursor: pointer;
 }
 
 .card-gallery-modal__panel {
@@ -50,9 +42,7 @@
   box-sizing: border-box;
   width: var(--root-card-gallery-panel-width);
   height: var(--root-card-gallery-panel-height);
-  padding: 10px 16px;
-  border: 2px solid rgba(240, 230, 211, 0.9);
-  background: rgba(31, 26, 20, 0.98);
+  padding: 12px 18px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -61,19 +51,20 @@
 .card-gallery-modal__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 22px;
   font-weight: normal;
-  color: var(--color-parchment);
-  background: rgba(31, 26, 20, 0.8);
-  padding: 4px 8px;
-  align-self: flex-start;
+  color: var(--color-ink);
+  text-transform: capitalize;
+  padding-bottom: 6px;
+  border-bottom: 2px dashed color-mix(in srgb, var(--color-ink) 35%, transparent);
 }
 
 .card-gallery-modal__empty {
   margin: auto;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  color: #9a9a9a;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--color-ink-soft);
 }
 
 .card-gallery-modal__strip {
@@ -114,7 +105,7 @@
 }
 
 .card-gallery-modal__card--selectable:hover {
-  border-color: color-mix(in srgb, var(--color-parchment) 55%, transparent);
+  border-color: color-mix(in srgb, var(--color-ink) 55%, transparent);
 }
 
 .card-gallery-modal__card--selected {
