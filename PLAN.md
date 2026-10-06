@@ -34,38 +34,38 @@ Simplifications (say if wrong):
 - Regression: lib, web and React suites green; `pnpm typecheck` and `pnpm lint` clean.
 
 ### Commit plan
-- `docs(plan): Lizard Cult and Riverfolk Company`
+- done: `docs(plan): Lizard Cult and Riverfolk Company`
   - `PLAN.md`
-- `feat(lib): Lizard Cult and Riverfolk boards, pieces and Lost Souls`
+- done: `feat(lib): Lizard Cult and Riverfolk boards, pieces and Lost Souls`
   - `lib/src/pieces/types.ts`, `lib/src/state/boards.ts`, `lib/src/cards/Deck.ts`
   - `lib/src/queries/supply.ts`, `lib/src/rules/place.ts`, `lib/src/rules/remove.ts`
   - `lib/src/queries/craft.ts`, `lib/src/queries/ruler.ts`, `lib/src/typeGuards.ts`
-- `refactor(lib): queue faction setup without requiring the Marquise`
+- done: `refactor(lib): queue faction setup without requiring the Marquise`
   - `lib/src/game/Game.ts`, `lib/src/game/factionSetup.ts`
   - `lib/src/events/placeStartingBuilding.ts`
-- `feat(lib): Lizard Cult faction`
+- done: `feat(lib): Lizard Cult faction`
   - `lib/src/factions/Lizard.ts`, `lib/src/factions/lizard/*`
   - `lib/src/events/chooseCultCorner.ts`, `lib/src/events/chooseOutcast.ts`
   - `lib/src/actions/types.ts`, `lib/src/events/types.ts`, `lib/src/events/resolvers.ts`
-- `feat(lib): Riverfolk Company faction`
+- done: `feat(lib): Riverfolk Company faction`
   - `lib/src/factions/Riverfolk.ts`, `lib/src/factions/riverfolk/*`
   - `lib/src/events/placeRiverfolkWarrior.ts`, `lib/src/events/setStartingCosts.ts`
-- `feat(lib): Riverfolk services for other players`
+- done: `feat(lib): Riverfolk services for other players`
   - `lib/src/events/buyServices.ts`, `lib/src/queries/mercenaries.ts`
   - `lib/src/queries/pieces.ts`, `lib/src/queries/move.ts`, `lib/src/triggers/hooks.ts`
   - `lib/src/events/battle/stages.ts`, `lib/src/events/battle/removal.ts`
-- `feat(web): accept Lizard Cult and Riverfolk Company`
+- done: `feat(web): accept Lizard Cult and Riverfolk Company`
   - `backend/web/src/schemas/common.ts`, `backend/web/src/typeGuards.ts`
   - `backend/web/src/view/redactStateForViewer.ts`
   - `backend/web_client/src/gameApi.ts`, `backend/web_client/src/schema.d.ts`
-- `feat(ui): Lizard Cult and Riverfolk assets, menu and pieces`
+- done: `feat(ui): Lizard Cult and Riverfolk assets, menu and pieces`
   - `frontend/react/public/assets/**`, `frontend/react/src/assets/gameAssets.ts`
   - `frontend/react/src/game/menuPartySetup.ts`, `frontend/react/src/game/theme.ts`
-- `feat(ui): play Lizard Cult and Riverfolk actions`
+- done: `feat(ui): play Lizard Cult and Riverfolk actions`
   - `frontend/react/src/game/resolution/optionActionComposer.ts`
   - `frontend/react/src/game/resolution/eventActionComposer.ts`
   - `frontend/react/src/ui/ActionTray.ts`
-- `feat(ui): Lizard Cult and Riverfolk faction boards`
+- done: `feat(ui): Lizard Cult and Riverfolk faction boards`
   - `frontend/react/src/ui/factionBoardViewModel.ts`
   - `frontend/react/src/react/factionBoardOverlays.tsx`
   - `frontend/react/src/assets/layouts/*.layout.json`
