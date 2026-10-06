@@ -1,9 +1,12 @@
 import type { ActionSpec } from '#api/client.ts'
 import {
+  SEAT_VALUE_PREFIX,
+  fallbackSeatLabel,
   readChoiceParams,
   type ActionComposerHooks,
   type ClientAction,
   type ComposerOutcome,
+  type SeatLabelOptions,
 } from '#game/resolution/ActionComposer.ts'
 
 /** Law Evening: "discard cards of your choice until you have five". */
@@ -211,7 +214,7 @@ function isBuildOption(value: unknown): value is BuildOption {
 /**
  * Marquise board daylight: recruit (immediate), build (paired), battle.
  */
-export function createMarquiseBoardComposerHooks(): {
+export function createMarquiseBoardComposerHooks(options?: SeatLabelOptions): {
   hooks: ActionComposerHooks
   getDraft: () => BoardDraft
   getPromptOptions: () => Array<{ label: string; value: string }>
@@ -323,8 +326,11 @@ export function createMarquiseBoardComposerHooks(): {
           }
         }
         promptOptions = matches.map((target) => ({
-          label: `seat ${String(target.defender)}`,
-          value: String(target.defender),
+          label:
+            options?.factionNameForSeat?.(target.defender) ??
+            fallbackSeatLabel(target.defender),
+          // Prefixed so the banner shows buttons, not a numeric count stepper.
+          value: `${SEAT_VALUE_PREFIX}${String(target.defender)}`,
         }))
         return {
           kind: 'incomplete',
@@ -364,7 +370,10 @@ export function createMarquiseBoardComposerHooks(): {
       }
 
       if (draft.type === 'battle' && draft.clearing !== null) {
-        const defender = Number(buildingOrSeat)
+        if (!buildingOrSeat.startsWith(SEAT_VALUE_PREFIX)) {
+          return null
+        }
+        const defender = Number(buildingOrSeat.slice(SEAT_VALUE_PREFIX.length))
         if (!Number.isInteger(defender)) {
           return null
         }

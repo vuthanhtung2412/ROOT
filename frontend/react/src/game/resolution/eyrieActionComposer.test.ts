@@ -94,7 +94,7 @@ describe('eyrieActionComposer', () => {
     )
     const mid = composer.chooseClearing(4)
     expect(mid.kind).toBe('incomplete')
-    expect(composer.chooseColumn('0')).toEqual({
+    expect(composer.chooseColumn('seat:0')).toEqual({
       kind: 'ready',
       action: {
         type: 'decree',

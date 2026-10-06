@@ -177,12 +177,12 @@ export class ReactGameController {
     this.marquiseMarch.setOnOutcome((outcome) => {
       this.applyComposerOutcome(outcome)
     })
-    this.marquiseBoard = createMarquiseBoardComposerHooks()
-    this.eyrieComposer = createEyrieComposerHooks()
     const seatLabelOptions: SeatLabelOptions = {
       factionNameForSeat: (seat: number): string | null =>
         this.latestSnapshot?.state?.factions[seat] ?? null,
     }
+    this.marquiseBoard = createMarquiseBoardComposerHooks(seatLabelOptions)
+    this.eyrieComposer = createEyrieComposerHooks(seatLabelOptions)
     this.vagabondComposer = createVagabondComposerHooks(seatLabelOptions)
     this.dominanceComposer = createDominanceComposerHooks()
     this.allianceComposer = createAllianceComposerHooks(seatLabelOptions)

@@ -141,7 +141,7 @@ export const CULT_EVENING_TO_SECOND_ROUND_STEPS = [
       const cultSupplyBefore = board(await ui.fetchState(), LIZARD).supply.warriors
       await ui.button('battle')
       await ui.clearing(4)
-      await ui.button('OK')
+      await ui.button('lizard')
       const defender = (await ui.fetchState()).pending[0]?.defender
       await ui.resolveBattle({ fieldHospitals: true })
       return { cultSupplyBefore, defender }
