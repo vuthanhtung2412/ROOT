@@ -38,6 +38,15 @@ export function factionColorForSeat(
   return FACTION_COLORS.neutral
 }
 
+const HEX_RADIX = 16
+const HEX_COLOR_DIGIT_COUNT = 6
+
+/** CSS colour of a faction, e.g. for the menu rows where no seat exists yet. */
+export function factionColorCss(factionId: string): string {
+  const color: number = factionColorForSeat(0, [factionId])
+  return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
+}
+
 export const PIECE_DRAW = {
   warriorRadius: 7,
   buildingSize: 14,

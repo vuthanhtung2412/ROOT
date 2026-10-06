@@ -1,8 +1,10 @@
 import { useState, useSyncExternalStore, type JSX } from 'react'
 import {
+  factionTextureKey,
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
 } from '#assets/gameAssets.ts'
+import { factionColorCss } from '#game/theme.ts'
 import {
   getHudSnapshot,
   getMenuCallbacks,
@@ -36,6 +38,32 @@ const SECONDARY_BUTTON_CLASS_NAME =
 const PLAYER_COUNT_BUTTON_CLASS_NAME =
   'root-button min-w-18 px-3 py-1.5 font-display text-xl'
 
+/** One seat: a band in the faction colour runs down its left edge. */
+const SEAT_ROW_CLASS_NAME =
+  'flex flex-row items-center border border-l-8 border-ink-soft bg-parchment/55 px-3 py-2'
+
+/** Faction head on a parchment disc ringed in the faction colour. */
+function FactionBadge(props: { factionId: string }): JSX.Element {
+  const imagePath: string | null = imagePathForAssetKey(
+    factionTextureKey(props.factionId),
+  )
+  return (
+    <span
+      className="flex size-9 flex-none items-center justify-center rounded-full border-3 bg-parchment"
+      style={{ borderColor: factionColorCss(props.factionId) }}
+    >
+      {imagePath !== null ? (
+        <img
+          className="block size-7 object-contain select-none"
+          src={imagePath}
+          alt=""
+          draggable={false}
+        />
+      ) : null}
+    </span>
+  )
+}
+
 const DEFAULT_MENU: MenuHudState = {
   statusText: '',
   statusColor: '#c44',
@@ -65,9 +93,11 @@ function OnlineLobbyPanel(props: {
         {props.lobby.seats.map((seat, seatIndex) => (
           <li
             key={`lobby-seat-${String(seatIndex)}`}
-            className="flex flex-row items-center justify-between gap-3 border border-ink-soft bg-parchment/55 px-3 py-2 font-body text-base text-ink"
+            className={`menu-seat ${SEAT_ROW_CLASS_NAME} justify-between gap-3 font-body text-base text-ink`}
+            style={{ borderLeftColor: factionColorCss(seat.faction) }}
           >
-            <span>
+            <span className="flex flex-row items-center gap-3">
+              <FactionBadge factionId={seat.faction} />
               Seat {seatIndex + 1} · {seat.faction}
             </span>
             <span className="text-sm text-ink-soft italic">
@@ -213,9 +243,11 @@ export function MenuOverlay(): JSX.Element | null {
             {seatFactions.map((factionId, seatIndex) => (
               <li
                 key={`seat-${String(seatIndex)}`}
-                className="flex flex-row items-center gap-3 border border-ink-soft bg-parchment/55 px-3 py-2"
+                className={`menu-seat ${SEAT_ROW_CLASS_NAME} gap-3`}
+                style={{ borderLeftColor: factionColorCss(factionId) }}
               >
-                <span className="min-w-18 font-body text-sm text-ink-soft">
+                <FactionBadge factionId={factionId} />
+                <span className="min-w-12 font-body text-sm text-ink-soft">
                   Seat {seatIndex + 1}
                 </span>
                 <label className="flex min-w-0 flex-1 flex-col gap-0.5">
