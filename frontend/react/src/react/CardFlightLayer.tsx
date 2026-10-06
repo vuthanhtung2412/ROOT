@@ -9,6 +9,7 @@ import { cardImagePublicPath } from '#assets/gameAssets.ts'
 import type { CardFlightBatch } from '#game/cardFlights.ts'
 import { getHudSnapshot, subscribeHud } from '#game/hudStore.ts'
 import { cardFaceFromId } from '#game/resolution/allianceActionComposer.ts'
+import { BoughtCardFlight } from '#react/BoughtCardFlight.tsx'
 import {
   CraftedCardFlight,
   flightEndMs,
@@ -37,6 +38,7 @@ function activate(batch: CardFlightBatch): ActiveFlight[] {
  * Cards a seat shows to the table, played for every player from the game log.
  * Crafted: an anvil leaves the seat's rail tile, the hammer strikes, the card
  * pops out. Revealed: the card leaves the rail tile face down, then flips.
+ * Bought: the card leaves the seller's rail tile, rests, then joins the buyer.
  */
 export function CardFlightLayer(): JSX.Element {
   const batch: CardFlightBatch = useSyncExternalStore(
@@ -85,13 +87,15 @@ export function CardFlightLayer(): JSX.Element {
 
   return (
     <>
-      {active.map((entry: ActiveFlight) =>
-        entry.flight.reason === 'craft' ? (
-          <CraftedCardFlight key={entry.key} entry={entry} />
-        ) : (
-          <RevealedCardFlight key={entry.key} entry={entry} />
-        ),
-      )}
+      {active.map((entry: ActiveFlight) => {
+        if (entry.flight.reason === 'craft') {
+          return <CraftedCardFlight key={entry.key} entry={entry} />
+        }
+        if (entry.flight.reason === 'buy') {
+          return <BoughtCardFlight key={entry.key} entry={entry} />
+        }
+        return <RevealedCardFlight key={entry.key} entry={entry} />
+      })}
     </>
   )
 }

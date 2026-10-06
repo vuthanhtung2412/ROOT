@@ -63,8 +63,17 @@ const STRIKES: readonly number[] = Array.from(
   (_unused: undefined, strike: number): number => strike,
 )
 
+/**
+ * Buy: out of the seller's rail tile, a second in the middle, then on to the
+ * buyer's rail tile, gone as it lands.
+ */
+export const BUY_TRAVEL_MS = 650
+export const BUY_HOLD_MS = 1000
+export const BUY_LEAVE_MS = 650
+export const BUY_LIFETIME_MS = BUY_TRAVEL_MS + BUY_HOLD_MS + BUY_LEAVE_MS
+
 /** Size leaving the rail tile, against the resting size. */
-const START_SCALE = 0.2
+export const START_SCALE = 0.2
 const CARD_POP_START_SCALE = 0.1
 const CARD_POP_OVERSHOOT_SCALE = 1.08
 const ANVIL_GONE_SCALE = 0.6
@@ -74,8 +83,8 @@ const HALF = 0.5
 
 const FLIGHT_BASE_CLASS_NAME =
   'pointer-events-none fixed top-0 left-0 z-250 opacity-0 select-none'
-const CARD_FRAME_CLASS_NAME = `card-flight ${FLIGHT_BASE_CLASS_NAME} h-77.5 w-55`
-const CARD_FACE_CLASS_NAME =
+export const CARD_FRAME_CLASS_NAME = `card-flight ${FLIGHT_BASE_CLASS_NAME} h-77.5 w-55`
+export const CARD_FACE_CLASS_NAME =
   'absolute inset-0 block size-full rounded-md border-3 border-ink-deep object-fill shadow-card backface-hidden'
 /** The back art has its own rounded shape: an ink line follows it, no frame. */
 const CARD_BACK_CLASS_NAME =
@@ -110,6 +119,7 @@ export type ActiveFlight = {
 const LIFETIME_MS_BY_REASON: Readonly<Record<CardFlightReason, number>> = {
   craft: CRAFT_LIFETIME_MS,
   reveal: REVEAL_LIFETIME_MS,
+  buy: BUY_LIFETIME_MS,
 }
 
 /** How long a flight stays on screen, its start delay included. */
@@ -119,12 +129,12 @@ export function flightEndMs(entry: ActiveFlight): number {
   )
 }
 
-type ScreenPoint = {
+export type ScreenPoint = {
   x: number
   y: number
 }
 
-type AnimationSpec = {
+export type AnimationSpec = {
   keyframes: Keyframe[]
   lifetimeMs: number
 }
@@ -134,7 +144,7 @@ function sceneCenter(): ScreenPoint {
 }
 
 /** Middle of the seat's rail tile; the scene centre when the tile is not drawn. */
-function railTileCenter(seat: number): ScreenPoint {
+export function railTileCenter(seat: number): ScreenPoint {
   const tile: Element | null = document.querySelector(
     `[data-rail-seat="${String(seat)}"]`,
   )
@@ -149,13 +159,13 @@ function railTileCenter(seat: number): ScreenPoint {
 }
 
 /** Where the flight comes to rest: the scene centre, fanned by its order. */
-function restPoint(entry: ActiveFlight): ScreenPoint {
+export function restPoint(entry: ActiveFlight): ScreenPoint {
   const center: ScreenPoint = sceneCenter()
   return { x: center.x + entry.order * FAN_OFFSET_PIXELS, y: center.y }
 }
 
 /** Centre an element on a point, at a scale. */
-function centeredTransform(point: ScreenPoint, scale: number): string {
+export function centeredTransform(point: ScreenPoint, scale: number): string {
   return `translate(${String(point.x)}px, ${String(point.y)}px) translate(-50%, -50%) scale(${String(scale)})`
 }
 
@@ -163,7 +173,7 @@ function centeredTransform(point: ScreenPoint, scale: number): string {
  * Run one Web Animation on the element for as long as it is mounted. The
  * keyframes are built on mount, once the rail tile can be measured.
  */
-function useFlightAnimation<Target extends HTMLElement>(
+export function useFlightAnimation<Target extends HTMLElement>(
   entry: ActiveFlight,
   build: (entry: ActiveFlight) => AnimationSpec,
 ): RefObject<Target | null> {
