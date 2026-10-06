@@ -65,3 +65,9 @@ Simplifications (say if wrong):
   - `frontend/react/src/ui/actionIcons.ts`, `frontend/react/src/react/PlayerRail.tsx`
 - done: `feat(ui): cart for the Riverfolk hand, axe for overwork`
   - `frontend/react/src/react/PlayerRail.tsx`, `frontend/react/src/ui/actionIcons.ts`
+- done: `feat(ui): phase header on the tray, gold victory points`
+  - `frontend/react/src/ui/phaseIcons.ts`, `frontend/react/src/ui/ActionTray.ts`
+  - `frontend/react/src/react/ActionTray.tsx`, `frontend/react/src/react/TurnBanner.tsx`
+  - `frontend/react/src/react/PlayerRail.tsx`
+- done: `feat(ui): larger board in the wide layout`
+  - `frontend/react/src/game/boardMapLayout.ts`, `frontend/react/src/game/boardMapLayout.test.ts`

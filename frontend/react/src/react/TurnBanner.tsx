@@ -19,16 +19,9 @@ import type {
   TurnBannerViewModel,
 } from '#ui/TurnBanner.ts'
 import type { IconType } from 'react-icons'
-import {
-  LuCheck,
-  LuMinus,
-  LuMoon,
-  LuPlus,
-  LuSun,
-  LuSunrise,
-  LuX,
-} from 'react-icons/lu'
+import { LuCheck, LuMinus, LuPlus, LuX } from 'react-icons/lu'
 import { Tooltip } from '#react/Tooltip.tsx'
+import { phaseIconFor } from '#ui/phaseIcons.ts'
 import {
   factionTextureKey,
   imagePathForAssetKey,
@@ -51,11 +44,6 @@ const BANNER_TILE_BUTTON_CLASS_NAME =
 const BANNER_HEAD_TILE_CLASS_NAME =
   'root-paper root-paper-fine z-1 -mr-2 box-border flex size-10 shrink-0 -rotate-4 items-center justify-center p-1 md:size-12'
 /** Time of day of the turn, drawn before the prompt. */
-const PHASE_ICONS: Readonly<Record<string, IconType>> = {
-  birdsong: LuSunrise,
-  daylight: LuSun,
-  evening: LuMoon,
-}
 const BANNER_PHASE_ICON_CLASS_NAME =
   'flex shrink-0 items-center justify-center text-xl text-rust md:text-2xl'
 const STEPPER_BUTTON_CLASS_NAME =
@@ -91,7 +79,7 @@ export function TurnBanner(): JSX.Element | null {
     composer !== null && !isGrid && (useStepper || composer.options.length > 0)
   // The head tile names the faction and the phase icon the phase: text = prompt only.
   const statusText = composer === null ? turn.prompt : composer.message
-  const PhaseIcon: IconType | null = PHASE_ICONS[turn.phase] ?? null
+  const PhaseIcon: IconType | null = phaseIconFor(turn.phase)
   const showConfirm =
     composer !== null && (composer.canConfirm || useStepper)
   const showCancel = composer !== null && composer.canCancel

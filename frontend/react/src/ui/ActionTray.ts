@@ -366,6 +366,21 @@ export function partitionTrayActionRegions(
   return regions
 }
 
+/**
+ * Short count beside the phase name in the tray header: the Marquise
+ * Daylight budget left, otherwise the number of buttons.
+ */
+export function trayActionCountLabel(
+  buttonCount: number,
+  state: GameState | undefined,
+): string {
+  const actionsLeft = marquiseDaylightActionsLeft(state)
+  if (actionsLeft !== null) {
+    return `${String(actionsLeft)} left`
+  }
+  return buttonCount === 1 ? '1 action' : `${String(buttonCount)} actions`
+}
+
 function primaryActionsRegionTitle(
   buttonCount: number,
   state: GameState | undefined,
