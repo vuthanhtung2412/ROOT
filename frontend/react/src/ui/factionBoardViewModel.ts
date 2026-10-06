@@ -38,8 +38,9 @@ import {
 import type { GameState } from '#api/client.ts'
 import {
   buildExpansionBoardViewModel,
+  lostSoulDefIdsFromDeck,
   lostSoulsCountFromDeck,
-  topLostSoulDefIdFromDeck,
+  lostSoulSuitCounts,
   type ExpansionBoardViewModel,
 } from '#ui/expansionBoardViewModel.ts'
 import { questDefOf, type QuestCard } from '@root/lib/quests'
@@ -517,10 +518,12 @@ export function buildFactionBoardViewModel(
     }
   }
   if (view.kind === 'lizard') {
+    const lostSoulDefIds = lostSoulDefIdsFromDeck(Reflect.get(state, 'deck'))
     return {
       ...view,
       lostSoulsCount: lostSoulsCountFromDeck(Reflect.get(state, 'deck')),
-      topLostSoulDefId: topLostSoulDefIdFromDeck(Reflect.get(state, 'deck')),
+      topLostSoulDefId: lostSoulDefIds.at(-1) ?? null,
+      lostSoulSuits: lostSoulSuitCounts(lostSoulDefIds.map(suitForDecreeCard)),
     }
   }
   return view

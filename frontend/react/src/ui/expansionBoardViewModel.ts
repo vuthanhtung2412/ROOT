@@ -7,6 +7,17 @@ export const BOARD_SUITS = ['fox', 'rabbit', 'mouse'] as const
 
 export type BoardSuit = (typeof BOARD_SUITS)[number]
 
+const BIRD_SUIT = 'bird'
+/** Display order of the Lost Souls suit tally. */
+const LOST_SOUL_SUITS: readonly string[] = [BIRD_SUIT, 'fox', 'mouse', 'rabbit']
+
+export type LostSoulSuitCount = {
+  suit: string
+  count: number
+  /** Leads the non-bird suits (ties flag every leader). Rule: 10.4.1. */
+  mostCommon: boolean
+}
+
 export type SuitCounts = Record<BoardSuit, number>
 
 /** Rule: 10.3.4 — spaces of each Gardens track. */
@@ -42,6 +53,8 @@ export type LizardBoardViewModel = {
   lostSoulsCount: number
   /** Card on top of the Lost Souls pile (last discarded); null when empty. */
   topLostSoulDefId: string | null
+  /** Lost Souls per suit, with the leading suit flagged. */
+  lostSoulSuits: LostSoulSuitCount[]
   boardTextureKey: string
 }
 
@@ -146,6 +159,7 @@ function lizardViewModel(
     revealedDefIds: readDefIds(board.revealed),
     lostSoulsCount: 0,
     topLostSoulDefId: null,
+    lostSoulSuits: lostSoulSuitCounts([]),
     boardTextureKey: RIVERFOLK_EXPANSION_ASSET_KEYS.characterBoardLizard,
   }
 }
@@ -210,8 +224,29 @@ export function lostSoulsCountFromDeck(deck: unknown): number {
   return Array.isArray(lostSouls) ? lostSouls.length : 0
 }
 
-/** Card definition on top of the Lost Souls pile (the last card discarded). */
-export function topLostSoulDefIdFromDeck(deck: unknown): string | null {
-  if (!isRecord(deck)) return null
-  return readDefIds(deck.lostSouls).at(-1) ?? null
+/** Card definitions in the Lost Souls pile, oldest first (last = top). */
+export function lostSoulDefIdsFromDeck(deck: unknown): string[] {
+  if (!isRecord(deck)) return []
+  return readDefIds(deck.lostSouls)
+}
+
+/**
+ * Lost Souls per suit, bird → fox → mouse → rabbit.
+ * Rule: 10.4.1 — the most common suit, ignoring birds, is the next Outcast;
+ * tied leaders are all flagged.
+ */
+export function lostSoulSuitCounts(
+  suits: readonly string[],
+): LostSoulSuitCount[] {
+  const countOf = (suit: string): number =>
+    suits.filter((entry: string): boolean => entry === suit).length
+  const mostCards = Math.max(...BOARD_SUITS.map(countOf))
+  return LOST_SOUL_SUITS.map((suit: string): LostSoulSuitCount => {
+    const count = countOf(suit)
+    return {
+      suit,
+      count,
+      mostCommon: suit !== BIRD_SUIT && count > 0 && count === mostCards,
+    }
+  })
 }

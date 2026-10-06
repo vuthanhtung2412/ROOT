@@ -9,6 +9,7 @@ import {
   cardImagePublicPath,
   factionTextureKey,
   imagePathForAssetKey,
+  suitTextureKey,
   warriorTokenTextureKey,
 } from '#assets/gameAssets.ts'
 import {
@@ -31,6 +32,7 @@ import {
   RIVERFOLK_TRADE_POST_TRACK_SLOT_COUNT,
   type BoardSuit,
   type LizardBoardViewModel,
+  type LostSoulSuitCount,
   type RiverfolkBoardViewModel,
   type RiverfolkServiceId,
 } from '#ui/expansionBoardViewModel.ts'
@@ -38,9 +40,19 @@ import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 
 /** An empty pile shows the printed Lost Souls art; a card covers it otherwise. */
 const LOST_SOULS_PILE_CLASS_NAME =
-  'pointer-events-auto absolute z-2 cursor-pointer p-[3%] hover:brightness-110'
-const LOST_SOULS_COUNT_CLASS_NAME =
-  'absolute inset-x-0 bottom-[3%] mx-auto w-fit bg-parchment/93 px-1.5 py-0.5 font-mono text-[clamp(10px,2vh,14px)] text-ink-deep'
+  'pointer-events-auto absolute z-2 cursor-pointer hover:brightness-110'
+/** Fills the whole frame (a button gives no height to percentages). */
+const LOST_SOULS_TOP_CARD_CLASS_NAME =
+  'pointer-events-none absolute inset-0 block size-full rounded-[5%] object-fill select-none'
+/** Suit chips sit astride the top edge of the card, like tabs. */
+const LOST_SOULS_SUIT_STRIP_CLASS_NAME =
+  'absolute inset-x-[10%] top-0 z-1 flex -translate-y-1/2 flex-row items-center justify-between font-mono text-[clamp(10px,2vh,14px)]'
+const LOST_SOULS_SUIT_CLASS_NAME =
+  'flex flex-row items-center gap-0.5 rounded px-1 py-0.5'
+const LOST_SOULS_SUIT_TRAILING_CLASS_NAME = 'bg-parchment/93 text-ink-deep'
+/** Rule: 10.4.1 — the suit that would become the Outcast. */
+const LOST_SOULS_SUIT_LEADING_CLASS_NAME =
+  'bg-gold font-bold text-ink-deep ring-2 ring-ink-deep'
 const FUND_BOX_CLASS_NAME =
   'absolute z-2 flex flex-wrap content-start items-start gap-0.5 overflow-hidden p-1'
 const FUND_WARRIOR_CLASS_NAME = 'block h-[30%] max-h-10 w-auto select-none'
@@ -119,17 +131,44 @@ function LostSoulsPile(
         getHudCallbacks().onLostSoulsClick()
       }}
     >
+      <span className={LOST_SOULS_SUIT_STRIP_CLASS_NAME}>
+        {props.view.lostSoulSuits.map((entry: LostSoulSuitCount) => {
+          const suitKey: string | null = suitTextureKey(entry.suit)
+          const suitImagePath: string | null =
+            suitKey === null ? null : imagePathForAssetKey(suitKey)
+          return (
+            <span
+              key={entry.suit}
+              className={`${LOST_SOULS_SUIT_CLASS_NAME} ${
+                entry.mostCommon
+                  ? LOST_SOULS_SUIT_LEADING_CLASS_NAME
+                  : LOST_SOULS_SUIT_TRAILING_CLASS_NAME
+              }`}
+              title={`${entry.suit}: ${String(entry.count)}`}
+            >
+              {suitImagePath !== null ? (
+                <img
+                  className="block h-[1.4em] w-auto select-none"
+                  src={suitImagePath}
+                  alt={entry.suit}
+                  draggable={false}
+                />
+              ) : (
+                entry.suit
+              )}
+              {String(entry.count)}
+            </span>
+          )
+        })}
+      </span>
       {topCardImagePath !== null ? (
         <img
-          className="pointer-events-none block size-full object-contain select-none"
+          className={LOST_SOULS_TOP_CARD_CLASS_NAME}
           src={topCardImagePath}
           alt=""
           draggable={false}
         />
       ) : null}
-      <span className={LOST_SOULS_COUNT_CLASS_NAME}>
-        {`Lost Souls: ${String(props.view.lostSoulsCount)}`}
-      </span>
     </button>
   )
 }

@@ -7,6 +7,7 @@ import {
 import { makeGameState } from '#test/factories.ts'
 import {
   LIZARD_GARDEN_TRACK_SLOT_COUNT,
+  lostSoulSuitCounts,
   RIVERFOLK_SERVICE_IDS,
   RIVERFOLK_TRADE_POST_TRACK_SLOT_COUNT,
 } from '#ui/expansionBoardViewModel.ts'
@@ -88,6 +89,26 @@ describe('Lizard Cult board view model', () => {
     expect(view?.kind === 'lizard' && view.lostSoulsCount).toBe(2)
     // The last card discarded is the top of the pile.
     expect(view?.kind === 'lizard' && view.topLostSoulDefId).toBe('ROOT-206')
+  })
+
+  it('Rule: 10.4.1 — tallies Lost Souls per suit and flags the leader, ignoring birds', () => {
+    expect(
+      lostSoulSuitCounts(['bird', 'bird', 'bird', 'fox', 'fox', 'mouse']),
+    ).toEqual([
+      { suit: 'bird', count: 3, mostCommon: false },
+      { suit: 'fox', count: 2, mostCommon: true },
+      { suit: 'mouse', count: 1, mostCommon: false },
+      { suit: 'rabbit', count: 0, mostCommon: false },
+    ])
+  })
+
+  it('flags every tied leader and none in an empty pile', () => {
+    const tied = lostSoulSuitCounts(['fox', 'rabbit'])
+    expect(tied.filter((entry) => entry.mostCommon).map((entry) => entry.suit)).toEqual([
+      'fox',
+      'rabbit',
+    ])
+    expect(lostSoulSuitCounts([]).some((entry) => entry.mostCommon)).toBe(false)
   })
 })
 
