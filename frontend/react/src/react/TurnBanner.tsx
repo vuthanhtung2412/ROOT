@@ -39,7 +39,7 @@ const BANNER_TILE_BUTTON_CLASS_NAME =
   'root-paper root-paper-fine root-paper-press m-0 flex size-10 items-center justify-center justify-self-center p-0 text-xl text-parchment md:size-11 md:text-2xl'
 /** Head of the faction that has to answer, tucked under the prompt strip. */
 const BANNER_HEAD_TILE_CLASS_NAME =
-  'root-paper root-paper-fine z-1 -mr-2 box-border flex size-10 shrink-0 -rotate-4 items-center justify-center p-1 [--root-paper-color:var(--color-paper-bright)] md:size-12'
+  'root-paper root-paper-fine z-1 -mr-2 box-border flex size-10 shrink-0 -rotate-4 items-center justify-center p-1 md:size-12'
 const STEPPER_BUTTON_CLASS_NAME =
   'root-paper root-medallion root-paper-press m-0 flex size-9 items-center justify-center p-0 text-xl text-parchment md:size-10'
 
