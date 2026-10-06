@@ -46,3 +46,9 @@ Simplifications (say if wrong):
   - `frontend/react/src/react/OptionGridModal.tsx`
 - done: `feat(ui): player rail seats on paper`
   - `frontend/react/src/react/PlayerRail.tsx`
+- done: `feat(ui): hold the hand as a fan without a tray`
+  - `frontend/react/src/react/CardHand.tsx`
+- done: `feat(ui): icons and art instead of labels, instant tooltips`
+  - `frontend/react/src/react/Tooltip.tsx`
+  - `frontend/react/src/react/ActionTray.tsx`, `frontend/react/src/ui/ActionTray.ts`
+  - `frontend/react/src/react/PlayerRail.tsx`, `frontend/react/src/react/TurnBanner.tsx`

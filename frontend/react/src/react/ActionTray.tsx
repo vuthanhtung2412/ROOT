@@ -12,9 +12,16 @@ import {
   subscribeHud,
 } from '#game/hudStore.ts'
 import type { IconType } from 'react-icons'
-import type { ActionTrayState, TrayActionRegion } from '#ui/ActionTray.ts'
+import { imagePathForAssetKey, suitTextureKey } from '#assets/gameAssets.ts'
+import { Tooltip } from '#react/Tooltip.tsx'
+import type {
+  ActionTrayState,
+  TrayActionArt,
+  TrayActionRegion,
+} from '#ui/ActionTray.ts'
 import { actionIconFor } from '#ui/actionIcons.ts'
 import {
+  trayActionArt,
   collapseTrayActionsByLabel,
   filterTrayActions,
   formatActionLabel,
@@ -33,20 +40,28 @@ function isBlockingHudModalOpen(): boolean {
 
 const META_REGION_ID: TrayActionRegion['id'] = 'meta'
 
-/** Narrow: one row of chips. Wide: medallions in the side column. */
+/**
+ * Narrow (touch, no hover): a row of labelled chips. Wide: icon medallions
+ * only; the label is the tooltip.
+ */
 const ACTION_GRID_CLASS_NAME =
-  'grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 md:grid-cols-[repeat(auto-fit,minmax(68px,1fr))] md:gap-x-1 md:gap-y-3'
+  'grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 md:flex md:flex-row md:flex-wrap md:justify-center md:gap-2.5'
 const META_GRID_CLASS_NAME =
-  'grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 md:gap-2.5'
+  'grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 md:flex md:flex-row md:flex-wrap md:justify-center md:gap-2.5'
 /** Narrow: a paper chip. Wide: the chip paper is dropped, the icon sits on a medallion. */
 const ACTION_BUTTON_CLASS_NAME =
-  'action-tray__action root-paper root-paper-fine root-paper-press m-0 flex min-w-0 flex-row items-center justify-center gap-1.5 px-2.5 py-1.5 text-center font-display text-sm text-ink capitalize md:flex-col md:gap-1 md:p-0 md:text-[15px] md:leading-tight md:[--root-paper-color:transparent] md:[--root-paper-edge:transparent] md:[--root-paper-texture:none]'
-const ACTION_ICON_CLASS_NAME =
-  'flex shrink-0 items-center justify-center text-lg text-ink md:root-paper md:root-medallion md:size-12 md:text-2xl md:text-parchment'
-/** Turn control (end phase, draw): a wide paper button, icon after the label. */
-const META_BUTTON_CLASS_NAME =
-  'action-tray__action root-paper root-paper-fine root-paper-press m-0 flex min-w-0 flex-row-reverse items-center justify-center gap-2 px-2.5 py-1.5 text-center font-display text-sm text-ink capitalize [--root-paper-color:var(--color-parchment-deep)] md:py-2 md:text-[17px]'
-const META_ICON_CLASS_NAME = 'flex shrink-0 items-center justify-center text-lg'
+  'action-tray__action root-paper root-paper-fine root-paper-press m-0 flex w-full min-w-0 flex-row items-center justify-center gap-1.5 px-2.5 py-1.5 text-center font-display text-sm text-ink capitalize md:w-auto md:p-0 md:[--root-paper-color:transparent] md:[--root-paper-edge:transparent] md:[--root-paper-texture:none]'
+const ICON_MEDALLION_CLASS_NAME =
+  'relative flex shrink-0 items-center justify-center text-lg text-ink md:root-paper md:root-medallion md:size-12 md:text-2xl'
+const ACTION_ICON_CLASS_NAME = `${ICON_MEDALLION_CLASS_NAME} md:text-parchment`
+/** Suit of the card an action plays (Decree), pinned on the medallion. */
+const ACTION_SUIT_BADGE_CLASS_NAME =
+  'pointer-events-none ml-1 size-4 object-contain md:absolute md:-right-1.5 md:-bottom-1.5 md:ml-0 md:size-6'
+/** Wide: read by screen readers and QA scripts, not drawn. */
+const ACTION_LABEL_CLASS_NAME = 'md:sr-only'
+/** Turn control (end phase, draw): a gold medallion apart from the actions. */
+const META_BUTTON_CLASS_NAME = ACTION_BUTTON_CLASS_NAME
+const META_ICON_CLASS_NAME = `${ICON_MEDALLION_CLASS_NAME} md:[--root-paper-color:var(--color-gold)]`
 /** Wide: the main actions sit on one sheet of paper. */
 const ACTION_REGION_CLASS_NAME =
   'flex w-full flex-col items-center gap-2 md:root-paper md:px-2 md:pt-2 md:pb-3'
@@ -72,32 +87,46 @@ function TrayActionButtons(props: {
       {props.actions.map((spec, index) => {
         const label = formatActionLabel(spec, props.pending, props.state)
         const key = `${spec.type}-${String(spec.actor)}-${String(index)}-${label}`
-        const ActionIcon: IconType = actionIconFor(spec.type)
+        const art: TrayActionArt = trayActionArt(spec, props.state)
+        const ActionIcon: IconType = actionIconFor(art.iconKey)
+        const suitTexture: string | null =
+          art.suit !== null ? suitTextureKey(art.suit) : null
+        const suitImagePath: string | null =
+          suitTexture !== null ? imagePathForAssetKey(suitTexture) : null
         return (
-          <button
-            key={key}
-            type="button"
-            className={
-              props.isMetaRegion
-                ? META_BUTTON_CLASS_NAME
-                : ACTION_BUTTON_CLASS_NAME
-            }
-            onClick={() => {
-              props.onSelectAction(spec)
-            }}
-          >
-            <span
+          <Tooltip key={key} label={label}>
+            <button
+              type="button"
               className={
                 props.isMetaRegion
-                  ? META_ICON_CLASS_NAME
-                  : ACTION_ICON_CLASS_NAME
+                  ? META_BUTTON_CLASS_NAME
+                  : ACTION_BUTTON_CLASS_NAME
               }
-              aria-hidden="true"
+              onClick={() => {
+                props.onSelectAction(spec)
+              }}
             >
-              <ActionIcon />
-            </span>
-            {label}
-          </button>
+              <span
+                className={
+                  props.isMetaRegion
+                    ? META_ICON_CLASS_NAME
+                    : ACTION_ICON_CLASS_NAME
+                }
+                aria-hidden="true"
+              >
+                <ActionIcon />
+                {suitImagePath !== null ? (
+                  <img
+                    className={ACTION_SUIT_BADGE_CLASS_NAME}
+                    src={suitImagePath}
+                    alt=""
+                    draggable={false}
+                  />
+                ) : null}
+              </span>
+              <span className={ACTION_LABEL_CLASS_NAME}>{label}</span>
+            </button>
+          </Tooltip>
         )
       })}
     </div>

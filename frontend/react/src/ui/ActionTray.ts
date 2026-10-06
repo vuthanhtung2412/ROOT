@@ -156,6 +156,31 @@ function formatActionLabel(
   return spec.type
 }
 
+const DECREE_ACTION_TYPE = 'decree'
+
+/** What a tray medallion draws: an icon key and, for a card play, its suit. */
+export type TrayActionArt = {
+  /** Key for `actionIconFor`: the action type, or the Decree column. */
+  iconKey: string
+  suit: string | null
+}
+
+/** Decree: icon of the column, suit of the card. Others: icon of the type. */
+export function trayActionArt(
+  spec: ActionSpec,
+  state?: GameState,
+): TrayActionArt {
+  if (spec.type !== DECREE_ACTION_TYPE) {
+    return { iconKey: spec.type, suit: null }
+  }
+  const params = readChoiceParams(spec)
+  const cardId: string | undefined = params.cardIds?.[0]
+  return {
+    iconKey: params.column?.[0] ?? spec.type,
+    suit: cardId !== undefined ? decreeCardSuit(cardId, state) : null,
+  }
+}
+
 function decreeCardSuit(cardId: string, state?: GameState): string | null {
   const fromState = findCardDefIdInState(cardId, state)
   const defId = fromState ?? parseDefIdFromCardId(cardId)

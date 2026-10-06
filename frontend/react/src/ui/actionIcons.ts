@@ -1,7 +1,6 @@
 import type { IconType } from 'react-icons'
 import {
   LuAnvil,
-  LuAxe,
   LuBedDouble,
   LuBird,
   LuChurch,
@@ -31,6 +30,7 @@ import {
   LuSwords,
   LuTent,
   LuTrash2,
+  LuTrees,
   LuUserPlus,
   LuUsers,
   LuWind,
@@ -57,7 +57,7 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   eveningDraw: LuLayers,
   spendBird: LuBird,
   // Marquise de Cat
-  overwork: LuAxe,
+  overwork: LuTrees,
   // Eyrie Dynasties
   decree: LuScrollText,
   // Woodland Alliance

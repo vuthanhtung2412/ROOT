@@ -18,7 +18,17 @@ import type {
   TurnBannerOptionItem,
   TurnBannerViewModel,
 } from '#ui/TurnBanner.ts'
-import { LuCheck, LuMinus, LuPlus, LuX } from 'react-icons/lu'
+import type { IconType } from 'react-icons'
+import {
+  LuCheck,
+  LuMinus,
+  LuMoon,
+  LuPlus,
+  LuSun,
+  LuSunrise,
+  LuX,
+} from 'react-icons/lu'
+import { Tooltip } from '#react/Tooltip.tsx'
 import {
   factionTextureKey,
   imagePathForAssetKey,
@@ -40,6 +50,14 @@ const BANNER_TILE_BUTTON_CLASS_NAME =
 /** Head of the faction that has to answer, tucked under the prompt strip. */
 const BANNER_HEAD_TILE_CLASS_NAME =
   'root-paper root-paper-fine z-1 -mr-2 box-border flex size-10 shrink-0 -rotate-4 items-center justify-center p-1 md:size-12'
+/** Time of day of the turn, drawn before the prompt. */
+const PHASE_ICONS: Readonly<Record<string, IconType>> = {
+  birdsong: LuSunrise,
+  daylight: LuSun,
+  evening: LuMoon,
+}
+const BANNER_PHASE_ICON_CLASS_NAME =
+  'flex shrink-0 items-center justify-center text-xl text-rust md:text-2xl'
 const STEPPER_BUTTON_CLASS_NAME =
   'root-paper root-medallion root-paper-press m-0 flex size-9 items-center justify-center p-0 text-xl text-parchment md:size-10'
 
@@ -71,10 +89,9 @@ export function TurnBanner(): JSX.Element | null {
   const isGrid = composer !== null && composer.optionPresentation === 'grid'
   const hasOptionRow =
     composer !== null && !isGrid && (useStepper || composer.options.length > 0)
-  const statusText =
-    composer === null
-      ? `${turn.actorFaction} · ${turn.phase}/${turn.step} — ${turn.prompt}`
-      : `${turn.actorFaction} · ${composer.message}`
+  // The head tile names the faction and the phase icon the phase: text = prompt only.
+  const statusText = composer === null ? turn.prompt : composer.message
+  const PhaseIcon: IconType | null = PHASE_ICONS[turn.phase] ?? null
   const showConfirm =
     composer !== null && (composer.canConfirm || useStepper)
   const showCancel = composer !== null && composer.canCancel
@@ -107,16 +124,27 @@ export function TurnBanner(): JSX.Element | null {
       )}
       <div className="flex min-w-0 flex-row items-center justify-center">
         {actorHeadPath !== null ? (
-          <span className={BANNER_HEAD_TILE_CLASS_NAME}>
-            <img
-              className="size-full object-contain"
-              src={actorHeadPath}
-              alt=""
-              draggable={false}
-            />
-          </span>
-        ) : null}
-        <p className="root-paper m-0 min-w-0 px-4 py-1.5 text-center font-display text-base leading-tight text-ink md:px-6 md:text-xl">
+          <Tooltip label={turn.actorFaction}>
+            <span className={BANNER_HEAD_TILE_CLASS_NAME}>
+              <img
+                className="size-full object-contain"
+                src={actorHeadPath}
+                alt={turn.actorFaction}
+                draggable={false}
+              />
+            </span>
+          </Tooltip>
+        ) : (
+          <span className="sr-only">{turn.actorFaction}</span>
+        )}
+        <p className="root-paper m-0 flex min-w-0 flex-row items-center gap-2 px-4 py-1.5 text-center font-display text-base leading-tight text-ink md:px-6 md:text-xl">
+          {PhaseIcon !== null ? (
+            <Tooltip label={`${turn.phase} · ${turn.step}`}>
+              <span className={BANNER_PHASE_ICON_CLASS_NAME}>
+                <PhaseIcon aria-hidden="true" />
+              </span>
+            </Tooltip>
+          ) : null}
           {statusText}
         </p>
       </div>
