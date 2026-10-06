@@ -343,6 +343,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
                 type="button"
                 className="pointer-events-auto absolute z-4 m-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
                 aria-label={`Clearing ${String(target.clearingId)}`}
+                data-clearing-id={target.clearingId}
                 onClick={() => {
                   handleClearingClick(target.clearingId)
                 }}

@@ -26,8 +26,6 @@ const MOVE_TRAIL_OPACITY = 0.9
 /** Dark line under the trail so it reads on any part of the map. */
 const MOVE_TRAIL_BACKING_WIDTH_PIXELS = 5
 const MOVE_TRAIL_BACKING_OPACITY = 0.55
-const PULSE_MS = 900
-const PULSE_REPEAT_COUNT = 3
 /** Part of the lifetime an effect stays fully visible before it fades. */
 const FADE_START_OFFSET = 0.75
 const POP_MS = 450
@@ -36,7 +34,6 @@ const SIGNED_DRIFT_PIXELS = 26
 const PLACED_COLOR = '#2f8f4e'
 const FALLBACK_FACTION_ID = 'marquise'
 const REMOVED_COLOR = '#b3261e'
-const BATTLE_COLOR = '#d43a2a'
 
 /** Above the piece art (z-3), never behind it. */
 const SIGN_BADGE_BASE_CLASS_NAME =
@@ -357,31 +354,11 @@ function BattleEffectView(
 ): JSX.Element | null {
   const center = props.hitCenters.get(props.effect.clearing)
   const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, FADE_OUT_OPTIONS)
-  const pulseRef = useKeyframes(
-    [
-      { transform: 'scale(0.85)', opacity: 1 },
-      { transform: 'scale(1.3)', opacity: 0.15 },
-    ],
-    { duration: PULSE_MS, iterations: PULSE_REPEAT_COUNT, easing: 'ease-out' },
-  )
   if (center === undefined) {
     return null
   }
-  const diameter = center.radius * 2
   return (
     <div ref={fadeRef} className="absolute inset-0">
-      <div
-        ref={pulseRef}
-        className="absolute rounded-full border-solid"
-        style={{
-          left: center.centerX - center.radius,
-          top: center.centerY - center.radius,
-          width: diameter,
-          height: diameter,
-          borderWidth: 5,
-          borderColor: BATTLE_COLOR,
-        }}
-      />
       <div
         className={BATTLE_BADGE_CLASS_NAME}
         style={{ left: center.centerX, top: center.centerY }}
@@ -409,7 +386,7 @@ export type BoardEffectsLayerProps = EffectContext & {
 
 /**
  * Plays what the last server update did on the map: pieces slide along their
- * move, placed pieces pop in, removed pieces drift away, a battle pulses.
+ * move, placed pieces pop in, removed pieces drift away, a battle names its two sides.
  */
 export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
   const [active, setActive] = useState<ActiveEffect[]>([])

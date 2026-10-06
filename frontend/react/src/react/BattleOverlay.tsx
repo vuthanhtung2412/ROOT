@@ -2,6 +2,7 @@ import { useSyncExternalStore, type JSX } from 'react'
 import { GiBrokenShield } from 'react-icons/gi'
 import { LuShield, LuSword, LuSwords } from 'react-icons/lu'
 import { factionPortraitPath } from '#assets/factionPortraits.ts'
+import { BattleBackdrop } from '#react/BattleBackdrop.tsx'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -25,12 +26,6 @@ const UNROLLED_DIE_FACE = '?'
 /** Middle of the screen; clicks pass through to the board under it. */
 const PANEL_CLASS_NAME =
   'pointer-events-none absolute top-1/2 left-1/2 flex w-max max-w-[calc(100vw-24px)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-4'
-/**
- * Dims the board behind the battle. Sits under the HUD (rail, tray, hand,
- * banner) so the buttons that answer the battle stay bright and clickable.
- */
-const BACKDROP_CLASS_NAME =
-  'battle-overlay__backdrop pointer-events-none fixed inset-0 z-50 bg-forest-deep/72'
 /** Two portrait tiles, the clearing mark between their lower corners. */
 const SIDES_CLASS_NAME =
   'battle-overlay__sides relative flex flex-row items-start justify-center gap-24 md:gap-32'
@@ -102,7 +97,7 @@ export function BattleOverlay(): JSX.Element | null {
 
   return (
     <>
-      <div className={BACKDROP_CLASS_NAME} aria-hidden="true" />
+      <BattleBackdrop clearingId={viewModel.clearing} />
       <div
         className="battle-overlay pointer-events-none fixed inset-0 z-201"
         role="group"
