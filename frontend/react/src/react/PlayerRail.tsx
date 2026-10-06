@@ -40,13 +40,13 @@ const SEAT_BADGE_CLASS_NAME =
 const ACTIVE_SEAT_MARK_CLASS_NAME = `${SEAT_BADGE_CLASS_NAME} -top-2.5 -left-2.5 size-6 text-sm text-ink [--root-paper-color:var(--color-gold)] md:size-7 md:text-base`
 /** Bottom left: victory points. */
 const SEAT_VICTORY_POINTS_CLASS_NAME =
-  'pointer-events-none absolute -bottom-3.5 -left-3.5 flex size-10 items-center justify-center md:-bottom-4 md:-left-4 md:size-13'
+  'pointer-events-none absolute -bottom-3 -left-3 flex size-8 items-center justify-center md:-bottom-3 md:-left-3 md:size-10'
 /** Laurel wreath around the score: gold leaves with an ink outline. */
 const SEAT_VICTORY_WREATH_CLASS_NAME =
   'absolute inset-0 size-full text-gold [filter:drop-shadow(1px_0_0_var(--color-ink-deep))_drop-shadow(-1px_0_0_var(--color-ink-deep))_drop-shadow(0_1px_0_var(--color-ink-deep))_drop-shadow(0_-1px_0_var(--color-ink-deep))]'
 /** Gold coin holding the score, set in the middle of the wreath. */
 const SEAT_VICTORY_COIN_CLASS_NAME =
-  'root-paper root-medallion -mt-1 flex size-6 items-center justify-center font-mono text-sm font-bold text-ink [--root-paper-color:var(--color-gold)] md:size-8 md:text-lg'
+  'root-paper root-medallion -mt-0.5 flex size-5 items-center justify-center font-mono text-xs font-bold text-ink [--root-paper-color:var(--color-gold)] md:size-6 md:text-sm'
 const SEAT_BUTTON_CLASS_NAME =
   'root-paper root-medallion root-paper-press m-0 flex size-7 items-center justify-center p-0 text-sm text-ink [--root-paper-color:var(--color-parchment-deep)] md:size-8 md:text-base'
 /** Right corners, bottom first: crafted cards, then the faction's own button. */
