@@ -3,6 +3,7 @@ import {
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
 } from '#assets/gameAssets.ts'
+import type { BoardEffectBatch } from '#game/boardEffects.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import {
@@ -25,6 +26,7 @@ export type GameScreenProps = {
   clearings: readonly BoardClearingPieces[] | null
   factions: readonly string[] | null
   forestPawns: readonly ForestPawnMarker[]
+  effects: BoardEffectBatch
   highlightedClearingIds: readonly number[]
   highlightedForestIndexes: readonly number[]
   onClearingSelected: (clearingId: number) => void
@@ -70,6 +72,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
         {...(props.clearings !== null ? { clearings: props.clearings } : {})}
         {...(props.factions !== null ? { factions: props.factions } : {})}
         forestPawns={props.forestPawns}
+        effects={props.effects}
         highlightedClearingIds={props.highlightedClearingIds}
         highlightedForestIndexes={props.highlightedForestIndexes}
         onClearingSelected={props.onClearingSelected}

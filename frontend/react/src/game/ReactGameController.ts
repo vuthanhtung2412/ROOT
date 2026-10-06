@@ -49,6 +49,11 @@ import {
   buildCurrentSeatWarriorCounts,
   loadGameSceneBoardLayout,
 } from '#game/gameSceneBoardState.ts'
+import {
+  boardEffectsBetween,
+  EMPTY_BOARD_EFFECT_BATCH,
+  type BoardEffectBatch,
+} from '#game/boardEffects.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
@@ -73,6 +78,8 @@ export type ReactGameBoardSnapshot = {
   forestPawns: readonly ForestPawnMarker[]
   highlightedClearingIds: readonly number[]
   highlightedForestIndexes: readonly number[]
+  /** What the last server update changed on the map (animated for everyone). */
+  effects: BoardEffectBatch
 }
 
 type BoardListener = () => void
@@ -96,7 +103,11 @@ export class ReactGameController {
     forestPawns: [],
     highlightedClearingIds: [],
     highlightedForestIndexes: [],
+    effects: EMPTY_BOARD_EFFECT_BATCH,
   }
+  /** Last committed server state the board effects were read from. */
+  private effectState: GameState | null = null
+  private boardEffects: BoardEffectBatch = EMPTY_BOARD_EFFECT_BATCH
   private readonly boardListeners = new Set<BoardListener>()
 
   private readonly battleOverlayTarget: BattleOverlaySyncTarget = {
@@ -141,6 +152,7 @@ export class ReactGameController {
       forestPawns: this.forestPawns,
       highlightedClearingIds: this.highlightedClearingIds,
       highlightedForestIndexes: this.highlightedForestIndexes,
+      effects: this.boardEffects,
     }
     for (const listener of this.boardListeners) {
       listener()
@@ -333,10 +345,12 @@ export class ReactGameController {
     this.unsubscribe = session.subscribe((snapshot) => {
       this.latestSnapshot = snapshot
       this.paintHud(snapshot)
+      this.syncBoardEffects(snapshot)
       this.syncBoardPieces(snapshot)
     })
     this.latestSnapshot = session.getSnapshot()
     this.paintHud(this.latestSnapshot)
+    this.syncBoardEffects(this.latestSnapshot)
     this.syncBoardPieces(this.latestSnapshot)
     const outcome = this.composer.getOutcome()
     if (outcome.kind === 'incomplete') {
@@ -358,6 +372,8 @@ export class ReactGameController {
     this.layout = null
     this.boardClearings = null
     this.boardFactions = null
+    this.effectState = null
+    this.boardEffects = EMPTY_BOARD_EFFECT_BATCH
     this.forestPawns = []
     this.highlightedClearingIds = []
     this.highlightedForestIndexes = []
@@ -662,6 +678,25 @@ export class ReactGameController {
       return true
     }
     return this.session.getLocalSeat() === actorSeat
+  }
+
+  /**
+   * Read the map changes of a server update. A repaint of the same state
+   * (e.g. a local march preview) carries the same state object and adds none.
+   */
+  private syncBoardEffects(snapshot: GameSessionSnapshot): void {
+    const state = snapshot.state
+    if (state === null || state === this.effectState) {
+      return
+    }
+    const effects = boardEffectsBetween(this.effectState, state)
+    this.effectState = state
+    if (effects.length > 0) {
+      this.boardEffects = {
+        sequence: this.boardEffects.sequence + 1,
+        effects,
+      }
+    }
   }
 
   private syncBoardPieces(snapshot: GameSessionSnapshot): void {
