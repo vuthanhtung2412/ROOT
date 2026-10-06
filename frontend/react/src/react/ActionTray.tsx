@@ -64,7 +64,7 @@ const ACTION_REGION_CLASS_NAME =
 const META_REGION_CLASS_NAME = 'flex w-full flex-col items-center gap-2'
 /** Tray header: phase mark, phase name, small action count pushed right. */
 const TRAY_HEADER_CLASS_NAME =
-  'flex w-full flex-row items-center gap-2.5 px-1.5 font-display text-lg tracking-display text-parchment text-shadow-ink md:mb-1.5 md:border-b-2 md:border-dashed md:border-ink/35 md:pb-2.5 md:text-2xl md:text-ink md:text-shadow-none'
+  'flex w-full flex-row items-center gap-2.5 px-1.5 font-display text-lg tracking-display text-parchment text-shadow-ink md:mb-1.5 md:border-b-3 md:border-ink-deep md:pb-2.5 md:text-2xl md:text-ink md:text-shadow-none'
 /** Gold diamond holding the time-of-day icon. */
 const TRAY_HEADER_PHASE_MARK_CLASS_NAME =
   'root-paper root-paper-fine flex size-6 shrink-0 rotate-45 items-center justify-center text-base text-ink text-shadow-none [--root-paper-color:var(--color-gold)] md:size-7 md:text-lg'
