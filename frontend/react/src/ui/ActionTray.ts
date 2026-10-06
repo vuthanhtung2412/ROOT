@@ -171,15 +171,18 @@ const BUY_SERVICES_PENDING_TYPE = 'buyServices'
 /** Icon keys of the answers to a pending event (all are `resolveEvent`). */
 export const DECLINE_ICON_KEY = 'declineEvent'
 export const BUY_SERVICE_ICON_KEY = 'buyService'
+export const DECLINE_SERVICE_ICON_KEY = 'declineService'
 export const REMOVE_HITS_ICON_KEY = 'removeHits'
 
 /** Answers to one pending event share a type: tell them apart by what they send. */
 function resolveEventIconKey(spec: ActionSpec, pending: unknown): string {
   const params = readChoiceParams(spec)
+  const isBuyingServices: boolean =
+    pendingEventType(pending) === BUY_SERVICES_PENDING_TYPE
   if (params.decline !== undefined) {
-    return DECLINE_ICON_KEY
+    return isBuyingServices ? DECLINE_SERVICE_ICON_KEY : DECLINE_ICON_KEY
   }
-  if (pendingEventType(pending) === BUY_SERVICES_PENDING_TYPE) {
+  if (isBuyingServices) {
     return BUY_SERVICE_ICON_KEY
   }
   if (params.pieceIds !== undefined) {

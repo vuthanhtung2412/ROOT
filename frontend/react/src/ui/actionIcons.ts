@@ -38,6 +38,7 @@ import {
   LuWind,
   LuWrench,
 } from 'react-icons/lu'
+import { MdOutlineRemoveShoppingCart } from 'react-icons/md'
 
 /** Icon of a tray action whose type has no icon of its own. */
 export const FALLBACK_ACTION_ICON: IconType = LuCircleDot
@@ -56,6 +57,7 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   resolveEvent: LuCircleDot,
   // Answers to a pending event (keys from `trayActionArt`)
   declineEvent: LuBan,
+  declineService: MdOutlineRemoveShoppingCart,
   buyService: LuShoppingCart,
   removeHits: LuSkull,
   // Turn control

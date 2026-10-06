@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   BUY_SERVICE_ICON_KEY,
   DECLINE_ICON_KEY,
+  DECLINE_SERVICE_ICON_KEY,
   trayActionArt,
   collapseTrayActionsByLabel,
   filterTrayActions,
@@ -326,7 +327,11 @@ describe('trayActionArt', () => {
     })
     expect(
       trayActionArt(decline, makeGameState(), buyServicesPending),
-    ).toEqual({ iconKey: DECLINE_ICON_KEY, suit: null })
+    ).toEqual({ iconKey: DECLINE_SERVICE_ICON_KEY, suit: null })
+    // Declining any other event (ambush, Field Hospitals) keeps the plain mark.
+    expect(trayActionArt(decline, makeGameState()).iconKey).toBe(
+      DECLINE_ICON_KEY,
+    )
   })
 
   it('draws a Decree action as its column', () => {
