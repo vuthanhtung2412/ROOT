@@ -2,10 +2,7 @@ import { useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
 import { GiLaurels } from 'react-icons/gi'
 import { LuLayers, LuScrollText, LuShoppingCart, LuSun } from 'react-icons/lu'
-import {
-  factionTextureKey,
-  imagePathForAssetKey,
-} from '#assets/gameAssets.ts'
+import { factionPortraitPath } from '#assets/factionPortraits.ts'
 import type { GameState } from '#api/client.ts'
 import {
   getHudCallbacks,
@@ -31,8 +28,8 @@ const SEAT_TILE_CLASS_NAME =
 /** Seat whose turn it is: a little bigger, under the sun badge. */
 const SEAT_TILE_ACTIVE_CLASS_NAME = 'scale-110'
 const SEAT_PORTRAIT_BUTTON_CLASS_NAME =
-  'm-0 box-border flex size-full cursor-pointer items-center justify-center border-0 bg-transparent p-2'
-/** Faction colour softened toward parchment so the head icon stays readable. */
+  'm-0 box-border flex size-full cursor-pointer items-center justify-center border-0 bg-transparent p-1'
+/** Faction colour softened toward parchment so the head art stays readable. */
 const PORTRAIT_TINT_PERCENT = 55
 const SEAT_BADGE_CLASS_NAME =
   'root-paper root-medallion absolute flex items-center justify-center'
@@ -97,9 +94,7 @@ export function PlayerRail(): JSX.Element | null {
       {rail.state.players.map((player) => {
         const isActive = player.seat === rail.activeSeat
         const factionColor: string = factionColorCss(player.faction)
-        const iconPath = imagePathForAssetKey(
-          factionTextureKey(player.faction),
-        )
+        const portraitPath: string | null = factionPortraitPath(player.faction)
         const seatButtons: SeatButtonView[] = [
           {
             label: CRAFTED_CARDS_LABEL,
@@ -150,10 +145,10 @@ export function PlayerRail(): JSX.Element | null {
                   callbacks.onSeatClick(player.seat)
                 }}
               >
-                {iconPath !== null ? (
+                {portraitPath !== null ? (
                   <img
-                    className="size-full object-contain"
-                    src={iconPath}
+                    className="size-full object-cover"
+                    src={portraitPath}
                     alt={player.faction}
                     draggable={false}
                   />
