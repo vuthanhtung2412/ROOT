@@ -15,6 +15,8 @@ export type TurnBannerOption = {
   item?: TurnBannerOptionItem
   /** Suit drawn as its icon in place of the label (fox / mouse / rabbit / bird). */
   suit?: string
+  /** Icon drawn before the label (see `optionIconFor`). */
+  iconId?: string
   /** Grid presentation: the row this option belongs to (one pick per row). */
   group?: string
   /** Grid presentation: the option picked in its row. */

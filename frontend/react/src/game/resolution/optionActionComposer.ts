@@ -175,8 +175,11 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
             label: step.label?.(value, labels) ?? String(value),
             value: `${CHOICE_VALUE_PREFIX}${String(index)}`,
           }
-          return step.valuesAreSuits === true
-            ? { ...option, suit: String(value) }
+          if (step.valuesAreSuits === true) {
+            return { ...option, suit: String(value) }
+          }
+          return step.valuesAreIconIds === true
+            ? { ...option, iconId: String(value) }
             : option
         },
       )
