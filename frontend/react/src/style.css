@@ -20,6 +20,8 @@
   --color-wood: #5b3d26;
   --color-confirm: #7da453;
   --color-paper-bright: #fff8e6;
+  /* Warm cream sheet behind cards (card detail, discard pile, crafted cards). */
+  --color-cream: #f6e7bd;
   /* Text printed straight on faction board art. */
   --color-ink-deep: #1a1408;
   /* Riverfolk Company faction color (FACTION_COLORS.riverfolk). */

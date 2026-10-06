@@ -139,7 +139,7 @@ function CardGalleryShell(props: {
         </button>
       ) : null}
       <div
-        className="card-gallery-modal__panel root-paper"
+        className="card-gallery-modal__panel root-paper [--root-paper-color:var(--color-cream)]"
         onClick={
           props.blocksBackground
             ? (event: MouseEvent<HTMLDivElement>) => {

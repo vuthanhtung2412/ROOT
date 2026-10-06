@@ -13,7 +13,7 @@ import {
 
 /** Torn paper sheet: card face on top, name and text under it. */
 const PANEL_CLASS_NAME =
-  'card-detail-overlay__panel root-paper pointer-events-none z-1 box-border flex w-[min(420px,92vw)] flex-col items-center px-6 pt-5 pb-4 text-center text-ink'
+  'card-detail-overlay__panel root-paper [--root-paper-color:var(--color-cream)] pointer-events-none z-1 box-border flex w-[min(420px,92vw)] flex-col items-center px-6 pt-5 pb-4 text-center text-ink'
 const FACE_CLASS_NAME =
   'card-detail-overlay__face mb-3 block h-77.5 w-55 rounded-md border-3 border-ink-deep object-fill shadow-card select-none'
 /** Name row: suit art, card name; a solid rule under it. */
