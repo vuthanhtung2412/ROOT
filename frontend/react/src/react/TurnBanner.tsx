@@ -18,10 +18,30 @@ import type {
   TurnBannerOptionItem,
   TurnBannerViewModel,
 } from '#ui/TurnBanner.ts'
-import { imagePathForAssetKey, itemTextureKey } from '#assets/gameAssets.ts'
+import { LuCheck, LuMinus, LuPlus, LuX } from 'react-icons/lu'
+import {
+  factionTextureKey,
+  imagePathForAssetKey,
+  itemTextureKey,
+} from '#assets/gameAssets.ts'
 
+/** Accessible names: the buttons show an icon only. */
 const BANNER_CANCEL_LABEL = 'X'
 const BANNER_CONFIRM_LABEL = 'OK'
+const STEPPER_DECREASE_LABEL = '<'
+const STEPPER_INCREASE_LABEL = '>'
+
+/** No panel of its own: the prompt strip and the tiles float over the board edge. */
+const BANNER_CLASS_NAME =
+  'fixed top-2 left-1/2 z-130 box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-x-2 gap-y-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[44px_minmax(0,1fr)_44px] md:gap-x-3 md:gap-y-2'
+/** Square paper tile: cancel (rust) and confirm (green). */
+const BANNER_TILE_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press m-0 flex size-10 items-center justify-center justify-self-center p-0 text-xl text-parchment md:size-11 md:text-2xl'
+/** Head of the faction that has to answer, tucked under the prompt strip. */
+const BANNER_HEAD_TILE_CLASS_NAME =
+  'root-paper root-paper-fine z-1 -mr-2 box-border flex size-10 shrink-0 -rotate-4 items-center justify-center p-1 [--root-paper-color:var(--color-paper-bright)] md:size-12'
+const STEPPER_BUTTON_CLASS_NAME =
+  'root-paper root-medallion root-paper-press m-0 flex size-9 items-center justify-center p-0 text-xl text-parchment md:size-10'
 
 export function TurnBanner(): JSX.Element | null {
   const banner = useSyncExternalStore(
@@ -59,34 +79,52 @@ export function TurnBanner(): JSX.Element | null {
     composer !== null && (composer.canConfirm || useStepper)
   const showCancel = composer !== null && composer.canCancel
 
+  const actorHeadPath: string | null = imagePathForAssetKey(
+    factionTextureKey(turn.actorFaction),
+  )
+
   return (
     <div
       className={
         hasOptionRow
-          ? 'root-panel fixed top-2 left-1/2 z-130 box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[48px_minmax(0,1fr)_48px] grid-rows-[auto_auto] items-center gap-x-2 gap-y-1.5 px-2 py-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[56px_minmax(0,1fr)_56px] md:gap-x-3 md:gap-y-2 md:px-3 md:py-2'
-          : 'root-panel fixed top-2 left-1/2 z-130 box-border grid w-[calc(100vw-16px)] min-h-10 -translate-x-1/2 grid-cols-[48px_minmax(0,1fr)_48px] grid-rows-[auto] items-center gap-x-2 gap-y-1.5 px-2 py-1.5 md:top-3 md:w-[min(640px,calc(100vw-24px))] md:min-h-11 md:grid-cols-[56px_minmax(0,1fr)_56px] md:gap-x-3 md:gap-y-2 md:px-3 md:py-2'
+          ? `${BANNER_CLASS_NAME} grid-rows-[auto_auto]`
+          : `${BANNER_CLASS_NAME} grid-rows-[auto]`
       }
     >
       {showCancel ? (
         <button
           type="button"
-          className="root-button root-button--danger justify-self-center px-2 py-1 text-[13px] md:px-2.5 md:text-[15px]"
+          className={`${BANNER_TILE_BUTTON_CLASS_NAME} [--root-paper-color:var(--color-rust)]`}
+          aria-label={BANNER_CANCEL_LABEL}
           onClick={() => {
             callbacks.onBannerCancel()
           }}
         >
-          {BANNER_CANCEL_LABEL}
+          <LuX aria-hidden="true" />
         </button>
       ) : (
         <span className="size-px" />
       )}
-      <p className="m-0 text-center font-display text-base leading-tight text-ink md:text-xl">
-        {statusText}
-      </p>
+      <div className="flex min-w-0 flex-row items-center justify-center">
+        {actorHeadPath !== null ? (
+          <span className={BANNER_HEAD_TILE_CLASS_NAME}>
+            <img
+              className="size-full object-contain"
+              src={actorHeadPath}
+              alt=""
+              draggable={false}
+            />
+          </span>
+        ) : null}
+        <p className="root-paper m-0 min-w-0 px-4 py-1.5 text-center font-display text-base leading-tight text-ink md:px-6 md:text-xl">
+          {statusText}
+        </p>
+      </div>
       {showConfirm ? (
         <button
           type="button"
-          className="root-button root-button--accent justify-self-center px-2 py-1 text-[13px] md:px-2.5 md:text-[15px]"
+          className={`${BANNER_TILE_BUTTON_CLASS_NAME} [--root-paper-color:var(--color-confirm)]`}
+          aria-label={BANNER_CONFIRM_LABEL}
           onClick={() => {
             if (countStepper !== null) {
               const selected = selectedCountStepperOption(countStepper)
@@ -98,7 +136,7 @@ export function TurnBanner(): JSX.Element | null {
             callbacks.onBannerConfirm()
           }}
         >
-          {BANNER_CONFIRM_LABEL}
+          <LuCheck aria-hidden="true" />
         </button>
       ) : (
         <span className="size-px" />
@@ -129,7 +167,7 @@ export function TurnBanner(): JSX.Element | null {
               <button
                 key={option.value}
                 type="button"
-                className="root-button root-button--quiet px-2 py-1 text-sm"
+                className="root-paper root-paper-fine root-paper-press m-0 px-3 py-1 font-display text-sm text-ink"
                 onClick={() => {
                   callbacks.onBannerPickOption(option.value)
                 }}
@@ -211,34 +249,28 @@ function CountStepperRow(props: {
     <div className="col-span-full flex flex-row flex-wrap items-center justify-center gap-2.5">
       <button
         type="button"
-        className={
-          atMin
-            ? 'root-button px-3 py-1.5 text-lg opacity-55'
-            : 'root-button px-3 py-1.5 text-lg'
-        }
+        className={STEPPER_BUTTON_CLASS_NAME}
+        aria-label={STEPPER_DECREASE_LABEL}
         disabled={atMin}
         onClick={() => {
           props.onStep(-1)
         }}
       >
-        {'<'}
+        <LuMinus aria-hidden="true" />
       </button>
-      <span className="border border-ink-soft bg-parchment-deep/80 px-3.5 py-1.5 font-mono text-base text-ink">
+      <span className="root-paper root-paper-fine min-w-28 px-4 py-1.5 text-center font-display text-lg text-ink">
         {formatCountStepperLabel(selected)}
       </span>
       <button
         type="button"
-        className={
-          atMax
-            ? 'root-button px-3 py-1.5 text-lg opacity-55'
-            : 'root-button px-3 py-1.5 text-lg'
-        }
+        className={STEPPER_BUTTON_CLASS_NAME}
+        aria-label={STEPPER_INCREASE_LABEL}
         disabled={atMax}
         onClick={() => {
           props.onStep(1)
         }}
       >
-        {'>'}
+        <LuPlus aria-hidden="true" />
       </button>
     </div>
   )
