@@ -52,9 +52,9 @@ const ROLE_BADGE_CLASS_NAME =
   'root-paper root-medallion absolute -top-3.5 z-1 flex size-9 items-center justify-center text-xl text-parchment md:size-10 md:text-2xl'
 const ATTACKER_ROLE_BADGE_CLASS_NAME = `${ROLE_BADGE_CLASS_NAME} -left-3.5`
 const DEFENDER_ROLE_BADGE_CLASS_NAME = `${ROLE_BADGE_CLASS_NAME} -right-3.5`
-/** Rust diamond with crossed swords between the two dice. */
+/** Rust diamond with crossed swords between the tiles, above the two dice. */
 const CLASH_MARK_CLASS_NAME =
-  'root-paper root-paper-fine absolute bottom-7 left-1/2 flex size-12 -translate-x-1/2 rotate-45 items-center justify-center text-2xl text-parchment [--root-paper-color:var(--color-rust)] md:bottom-8 md:size-16 md:text-4xl'
+  'root-paper root-paper-fine absolute top-1.5 left-1/2 flex size-12 -translate-x-1/2 rotate-45 items-center justify-center text-2xl text-parchment [--root-paper-color:var(--color-rust)] md:top-2 md:size-16 md:text-4xl'
 /** Damage this side takes: one broken shield medallion per hit. */
 const HITS_ROW_CLASS_NAME = 'flex h-8 flex-row items-center gap-2 md:h-9'
 const HIT_CLASS_NAME =
