@@ -117,10 +117,24 @@ const FADE_OUT_OPTIONS: KeyframeAnimationOptions = {
   duration: EFFECT_LIFETIME_MS,
   fill: 'forwards',
 }
-/** A move is gone soon after the slide lands: a thin trail, no lingering. */
-const MOVE_FADE_OPTIONS: KeyframeAnimationOptions = {
-  duration: MOVE_LIFETIME_MS,
-  fill: 'forwards',
+/** A move waiting for the moves before it stays out of sight. */
+const WAITING_MOVE_CLASS_NAME = 'absolute inset-0 opacity-0'
+const STARTED_MOVE_CLASS_NAME = 'absolute inset-0'
+
+/** When a move starts: once every earlier move of its update has landed. */
+function moveStartDelay(effect: BoardMoveEffect): number {
+  return effect.step * MOVE_SLIDE_MS
+}
+
+/** How long a batch stays on the map: long enough for its last move. */
+function batchLifetime(batch: BoardEffectBatch): number {
+  return batch.effects.reduce(
+    (lifetime: number, effect: BoardEffect): number =>
+      effect.kind === 'move'
+        ? Math.max(lifetime, moveStartDelay(effect) + MOVE_LIFETIME_MS)
+        : lifetime,
+    EFFECT_LIFETIME_MS,
+  )
 }
 
 function MoveEffectView(
@@ -138,13 +152,19 @@ function MoveEffectView(
       : stackPosition(toCenter, props.effect.toSlot)
   const deltaX = (to?.left ?? 0) - (from?.left ?? 0)
   const deltaY = (to?.top ?? 0) - (from?.top ?? 0)
-  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, MOVE_FADE_OPTIONS)
+  const delay = moveStartDelay(props.effect)
+  // A move is gone soon after the slide lands: a thin trail, no lingering.
+  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, {
+    duration: MOVE_LIFETIME_MS,
+    delay,
+    fill: 'forwards',
+  })
   const slideRef = useKeyframes(
     [
       { transform: 'translate(0px, 0px)' },
       { transform: `translate(${String(deltaX)}px, ${String(deltaY)}px)` },
     ],
-    { duration: MOVE_SLIDE_MS, easing: 'ease-in-out', fill: 'forwards' },
+    { duration: MOVE_SLIDE_MS, delay, easing: 'ease-in-out', fill: 'forwards' },
   )
   if (from === undefined || to === undefined) {
     return null
@@ -153,7 +173,10 @@ function MoveEffectView(
     factionColorForSeat(props.effect.owner, props.factions),
   )
   return (
-    <div ref={fadeRef} className="absolute inset-0">
+    <div
+      ref={fadeRef}
+      className={delay > 0 ? WAITING_MOVE_CLASS_NAME : STARTED_MOVE_CLASS_NAME}
+    >
       <svg
         className="absolute inset-0 overflow-visible"
         width="100%"
@@ -383,7 +406,7 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
       setActive((current: ActiveEffect[]) =>
         current.filter((entry: ActiveEffect) => !startedKeys.has(entry.key)),
       )
-    }, EFFECT_LIFETIME_MS)
+    }, batchLifetime(batch))
     timersRef.current.add(timer)
   }, [batch])
 
