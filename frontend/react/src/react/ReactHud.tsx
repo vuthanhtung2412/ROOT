@@ -17,6 +17,7 @@ import {
 } from '#react/HudChrome.tsx'
 import { MenuOverlay } from '#react/MenuOverlay.tsx'
 import { OptionGridModal } from '#react/OptionGridModal.tsx'
+import { PaperFilters } from '#react/PaperFilters.tsx'
 import { PlayerRail } from '#react/PlayerRail.tsx'
 import { StatusMessage } from '#react/StatusMessage.tsx'
 import { TurnBanner } from '#react/TurnBanner.tsx'
@@ -25,6 +26,7 @@ import { TurnBanner } from '#react/TurnBanner.tsx'
 export function ReactHud(): JSX.Element {
   return (
     <>
+      <PaperFilters />
       <BootOverlay />
       <MenuOverlay />
       <TurnBanner />
