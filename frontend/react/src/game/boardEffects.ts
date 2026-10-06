@@ -42,6 +42,11 @@ export type BoardMoveEffect = PieceGroup & {
   kind: 'move'
   from: number
   to: number
+  /**
+   * Position of the move among the moves of its update: moves play one after
+   * the other, the first at 0.
+   */
+  step: number
   /** Stack the pieces left, as drawn before the move. */
   fromSlot: BoardStackSlot
   /** Stack the pieces joined, as drawn after the move. */
@@ -148,6 +153,8 @@ function stackCountIn(
 }
 
 const NO_STACK_SLOT: BoardStackSlot = { index: 0, total: 1 }
+/** Moves read from a board comparison have no order: they all play first. */
+const FIRST_MOVE_STEP = 0
 
 /** Slot of the piece's group among the stacks of a clearing; null if absent. */
 function stackSlotIn(
@@ -282,6 +289,7 @@ function moveEffectsOfSteps(
           kind: 'move',
           from: step.from,
           to: step.to,
+          step: stepIndex,
           fromSlot:
             stackSlotIn(boards.previous[step.from], piece) ??
             stackSlotIn(boards.next[step.from], piece) ??
@@ -337,6 +345,7 @@ export function pieceEffectsBetween(
         kind: 'move',
         from: was.clearing,
         to: now.clearing,
+        step: FIRST_MOVE_STEP,
         fromSlot:
           stackSlotIn(previous[was.clearing], was.piece) ?? NO_STACK_SLOT,
         toSlot: stackSlotIn(next[now.clearing], now.piece) ?? NO_STACK_SLOT,

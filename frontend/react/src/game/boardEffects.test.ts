@@ -99,6 +99,7 @@ describe('pieceEffectsBetween', () => {
         kind: 'move',
         from: 0,
         to: 1,
+        step: 0,
         fromSlot: { index: 0, total: 1 },
         toSlot: { index: 0, total: 1 },
         owner: CAT_SEAT,
@@ -253,8 +254,8 @@ describe('boardEffectsBetween', () => {
       ]),
     )
     expect(effects).toMatchObject([
-      { kind: 'move', from: 0, to: 1, count: 1 },
-      { kind: 'move', from: 1, to: 2, count: 2 },
+      { kind: 'move', from: 0, to: 1, count: 1, step: 0 },
+      { kind: 'move', from: 1, to: 2, count: 2, step: 1 },
     ])
     expect(effects).toHaveLength(2)
   })
