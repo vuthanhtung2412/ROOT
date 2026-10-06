@@ -339,7 +339,7 @@ describe('expansion tray labels and banner prompts', () => {
         makeActionSpec({ type: 'resolveEvent', params: { decline: [true] } }),
         pending,
       ),
-    ).toBe('no service')
+    ).toBe('skip service')
     expect(formatActionLabel(makeActionSpec({ type: 'ritualScore' }))).toBe(
       'score',
     )

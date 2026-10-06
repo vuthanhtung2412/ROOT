@@ -94,7 +94,7 @@ function formatActionLabel(
   if (expansionLabel !== undefined) return expansionLabel
   if (spec.type === 'resolveEvent') {
     if (pendingType === 'buyServices') {
-      return params.decline !== undefined ? 'no service' : 'buy service'
+      return params.decline !== undefined ? 'skip service' : 'buy service'
     }
     const startingBuilding = params.building?.[0]
     if (startingBuilding !== undefined) {
