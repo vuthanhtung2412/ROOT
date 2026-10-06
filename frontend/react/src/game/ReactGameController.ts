@@ -53,6 +53,7 @@ import {
 import {
   boardEffectsBetween,
   EMPTY_BOARD_EFFECT_BATCH,
+  logEntriesAddedSince,
   type BoardEffectBatch,
 } from '#game/boardEffects.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
@@ -108,6 +109,8 @@ export class ReactGameController {
   }
   /** Last committed server state the board effects were read from. */
   private effectState: GameState | null = null
+  /** Length of the game log that came with `effectState`. */
+  private effectLogLength = 0
   private boardEffects: BoardEffectBatch = EMPTY_BOARD_EFFECT_BATCH
   private readonly boardListeners = new Set<BoardListener>()
 
@@ -381,6 +384,7 @@ export class ReactGameController {
     this.boardClearings = null
     this.boardFactions = null
     this.effectState = null
+    this.effectLogLength = 0
     this.boardEffects = EMPTY_BOARD_EFFECT_BATCH
     this.forestPawns = []
     this.highlightedClearingIds = []
@@ -701,8 +705,13 @@ export class ReactGameController {
     if (state === null || state === this.effectState) {
       return
     }
-    const effects = boardEffectsBetween(this.effectState, state)
+    const effects = boardEffectsBetween(
+      this.effectState,
+      state,
+      logEntriesAddedSince(this.effectLogLength, snapshot.log),
+    )
     this.effectState = state
+    this.effectLogLength = snapshot.log.length
     if (effects.length > 0) {
       this.boardEffects = {
         sequence: this.boardEffects.sequence + 1,

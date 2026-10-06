@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   battleEffectBetween,
   boardEffectsBetween,
+  logEntriesAddedSince,
+  moveStepsFromLog,
   pieceEffectsBetween,
   type BoardEffectClearing,
   type BoardEffectPiece,
   type BoardEffectState,
+  type BoardMoveStep,
 } from '#game/boardEffects.ts'
 
 const CAT_SEAT = 0
@@ -41,6 +44,49 @@ function battleEvent(clearing: number, stage: string): Record<string, unknown> {
 function state(overrides: Partial<BoardEffectState>): BoardEffectState {
   return { id: 'game', clearings: board([]), pending: [], ...overrides }
 }
+
+/** Log entries of moves, as the server writes them: removed, then placed. */
+function moveLogEntries(
+  steps: readonly BoardMoveStep[],
+): Record<string, unknown>[] {
+  return steps.flatMap((step: BoardMoveStep): Record<string, unknown>[] => [
+    { t: 'pieces', clearing: step.from, removed: step.pieces },
+    { t: 'pieces', clearing: step.to, placed: step.pieces },
+  ])
+}
+
+describe('moveStepsFromLog', () => {
+  it('reads each removed-then-placed pair as one step, in order', () => {
+    const steps: BoardMoveStep[] = [
+      { from: 0, to: 1, pieces: [warrior('a', CAT_SEAT)] },
+      { from: 1, to: 2, pieces: [warrior('b', CAT_SEAT), warrior('a', CAT_SEAT)] },
+    ]
+    expect(moveStepsFromLog(moveLogEntries(steps))).toEqual(steps)
+  })
+
+  it('skips placements, removals and other entries', () => {
+    expect(
+      moveStepsFromLog([
+        { t: 'action', actor: CAT_SEAT },
+        { t: 'pieces', clearing: 0, removed: [warrior('a', CAT_SEAT)] },
+        { t: 'pieces', clearing: 1, placed: [warrior('new', CAT_SEAT)] },
+      ]),
+    ).toEqual([])
+  })
+})
+
+describe('logEntriesAddedSince', () => {
+  const log: string[] = ['join', 'start', 'action']
+
+  it('returns the entries past the earlier length', () => {
+    expect(logEntriesAddedSince(2, log)).toEqual(['action'])
+  })
+
+  it('returns nothing before a log was loaded or after it restarted', () => {
+    expect(logEntriesAddedSince(0, log)).toEqual([])
+    expect(logEntriesAddedSince(5, log)).toEqual([])
+  })
+})
 
 describe('pieceEffectsBetween', () => {
   it('groups warriors moved together into one move with a count', () => {
@@ -191,6 +237,42 @@ describe('boardEffectsBetween', () => {
       }),
     )
     expect(effects.map((effect) => effect.kind)).toEqual(['battle', 'move'])
+  })
+
+  it('tells both moves of a march whose first warrior leaves again', () => {
+    const effects = boardEffectsBetween(
+      state({
+        clearings: board([warrior('a', CAT_SEAT)], [warrior('b', CAT_SEAT)]),
+      }),
+      state({
+        clearings: board([], [], [warrior('b', CAT_SEAT), warrior('a', CAT_SEAT)]),
+      }),
+      moveLogEntries([
+        { from: 0, to: 1, pieces: [warrior('a', CAT_SEAT)] },
+        { from: 1, to: 2, pieces: [warrior('b', CAT_SEAT), warrior('a', CAT_SEAT)] },
+      ]),
+    )
+    expect(effects).toMatchObject([
+      { kind: 'move', from: 0, to: 1, count: 1 },
+      { kind: 'move', from: 1, to: 2, count: 2 },
+    ])
+    expect(effects).toHaveLength(2)
+  })
+
+  it('still compares the boards for pieces the log does not move', () => {
+    const effects = boardEffectsBetween(
+      state({
+        clearings: board([warrior('a', CAT_SEAT), warrior('cult', CULT_SEAT)]),
+      }),
+      state({
+        clearings: board([], [warrior('a', CAT_SEAT), warrior('cult', CULT_SEAT)]),
+      }),
+      moveLogEntries([{ from: 0, to: 1, pieces: [warrior('a', CAT_SEAT)] }]),
+    )
+    expect(effects).toMatchObject([
+      { kind: 'move', owner: CAT_SEAT, from: 0, to: 1, count: 1 },
+      { kind: 'move', owner: CULT_SEAT, from: 0, to: 1, count: 1 },
+    ])
   })
 
   it('ignores a wholesale board replacement such as a loaded snapshot', () => {

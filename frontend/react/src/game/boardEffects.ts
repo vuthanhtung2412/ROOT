@@ -163,10 +163,149 @@ function stackSlotIn(
   return index < 0 ? null : { index, total: stackKeys.length }
 }
 
-/** Moves, placements and removals between two committed boards. */
+/** Pieces that left one clearing for another in a single step of an action. */
+export type BoardMoveStep = {
+  from: number
+  to: number
+  pieces: readonly BoardEffectPiece[]
+}
+
+const PIECES_LOG_ENTRY_TYPE = 'pieces'
+
+function readPiece(value: unknown): BoardEffectPiece | null {
+  if (typeof value !== 'object' || value === null) return null
+  const id: unknown = Reflect.get(value, 'id')
+  const kind: unknown = Reflect.get(value, 'kind')
+  const owner: unknown = Reflect.get(value, 'owner')
+  const type: unknown = Reflect.get(value, 'type')
+  if (
+    typeof id !== 'string' ||
+    typeof kind !== 'string' ||
+    typeof owner !== 'number'
+  ) {
+    return null
+  }
+  const piece: BoardEffectPiece = { id, kind, owner }
+  return typeof type === 'string' ? { ...piece, type } : piece
+}
+
+type PiecesLogSide = 'placed' | 'removed'
+
+type PiecesLogChange = {
+  clearing: number
+  pieces: readonly BoardEffectPiece[]
+}
+
+/** One side of a `pieces` log entry; null when the entry has no such side. */
+function readPiecesChange(
+  entry: unknown,
+  side: PiecesLogSide,
+): PiecesLogChange | null {
+  if (typeof entry !== 'object' || entry === null) return null
+  if (Reflect.get(entry, 't') !== PIECES_LOG_ENTRY_TYPE) return null
+  const clearing: unknown = Reflect.get(entry, 'clearing')
+  const listed: unknown = Reflect.get(entry, side)
+  if (typeof clearing !== 'number' || !Array.isArray(listed)) return null
+  const pieces: BoardEffectPiece[] = []
+  for (const value of listed) {
+    const piece = readPiece(value)
+    if (piece === null) return null
+    pieces.push(piece)
+  }
+  return pieces.length === 0 ? null : { clearing, pieces }
+}
+
+function samePieces(
+  left: readonly BoardEffectPiece[],
+  right: readonly BoardEffectPiece[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every(
+      (piece: BoardEffectPiece, index: number): boolean =>
+        piece.id === right[index]?.id,
+    )
+  )
+}
+
+/**
+ * Move steps in the order the log records them: the same pieces removed from
+ * one clearing, then placed in another. A march keeps both of its moves, even
+ * when a warrior of the first move leaves again in the second.
+ */
+export function moveStepsFromLog(entries: readonly unknown[]): BoardMoveStep[] {
+  const steps: BoardMoveStep[] = []
+  entries.forEach((entry: unknown, index: number) => {
+    const removed = readPiecesChange(entry, 'removed')
+    const placed = readPiecesChange(entries[index + 1], 'placed')
+    if (removed === null || placed === null) return
+    if (removed.clearing === placed.clearing) return
+    if (!samePieces(removed.pieces, placed.pieces)) return
+    steps.push({
+      from: removed.clearing,
+      to: placed.clearing,
+      pieces: removed.pieces,
+    })
+  })
+  return steps
+}
+
+/**
+ * Log entries one update added. None while the earlier log was not loaded yet
+ * (a resumed game shows its state before its log) or when the log restarted.
+ */
+export function logEntriesAddedSince(
+  previousLogLength: number,
+  log: readonly unknown[],
+): readonly unknown[] {
+  if (previousLogLength === 0 || log.length < previousLogLength) return []
+  return log.slice(previousLogLength)
+}
+
+type ComparedBoards = {
+  previous: readonly BoardEffectClearing[]
+  next: readonly BoardEffectClearing[]
+}
+
+/** One move effect per piece group of every step, in step order. */
+function moveEffectsOfSteps(
+  steps: readonly BoardMoveStep[],
+  boards: ComparedBoards,
+): BoardMoveEffect[] {
+  const moves = new Map<string, BoardMoveEffect>()
+  steps.forEach((step: BoardMoveStep, stepIndex: number) => {
+    for (const piece of step.pieces) {
+      countPiece(
+        moves,
+        `${String(stepIndex)}|${groupKey(piece)}`,
+        (): BoardMoveEffect => ({
+          kind: 'move',
+          from: step.from,
+          to: step.to,
+          fromSlot:
+            stackSlotIn(boards.previous[step.from], piece) ??
+            stackSlotIn(boards.next[step.from], piece) ??
+            NO_STACK_SLOT,
+          toSlot:
+            stackSlotIn(boards.next[step.to], piece) ??
+            stackSlotIn(boards.previous[step.to], piece) ??
+            NO_STACK_SLOT,
+          ...pieceGroup(piece),
+        }),
+      )
+    }
+  })
+  return [...moves.values()]
+}
+
+/**
+ * Moves, placements and removals between two committed boards. Pieces in
+ * `steppedPieceIds` already have their moves told by the log, step by step.
+ */
 export function pieceEffectsBetween(
   previous: readonly BoardEffectClearing[],
   next: readonly BoardEffectClearing[],
+  steppedPieceIds: ReadonlySet<string> = new Set<string>(),
 ): BoardEffect[] {
   const before = locatePieces(previous)
   const after = locatePieces(next)
@@ -190,7 +329,7 @@ export function pieceEffectsBetween(
       )
       continue
     }
-    if (was.clearing === now.clearing) continue
+    if (was.clearing === now.clearing || steppedPieceIds.has(pieceId)) continue
     countPiece(
       moves,
       `${String(was.clearing)}>${String(now.clearing)}|${groupKey(now.piece)}`,
@@ -264,14 +403,28 @@ export function battleEffectBetween(
 
 /**
  * Effects of one server update. Empty for the first state seen, another game,
- * or a wholesale board replacement.
+ * or a wholesale board replacement. `newLogEntries` are the log entries the
+ * update added: they tell the moves a board comparison cannot see.
  */
 export function boardEffectsBetween(
   previous: BoardEffectState | null,
   next: BoardEffectState,
+  newLogEntries: readonly unknown[] = [],
 ): BoardEffect[] {
   if (previous === null || previous.id !== next.id) return []
-  const pieceEffects = pieceEffectsBetween(previous.clearings, next.clearings)
+  const steps = moveStepsFromLog(newLogEntries)
+  const steppedPieceIds = new Set<string>(
+    steps.flatMap((step: BoardMoveStep): string[] =>
+      step.pieces.map((piece: BoardEffectPiece): string => piece.id),
+    ),
+  )
+  const pieceEffects = [
+    ...moveEffectsOfSteps(steps, {
+      previous: previous.clearings,
+      next: next.clearings,
+    }),
+    ...pieceEffectsBetween(previous.clearings, next.clearings, steppedPieceIds),
+  ]
   if (pieceEffects.length > MAX_PIECE_EFFECTS_PER_UPDATE) return []
   const battle = battleEffectBetween(previous.pending, next.pending)
   return battle === null ? pieceEffects : [battle, ...pieceEffects]
