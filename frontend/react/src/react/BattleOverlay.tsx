@@ -1,11 +1,10 @@
 import { useSyncExternalStore, type JSX } from 'react'
+import { GiBrokenShield } from 'react-icons/gi'
 import { LuShield, LuSword, LuSwords } from 'react-icons/lu'
 import {
   factionTextureKey,
   imagePathForAssetKey,
-  suitTextureKey,
 } from '#assets/gameAssets.ts'
-import { fallClearingSuit } from '#game/boardLayout.ts'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -53,12 +52,10 @@ const ROLE_BADGE_CLASS_NAME =
   'root-paper root-medallion absolute -top-3.5 z-1 flex size-9 items-center justify-center text-xl text-parchment md:size-10 md:text-2xl'
 const ATTACKER_ROLE_BADGE_CLASS_NAME = `${ROLE_BADGE_CLASS_NAME} -left-3.5`
 const DEFENDER_ROLE_BADGE_CLASS_NAME = `${ROLE_BADGE_CLASS_NAME} -right-3.5`
-/** Rust diamond holding the suit of the clearing fought over. */
-const CLEARING_MARK_CLASS_NAME =
-  'root-paper root-paper-fine absolute bottom-7 left-1/2 flex size-12 -translate-x-1/2 rotate-45 items-center justify-center text-2xl text-parchment [--root-paper-color:var(--color-rust)] md:bottom-8 md:size-16'
-const CLEARING_SUIT_CLASS_NAME =
-  'size-7 -rotate-45 object-contain brightness-0 invert md:size-9'
-/** Hits this side deals: one sword medallion each. */
+/** Rust diamond with crossed swords between the two dice. */
+const CLASH_MARK_CLASS_NAME =
+  'root-paper root-paper-fine absolute bottom-7 left-1/2 flex size-12 -translate-x-1/2 rotate-45 items-center justify-center text-2xl text-parchment [--root-paper-color:var(--color-rust)] md:bottom-8 md:size-16 md:text-4xl'
+/** Damage this side takes: one broken shield medallion per hit. */
 const HITS_ROW_CLASS_NAME = 'flex h-8 flex-row items-center gap-2 md:h-9'
 const HIT_CLASS_NAME =
   'root-paper root-medallion flex size-8 items-center justify-center text-lg text-parchment [--root-paper-color:var(--color-rust)] md:size-9 md:text-xl'
@@ -73,7 +70,10 @@ type BattleSideView = {
   roleLabel: string
   faction: string
   roll: number | null
+  /** Hits this side deals (read out for screen readers). */
   hits: number
+  /** Hits the other side deals: the damage drawn under this side. */
+  hitsTaken: number
 }
 
 export function BattleOverlay(): JSX.Element | null {
@@ -99,11 +99,6 @@ export function BattleOverlay(): JSX.Element | null {
   const lowDie = viewModel.rolls?.[1] ?? null
   const attackerDie = defenderUsesHigherDie ? lowDie : highDie
   const defenderDie = defenderUsesHigherDie ? highDie : lowDie
-  const clearingSuit = fallClearingSuit(viewModel.clearing)
-  const suitTexture: string | null =
-    clearingSuit !== null ? suitTextureKey(clearingSuit) : null
-  const suitImagePath: string | null =
-    suitTexture !== null ? imagePathForAssetKey(suitTexture) : null
 
   return (
     <>
@@ -132,19 +127,11 @@ export function BattleOverlay(): JSX.Element | null {
                 faction: viewModel.attackerFaction,
                 roll: attackerDie,
                 hits: viewModel.hits.attacker,
+                hitsTaken: viewModel.hits.defender,
               }}
             />
-            <span className={CLEARING_MARK_CLASS_NAME} aria-hidden="true">
-              {suitImagePath !== null ? (
-                <img
-                  className={CLEARING_SUIT_CLASS_NAME}
-                  src={suitImagePath}
-                  alt=""
-                  draggable={false}
-                />
-              ) : (
-                <LuSwords className="-rotate-45" />
-              )}
+            <span className={CLASH_MARK_CLASS_NAME} aria-hidden="true">
+              <LuSwords className="-rotate-45" />
             </span>
             <BattleSide
               side={{
@@ -153,6 +140,7 @@ export function BattleOverlay(): JSX.Element | null {
                 faction: viewModel.defenderFaction,
                 roll: defenderDie,
                 hits: viewModel.hits.defender,
+                hitsTaken: viewModel.hits.attacker,
               }}
             />
           </div>
@@ -180,7 +168,7 @@ function BattleSide(props: { side: BattleSideView }): JSX.Element {
     factionTextureKey(side.faction),
   )
   const hitMarks: readonly number[] = Array.from(
-    { length: side.hits },
+    { length: side.hitsTaken },
     (_: undefined, index: number): number => index,
   )
   const isAttacker: boolean = side.role === 'attacker'
@@ -233,7 +221,7 @@ function BattleSide(props: { side: BattleSideView }): JSX.Element {
       <div className={HITS_ROW_CLASS_NAME} aria-hidden="true">
         {hitMarks.map((hitIndex: number) => (
           <span key={hitIndex} className={HIT_CLASS_NAME}>
-            <LuSwords />
+            <GiBrokenShield />
           </span>
         ))}
       </div>
