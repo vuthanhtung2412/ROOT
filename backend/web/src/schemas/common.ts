@@ -6,7 +6,7 @@ export const JsonObjectSchema = z
   .openapi('JsonObject')
 
 export const FactionIdSchema = z
-  .enum(['marquise', 'eyrie', 'alliance', 'vagabond'])
+  .enum(['marquise', 'eyrie', 'alliance', 'vagabond', 'lizard', 'riverfolk'])
   .openapi('FactionId')
 
 export const ErrorBodySchema = z
