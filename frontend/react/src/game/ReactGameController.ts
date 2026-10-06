@@ -222,7 +222,12 @@ export class ReactGameController {
       if (snapshot === null || snapshot.state === null) {
         return
       }
-      const actorSeat = snapshot.state.currentSeat
+      // Same actor as paintHud: a pending event may belong to another seat
+      // (Field Hospitals of the defender during the attacker's turn).
+      const actorSeat = buildTurnBannerViewModel(
+        snapshot.state,
+        snapshot.legalActions,
+      ).actorSeat
       this.autoPrompts?.runAfterHudPaint(
         snapshot,
         actorSeat,
