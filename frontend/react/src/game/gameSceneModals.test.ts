@@ -106,3 +106,51 @@ describe('GameSceneModals.openSupporters', () => {
     expect(getCardPileSnapshot()).toBeNull()
   })
 })
+
+describe('GameSceneModals.openPublicHand', () => {
+  const riverfolkHand = [{ id: 'ROOT-204#1', defId: 'ROOT-204' }]
+
+  function stateWithRiverfolk(): ReturnType<typeof makeGameState> {
+    return makeGameState({
+      factions: ['marquise', 'riverfolk'],
+      players: [
+        { playerId: 'marquise', seat: 0, faction: 'marquise', vp: 0, hand: [] },
+        {
+          playerId: 'riverfolk',
+          seat: 1,
+          faction: 'riverfolk',
+          vp: 0,
+          hand: riverfolkHand,
+        },
+      ],
+    })
+  }
+
+  beforeEach(() => {
+    hideCardPile()
+  })
+
+  it('Rule: 11.2.3 Public Hand — any viewer opens the Riverfolk hand', () => {
+    const modals = new GameSceneModals(() => OTHER_SEAT)
+
+    modals.openPublicHand(stateWithRiverfolk(), 1)
+
+    expect(getCardPileSnapshot()).toEqual({
+      title: 'Riverfolk hand (1)',
+      cards: riverfolkHand,
+      emptyMessage: 'Riverfolk hand empty',
+    })
+  })
+
+  it('toggles closed on a second click; other hands stay private', () => {
+    const modals = new GameSceneModals(() => OTHER_SEAT)
+    const state = stateWithRiverfolk()
+
+    modals.openPublicHand(state, 1)
+    modals.openPublicHand(state, 1)
+    expect(getCardPileSnapshot()).toBeNull()
+
+    modals.openPublicHand(state, 0)
+    expect(getCardPileSnapshot()).toBeNull()
+  })
+})

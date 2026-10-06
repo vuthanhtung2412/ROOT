@@ -278,6 +278,13 @@ export class ReactGameController {
           this.syncActionTrayFromLatestSnapshot()
         }
       },
+      onPublicHandClick: (seat) => {
+        const state = this.latestSnapshot?.state
+        if (state !== null && state !== undefined) {
+          this.modals?.openPublicHand(state, seat)
+          this.syncActionTrayFromLatestSnapshot()
+        }
+      },
       onSelectAction: (spec) => {
         this.handleSelectAction(spec)
       },

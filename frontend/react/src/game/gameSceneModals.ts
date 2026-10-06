@@ -28,6 +28,8 @@ import {
 
 const SUPPORTERS_PILE_TITLE_PREFIX = 'Supporters ('
 const VAGABOND_FACTION_ID = 'vagabond'
+export const PUBLIC_HAND_FACTION_ID = 'riverfolk'
+const PUBLIC_HAND_PILE_TITLE_PREFIX = 'Riverfolk hand ('
 
 function isCardGalleryFace(value: unknown): value is CardGalleryFace {
   if (typeof value !== 'object' || value === null) {
@@ -157,6 +159,27 @@ export class GameSceneModals {
       title: `${SUPPORTERS_PILE_TITLE_PREFIX}${String(cards.length)})`,
       cards,
       emptyMessage: 'No supporters',
+    })
+  }
+
+  /** Rule: 11.2.3 Public Hand — anyone may look at the Riverfolk hand. */
+  openPublicHand(state: GameState, seat: number): void {
+    const openPile = getCardPileSnapshot()
+    if (
+      openPile !== null &&
+      openPile.title.startsWith(PUBLIC_HAND_PILE_TITLE_PREFIX)
+    ) {
+      hideCardPile()
+      return
+    }
+    const player = state.players.find((entry) => entry.seat === seat)
+    if (player === undefined || player.faction !== PUBLIC_HAND_FACTION_ID) {
+      return
+    }
+    showCardPile({
+      title: `${PUBLIC_HAND_PILE_TITLE_PREFIX}${String(player.hand.length)})`,
+      cards: player.hand,
+      emptyMessage: 'Riverfolk hand empty',
     })
   }
 

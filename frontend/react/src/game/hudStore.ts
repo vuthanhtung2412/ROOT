@@ -115,6 +115,7 @@ export type HudCallbacks = {
   onCraftedCardsClick: (seat: number) => void
   onCompletedQuestsClick: (seat: number) => void
   onSupportersClick: (seat: number) => void
+  onPublicHandClick: (seat: number) => void
   onSelectAction: (spec: ActionSpec) => void
   /** Vagabond board: item clicked to move between its track and the Satchel. */
   onRearrangeItem: (spec: ActionSpec) => void
@@ -192,6 +193,7 @@ const NOOP_CALLBACKS: HudCallbacks = {
   onCraftedCardsClick: () => undefined,
   onCompletedQuestsClick: () => undefined,
   onSupportersClick: () => undefined,
+  onPublicHandClick: () => undefined,
   onSelectAction: () => undefined,
   onRearrangeItem: () => undefined,
   onQuestPicked: () => undefined,
