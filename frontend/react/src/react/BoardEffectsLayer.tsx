@@ -34,9 +34,13 @@ const FALLBACK_FACTION_ID = 'marquise'
 const REMOVED_COLOR = '#b3261e'
 const BATTLE_COLOR = '#d43a2a'
 
-/** Above the piece art (z-3), on its top-left corner — never behind it. */
-const SIGN_BADGE_CLASS_NAME =
-  'absolute -top-6 -left-6 z-4 flex size-4 items-center justify-center rounded-full font-mono text-[13px] leading-none font-bold text-white ring-1 ring-white'
+/** Above the piece art (z-3), never behind it. */
+const SIGN_BADGE_BASE_CLASS_NAME =
+  'absolute z-4 flex items-center justify-center rounded-full font-mono leading-none font-bold text-white ring-1 ring-white'
+/** Small, overlapping the top-right corner of the placed piece. */
+const PLACED_SIGN_BADGE_CLASS_NAME = `${SIGN_BADGE_BASE_CLASS_NAME} -top-4 left-2.5 size-3 text-[10px]`
+/** Off the top-left corner of the removed piece. */
+const REMOVED_SIGN_BADGE_CLASS_NAME = `${SIGN_BADGE_BASE_CLASS_NAME} -top-6 -left-6 size-4 text-[13px]`
 const BATTLE_BADGE_CLASS_NAME =
   'absolute flex -translate-x-1/2 -translate-y-1/2 flex-row items-center gap-1 rounded bg-ink-deep/85 px-1.5 py-0.5 text-[16px] text-white'
 
@@ -228,7 +232,7 @@ function PlaceEffectView(
           clearingId={props.effect.clearing}
         />
         <span
-          className={SIGN_BADGE_CLASS_NAME}
+          className={PLACED_SIGN_BADGE_CLASS_NAME}
           style={{ background: PLACED_COLOR }}
         >
           +
@@ -271,7 +275,7 @@ function RemoveEffectView(
         />
       </div>
       <span
-        className={SIGN_BADGE_CLASS_NAME}
+        className={REMOVED_SIGN_BADGE_CLASS_NAME}
         style={{ background: REMOVED_COLOR }}
       >
         −
