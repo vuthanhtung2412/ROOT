@@ -115,7 +115,7 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | 8 | **battle** on clearing **6** vs Marquise | Fund → Committed (auto: only own funds left); dice 1 / 0 → the Cat warrior on 6 is removed, Riverfolk loses none | **R5** | ☐ |
 | 9 | **draw** | +1 card (6 in hand); fund → Committed; Funds left = **3** | **R8** | ☐ |
 | 10 | **End phase** → Evening | Must discard 1 (hand limit 5) → Lost Souls | **R11** | ☐ |
-| 11 | **End phase** → **set costs** → in the modal click Mercenaries **2** → **Confirm** | One modal shows the three service rows on their current cost; Mercenaries marker moves, other two stay 1 | **R11** | ☐ |
+| 11 | **End phase** → **set costs** → in the modal click Mercenaries **2** → banner **OK** | One modal shows the three service rows on their current cost; Mercenaries marker moves, other two stay 1 | **R11** | ☐ |
 | 12 | **End phase** | Turn passes → **Cult** Birdsong, service prompt first | | ☐ |
 
 ### Part 2 — Cult Birdsong (conspiracies)

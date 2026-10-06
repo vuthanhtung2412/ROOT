@@ -9,9 +9,6 @@ import type {
   TurnBannerOption,
 } from '#ui/TurnBanner.ts'
 
-const CANCEL_LABEL = 'Cancel'
-const CONFIRM_LABEL = 'Confirm'
-
 const CELL_CLASS_NAME =
   'flex size-12 cursor-pointer items-center justify-center rounded-full font-display text-xl text-ink'
 const CELL_IDLE_CLASS_NAME = 'border-2 border-ink bg-parchment hover:brightness-95'
@@ -41,7 +38,8 @@ function rowsOf(options: readonly TurnBannerOption[]): OptionGridRow[] {
 
 /**
  * One modal for a choice with several rows (Riverfolk Set Costs: the Services
- * track): click one value per row, then Confirm sends them together.
+ * track): click one value per row; the turn banner's OK sends them together
+ * and its X cancels. Sits under the banner (z-130), over tray, hand and rail.
  */
 export function OptionGridModal(): JSX.Element | null {
   const composer: TurnBannerComposerView | null = useSyncExternalStore(
@@ -55,16 +53,13 @@ export function OptionGridModal(): JSX.Element | null {
   const callbacks = getHudCallbacks()
   return (
     <div
-      className="option-grid-modal pointer-events-auto fixed inset-0 z-360 flex items-center justify-center"
+      className="option-grid-modal pointer-events-auto fixed inset-0 z-125 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
       aria-label={composer.message}
     >
       <div className="absolute inset-0 bg-forest-deep/72" />
-      <div className="root-panel relative z-1 flex flex-col gap-5 px-7 py-5">
-        <h2 className="m-0 text-center font-display text-xl text-ink">
-          {composer.message}
-        </h2>
+      <div className="root-panel relative z-1 px-7 py-5">
         <div className="flex flex-col gap-3">
           {rowsOf(composer.options).map((row: OptionGridRow) => (
             <div
@@ -96,29 +91,6 @@ export function OptionGridModal(): JSX.Element | null {
               </div>
             </div>
           ))}
-        </div>
-        <div className="flex flex-row justify-end gap-3">
-          {composer.canCancel ? (
-            <button
-              type="button"
-              className="root-button root-button--danger px-3 py-1.5 text-[15px]"
-              onClick={() => {
-                callbacks.onBannerCancel()
-              }}
-            >
-              {CANCEL_LABEL}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="root-button root-button--accent px-3 py-1.5 text-[15px]"
-            disabled={!composer.canConfirm}
-            onClick={() => {
-              callbacks.onBannerConfirm()
-            }}
-          >
-            {CONFIRM_LABEL}
-          </button>
         </div>
       </div>
     </div>

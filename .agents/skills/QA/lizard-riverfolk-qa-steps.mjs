@@ -254,7 +254,7 @@ export const RIVERFOLK_TURN_TO_CULT_DAYLIGHT_STEPS = [
     play: async (ui) => {
       await ui.button('set costs')
       await ui.button('Mercenaries 2')
-      await ui.button('Confirm')
+      await ui.button('OK')
       await ui.button('end phase')
       await ui.waitForButton('buy service')
     },
