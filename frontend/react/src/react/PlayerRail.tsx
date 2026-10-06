@@ -46,7 +46,7 @@ const SEAT_VICTORY_WREATH_CLASS_NAME =
   'absolute inset-0 size-full text-gold [filter:drop-shadow(1px_0_0_var(--color-ink-deep))_drop-shadow(-1px_0_0_var(--color-ink-deep))_drop-shadow(0_1px_0_var(--color-ink-deep))_drop-shadow(0_-1px_0_var(--color-ink-deep))]'
 /** Gold coin holding the score, set in the middle of the wreath. */
 const SEAT_VICTORY_COIN_CLASS_NAME =
-  'root-paper root-medallion -mt-0.5 flex size-5 items-center justify-center font-mono text-xs font-bold text-ink [--root-paper-color:var(--color-gold)] md:size-6 md:text-sm'
+  'root-paper root-medallion -mt-0.5 flex size-5 items-center justify-center font-mono text-xs font-bold text-white text-shadow-outline [--root-paper-color:var(--color-gold)] md:size-6 md:text-sm'
 const SEAT_BUTTON_CLASS_NAME =
   'root-paper root-medallion root-paper-press m-0 flex size-7 items-center justify-center p-0 text-sm text-ink [--root-paper-color:var(--color-parchment-deep)] md:size-8 md:text-base'
 /** Right corners, bottom first: crafted cards, then the faction's own button. */
