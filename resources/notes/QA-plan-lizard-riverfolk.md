@@ -7,6 +7,7 @@
 | Snapshot | `tmp/qa/snapshots/lizard-riverfolk-qa-run.json` |
 | Regen | `cd lib && pnpm exec tsx ../.cursor/skills/QA/make-lizard-riverfolk-qa-run.ts` |
 | Rules | `resources/rules/Law_of_Root.md` (Law 10 Lizard Cult, Law 11 Riverfolk Company) |
+| Dice | Fixed by the snapshot's rng seed (`BATTLE_DICE` in the regen script): the five battles of this plan always roll the same. Play the battles in plan order — an extra or skipped battle shifts every later roll. |
 
 ---
 
@@ -14,9 +15,12 @@
 
 1. Regen snapshot (optional).
 2. `pnpm --filter @root/web dev` + `pnpm --filter @root/react dev`
-3. `pnpm --filter @root/cli start -- load tmp/qa/snapshots/lizard-riverfolk-qa-run.json`
+3. `pnpm --filter @root/cli start -- load "$PWD/tmp/qa/snapshots/lizard-riverfolk-qa-run.json"` (absolute path — the CLI resolves from `frontend/cli/`)
 4. React → **Continue loaded game** (not New Game)
 5. After each step: board + `GET /game` / `/game/log`
+6. Every **Field Hospitals** prompt the Marquise gets (steps 8, 16, 19, 37): **Decline**.
+
+**Where to look:** Cult board → **Lost Souls** frame (top card + suit tally, leading suit highlighted; click = whole pile) and the **Revealed** panel beside the board. Riverfolk board → count badge on the corner of Payments / Funds / Commitments.
 
 **Seats:** `0` Marquise · `1` Riverfolk · `2` Lizard Cult (three players)
 
@@ -106,7 +110,7 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | 5 | **craft** → Anvil → **Craft** | Item gained, **+2 VP**; one fund sits on the fox Trade Posts space; card → Lost Souls | **R6** | ☐ |
 | 6 | **craft** → A Visit To Friends → **Export** | No item, no VP; 1 own warrior supply → Payments; fund on rabbit space; card → Lost Souls | **R7** | ☐ |
 | 7 | **move** 10 → **9**, 2 warriors → **Marquise fund** | Legal by river (no path), neither clearing ruled by Riverfolk; fund → Committed | **R4** | ☐ |
-| 8 | **battle** on clearing **6** vs Marquise | Fund → Committed (auto: only own funds left); battle resolves (Cat ambush decline OK) | **R5** | ☐ |
+| 8 | **battle** on clearing **6** vs Marquise | Fund → Committed (auto: only own funds left); dice 1 / 0 → the Cat warrior on 6 is removed, Riverfolk loses none | **R5** | ☐ |
 | 9 | **draw** | +1 card (6 in hand); fund → Committed; Funds left = **3** | **R8** | ☐ |
 | 10 | **End phase** → Evening | Must discard 1 (hand limit 5) → Lost Souls | **R11** | ☐ |
 | 11 | **End phase** → **set costs** → Mercenaries → **Cost 2** | Marker moves; other two stay 1 | **R11** | ☐ |
@@ -117,25 +121,25 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | # | Do | Expect | Hits | ☐ |
 |---|----|--------|------|---|
 | 13 | **buy service** → Hand Card → Birdy Bindle from the shown Riverfolk hand | Card → Cult hand; 1 Cult warrior → Payments; prompt **stays open** (2 services: post on 4 holds Cult pieces) | **R12** **R15** | ☐ |
-| 14 | **no service** | Outcast adjusts automatically: marker → **fox**, Outcast side; Lost Souls emptied; bird Dominance available | **L1** **L2** | ☐ |
+| 14 | Before answering, open the Cult board: Lost Souls tally shows **fox** highlighted (4 fox). Then **no service** | Outcast adjusts automatically: marker → **fox**, Outcast side; Lost Souls emptied (printed art shows, tally all 0); bird Dominance available | **L1** **L2** | ☐ |
 | 15 | **convert** → clearing **7** → Riverfolk | Only fox clearings offered. 7 = 3 Cult / 1 Riverfolk / 2 Cat; acolytes 9 → 7 | **L5** | ☐ |
-| 16 | **crusade: battle** → clearing **7** → pick **Marquise** | Must choose Cat or Riverfolk; acolytes 7 → 5; hits resolve | **L3** | ☐ |
+| 16 | **crusade: battle** → clearing **7** → pick **Marquise** | Must choose Cat or Riverfolk; acolytes 7 → 5; dice 1 / 0 → Cat removes 1 warrior, Cult loses none (7 = 3 Cult / 1 Riverfolk / 1 Cat) | **L3** | ☐ |
 | 17 | **sanctify** → clearing **5** | Sawmill gone, garden placed; **+1 VP**; acolytes 5 → 2; fox gardens on map = 2 | **L6** | ☐ |
 | 18 | **crusade: move** 0 → **8**, 2 warriors | Acolytes 2 → 0; tray now only **crusade: battle** / **skip battle** | **L4** | ☐ |
-| 19 | **crusade: battle** on 8 (or **skip battle**) | No extra acolyte cost | **L4** | ☐ |
+| 19 | **crusade: battle** on 8 (do **not** skip — the dice order depends on it) | No extra acolyte cost; dice 1 / 0 → Cat warrior removed, 8 = 2 Cult | **L4** | ☐ |
 | 20 | **End phase** → Daylight | | | ☐ |
 
 ### Part 3 — Cult Daylight + Evening
 
 | # | Do | Expect | Hits | ☐ |
 |---|----|--------|------|---|
-| 21 | **build garden** → Bake Sale → clearing **4** | Allowed though Cat has 3 warriors vs 2 (Pilgrims); 2nd rabbit garden; card sits revealed | **L7** **L14** | ☐ |
-| 22 | **recruit** → Mouse-in-a-sack → clearing **8** | Only mouse clearings offered; +1 Cult warrior; card revealed | **L8** | ☐ |
+| 21 | **build garden** → Bake Sale → clearing **4** | Allowed though Cat has 3 warriors vs 2 (Pilgrims); 2nd rabbit garden; card shows in the **Revealed** side panel | **L7** **L14** | ☐ |
+| 22 | **recruit** → Mouse-in-a-sack → clearing **8** | Only mouse clearings offered; +1 Cult warrior (8 = 3 Cult); 2 cards in the Revealed panel | **L8** | ☐ |
 | 23 | **score** → Root Tea (fox) | **+2 VP** (2 fox gardens on map); card → Lost Souls (not revealed) | **L9** | ☐ |
 | 24 | Open **score** again | Travel Gear (fox) not offered — fox already scored | **L9** | ☐ |
 | 25 | **sacrifice** → Birdy Bindle | Acolytes +1; bird never offered for build / recruit / score | **L10** | ☐ |
-| 26 | **End phase** → Evening | Revealed cards back in hand | **L11** | ☐ |
-| 27 | **craft** → Foxfolk Steel | Crafted with the 2 fox gardens; Travel Gear (cost rabbit) **not** craftable despite 2 rabbit gardens | **L11** | ☐ |
+| 26 | **End phase** → Evening | Revealed panel empties; the 3 cards are back in hand | **L11** | ☐ |
+| 27 | **craft** → Foxfolk Steel | Crafted with the 2 fox gardens, **+2 VP**; Travel Gear (cost rabbit) **not** craftable despite 2 rabbit gardens | **L11** | ☐ |
 | 28 | **End phase** → draw | Draws **3** (1 + rabbit bonus + fox bonus) | **L12** | ☐ |
 | 29 | Discard to 5: **Travel Gear (fox)** + **Birdy Bindle** | Cards → Lost Souls (keeps fox in the lead for step 43) | | ☐ |
 | 30 | **End phase** | Turn passes → **Marquise**, service prompt first | | ☐ |
@@ -147,11 +151,11 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | 31 | **buy service** → Hand Card → any card | Card taken; 1 Cat warrior → Payments | **R12** | ☐ |
 | 32 | **buy service** → Riverboats | 1 Cat warrior → Payments | **R13** | ☐ |
 | 33 | **buy service** → Mercenaries | **2** Cat warriors → Payments (new cost); prompt closes after 3 (posts on 4 and 11 hold Cat pieces) | **R14** **R15** **R11** | ☐ |
-| 34 | Birdsong → **End phase** to Daylight actions | No wood (sawmill sanctified) | | ☐ |
-| 35 | **March** 10 → **9** | Legal by river only | **R13** | ☐ |
-| 36 | **Battle** on **11** vs Riverfolk | Post removed (defenseless), Cat +1 VP; Riverfolk Funds 3 → **1**, 2 warriors back to supply; fox track stays 2 (post out of the game) | **R16** | ☐ |
-| 37 | **Battle** on **4** vs Cult | Cat rolls with own + Riverfolk warriors; removed Cult warriors → **Acolytes**, not supply; Cat hits alternate own / Riverfolk warrior | **L13** **R14** | ☐ |
-| 38 | Spend a bird card for an extra action → **Battle** on **5** vs Cult | Garden removed (defenseless) → back on fox track; Cult loses 1 random card → Lost Souls; Cat +1 VP | **L15** | ☐ |
+| 34 | Birdsong → **End phase** twice (skip craft) to Daylight actions | No wood (sawmill sanctified) | | ☐ |
+| 35 | **March** 10 → **9**, 1 warrior | Legal by river only | **R13** | ☐ |
+| 36 | **Battle** on **11** vs Riverfolk | Dice 0 / 0, post still removed (defenseless extra hit), Cat +1 VP; Riverfolk Funds 3 → **1**, 2 warriors back to supply; fox track stays 2 (post out of the game) | **R16** | ☐ |
+| 37 | **Battle** on **4** vs Cult | Dice 2 / 2. Both Cult warriors removed → **Acolytes 1 → 3**, Cult supply unchanged (Revenge). Cat takes 2 hits: 1 own warrior + the Riverfolk warrior on 4 (mercenary split). 4 = 2 Cat / 2 gardens / post | **L13** **R14** | ☐ |
+| 38 | **spend bird** (any bird card) → **Battle** on **5** vs Cult | Garden removed (defenseless) → back on fox track (2 → 1 on map); Cult loses 1 random card → Lost Souls (hand 5 → 4); Cat +1 VP | **L15** | ☐ |
 | 39 | Finish Cat turn | Turn passes → **Riverfolk** Birdsong | | ☐ |
 
 ### Part 5 — Second round (negative Protectionism + Hated)
@@ -160,8 +164,8 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 |---|----|--------|------|---|
 | 40 | Riverfolk Birdsong | **No** Protectionism (Payments held 1 own + 1 Cult + 4 Cat); 0 VP (1 fund); Funds = **12** (1 + 6 Payments + 3 Committed + 2 craft spaces) | **R1** **R2** **R3** | ☐ |
 | 41 | **End phase** through to Cult | Discard nothing | | ☐ |
-| 42 | As Cult: **no service** | Fox leads Lost Souls and is already Outcast → marker flips to **Hated** | **L16** | ☐ |
-| 43 | Check tray | With 1 acolyte: crusade + convert offered (cost 1); sanctify needs 2 | **L16** | ☐ |
+| 42 | Cult board first: Lost Souls tally highlights **fox** (3 fox). Then **no service** | Fox leads and is already Outcast → marker flips to **Hated** | **L16** | ☐ |
+| 43 | **convert** any offered warrior | Acolytes **3 → 2** — cost 1, not 2 (Hated discount) | **L16** | ☐ |
 
 ### Part 0 — Setup smoke (separate **New Game**, any time)
 
@@ -212,9 +216,9 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | R16 | 36 | ☐ |
 | S1 / S2 | A–E | ☐ |
 
-**Stretch / may need luck:** L13 (Cat must roll ≥1 hit on 4), R14 hit split (Cat must take 2 hits on 4), step 43 numbers if battles on 7/8 went badly.
+**No luck needed:** dice are fixed by the snapshot seed. Unit tests cover the same rules without dice: Revenge and Fear of the Faithful (`lib/src/factions/Lizard.test.ts`), mercenary hit split (`lib/src/events/buyServices.test.ts`), Trade Disruption (`lib/src/factions/Riverfolk.test.ts`).
 
-**Do not:** let the Riverfolk battle on 7 or move onto 11 (breaks Convert targets / defenseless post); score a rabbit card as Cult or discard non-fox cards in step 29 (breaks Hated in step 42).
+**Do not:** start any battle that is not in the plan, or skip one (shifts the dice); let the Riverfolk battle on 7 or move onto 11 (breaks Convert targets / defenseless post); score a rabbit card as Cult or discard non-fox cards in step 29 (breaks Hated in step 42).
 
 **Not covered:** Vagabond paying for services with items (no Vagabond seat); Riverfolk public hand in online mode (hotseat run).
 
@@ -234,4 +238,5 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | 28 | Draws < 3 | Step 17 or 21 skipped |
 | 33 | Prompt closes early | Cat supply short, or post on 11 already gone |
 | 36 | Post survives | Riverfolk warrior on 11 |
+| 37 | Dice not 2 / 2 | A battle was added or skipped earlier, or the snapshot was not regenerated |
 | 42 | Not Hated | Non-fox cards reached Lost Souls (steps 23, 29, 38 random card) |

@@ -11,6 +11,7 @@ import { writeFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Game } from '../../../lib/src/index.ts'
+import { SeededRng } from '../../../lib/src/rules/Rng.ts'
 import { createTurnScratch } from '../../../lib/src/state/turnScratch.ts'
 import type { GameSnapshot } from '../../../lib/src/state/types.ts'
 import type { Card } from '../../../lib/src/cards/types.ts'
@@ -102,6 +103,30 @@ const LIZARD_HAND = [
 ]
 /** Fox leads → Outcast moves mouse → fox; the dominance card becomes available. */
 const LOST_SOULS = ['ROOT-216', 'ROOT-72', 'ROOT-79', 'ROOT-210', 'ROOT-211']
+
+/**
+ * Dice of the five battles of the plan, in play order (two rolls per battle,
+ * higher roll to the attacker). Only battles roll dice before step 38.
+ */
+const BATTLE_DICE: readonly number[] = [
+  1, 0, // step 8: Riverfolk removes the Cat warrior on 6
+  1, 0, // step 16: Cult removes one Cat warrior on 7
+  1, 0, // step 19: Cult removes the Cat warrior on 8
+  0, 0, // step 36: trade post on 11 falls to the defenseless extra hit
+  2, 2, // step 37: Revenge (2 Cult warriors) + mercenary hit split (2 hits on Cat)
+]
+const DICE_SEED_SEARCH_LIMIT = 50_000_000
+
+/** Seed whose first rolls are exactly `rolls` (snapshot rng restarts at cursor 0). */
+function findDiceSeed(rolls: readonly number[]): number {
+  for (let seed = 0; seed < DICE_SEED_SEARCH_LIMIT; seed++) {
+    const probe = new SeededRng({ seed, cursor: 0 })
+    if (rolls.every((roll: number): boolean => probe.roll() === roll)) {
+      return seed
+    }
+  }
+  throw new Error(`no seed with rolls ${rolls.join(',')}`)
+}
 
 function finishSetup(game: Game): void {
   let guard = 0
@@ -266,6 +291,7 @@ async function main(): Promise<void> {
   riverfolk.hand = takeFromDeck(snap, RIVERFOLK_HAND)
   lizard.hand = takeFromDeck(snap, LIZARD_HAND)
   snap.state.deck.lostSouls = takeFromDeck(snap, LOST_SOULS)
+  snap.rng = { seed: findDiceSeed(BATTLE_DICE), cursor: 0 }
 
   const restored = Game.fromJSON(snap)
   const outPath = path.join(outDirectory, OUT_NAME)
