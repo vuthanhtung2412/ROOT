@@ -68,6 +68,7 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   overwork: LuAxe,
   // Eyrie Dynasties
   decree: LuScrollText,
+  addToDecree: LuScrollText,
   // Woodland Alliance
   revolt: LuFlame,
   spreadSympathy: LuHeartHandshake,

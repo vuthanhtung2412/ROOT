@@ -60,6 +60,7 @@ function formatActionLabel(
     }
     return column !== undefined ? column : 'decree'
   }
+  if (spec.type === 'addToDecree') return 'add to decree'
   if (spec.type === 'revolt') return 'revolt'
   if (spec.type === 'spreadSympathy') return 'spread sympathy'
   if (spec.type === 'mobilize') return 'mobilize'
