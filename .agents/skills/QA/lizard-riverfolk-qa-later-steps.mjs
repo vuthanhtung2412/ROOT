@@ -294,9 +294,10 @@ export const SETUP_STEPS = [
   {
     title: 'E · Riverfolk: starting costs, then the Marquise service prompt (S2)',
     play: async (ui) => {
-      await ui.button('Cost 2')
-      await ui.button('Cost 1')
-      await ui.button('Cost 4')
+      await ui.button('Hand Card 2')
+      await ui.button('Riverboats 1')
+      await ui.button('Mercenaries 4')
+      await ui.button('OK')
       await ui.waitForButton('buy service')
     },
     verify: (state) => {

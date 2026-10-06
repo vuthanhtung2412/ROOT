@@ -146,8 +146,13 @@ function finishSetup(game: Game): void {
       game.apply({ type: 'resolveEvent', suit: 'mouse' })
     } else if (event.type === 'placeRiverfolkWarrior') {
       game.apply({ type: 'resolveEvent', clearing: RIVERFOLK_BATTLE_CLEARING })
-    } else if (event.type === 'setStartingCost') {
-      game.apply({ type: 'resolveEvent', cost: 1 })
+    } else if (event.type === 'setStartingCosts') {
+      game.apply({
+        type: 'resolveEvent',
+        handCard: 1,
+        riverboats: 1,
+        mercenaries: 1,
+      })
     } else {
       throw new Error(`setup pending: ${JSON.stringify(event)}`)
     }

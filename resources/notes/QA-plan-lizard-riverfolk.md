@@ -177,7 +177,7 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | B | Cult: choose starting corner | Only the corner opposite the keep highlighted; 4 warriors + garden there, 1 warrior in each adjacent clearing | **S1** | ☐ |
 | C | Cult: choose Outcast suit | Marker on that suit, Outcast side | **S1** | ☐ |
 | D | Riverfolk: place 4 warriors | Only river clearings (3/4/6/9/10), never the keep clearing; Payments starts with 3 | **S2** | ☐ |
-| E | Riverfolk: starting cost ×3 (Hand Card, Riverboats, Mercenaries) | Cost 1–4 each; Marquise then gets the service prompt | **S2** | ☐ |
+| E | Riverfolk: starting costs in one modal (Hand Card, Riverboats, Mercenaries), then OK | Cost 1–4 each; Marquise then gets the service prompt | **S2** | ☐ |
 
 ---
 

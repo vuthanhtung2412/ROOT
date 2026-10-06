@@ -280,18 +280,9 @@ function resolveEventFlow(
       singleFieldOptions(spec, 'suits', 'suit'),
     )
   }
-  if (pendingType === 'setStartingCost') {
-    const service = rawList(spec, 'services')[0]
-    return setupFlow(
-      'Riverfolk Company',
-      {
-        field: 'cost',
-        kind: 'choice',
-        prompt: `starting cost of ${serviceLabel(String(service))}`,
-        label: (value: OptionValue): string => `Cost ${String(value)}`,
-      },
-      singleFieldOptions(spec, 'costs', 'cost'),
-    )
+  if (pendingType === 'setStartingCosts') {
+    // Rule: 11.3.5 — same Services track modal as the Set Costs action.
+    return setupFlow('Starting costs', SERVICE_COSTS_STEP, optionsOf(spec))
   }
   if (pendingType === 'buyServices') {
     const options = optionsOf(spec)

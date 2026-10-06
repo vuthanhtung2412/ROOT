@@ -52,3 +52,11 @@ Simplifications (say if wrong):
   - `frontend/react/src/react/Tooltip.tsx`
   - `frontend/react/src/react/ActionTray.tsx`, `frontend/react/src/ui/ActionTray.ts`
   - `frontend/react/src/react/PlayerRail.tsx`, `frontend/react/src/react/TurnBanner.tsx`
+- done: `feat(lib): set the three Riverfolk starting costs in one setup choice`
+  - `lib/src/events/setStartingCosts.ts`, `lib/src/events/types.ts`, `lib/src/events/resolvers.ts`
+  - `lib/src/factions/riverfolk/setup.ts`, `lib/src/game/factionSetup.ts`, `lib/src/game/Game.ts`
+  - `lib/src/actions/types.ts`, `lib/src/typeGuards.ts`, `lib/src/test/fixtures.ts`
+- done: `feat(ui): set the Riverfolk starting costs in the Services modal`
+  - `frontend/react/src/game/resolution/optionActionFlows.ts`
+  - `frontend/react/src/game/expansionPendingPrompts.ts`
+  - `.agents/skills/QA/lizard-riverfolk-qa-later-steps.mjs`, `.agents/skills/QA/make-lizard-riverfolk-qa-run.ts`

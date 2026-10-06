@@ -13,7 +13,7 @@ const EXPANSION_PENDING_PROMPTS: Readonly<Record<string, string>> = {
   chooseCultCorner: 'Lizard Cult — choose starting corner',
   chooseOutcast: 'Lizard Cult — choose the Outcast suit',
   placeRiverfolkWarrior: 'Riverfolk Company — place a warrior on the river',
-  setStartingCost: 'Riverfolk Company — set starting service costs',
+  setStartingCosts: 'Riverfolk Company — set starting service costs',
   buyServices: 'Riverfolk services — buy or decline',
 }
 
