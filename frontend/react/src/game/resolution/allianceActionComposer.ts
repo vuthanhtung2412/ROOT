@@ -26,7 +26,7 @@ type SupporterSpendDraft = {
 type AllianceDraft =
   | { type: 'idle' }
   | SupporterSpendDraft
-  | { type: 'mobilize'; cardIds: string[] }
+  | { type: 'mobilize'; cardIds: string[]; selected: string[] }
   | { type: 'train'; cardIds: string[] }
   | {
       type: 'militaryOp'
@@ -199,6 +199,23 @@ function isSupporterSpendDraft(
   return draft.type === 'revolt' || draft.type === 'spreadSympathy'
 }
 
+/** Rule: 8.5.2 Mobilize — any number of hand cards in one go, then Confirm. */
+function mobilizePickPrompt(
+  cardIds: readonly string[],
+  selectedCount: number,
+): ComposerOutcome {
+  return {
+    kind: 'incomplete',
+    prompt: {
+      message: `Mobilize — pick cards (${String(selectedCount)} chosen), Confirm when ready`,
+      highlightClearings: [],
+      enabledCardIds: [...cardIds],
+      canConfirm: selectedCount > 0,
+      canCancel: true,
+    },
+  }
+}
+
 /** Alliance birdsong/daylight/evening choice flows. */
 export function createAllianceComposerHooks(
   options?: SeatLabelOptions,
@@ -207,6 +224,7 @@ export function createAllianceComposerHooks(
   getDraft: () => AllianceDraft
   getPromptOptions: () => Array<{ label: string; value: string }>
   getSupporterPilePick: () => AllianceSupporterPilePick | null
+  getSelectedHandCardIds: () => string[]
 } {
   let draft: AllianceDraft = { type: 'idle' }
   let promptOptions: Array<{ label: string; value: string }> = []
@@ -226,13 +244,18 @@ export function createAllianceComposerHooks(
         draft = started.draft
         return started.outcome
       }
-      if (spec.type === 'mobilize' || spec.type === 'train') {
+      if (spec.type === 'mobilize') {
         const cardIds = params.cardIds ?? []
-        draft = { type: spec.type, cardIds }
+        draft = { type: 'mobilize', cardIds, selected: [] }
+        return mobilizePickPrompt(cardIds, 0)
+      }
+      if (spec.type === 'train') {
+        const cardIds = params.cardIds ?? []
+        draft = { type: 'train', cardIds }
         return {
           kind: 'incomplete',
           prompt: {
-            message: `${spec.type === 'mobilize' ? 'Mobilize' : 'Train'} — pick card`,
+            message: 'Train — pick card',
             highlightClearings: [],
             enabledCardIds: cardIds,
             canConfirm: false,
@@ -403,13 +426,16 @@ export function createAllianceComposerHooks(
         draft = { ...draft, selected }
         return supporterPickPrompt(clearingId, draft.cost, selected.length)
       }
-      if (
-        (draft.type === 'mobilize' || draft.type === 'train') &&
-        draft.cardIds.includes(cardId)
-      ) {
-        const type = draft.type
+      if (draft.type === 'mobilize' && draft.cardIds.includes(cardId)) {
+        const selected = draft.selected.includes(cardId)
+          ? draft.selected.filter((id) => id !== cardId)
+          : [...draft.selected, cardId]
+        draft = { ...draft, selected }
+        return mobilizePickPrompt(draft.cardIds, selected.length)
+      }
+      if (draft.type === 'train' && draft.cardIds.includes(cardId)) {
         draft = { type: 'idle' }
-        return { kind: 'ready', action: { type, cardId } }
+        return { kind: 'ready', action: { type: 'train', cardId } }
       }
       return null
     },
@@ -485,6 +511,14 @@ export function createAllianceComposerHooks(
     },
 
     confirm: (): ComposerOutcome | null => {
+      if (draft.type === 'mobilize') {
+        if (draft.selected.length === 0) {
+          return null
+        }
+        const cardIds = draft.selected
+        draft = { type: 'idle' }
+        return { kind: 'ready', action: { type: 'mobilize', cardIds } }
+      }
       if (
         !isSupporterSpendDraft(draft) ||
         draft.clearing === null ||
@@ -516,6 +550,8 @@ export function createAllianceComposerHooks(
     hooks,
     getDraft: (): AllianceDraft => draft,
     getPromptOptions: (): Array<{ label: string; value: string }> => promptOptions,
+    getSelectedHandCardIds: (): string[] =>
+      draft.type === 'mobilize' ? draft.selected : [],
     getSupporterPilePick: (): AllianceSupporterPilePick | null => {
       if (!isSupporterSpendDraft(draft) || draft.clearing === null) {
         return null

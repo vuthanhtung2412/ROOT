@@ -180,6 +180,53 @@ describe('allianceActionComposer spreadSympathy', () => {
   })
 })
 
+describe('allianceActionComposer mobilize', () => {
+  const HAND_CARD_IDS: string[] = ['ROOT-84#1', 'ROOT-57#1', 'ROOT-72#1']
+
+  function beginMobilize(): {
+    alliance: ReturnType<typeof createAllianceComposerHooks>
+    composer: ActionComposer
+  } {
+    const alliance = createAllianceComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(alliance.hooks)
+    composer.begin(
+      makeActionSpec({ type: 'mobilize', params: { cardIds: HAND_CARD_IDS } }),
+    )
+    return { alliance, composer }
+  }
+
+  it('Rule: 8.5.2 Mobilize — picks any number of cards, confirm submits them all', () => {
+    const { alliance, composer } = beginMobilize()
+
+    composer.chooseCard('ROOT-84#1')
+    const afterSecond = composer.chooseCard('ROOT-72#1')
+    expect(afterSecond).toMatchObject({
+      kind: 'incomplete',
+      prompt: { canConfirm: true, enabledCardIds: HAND_CARD_IDS },
+    })
+    expect(alliance.getSelectedHandCardIds()).toEqual(['ROOT-84#1', 'ROOT-72#1'])
+
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: { type: 'mobilize', cardIds: ['ROOT-84#1', 'ROOT-72#1'] },
+    })
+    expect(alliance.getSelectedHandCardIds()).toEqual([])
+  })
+
+  it('a second tap takes the card back; nothing chosen cannot confirm', () => {
+    const { alliance, composer } = beginMobilize()
+
+    composer.chooseCard('ROOT-57#1')
+    const afterUntap = composer.chooseCard('ROOT-57#1')
+    expect(afterUntap).toMatchObject({
+      kind: 'incomplete',
+      prompt: { canConfirm: false },
+    })
+    expect(alliance.getSelectedHandCardIds()).toEqual([])
+  })
+})
+
 describe('allianceActionComposer militaryOp move', () => {
   const ORIGIN_CLEARING = 7
   const DESTINATION_CLEARING = 3

@@ -501,7 +501,9 @@ export class ReactGameController {
       ],
       getDiscardSelection: () => {
         const discardDraft = this.marquiseCards.getDraft()
-        return discardDraft.type === 'discardMany' ? discardDraft.selected : []
+        return discardDraft.type === 'discardMany'
+          ? discardDraft.selected
+          : this.allianceComposer.getSelectedHandCardIds()
       },
       getSupporterPilePick: () =>
         this.allianceComposer.getSupporterPilePick() ??

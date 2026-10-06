@@ -208,7 +208,7 @@ export type Action =
     }
   | { type: 'revolt'; clearing: ClearingId; supporterIds: string[] }
   | { type: 'spreadSympathy'; clearing: ClearingId; supporterIds: string[] }
-  | { type: 'mobilize'; cardId: string }
+  | { type: 'mobilize'; cardIds: string[] }
   | { type: 'train'; cardId: string }
   | {
       type: 'militaryOp'

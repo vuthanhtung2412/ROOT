@@ -21,6 +21,10 @@ function seatForPlayerId(state: GameState, playerId: string): number | null {
 function hideSecretCard(action: Action): Action {
   switch (action.type) {
     case 'mobilize':
+      return {
+        ...action,
+        cardIds: action.cardIds.map((): string => HIDDEN_CARD_DEFINITION_ID),
+      }
     case 'aid':
       return { ...action, cardId: HIDDEN_CARD_DEFINITION_ID }
     case 'swapMeet':

@@ -393,7 +393,7 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
     case 'mobilize': {
       const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
       if (!cardId) return null
-      return { type: 'mobilize', cardId }
+      return { type: 'mobilize', cardIds: [cardId] }
     }
     case 'train': {
       const cardId = pick(readStringList(paramList(spec.params, 'cardIds')))
