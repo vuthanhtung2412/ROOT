@@ -29,20 +29,20 @@ Simplifications (say if wrong):
   1280×720 and a narrow viewport; screenshots in `tmp/ui-mockups/`.
 
 ### Commit plan
-- `docs(plan): Steam-style HUD paper kit`
+- done: `docs(plan): Steam-style HUD paper kit`
   - `PLAN.md`
-- `feat(ui): torn paper kit and Lucide icons`
+- done: `feat(ui): torn paper kit and Lucide icons`
   - `frontend/react/package.json`, `frontend/react/src/style.css`
   - `frontend/react/src/react/PaperFilters.tsx`, `frontend/react/src/react/ReactHud.tsx`
-- `feat(ui): action tray as icon medallions`
+- done: `feat(ui): action tray as icon medallions`
   - `frontend/react/src/ui/actionIcons.ts`, `frontend/react/src/ui/actionIcons.test.ts`
   - `frontend/react/src/react/ActionTray.tsx`
-  - `.agents/skills/QA/record-fe-qa-scenarios.mjs`
-- `feat(ui): turn banner as a torn paper strip`
+  - `.agents/skills/QA/record-fe-qa-scenarios.mjs`, `.agents/skills/QA/shoot-hud.mjs`
+- done: `feat(ui): turn banner as a torn paper strip`
   - `frontend/react/src/react/TurnBanner.tsx`
-- `feat(ui): battle overlay as floating portrait tiles`
+- done: `feat(ui): battle overlay as floating portrait tiles`
   - `frontend/react/src/react/BattleOverlay.tsx`, `frontend/react/src/react/BattleOverlay.css` (removed)
-- `feat(ui): option grid modal on paper`
+- done: `feat(ui): option grid modal on paper`
   - `frontend/react/src/react/OptionGridModal.tsx`
-- `feat(ui): player rail seats on paper`
+- done: `feat(ui): player rail seats on paper`
   - `frontend/react/src/react/PlayerRail.tsx`
