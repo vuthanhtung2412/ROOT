@@ -1,4 +1,9 @@
 import cardCatalog from '#assets/cardCatalog.json'
+import {
+  expansionFactionTextureKey,
+  expansionWarriorTextureKey,
+  RIVERFOLK_EXPANSION_IMAGE_ASSETS,
+} from '#assets/riverfolkExpansionAssets.ts'
 
 /** Minimal loader surface for preload helpers. */
 export type ImageAssetLoader = {
@@ -158,6 +163,10 @@ export function pieceTokenTextureKey(
 
 /** Faction icon texture key for rail / warrior stacks. */
 export function factionTextureKey(factionId: string): string {
+  const expansionKey = expansionFactionTextureKey(factionId)
+  if (expansionKey !== null) {
+    return expansionKey
+  }
   if (factionId === 'eyrie') {
     return GAME_ASSET_KEYS.factionEyrie
   }
@@ -181,7 +190,7 @@ export function warriorTokenTextureKey(factionId: string): string | null {
   if (factionId === 'alliance') {
     return GAME_ASSET_KEYS.tokenAllianceWarrior
   }
-  return null
+  return expansionWarriorTextureKey(factionId)
 }
 
 /** Alliance base token by clearing suit. */
@@ -402,6 +411,7 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
     key: GAME_ASSET_KEYS.itemTorch,
     path: 'assets/items/torch.png',
   },
+  ...RIVERFOLK_EXPANSION_IMAGE_ASSETS,
 ]
 
 export function cardImageAssets(): GameImageAsset[] {

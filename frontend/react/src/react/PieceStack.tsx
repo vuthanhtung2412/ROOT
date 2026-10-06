@@ -7,6 +7,10 @@ import {
   pieceTokenTextureKey,
   warriorTokenTextureKey,
 } from '#assets/gameAssets.ts'
+import {
+  isSuitScopedPieceType,
+  suitScopedPieceTextureKey,
+} from '#assets/riverfolkExpansionAssets.ts'
 import { fallClearingSuit } from '#game/boardLayout.ts'
 import {
   clearingHasRuin,
@@ -39,6 +43,13 @@ function textureKeyForStack(
     const suit = fallClearingSuit(clearingId) ?? 'fox'
     return allianceBaseTextureKey(suit)
   }
+  if (stack.type !== undefined && isSuitScopedPieceType(stack.type)) {
+    const suit = fallClearingSuit(clearingId) ?? 'fox'
+    const suitScopedKey = suitScopedPieceTextureKey(stack.type, suit)
+    if (suitScopedKey !== null) {
+      return suitScopedKey
+    }
+  }
   if (stack.kind === 'warrior') {
     const warriorKey = warriorTokenTextureKey(stack.factionId)
     if (warriorKey !== null) {
@@ -69,7 +80,8 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
     pieceTokenTextureKey(props.stack.kind, props.stack.type) !== null ||
     (props.stack.kind === 'warrior' &&
       warriorTokenTextureKey(props.stack.factionId) !== null) ||
-    (props.stack.kind === 'building' && props.stack.type === 'base')
+    (props.stack.kind === 'building' && props.stack.type === 'base') ||
+    isSuitScopedPieceType(props.stack.type)
   const size = usesTokenArt
     ? PIECE_DRAW.buildingIconSize
     : props.stack.kind === 'warrior'
