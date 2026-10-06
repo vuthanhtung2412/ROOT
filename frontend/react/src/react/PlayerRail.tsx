@@ -49,11 +49,12 @@ const SEAT_VICTORY_COIN_CLASS_NAME =
   'root-paper root-medallion -mt-0.5 flex size-5 items-center justify-center font-mono text-xs font-bold text-white text-shadow-outline [--root-paper-color:var(--color-gold)] md:size-6 md:text-sm'
 const SEAT_BUTTON_CLASS_NAME =
   'root-paper root-medallion root-paper-press m-0 flex size-7 items-center justify-center p-0 text-sm text-ink [--root-paper-color:var(--color-parchment-deep)] md:size-8 md:text-base'
-/** Right corners, bottom first: crafted cards, then the faction's own button. */
-const SEAT_BUTTON_CORNER_CLASS_NAMES: readonly string[] = [
-  'absolute -right-2.5 -bottom-2.5 inline-flex',
-  'absolute -top-2.5 -right-2.5 inline-flex',
-]
+/**
+ * Right edge, stacked from the bottom corner up: crafted cards first, then
+ * the faction's own buttons above it.
+ */
+const SEAT_BUTTON_STACK_CLASS_NAME =
+  'absolute -right-2.5 -bottom-2.5 flex flex-col-reverse items-center gap-0.5'
 
 type SeatButtonView = {
   label: string
@@ -65,11 +66,10 @@ type SeatButtonView = {
 
 function SeatButton(props: {
   button: SeatButtonView
-  cornerClassName: string
 }): JSX.Element {
   const button: SeatButtonView = props.button
   return (
-    <Tooltip label={button.label} className={props.cornerClassName}>
+    <Tooltip label={button.label}>
       <button
         type="button"
         className={`${button.hookClassName} ${SEAT_BUTTON_CLASS_NAME}`}
@@ -179,15 +179,11 @@ export function PlayerRail(): JSX.Element | null {
                 <LuSun />
               </span>
             ) : null}
-            {seatButtons.map((button: SeatButtonView, buttonIndex: number) => (
-              <SeatButton
-                key={button.label}
-                button={button}
-                cornerClassName={
-                  SEAT_BUTTON_CORNER_CLASS_NAMES[buttonIndex] ?? ''
-                }
-              />
-            ))}
+            <div className={SEAT_BUTTON_STACK_CLASS_NAME}>
+              {seatButtons.map((button: SeatButtonView) => (
+                <SeatButton key={button.label} button={button} />
+              ))}
+            </div>
           </div>
         )
       })}
