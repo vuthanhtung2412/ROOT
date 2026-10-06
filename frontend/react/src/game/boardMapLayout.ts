@@ -13,10 +13,12 @@ import type { ViewportLayoutMode } from '#game/viewportLayout.ts'
 /**
  * Landscape map band inside center playfield column (1-3-1 grid).
  * Side columns hold VP rail + action tray, so map may fill most of host.
+ * Height: the banner floats over the top edge and the fanned hand only
+ * peeks over the bottom edge, so the map takes nearly the full height.
  */
-export const BOARD_MAP_WIDTH_RATIO_LANDSCAPE = 0.96
-export const BOARD_MAP_HEIGHT_RATIO_LANDSCAPE = 0.82
-export const BOARD_MAP_CENTER_Y_RATIO_LANDSCAPE = 0.44
+export const BOARD_MAP_WIDTH_RATIO_LANDSCAPE = 0.98
+export const BOARD_MAP_HEIGHT_RATIO_LANDSCAPE = 0.9
+export const BOARD_MAP_CENTER_Y_RATIO_LANDSCAPE = 0.46
 
 /** Portrait: map nearly fills the native host (HUD is outside). */
 export const BOARD_MAP_WIDTH_RATIO_PORTRAIT = 0.98
