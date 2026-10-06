@@ -6,6 +6,7 @@
 |---|---|
 | Snapshot | `tmp/qa/snapshots/lizard-riverfolk-qa-run.json` |
 | Regen | `cd lib && pnpm exec tsx ../.cursor/skills/QA/make-lizard-riverfolk-qa-run.ts` |
+| Replay | `node .agents/skills/QA/replay-lizard-riverfolk-qa.mjs` — plays this plan in the UI, checks each step against `GET /game`, records `tmp/artifacts/lizard-riverfolk-qa/` |
 | Rules | `resources/rules/Law_of_Root.md` (Law 10 Lizard Cult, Law 11 Riverfolk Company) |
 | Dice | Fixed by the snapshot's rng seed (`BATTLE_DICE` in the regen script): the five battles of this plan always roll the same. Play the battles in plan order — an extra or skipped battle shifts every later roll. |
 
@@ -19,6 +20,7 @@
 4. React → **Continue loaded game** (not New Game)
 5. After each step: board + `GET /game` / `/game/log`
 6. Every **Field Hospitals** prompt the Marquise gets (steps 8, 16, 19, 37): **Decline**.
+7. The UI ends a phase by itself when **End phase** is the only action: steps 1, 2 and 20 and the first **End phase** of steps 11 and 34 need no click.
 
 **Where to look:** Cult board → **Lost Souls** frame (top card + suit tally, leading suit highlighted; click = whole pile) and the **Revealed** panel beside the board. Riverfolk board → count badge on the corner of Payments / Funds / Commitments.
 
