@@ -6,8 +6,10 @@
  * tmp/qa/snapshots/ui-improvements-qa-run.json (make-ui-improvements-qa-run.ts).
  * The snapshot replaces the game of the API it is loaded into: point the
  * script at a spare pair of servers to leave a game in progress alone, e.g.
+ * (ROOT_GAME_STORE_FILE=off keeps the spare backend off the saved game file
+ * the main backend restores from)
  *
- *   PORT=3100 pnpm --filter @root/web dev
+ *   ROOT_GAME_STORE_FILE=off PORT=3100 pnpm --filter @root/web dev
  *   ROOT_DEV_API=http://localhost:3100 pnpm --filter @root/react exec vite --port 5180 --strictPort
  *   ROOT_DEV_API=http://localhost:3100 ROOT_REACT_URL=http://localhost:5180 \
  *     node .agents/skills/QA/replay-ui-improvements-qa.mjs

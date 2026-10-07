@@ -30,9 +30,9 @@
 
 1. Regen snapshot (optional).
 2. `pnpm --filter @root/web dev` + `pnpm --filter @root/react dev`.
-   The snapshot **replaces the game** of the API it is loaded into. To leave a game in progress alone, run a spare pair and point the replay at it:
+   The snapshot **replaces the game** of the API it is loaded into. To leave a game in progress alone, run a spare pair and point the replay at it. `ROOT_GAME_STORE_FILE=off` is required: without it the spare backend loads and overwrites the same saved game file (`backend/web/.data/game-slot.json`) as the main one.
    ```bash
-   PORT=3100 pnpm --filter @root/web dev
+   ROOT_GAME_STORE_FILE=off PORT=3100 pnpm --filter @root/web dev
    ROOT_DEV_API=http://localhost:3100 pnpm --filter @root/react exec vite --port 5180 --strictPort
    ROOT_DEV_API=http://localhost:3100 ROOT_REACT_URL=http://localhost:5180 node .agents/skills/QA/replay-ui-improvements-qa.mjs
    ```
