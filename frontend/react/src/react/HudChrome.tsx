@@ -59,7 +59,7 @@ export function GameDrawer(): JSX.Element | null {
         }}
       >
         <GiCardBurn aria-hidden="true" />
-        {`Discard (${String(drawer.discardCount)})`}
+        {`Discarded pile (${String(drawer.discardCount)})`}
       </button>
     </div>
   )

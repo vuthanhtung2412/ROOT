@@ -26,7 +26,7 @@ describe('vagabondActionComposer Day Labor', () => {
     const { vagabond } = beginDayLabor()
 
     expect(vagabond.getDiscardPilePick()).toEqual({
-      title: 'Day Labor — take a card from the discard pile',
+      title: 'Day Labor — take a card from the discarded pile',
       cards: [
         { id: 'ROOT-72#1', defId: 'ROOT-72' },
         { id: 'ROOT-205#1', defId: 'ROOT-205' },
