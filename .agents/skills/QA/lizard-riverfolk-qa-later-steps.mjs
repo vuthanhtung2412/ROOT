@@ -197,9 +197,9 @@ export const CULT_EVENING_TO_SECOND_ROUND_STEPS = [
     play: async (ui) => {
       await ui.button('end phase')
       await ui.button('end phase')
-      await ui.waitForButton('no service')
+      await ui.waitForButton('skip service')
       const before = await ui.lookAtBoard('lizard', readLostSouls)
-      await ui.button('no service')
+      await ui.button('skip service')
       await ui.waitForButton('convert')
       const after = await ui.lookAtBoard('lizard', readLostSouls)
       return { before, after }

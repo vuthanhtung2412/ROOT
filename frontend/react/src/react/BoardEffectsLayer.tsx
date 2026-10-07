@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState, type JSX, type RefObject } from 'react'
-import { factionTextureKey, imagePathForAssetKey } from '#assets/gameAssets.ts'
 import type {
-  BoardBattleEffect,
   BoardEffect,
   BoardEffectBatch,
   BoardMoveEffect,
@@ -9,21 +7,23 @@ import type {
   BoardRemoveEffect,
   BoardStackSlot,
 } from '#game/boardEffects.ts'
+import {
+  batchLifetime,
+  EFFECT_LIFETIME_MS,
+  MOVE_LIFETIME_MS,
+  MOVE_SLIDE_MS,
+  moveStartDelay,
+  placeStartDelay,
+} from '#react/boardEffectTiming.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import { PieceStack, type ClearingHitCenter } from '#react/PieceStack.tsx'
 import { stackOffsets, type PieceStackViewModel } from '#ui/PieceView.ts'
 
-/** How long an effect stays on the map, slide and fade included. */
-const EFFECT_LIFETIME_MS = 2800
-const MOVE_SLIDE_MS = 700
-const MOVE_LIFETIME_MS = 1200
 const MOVE_TRAIL_WIDTH_PIXELS = 2
 const MOVE_TRAIL_OPACITY = 0.9
 /** Dark line under the trail so it reads on any part of the map. */
 const MOVE_TRAIL_BACKING_WIDTH_PIXELS = 5
 const MOVE_TRAIL_BACKING_OPACITY = 0.55
-const PULSE_MS = 900
-const PULSE_REPEAT_COUNT = 3
 /** Part of the lifetime an effect stays fully visible before it fades. */
 const FADE_START_OFFSET = 0.75
 const POP_MS = 450
@@ -32,7 +32,6 @@ const SIGNED_DRIFT_PIXELS = 26
 const PLACED_COLOR = '#2f8f4e'
 const FALLBACK_FACTION_ID = 'marquise'
 const REMOVED_COLOR = '#b3261e'
-const BATTLE_COLOR = '#d43a2a'
 
 /** Above the piece art (z-3), never behind it. */
 const SIGN_BADGE_BASE_CLASS_NAME =
@@ -41,17 +40,22 @@ const SIGN_BADGE_BASE_CLASS_NAME =
 const PLACED_SIGN_BADGE_CLASS_NAME = `${SIGN_BADGE_BASE_CLASS_NAME} -top-4 left-2.5 size-3 text-[10px]`
 /** Off the top-left corner of the removed piece. */
 const REMOVED_SIGN_BADGE_CLASS_NAME = `${SIGN_BADGE_BASE_CLASS_NAME} -top-6 -left-6 size-4 text-[13px]`
-const BATTLE_BADGE_CLASS_NAME =
-  'absolute flex -translate-x-1/2 -translate-y-1/2 flex-row items-center gap-1 rounded bg-ink-deep/85 px-1.5 py-0.5 text-[16px] text-white'
 
 type ActiveEffect = {
   key: string
   effect: BoardEffect
 }
 
+export type BoardEffectPosition = {
+  left: number
+  top: number
+}
+
 type EffectContext = {
   factions: readonly string[]
   hitCenters: ReadonlyMap<number, ClearingHitCenter>
+  /** Where a pawn stands in each forest (forest index → position). */
+  forestCenters: ReadonlyMap<number, BoardEffectPosition>
 }
 
 function colorToCss(color: number): string {
@@ -118,38 +122,42 @@ const FADE_OUT_OPTIONS: KeyframeAnimationOptions = {
   fill: 'forwards',
 }
 /** A move waiting for the moves before it stays out of sight. */
-const WAITING_MOVE_CLASS_NAME = 'absolute inset-0 opacity-0'
-const STARTED_MOVE_CLASS_NAME = 'absolute inset-0'
+const WAITING_EFFECT_CLASS_NAME = 'absolute inset-0 opacity-0'
+const STARTED_EFFECT_CLASS_NAME = 'absolute inset-0'
 
-/** When a move starts: once every earlier move of its update has landed. */
-function moveStartDelay(effect: BoardMoveEffect): number {
-  return effect.step * MOVE_SLIDE_MS
+
+type MoveEnd = {
+  clearing: number
+  /** Set when the end is a forest: the clearing is then unused. */
+  forest: number | undefined
+  slot: BoardStackSlot
 }
 
-/** How long a batch stays on the map: long enough for its last move. */
-function batchLifetime(batch: BoardEffectBatch): number {
-  return batch.effects.reduce(
-    (lifetime: number, effect: BoardEffect): number =>
-      effect.kind === 'move'
-        ? Math.max(lifetime, moveStartDelay(effect) + MOVE_LIFETIME_MS)
-        : lifetime,
-    EFFECT_LIFETIME_MS,
-  )
+/** Where one end of a move is drawn: a forest centre, else a clearing stack. */
+function moveEndPosition(
+  context: EffectContext,
+  end: MoveEnd,
+): BoardEffectPosition | undefined {
+  if (end.forest !== undefined) {
+    return context.forestCenters.get(end.forest)
+  }
+  const center = context.hitCenters.get(end.clearing)
+  return center === undefined ? undefined : stackPosition(center, end.slot)
 }
 
 function MoveEffectView(
   props: EffectContext & { effect: BoardMoveEffect },
 ): JSX.Element | null {
-  const fromCenter = props.hitCenters.get(props.effect.from)
-  const toCenter = props.hitCenters.get(props.effect.to)
-  const from =
-    fromCenter === undefined
-      ? undefined
-      : stackPosition(fromCenter, props.effect.fromSlot)
-  const to =
-    toCenter === undefined
-      ? undefined
-      : stackPosition(toCenter, props.effect.toSlot)
+  const from = moveEndPosition(props, {
+    clearing: props.effect.from,
+    forest: props.effect.fromForest,
+    slot: props.effect.fromSlot,
+  })
+  const to = moveEndPosition(props, {
+    clearing: props.effect.to,
+    forest: props.effect.toForest,
+    slot: props.effect.toSlot,
+  })
   const deltaX = (to?.left ?? 0) - (from?.left ?? 0)
   const deltaY = (to?.top ?? 0) - (from?.top ?? 0)
   const delay = moveStartDelay(props.effect)
@@ -175,7 +183,9 @@ function MoveEffectView(
   return (
     <div
       ref={fadeRef}
-      className={delay > 0 ? WAITING_MOVE_CLASS_NAME : STARTED_MOVE_CLASS_NAME}
+      className={
+        delay > 0 ? WAITING_EFFECT_CLASS_NAME : STARTED_EFFECT_CLASS_NAME
+      }
     >
       <svg
         className="absolute inset-0 overflow-visible"
@@ -225,20 +235,29 @@ function PlaceEffectView(
   props: EffectContext & { effect: BoardPlaceEffect },
 ): JSX.Element | null {
   const center = props.hitCenters.get(props.effect.clearing)
-  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, FADE_OUT_OPTIONS)
+  const delay = placeStartDelay(props.effect)
+  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, {
+    ...FADE_OUT_OPTIONS,
+    delay,
+  })
   const popRef = useKeyframes(
     [
       { transform: 'scale(0)' },
       { transform: 'scale(1.5)', offset: 0.7 },
       { transform: 'scale(1.2)' },
     ],
-    { duration: POP_MS, easing: 'ease-out', fill: 'forwards' },
+    { duration: POP_MS, delay, easing: 'ease-out', fill: 'forwards' },
   )
   if (center === undefined) {
     return null
   }
   return (
-    <div ref={fadeRef} className="absolute inset-0">
+    <div
+      ref={fadeRef}
+      className={
+        delay > 0 ? WAITING_EFFECT_CLASS_NAME : STARTED_EFFECT_CLASS_NAME
+      }
+    >
       <div
         ref={popRef}
         className="absolute"
@@ -307,67 +326,6 @@ function RemoveEffectView(
   )
 }
 
-function FactionIcon(props: {
-  seat: number
-  factions: readonly string[]
-}): JSX.Element | null {
-  const factionId = props.factions[props.seat] ?? FALLBACK_FACTION_ID
-  const imagePath = imagePathForAssetKey(factionTextureKey(factionId))
-  if (imagePath === null) {
-    return null
-  }
-  return (
-    <img
-      className="block size-6 object-contain select-none"
-      src={imagePath}
-      alt={factionId}
-      draggable={false}
-    />
-  )
-}
-
-function BattleEffectView(
-  props: EffectContext & { effect: BoardBattleEffect },
-): JSX.Element | null {
-  const center = props.hitCenters.get(props.effect.clearing)
-  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, FADE_OUT_OPTIONS)
-  const pulseRef = useKeyframes(
-    [
-      { transform: 'scale(0.85)', opacity: 1 },
-      { transform: 'scale(1.3)', opacity: 0.15 },
-    ],
-    { duration: PULSE_MS, iterations: PULSE_REPEAT_COUNT, easing: 'ease-out' },
-  )
-  if (center === undefined) {
-    return null
-  }
-  const diameter = center.radius * 2
-  return (
-    <div ref={fadeRef} className="absolute inset-0">
-      <div
-        ref={pulseRef}
-        className="absolute rounded-full border-solid"
-        style={{
-          left: center.centerX - center.radius,
-          top: center.centerY - center.radius,
-          width: diameter,
-          height: diameter,
-          borderWidth: 5,
-          borderColor: BATTLE_COLOR,
-        }}
-      />
-      <div
-        className={BATTLE_BADGE_CLASS_NAME}
-        style={{ left: center.centerX, top: center.centerY }}
-      >
-        <FactionIcon seat={props.effect.attacker} factions={props.factions} />
-        ⚔
-        <FactionIcon seat={props.effect.defender} factions={props.factions} />
-      </div>
-    </div>
-  )
-}
-
 function activate(batch: BoardEffectBatch): ActiveEffect[] {
   return batch.effects.map(
     (effect: BoardEffect, index: number): ActiveEffect => ({
@@ -383,7 +341,7 @@ export type BoardEffectsLayerProps = EffectContext & {
 
 /**
  * Plays what the last server update did on the map: pieces slide along their
- * move, placed pieces pop in, removed pieces drift away, a battle pulses.
+ * move, placed pieces pop in, removed pieces drift away.
  */
 export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
   const [active, setActive] = useState<ActiveEffect[]>([])
@@ -426,6 +384,7 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
         const context: EffectContext = {
           factions: props.factions,
           hitCenters: props.hitCenters,
+          forestCenters: props.forestCenters,
         }
         if (entry.effect.kind === 'move') {
           return (
@@ -442,9 +401,8 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
             <RemoveEffectView key={entry.key} {...context} effect={entry.effect} />
           )
         }
-        return (
-          <BattleEffectView key={entry.key} {...context} effect={entry.effect} />
-        )
+        // A battle is told by the badge on its clearing (BattleClearingBadge).
+        return null
       })}
     </div>
   )

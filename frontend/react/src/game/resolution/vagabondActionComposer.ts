@@ -14,7 +14,7 @@ import {
 } from '#game/resolution/allianceActionComposer.ts'
 import type { TurnBannerOption, TurnBannerOptionItem } from '#ui/TurnBanner.ts'
 
-const DAY_LABOR_PROMPT = 'Day Labor — take a card from the discard pile'
+const DAY_LABOR_PROMPT = 'Day Labor — take a card from the discarded pile'
 
 type VagabondDraft =
   | { type: 'idle' }

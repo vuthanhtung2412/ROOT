@@ -9,6 +9,11 @@ import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { TurnBannerComposerView, TurnBannerViewModel } from '#ui/TurnBanner.ts'
 import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
+import type { BattleMark } from '#game/battleOverlayModel.ts'
+import {
+  EMPTY_CARD_FLIGHT_BATCH,
+  type CardFlightBatch,
+} from '#game/cardFlights.ts'
 import type { SetupCardPickKind } from '#ui/setupCardPick.ts'
 
 export type HudListener = () => void
@@ -147,6 +152,10 @@ export type HudState = {
   actionTray: ActionTrayHudState
   turnBanner: TurnBannerHudState
   battleOverlay: BattleOverlayViewModel | null
+  /** Sides shown on the clearing of the battle being resolved. */
+  battleMark: BattleMark | null
+  /** Crafted / revealed cards flying out of the rail (last server update). */
+  cardFlights: CardFlightBatch
   cardHand: CardHandHudState
   statusMessage: StatusMessageHudState
   shell: HudShell
@@ -170,6 +179,8 @@ const INITIAL_HUD_STATE: HudState = {
     composer: null,
   },
   battleOverlay: null,
+  battleMark: null,
+  cardFlights: EMPTY_CARD_FLIGHT_BATCH,
   cardHand: null,
   statusMessage: null,
   shell: 'boot',

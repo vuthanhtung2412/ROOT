@@ -137,9 +137,9 @@ export class GameSceneModals {
     }
     const cards = state.deck?.discard ?? []
     showCardPile({
-      title: `Discard pile (${String(cards.length)})`,
+      title: `Discarded pile (${String(cards.length)})`,
       cards,
-      emptyMessage: 'Discard pile empty',
+      emptyMessage: 'Discarded pile empty',
     })
   }
 

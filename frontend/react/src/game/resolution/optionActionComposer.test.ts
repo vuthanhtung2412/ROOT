@@ -215,6 +215,11 @@ describe('optionActionComposer pending events', () => {
         params: { suits: ['fox', 'rabbit', 'mouse'] },
       }),
     )
+    expect(outcast.option.getPromptOptions()).toEqual([
+      { label: 'fox', value: 'choice:0', suit: 'fox' },
+      { label: 'rabbit', value: 'choice:1', suit: 'rabbit' },
+      { label: 'mouse', value: 'choice:2', suit: 'mouse' },
+    ])
     expect(outcast.composer.chooseColumn('choice:1')).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', suit: 'rabbit' },
@@ -334,7 +339,7 @@ describe('expansion tray labels and banner prompts', () => {
         makeActionSpec({ type: 'resolveEvent', params: { decline: [true] } }),
         pending,
       ),
-    ).toBe('no service')
+    ).toBe('skip service')
     expect(formatActionLabel(makeActionSpec({ type: 'ritualScore' }))).toBe(
       'score',
     )

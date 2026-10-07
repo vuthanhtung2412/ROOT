@@ -85,6 +85,30 @@ export function buildFinishedBattleOverlayViewModel(
   }
 }
 
+/** The two sides of a battle, worn by its clearing for as long as it lasts. */
+export type BattleMark = {
+  clearing: number
+  attackerFaction: string
+  defenderFaction: string
+}
+
+type BattleSides = {
+  clearing: number
+  attacker: number
+  defender: number
+}
+
+export function buildBattleMark(
+  state: GameState,
+  battle: BattleSides,
+): BattleMark {
+  return {
+    clearing: battle.clearing,
+    attackerFaction: factionLabel(state, battle.attacker),
+    defenderFaction: factionLabel(state, battle.defender),
+  }
+}
+
 export function readBattleClearingId(state: GameState): number | null {
   const battle = readBattlePending(state.pending[0])
   return battle?.clearing ?? null
@@ -150,6 +174,88 @@ function detectFinishedBattleOutcome(
     rolls: tracker.rolls,
     hits: { ...tracker.peakHits },
   }
+}
+
+/** A battle is waiting anywhere in the pending queue, not only on top. */
+export function hasPendingBattle(state: GameState): boolean {
+  return state.pending.some(
+    (event: unknown): boolean => readBattlePending(event) !== null,
+  )
+}
+
+const EVENT_LOG_ENTRY_TYPE = 'event'
+const PIECES_LOG_ENTRY_TYPE = 'pieces'
+
+function readLoggedBattle(entry: unknown): BattlePending | null {
+  if (typeof entry !== 'object' || entry === null) {
+    return null
+  }
+  if (Reflect.get(entry, 't') !== EVENT_LOG_ENTRY_TYPE) {
+    return null
+  }
+  return readBattlePending(Reflect.get(entry, 'event'))
+}
+
+/** Pieces of a seat a `pieces` log entry removed from a clearing. */
+function removedPieceCount(
+  entry: unknown,
+  clearing: number,
+  owner: number,
+): number {
+  if (typeof entry !== 'object' || entry === null) {
+    return 0
+  }
+  if (
+    Reflect.get(entry, 't') !== PIECES_LOG_ENTRY_TYPE ||
+    Reflect.get(entry, 'clearing') !== clearing
+  ) {
+    return 0
+  }
+  const removed: unknown = Reflect.get(entry, 'removed')
+  if (!Array.isArray(removed)) {
+    return 0
+  }
+  return removed.filter(
+    (piece: unknown): boolean =>
+      typeof piece === 'object' &&
+      piece !== null &&
+      Reflect.get(piece, 'owner') === owner,
+  ).length
+}
+
+/**
+ * Result of the last rolled battle the log entries tell; null without one.
+ * A battle nobody had to answer (no ambush, no piece to choose) opens and
+ * ends inside one server update: it is never pending here, only logged.
+ * Its hits are back to zero once taken, so removed pieces count as hits.
+ */
+export function finishedBattleOutcomeFromLog(
+  entries: readonly unknown[],
+): FinishedBattleOutcome | null {
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const battle = readLoggedBattle(entries[index])
+    if (battle === null || battle.rolls === null) {
+      continue
+    }
+    const later = entries.slice(index + 1)
+    const removedOf = (owner: number): number =>
+      later.reduce(
+        (count: number, entry: unknown): number =>
+          count + removedPieceCount(entry, battle.clearing, owner),
+        0,
+      )
+    return {
+      clearing: battle.clearing,
+      attacker: battle.attacker,
+      defender: battle.defender,
+      rolls: battle.rolls,
+      hits: {
+        attacker: Math.max(battle.hits.attacker, removedOf(battle.defender)),
+        defender: Math.max(battle.hits.defender, removedOf(battle.attacker)),
+      },
+    }
+  }
+  return null
 }
 
 function factionLabel(state: GameState, seat: number): string {

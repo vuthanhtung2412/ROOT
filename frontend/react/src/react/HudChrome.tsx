@@ -1,5 +1,6 @@
 import { useSyncExternalStore, type JSX } from 'react'
-import { LuFlag, LuLayers } from 'react-icons/lu'
+import { GiCardBurn } from 'react-icons/gi'
+import { LuFlag } from 'react-icons/lu'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -57,8 +58,8 @@ export function GameDrawer(): JSX.Element | null {
           callbacks.onOpenDiscardPile()
         }}
       >
-        <LuLayers aria-hidden="true" />
-        {`Discard (${String(drawer.discardCount)})`}
+        <GiCardBurn aria-hidden="true" />
+        {`Discarded (${String(drawer.discardCount)})`}
       </button>
     </div>
   )

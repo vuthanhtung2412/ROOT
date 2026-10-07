@@ -1,8 +1,10 @@
 import type { JSX } from 'react'
 import { ActionTray } from '#react/ActionTray.tsx'
+import { BattleClearingBadge } from '#react/BattleClearingBadge.tsx'
 import { BattleOverlay } from '#react/BattleOverlay.tsx'
 import { BootOverlay } from '#react/BootOverlay.tsx'
 import { CardDetailOverlay } from '#react/CardDetailOverlay.tsx'
+import { CardFlightLayer } from '#react/CardFlightLayer.tsx'
 import {
   CardPileModal,
   CompletedQuestsModal,
@@ -31,7 +33,9 @@ export function ReactHud(): JSX.Element {
       <MenuOverlay />
       <TurnBanner />
       <BattleOverlay />
+      <BattleClearingBadge />
       <PlayerRail />
+      <CardFlightLayer />
       <ActionTray />
       <CardHand />
       <StatusMessage />

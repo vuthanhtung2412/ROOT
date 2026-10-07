@@ -83,18 +83,28 @@ describe('marquiseActionComposer cards', () => {
     composer.begin(
       makeActionSpec({ type: 'discard', params: { cardIds: SEVEN_CARD_HAND } }),
     )
-    composer.chooseCard('a')
+    const afterFirst = composer.chooseCard('a')
+    // Still short: every card of the hand can be picked.
+    expect(afterFirst).toMatchObject({
+      prompt: { enabledCardIds: SEVEN_CARD_HAND, canConfirm: false },
+    })
     composer.chooseCard('b')
 
     const afterThird = composer.chooseCard('c')
 
+    // Enough picked: only the picked cards stay lit, the rest dim.
     expect(afterThird).toMatchObject({
       kind: 'incomplete',
-      prompt: { canConfirm: true },
+      prompt: { canConfirm: true, enabledCardIds: ['a', 'b'] },
     })
+    // Putting one back lights the whole hand again.
+    expect(composer.chooseCard('a')).toMatchObject({
+      prompt: { enabledCardIds: SEVEN_CARD_HAND, canConfirm: false },
+    })
+    composer.chooseCard('a')
     expect(composer.confirm()).toEqual({
       kind: 'ready',
-      action: { type: 'discard', cardIds: ['a', 'b'] },
+      action: { type: 'discard', cardIds: ['b', 'a'] },
     })
   })
 

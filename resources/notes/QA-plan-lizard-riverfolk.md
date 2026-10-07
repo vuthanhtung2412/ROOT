@@ -123,7 +123,7 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | # | Do | Expect | Hits | ☐ |
 |---|----|--------|------|---|
 | 13 | **buy service** → Hand Card → Birdy Bindle from the shown Riverfolk hand | Card → Cult hand; 1 Cult warrior → Payments; prompt **stays open** (2 services: post on 4 holds Cult pieces) | **R12** **R15** | ☐ |
-| 14 | Before answering, open the Cult board: Lost Souls tally shows **fox** highlighted (4 fox). Then **no service** | Outcast adjusts automatically: marker → **fox**, Outcast side; Lost Souls emptied (printed art shows, tally all 0); bird Dominance available | **L1** **L2** | ☐ |
+| 14 | Before answering, open the Cult board: Lost Souls tally shows **fox** highlighted (4 fox). Then **skip service** | Outcast adjusts automatically: marker → **fox**, Outcast side; Lost Souls emptied (printed art shows, tally all 0); bird Dominance available | **L1** **L2** | ☐ |
 | 15 | **convert** → clearing **7** → Riverfolk | Only fox clearings offered. 7 = 3 Cult / 1 Riverfolk / 2 Cat; acolytes 9 → 7 | **L5** | ☐ |
 | 16 | **crusade: battle** → clearing **7** → pick **Marquise** | Must choose Cat or Riverfolk; acolytes 7 → 5; dice 1 / 0 → Cat removes 1 warrior, Cult loses none (7 = 3 Cult / 1 Riverfolk / 1 Cat) | **L3** | ☐ |
 | 17 | **sanctify** → clearing **5** | Sawmill gone, garden placed; **+1 VP**; acolytes 5 → 2; fox gardens on map = 2 | **L6** | ☐ |
@@ -166,7 +166,7 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 |---|----|--------|------|---|
 | 40 | Riverfolk Birdsong | **No** Protectionism (Payments held 1 own + 1 Cult + 4 Cat); 0 VP (1 fund); Funds = **12** (1 + 6 Payments + 3 Committed + 2 craft spaces) | **R1** **R2** **R3** | ☐ |
 | 41 | **End phase** through to Cult | Discard nothing | | ☐ |
-| 42 | Cult board first: Lost Souls tally highlights **fox** (3 fox). Then **no service** | Fox leads and is already Outcast → marker flips to **Hated** | **L16** | ☐ |
+| 42 | Cult board first: Lost Souls tally highlights **fox** (3 fox). Then **skip service** | Fox leads and is already Outcast → marker flips to **Hated** | **L16** | ☐ |
 | 43 | **convert** any offered warrior | Acolytes **3 → 2** — cost 1, not 2 (Hated discount) | **L16** | ☐ |
 
 ### Part 0 — Setup smoke (separate **New Game**, any time)

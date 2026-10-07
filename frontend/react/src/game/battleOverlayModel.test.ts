@@ -4,6 +4,7 @@ import {
   BATTLE_OVER_MESSAGE,
   buildBattleOverlayViewModel,
   buildFinishedBattleOverlayViewModel,
+  finishedBattleOutcomeFromLog,
   readBattleClearingId,
   updateBattleTracker,
   ZERO_HIT_BATTLE_MESSAGE,
@@ -208,6 +209,59 @@ describe('buildFinishedBattleOverlayViewModel', () => {
     expect(view.outcomeMessage).toBe(BATTLE_OVER_MESSAGE)
     expect(view.rolls).toEqual([3, 1])
     expect(view.hits).toEqual({ attacker: 2, defender: 1 })
+  })
+})
+
+describe('finishedBattleOutcomeFromLog', () => {
+  const ATTACKER_SEAT = 0
+  const DEFENDER_SEAT = 1
+  const BATTLE_CLEARING = 3
+
+  function loggedBattle(rolls: [number, number] | undefined): unknown {
+    return {
+      t: 'event',
+      event: {
+        type: 'battle',
+        clearing: BATTLE_CLEARING,
+        stage: 'removeAttacker',
+        attacker: ATTACKER_SEAT,
+        defender: DEFENDER_SEAT,
+        rolls,
+        // Hits are back to zero once the pieces were taken.
+        hits: { attacker: 0, defender: 0 },
+      },
+    }
+  }
+
+  it('counts the pieces removed after the roll as the hits', () => {
+    const outcome = finishedBattleOutcomeFromLog([
+      loggedBattle([2, 1]),
+      {
+        t: 'pieces',
+        clearing: BATTLE_CLEARING,
+        removed: [
+          { id: 'd1', kind: 'warrior', owner: DEFENDER_SEAT },
+          { id: 'd2', kind: 'warrior', owner: DEFENDER_SEAT },
+        ],
+      },
+      {
+        t: 'pieces',
+        clearing: BATTLE_CLEARING,
+        removed: [{ id: 'a1', kind: 'warrior', owner: ATTACKER_SEAT }],
+      },
+    ])
+    expect(outcome).toEqual({
+      clearing: BATTLE_CLEARING,
+      attacker: ATTACKER_SEAT,
+      defender: DEFENDER_SEAT,
+      rolls: [2, 1],
+      hits: { attacker: 2, defender: 1 },
+    })
+  })
+
+  it('is null without a rolled battle', () => {
+    expect(finishedBattleOutcomeFromLog([{ t: 'start' }])).toBeNull()
+    expect(finishedBattleOutcomeFromLog([loggedBattle(undefined)])).toBeNull()
   })
 })
 

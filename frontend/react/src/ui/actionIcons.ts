@@ -1,4 +1,5 @@
 import type { IconType } from 'react-icons'
+import { GiCardDiscard } from 'react-icons/gi'
 import {
   LuAnvil,
   LuAxe,
@@ -63,6 +64,7 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   // Turn control
   endPhase: LuPlay,
   eveningDraw: LuLayers,
+  discard: GiCardDiscard,
   spendBird: LuBird,
   // Marquise de Cat
   overwork: LuAxe,

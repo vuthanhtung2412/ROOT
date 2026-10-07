@@ -284,7 +284,7 @@ export const RIVERFOLK_TURN_TO_CULT_DAYLIGHT_STEPS = [
     title: '14 · Lost Souls: fox leads → Outcast becomes fox (L1 L2)',
     play: async (ui) => {
       const before = await ui.lookAtBoard('lizard', readLostSouls)
-      await ui.button('no service')
+      await ui.button('skip service')
       await ui.waitForButton('convert')
       const after = await ui.lookAtBoard('lizard', readLostSouls)
       return { before, after }

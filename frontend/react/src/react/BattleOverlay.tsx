@@ -1,10 +1,7 @@
 import { useSyncExternalStore, type JSX } from 'react'
 import { GiBrokenShield } from 'react-icons/gi'
 import { LuShield, LuSword, LuSwords } from 'react-icons/lu'
-import {
-  factionTextureKey,
-  imagePathForAssetKey,
-} from '#assets/gameAssets.ts'
+import { factionPortraitPath } from '#assets/factionPortraits.ts'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -40,7 +37,7 @@ const SIDES_CLASS_NAME =
 const SIDE_CLASS_NAME = 'battle-overlay__side flex flex-col items-center gap-3'
 /** Portrait tile: the paper takes the faction tint from the text colour. */
 const PORTRAIT_TILE_CLASS_NAME =
-  'root-paper relative box-border flex size-24 items-center justify-center p-2.5 [--root-paper-color:currentColor] md:size-32'
+  'root-paper relative box-border flex size-24 items-center justify-center p-1.5 [--root-paper-color:currentColor] md:size-32'
 /** Die on the tile's inner bottom corner, leaning toward the clearing mark. */
 const DIE_CLASS_NAME =
   'battle-overlay__die root-paper root-paper-fine absolute -bottom-5 z-1 flex size-11 items-center justify-center font-mono text-3xl font-bold text-ink [--root-paper-color:var(--color-paper-bright)] md:size-14 md:text-4xl'
@@ -65,7 +62,7 @@ const HIT_CLASS_NAME =
 const STRAP_CLASS_NAME =
   'battle-overlay__prompt battle-overlay__headline root-paper m-0 -rotate-1 px-6 py-1.5 text-center font-display text-lg font-bold text-ink first-letter:uppercase md:text-2xl'
 const STRAP_FLASH_CLASS_NAME = '[--root-paper-color:var(--color-gold)]'
-/** Faction colour softened toward parchment so the head icon stays readable. */
+/** Faction colour softened toward parchment so the head art stays readable. */
 const PORTRAIT_TINT_PERCENT = 55
 
 type BattleSideView = {
@@ -167,9 +164,7 @@ export function BattleOverlay(): JSX.Element | null {
 function BattleSide(props: { side: BattleSideView }): JSX.Element {
   const side: BattleSideView = props.side
   const waiting: boolean = side.roll === null
-  const headPath: string | null = imagePathForAssetKey(
-    factionTextureKey(side.faction),
-  )
+  const headPath: string | null = factionPortraitPath(side.faction)
   const hitMarks: readonly number[] = Array.from(
     { length: side.hitsTaken },
     (_: undefined, index: number): number => index,
@@ -196,7 +191,7 @@ function BattleSide(props: { side: BattleSideView }): JSX.Element {
       >
         {headPath !== null ? (
           <img
-            className="size-full object-contain"
+            className="size-full object-cover"
             src={headPath}
             alt={side.faction}
             draggable={false}

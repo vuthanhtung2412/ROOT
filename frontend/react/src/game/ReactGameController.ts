@@ -17,7 +17,18 @@ import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
 import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
 import { GameSceneModals } from '#game/gameSceneModals.ts'
-import { patchHud, resetHud, setHudCallbacks } from '#game/hudStore.ts'
+import {
+  getHudSnapshot,
+  patchHud,
+  resetHud,
+  setHudCallbacks,
+} from '#game/hudStore.ts'
+import {
+  boughtCardFlights,
+  cardFlightsFromLog,
+  type CardFlight,
+} from '#game/cardFlights.ts'
+import { withPawnForestMoves } from '#game/pawnForestMoves.ts'
 import { showCardDetail } from '#react/CardDetailOverlay.tsx'
 import { syncLeaderPickOverlay } from '#react/HudChrome.tsx'
 import {
@@ -54,6 +65,8 @@ import {
   boardEffectsBetween,
   EMPTY_BOARD_EFFECT_BATCH,
   logEntriesAddedSince,
+  PLACE_STEP_MS,
+  type BoardEffect,
   type BoardEffectBatch,
 } from '#game/boardEffects.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
@@ -111,12 +124,26 @@ export class ReactGameController {
   private effectState: GameState | null = null
   /** Length of the game log that came with `effectState`. */
   private effectLogLength = 0
+  /** Placed pieces not drawn yet: their placement step has not started. */
+  private readonly heldBackPieceIds = new Set<string>()
+  private readonly placementTimers = new Set<number>()
   private boardEffects: BoardEffectBatch = EMPTY_BOARD_EFFECT_BATCH
   private readonly boardListeners = new Set<BoardListener>()
 
   private readonly battleOverlayTarget: BattleOverlaySyncTarget = {
     sync: (viewModel) => {
       syncBattleOverlayView(viewModel)
+    },
+    syncMark: (mark) => {
+      // Synced on every repaint: only a change is worth a HUD update.
+      const shown = getHudSnapshot().battleMark
+      const unchanged =
+        shown?.clearing === mark?.clearing &&
+        shown?.attackerFaction === mark?.attackerFaction &&
+        shown?.defenderFaction === mark?.defenderFaction
+      if (!unchanged) {
+        patchHud({ battleMark: mark })
+      }
     },
   }
   private readonly composer = new ActionComposer()
@@ -222,6 +249,7 @@ export class ReactGameController {
       },
       () => this.battleOverlayTarget,
       () => this.latestSnapshot?.state,
+      () => this.latestSnapshot?.log ?? [],
     )
     this.battleOverlayController.setOnResultFlashEnded(() => {
       const snapshot = this.latestSnapshot
@@ -385,6 +413,7 @@ export class ReactGameController {
     this.boardFactions = null
     this.effectState = null
     this.effectLogLength = 0
+    this.releaseHeldBackPieces()
     this.boardEffects = EMPTY_BOARD_EFFECT_BATCH
     this.forestPawns = []
     this.highlightedClearingIds = []
@@ -705,11 +734,23 @@ export class ReactGameController {
     if (state === null || state === this.effectState) {
       return
     }
-    const effects = boardEffectsBetween(
+    const newLogEntries: readonly unknown[] = logEntriesAddedSince(
+      this.effectLogLength,
+      snapshot.log,
+    )
+    const effects = withPawnForestMoves(
+      boardEffectsBetween(this.effectState, state, newLogEntries),
       this.effectState,
       state,
-      logEntriesAddedSince(this.effectLogLength, snapshot.log),
     )
+    // Same guard as the board effects: nothing flies for another game.
+    if (this.effectState?.id === state.id) {
+      this.syncCardFlights([
+        ...cardFlightsFromLog(newLogEntries),
+        ...boughtCardFlights(this.effectState, state, newLogEntries),
+      ])
+    }
+    this.holdBackLaterPlacements(effects)
     this.effectState = state
     this.effectLogLength = snapshot.log.length
     if (effects.length > 0) {
@@ -718,6 +759,54 @@ export class ReactGameController {
         effects,
       }
     }
+  }
+
+  /**
+   * Pieces placed one clearing after the other (wood at each sawmill) stay
+   * off the board until their step starts, so they appear with their effect.
+   */
+  private holdBackLaterPlacements(effects: readonly BoardEffect[]): void {
+    for (const effect of effects) {
+      if (effect.kind !== 'place' || effect.step === 0) {
+        continue
+      }
+      const pieceIds: readonly string[] = effect.pieceIds
+      for (const pieceId of pieceIds) {
+        this.heldBackPieceIds.add(pieceId)
+      }
+      const timer = window.setTimeout(() => {
+        this.placementTimers.delete(timer)
+        for (const pieceId of pieceIds) {
+          this.heldBackPieceIds.delete(pieceId)
+        }
+        if (this.latestSnapshot !== null) {
+          this.syncBoardPieces(this.latestSnapshot)
+        }
+      }, effect.step * PLACE_STEP_MS)
+      this.placementTimers.add(timer)
+    }
+  }
+
+  /** Every held-back piece shows at once (the game screen is closing). */
+  private releaseHeldBackPieces(): void {
+    for (const timer of this.placementTimers) {
+      window.clearTimeout(timer)
+    }
+    this.placementTimers.clear()
+    this.heldBackPieceIds.clear()
+  }
+
+  /** Crafted / revealed cards of one server update fly out of the rail. */
+  private syncCardFlights(flights: readonly CardFlight[]): void {
+    if (flights.length === 0) {
+      return
+    }
+    patchHud({
+      cardFlights: {
+        sequence: getHudSnapshot().cardFlights.sequence + 1,
+        flights,
+      },
+    })
   }
 
   private syncBoardPieces(snapshot: GameSessionSnapshot): void {
@@ -729,7 +818,20 @@ export class ReactGameController {
       snapshot.state.currentSeat,
       this.marquiseMarch.getMarchPreviewMove(),
     )
-    this.boardClearings = stampPawnCharacters(clearings, snapshot.state.players)
+    const heldBackPieceIds: ReadonlySet<string> = this.heldBackPieceIds
+    const shownClearings =
+      heldBackPieceIds.size === 0
+        ? clearings
+        : clearings.map((clearing) => ({
+            ...clearing,
+            pieces: clearing.pieces.filter(
+              (piece) => !heldBackPieceIds.has(piece.id),
+            ),
+          }))
+    this.boardClearings = stampPawnCharacters(
+      shownClearings,
+      snapshot.state.players,
+    )
     this.boardFactions = snapshot.state.factions
     this.forestPawns = forestPawnsFromPlayers(snapshot.state.players)
     this.notifyBoard()

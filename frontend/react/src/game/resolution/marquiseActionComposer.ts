@@ -129,7 +129,9 @@ export function createMarquiseCardComposerHooks(): {
           prompt: {
             message: `Discard ${String(selected.length)}/${String(required)} card(s) — Confirm when ready`,
             highlightClearings: [],
-            enabledCardIds: draft.cardIds,
+            // Enough picked: the other cards dim; a picked one can be put back.
+            enabledCardIds:
+              selected.length === required ? selected : draft.cardIds,
             canConfirm: selected.length === required,
             canCancel: true,
           },

@@ -42,6 +42,10 @@ export type BoardMoveEffect = PieceGroup & {
   kind: 'move'
   from: number
   to: number
+  /** Forest the piece left instead of a clearing (`from` is then unused). */
+  fromForest?: number
+  /** Forest the piece entered instead of a clearing (`to` is then unused). */
+  toForest?: number
   /**
    * Position of the move among the moves of its update: moves play one after
    * the other, the first at 0.
@@ -56,6 +60,13 @@ export type BoardMoveEffect = PieceGroup & {
 export type BoardPlaceEffect = PieceGroup & {
   kind: 'place'
   clearing: number
+  /**
+   * Position among the placements of its update that appear one after the
+   * other; 0 = at once.
+   */
+  step: number
+  /** The pieces placed: held off the board until the step starts. */
+  pieceIds: readonly string[]
   slot: BoardStackSlot
   /** Size of the stack once the pieces are on it (what the board shows). */
   stackCount: number
@@ -152,12 +163,17 @@ function stackCountIn(
   ).length
 }
 
-const NO_STACK_SLOT: BoardStackSlot = { index: 0, total: 1 }
+export const NO_STACK_SLOT: BoardStackSlot = { index: 0, total: 1 }
 /** Moves read from a board comparison have no order: they all play first. */
 const FIRST_MOVE_STEP = 0
+const FIRST_PLACE_STEP = 0
+/** Time between two steps of placements that appear one after the other. */
+export const PLACE_STEP_MS = 350
+/** Piece types placed one clearing after the other. Rule: 6.4 Birdsong wood. */
+const STAGGERED_PIECE_TYPES: ReadonlySet<string> = new Set<string>(['wood'])
 
 /** Slot of the piece's group among the stacks of a clearing; null if absent. */
-function stackSlotIn(
+export function stackSlotIn(
   clearing: BoardEffectClearing | undefined,
   piece: BoardEffectPiece,
 ): BoardStackSlot | null {
@@ -324,16 +340,25 @@ export function pieceEffectsBetween(
   for (const [pieceId, now] of after) {
     const was = before.get(pieceId)
     if (was === undefined) {
-      countPiece(
-        placements,
-        `${String(now.clearing)}|${groupKey(now.piece)}`,
-        (): BoardPlaceEffect => ({
-          kind: 'place',
-          clearing: now.clearing,
-          slot: stackSlotIn(next[now.clearing], now.piece) ?? NO_STACK_SLOT,
-          stackCount: stackCountIn(next[now.clearing], now.piece),
-          ...pieceGroup(now.piece),
-        }),
+      const placementKey = `${String(now.clearing)}|${groupKey(now.piece)}`
+      const placement = placements.get(placementKey)
+      placements.set(
+        placementKey,
+        placement === undefined
+          ? {
+              kind: 'place',
+              clearing: now.clearing,
+              step: FIRST_PLACE_STEP,
+              pieceIds: [pieceId],
+              slot: stackSlotIn(next[now.clearing], now.piece) ?? NO_STACK_SLOT,
+              stackCount: stackCountIn(next[now.clearing], now.piece),
+              ...pieceGroup(now.piece),
+            }
+          : {
+              ...placement,
+              count: placement.count + 1,
+              pieceIds: [...placement.pieceIds, pieceId],
+            },
       )
       continue
     }
@@ -369,7 +394,36 @@ export function pieceEffectsBetween(
       }),
     )
   }
-  return [...moves.values(), ...removals.values(), ...placements.values()]
+  return [
+    ...moves.values(),
+    ...removals.values(),
+    ...oneClearingAfterTheOther([...placements.values()]),
+  ]
+}
+
+/**
+ * Pieces that grow in several clearings at once (wood at every sawmill)
+ * appear one clearing after the other, in clearing order.
+ */
+function oneClearingAfterTheOther(
+  placements: readonly BoardPlaceEffect[],
+): BoardPlaceEffect[] {
+  const isStaggered = (placement: BoardPlaceEffect): boolean =>
+    placement.pieceType !== undefined &&
+    STAGGERED_PIECE_TYPES.has(placement.pieceType)
+  const clearingsInOrder: number[] = [
+    ...new Set<number>(
+      placements
+        .filter(isStaggered)
+        .map((placement: BoardPlaceEffect): number => placement.clearing),
+    ),
+  ].sort((left: number, right: number): number => left - right)
+  return placements.map(
+    (placement: BoardPlaceEffect): BoardPlaceEffect =>
+      isStaggered(placement)
+        ? { ...placement, step: clearingsInOrder.indexOf(placement.clearing) }
+        : placement,
+  )
 }
 
 function readBattle(event: unknown): BoardBattleEffect | null {
