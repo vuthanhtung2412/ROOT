@@ -160,6 +160,35 @@ describe('Charm Offensive flow', () => {
   })
 })
 
+describe('Informants flow', () => {
+  const FOX_AMBUSH_ID = 'ROOT-202#1'
+  const BIRD_AMBUSH_ID = 'ROOT-200#1'
+  const spec: ActionSpec = makeActionSpec({
+    type: 'informantsTakeAmbush',
+    params: {
+      cardIds: [FOX_AMBUSH_ID, BIRD_AMBUSH_ID],
+      options: [{ cardId: FOX_AMBUSH_ID }, { cardId: BIRD_AMBUSH_ID }],
+    },
+  })
+
+  it('shows the ambush cards of the Discarded pile and takes the picked one', () => {
+    const { composer, shownPileCardIds } = composerUnderTest()
+
+    const begun = expectIncomplete(composer.begin(spec))
+    expect(begun.prompt.canCancel).toBe(true)
+    expect(shownPileCardIds()).toEqual([FOX_AMBUSH_ID, BIRD_AMBUSH_ID])
+
+    expect(composer.chooseCard(BIRD_AMBUSH_ID)).toEqual({
+      kind: 'ready',
+      action: { type: 'informantsTakeAmbush', cardId: BIRD_AMBUSH_ID },
+    })
+  })
+
+  it('has a tray label', () => {
+    expect(formatActionLabel(spec)).toBe('informants')
+  })
+})
+
 describe('League of Adventurous Mice flows', () => {
   const moveSpec: ActionSpec = makeActionSpec({
     type: 'leagueMove',

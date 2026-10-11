@@ -62,7 +62,8 @@ Cards:
 - [x] **C5 — Charm Offensive** (`charmOffensive`, Evening, once). Pick another player to score 1 point.
   - [x] **C5.1 — Rule fix: "At start of Evening".** `lib` allowed it at any point of Evening, also after the draw. Now the Evening draw waits while the card can be used; drawing (or any other Evening action) ends the offer; using the card lets the draw go on by itself.
   - [x] **C5.2 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
-- [ ] **C6 — Informants** (`informantsTakeAmbush`, Evening draw step). Pick an ambush card from the Discarded pile instead of drawing.
+- [x] **C6 — Informants** (`informantsTakeAmbush`, Evening draw step). Pick an ambush card from the Discarded pile instead of drawing.
+  - Rule check: no mismatch. The Evening draw already waits while an ambush card is in the Discarded pile; taking it replaces the whole draw.
 - [ ] **C7 — False Orders** (`falseOrders`, Birdsong). Pick enemy → origin clearing with their warriors → adjacent destination.
 - [ ] **C8 — Eyrie Émigré** (`eyrieEmigre`, Birdsong). Pick origin → destination → count → defender.
   - Rule mismatch: card says the move is mandatory at end of Birdsong, then a battle in the destination, discard if both were not taken. `lib` only offers moves into a clearing that already holds an enemy, and lets the player skip the move. Force the move when any move is legal; battle if the destination holds an enemy; otherwise discard the card.

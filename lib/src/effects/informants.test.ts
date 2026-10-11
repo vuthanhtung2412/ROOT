@@ -36,3 +36,25 @@ describe('Informants', () => {
     )
   })
 })
+
+describe('Informants — legal payloads', () => {
+  it('lists each ambush card of the discard pile, and no other card', () => {
+    const game = createPlayingGame({ seed: 17 })
+    game.state.players[0]!.playArea.push(card('ROOT-79'))
+    const foxAmbush = card('ROOT-202')
+    const birdAmbush = card('ROOT-200')
+    game.state.deck.discard.push(foxAmbush, card('ROOT-204'), birdAmbush)
+    game.apply({ type: 'endPhase' })
+    game.apply({ type: 'endPhase' })
+    game.apply({ type: 'endPhase' })
+
+    const spec = game
+      .legalActions()
+      .find((candidate) => candidate.type === 'informantsTakeAmbush')
+
+    expect(spec?.params?.options).toEqual([
+      { cardId: foxAmbush.id },
+      { cardId: birdAmbush.id },
+    ])
+  })
+})

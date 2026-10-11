@@ -1,4 +1,5 @@
-import type { Action } from '#actions/types.js'
+import type { ActionOption } from '#actions/options.js'
+import type { Action, ActionSpec } from '#actions/types.js'
 import { defOf } from '#cards/Deck.js'
 import type { CardEffect } from '#triggers/effects.js'
 import type { Ctx } from '#game/ctx.js'
@@ -77,12 +78,16 @@ export const informantsEffect: CardEffect = {
     if (!informantsCanReplaceDraw(state)) return []
     const ownerSeat = informantsOwner(state)
     if (ownerSeat === null) return []
-    return [
-      {
-        type: 'informantsTakeAmbush',
-        actor: ownerSeat,
-        params: { cardIds: ambushIdsInDiscard(state) },
-      },
-    ]
+    const ambushCardIds: string[] = ambushIdsInDiscard(state)
+    // Every legal payload: one ambush card of the discard pile.
+    const options: ActionOption[] = ambushCardIds.map(
+      (cardId: string): ActionOption => ({ cardId }),
+    )
+    const spec: ActionSpec = {
+      type: 'informantsTakeAmbush',
+      actor: ownerSeat,
+      params: { cardIds: ambushCardIds, options },
+    }
+    return [spec]
   },
 }

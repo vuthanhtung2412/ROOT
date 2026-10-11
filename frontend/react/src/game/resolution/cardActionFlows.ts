@@ -62,6 +62,18 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
       },
     ],
   },
+  // Informants: take an ambush card from the Discarded pile instead of drawing.
+  informantsTakeAmbush: {
+    title: 'Informants',
+    asksEveryStep: true,
+    steps: [
+      {
+        field: 'cardId',
+        kind: 'pileCard',
+        prompt: 'Take an ambush card instead of drawing',
+      },
+    ],
+  },
   // League of Adventurous Mice: exhaust a crafted item to move or battle.
   leagueMove: {
     title: 'League of Adventurous Mice',
@@ -123,6 +135,7 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
 /** Tray labels of the card actions. */
 export const CARD_ACTION_LABELS: Readonly<Record<string, string>> = {
   charmOffensive: 'charm offensive',
+  informantsTakeAmbush: 'informants',
   leagueMove: 'league: move',
   leagueBattle: 'league: battle',
   propagandaBureau: 'propaganda bureau',
