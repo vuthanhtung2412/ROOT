@@ -1,13 +1,8 @@
 import {
   CanvasTexture,
-  Color,
-  DirectionalLight,
-  Fog,
-  HemisphereLight,
   Mesh,
   MeshStandardMaterial,
   PlaneGeometry,
-  Scene,
   SRGBColorSpace,
 } from 'three'
 import type {
@@ -20,7 +15,7 @@ import { createSeededRandom } from '#game/map3d/treePlacement.ts'
 
 /**
  * The woodland floor, painted here from the terrain: forest floor, sandy
- * clearings, stone-dotted paths and the river. Then the daylight over it.
+ * clearings, stone-dotted paths and the river.
  */
 const GROUND_TEXTURE_WIDTH_PIXELS = 4096
 const FOREST_FLOOR_COLOR = '#4a5636'
@@ -56,22 +51,6 @@ const QUARTER_TURN_RADIANS = Math.PI / 2
 const HALF = 0.5
 const DOUBLE = 2
 
-/** `--color-forest-deep`: the far woodland fades into the game backdrop. */
-const BACKGROUND_COLOR = 0x24362e
-const FOG_NEAR = 150
-const FOG_FAR = 330
-const SKY_LIGHT_COLOR = 0xfff3dc
-const GROUND_LIGHT_COLOR = 0x39503f
-const SKY_LIGHT_INTENSITY = 1.5
-const SUN_COLOR = 0xffe2b0
-const SUN_INTENSITY = 2.1
-const SUN_POSITION = { x: -55, y: 90, z: 40 } as const
-const SHADOW_MAP_SIZE_PIXELS = 4096
-const SHADOW_AREA_HALF_SIZE = 95
-const SHADOW_CAMERA_FAR = 300
-const SHADOW_BIAS = -0.0006
-const SHADOW_NORMAL_BIAS = 0.05
-
 type GroundPainter = {
   context: CanvasRenderingContext2D
   /** Canvas pixels per world unit. */
@@ -81,13 +60,13 @@ type GroundPainter = {
 
 function canvasX(painter: GroundPainter, ground: MapGroundPoint): number {
   const halfWidth: number =
-    painter.terrain.worldSize.width * HALF + painter.terrain.margin
+    painter.terrain.worldSize.width * HALF + painter.terrain.marginX
   return (ground.x + halfWidth) * painter.scale
 }
 
 function canvasY(painter: GroundPainter, ground: MapGroundPoint): number {
   const halfDepth: number =
-    painter.terrain.worldSize.depth * HALF + painter.terrain.margin
+    painter.terrain.worldSize.depth * HALF + painter.terrain.marginZ
   return (ground.z + halfDepth) * painter.scale
 }
 
@@ -199,9 +178,9 @@ function paintGround(painter: GroundPainter): void {
   })
 }
 
-function createGround(terrain: MapTerrain): Mesh {
-  const width: number = terrain.worldSize.width + terrain.margin * DOUBLE
-  const depth: number = terrain.worldSize.depth + terrain.margin * DOUBLE
+export function createGround(terrain: MapTerrain): Mesh {
+  const width: number = terrain.worldSize.width + terrain.marginX * DOUBLE
+  const depth: number = terrain.worldSize.depth + terrain.marginZ * DOUBLE
   const canvas: HTMLCanvasElement = document.createElement('canvas')
   canvas.width = GROUND_TEXTURE_WIDTH_PIXELS
   canvas.height = Math.round((GROUND_TEXTURE_WIDTH_PIXELS * depth) / width)
@@ -225,34 +204,3 @@ function createGround(terrain: MapTerrain): Mesh {
   return ground
 }
 
-function createSun(): DirectionalLight {
-  const sun: DirectionalLight = new DirectionalLight(SUN_COLOR, SUN_INTENSITY)
-  sun.position.set(SUN_POSITION.x, SUN_POSITION.y, SUN_POSITION.z)
-  sun.castShadow = true
-  sun.shadow.mapSize.set(SHADOW_MAP_SIZE_PIXELS, SHADOW_MAP_SIZE_PIXELS)
-  sun.shadow.camera.left = -SHADOW_AREA_HALF_SIZE
-  sun.shadow.camera.right = SHADOW_AREA_HALF_SIZE
-  sun.shadow.camera.top = SHADOW_AREA_HALF_SIZE
-  sun.shadow.camera.bottom = -SHADOW_AREA_HALF_SIZE
-  sun.shadow.camera.far = SHADOW_CAMERA_FAR
-  sun.shadow.bias = SHADOW_BIAS
-  sun.shadow.normalBias = SHADOW_NORMAL_BIAS
-  return sun
-}
-
-/** Scene with the woodland floor and the daylight. */
-export function createMapGroundScene(terrain: MapTerrain): Scene {
-  const scene: Scene = new Scene()
-  scene.background = new Color(BACKGROUND_COLOR)
-  scene.fog = new Fog(BACKGROUND_COLOR, FOG_NEAR, FOG_FAR)
-  scene.add(
-    createGround(terrain),
-    new HemisphereLight(
-      SKY_LIGHT_COLOR,
-      GROUND_LIGHT_COLOR,
-      SKY_LIGHT_INTENSITY,
-    ),
-    createSun(),
-  )
-  return scene
-}

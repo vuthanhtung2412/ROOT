@@ -2,7 +2,7 @@ import { MathUtils, MOUSE, PerspectiveCamera, TOUCH, Vector3 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import type {
   MapGroundPoint,
-  MapViewSize,
+  MapViewFrame,
   MapWorldSize,
 } from '#game/map3d/mapWorldSpace.ts'
 
@@ -20,7 +20,7 @@ export type MapViewPose = {
 export type MapCameraRig = {
   camera: PerspectiveCamera
   controls: OrbitControls
-  resize: (viewSize: MapViewSize) => void
+  resize: (frame: MapViewFrame) => void
   /** Glide back to the opening view. */
   resetView: () => void
   /** Advance a running glide; call once per frame. */
@@ -53,11 +53,11 @@ export function createMapCameraRig(
   /** Listens for wheel and drag: the map and everything laid over it. */
   controlElement: HTMLElement,
   worldSize: MapWorldSize,
-  initialViewSize: MapViewSize,
+  initialFrame: MapViewFrame,
 ): MapCameraRig {
   const camera: PerspectiveCamera = new PerspectiveCamera(
     FIELD_OF_VIEW_DEGREES,
-    initialViewSize.width / initialViewSize.height,
+    initialFrame.view.width / initialFrame.view.height,
     NEAR_PLANE,
     FAR_PLANE,
   )
@@ -78,23 +78,36 @@ export function createMapCameraRig(
   }
   controls.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }
 
-  /** Distance at which the whole woodland fits the view. */
+  let frame: MapViewFrame = initialFrame
+  const halfViewTangent: number = Math.tan(
+    MathUtils.degToRad(FIELD_OF_VIEW_DEGREES) * HALF,
+  )
+
+  /** Distance at which the whole woodland fits the focus of the view. */
   const homeDistance = (): number => {
-    const halfViewTangent: number = Math.tan(
-      MathUtils.degToRad(FIELD_OF_VIEW_DEGREES) * HALF,
-    )
     // Seen at a tilt, the depth of the ground is foreshortened.
     const fitDepth: number =
-      (worldSize.depth * Math.cos(TILT_ANGLE) * HALF) / halfViewTangent
+      (worldSize.depth * Math.cos(TILT_ANGLE) * HALF) /
+      (halfViewTangent * (frame.focus.height / frame.view.height))
     const fitWidth: number =
-      (worldSize.width * HALF) / (halfViewTangent * camera.aspect)
+      (worldSize.width * HALF) /
+      (halfViewTangent * camera.aspect * (frame.focus.width / frame.view.width))
     return Math.max(fitDepth, fitWidth) * HOME_FIT_MARGIN
   }
 
-  const homePose = (): MapViewPose => ({
-    distance: homeDistance(),
-    target: { x: 0, z: worldSize.depth * HOME_TARGET_DEPTH_RATIO },
-  })
+  const homePose = (): MapViewPose => {
+    const distance: number = homeDistance()
+    const worldUnitsPerPixel: number =
+      (distance * halfViewTangent) / (frame.view.height * HALF)
+    return {
+      distance,
+      // Aim off-centre so the woodland sits in the middle of the focus.
+      target: {
+        x: -frame.focusOffsetX * worldUnitsPerPixel,
+        z: worldSize.depth * HOME_TARGET_DEPTH_RATIO,
+      },
+    }
+  }
 
   const applyPose = (pose: MapViewPose): void => {
     controls.target.set(pose.target.x, 0, pose.target.z)
@@ -146,13 +159,14 @@ export function createMapCameraRig(
   }
   controls.addEventListener('start', stopGlide)
 
-  const resize = (viewSize: MapViewSize): void => {
-    camera.aspect = viewSize.width / viewSize.height
+  const resize = (nextFrame: MapViewFrame): void => {
+    frame = nextFrame
+    camera.aspect = nextFrame.view.width / nextFrame.view.height
     camera.updateProjectionMatrix()
     controls.maxDistance = homeDistance()
   }
 
-  resize(initialViewSize)
+  resize(initialFrame)
   controls.maxDistance = Number.POSITIVE_INFINITY
   applyPose({
     ...homePose(),

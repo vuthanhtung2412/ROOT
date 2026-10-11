@@ -1,4 +1,9 @@
-import { PCFSoftShadowMap, Vector3, WebGLRenderer, type Scene } from 'three'
+import { PCFSoftShadowMap, Scene, Vector3, WebGLRenderer } from 'three'
+import {
+  createDaylightRig,
+  type DaylightRig,
+  type TimeOfDay,
+} from '#game/map3d/daylight.ts'
 import {
   createGroundMarkers,
   type ClearingRingStyle,
@@ -10,14 +15,14 @@ import type { MapModels } from '#game/map3d/mapModels.ts'
 import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type {
   MapGroundPoint,
-  MapViewSize,
+  MapViewFrame,
 } from '#game/map3d/mapWorldSpace.ts'
 import {
   createPieceLayer,
   type MapPiece,
   type PieceLayer,
 } from '#game/map3d/pieceMeshes.ts'
-import { createMapGroundScene } from '#game/map3d/sceneGround.ts'
+import { createGround } from '#game/map3d/sceneGround.ts'
 import { createTreeMeshes } from '#game/map3d/treeMeshes.ts'
 import { placeTrees } from '#game/map3d/treePlacement.ts'
 
@@ -30,7 +35,8 @@ export type MapSceneInput = {
   controlElement: HTMLElement
   models: MapModels
   terrain: MapTerrain
-  viewSize: MapViewSize
+  frame: MapViewFrame
+  timeOfDay: TimeOfDay
   forests: readonly ForestGround[]
   /** Suit icon of each clearing (clearing id → image path). */
   suitTexturePaths: ReadonlyMap<number, string>
@@ -43,10 +49,12 @@ export type MapViewPoint = {
 }
 
 export type MapScene = {
-  resize: (viewSize: MapViewSize) => void
+  resize: (frame: MapViewFrame) => void
   setPieces: (pieces: readonly MapPiece[]) => void
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
   setHighlightedForests: (forestIndexes: ReadonlySet<number>) => void
+  /** Fade the light to that of a phase of the turn. */
+  setTimeOfDay: (timeOfDay: TimeOfDay) => void
   /** Where a point above the ground shows up in the view. */
   projectToView: (ground: MapGroundPoint, height: number) => MapViewPoint
   /** Called whenever the camera moved, so overlays can follow. */
@@ -71,7 +79,10 @@ export function createMapScene(input: MapSceneInput): MapScene {
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = PCFSoftShadowMap
 
-  const scene: Scene = createMapGroundScene(input.terrain)
+  const scene: Scene = new Scene()
+  const daylight: DaylightRig = createDaylightRig(input.timeOfDay)
+  scene.fog = daylight.fog
+  scene.background = daylight.backdrop
   const groundMarkers: GroundMarkers = createGroundMarkers({
     clearings: input.terrain.clearings,
     forests: input.forests,
@@ -79,6 +90,8 @@ export function createMapScene(input: MapSceneInput): MapScene {
   })
   const pieceLayer: PieceLayer = createPieceLayer(input.models.meeples)
   scene.add(
+    ...daylight.lights,
+    createGround(input.terrain),
     createTreeMeshes(placeTrees(input.terrain, TREE_SEED), input.models.trees),
     groundMarkers.group,
     pieceLayer.group,
@@ -87,9 +100,9 @@ export function createMapScene(input: MapSceneInput): MapScene {
   const cameraRig: MapCameraRig = createMapCameraRig(
     input.controlElement,
     input.terrain.worldSize,
-    input.viewSize,
+    input.frame,
   )
-  let viewSize: MapViewSize = input.viewSize
+  let frame: MapViewFrame = input.frame
   const viewListeners: Set<() => void> = new Set<() => void>()
   const notifyViewChanged = (): void => {
     viewListeners.forEach((listener: () => void): void => {
@@ -98,13 +111,13 @@ export function createMapScene(input: MapSceneInput): MapScene {
   }
   cameraRig.controls.addEventListener('change', notifyViewChanged)
 
-  const resize = (nextViewSize: MapViewSize): void => {
-    viewSize = nextViewSize
-    renderer.setSize(nextViewSize.width, nextViewSize.height)
-    cameraRig.resize(nextViewSize)
+  const resize = (nextFrame: MapViewFrame): void => {
+    frame = nextFrame
+    renderer.setSize(nextFrame.view.width, nextFrame.view.height)
+    cameraRig.resize(nextFrame)
     notifyViewChanged()
   }
-  resize(input.viewSize)
+  resize(input.frame)
 
   const startMilliseconds: number = performance.now()
   let previousMilliseconds: number = startMilliseconds
@@ -116,6 +129,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     )
     previousMilliseconds = nowMilliseconds
     cameraRig.update(deltaSeconds)
+    daylight.update(deltaSeconds)
     groundMarkers.update(
       (nowMilliseconds - startMilliseconds) / MILLISECONDS_PER_SECOND,
     )
@@ -130,11 +144,12 @@ export function createMapScene(input: MapSceneInput): MapScene {
     setPieces: pieceLayer.setPieces,
     setClearingRings: groundMarkers.setClearingRings,
     setHighlightedForests: groundMarkers.setHighlightedForests,
+    setTimeOfDay: daylight.setTimeOfDay,
     projectToView: (ground: MapGroundPoint, height: number): MapViewPoint => {
       projected.set(ground.x, height, ground.z).project(cameraRig.camera)
       return {
-        x: (projected.x + 1) * HALF * viewSize.width,
-        y: (1 - projected.y) * HALF * viewSize.height,
+        x: (projected.x + 1) * HALF * frame.view.width,
+        y: (1 - projected.y) * HALF * frame.view.height,
       }
     },
     onViewChanged: (listener: () => void): (() => void) => {

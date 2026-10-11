@@ -104,8 +104,8 @@ function treeKindAt(
 /** One candidate per grid cell, jittered inside the cell. */
 export function placeTrees(terrain: MapTerrain, seed: number): TreePlacement[] {
   const random: () => number = createSeededRandom(seed)
-  const halfWidth: number = terrain.worldSize.width * HALF + terrain.margin
-  const halfDepth: number = terrain.worldSize.depth * HALF + terrain.margin
+  const halfWidth: number = terrain.worldSize.width * HALF + terrain.marginX
+  const halfDepth: number = terrain.worldSize.depth * HALF + terrain.marginZ
   const placements: TreePlacement[] = []
   for (let z = -halfDepth; z < halfDepth; z += TREE_SPACING) {
     for (let x = -halfWidth; x < halfWidth; x += TREE_SPACING) {

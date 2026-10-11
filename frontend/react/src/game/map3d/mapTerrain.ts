@@ -2,8 +2,10 @@ import { CatmullRomCurve3, Vector3 } from 'three'
 import { FALL_PATHS } from '@root/lib/fall-metadata'
 import type { BoardLayout, ClearingLayoutPoint } from '#game/boardLayout.ts'
 import {
+  mapWorldSizeForView,
   normalizedToGround,
   type MapGroundPoint,
+  type MapViewFrame,
   type MapWorldSize,
   type NormalizedMapPoint,
 } from '#game/map3d/mapWorldSpace.ts'
@@ -26,8 +28,10 @@ export type PathGround = {
 
 export type MapTerrain = {
   worldSize: MapWorldSize
-  /** How far the woodland runs on past the playable area, each side. */
-  margin: number
+  /** How far the woodland runs on past the playable area, left and right. */
+  marginX: number
+  /** … and behind and in front. */
+  marginZ: number
   clearings: readonly ClearingGround[]
   paths: readonly PathGround[]
   /** The river as a dense line of points, source to mouth. */
@@ -36,7 +40,14 @@ export type MapTerrain = {
 
 /** Clearing radius in world units: wide enough for three slots and an army. */
 const CLEARING_RADIUS = 7.4
-const TERRAIN_MARGIN_RATIO = 0.3
+/** Woodland past the playable area when the view shows nothing but it. */
+const BASE_MARGIN_RATIO = 0.3
+/**
+ * Extra woodland per unit the view is larger than its focus (the map fills
+ * the whole screen, the playable area only the middle of it). More than 0.5
+ * a side, because the far edge of a tilted view takes in more ground.
+ */
+const COVER_MARGIN_RATIO = 0.95
 const RIVER_POINT_COUNT = 220
 
 /**
@@ -76,8 +87,9 @@ function riverGround(worldSize: MapWorldSize): MapGroundPoint[] {
 
 export function createMapTerrain(
   layout: BoardLayout,
-  worldSize: MapWorldSize,
+  frame: MapViewFrame,
 ): MapTerrain {
+  const worldSize: MapWorldSize = mapWorldSizeForView(frame.focus)
   const clearings: ClearingGround[] = Object.entries(layout.clearings).map(
     ([clearingId, point]: [string, ClearingLayoutPoint]): ClearingGround => ({
       clearingId: Number(clearingId),
@@ -103,7 +115,14 @@ export function createMapTerrain(
   )
   return {
     worldSize,
-    margin: worldSize.width * TERRAIN_MARGIN_RATIO,
+    marginX:
+      worldSize.width *
+      (BASE_MARGIN_RATIO +
+        (frame.view.width / frame.focus.width - 1) * COVER_MARGIN_RATIO),
+    marginZ:
+      worldSize.depth *
+      (BASE_MARGIN_RATIO +
+        (frame.view.height / frame.focus.height - 1) * COVER_MARGIN_RATIO),
     clearings,
     paths,
     river: riverGround(worldSize),

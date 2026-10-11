@@ -11,7 +11,7 @@ const MAP_CENTER_RATIO = 0.5
  * The woodland is as deep as the part of the screen it is shown in: a tall
  * map area gets a deep woodland, a wide one a shallow woodland.
  */
-const MINIMUM_DEPTH_RATIO = 0.7
+const MINIMUM_DEPTH_RATIO = 0.6
 const MAXIMUM_DEPTH_RATIO = 1.15
 /** The turn banner and the hand cover the top and bottom of the map area. */
 const VIEW_HEIGHT_FOR_MAP_RATIO = 0.86
@@ -21,6 +21,20 @@ const DEPTH_RATIO_STEP = 0.05
 export type MapViewSize = {
   width: number
   height: number
+}
+
+/**
+ * The view the map is drawn in, and its focus: the part of it, centred,
+ * that the playable woodland must fit (the rest lies under the HUD).
+ */
+export type MapViewFrame = {
+  view: MapViewSize
+  focus: MapViewSize
+  /**
+   * Pixels the focus centre sits right of the view centre (negative: left),
+   * for a HUD that covers more of one side than of the other.
+   */
+  focusOffsetX: number
 }
 
 export type MapWorldSize = {

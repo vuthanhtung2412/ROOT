@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { GAME_ASSET_KEYS, imagePathForAssetKey } from '#assets/gameAssets.ts'
 import {
   fallClearingSuit,
   type BoardLayout,
   type ClearingSuit,
 } from '#game/boardLayout.ts'
+import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import type { ForestGround } from '#game/map3d/groundMarkers.ts'
 import { loadMapModels, type MapModels } from '#game/map3d/mapModels.ts'
 import { createMapScene, type MapScene } from '#game/map3d/mapScene.ts'
@@ -17,7 +18,7 @@ import {
   mapWorldSizeForView,
   normalizedToGround,
   type MapGroundPoint,
-  type MapViewSize,
+  type MapViewFrame,
   type MapWorldSize,
   type NormalizedMapPoint,
 } from '#game/map3d/mapWorldSpace.ts'
@@ -31,6 +32,9 @@ export type MapSceneHandle = {
   /** Bumps on every camera move: overlays re-project when it changes. */
   viewVersion: number
 }
+
+/** Digits kept of "how much larger than its focus is the view". */
+const COVER_RATIO_DIGITS = 1
 
 const SUIT_TEXTURE_KEY_BY_SUIT: Readonly<Record<ClearingSuit, string>> = {
   fox: GAME_ASSET_KEYS.suitFox,
@@ -69,7 +73,8 @@ function suitTexturePathsFor(
 export function useMapScene(
   canvasReference: RefObject<HTMLCanvasElement | null>,
   layout: BoardLayout,
-  viewSize: MapViewSize,
+  frame: MapViewFrame,
+  timeOfDay: TimeOfDay,
 ): MapSceneHandle {
   const [models, setModels] = useState<MapModels | null>(null)
   const [scene, setScene] = useState<MapScene | null>(null)
@@ -87,19 +92,23 @@ export function useMapScene(
     }
   }, [])
 
-  // The woodland takes the shape of the part of the screen it fills.
-  const worldSize: MapWorldSize = useMemo(
-    () => mapWorldSizeForView(viewSize),
-    [viewSize],
-  )
+  // The woodland takes the shape of the part of the screen it fills. Its
+  // shape is rounded to steps, so dragging a window edge rebuilds it rarely.
+  const terrainShape: string = [
+    mapWorldSizeForView(frame.focus).depth,
+    (frame.view.width / frame.focus.width).toFixed(COVER_RATIO_DIGITS),
+    (frame.view.height / frame.focus.height).toFixed(COVER_RATIO_DIGITS),
+  ].join(':')
   const terrain: MapTerrain = useMemo(
-    () => createMapTerrain(layout, worldSize),
-    [layout, worldSize],
+    () => createMapTerrain(layout, frame),
+    // `frame` is read when the shape it rounds to changes, not on each pixel.
+    [layout, terrainShape],
   )
   const forestGrounds: ForestGround[] = useMemo(
-    () => forestGroundsForWorld(worldSize),
-    [worldSize],
+    () => forestGroundsForWorld(terrain.worldSize),
+    [terrain],
   )
+  const initialTimeOfDay = useRef<TimeOfDay>(timeOfDay)
 
   useEffect(() => {
     const canvas: HTMLCanvasElement | null = canvasReference.current
@@ -111,7 +120,8 @@ export function useMapScene(
       controlElement: canvas.parentElement ?? canvas,
       models,
       terrain,
-      viewSize,
+      frame,
+      timeOfDay: initialTimeOfDay.current,
       forests: forestGrounds,
       suitTexturePaths: suitTexturePathsFor(terrain.clearings),
     })
@@ -124,12 +134,17 @@ export function useMapScene(
       created.dispose()
       setScene(null)
     }
-    // A new view size only rebuilds the scene through `terrain`.
+    // A new frame only rebuilds the scene through `terrain`.
   }, [canvasReference, forestGrounds, models, terrain])
 
   useEffect(() => {
-    scene?.resize(viewSize)
-  }, [scene, viewSize])
+    scene?.resize(frame)
+  }, [scene, frame])
+
+  useEffect(() => {
+    initialTimeOfDay.current = timeOfDay
+    scene?.setTimeOfDay(timeOfDay)
+  }, [scene, timeOfDay])
 
   return {
     scene,

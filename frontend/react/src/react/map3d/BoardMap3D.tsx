@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, type JSX } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+  type JSX,
+} from 'react'
 import { FALL_BOARD_LAYOUT, type BoardLayout } from '#game/boardLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import type {
@@ -9,8 +15,10 @@ import type { MapScene, MapViewPoint } from '#game/map3d/mapScene.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
 import type {
   MapGroundPoint,
-  MapViewSize,
+  MapViewFrame,
 } from '#game/map3d/mapWorldSpace.ts'
+import { getHudSnapshot, subscribeHud } from '#game/hudStore.ts'
+import { timeOfDayForPhase } from '#game/map3d/daylight.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import type { BoardMapProps } from '#react/BoardMap.tsx'
 import {
@@ -37,8 +45,10 @@ const RULER_RING_OPACITY = 0.95
 const HIT_RADIUS_RATIO = 0.9
 const HALF = 0.5
 
+/** Gap between the reset button and the right edge of the focus. */
+const RESET_VIEW_INSET_PIXELS = 8
 const RESET_VIEW_CLASS_NAME =
-  'map-3d-reset-view pointer-events-auto absolute top-2 right-2 z-6 cursor-pointer rounded border border-parchment-shadow bg-[#1a2438cc] px-2 py-1 font-body text-xs font-bold text-parchment'
+  'map-3d-reset-view pointer-events-auto absolute top-2 z-6 cursor-pointer rounded border border-parchment-shadow bg-[#1a2438cc] px-2 py-1 font-body text-xs font-bold text-parchment'
 
 /** A clearing as it shows up in the view right now. */
 type ProjectedClearing = {
@@ -97,17 +107,46 @@ function forestCenter(scene: MapScene, forest: ForestGround): MapViewPoint {
   }
 }
 
+export type BoardMap3DProps = BoardMapProps & {
+  /**
+   * The part of the view, in pixels, the playable woodland must fit: the
+   * map fills the whole screen, the HUD covers its sides. Default: all of it.
+   */
+  focusWidth?: number
+  focusHeight?: number
+  /** Pixels the focus centre sits right of the view centre. */
+  focusOffsetX?: number
+}
+
 /** The Autumn map as a 3D scene: same props and same hooks as `BoardMap`. */
-export function BoardMap3D(props: BoardMapProps): JSX.Element {
+export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
   const layout: BoardLayout = props.layout ?? FALL_BOARD_LAYOUT
   const viewWidth: number = props.viewWidth ?? GAME_LOGICAL_WIDTH
   const viewHeight: number = props.viewHeight ?? GAME_LOGICAL_HEIGHT
-  const viewSize: MapViewSize = useMemo(
-    () => ({ width: viewWidth, height: viewHeight }),
-    [viewWidth, viewHeight],
+  const focusWidth: number = props.focusWidth ?? viewWidth
+  const focusHeight: number = props.focusHeight ?? viewHeight
+  const focusOffsetX: number = props.focusOffsetX ?? 0
+  const frame: MapViewFrame = useMemo(
+    () => ({
+      view: { width: viewWidth, height: viewHeight },
+      focus: { width: focusWidth, height: focusHeight },
+      focusOffsetX,
+    }),
+    [viewWidth, viewHeight, focusWidth, focusHeight, focusOffsetX],
+  )
+  // The light follows the phase of the turn shown in the banner.
+  const phase: string | null = useSyncExternalStore(
+    subscribeHud,
+    (): string | null => getHudSnapshot().turnBanner.turn?.phase ?? null,
+    (): string | null => getHudSnapshot().turnBanner.turn?.phase ?? null,
   )
   const canvasReference = useRef<HTMLCanvasElement | null>(null)
-  const handle: MapSceneHandle = useMapScene(canvasReference, layout, viewSize)
+  const handle: MapSceneHandle = useMapScene(
+    canvasReference,
+    layout,
+    frame,
+    timeOfDayForPhase(phase),
+  )
   const { scene, clearingGrounds, forestGrounds, viewVersion } = handle
 
   const highlighted: Set<number> = useMemo(
@@ -244,6 +283,12 @@ export function BoardMap3D(props: BoardMapProps): JSX.Element {
         <button
           type="button"
           className={RESET_VIEW_CLASS_NAME}
+          style={{
+            right:
+              (viewWidth - focusWidth) * HALF -
+              focusOffsetX +
+              RESET_VIEW_INSET_PIXELS,
+          }}
           onClick={() => {
             scene.resetView()
           }}
