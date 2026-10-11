@@ -2,6 +2,7 @@ import {
   FALL,
   FALL_LAYOUT,
   Game,
+  type Action,
   type GameState,
   type LogEntry,
   formatGameView,
@@ -201,8 +202,13 @@ const joinRoute = createRoute({
 gameRoutes.openapi(joinRoute, async (context) => {
   const game = requireGame()
   const body = context.req.valid('json')
-  const result = game.join(body.playerId)
-  logGameEvent('JOIN', result.state, { type: 'join', playerId: body.playerId })
+  const joinAction: Action = {
+    type: 'join',
+    playerId: body.playerId,
+    ...(body.faction === undefined ? {} : { faction: body.faction }),
+  }
+  const result = game.apply(joinAction)
+  logGameEvent('JOIN', result.state, joinAction)
   publishGameChange()
   return context.json(
     { ...result, state: stateForCaller(game, body.playerId) },

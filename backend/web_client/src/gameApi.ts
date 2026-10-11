@@ -66,6 +66,8 @@ export type GameState = {
   deck?: {
     discard: Array<{ id: string; defId: string }>
   }
+  /** Created with no faction set: players pick an untaken faction on joining. */
+  openLobby?: boolean
   /** Items left in the supply on the map, by item type. */
   itemSupply?: Record<string, number>
   /** Latest actions the player whose turn it is may take back; absent = none. */
@@ -108,7 +110,8 @@ export type GameApi = {
   createGame: (
     input?: CreateGameInput,
   ) => Promise<{ state: GameState; mode: LobbyMode }>
-  join: (playerId: string) => Promise<ActionResult>
+  /** `faction`: the player's pick in an open lobby (created with no factions). */
+  join: (playerId: string, faction?: string) => Promise<ActionResult>
   start: () => Promise<ActionResult>
   getGame: () => Promise<{
     state: GameState
@@ -326,9 +329,14 @@ export function createGameApi(
       return { state: parseGameState(data.state), mode: data.mode }
     },
 
-    async join(playerId: string): Promise<ActionResult> {
+    async join(playerId: string, faction?: string): Promise<ActionResult> {
       const result = await client.POST('/game/join', {
-        body: { playerId },
+        body: {
+          playerId,
+          ...(faction === undefined
+            ? {}
+            : { faction: parseFactionIds([faction])[0]! }),
+        },
       })
       return parseActionResult(requireData(result))
     },

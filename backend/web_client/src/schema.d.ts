@@ -548,6 +548,7 @@ export interface components {
       detail?: unknown;
     };
     CreateGameBody: {
+      /** @description Faction of each seat. Empty list = open lobby: every player picks an untaken faction when joining. */
       factions?: components["schemas"]["FactionId"][];
       mode?: components["schemas"]["LobbyMode"];
     };
@@ -562,6 +563,7 @@ export interface components {
     };
     JoinBody: {
       playerId: string;
+      faction?: components["schemas"]["FactionId"];
     };
     GetGameResponse: {
       state: components["schemas"]["GameState"];

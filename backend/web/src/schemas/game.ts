@@ -30,7 +30,10 @@ export const LobbyModeSchema = z.enum(LOBBY_MODES).openapi('LobbyMode')
 
 export const CreateGameBodySchema = z
   .object({
-    factions: z.array(FactionIdSchema).optional(),
+    factions: z.array(FactionIdSchema).optional().openapi({
+      description:
+        'Faction of each seat. Empty list = open lobby: every player picks an untaken faction when joining.',
+    }),
     mode: LobbyModeSchema.optional(),
   })
   .openapi('CreateGameBody')
@@ -45,6 +48,10 @@ export const CreateGameResponseSchema = z
 export const JoinBodySchema = z
   .object({
     playerId: z.string().min(1),
+    faction: FactionIdSchema.optional().openapi({
+      description:
+        'Open lobby (created with no factions): the faction this player picks. Joining again changes the pick.',
+    }),
   })
   .openapi('JoinBody')
 

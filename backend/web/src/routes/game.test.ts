@@ -169,6 +169,43 @@ describe('game routes', () => {
       expect(store.game).toBeNull()
     })
 
+    it('open lobby: players pick their faction; a taken one is refused', async () => {
+      await app.request(
+        '/game',
+        jsonRequest('POST', { factions: [], mode: 'online' }),
+      )
+      expect(store.game?.state.openLobby).toBe(true)
+
+      const hostJoin = await app.request(
+        '/game/join',
+        jsonRequest('POST', { playerId: HOST_PLAYER_ID, faction: 'lizard' }),
+      )
+      expect(hostJoin.status).toBe(200)
+
+      const takenJoin = await app.request(
+        '/game/join',
+        jsonRequest('POST', { playerId: GUEST_PLAYER_ID, faction: 'lizard' }),
+      )
+      expect(takenJoin.status).toBe(400)
+      expect(await takenJoin.json()).toMatchObject({ code: 'FACTION_TAKEN' })
+
+      const noFactionJoin = await app.request(
+        '/game/join',
+        jsonRequest('POST', { playerId: GUEST_PLAYER_ID }),
+      )
+      expect(noFactionJoin.status).toBe(400)
+
+      const guestJoin = await app.request(
+        '/game/join',
+        jsonRequest('POST', { playerId: GUEST_PLAYER_ID, faction: 'riverfolk' }),
+      )
+      expect(guestJoin.status).toBe(200)
+      expect(store.game?.state.factions).toEqual(['lizard', 'riverfolk'])
+
+      const hostStart = await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
+      expect(hostStart.status).toBe(200)
+    })
+
     /** Resolve setup straight on the store: the online game reaches turn 1. */
     function finishSetupOnStore(): void {
       const game = store.game

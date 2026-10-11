@@ -83,7 +83,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FactionId"
-            }
+            },
+            "description": "Faction of each seat. Empty list = open lobby: every player picks an untaken faction when joining."
           },
           "mode": {
             "$ref": "#/components/schemas/LobbyMode"
@@ -131,6 +132,16 @@
           "playerId": {
             "type": "string",
             "minLength": 1
+          },
+          "faction": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FactionId"
+              },
+              {
+                "description": "Open lobby (created with no factions): the faction this player picks. Joining again changes the pick."
+              }
+            ]
           }
         },
         "required": [
