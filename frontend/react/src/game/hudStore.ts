@@ -83,11 +83,19 @@ export type MenuLobbySeat = {
   isLocalPlayer: boolean
 }
 
+/** One faction of the lobby picker and who holds it. */
+export type MenuFactionChoice = {
+  faction: string
+  takenBy: 'you' | 'other' | null
+}
+
 /** Online lobby shown in the menu while seats fill up. */
 export type MenuLobbyHudState = {
   seats: MenuLobbySeat[]
   isHost: boolean
   canStart: boolean
+  /** Open lobby: every faction, to pick from. Empty when seats are preset. */
+  factionChoices: MenuFactionChoice[]
 }
 
 export type MenuHudState = {
@@ -95,6 +103,8 @@ export type MenuHudState = {
   statusColor: string
   playPending: boolean
   showQaContinue: boolean
+  /** A live online game is on the server: the start button reads "Join game". */
+  lobbyOnServer: boolean
   /** Non-null while this browser waits in an online lobby. */
   lobby: MenuLobbyHudState | null
 }
@@ -103,10 +113,10 @@ export type MenuCallbacks = {
   /** Local hotseat: create lobby with chosen factions, join all, start. */
   onStartParty: (factions: string[]) => void
   onQaContinue: () => void
-  /** Online: create a lobby with the chosen factions and take seat 1. */
-  onHostOnline: (factions: string[]) => void
-  /** Online: take the next free seat of the waiting lobby. */
-  onJoinOnline: () => void
+  /** The one start button: join the waiting lobby, or create one. */
+  onPlayOnline: () => void
+  /** Open lobby: take a seat with this faction, or change the pick. */
+  onPickFaction: (faction: string) => void
   /** Online host: start once every seat is filled. */
   onStartOnline: () => void
   /** Online lobby: host closes the lobby, guest steps out of it. */
@@ -226,8 +236,8 @@ const NOOP_CALLBACKS: HudCallbacks = {
 const NOOP_MENU_CALLBACKS: MenuCallbacks = {
   onStartParty: () => undefined,
   onQaContinue: () => undefined,
-  onHostOnline: () => undefined,
-  onJoinOnline: () => undefined,
+  onPlayOnline: () => undefined,
+  onPickFaction: () => undefined,
   onStartOnline: () => undefined,
   onLeaveOnline: () => undefined,
 }

@@ -321,6 +321,24 @@ describe('GameSession', () => {
       expect(session.getSnapshot().error).not.toBeNull()
     })
 
+    it('tells the menu whether a live online game is on the server', async () => {
+      const liveLobby = {
+        state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),
+        historyLength: 1,
+        mode: 'online',
+      }
+      stubFetchSequence([
+        { body: liveLobby },
+        { body: { ...liveLobby, mode: 'hotseat' } },
+        { body: { code: 'NO_GAME', detail: null }, status: 404 },
+      ])
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
+
+      expect(await session.hasLiveOnlineGame()).toBe(true)
+      expect(await session.hasLiveOnlineGame()).toBe(false)
+      expect(await session.hasLiveOnlineGame()).toBe(false)
+    })
+
     it('one button: a game in progress is not replaced', async () => {
       const running = {
         state: { ...openLobbyState([[HOST_PLAYER_ID, 'marquise']]), status: 'playing' },

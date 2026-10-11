@@ -7,25 +7,21 @@ import {
   useSyncExternalStore,
   type JSX,
 } from 'react'
-import { createFrontendApi, type GameState } from '#api/client.ts'
+import { createFrontendApi } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import {
   autumnMapPublicPath,
   CORE_IMAGE_ASSETS,
 } from '#assets/gameAssets.ts'
-import { GameSession } from '#game/GameSession.ts'
+import { GameSession, type GameSessionSnapshot } from '#game/GameSession.ts'
 import {
   clearHotseatGameOpen,
   isHotseatGameOpen,
   markHotseatGameOpen,
   reloadHotseatSlot,
 } from '#game/hotseatResume.ts'
-import {
-  getHudSnapshot,
-  setMenuCallbacks,
-  subscribeHud,
-  type MenuLobbyHudState,
-} from '#game/hudStore.ts'
+import { getHudSnapshot, setMenuCallbacks, subscribeHud } from '#game/hudStore.ts'
+import { buildMenuLobby } from '#game/menuLobby.ts'
 import {
   fetchQaSnapshot,
   readQaSnapshotPath,
@@ -39,6 +35,7 @@ import { GameScreen } from '#react/GameScreen.tsx'
 import {
   showMenuShell,
   syncMenuLobby,
+  syncMenuLobbyOnServer,
   syncMenuPlayPending,
   syncMenuStatus,
 } from '#react/MenuOverlay.tsx'
@@ -46,23 +43,8 @@ import { ReactHud } from '#react/ReactHud.tsx'
 import { useViewportFit } from '#react/useViewportFit.ts'
 import { useViewportLayoutMode } from '#react/useViewportLayoutMode.ts'
 
-/** Lobby rows for the menu: one per faction seat, filled in join order. */
-function buildMenuLobby(
-  state: GameState,
-  localSeat: number | null,
-  isHost: boolean,
-): MenuLobbyHudState {
-  const joinedCount: number = state.players.length
-  return {
-    seats: state.factions.map((faction, seat) => ({
-      faction,
-      occupied: seat < joinedCount,
-      isLocalPlayer: seat === localSeat,
-    })),
-    isHost,
-    canStart: isHost && joinedCount === state.factions.length,
-  }
-}
+/** How often the menu asks the server whether a lobby waits to be joined. */
+const LOBBY_STATUS_POLL_MS = 2500
 
 function prefetchImage(path: string): Promise<void> {
   return new Promise((resolve) => {
@@ -110,10 +92,10 @@ export function App(): JSX.Element {
   const lobbyUnsubscribeRef = useRef<(() => void) | null>(null)
   const handleStartPartyRef = useRef<(factions: string[]) => void>(() => undefined)
   const handleQaContinueRef = useRef<() => void>(() => undefined)
-  const handleHostOnlineRef = useRef<(factions: string[]) => void>(
+  const handlePlayOnlineRef = useRef<() => void>(() => undefined)
+  const handlePickFactionRef = useRef<(faction: string) => void>(
     () => undefined,
   )
-  const handleJoinOnlineRef = useRef<() => void>(() => undefined)
   const handleStartOnlineRef = useRef<() => void>(() => undefined)
   const handleLeaveOnlineRef = useRef<() => void>(() => undefined)
   const resumeOnlineGameRef = useRef<() => Promise<void>>(() =>
@@ -172,11 +154,11 @@ export function App(): JSX.Element {
       onQaContinue: () => {
         handleQaContinueRef.current()
       },
-      onHostOnline: (factions) => {
-        handleHostOnlineRef.current(factions)
+      onPlayOnline: () => {
+        handlePlayOnlineRef.current()
       },
-      onJoinOnline: () => {
-        handleJoinOnlineRef.current()
+      onPickFaction: (faction) => {
+        handlePickFactionRef.current(faction)
       },
       onStartOnline: () => {
         handleStartOnlineRef.current()
@@ -214,7 +196,7 @@ export function App(): JSX.Element {
   const watchOnlineLobby = useCallback((): void => {
     clearLobbyWait()
     const session = ensureSession()
-    lobbyUnsubscribeRef.current = session.subscribe((snapshot) => {
+    const showLobby = (snapshot: GameSessionSnapshot): void => {
       const state = snapshot.state
       if (state === null) {
         clearLobbyWait()
@@ -231,7 +213,12 @@ export function App(): JSX.Element {
       if (state.status === 'setup' || state.status === 'playing') {
         enterGame()
       }
-    })
+    }
+    lobbyUnsubscribeRef.current = session.subscribe(showLobby)
+    // The lobby is on screen at once, not only after the next server push.
+    if (session.getSnapshot().state !== null) {
+      showLobby(session.getSnapshot())
+    }
   }, [clearLobbyWait, ensureSession, enterGame])
 
   const runOnlineLobbyAction = useCallback(
@@ -262,20 +249,26 @@ export function App(): JSX.Element {
     [ensureSession, rebindSessionApi, watchOnlineLobby],
   )
 
-  const handleHostOnline = useCallback(
-    (factions: string[]): Promise<void> =>
-      runOnlineLobbyAction('Creating online lobby…', (session) =>
-        session.hostOnlineGame(factions),
+  /** The one start button: join the waiting lobby, or create one. */
+  const handlePlayOnline = useCallback(
+    (): Promise<void> =>
+      runOnlineLobbyAction('Opening lobby…', (session) =>
+        session.enterOnlineLobby(),
       ),
     [runOnlineLobbyAction],
   )
 
-  const handleJoinOnline = useCallback(
-    (): Promise<void> =>
-      runOnlineLobbyAction('Joining online lobby…', (session) =>
-        session.joinOnlineGame(),
-      ),
-    [runOnlineLobbyAction],
+  /** Open lobby: take a seat with the faction, or change the pick. */
+  const handlePickFaction = useCallback(
+    async (faction: string): Promise<void> => {
+      const session = ensureSession()
+      const picked: boolean = await session.pickLobbyFaction(faction)
+      syncMenuStatus(
+        picked ? '' : (session.getSnapshot().error ?? 'Could not pick'),
+        picked ? '#9a9a9a' : '#c44',
+      )
+    },
+    [ensureSession],
   )
 
   const handleStartOnline = useCallback(async (): Promise<void> => {
@@ -297,7 +290,7 @@ export function App(): JSX.Element {
     // Stop watching first: our own leave is not "the game was closed".
     clearLobbyWait()
     const session = ensureSession()
-    await session.restart()
+    await session.leaveOnlineLobby()
     playPendingRef.current = false
     syncMenuPlayPending(false)
     const error = session.getSnapshot().error
@@ -401,11 +394,11 @@ export function App(): JSX.Element {
   handleQaContinueRef.current = () => {
     void handleQaContinue()
   }
-  handleHostOnlineRef.current = (factions: string[]) => {
-    void handleHostOnline(factions)
+  handlePlayOnlineRef.current = () => {
+    void handlePlayOnline()
   }
-  handleJoinOnlineRef.current = () => {
-    void handleJoinOnline()
+  handlePickFactionRef.current = (faction: string) => {
+    void handlePickFaction(faction)
   }
   handleLeaveOnlineRef.current = () => {
     void handleLeaveOnline()
@@ -455,6 +448,30 @@ export function App(): JSX.Element {
       controller.stop()
     }
   }, [clearLobbyWait, controller, showMenu])
+
+  // Menu: the start button reads "Join game" while a lobby waits on the server.
+  useEffect(() => {
+    if (shell !== 'menu') {
+      return undefined
+    }
+    let cancelled = false
+    const askServer = async (): Promise<void> => {
+      const hasLiveGame: boolean = await ensureSession()
+        .hasLiveOnlineGame()
+        .catch((): boolean => false)
+      if (!cancelled) {
+        syncMenuLobbyOnServer(hasLiveGame)
+      }
+    }
+    void askServer()
+    const timer: number = window.setInterval(() => {
+      void askServer()
+    }, LOBBY_STATUS_POLL_MS)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [ensureSession, shell])
 
   const gameVisible = shell === 'game'
   const viewportZoom = useViewportFit()

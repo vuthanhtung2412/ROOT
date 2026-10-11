@@ -85,7 +85,10 @@ Cards:
   - Also cleared when another player answers a prompt (their choice is not the turn player's to rewind).
   - A phase the UI ends by itself (only "end phase" on offer) is not a decision: Undo goes back to the last real choice.
   - Limit: undo replays the game from its seed, so it does not work on a QA snapshot whose state was edited by hand.
-- [ ] **F3 + F4 — One start flow, players choose their faction.**
+- [x] **F3 + F4 — One start flow, players choose their faction.**
+  - Done: an "open lobby" (game created with no factions). The first player to pick a faction takes seat 1 and hosts. A pick can be changed until the game starts. Up to 4 players; the host starts with 2 or more.
+  - The button reads **Join game** whenever a live online game is on the server (lobby, or a game in progress to rejoin), else **Create game**.
+  - Hotseat (all seats on one device) and the QA shortcut stay below the button in dev builds only, as before.
   - Start screen has a single button: **Create** when no game is in the lobby state, **Join** when one is.
   - One player creates the game; for every other player the button becomes **Join**.
   - No faction set is chosen in advance. After joining, each player picks a faction; a faction already taken cannot be picked.

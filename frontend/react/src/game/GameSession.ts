@@ -332,6 +332,21 @@ export class GameSession {
   }
 
   /**
+   * A live online game (lobby or in progress) sits on the server: the start
+   * button then joins — or rejoins a seat held earlier — instead of creating.
+   */
+  async hasLiveOnlineGame(): Promise<boolean> {
+    try {
+      return !(await this.isSlotLeftover())
+    } catch (error: unknown) {
+      if (isNoGameError(error)) {
+        return false
+      }
+      throw error
+    }
+  }
+
+  /**
    * True when the server slot holds no live online game: a hotseat / QA game
    * (e.g. reloaded from disk after a restart) or a finished one. Such a slot
    * belongs to nobody, so a new online host may replace it.
