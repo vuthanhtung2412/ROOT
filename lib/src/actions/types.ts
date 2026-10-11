@@ -189,7 +189,8 @@ export type Action =
       from: ClearingId
       to: ClearingId
       count: number
-      defender: Seat
+      /** Enemy battled in the destination; absent when it holds no enemy. */
+      defender?: Seat
     }
   | { type: 'discard'; cardIds: string[] }
   | { type: 'addToDecree'; cards: AddToDecreeCard[] }

@@ -62,6 +62,11 @@ export type TurnScratch = {
    * of Birdsong / Evening" effects (Saboteurs, Charm Offensive) are over.
    */
   phaseActionTaken: boolean
+  /**
+   * The current player ended Birdsong; only "at end of Birdsong" effects
+   * (Eyrie Émigré) are left before Daylight.
+   */
+  endOfBirdsong: boolean
   emergencyOrdersDone: boolean
   eveningScoreDone: boolean
   decree: DecreeCursor | null

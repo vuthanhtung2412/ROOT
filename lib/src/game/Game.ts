@@ -22,6 +22,7 @@ import type { GameSnapshot } from '#state/snapshot.js'
 import type { Seat } from '#pieces/types.js'
 import type { GameState, Phase } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
+import { eyrieEmigreForcedMove } from '#effects/eyrieEmigre.js'
 import '#effects/register.js'
 import { offerRiverfolkServices } from '#events/buyServices.js'
 import { RESOLVERS } from '#events/resolvers.js'
@@ -151,6 +152,11 @@ export class Game {
     }
 
     const ctx = this.makeCtx()
+    if (state.turnScratch.endOfBirdsong && state.phase === 'birdsong') {
+      // Birdsong is over: the forced Eyrie Émigré move, then on to Daylight.
+      const forcedMove: ActionSpec | null = eyrieEmigreForcedMove(state, ctx.hooks)
+      return [forcedMove ?? { type: 'endPhase', actor: state.currentSeat }]
+    }
     const specs = factionFor(factionOf(state, state.currentSeat)).legalActions(
       state,
       ctx,
@@ -190,7 +196,7 @@ export class Game {
       (action.type === 'endPhase' || action.type === 'hideout') &&
       this.state.status === 'playing'
     ) {
-      logs.push(...this.advanceStepOrPhase())
+      logs.push(...this.advanceOrHoldAtEndOfBirdsong())
       logs.push(...checkActivatedDominanceWin(this.state, this.makeCtx()))
       if (this.state.status === 'playing') {
         logs.push(...this.runAutoActions())
@@ -201,7 +207,7 @@ export class Game {
       (action.type === 'addToDecree' || action.type === 'newRoost') &&
       this.state.status === 'playing'
     ) {
-      logs.push(...this.advanceStepOrPhase())
+      logs.push(...this.advanceOrHoldAtEndOfBirdsong())
       logs.push(...this.runAutoActions())
     }
 
@@ -310,6 +316,9 @@ export class Game {
 
     if (effectForAction(action) !== undefined) return
 
+    // The faction already ended its Birdsong; this only leaves the hold.
+    if (action.type === 'endPhase' && this.state.turnScratch.endOfBirdsong) return
+
     if (action.type === 'takeDominance' || action.type === 'activateDominance') {
       return
     }
@@ -412,6 +421,8 @@ export class Game {
   }
 
   private applyEndPhase(): LogEntry[] {
+    // Held at the end of Birdsong: the faction ended its phase before the hold.
+    if (this.state.turnScratch.endOfBirdsong) return []
     const ctx = this.makeCtx()
     const faction = factionFor(factionOf(this.state, this.state.currentSeat))
     faction.validate(this.state, { type: 'endPhase' }, ctx)
@@ -432,6 +443,27 @@ export class Game {
     if (!START_OF_PHASE_NEUTRAL_ACTIONS.has(action.type)) {
       state.turnScratch.phaseActionTaken = true
     }
+  }
+
+  /**
+   * Leave the current step, unless Birdsong is ending and Eyrie Émigré still
+   * forces a move ("At end of Birdsong, you must take a move…"): then Birdsong
+   * is held until that move is taken.
+   */
+  private advanceOrHoldAtEndOfBirdsong(): LogEntry[] {
+    const { state } = this
+    const birdsongSteps = factionFor(factionOf(state, state.currentSeat)).steps
+      .birdsong
+    const isLeavingBirdsong: boolean =
+      state.phase === 'birdsong' && state.step === birdsongSteps.at(-1)
+    if (
+      isLeavingBirdsong &&
+      eyrieEmigreForcedMove(state, this.makeCtx().hooks) !== null
+    ) {
+      state.turnScratch.endOfBirdsong = true
+      return []
+    }
+    return this.advanceStepOrPhase()
   }
 
   private advanceStepOrPhase(): LogEntry[] {
@@ -485,6 +517,7 @@ export class Game {
       state.step = faction.steps[nextPhase][0]!
       // Before the autos of the new phase: they may wait on a start-of-phase card.
       state.turnScratch.phaseActionTaken = false
+      state.turnScratch.endOfBirdsong = false
       if (nextPhase === 'evening' && state.step === 'military') {
         const board = playerOf(state, state.currentSeat).board
         if (board.kind === 'alliance') {

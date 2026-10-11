@@ -40,6 +40,26 @@ function readBooleanList(values: unknown[] | undefined): boolean[] {
   return values.filter((value): value is boolean => typeof value === 'boolean')
 }
 
+/** One complete legal payload of an action: every field but `type`. */
+type PayloadOption = Record<string, string | number | boolean>
+
+function isPayloadOption(value: unknown): value is PayloadOption {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false
+  }
+  return Object.values(value).every(
+    (field: unknown): boolean =>
+      typeof field === 'string' ||
+      typeof field === 'number' ||
+      typeof field === 'boolean',
+  )
+}
+
+function readPayloadOptions(values: unknown[] | undefined): PayloadOption[] {
+  if (!values) return []
+  return values.filter(isPayloadOption)
+}
+
 function isNumberList(value: unknown): value is number[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'number')
 }
@@ -602,8 +622,11 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
       if (declineList.includes(true)) return { type: 'resolveEvent', decline: true }
       return { type: 'resolveEvent', decline: true }
     }
-    default:
-      return null
+    default: {
+      // Actions that list complete payloads (crafted cards, expansion factions).
+      const payload = pick(readPayloadOptions(paramList(spec.params, 'options')))
+      return payload === undefined ? null : { type: spec.type, ...payload }
+    }
   }
 }
 
