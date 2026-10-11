@@ -11,6 +11,7 @@
 
 - [x] **B1 — Show the item supply more explicitly**, so an exhausted item is obvious. Add a supply button that works like the Discarded pile button.
   - Context: Root Tea could not be crafted after buying from Riverfolk. Rule checked, behaviour is correct; only the UI is missing.
+  - Modal: 2×6 map-strip grid (bag/boot/crossbow·hammer/sword/tea/coin), cream paper shell like Discarded, taken slots as ghosts.
 - [x] **B2 — Eyrie UI does not show the skip ambush button.** It should be below the banner at the top; in that game it was not shown.
   - Cause: a click on the map while the prompt was up wiped it (same for Field Hospitals and battle removal). Reproduced from event 156 of the log.
 
@@ -85,7 +86,7 @@ Cards:
   - Also cleared when another player answers a prompt (their choice is not the turn player's to rewind).
   - Also cleared when an action reveals hidden information: dice rolled, a draw from the deck or the quest deck, a card leaving another player's hand (Swap Meet, Steal, a Cult card discarded at random). Such an action cannot be taken back.
   - A phase the UI ends by itself (only "end phase" on offer) is not a decision: Undo goes back to the last real choice.
-  - Limit: undo replays the game from its seed, so it does not work on a QA snapshot whose state was edited by hand.
+  - Limit: undo replays the game from its seed, so it does not work on a QA snapshot whose state was edited by hand — except surgical board replace, which restores a pure snapshot (no replay) when the log has no prior history.
 - [x] **F3 + F4 — One start flow, players choose their faction.**
   - Done: an "open lobby" (game created with no factions). The first player to pick a faction takes seat 1 and hosts. A pick can be changed until the game starts. Up to 4 players; the host starts with 2 or more.
   - The button reads **Join game** whenever a live online game is on the server (lobby, or a game in progress to rejoin), else **Create game**.
@@ -109,7 +110,7 @@ Cards:
 - [x] **U2 — Show how many cards are in hand**, for the player's own hand and every opponent's hand.
   - Card-back badge on the top right of every seat of the player rail.
   - Online, the server sent opponents' hands as empty, so their size was hidden too. It now sends face-down cards: the size is open, the cards are not.
-- [ ] **U3 — Reduce verbosity of the action banner.** Deferred.
+- ~~**U3 — Reduce verbosity of the action banner.**~~ Deferred (out of this pass).
 - [x] **U4 — Remove the number in the middle of a building.** One icon per building, no count badge: a clearing holds at most 3 buildings, so repeated icons are fine.
 - [x] **U5 — Pointy finger in clearing.** Pointer cursor only when hovering a clickable clearing.
 - [x] **U6 — Theme the cursor to the game.** Create the cursor art that fits the game best. Do together with U5.
@@ -120,7 +121,7 @@ Cards:
 - [x] **P1 — Initial loading takes more than 10s.** Measure on the prod build first, then cut.
   - Prod measure: JS ~547 KiB; blocking boot was 58 images / 7.44 MiB (~12.8 s @ 5 Mbps).
   - Cut: menu boot = banner + wallpaper + faction heads only (~0.8 MiB / ~1.2 s); warm boards/tokens/map after menu; `enterGame` waits on warm. Autumn map → 2048w webp (3.3 MiB → 0.95 MiB).
-- [ ] **P2 — Preload assets for the potential next game states.** Deferred.
+- ~~**P2 — Preload assets for the potential next game states.**~~ Deferred (out of this pass).
 - [x] **P3 — Mobile build: preload assets at compile time.** Native build only; mobile web is unchanged.
   - `build:ios` sets `ROOT_NATIVE_ASSET_PRELOAD=1`; Vite injects `<link rel="preload" as="image">` for menu+warm paths into `index.html`. Plain `pnpm build` (web) injects none.
 
