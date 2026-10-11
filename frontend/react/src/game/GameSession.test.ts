@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createFrontendApi } from '#api/client.ts'
+import { createFrontendApi, type GameState } from '#api/client.ts'
 import type { GameSocketPush } from '#api/gameSocket.ts'
 import {
   makeActionSpec,
@@ -226,6 +226,116 @@ describe('GameSession', () => {
       expect(joined).toBe(true)
       expect(session.getLocalSeat()).toBe(1)
       expect(session.isOnlineHost()).toBe(false)
+    })
+
+    /** Open lobby as the server sends it: players so far, each with a pick. */
+    function openLobbyState(picks: Array<[string, string]>): GameState {
+      const base = makeGameState({ status: 'waiting' })
+      return {
+        ...base,
+        openLobby: true,
+        factions: picks.map(([, faction]: [string, string]): string => faction),
+        players: picks.map(([playerId, faction]: [string, string], seat: number) => ({
+          playerId,
+          seat,
+          faction,
+          vp: 0,
+          hand: [],
+        })),
+      }
+    }
+
+    it('one button: no game on the server → creates an open lobby and watches it', async () => {
+      const fetchMock = stubFetchSequence([
+        { body: { code: 'NO_GAME', detail: null }, status: 404 },
+        { body: { state: openLobbyState([]), mode: 'online' }, status: 201 },
+        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online' } },
+      ])
+      const session = createSession({ generatePlayerId: () => HOST_PLAYER_ID })
+
+      expect(await session.enterOnlineLobby()).toBe(true)
+
+      const createRequest: unknown = fetchMock.mock.calls[1]![0]
+      if (!(createRequest instanceof Request)) throw new Error('expected Request')
+      expect(await createRequest.json()).toEqual({ factions: [], mode: 'online' })
+      expect(session.getLocalPlayerId()).toBe(HOST_PLAYER_ID)
+      // No faction picked yet: watching, not seated.
+      expect(session.getLocalSeat()).toBeNull()
+    })
+
+    it('one button: a waiting lobby → enters it without creating a game', async () => {
+      const lobby = {
+        state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),
+        historyLength: 1,
+        mode: 'online',
+      }
+      const fetchMock = stubFetchSequence([{ body: lobby }, { body: lobby }])
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
+
+      expect(await session.enterOnlineLobby()).toBe(true)
+
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(session.getSnapshot().state?.players).toHaveLength(1)
+      expect(session.getLocalSeat()).toBeNull()
+    })
+
+    it('picking a faction takes the seat; the first to pick hosts', async () => {
+      const fetchMock = stubFetchSequence([
+        { body: { code: 'NO_GAME', detail: null }, status: 404 },
+        { body: { state: openLobbyState([]), mode: 'online' }, status: 201 },
+        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online' } },
+        { body: { state: openLobbyState([[HOST_PLAYER_ID, 'lizard']]), log: [] } },
+      ])
+      const session = createSession({ generatePlayerId: () => HOST_PLAYER_ID })
+      await session.enterOnlineLobby()
+
+      expect(await session.pickLobbyFaction('lizard')).toBe(true)
+
+      const joinRequest: unknown = fetchMock.mock.calls[3]![0]
+      if (!(joinRequest instanceof Request)) throw new Error('expected Request')
+      expect(await joinRequest.json()).toEqual({
+        playerId: HOST_PLAYER_ID,
+        faction: 'lizard',
+      })
+      expect(session.getLocalSeat()).toBe(0)
+      expect(session.isOnlineHost()).toBe(true)
+    })
+
+    it('a taken faction is refused and the browser stays unseated', async () => {
+      const lobby = {
+        state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),
+        historyLength: 1,
+        mode: 'online',
+      }
+      stubFetchSequence([
+        { body: lobby },
+        { body: lobby },
+        { body: { code: 'FACTION_TAKEN', detail: null }, status: 400 },
+      ])
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
+      await session.enterOnlineLobby()
+
+      expect(await session.pickLobbyFaction('marquise')).toBe(false)
+
+      expect(session.getLocalSeat()).toBeNull()
+      expect(session.getSnapshot().error).not.toBeNull()
+    })
+
+    it('one button: a game in progress is not replaced', async () => {
+      const running = {
+        state: { ...openLobbyState([[HOST_PLAYER_ID, 'marquise']]), status: 'playing' },
+        historyLength: 9,
+        mode: 'online',
+      }
+      const fetchMock = stubFetchSequence([{ body: running }, { body: running }])
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
+
+      expect(await session.enterOnlineLobby()).toBe(false)
+
+      expect(session.getSnapshot().error).toBe(
+        'A game is already running on this server',
+      )
+      expect(fetchMock).toHaveBeenCalledTimes(2)
     })
 
     it('guest cannot join a hotseat or missing game', async () => {

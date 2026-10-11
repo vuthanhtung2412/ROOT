@@ -44,6 +44,9 @@ export type PlayResult = 'continued' | JoinMatchResult
  */
 export type OnlineLobbyStatus = 'none' | 'joinable' | 'busy'
 
+/** Seats of an open lobby (players pick their faction): the table size. */
+const OPEN_LOBBY_SEAT_COUNT = 4
+
 /** The lobby creator joins first, so the host always holds seat 0. */
 const ONLINE_HOST_SEAT = 0
 
@@ -154,6 +157,8 @@ export class GameSession {
     if (
       this.localPlayerId !== null &&
       payload.state !== null &&
+      // A browser may watch a waiting lobby before it picks a faction.
+      payload.state.status !== 'waiting' &&
       !playerIdInState(payload.state, this.localPlayerId)
     ) {
       this.setError('Stored playerId not in this game')
@@ -305,7 +310,11 @@ export class GameSession {
   async findOnlineLobby(): Promise<OnlineLobbyStatus> {
     try {
       const game = await this.api.getGame()
-      const hasFreeSeat = game.state.players.length < game.state.factions.length
+      const seatCount: number =
+        game.state.openLobby === true
+          ? OPEN_LOBBY_SEAT_COUNT
+          : game.state.factions.length
+      const hasFreeSeat = game.state.players.length < seatCount
       if (
         game.mode === 'online' &&
         game.state.status === 'waiting' &&
@@ -386,6 +395,99 @@ export class GameSession {
       this.setError(errorMessage(error))
       return false
     }
+  }
+
+  /**
+   * The one start button: enter the waiting online lobby, or create an open
+   * one (no faction decided) when the server slot is free. The browser then
+   * watches the lobby; it takes a seat by picking a faction.
+   */
+  async enterOnlineLobby(): Promise<boolean> {
+    this.setLoading(true)
+    this.qaMode = false
+    try {
+      // Already seated (reload, or left to the menu earlier): same seat back.
+      if (await this.resumeOnlineGame()) {
+        return true
+      }
+      const lobby: OnlineLobbyStatus = await this.findOnlineLobby()
+      if (lobby === 'busy' && !(await this.isSlotLeftover())) {
+        this.setError('A game is already running on this server')
+        return false
+      }
+      if (lobby !== 'joinable') {
+        await this.api.createGame({
+          factions: [],
+          mode: 'online',
+          replace: lobby === 'busy',
+        })
+      }
+      const playerId: string = this.generatePlayerId()
+      this.bindLocalPlayer(playerId)
+      this.connectLocalSocket(playerId)
+      const game = await this.api.getGame()
+      this.publish({
+        state: game.state,
+        legalActions: [],
+        historyLength: game.historyLength,
+        log: [],
+        error: null,
+        loading: false,
+      })
+      return true
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+      return false
+    }
+  }
+
+  /** Open lobby: take a seat with `faction`, or change the pick already made. */
+  async pickLobbyFaction(faction: string): Promise<boolean> {
+    const playerId: string | null = this.localPlayerId
+    if (playerId === null) {
+      this.setError('Enter the lobby first')
+      return false
+    }
+    try {
+      const joined = await this.api.join(playerId, faction)
+      this.publish({
+        ...this.snapshot,
+        state: joined.state,
+        error: null,
+        loading: false,
+      })
+      return true
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+      return false
+    }
+  }
+
+  /**
+   * Leave the lobby screen. A browser that only watches a lobby others sit
+   * in walks away; the host (or the last one in an empty lobby) closes it.
+   */
+  async leaveOnlineLobby(): Promise<void> {
+    const state: GameState | null = this.snapshot.state
+    const isWatchingOnly: boolean =
+      state !== null && this.getLocalSeat() === null && state.players.length > 0
+    if (!isWatchingOnly) {
+      await this.restart()
+      return
+    }
+    this.disconnectSocket()
+    clearPlayerIdentity(
+      this.identityStorage === undefined ? undefined : this.identityStorage,
+    )
+    this.localPlayerId = null
+    this.publish({
+      state: null,
+      legalActions: [],
+      historyLength: 0,
+      log: [],
+      error: null,
+      loading: false,
+    })
   }
 
   /** Online host: start the game once the lobby is full. */
