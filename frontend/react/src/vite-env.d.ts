@@ -10,3 +10,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+interface Window {
+  /** QA log replay: skip sole-endPhase / forced prompt autos so the script drives. */
+  __ROOT_QA_DISABLE_AUTO__?: boolean
+}

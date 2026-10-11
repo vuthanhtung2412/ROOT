@@ -67,6 +67,10 @@ export class AutoPromptController {
     actorSeat: number,
     localControlsActor: boolean,
   ): void {
+    // Log-replay QA: the script posts the logged acts; no sole-endPhase / prompts.
+    if (window.__ROOT_QA_DISABLE_AUTO__ === true) {
+      return
+    }
     this.maybeBeginSetupPrompt(snapshot, actorSeat, localControlsActor)
     this.maybeBeginForcedCardPrompt(snapshot, actorSeat, localControlsActor)
     this.maybeBeginFieldHospitalPrompt(snapshot, actorSeat, localControlsActor)

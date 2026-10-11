@@ -277,6 +277,10 @@ export class ReactGameController {
         snapshot.state,
         snapshot.legalActions,
       ).actorSeat
+      // Log-replay QA sets this so the script alone posts the logged acts.
+      if (window.__ROOT_QA_DISABLE_AUTO__ === true) {
+        return
+      }
       this.autoPrompts?.runAfterHudPaint(
         snapshot,
         actorSeat,
