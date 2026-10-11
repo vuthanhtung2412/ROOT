@@ -29,11 +29,12 @@ const BoardMap3D = lazy(async () => {
 })
 
 /**
- * Share of the screen width the side HUD covers in landscape (player rail on
- * the left, action tray on the right): no clearing of the 3D map goes there.
+ * Share of the screen width kept free of clearings in landscape: the player
+ * rail hugs the left edge; on the right the action tray fills the bottom
+ * corner, so the clearing down there must stay clear of it.
  */
-const MAP_3D_LEFT_HUD_WIDTH_RATIO = 0.13
-const MAP_3D_RIGHT_HUD_WIDTH_RATIO = 0.2
+const MAP_3D_LEFT_HUD_WIDTH_RATIO = 0.07
+const MAP_3D_RIGHT_HUD_WIDTH_RATIO = 0.13
 const HALF = 0.5
 /** Gap between the toggle and the corner of the map area. */
 const MAP_VIEW_TOGGLE_INSET_PIXELS = 8

@@ -97,7 +97,7 @@ export function PlayerRail(): JSX.Element | null {
   }
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed top-16 right-2 left-2 z-100 box-border flex w-auto flex-row flex-wrap items-start justify-center gap-5 px-0 pt-1 md:top-10 md:right-auto md:bottom-3 md:left-0 md:w-(--root-landscape-side-percent) md:flex-col md:flex-nowrap md:items-center md:justify-start md:gap-8 md:overflow-x-hidden md:overflow-y-auto md:px-4 md:pt-4">
+    <div className="fixed top-16 right-2 left-2 z-100 box-border flex w-auto flex-row flex-wrap items-start justify-center gap-5 px-0 pt-1 md:top-10 md:right-auto md:bottom-3 md:left-0 md:w-auto md:flex-col md:flex-nowrap md:items-center md:justify-start md:gap-8 md:overflow-x-hidden md:overflow-y-auto md:px-4 md:pt-4">
       {rail.state.players.map((player) => {
         const isActive = player.seat === rail.activeSeat
         const factionColor: string = factionColorCss(player.faction)
