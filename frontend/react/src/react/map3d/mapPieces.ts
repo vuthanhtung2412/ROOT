@@ -94,7 +94,7 @@ function slotPieces(
     ? [
         {
           key: `${String(clearingId)}-ruin`,
-          shape: 'disc',
+          shape: 'piece',
           textureKey: GAME_ASSET_KEYS.markerRuin,
           texturePath: imagePathForAssetKey(GAME_ASSET_KEYS.markerRuin),
           color: FACTION_COLORS.neutral,
@@ -107,7 +107,7 @@ function slotPieces(
     .filter((piece: PieceViewModel): boolean => piece.kind === BUILDING_KIND)
     .map(
       (piece: PieceViewModel): MapPiece =>
-        singlePiece(piece, clearingId, 'tile'),
+        singlePiece(piece, clearingId, 'piece'),
     )
   const occupants: MapPiece[] = [...ruin, ...buildings]
   const slotCount: number = Math.max(
@@ -171,7 +171,7 @@ function stackPieces(
     const textureKey: string = textureKeyForStack(stack, clearingId)
     return {
       key: `${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`,
-      shape: FIGURE_KINDS.has(stack.kind) ? 'figure' : 'disc',
+      shape: 'piece',
       textureKey,
       texturePath: imagePathForAssetKey(textureKey),
       color: stack.color,
@@ -222,7 +222,7 @@ export function mapPiecesForBoard(input: MapPiecesInput): MapPiece[] {
       return [
         {
           key: `forest-pawn-${String(marker.seat)}`,
-          shape: 'figure',
+          shape: 'piece',
           textureKey,
           texturePath: imagePathForAssetKey(textureKey),
           color: factionColorForSeat(marker.seat, input.factions),

@@ -14,7 +14,7 @@ const MAP_CENTER_RATIO = 0.5
 const MINIMUM_DEPTH_RATIO = 0.6
 const MAXIMUM_DEPTH_RATIO = 1.15
 /** The turn banner and the hand cover the top and bottom of the map area. */
-const VIEW_HEIGHT_FOR_MAP_RATIO = 0.86
+const VIEW_HEIGHT_FOR_MAP_RATIO = 0.8
 /** Steps of the shape, so dragging a window edge does not rebuild each pixel. */
 const DEPTH_RATIO_STEP = 0.05
 

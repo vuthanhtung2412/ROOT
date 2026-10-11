@@ -88,7 +88,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     forests: input.forests,
     suitTexturePaths: input.suitTexturePaths,
   })
-  const pieceLayer: PieceLayer = createPieceLayer(input.models.meeples)
+  const pieceLayer: PieceLayer = createPieceLayer(input.models.pieces)
   scene.add(
     ...daylight.lights,
     createGround(input.terrain),
@@ -129,6 +129,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     )
     previousMilliseconds = nowMilliseconds
     cameraRig.update(deltaSeconds)
+    pieceLayer.setZoom(cameraRig.zoom())
     daylight.update(deltaSeconds)
     groundMarkers.update(
       (nowMilliseconds - startMilliseconds) / MILLISECONDS_PER_SECOND,

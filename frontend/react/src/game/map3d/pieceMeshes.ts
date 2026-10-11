@@ -1,8 +1,10 @@
 import {
+  Box3,
   BoxGeometry,
   CanvasTexture,
   CylinderGeometry,
   Group,
+  MathUtils,
   Mesh,
   MeshStandardMaterial,
   Object3D,
@@ -11,26 +13,28 @@ import {
   SRGBColorSpace,
   Texture,
   TextureLoader,
+  Vector3,
   type BufferGeometry,
   type Material,
 } from 'three'
+import type { PieceModel } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 
 /**
- * Everything standing in the clearings:
- * - `slot`: an empty building plot (one per building slot of the clearing);
- * - `tile`: a building — a square cardboard tile standing on its plot;
- * - `disc`: a round cardboard token (wood, sympathy, keep, ruin …);
- * - `figure`: a warrior or pawn — a wooden meeple.
- * One piece per stack, with the stack size on a badge.
+ * Everything standing in the clearings. A piece is shown two ways at once:
+ * - its 2D token icon (with the stack size on a badge), laid over the map;
+ * - its 3D model: a structure for a building, a wooden meeple for a warrior.
+ * Zoomed out, only the icons show, large, like on the flat map. Zooming in,
+ * the models rise and the icons shrink to small labels above them.
+ * An empty building slot is a staked-out plot, always in 3D.
  */
-export type MapPieceShape = 'slot' | 'tile' | 'disc' | 'figure'
+export type MapPieceShape = 'slot' | 'piece'
 
 export type MapPiece = {
   key: string
   shape: MapPieceShape
-  /** Token texture key: picks the meeple model of a figure. */
+  /** Token texture key: picks the 3D model of the piece. */
   textureKey: string
   texturePath: string | null
   /** Faction colour, 0xRRGGBB. */
@@ -42,28 +46,59 @@ export type MapPiece = {
 export type PieceLayer = {
   group: Group
   setPieces: (pieces: readonly MapPiece[]) => void
+  /** 0 = zoomed all the way out, 1 = all the way in. Call once per frame. */
+  setZoom: (zoom: number) => void
   dispose: () => void
+}
+
+/** A piece on the map and the parts that change with the zoom. */
+type PieceView = {
+  label: Group
+  model: Object3D | null
+  modelScale: number
+  /** Height of the model's top, at full size. */
+  modelTop: number
 }
 
 /** Meeple models are 2.3 units tall. */
 const MEEPLE_MODEL_SCALE = 1.9
-const TOKEN_SIZE = 3.7
-const TOKEN_THICKNESS = 0.42
-/** Cardboard leans back a little so its face meets the camera. */
-const TOKEN_LEAN_RADIANS = -0.6
-const DISC_SIDE_COUNT = 40
-const CARDBOARD_EDGE_COLOR = 0xcdb98c
-const QUARTER_TURN_RADIANS = Math.PI / 2
+/** A structure is scaled to this footprint (its larger side) … */
+const STRUCTURE_FOOTPRINT = 3.7
+/** … but never taller than this. */
+const STRUCTURE_MAXIMUM_HEIGHT = 5.6
+const STRUCTURE_BASE_RADIUS = 2.35
+const STRUCTURE_BASE_HEIGHT = 0.2
+const STRUCTURE_BASE_SIDE_COUNT = 32
+
+/** Icon size (world units) zoomed out, and zoomed in over a 3D model. */
+const LABEL_FAR_SIZE = 4.3
+const LABEL_NEAR_SIZE = 1.5
+/** A piece without a 3D model keeps a large icon when zoomed in. */
+const LABEL_NEAR_SIZE_WITHOUT_MODEL = 3.3
+const LABEL_FAR_HEIGHT = 0.8
+/** Gap between the top of a model and its label. */
+const LABEL_CLEARANCE = 1.2
+/** The models grow in over this part of the zoom. */
+const MODEL_RISE_START_ZOOM = 0.12
+const MODEL_RISE_END_ZOOM = 0.5
+const MODEL_HIDDEN_BELOW_GROWTH = 0.02
+/** Icons draw over the woodland, badges over the icons. */
+const LABEL_RENDER_ORDER = 9
+const BADGE_RENDER_ORDER = 10
+/** Badge, relative to its icon: half its size, on its top right corner. */
+const BADGE_RELATIVE_SIZE = 0.5
+const BADGE_SPRITE_CENTER = -0.3
 
 const SLOT_SIZE = 4.1
 const SLOT_HEIGHT = 0.28
 const SLOT_COLOR = 0x8a7550
 const SLOT_FLOOR_SIZE = 3.3
 const SLOT_FLOOR_COLOR = 0x5c4c34
+const SLOT_FLOOR_LIFT = 0.02
 const SLOT_POST_SIZE = 0.5
 const SLOT_POST_HEIGHT = 0.95
 const SLOT_POST_COLOR = 0xe9dfc4
-/** Corner posts stand at (±1, ±1) × this offset. */
+/** Corner posts stand at (±1, ±1) × the post offset. */
 const SLOT_CORNER_SIGNS: ReadonlyArray<readonly [number, number]> = [
   [-1, -1],
   [1, -1],
@@ -72,9 +107,6 @@ const SLOT_CORNER_SIGNS: ReadonlyArray<readonly [number, number]> = [
 ]
 
 const BADGE_TEXTURE_SIZE_PIXELS = 96
-const BADGE_SIZE = 2
-const BADGE_HEIGHT = 4.8
-const BADGE_SIDE_OFFSET = 1.6
 const BADGE_BORDER_WIDTH_PIXELS = 7
 const BADGE_BORDER_COLOR = '#f0e6d3'
 const BADGE_TEXT_COLOR = '#ffffff'
@@ -84,8 +116,6 @@ const HALF = 0.5
 const FULL_TURN_RADIANS = Math.PI * 2
 const HEX_RADIX = 16
 const HEX_COLOR_DIGIT_COUNT = 6
-/** Badges draw after the trees so a stack size is never hidden. */
-const BADGE_RENDER_ORDER = 10
 
 function colorToCss(color: number): string {
   return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
@@ -141,28 +171,27 @@ function shadowedMesh(
 }
 
 export function createPieceLayer(
-  meepleModels: ReadonlyMap<string, Group>,
+  pieceModels: ReadonlyMap<string, PieceModel>,
 ): PieceLayer {
   const group: Group = new Group()
   const textureLoader: TextureLoader = new TextureLoader()
-  const faceMaterials: Map<string, MeshStandardMaterial> = new Map<
+  const iconMaterials: Map<string, SpriteMaterial> = new Map<
     string,
+    SpriteMaterial
+  >()
+  const badgeMaterials: Map<string, SpriteMaterial> = new Map<
+    string,
+    SpriteMaterial
+  >()
+  const baseMaterials: Map<number, MeshStandardMaterial> = new Map<
+    number,
     MeshStandardMaterial
   >()
-  const badgeTextures: Map<string, CanvasTexture> = new Map<
-    string,
-    CanvasTexture
-  >()
-  const tileGeometry: BoxGeometry = new BoxGeometry(
-    TOKEN_SIZE,
-    TOKEN_SIZE,
-    TOKEN_THICKNESS,
-  )
-  const discGeometry: CylinderGeometry = new CylinderGeometry(
-    TOKEN_SIZE * HALF,
-    TOKEN_SIZE * HALF,
-    TOKEN_THICKNESS,
-    DISC_SIDE_COUNT,
+  const baseGeometry: CylinderGeometry = new CylinderGeometry(
+    STRUCTURE_BASE_RADIUS,
+    STRUCTURE_BASE_RADIUS,
+    STRUCTURE_BASE_HEIGHT,
+    STRUCTURE_BASE_SIDE_COUNT,
   )
   const slotGeometry: BoxGeometry = new BoxGeometry(
     SLOT_SIZE,
@@ -179,32 +208,62 @@ export function createPieceLayer(
     SLOT_POST_HEIGHT,
     SLOT_POST_SIZE,
   )
-  const edgeMaterial: MeshStandardMaterial =
-    standardMaterial(CARDBOARD_EDGE_COLOR)
   const slotMaterial: MeshStandardMaterial = standardMaterial(SLOT_COLOR)
   const slotFloorMaterial: MeshStandardMaterial =
     standardMaterial(SLOT_FLOOR_COLOR)
   const slotPostMaterial: MeshStandardMaterial =
     standardMaterial(SLOT_POST_COLOR)
+  let views: PieceView[] = []
+  let currentZoom = 0
 
-  /** The printed face of a cardboard piece. */
-  const faceMaterial = (piece: MapPiece): MeshStandardMaterial => {
+  const iconMaterial = (piece: MapPiece): SpriteMaterial => {
     const materialKey: string = piece.texturePath ?? colorToCss(piece.color)
-    const cached: MeshStandardMaterial | undefined =
-      faceMaterials.get(materialKey)
+    const cached: SpriteMaterial | undefined = iconMaterials.get(materialKey)
     if (cached !== undefined) {
       return cached
     }
-    const material: MeshStandardMaterial = standardMaterial(
-      piece.texturePath === null ? piece.color : 0xffffff,
-    )
+    const material: SpriteMaterial = new SpriteMaterial({
+      color: piece.texturePath === null ? piece.color : 0xffffff,
+      depthTest: false,
+    })
     if (piece.texturePath !== null) {
       const texture: Texture = textureLoader.load(piece.texturePath)
       texture.colorSpace = SRGBColorSpace
       material.map = texture
     }
-    faceMaterials.set(materialKey, material)
+    iconMaterials.set(materialKey, material)
     return material
+  }
+
+  const badgeMaterial = (piece: MapPiece): SpriteMaterial => {
+    const materialKey: string = `${String(piece.count)}:${String(piece.color)}`
+    const cached: SpriteMaterial | undefined = badgeMaterials.get(materialKey)
+    if (cached !== undefined) {
+      return cached
+    }
+    const material: SpriteMaterial = new SpriteMaterial({
+      map: createBadgeTexture(piece.count, piece.color),
+      depthTest: false,
+    })
+    badgeMaterials.set(materialKey, material)
+    return material
+  }
+
+  /** The 2D token icon, with the stack size pinned on its corner. */
+  const createLabel = (piece: MapPiece): Group => {
+    const label: Group = new Group()
+    const icon: Sprite = new Sprite(iconMaterial(piece))
+    icon.renderOrder = LABEL_RENDER_ORDER
+    label.add(icon)
+    if (piece.count > 1) {
+      const badge: Sprite = new Sprite(badgeMaterial(piece))
+      badge.scale.setScalar(BADGE_RELATIVE_SIZE)
+      // Anchored off-centre, so it sits on the icon's corner on screen.
+      badge.center.set(BADGE_SPRITE_CENTER, BADGE_SPRITE_CENTER)
+      badge.renderOrder = BADGE_RENDER_ORDER
+      label.add(badge)
+    }
+    return label
   }
 
   /** An empty building slot: a plot staked out with four corner posts. */
@@ -213,7 +272,7 @@ export function createPieceLayer(
     const plot: Mesh = shadowedMesh(slotGeometry, slotMaterial)
     plot.position.y = SLOT_HEIGHT * HALF
     const floor: Mesh = new Mesh(slotFloorGeometry, slotFloorMaterial)
-    floor.position.y = SLOT_HEIGHT * HALF + 0.02
+    floor.position.y = SLOT_HEIGHT * HALF + SLOT_FLOOR_LIFT
     floor.receiveShadow = true
     slot.add(plot, floor)
     const postOffset: number = (SLOT_SIZE - SLOT_POST_SIZE) * HALF
@@ -229,102 +288,134 @@ export function createPieceLayer(
     return slot
   }
 
-  /** A square building tile, standing on the plot it was built on. */
-  const createTile = (piece: MapPiece): Object3D => {
-    const face: MeshStandardMaterial = faceMaterial(piece)
-    // Box faces: +x, -x, +y, -y, +z (front), -z (back).
-    const materials: Material[] = [
-      edgeMaterial,
-      edgeMaterial,
-      edgeMaterial,
-      edgeMaterial,
-      face,
-      face,
-    ]
-    const tile: Mesh = shadowedMesh(tileGeometry, materials)
-    tile.position.y = TOKEN_SIZE * HALF
-    const holder: Group = new Group()
-    holder.add(tile)
-    holder.rotation.x = TOKEN_LEAN_RADIANS
-    return holder
-  }
-
-  /** A round token, standing on its edge. */
-  const createDisc = (piece: MapPiece): Object3D => {
-    const face: MeshStandardMaterial = faceMaterial(piece)
-    // Cylinder faces: side, top cap, bottom cap.
-    const disc: Mesh = shadowedMesh(discGeometry, [edgeMaterial, face, face])
-    // Stand the disc up: its printed top cap turns towards the camera, and a
-    // quarter turn about its own axis brings the art upright.
-    disc.rotation.set(QUARTER_TURN_RADIANS, QUARTER_TURN_RADIANS, 0)
-    disc.position.y = TOKEN_SIZE * HALF
-    const holder: Group = new Group()
-    holder.add(disc)
-    holder.rotation.x = TOKEN_LEAN_RADIANS
-    return holder
-  }
-
-  const createFigure = (piece: MapPiece): Object3D => {
-    const model: Group | undefined = meepleModels.get(piece.textureKey)
-    if (model === undefined) {
-      return createDisc(piece)
+  const baseMaterial = (color: number): MeshStandardMaterial => {
+    const cached: MeshStandardMaterial | undefined = baseMaterials.get(color)
+    if (cached !== undefined) {
+      return cached
     }
-    const meeple: Object3D = model.clone()
-    meeple.scale.setScalar(MEEPLE_MODEL_SCALE)
-    for (const part of meshesOf(meeple)) {
+    const material: MeshStandardMaterial = standardMaterial(color)
+    baseMaterials.set(color, material)
+    return material
+  }
+
+  /** The 3D model of a piece, feet on the ground, sized for a clearing. */
+  const createModel = (
+    piece: MapPiece,
+    pieceModel: PieceModel,
+  ): { model: Object3D; scale: number; top: number } => {
+    const figure: Object3D = pieceModel.model.clone()
+    for (const part of meshesOf(figure)) {
       part.castShadow = true
       part.receiveShadow = true
     }
-    return meeple
-  }
-
-  const createBadge = (piece: MapPiece): Sprite => {
-    const badgeKey: string = `${String(piece.count)}:${String(piece.color)}`
-    const texture: CanvasTexture =
-      badgeTextures.get(badgeKey) ??
-      createBadgeTexture(piece.count, piece.color)
-    badgeTextures.set(badgeKey, texture)
-    const badge: Sprite = new Sprite(
-      new SpriteMaterial({ map: texture, depthTest: false }),
+    if (pieceModel.kind === 'meeple') {
+      const height: number = new Box3()
+        .setFromObject(figure)
+        .getSize(new Vector3()).y
+      return {
+        model: figure,
+        scale: MEEPLE_MODEL_SCALE,
+        top: height * MEEPLE_MODEL_SCALE,
+      }
+    }
+    // A structure comes at any size and origin: centre it on its plot, on a
+    // base plate in the colour of the faction that owns it.
+    const bounds: Box3 = new Box3().setFromObject(figure)
+    const size: Vector3 = bounds.getSize(new Vector3())
+    const center: Vector3 = bounds.getCenter(new Vector3())
+    const scale: number = Math.min(
+      STRUCTURE_FOOTPRINT / Math.max(size.x, size.z),
+      STRUCTURE_MAXIMUM_HEIGHT / size.y,
     )
-    badge.scale.setScalar(BADGE_SIZE)
-    badge.position.set(BADGE_SIDE_OFFSET, BADGE_HEIGHT, 0)
-    badge.renderOrder = BADGE_RENDER_ORDER
-    return badge
+    figure.position.set(
+      -center.x,
+      STRUCTURE_BASE_HEIGHT / scale - bounds.min.y,
+      -center.z,
+    )
+    const base: Mesh = shadowedMesh(baseGeometry, baseMaterial(piece.color))
+    base.scale.setScalar(1 / scale)
+    base.position.y = (STRUCTURE_BASE_HEIGHT * HALF) / scale
+    const structure: Group = new Group()
+    structure.add(figure, base)
+    return {
+      model: structure,
+      scale,
+      top: size.y * scale + STRUCTURE_BASE_HEIGHT,
+    }
   }
 
-  const createPiece = (piece: MapPiece): Object3D => {
-    if (piece.shape === 'slot') {
-      return createSlot()
+  const applyZoom = (): void => {
+    const growth: number = MathUtils.smoothstep(
+      currentZoom,
+      MODEL_RISE_START_ZOOM,
+      MODEL_RISE_END_ZOOM,
+    )
+    for (const view of views) {
+      if (view.model === null) {
+        view.label.scale.setScalar(
+          MathUtils.lerp(LABEL_FAR_SIZE, LABEL_NEAR_SIZE_WITHOUT_MODEL, growth),
+        )
+        view.label.position.y = LABEL_FAR_HEIGHT
+        continue
+      }
+      view.model.visible = growth > MODEL_HIDDEN_BELOW_GROWTH
+      view.model.scale.setScalar(view.modelScale * growth)
+      view.label.scale.setScalar(
+        MathUtils.lerp(LABEL_FAR_SIZE, LABEL_NEAR_SIZE, growth),
+      )
+      view.label.position.y = MathUtils.lerp(
+        LABEL_FAR_HEIGHT,
+        view.modelTop + LABEL_CLEARANCE,
+        growth,
+      )
     }
-    if (piece.shape === 'tile') {
-      return createTile(piece)
-    }
-    if (piece.shape === 'disc') {
-      return createDisc(piece)
-    }
-    return createFigure(piece)
   }
 
   return {
     group,
     setPieces: (pieces: readonly MapPiece[]): void => {
       group.clear()
+      views = []
       for (const piece of pieces) {
         const holder: Group = new Group()
-        holder.add(createPiece(piece))
-        if (piece.count > 1) {
-          holder.add(createBadge(piece))
-        }
         holder.position.set(piece.ground.x, 0, piece.ground.z)
         group.add(holder)
+        if (piece.shape === 'slot') {
+          holder.add(createSlot())
+          continue
+        }
+        const label: Group = createLabel(piece)
+        holder.add(label)
+        const pieceModel: PieceModel | undefined = pieceModels.get(
+          piece.textureKey,
+        )
+        if (pieceModel === undefined) {
+          views.push({ label, model: null, modelScale: 1, modelTop: 0 })
+          continue
+        }
+        const created: { model: Object3D; scale: number; top: number } =
+          createModel(piece, pieceModel)
+        holder.add(created.model)
+        views.push({
+          label,
+          model: created.model,
+          modelScale: created.scale,
+          modelTop: created.top,
+        })
       }
+      applyZoom()
+    },
+    setZoom: (zoom: number): void => {
+      if (zoom === currentZoom) {
+        return
+      }
+      currentZoom = zoom
+      applyZoom()
     },
     dispose: (): void => {
       group.clear()
       for (const geometry of [
-        tileGeometry,
-        discGeometry,
+        baseGeometry,
         slotGeometry,
         slotFloorGeometry,
         slotPostGeometry,
@@ -332,17 +423,15 @@ export function createPieceLayer(
         geometry.dispose()
       }
       for (const material of [
-        edgeMaterial,
         slotMaterial,
         slotFloorMaterial,
         slotPostMaterial,
-        ...faceMaterials.values(),
+        ...baseMaterials.values(),
+        ...iconMaterials.values(),
+        ...badgeMaterials.values(),
       ]) {
         material.map?.dispose()
         material.dispose()
-      }
-      for (const texture of badgeTextures.values()) {
-        texture.dispose()
       }
     },
   }

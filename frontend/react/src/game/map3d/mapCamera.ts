@@ -25,6 +25,8 @@ export type MapCameraRig = {
   resetView: () => void
   /** Advance a running glide; call once per frame. */
   update: (deltaSeconds: number) => void
+  /** 0 = zoomed all the way out, 1 = all the way in. */
+  zoom: () => number
   dispose: () => void
 }
 
@@ -33,12 +35,21 @@ const NEAR_PLANE = 1
 const FAR_PLANE = 900
 const HALF = 0.5
 
-/** Tilt from straight down. */
-const TILT_ANGLE = MathUtils.degToRad(38)
+/**
+ * Tilt from straight down. Zoomed out the camera looks straight down, like
+ * at a map; zooming in tips it forward so the 3D pieces show their sides.
+ */
+const FAR_TILT_ANGLE = MathUtils.degToRad(1)
+const NEAR_TILT_ANGLE = MathUtils.degToRad(44)
+/** The camera reaches its full tilt at this much zoom (0 = out, 1 = in). */
+const FULL_TILT_ZOOM = 0.75
 /** Room around the woodland at the home view. */
 const HOME_FIT_MARGIN = 1.04
-/** The tilted woodland looks centred when the camera aims a little south. */
-const HOME_TARGET_DEPTH_RATIO = 0.03
+/**
+ * The hand covers more of the bottom of the view than the banner does of
+ * the top: aim a little south, so the woodland sits a little higher.
+ */
+const HOME_TARGET_DEPTH_RATIO = 0.035
 /** The map opens from a little higher up and settles into the home view. */
 const OPENING_DISTANCE_RATIO = 1.35
 const MINIMUM_DISTANCE = 26
@@ -66,6 +77,8 @@ export function createMapCameraRig(
     controlElement,
   )
   controls.enableRotate = false
+  controls.minAzimuthAngle = 0
+  controls.maxAzimuthAngle = 0
   controls.enableDamping = true
   controls.dampingFactor = DAMPING_FACTOR
   controls.screenSpacePanning = false
@@ -85,9 +98,8 @@ export function createMapCameraRig(
 
   /** Distance at which the whole woodland fits the focus of the view. */
   const homeDistance = (): number => {
-    // Seen at a tilt, the depth of the ground is foreshortened.
     const fitDepth: number =
-      (worldSize.depth * Math.cos(TILT_ANGLE) * HALF) /
+      (worldSize.depth * HALF) /
       (halfViewTangent * (frame.focus.height / frame.view.height))
     const fitWidth: number =
       (worldSize.width * HALF) /
@@ -109,11 +121,26 @@ export function createMapCameraRig(
     }
   }
 
+  /** 0 = zoomed all the way out (the home view), 1 = all the way in. */
+  const zoomFor = (distance: number): number =>
+    MathUtils.clamp(
+      1 - (distance - MINIMUM_DISTANCE) / (homeDistance() - MINIMUM_DISTANCE),
+      0,
+      1,
+    )
+
+  const tiltFor = (distance: number): number =>
+    MathUtils.lerp(
+      FAR_TILT_ANGLE,
+      NEAR_TILT_ANGLE,
+      MathUtils.smoothstep(zoomFor(distance), 0, FULL_TILT_ZOOM),
+    )
+
   const applyPose = (pose: MapViewPose): void => {
     controls.target.set(pose.target.x, 0, pose.target.z)
     const offset: Vector3 = new Vector3().setFromSphericalCoords(
       pose.distance,
-      TILT_ANGLE,
+      tiltFor(pose.distance),
       0,
     )
     camera.position.copy(controls.target).add(offset)
@@ -201,8 +228,14 @@ export function createMapCameraRig(
       } else {
         keepTargetOnMap()
       }
+      // The controls may zoom and pan, never turn: the tilt is pinned to
+      // what the zoom calls for, the heading to north.
+      const tilt: number = tiltFor(controls.getDistance())
+      controls.minPolarAngle = tilt
+      controls.maxPolarAngle = tilt
       controls.update()
     },
+    zoom: (): number => zoomFor(controls.getDistance()),
     dispose: (): void => {
       controls.removeEventListener('start', stopGlide)
       controls.dispose()

@@ -34,7 +34,7 @@ const BoardMap3D = lazy(async () => {
  * corner, so the clearing down there must stay clear of it.
  */
 const MAP_3D_LEFT_HUD_WIDTH_RATIO = 0.07
-const MAP_3D_RIGHT_HUD_WIDTH_RATIO = 0.13
+const MAP_3D_RIGHT_HUD_WIDTH_RATIO = 0.15
 const HALF = 0.5
 /** Gap between the toggle and the corner of the map area. */
 const MAP_VIEW_TOGGLE_INSET_PIXELS = 8
