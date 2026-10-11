@@ -31,12 +31,21 @@ Per card, in this order:
 
 1. **Rule first.** Compare `lib` with the card text and Law of Root. Any mismatch: fix the code to the rule, in its own commit, before any UI work.
 2. Wire the action in the frontend.
-3. **Video demo.** Record a short video of the card being used in the real UI, one video per card fixed.
+3. **Every pick is asked**, even when a step has a single possible value (no auto-pick), for all 8 cards.
+
+After all cards: **one video for all of them**, `card-fe-support.qa`, recorded by replaying `resources/notes/QA-plan-card-fe-support.md` (C10).
 
 Cards:
 
-- [ ] **C1 — Propaganda Bureau** (`propagandaBureau`, Daylight, once). Pick hand card → matching clearing → enemy whose warrior is replaced.
+- [ ] **C1 — Propaganda Bureau** (`propagandaBureau`, Daylight, once). Tray button → clearing → enemy (one banner button per faction) → hand card to spend.
+  - Card text: "Once in Daylight, you may spend a card to replace an enemy warrior in a matching clearing with a warrior of your faction."
   - Needs a label lookup: warrior piece id → owner faction name.
+  - Rule, checked online: replace = remove then place (Law of Root G.1.21; Root Database glossary). Ruling: a replaced warrior triggers Field Hospitals, and does not go to Coffin Makers (Convert, Propaganda Bureau).
+  - Rule mismatches in `lib`, fix first:
+    - [ ] **C1.1 — Replace must be completable.** No clearing offered where the owner cannot place (e.g. the Keep); card not offered when the owner's warrior supply is empty. Today the card is spent and the enemy warrior removed before the action fails.
+    - [ ] **C1.2 — Replace is a real remove.** Propaganda Bureau returns the warrior to supply by itself, so Field Hospitals is never offered. Use the shared remove.
+    - [ ] **C1.3 — Coffin Makers skips replaced warriors.** Today it collects them, for Propaganda Bureau and for Lizard Cult Convert. One fix for both, since both go through the shared remove after C1.2.
+  - [ ] **C1.4 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
 - [ ] **C2 — Saboteurs** (`saboteurs`, Birdsong). Pick enemy → pick one of their crafted cards to discard.
 - [ ] **C3 — League of Adventurous Mice** (`leagueMove`, `leagueBattle`, Daylight, once). Pick crafted item to exhaust → move (origin → destination → count) or battle (clearing → defender).
   - Needs a label lookup: crafted item index → item name. Offer one index per item type.
@@ -48,6 +57,7 @@ Cards:
 - [ ] **C8 — Eyrie Émigré** (`eyrieEmigre`, Birdsong). Pick origin → destination → count → defender.
   - Rule mismatch: card says the move is mandatory at end of Birdsong, then a battle in the destination, discard if both were not taken. `lib` only offers moves into a clearing that already holds an enemy, and lets the player skip the move. Force the move when any move is legal; battle if the destination holds an enemy; otherwise discard the card.
 - [ ] **C9 — Update `resources/notes/frontend-vs-registered-actions.md`.** Remove these actions from "not wired in React composers yet".
+- [ ] **C10 — QA run + video.** Snapshot builder and replay script for `resources/notes/QA-plan-card-fe-support.md`; record `tmp/artifacts/card-fe-support-qa/card-fe-support.qa.mp4`.
 
 ## 3. Game rules / flow
 
@@ -62,7 +72,7 @@ Cards:
 - [ ] **U1 — Game log visible to the player in the frontend.**
 - [ ] **U2 — Show how many cards are in hand**, for the player's own hand and every opponent's hand.
 - [ ] **U3 — Reduce verbosity of the action banner.**
-- [ ] **U4 — Remove the number in the middle of a building.** A clearing holds at most 2 buildings.
+- [ ] **U4 — Remove the number in the middle of a building.** A clearing holds at most 3 buildings so duplicate icon is still fine.
 - [ ] **U5 — Pointy finger in clearing.** Pointer cursor only when hovering a clickable clearing.
 - [ ] **U6 — Theme the cursor to the game.** Do together with U5.
 
