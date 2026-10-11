@@ -4,6 +4,22 @@ type Clearings = GameState['clearings']
 
 const WARRIOR_KIND = 'warrior'
 
+/**
+ * Type of the item at `itemIndex` in the Crafted Items box of the player whose
+ * turn it is; null when there is none.
+ */
+export function craftedItemTypeOfCurrentPlayer(
+  state: GameState,
+  itemIndex: number,
+): string | null {
+  const currentPlayer = state.players.find(
+    (player): boolean => player.seat === state.currentSeat,
+  )
+  const item = currentPlayer?.craftedItems?.[itemIndex]
+  if (item === undefined) return null
+  return typeof item === 'string' ? item : item.type
+}
+
 /** Seat owning the warrior `pieceId` on the map; null when it is not there. */
 export function warriorOwnerSeat(
   clearings: Clearings,

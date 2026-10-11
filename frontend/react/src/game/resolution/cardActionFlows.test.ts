@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { ActionSpec } from '#api/client.ts'
-import { warriorOwnerSeat } from '#game/cardActionLabels.ts'
+import {
+  craftedItemTypeOfCurrentPlayer,
+  warriorOwnerSeat,
+} from '#game/cardActionLabels.ts'
 import {
   ActionComposer,
   type ComposerOutcome,
@@ -20,6 +23,10 @@ const WARRIOR_OWNER_SEATS: Readonly<Record<string, number>> = {
   [CAT_WARRIOR_ID]: 0,
   [BIRD_WARRIOR_ID]: 2,
 }
+/** Crafted Items box of the actor: a boot, a second boot, a tea. */
+const CRAFTED_ITEM_TYPES: readonly string[] = ['boot', 'boot', 'tea']
+const BOOT_ITEM_INDEX = 0
+const TEA_ITEM_INDEX = 2
 
 type ComposerUnderTest = {
   composer: ActionComposer
@@ -33,6 +40,8 @@ function composerUnderTest(): ComposerUnderTest {
     factionNameForSeat: (seat: number): string | null => FACTIONS[seat] ?? null,
     warriorOwnerSeat: (pieceId: string): number | null =>
       WARRIOR_OWNER_SEATS[pieceId] ?? null,
+    craftedItemType: (itemIndex: number): string | null =>
+      CRAFTED_ITEM_TYPES[itemIndex] ?? null,
   })
   const composer = new ActionComposer()
   composer.setHooks(option.hooks)
@@ -122,6 +131,106 @@ describe('Propaganda Bureau flow', () => {
 
   it('has a tray label', () => {
     expect(formatActionLabel(spec)).toBe('propaganda bureau')
+  })
+})
+
+describe('League of Adventurous Mice flows', () => {
+  const moveSpec: ActionSpec = makeActionSpec({
+    type: 'leagueMove',
+    params: {
+      options: [BOOT_ITEM_INDEX, TEA_ITEM_INDEX].flatMap((itemIndex: number) => [
+        { itemIndex, from: 1, to: 4, count: 1 },
+        { itemIndex, from: 1, to: 4, count: 2 },
+        { itemIndex, from: 1, to: 5, count: 1 },
+        { itemIndex, from: 9, to: 0, count: 1 },
+      ]),
+    },
+  })
+  const battleSpec: ActionSpec = makeActionSpec({
+    type: 'leagueBattle',
+    params: {
+      options: [
+        { itemIndex: TEA_ITEM_INDEX, clearing: 1, defender: 0 },
+        { itemIndex: TEA_ITEM_INDEX, clearing: 1, defender: 2 },
+      ],
+    },
+  })
+
+  it('move: item by name, origin, destination, then the warrior count', () => {
+    const { composer, promptOptions } = composerUnderTest()
+
+    expectIncomplete(composer.begin(moveSpec))
+    expect(promptOptions()).toEqual([
+      { label: 'Boot', value: 'choice:0' },
+      { label: 'Tea', value: 'choice:1' },
+    ])
+
+    const afterItem = expectIncomplete(composer.chooseColumn('choice:1'))
+    expect(afterItem.prompt.highlightClearings).toEqual([1, 9])
+    const afterOrigin = expectIncomplete(composer.chooseClearing(1))
+    expect(afterOrigin.prompt.highlightClearings).toEqual([4, 5])
+    expectIncomplete(composer.chooseClearing(4))
+    expect(promptOptions()).toEqual([
+      { label: '1 warrior', value: '1' },
+      { label: '2 warriors', value: '2' },
+    ])
+
+    expect(composer.chooseColumn('2')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'leagueMove',
+        itemIndex: TEA_ITEM_INDEX,
+        from: 1,
+        to: 4,
+        count: 2,
+      },
+    })
+  })
+
+  it('battle: item, clearing, then the defender by faction name', () => {
+    const { composer, promptOptions } = composerUnderTest()
+
+    expectIncomplete(composer.begin(battleSpec))
+    expect(promptOptions()).toEqual([{ label: 'Tea', value: 'choice:0' }])
+    expectIncomplete(composer.chooseColumn('choice:0'))
+    expectIncomplete(composer.chooseClearing(1))
+    expect(promptOptions()).toEqual([
+      { label: 'marquise', value: 'choice:0' },
+      { label: 'eyrie', value: 'choice:1' },
+    ])
+
+    expect(composer.chooseColumn('choice:1')).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'leagueBattle',
+        itemIndex: TEA_ITEM_INDEX,
+        clearing: 1,
+        defender: 2,
+      },
+    })
+  })
+
+  it('has tray labels that tell move from battle', () => {
+    expect(formatActionLabel(moveSpec)).toBe('league: move')
+    expect(formatActionLabel(battleSpec)).toBe('league: battle')
+  })
+})
+
+describe('craftedItemTypeOfCurrentPlayer', () => {
+  it('reads the Crafted Items box of the player whose turn it is', () => {
+    const base = makeGameState({ currentSeat: 1 })
+    const state = {
+      ...base,
+      players: base.players.map((seated) =>
+        seated.seat === 1
+          ? { ...seated, craftedItems: [{ type: 'sword', exhausted: false }, 'tea'] }
+          : { ...seated, craftedItems: ['coin'] },
+      ),
+    }
+
+    expect(craftedItemTypeOfCurrentPlayer(state, 0)).toBe('sword')
+    expect(craftedItemTypeOfCurrentPlayer(state, 1)).toBe('tea')
+    expect(craftedItemTypeOfCurrentPlayer(state, 2)).toBeNull()
   })
 })
 

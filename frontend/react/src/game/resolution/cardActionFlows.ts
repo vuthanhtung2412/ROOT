@@ -1,6 +1,7 @@
 import type {
   FlowDefinition,
   OptionLabels,
+  OptionStep,
   OptionValue,
 } from '#game/resolution/optionActionFlows.ts'
 
@@ -12,6 +13,20 @@ function seatLabel(value: OptionValue, labels: OptionLabels): string {
 /** Label of the enemy a warrior belongs to, for a `pieceId` choice. */
 function warriorOwnerLabel(value: OptionValue, labels: OptionLabels): string {
   return labels.warriorOwnerName(String(value)) ?? String(value)
+}
+
+/** Name of an item in the actor's Crafted Items box, for an `itemIndex` choice. */
+function craftedItemLabel(value: OptionValue, labels: OptionLabels): string {
+  const name: string | null =
+    typeof value === 'number' ? labels.craftedItemName(value) : null
+  return name ?? `item ${String(value)}`
+}
+
+const ITEM_TO_EXHAUST_STEP: OptionStep = {
+  field: 'itemIndex',
+  kind: 'choice',
+  prompt: 'pick item to exhaust',
+  label: craftedItemLabel,
 }
 
 /**
@@ -32,6 +47,31 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
         label: warriorOwnerLabel,
       },
       { field: 'cardId', kind: 'card', prompt: 'pick matching card to spend' },
+    ],
+  },
+  // League of Adventurous Mice: exhaust a crafted item to move or battle.
+  leagueMove: {
+    title: 'League of Adventurous Mice',
+    asksEveryStep: true,
+    steps: [
+      ITEM_TO_EXHAUST_STEP,
+      { field: 'from', kind: 'clearing', prompt: 'pick origin' },
+      { field: 'to', kind: 'clearing', prompt: 'pick destination' },
+      { field: 'count', kind: 'count', prompt: 'how many warriors?' },
+    ],
+  },
+  leagueBattle: {
+    title: 'League of Adventurous Mice',
+    asksEveryStep: true,
+    steps: [
+      ITEM_TO_EXHAUST_STEP,
+      { field: 'clearing', kind: 'clearing', prompt: 'pick clearing' },
+      {
+        field: 'defender',
+        kind: 'choice',
+        prompt: 'pick defender',
+        label: seatLabel,
+      },
     ],
   },
   // Saboteurs: discard it to discard a crafted card of an enemy.
@@ -56,6 +96,8 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
 
 /** Tray labels of the card actions. */
 export const CARD_ACTION_LABELS: Readonly<Record<string, string>> = {
+  leagueMove: 'league: move',
+  leagueBattle: 'league: battle',
   propagandaBureau: 'propaganda bureau',
   saboteurs: 'saboteurs',
 }

@@ -17,6 +17,7 @@ import {
   type OptionStep,
   type OptionValue,
 } from '#game/resolution/optionActionFlows.ts'
+import { itemName } from '#ui/itemSupply.ts'
 import type {
   TurnBannerOption,
   TurnBannerOptionPresentation,
@@ -48,6 +49,8 @@ export type OptionComposerOptions = SeatLabelOptions & {
   currentServiceCost?: (service: string) => number | null
   /** Seat owning a warrior on the map; null when the piece is not found. */
   warriorOwnerSeat?: (pieceId: string) => number | null
+  /** Type of an item in the actor's Crafted Items box; null when not found. */
+  craftedItemType?: (itemIndex: number) => string | null
 }
 
 function distinctValues(
@@ -95,6 +98,11 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
       const ownerSeat: number | null =
         options?.warriorOwnerSeat?.(pieceId) ?? null
       return ownerSeat === null ? null : seatName(ownerSeat)
+    },
+    craftedItemName: (itemIndex: number): string | null => {
+      const itemType: string | null =
+        options?.craftedItemType?.(itemIndex) ?? null
+      return itemType === null ? null : itemName(itemType)
     },
   }
 

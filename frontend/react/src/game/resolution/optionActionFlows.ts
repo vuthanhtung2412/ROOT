@@ -45,6 +45,8 @@ export type OptionLabels = {
   currentServiceCost: (service: string) => number | null
   /** Faction owning a warrior on the map; null when the piece is not found. */
   warriorOwnerName: (pieceId: string) => string | null
+  /** Name of an item in the actor's Crafted Items box; null when not found. */
+  craftedItemName: (itemIndex: number) => string | null
 }
 
 /** A staged action: its legal payloads and the order their fields are picked. */
