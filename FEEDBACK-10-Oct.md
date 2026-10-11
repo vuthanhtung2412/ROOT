@@ -73,7 +73,8 @@ Cards:
   - [x] **C8.1 — Rule fix.** The card is no longer usable during Birdsong. Ending Birdsong holds the phase and leaves the forced move as the only action; a destination with an enemy comes with its battle, one without discards the card; then only "end phase" is left. No possible move → Birdsong ends and the card is discarded. The CLI auto player now plays any action that lists its payloads, so it is not stuck on the forced move.
   - [x] **C8.2 — Frontend:** the forced move opens by itself when Birdsong ends: origin → destination → count → defender.
 - [x] **C9 — Update `resources/notes/frontend-vs-registered-actions.md`.** Remove these actions from "not wired in React composers yet".
-- [ ] **C10 — QA run + video.** Snapshot builder and replay script for `resources/notes/QA-plan-card-fe-support.md`; record `tmp/artifacts/card-fe-support-qa/card-fe-support.qa.mp4`.
+- [x] **C10 — QA run + video.** 9 of 9 UI steps pass; video is 94 s. The run also found C6.1 and that a held draw could be skipped with "end phase" (fixed: the phase cannot end before a held step).
+  - Snapshot builder and replay script for `resources/notes/QA-plan-card-fe-support.md`; record `tmp/artifacts/card-fe-support-qa/card-fe-support.qa.mp4`.
 
 ## 3. Game rules / flow
 

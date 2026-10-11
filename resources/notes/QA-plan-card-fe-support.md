@@ -2,12 +2,12 @@
 
 **One snapshot. One continuous play sequence. One video.** Each step lists **Hits** (`C#`, matching `FEEDBACK-10-Oct.md` section 2).
 
-Status: **plan only.** The regen and replay scripts below do not exist yet; they are written with C1–C8.
+Status: **passes.** `simulate` plays the plan on the engine; the replay plays it in the UI (9 recorded steps, each covering one card).
 
 | | |
 |---|---|
 | Snapshot | `tmp/qa/snapshots/card-fe-support-qa-run.json` |
-| Regen | `cd lib && pnpm exec tsx ../.agents/skills/QA/make-card-fe-support-qa-run.ts` |
+| Regen | `cd lib && pnpm exec tsx ../.agents/skills/QA/make-card-fe-support-qa-run.ts` (add `simulate` to play and check the plan on the engine, no UI) |
 | Replay | `node .agents/skills/QA/replay-card-fe-support-qa.mjs` — plays this plan in the UI, checks each step against `GET /game`, records `tmp/artifacts/card-fe-support-qa/card-fe-support.qa.mp4` |
 | Rules | Card text (`lib/src/cards/ep.generated.ts`), `resources/rules/Law_of_Root.md` G.1.21 Replace, 6.2.2 The Keep, 6.2.3 Field Hospitals |
 | Dice | Fixed by the snapshot's rng seed: the single battle of this plan (step 9) rolls 1 / 0. An extra battle shifts the roll. |
@@ -24,6 +24,7 @@ Status: **plan only.** The regen and replay scripts below do not exist yet; they
 5. After each step: board + `GET /game` / `/game/log`.
 6. Every **Field Hospitals** prompt the Marquise gets (steps 9, 14): **Decline**.
 7. No step is skipped when it has a single possible value: every pick below is asked, even "Marquise" as the only enemy.
+8. The UI ends a phase by itself when **End phase** is the only action: steps 1, 8 and 17 need no click, and Birdsong / Evening end alone after steps 9 and 18.
 
 **Seats:** `0` Marquise · `1` Woodland Alliance (two players). The Alliance is the actor: every step of its turn is optional, so the turn shows the card actions only.
 
@@ -91,14 +92,14 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | 5 | Give **Travel Gear (mouse)** | Alliance hand: Sword, Mouse-in-a-sack, A Visit To Friends. Marquise hand: Travel Gear. **swap meet** button gone | **C4a** | ☐ |
 | 6 | **false orders** → **Marquise** | Clearings 1, 2, 6 highlighted (every clearing with Cat warriors) | **C7** | ☐ |
 | 7 | Origin **1** → destination **5** | Only 4, 5, 9 offered as destination. 2 of the 3 Cat warriors (half, rounded up) move to 5: 1 = 1 Cat, 5 = 2 Cat. False Orders → Discarded pile (5 cards). Button gone | **C7** | ☐ |
-| 8 | **End phase** | Birdsong does not end: Eyrie Émigré asks for a move. Only clearing **9** is an origin | **C8a** | ☐ |
+| 8 | Nothing to click: only **End phase** is left, the UI ends Birdsong | Birdsong does not end: the Eyrie Émigré prompt opens by itself and cannot be cancelled. Only clearing **9** is an origin | **C8a** | ☐ |
 | 9 | Origin **9** → destination **1** → **3 warriors** → **Marquise** | Destinations 0, 1, 11 offered. 3 Alliance warriors move to 1, battle starts there. Dice 1 / 0 → Field Hospitals prompt (Marquise holds a mouse card) → **Decline** → the Cat warrior leaves 1. **Coffin Makers holds 1 warrior** (Cat supply unchanged). Eyrie Émigré stays in play. Daylight begins | **C8** | ☐ |
 
 ### Part 2 — Alliance Daylight
 
 | # | Do | Expect | Hits | ☐ |
 |---|----|--------|------|---|
-| 10 | Look at the tray | **league: move**, **propaganda bureau**, craft / end phase. No **league: battle** (no enemy shares a clearing with Alliance warriors) | | ☐ |
+| 10 | Look at the tray | **league: move**, **propaganda bureau**, mobilize / end phase. No **league: battle** (no enemy shares a clearing with Alliance warriors) | | ☐ |
 | 11 | **league: move** → item **Travel Gear** | Both ready items offered (Travel Gear, Root Tea). Origins 1 and 9 highlighted | **C3** | ☐ |
 | 12 | Origin **1** → destination **4** → **1 warrior** | 1 = 2 Alliance, 4 = 1 Alliance. Travel Gear shows exhausted in Crafted Items. Both league buttons gone for the turn | **C3** | ☐ |
 | 13 | **propaganda bureau** | Only clearing **6** highlighted. Not **2** (Keep: the Alliance cannot place there, though it holds a rabbit card). Not **5** (no fox or bird card in hand) | **C1** **C1a** | ☐ |
@@ -110,7 +111,7 @@ Play top → bottom. Do **not** reload between steps (unless Fail → regen).
 | # | Do | Expect | Hits | ☐ |
 |---|----|--------|------|---|
 | 16 | **charm offensive** → **Marquise** | Alliance draws 1 card (hand 3); Marquise **+1 VP**. Button gone | **C5** | ☐ |
-| 17 | **End phase** to the draw step | Tray offers **draw** and **informants**; the draw does not happen by itself | **C6** | ☐ |
+| 17 | Nothing to click: the UI goes on to the draw step | Tray offers **draw** and **informants**, and no **end phase**: the draw does not happen by itself and cannot be skipped | **C6** | ☐ |
 | 18 | **informants** → pick **Ambush! (fox)** from the shown pile | Only ambush cards are shown. Ambush → Alliance hand (4 cards); no card drawn from the deck; Discarded pile 5 cards | **C6** | ☐ |
 | 19 | **End phase** | Turn passes → Marquise. Eyrie Émigré still in the Alliance play area | | ☐ |
 
