@@ -35,7 +35,8 @@ export type LeaderPickHudState = {
 
 export type GameDrawerHudState = {
   discardCount: number
-  endGameArmed: boolean
+  /** Only the host ends the game for everyone; a guest can only leave it. */
+  canEndGame: boolean
   /** The local player has an action of this turn to take back. */
   canUndo: boolean
 } | null

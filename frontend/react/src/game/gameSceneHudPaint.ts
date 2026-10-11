@@ -59,6 +59,8 @@ export function paintGameSceneHud(
   deps.getModals()?.refreshCraftedCards(snapshot.state)
   deps.getModals()?.refreshCompletedQuests(snapshot.state)
   syncGameDrawer({
+    // Rule of the table, not of Root: only the host ends an online game.
+    canEndGame: deps.getSession()?.isOnlineGuest() !== true,
     discardCount: snapshot.state.deck?.discard.length ?? 0,
     canUndo: canUndoTurnAction(
       snapshot.state,

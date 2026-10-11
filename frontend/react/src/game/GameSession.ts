@@ -691,8 +691,11 @@ export class GameSession {
     }
   }
 
-  /** Online: this browser holds a seat that is not the host's. */
-  private isOnlineGuest(): boolean {
+  /**
+   * Online: this browser holds a seat that is not the host's. A guest cannot
+   * end the game; it can only leave it.
+   */
+  isOnlineGuest(): boolean {
     const localSeat = this.getLocalSeat()
     return !this.qaMode && localSeat !== null && localSeat !== ONLINE_HOST_SEAT
   }

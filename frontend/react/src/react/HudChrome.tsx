@@ -1,11 +1,12 @@
-import { useSyncExternalStore, type JSX } from 'react'
+import { useState, useSyncExternalStore, type JSX } from 'react'
 import { GiCardBurn } from 'react-icons/gi'
-import { LuFlag, LuUndo2 } from 'react-icons/lu'
+import { LuFlag, LuLogOut, LuUndo2 } from 'react-icons/lu'
 import {
   getHudCallbacks,
   getHudSnapshot,
   patchHud,
   subscribeHud,
+  type GameDrawerHudState,
 } from '#game/hudStore.ts'
 import { ItemSupplyButton } from '#react/ItemSupply.tsx'
 import {
@@ -20,16 +21,88 @@ const VEIL_CLASS_NAME = 'inset-0 bg-forest-deep/72'
 const DRAWER_BUTTON_CLASS_NAME =
   'root-paper root-paper-fine root-paper-press pointer-events-auto m-0 flex flex-row items-center gap-1.5 px-3 py-1.5 font-display text-sm text-ink md:text-base'
 
+/** Words of the exit button and of the modal that confirms it. */
+type ExitGameWording = {
+  button: string
+  question: string
+  consequence: string
+  confirm: string
+}
+
+/** Host (or a single-device game): the game stops for every player. */
+const END_GAME_WORDING: ExitGameWording = {
+  button: 'End game',
+  question: 'End the game?',
+  consequence: 'The game stops for every player and cannot be resumed.',
+  confirm: 'Yes, end the game',
+}
+
+/** Online guest: only this browser goes back to the menu. */
+const LEAVE_GAME_WORDING: ExitGameWording = {
+  button: 'Leave game',
+  question: 'Leave the game?',
+  consequence:
+    'The game goes on without you on this screen. Only the host can end it. "Join game" brings you back to your seat.',
+  confirm: 'Yes, leave',
+}
+
+const KEEP_PLAYING_LABEL = 'Keep playing'
+const EXIT_MODAL_BUTTON_CLASS_NAME = 'root-button px-3.5 py-2 font-display text-lg'
+
+/** Asks before leaving the game: one stray click must not end it. */
+function ExitGameModal(props: {
+  wording: ExitGameWording
+  onConfirm: () => void
+  onCancel: () => void
+}): JSX.Element {
+  return (
+    <div
+      className="exit-game-modal pointer-events-auto fixed inset-0 z-400 flex items-center justify-center"
+      role="alertdialog"
+      aria-modal="true"
+      aria-label={props.wording.question}
+    >
+      <div className={`absolute ${VEIL_CLASS_NAME}`} onClick={props.onCancel} />
+      <div className="root-panel relative z-1 m-3 flex max-w-[min(92vw,460px)] flex-col gap-3 px-5 py-4 text-ink">
+        <h2 className="m-0 font-display text-2xl font-normal">
+          {props.wording.question}
+        </h2>
+        <p className="m-0 font-body text-base">{props.wording.consequence}</p>
+        <div className="flex flex-row flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            className={`${EXIT_MODAL_BUTTON_CLASS_NAME} root-button--quiet`}
+            onClick={props.onCancel}
+          >
+            {KEEP_PLAYING_LABEL}
+          </button>
+          <button
+            type="button"
+            className={`${EXIT_MODAL_BUTTON_CLASS_NAME} root-button--accent`}
+            onClick={props.onConfirm}
+          >
+            {props.wording.confirm}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function GameDrawer(): JSX.Element | null {
   const drawer = useSyncExternalStore(
     subscribeHud,
     () => getHudSnapshot().gameDrawer,
     () => getHudSnapshot().gameDrawer,
   )
+  const [isConfirmingExit, setIsConfirmingExit] = useState<boolean>(false)
   if (drawer === null) {
     return null
   }
   const callbacks = getHudCallbacks()
+  const exitWording: ExitGameWording = drawer.canEndGame
+    ? END_GAME_WORDING
+    : LEAVE_GAME_WORDING
 
   return (
     <div className="pointer-events-none fixed right-2 bottom-(--root-portrait-drawer-bottom) left-2 z-112 flex justify-between md:right-3 md:bottom-22.5 md:left-3">
@@ -37,21 +110,28 @@ export function GameDrawer(): JSX.Element | null {
         type="button"
         className={`${DRAWER_BUTTON_CLASS_NAME} [--root-paper-color:color-mix(in_srgb,var(--color-rust)_45%,var(--color-parchment))]`}
         onClick={() => {
-          if (!drawer.endGameArmed) {
-            patchHud({
-              gameDrawer: { ...drawer, endGameArmed: true },
-            })
-            return
-          }
-          patchHud({
-            gameDrawer: { ...drawer, endGameArmed: false },
-          })
-          callbacks.onEndGame()
+          setIsConfirmingExit(true)
         }}
       >
-        <LuFlag aria-hidden="true" />
-        {drawer.endGameArmed ? 'Confirm end?' : 'End game'}
+        {drawer.canEndGame ? (
+          <LuFlag aria-hidden="true" />
+        ) : (
+          <LuLogOut aria-hidden="true" />
+        )}
+        {exitWording.button}
       </button>
+      {isConfirmingExit ? (
+        <ExitGameModal
+          wording={exitWording}
+          onConfirm={() => {
+            setIsConfirmingExit(false)
+            callbacks.onEndGame()
+          }}
+          onCancel={() => {
+            setIsConfirmingExit(false)
+          }}
+        />
+      ) : null}
       {drawer.canUndo ? (
         <button
           type="button"
@@ -175,28 +255,17 @@ export function LeaderPickOverlay(): JSX.Element | null {
   )
 }
 
-/** What the drawer shows of the game state: Discarded pile size, Undo. */
-export type GameDrawerSync = {
-  discardCount: number
-  canUndo: boolean
-}
-
-export function syncGameDrawer(next: GameDrawerSync): void {
+export function syncGameDrawer(next: NonNullable<GameDrawerHudState>): void {
   const current = getHudSnapshot().gameDrawer
   if (
     current !== null &&
     current.discardCount === next.discardCount &&
-    current.canUndo === next.canUndo
+    current.canUndo === next.canUndo &&
+    current.canEndGame === next.canEndGame
   ) {
     return
   }
-  patchHud({
-    gameDrawer: {
-      discardCount: next.discardCount,
-      canUndo: next.canUndo,
-      endGameArmed: current?.endGameArmed ?? false,
-    },
-  })
+  patchHud({ gameDrawer: { ...next } })
 }
 
 export function syncWinnerOverlay(winnerFaction: string | null): void {

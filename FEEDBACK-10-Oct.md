@@ -93,7 +93,9 @@ Cards:
   - One player creates the game; for every other player the button becomes **Join**.
   - No faction set is chosen in advance. After joining, each player picks a faction; a faction already taken cannot be picked.
   - Assumed, not confirmed: all 6 factions can be picked; the creator starts the game once at least 2 players have picked; hotseat stays, with the creator picking every faction.
-- [ ] **F5 — End game is too accessible.** Only the game host can end the game, behind a confirmation modal.
+- [x] **F5 — End game is too accessible.** Only the game host can end the game, behind a confirmation modal.
+  - A guest sees **Leave game** instead (same modal): only that browser goes back to the menu, and "Join game" returns it to its seat.
+  - Checked with `.agents/skills/QA/replay-online-two-players.mjs` (updated to the new lobby): 11 of 11 steps pass.
 
 ## 4. In-game UI
 

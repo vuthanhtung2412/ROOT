@@ -39,6 +39,8 @@ const PLAYER_ID_HEADER = 'X-Player-Id'
 const IDENTITY_STORAGE_KEY = 'root.react.playerIdentity'
 const HIDDEN_CARD_DEFINITION_ID = 'HIDDEN'
 const TRAY_ACTION_LABELS = ['march', 'battle', 'recruit', 'build', 'craft', 'end phase']
+/** Faction each browser picks in the lobby, host first (seat order). */
+const LOBBY_FACTIONS = ['marquise', 'eyrie', 'alliance', 'vagabond']
 
 const results = []
 
@@ -80,6 +82,12 @@ async function openPlayer(browser, name, seat) {
     joinId: null,
     async button(label) {
       await page.getByRole('button', { name: label, exact: true }).first().click()
+      await settle()
+    },
+    /** Lobby: take a seat with this faction (or change the pick). */
+    async pickFaction(factionId) {
+      await page.locator(`[data-faction="${factionId}"]`).click()
+      await page.locator(`[data-faction="${factionId}"][aria-pressed="true"]`).waitFor()
       await settle()
     },
     async boardButton(label) {
@@ -326,25 +334,30 @@ async function main() {
 
   const steps = [
     [
-      `Host creates an online lobby for ${playerCount} players`,
+      'Host creates the game with the one start button and picks a faction',
       async () => {
-        await host.button(String(playerCount))
-        await host.button('Host online game')
-        await host.page.getByRole('button', { name: 'Start online game' }).waitFor()
+        await host.button('Create game')
+        await host.pickFaction(LOBBY_FACTIONS[0])
+        await host.page.getByRole('button', { name: 'Start game' }).waitFor()
         host.joinId = await host.storedJoinId()
         expectThat(host.joinId !== null, 'host has no stored join id')
         const startEnabled = await host.page
-          .getByRole('button', { name: 'Start online game' })
+          .getByRole('button', { name: 'Start game' })
           .isEnabled()
-        expectThat(!startEnabled, 'Start enabled before the lobby is full')
-        return 'Lobby shown, Start disabled until seats fill'
+        expectThat(!startEnabled, 'Start enabled with a single player')
+        return 'Lobby shown, Start disabled until a second player picks'
       },
     ],
     [
-      'Each guest joins from its own browser',
+      'Each guest joins from its own browser and picks a free faction',
       async () => {
-        for (const guest of guests) {
-          await guest.button('Join online game')
+        for (const [guestIndex, guest] of guests.entries()) {
+          await guest.button('Join game')
+          const takenFaction = guest.page.locator(
+            `[data-faction="${LOBBY_FACTIONS[0]}"]`,
+          )
+          expectThat(await takenFaction.isDisabled(), 'a taken faction can be picked')
+          await guest.pickFaction(LOBBY_FACTIONS[guestIndex + 1])
           await guest.page.getByText('Waiting for the host to start').waitFor()
           guest.joinId = await guest.storedJoinId()
         }
@@ -352,11 +365,11 @@ async function main() {
         expectThat(joinIds.size === playerCount && !joinIds.has(null), 'join ids not unique')
         await host.page.waitForFunction(() => {
           const start = [...document.querySelectorAll('button')].find(
-            (button) => button.textContent?.trim() === 'Start online game',
+            (button) => button.textContent?.trim() === 'Start game',
           )
           return start !== undefined && !start.disabled
         })
-        return `${guests.length} guest(s) seated, host Start enabled`
+        return `${guests.length} guest(s) seated with their own faction, host Start enabled`
       },
     ],
     [
@@ -376,7 +389,7 @@ async function main() {
     [
       'Host starts; every browser enters the game',
       async () => {
-        await host.button('Start online game')
+        await host.button('Start game')
         for (const player of players) await player.waitForBoard()
         return 'Board visible in every browser'
       },
@@ -467,14 +480,18 @@ async function main() {
       },
     ],
     [
-      'Guest "End game" only leaves; Join takes the seat back',
+      'A guest has no "End game": "Leave game" only leaves; Join takes the seat back',
       async () => {
-        await lastGuest.button('End game')
-        await lastGuest.button('Confirm end?')
-        await lastGuest.page.getByRole('button', { name: 'Join online game' }).waitFor()
+        const guestCanEnd = await lastGuest.page
+          .getByRole('button', { name: 'End game', exact: true })
+          .count()
+        expectThat(guestCanEnd === 0, 'a guest sees "End game"')
+        await lastGuest.button('Leave game')
+        await lastGuest.button('Yes, leave')
+        await lastGuest.page.getByRole('button', { name: 'Join game' }).waitFor()
         const stillThere = await viewFor(host)
         expectThat(stillThere.state.status === 'playing', 'game was ended by a guest')
-        await lastGuest.button('Join online game')
+        await lastGuest.button('Join game')
         await lastGuest.waitForBoard()
         expectThat((await lastGuest.storedJoinId()) === lastGuest.joinId, 'guest got a new seat')
         return 'Game kept running; guest back in the same seat'
