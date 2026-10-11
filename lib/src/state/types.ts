@@ -118,4 +118,10 @@ export type GameState = {
   /** Vagabond seats in coalition with `winner`. Rule: Vagabond 9.2.8. */
   coWinners?: Seat[]
   turnScratch: TurnScratch
+  /**
+   * Latest actions the player whose turn it is may take back. Starts again
+   * from zero after a battle, when the turn ends, and when another player
+   * answers. Absent = none.
+   */
+  undoableActions?: number
 }

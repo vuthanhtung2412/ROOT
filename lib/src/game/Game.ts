@@ -29,11 +29,19 @@ import { RESOLVERS } from '#events/resolvers.js'
 import { EFFECTS, effectForAction } from '#triggers/effects.js'
 import type { Listener } from '#triggers/effects.js'
 import { buildRuleHooks } from '#triggers/buildHooks.js'
-import { requireSeat } from '#typeGuards.js'
+import { isBattleEvent, requireSeat } from '#typeGuards.js'
 import type { Ctx } from '#game/ctx.js'
 import { SignalBus } from '#triggers/SignalBus.js'
 
 const PHASES: Phase[] = ['birdsong', 'daylight', 'evening']
+
+type UndoCheckpoint = {
+  wasPlaying: boolean
+  turn: number
+  /** Seat sending the action: the pending event's responder, else the turn's. */
+  actingSeat: Seat
+  battlePending: boolean
+}
 
 /** Actions that leave the player "at the start of" the phase they are in. */
 const START_OF_PHASE_NEUTRAL_ACTIONS: ReadonlySet<Action['type']> = new Set<
@@ -209,6 +217,7 @@ export class Game {
     }
 
     this.validate(action)
+    const before: UndoCheckpoint = this.undoCheckpoint()
     logs.push(...this.execute(action))
     // "At the start of Birdsong / Evening" lasts until the player takes an
     // action in that phase. Answers to pending events and the start-of-phase
@@ -256,8 +265,53 @@ export class Game {
 
     this.history.push(action)
     this.log.push(...logs)
+    this.state.undoableActions = this.keepsUndoHistory(before)
+      ? (this.state.undoableActions ?? 0) + 1
+      : 0
 
     return { state: this.state, log: logs }
+  }
+
+  /** What decides, before an action, whether it can be taken back later. */
+  private undoCheckpoint(): UndoCheckpoint {
+    const { state } = this
+    const answeringSeat: Seat | undefined =
+      state.pending.length > 0 ? this.pendingLegalActions()[0]?.actor : undefined
+    return {
+      wasPlaying: state.status === 'playing',
+      turn: state.turn,
+      actingSeat: answeringSeat ?? state.currentSeat,
+      battlePending: state.pending.some(isBattleEvent),
+    }
+  }
+
+  /**
+   * An action stays undoable while the turn goes on with nothing others saw
+   * resolved: no battle, no answer from another player, same turn.
+   */
+  private keepsUndoHistory(before: UndoCheckpoint): boolean {
+    const { state } = this
+    return (
+      before.wasPlaying &&
+      state.status === 'playing' &&
+      state.turn === before.turn &&
+      before.actingSeat === state.currentSeat &&
+      !before.battlePending &&
+      !state.pending.some(isBattleEvent)
+    )
+  }
+
+  /** The player whose turn it is has an action of this turn to take back. */
+  canUndoTurnAction(): boolean {
+    return (this.state.undoableActions ?? 0) > 0 && this.history.length > 0
+  }
+
+  /** Take back the latest action of the current turn (see `undoableActions`). */
+  undoTurnAction(): void {
+    if (!this.canUndoTurnAction()) {
+      throw new RuleError('NOTHING_TO_UNDO')
+    }
+    this.undo()
   }
 
   /** Subscribe to emitted game signals (tests / diagnostics). */
