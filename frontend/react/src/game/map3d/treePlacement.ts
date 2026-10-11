@@ -25,7 +25,7 @@ const TREE_SPACING = 1.3
 /** A few gaps keep the carpet from looking combed. */
 const PINE_KEEP_PROBABILITY = 0.97
 const PATH_FREE_HALF_WIDTH = 0.8
-const RIVER_FREE_HALF_WIDTH = 3.1
+const RIVER_FREE_HALF_WIDTH = 1.9
 /** Leafy trees stand in this band round a clearing (ratios of its radius). */
 const CLEARING_RIM_OUTER_RATIO = 1.3
 const RIM_LEAFY_PROBABILITY = 0.4
@@ -35,7 +35,7 @@ const RIM_LEAFY_PROBABILITY = 0.4
  */
 const CLEARING_RIM_HEIGHT_FACTOR = 0.35
 /** … and in this band along the river bank. */
-const RIVER_BANK_OUTER_DISTANCE = 4.6
+const RIVER_BANK_OUTER_DISTANCE = 3.2
 const BANK_LEAFY_PROBABILITY = 0.3
 
 const MINIMUM_TREE_SCALE = 0.75

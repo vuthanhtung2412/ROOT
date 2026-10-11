@@ -22,6 +22,7 @@ import {
   type MapPiece,
   type PieceLayer,
 } from '#game/map3d/pieceMeshes.ts'
+import { createRiverFlow, type RiverFlow } from '#game/map3d/riverFlow.ts'
 import { createGround } from '#game/map3d/sceneGround.ts'
 import { createTreeMeshes } from '#game/map3d/treeMeshes.ts'
 import { placeTrees } from '#game/map3d/treePlacement.ts'
@@ -89,9 +90,11 @@ export function createMapScene(input: MapSceneInput): MapScene {
     suitTexturePaths: input.suitTexturePaths,
   })
   const pieceLayer: PieceLayer = createPieceLayer(input.models.pieces)
+  const riverFlow: RiverFlow = createRiverFlow(input.terrain.river)
   scene.add(
     ...daylight.lights,
     createGround(input.terrain),
+    riverFlow.mesh,
     createTreeMeshes(placeTrees(input.terrain, TREE_SEED), input.models.trees),
     groundMarkers.group,
     pieceLayer.group,
@@ -132,6 +135,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     pieceLayer.setZoom(cameraRig.zoom())
     groundMarkers.setZoom(cameraRig.zoom())
     daylight.update(deltaSeconds)
+    riverFlow.update(deltaSeconds)
     groundMarkers.update(
       (nowMilliseconds - startMilliseconds) / MILLISECONDS_PER_SECOND,
     )
@@ -166,6 +170,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
       cameraRig.controls.removeEventListener('change', notifyViewChanged)
       cameraRig.dispose()
       pieceLayer.dispose()
+      riverFlow.dispose()
       renderer.dispose()
     },
   }

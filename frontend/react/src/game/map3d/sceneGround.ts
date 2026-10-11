@@ -41,11 +41,11 @@ const PATH_EDGE_WIDTH = 1.7
 const PATH_GRAVEL_COLOR = '#8f8f8a'
 const PATH_GRAVEL_EDGE_COLOR = '#5f625c'
 const RIVER_BANK_COLOR = '#7b7a4c'
-const RIVER_BANK_WIDTH = 7.2
+const RIVER_BANK_WIDTH = 4.4
 const RIVER_WATER_COLOR = '#5fa9c4'
-const RIVER_WATER_WIDTH = 5
+const RIVER_WATER_WIDTH = 3
 const RIVER_SHALLOW_COLOR = '#8fcbd9'
-const RIVER_SHALLOW_WIDTH = 2.6
+const RIVER_SHALLOW_WIDTH = 1.5
 /** The clearing's sand spreads a little past its ring. */
 const CLEARING_SAND_RADIUS_RATIO = 1.12
 const GROUND_SEED = 607
