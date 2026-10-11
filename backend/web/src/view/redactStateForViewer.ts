@@ -27,7 +27,7 @@ function faceDownCards(count: number, pileName: string): HiddenCard[] {
  * Seat-scoped view of the game: the viewer keeps their own secrets, everything
  * face-down on a real table is hidden. Does not mutate `state`.
  *
- * Hidden: other hands, other join ids, Alliance supporters of other seats,
+ * Hidden: other hands (their size stays), other join ids, Alliance supporters of other seats,
  * draw pile order, quest deck order, and the RNG seed.
  */
 export function redactStateForViewer(
@@ -60,7 +60,11 @@ function redactPlayerForViewer(
     // A join id is that seat's secret: never hand it to another viewer.
     playerId: `${HIDDEN_PLAYER_ID_PREFIX}${String(player.seat)}`,
     // Rule: 11.2.3 Public Hand — the Riverfolk hand is face up for everyone.
-    hand: player.faction === PUBLIC_HAND_FACTION ? player.hand : [],
+    // Any other hand is face down: its size is open, its cards are not.
+    hand:
+      player.faction === PUBLIC_HAND_FACTION
+        ? player.hand
+        : faceDownCards(player.hand.length, `hand-${String(player.seat)}`),
     board:
       player.board.kind === 'alliance'
         ? {

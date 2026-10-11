@@ -105,7 +105,9 @@ Cards:
   - Server log: `CRAFT Root Tea [mouse] item:tea +2vp (ROOT-222#1)`.
   - An action that concerns a card shows the card name not ID show card name (card ID) in server log too.
   - An action that concerns a clearing shows it as a "clearing highlight" component: clicking e.g. "C7" highlights clearing 7 on the map.
-- [ ] **U2 — Show how many cards are in hand**, for the player's own hand and every opponent's hand.
+- [x] **U2 — Show how many cards are in hand**, for the player's own hand and every opponent's hand.
+  - Card-back badge on the top right of every seat of the player rail.
+  - Online, the server sent opponents' hands as empty, so their size was hidden too. It now sends face-down cards: the size is open, the cards are not.
 - [ ] **U3 — Reduce verbosity of the action banner.** Deferred.
 - [ ] **U4 — Remove the number in the middle of a building.** One icon per building, no count badge: a clearing holds at most 3 buildings, so repeated icons are fine.
 - [ ] **U5 — Pointy finger in clearing.** Pointer cursor only when hovering a clickable clearing.

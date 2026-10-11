@@ -4,7 +4,7 @@ import { createTwoPlayerGameState } from '#test/gameStateFixtures.js'
 import { redactStateForViewer } from '#view/redactStateForViewer.js'
 
 describe('redactStateForViewer', () => {
-  it('keeps viewer hand and empties opponent hand', () => {
+  it('keeps the viewer hand; an opponent hand keeps its size, not its cards', () => {
     const state = createTwoPlayerGameState([
       {
         playerId: 'marquise',
@@ -28,7 +28,11 @@ describe('redactStateForViewer', () => {
       { id: 'c1', defId: 'fox_ambush' },
       { id: 'c2', defId: 'bird_armorers' },
     ])
-    expect(forMarquise.players[1]?.hand).toEqual([])
+    expect(forMarquise.players[1]?.hand).toEqual([
+      { id: 'HIDDEN#hand-1-0', defId: 'HIDDEN' },
+      { id: 'HIDDEN#hand-1-1', defId: 'HIDDEN' },
+    ])
+    expect(JSON.stringify(forMarquise.players[1]?.hand)).not.toContain('mouse_ambush')
     expect(state.players[1]?.hand).toHaveLength(2)
   })
 

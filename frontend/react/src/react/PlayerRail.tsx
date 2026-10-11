@@ -35,6 +35,12 @@ const SEAT_BADGE_CLASS_NAME =
   'root-paper root-medallion absolute flex items-center justify-center'
 /** Top left: whose turn it is. */
 const ACTIVE_SEAT_MARK_CLASS_NAME = `${SEAT_BADGE_CLASS_NAME} -top-2.5 -left-2.5 size-6 text-sm text-ink [--root-paper-color:var(--color-gold)] md:size-7 md:text-base`
+/**
+ * Top right: cards in hand, on a small card back. Shown for every seat: the
+ * size of a hand is open information.
+ */
+const SEAT_HAND_COUNT_CLASS_NAME =
+  'player-rail__hand-count pointer-events-auto absolute -top-2.5 -right-2 flex h-7 w-5 rotate-6 items-center justify-center rounded-xs border-2 border-ink-deep bg-rust font-mono text-xs font-bold text-white text-shadow-outline md:h-8 md:w-6 md:text-sm'
 /** Bottom left: victory points. */
 const SEAT_VICTORY_POINTS_CLASS_NAME =
   'pointer-events-none absolute -bottom-3 -left-3 flex size-8 items-center justify-center md:-bottom-3 md:-left-3 md:size-10'
@@ -175,6 +181,14 @@ export function PlayerRail(): JSX.Element | null {
                 <LuSun />
               </span>
             ) : null}
+            <span
+              className={SEAT_HAND_COUNT_CLASS_NAME}
+              data-hand-count={player.hand.length}
+              aria-label={`${String(player.hand.length)} cards in hand`}
+              title={`${String(player.hand.length)} cards in hand`}
+            >
+              {String(player.hand.length)}
+            </span>
             <div className={SEAT_BUTTON_STACK_CLASS_NAME}>
               {seatButtons.map((button: SeatButtonView) => (
                 <SeatButton key={button.label} button={button} />

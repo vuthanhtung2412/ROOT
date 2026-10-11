@@ -413,7 +413,12 @@ async function main() {
                 `${viewer.name}: UI hand does not match`,
               )
             } else {
-              expectThat(hand.length === 0, `${viewer.name} sees ${other.name}'s hand`)
+              // The hand size is open; which cards it holds is not.
+              expectThat(hand.length > 0, `${viewer.name} cannot see how many cards ${other.name} holds`)
+              expectThat(
+                hand.every((card) => card.defId === HIDDEN_CARD_DEFINITION_ID),
+                `${viewer.name} sees ${other.name}'s hand`,
+              )
               expectThat(!viewText.includes(other.joinId), `${other.name} join id leaked in state`)
               expectThat(!logText.includes(other.joinId), `${other.name} join id leaked in log`)
             }
