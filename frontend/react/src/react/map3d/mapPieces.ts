@@ -63,13 +63,13 @@ const SLOT_JITTER_RATIO = 0.07
 const SLOT_MAXIMUM_TURN = 0.5
 /** Clearings with more slots than a pattern knows fall back to a row. */
 const SLOT_ROW_DEPTH_RATIO = -0.42
-const SLOT_ROW_SPACING = 3.6
+const SLOT_ROW_SPACING = 2.6
 /** Each clearing rolls its own dice. */
 const SLOT_SEED_STEP = 7919
 /** Tokens and meeples stand in rows across the front of the clearing. */
 const STACK_ROW_DEPTH_RATIO = 0.24
-const STACK_ROW_SPACING = 3.3
-const STACK_SPACING = 3.3
+const STACK_ROW_SPACING = 2.5
+const STACK_SPACING = 2.5
 const STACKS_PER_ROW = 4
 const HALF = 0.5
 const DOUBLE = 2

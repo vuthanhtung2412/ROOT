@@ -61,10 +61,10 @@ const PULSE_DEPTH = 0.45
 const PULSE_RADIANS_PER_SECOND = 4
 const QUARTER_TURN_RADIANS = Math.PI / 2
 
-const SUIT_MEDALLION_RADIUS = 1.7
+const SUIT_MEDALLION_RADIUS = 1.3
 const SUIT_MEDALLION_SEGMENT_COUNT = 40
 const SUIT_MEDALLION_COLOR = 0xf0e6d3
-const SUIT_ICON_SIZE = 2.3
+const SUIT_ICON_SIZE = 1.75
 /** Above the ring it is set into; the icon a hair above the medallion. */
 const SUIT_MEDALLION_HEIGHT = 0.08
 const SUIT_ICON_HEIGHT = 0.1

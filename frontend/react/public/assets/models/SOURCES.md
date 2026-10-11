@@ -23,10 +23,10 @@ Zero (CC0 1.0), downloaded from Poly Pizza:
 | `quaternius/sawmill.glb` | Fantasy Sawmill | https://poly.pizza/m/alxTTFjKDM |
 | `quaternius/workshop.glb` | Blacksmith | https://poly.pizza/m/bV52eTG1Aj |
 | `quaternius/recruiter.glb` | Fantasy Barracks | https://poly.pizza/m/wTDbVozPAj |
-| `quaternius/keep.glb` | Tower | https://poly.pizza/m/iuMDwgTRMU |
+| `quaternius/keep.glb` | Temple (a white castle with red spires) | https://poly.pizza/m/CE2Mn7lh6A |
 | `quaternius/wood.glb` | Logs | https://poly.pizza/m/fei4I7FfrJ |
 | `quaternius/roost.glb` | Bell Tower | https://poly.pizza/m/ux44tbeQvj |
-| `quaternius/base.glb` | Tent | https://poly.pizza/m/5Q7qIrfDxA |
+| `quaternius/base.glb` | Tower | https://poly.pizza/m/iuMDwgTRMU |
 | `quaternius/garden.glb` | Temple | https://poly.pizza/m/JsZnPztvRl |
 | `quaternius/trade-post.glb` | Market Stalls | https://poly.pizza/m/jSqGy8V0MQ |
 

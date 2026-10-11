@@ -63,24 +63,24 @@ type PieceView = {
 }
 
 /** Meeple models are 2.3 units tall. */
-const MEEPLE_MODEL_SCALE = 1.25
+const MEEPLE_MODEL_SCALE = 0.8
 /** A structure is scaled to this footprint (its larger side) … */
-const STRUCTURE_FOOTPRINT = 2.6
+const STRUCTURE_FOOTPRINT = 1.75
 /** … but never taller than this. */
-const STRUCTURE_MAXIMUM_HEIGHT = 4.1
-const STRUCTURE_BASE_RADIUS = 1.45
-const STRUCTURE_BASE_HEIGHT = 0.2
+const STRUCTURE_MAXIMUM_HEIGHT = 2.9
+const STRUCTURE_BASE_RADIUS = 1
+const STRUCTURE_BASE_HEIGHT = 0.14
 const STRUCTURE_BASE_SIDE_COUNT = 32
 const MATTE_MINIMUM_ROUGHNESS = 0.8
 
 /** Icon size (world units) zoomed out, and zoomed in over a 3D model. */
-const LABEL_FAR_SIZE = 3.2
-const LABEL_NEAR_SIZE = 1.15
+const LABEL_FAR_SIZE = 2.45
+const LABEL_NEAR_SIZE = 0.8
 /** A piece without a 3D model keeps a large icon when zoomed in. */
-const LABEL_NEAR_SIZE_WITHOUT_MODEL = 2.4
+const LABEL_NEAR_SIZE_WITHOUT_MODEL = 1.7
 const LABEL_FAR_HEIGHT = 0.8
 /** Gap between the top of a model and its label. */
-const LABEL_CLEARANCE = 0.9
+const LABEL_CLEARANCE = 0.6
 /** The models grow in over this part of the zoom. */
 const MODEL_RISE_START_ZOOM = 0.12
 const MODEL_RISE_END_ZOOM = 0.5
@@ -92,14 +92,14 @@ const BADGE_RENDER_ORDER = 10
 const BADGE_RELATIVE_SIZE = 0.5
 const BADGE_SPRITE_CENTER = -0.3
 
-const SLOT_SIZE = 3
-const SLOT_HEIGHT = 0.22
+const SLOT_SIZE = 2.1
+const SLOT_HEIGHT = 0.16
 const SLOT_COLOR = 0x8a7550
-const SLOT_FLOOR_SIZE = 2.4
+const SLOT_FLOOR_SIZE = 1.65
 const SLOT_FLOOR_COLOR = 0x5c4c34
 const SLOT_FLOOR_LIFT = 0.02
-const SLOT_POST_SIZE = 0.36
-const SLOT_POST_HEIGHT = 0.7
+const SLOT_POST_SIZE = 0.26
+const SLOT_POST_HEIGHT = 0.5
 const SLOT_POST_COLOR = 0xe9dfc4
 /** Corner posts stand at (±1, ±1) × the post offset. */
 const SLOT_CORNER_SIGNS: ReadonlyArray<readonly [number, number]> = [

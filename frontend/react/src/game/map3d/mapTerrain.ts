@@ -38,8 +38,8 @@ export type MapTerrain = {
   river: readonly MapGroundPoint[]
 }
 
-/** Clearing radius in world units: wide enough for three slots and an army. */
-const CLEARING_RADIUS = 7.4
+/** Clearing radius in world units: room for three slots and three armies. */
+const CLEARING_RADIUS = 5.8
 /** Woodland past the playable area when the view shows nothing but it. */
 const BASE_MARGIN_RATIO = 0.3
 /**
