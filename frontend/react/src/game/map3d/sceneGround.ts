@@ -37,6 +37,9 @@ const CLEARING_CENTER_COLOR = '#d6bf88'
 /** A path is little more than its line of stones (as in the digital game). */
 const PATH_WIDTH = 1.15
 const PATH_EDGE_WIDTH = 1.7
+/** Paths are beds of grey pebbles. */
+const PATH_GRAVEL_COLOR = '#8f8f8a'
+const PATH_GRAVEL_EDGE_COLOR = '#5f625c'
 const RIVER_BANK_COLOR = '#7b7a4c'
 const RIVER_BANK_WIDTH = 7.2
 const RIVER_WATER_COLOR = '#5fa9c4'
@@ -156,13 +159,13 @@ function paintGround(painter: GroundPainter): void {
   })
   for (const path of terrain.paths) {
     strokeLine(painter, [path.start, path.end], {
-      color: OPEN_GROUND_EDGE_COLOR,
+      color: PATH_GRAVEL_EDGE_COLOR,
       width: PATH_EDGE_WIDTH,
     })
   }
   for (const path of terrain.paths) {
     strokeLine(painter, [path.start, path.end], {
-      color: OPEN_GROUND_COLOR,
+      color: PATH_GRAVEL_COLOR,
       width: PATH_WIDTH,
     })
   }

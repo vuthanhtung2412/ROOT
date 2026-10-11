@@ -64,16 +64,23 @@ const GRASS_INNER_RADIUS_RATIO = 0.78
 const GRASS_OUTER_RADIUS_RATIO = 1.1
 
 const PATH_HALF_WIDTH = 0.52
-const PATH_DIRT_DABS_PER_UNIT = 2.2
-const PATH_RUT_COLOR = '#977d4c'
-const PATH_RUT_OFFSET = 0.26
-const PATH_RUT_WIDTH = 0.09
-const PATH_RUT_OPACITY = 0.55
+const PATH_PEBBLES_PER_UNIT = 26
+const PATH_PEBBLE_COLORS: readonly string[] = [
+  '#a9aaa5',
+  '#7f817c',
+  '#c3c4be',
+  '#96958f',
+  '#6d6f6b',
+]
+const PATH_PEBBLE_SHADOW_COLOR = '#4a4c48'
+const PATH_PEBBLE_SHADOW_OFFSET = 0.03
+const PATH_PEBBLE_MINIMUM_RADIUS = 0.06
+const PATH_PEBBLE_RADIUS_SPREAD = 0.1
 const PATH_STONE_SPACING = 0.9
 const PATH_STONE_JITTER = 0.1
 const PATH_STONE_MINIMUM_RADIUS = 0.13
 const PATH_STONE_RADIUS_SPREAD = 0.09
-const PATH_STONE_SHADOW_COLOR = '#7d6a44'
+const PATH_STONE_SHADOW_COLOR = '#4a4c48'
 const PATH_STONE_SHADOW_OFFSET = 0.08
 
 const RIVER_HALF_WIDTH = 2.5
@@ -228,34 +235,33 @@ function pathPoint(
   }
 }
 
-/** Worn dirt and two cart ruts along a path. */
+/** A bed of grey pebbles, each with a sliver of shadow. */
 export function paintPathDetail(brush: GroundBrush, path: PathGround): void {
-  const { context, scale } = brush
   const length: number = groundDistance(path.start, path.end)
-  for (let index = 0; index < length * PATH_DIRT_DABS_PER_UNIT; index += 1) {
+  for (let index = 0; index < length * PATH_PEBBLES_PER_UNIT; index += 1) {
+    const center: MapGroundPoint = pathPoint(
+      path,
+      brush.random(),
+      (brush.random() - HALF) * PATH_HALF_WIDTH * 2,
+    )
+    const radius: number =
+      PATH_PEBBLE_MINIMUM_RADIUS + brush.random() * PATH_PEBBLE_RADIUS_SPREAD
     dab(brush, {
-      center: pathPoint(
-        path,
-        brush.random(),
-        (brush.random() - HALF) * PATH_HALF_WIDTH * 2,
-      ),
-      radius: 0.2 + brush.random() * 0.6,
-      color: pick(brush, DIRT_COLORS),
-      opacity: 0.3,
+      center: {
+        x: center.x + PATH_PEBBLE_SHADOW_OFFSET,
+        z: center.z + PATH_PEBBLE_SHADOW_OFFSET,
+      },
+      radius,
+      color: PATH_PEBBLE_SHADOW_COLOR,
+      opacity: 0.8,
+    })
+    dab(brush, {
+      center,
+      radius,
+      color: pick(brush, PATH_PEBBLE_COLORS),
+      opacity: 1,
     })
   }
-  context.strokeStyle = PATH_RUT_COLOR
-  context.lineWidth = PATH_RUT_WIDTH * scale
-  context.globalAlpha = PATH_RUT_OPACITY
-  for (const side of [-PATH_RUT_OFFSET, PATH_RUT_OFFSET]) {
-    const start: CanvasPoint = brush.toCanvas(pathPoint(path, 0, side))
-    const end: CanvasPoint = brush.toCanvas(pathPoint(path, 1, side))
-    context.beginPath()
-    context.moveTo(start.x, start.y)
-    context.lineTo(end.x, end.y)
-    context.stroke()
-  }
-  context.globalAlpha = 1
 }
 
 /** The white stones down the middle of a path, laid one by one. */
