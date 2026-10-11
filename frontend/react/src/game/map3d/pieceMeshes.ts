@@ -2,7 +2,6 @@ import {
   Box3,
   BoxGeometry,
   CanvasTexture,
-  CylinderGeometry,
   Group,
   MathUtils,
   Mesh,
@@ -69,9 +68,6 @@ const MEEPLE_MODEL_SCALE = 0.5
 const STRUCTURE_FOOTPRINT = 1.65
 /** … but never taller than this. */
 const STRUCTURE_MAXIMUM_HEIGHT = 2.8
-const STRUCTURE_BASE_RADIUS = 0.94
-const STRUCTURE_BASE_HEIGHT = 0.14
-const STRUCTURE_BASE_SIDE_COUNT = 32
 const MATTE_MINIMUM_ROUGHNESS = 0.8
 const DECAL_ALPHA_CUTOFF = 0.5
 
@@ -188,17 +184,7 @@ export function createPieceLayer(
     string,
     SpriteMaterial
   >()
-  const baseMaterials: Map<number, MeshStandardMaterial> = new Map<
-    number,
-    MeshStandardMaterial
-  >()
   const matteMaterials: Map<Material, Material> = new Map<Material, Material>()
-  const baseGeometry: CylinderGeometry = new CylinderGeometry(
-    STRUCTURE_BASE_RADIUS,
-    STRUCTURE_BASE_RADIUS,
-    STRUCTURE_BASE_HEIGHT,
-    STRUCTURE_BASE_SIDE_COUNT,
-  )
   const slotGeometry: BoxGeometry = new BoxGeometry(
     SLOT_SIZE,
     SLOT_HEIGHT,
@@ -318,16 +304,6 @@ export function createPieceLayer(
     return matte
   }
 
-  const baseMaterial = (color: number): MeshStandardMaterial => {
-    const cached: MeshStandardMaterial | undefined = baseMaterials.get(color)
-    if (cached !== undefined) {
-      return cached
-    }
-    const material: MeshStandardMaterial = standardMaterial(color)
-    baseMaterials.set(color, material)
-    return material
-  }
-
   /** The 3D model of a piece, feet on the ground, sized for a clearing. */
   const createModel = (
     piece: MapPiece,
@@ -351,8 +327,8 @@ export function createPieceLayer(
         top: height * MEEPLE_MODEL_SCALE,
       }
     }
-    // A structure comes at any size and origin: centre it on its plot, on a
-    // base plate in the colour of the faction that owns it.
+    // A structure comes at any size and origin: centre it on its plot.
+    // Scale lives on a wrapper group so the foot offset stays in model units.
     const bounds: Box3 = new Box3().setFromObject(figure)
     const size: Vector3 = bounds.getSize(new Vector3())
     const center: Vector3 = bounds.getCenter(new Vector3())
@@ -362,19 +338,14 @@ export function createPieceLayer(
         STRUCTURE_FOOTPRINT / Math.max(size.x, size.z),
         STRUCTURE_MAXIMUM_HEIGHT / size.y,
       ) * sizeFactor
-    // The base plate grows with the structure; both live in model units.
-    const baseHeight: number = STRUCTURE_BASE_HEIGHT * sizeFactor
-    figure.position.set(-center.x, baseHeight / scale - bounds.min.y, -center.z)
-    const base: Mesh = shadowedMesh(baseGeometry, baseMaterial(piece.color))
-    base.scale.setScalar(sizeFactor / scale)
-    base.position.y = (baseHeight * HALF) / scale
+    figure.position.set(-center.x, -bounds.min.y, -center.z)
     const structure: Group = new Group()
-    structure.add(figure, base)
+    structure.add(figure)
     structure.rotation.y = piece.rotation ?? 0
     return {
       model: structure,
       scale,
-      top: size.y * scale + baseHeight,
+      top: size.y * scale,
     }
   }
 
@@ -451,7 +422,6 @@ export function createPieceLayer(
     dispose: (): void => {
       group.clear()
       for (const geometry of [
-        baseGeometry,
         slotGeometry,
         slotFloorGeometry,
         slotPostGeometry,
@@ -462,7 +432,6 @@ export function createPieceLayer(
         slotMaterial,
         slotFloorMaterial,
         slotPostMaterial,
-        ...baseMaterials.values(),
         ...iconMaterials.values(),
         ...badgeMaterials.values(),
       ]) {
