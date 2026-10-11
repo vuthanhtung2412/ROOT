@@ -1,61 +1,42 @@
-import type { ClearingLayoutPoint } from '#game/boardLayout.ts'
-import type {
-  MapNaturalSize,
-  NormalizedMapPoint,
+import type { MapTerrain, PathGround } from '#game/map3d/mapTerrain.ts'
+import {
+  distanceToSegment,
+  groundDistance,
+  type MapGroundPoint,
 } from '#game/map3d/mapWorldSpace.ts'
 
 /**
- * Where the 3D trees stand: read off the map art, so a pine grows where a
- * pine is painted and paths, rivers and clearings stay open.
+ * Where the trees stand: pines carpet the woodland, clearings, paths and the
+ * river stay open, and leafy trees gather round clearings and along the water.
  */
-
-export type RgbColor = {
-  red: number
-  green: number
-  blue: number
-}
-
 export type TreeKind = 'pine' | 'leafy'
 
 export type TreePlacement = {
   kind: TreeKind
-  position: NormalizedMapPoint
+  position: MapGroundPoint
   /** Size multiplier, so the forest is not a wall of clones. */
   scale: number
   /** Turn around the trunk, radians. */
   rotation: number
 }
 
-/** Colour of the map art at a point (0..1 from the left / top edge). */
-export type MapColorSampler = (point: NormalizedMapPoint) => RgbColor
-
-export type TreePlacementInput = {
-  sampleColor: MapColorSampler
-  mapNaturalSize: MapNaturalSize
-  clearings: readonly ClearingLayoutPoint[]
-  /** Trees per map width; rows follow from the map shape. */
-  columnCount: number
-  seed: number
-}
-
-/** Painted pines are dark and never redder than green. */
-const PINE_MAXIMUM_BRIGHTNESS = 100
-/** Painted leafy crowns are bright and clearly more green than blue. */
-const LEAFY_MINIMUM_BRIGHTNESS = 105
-const LEAFY_MINIMUM_GREEN_OVER_BLUE = 40
-const COLOR_CHANNEL_COUNT = 3
-
-/** Pieces stand in the middle of a clearing: keep that part free of trees. */
-const CLEARING_TREE_FREE_RADIUS_RATIO = 0.95
-/** Leafy trees are sparser in the art than the pine carpet. */
-const LEAFY_KEEP_PROBABILITY = 0.35
-/** The score track and its border are not woodland. */
-const SCORE_TRACK_TOP_RATIO = 0.925
+/** Distance between neighbouring trees, before jitter. */
+const TREE_SPACING = 1.3
+/** A few gaps keep the carpet from looking combed. */
+const PINE_KEEP_PROBABILITY = 0.93
+const PATH_FREE_HALF_WIDTH = 2.6
+const RIVER_FREE_HALF_WIDTH = 3.1
+/** Leafy trees stand in this band round a clearing (ratios of its radius). */
+const CLEARING_RIM_OUTER_RATIO = 1.3
+const RIM_LEAFY_PROBABILITY = 0.4
+/** … and in this band along the river bank. */
+const RIVER_BANK_OUTER_DISTANCE = 4.6
+const BANK_LEAFY_PROBABILITY = 0.3
 
 const MINIMUM_TREE_SCALE = 0.75
 const TREE_SCALE_SPREAD = 0.6
 const FULL_TURN_RADIANS = Math.PI * 2
-const CELL_CENTER_OFFSET = 0.5
+const HALF = 0.5
 
 const UINT32_RANGE = 4294967296
 const MULBERRY_INCREMENT = 0x6d2b79f5
@@ -72,75 +53,72 @@ export function createSeededRandom(seed: number): () => number {
   }
 }
 
-export function treeKindForColor(color: RgbColor): TreeKind | null {
-  const brightness: number =
-    (color.red + color.green + color.blue) / COLOR_CHANNEL_COUNT
-  if (color.green < color.red) {
-    return null
+function distanceToRiver(point: MapGroundPoint, terrain: MapTerrain): number {
+  let nearest: number = Number.POSITIVE_INFINITY
+  for (let index = 1; index < terrain.river.length; index += 1) {
+    const start: MapGroundPoint | undefined = terrain.river[index - 1]
+    const end: MapGroundPoint | undefined = terrain.river[index]
+    if (start !== undefined && end !== undefined) {
+      nearest = Math.min(nearest, distanceToSegment(point, start, end))
+    }
   }
-  if (brightness <= PINE_MAXIMUM_BRIGHTNESS && color.green >= color.blue) {
-    return 'pine'
-  }
-  if (
-    brightness >= LEAFY_MINIMUM_BRIGHTNESS &&
-    color.green - color.blue >= LEAFY_MINIMUM_GREEN_OVER_BLUE
-  ) {
-    return 'leafy'
-  }
-  return null
+  return nearest
 }
 
-function isInsideClearing(
-  point: NormalizedMapPoint,
-  input: TreePlacementInput,
-): boolean {
-  const shorterSide: number = Math.min(
-    input.mapNaturalSize.width,
-    input.mapNaturalSize.height,
+/** What may grow at a point: nothing, a pine, or a leafy tree. */
+function treeKindAt(
+  point: MapGroundPoint,
+  terrain: MapTerrain,
+  roll: number,
+): TreeKind | null {
+  let onClearingRim = false
+  for (const clearing of terrain.clearings) {
+    const distance: number = groundDistance(point, clearing.center)
+    if (distance < clearing.radius) {
+      return null
+    }
+    if (distance < clearing.radius * CLEARING_RIM_OUTER_RATIO) {
+      onClearingRim = true
+    }
+  }
+  const onPath: boolean = terrain.paths.some(
+    (path: PathGround): boolean =>
+      distanceToSegment(point, path.start, path.end) < PATH_FREE_HALF_WIDTH,
   )
-  return input.clearings.some((clearing: ClearingLayoutPoint): boolean => {
-    const distanceX: number =
-      (point.x - clearing.x) * input.mapNaturalSize.width
-    const distanceY: number =
-      (point.y - clearing.y) * input.mapNaturalSize.height
-    const freeRadius: number =
-      clearing.r * shorterSide * CLEARING_TREE_FREE_RADIUS_RATIO
-    return Math.hypot(distanceX, distanceY) < freeRadius
-  })
+  if (onPath) {
+    return null
+  }
+  const riverDistance: number = distanceToRiver(point, terrain)
+  if (riverDistance < RIVER_FREE_HALF_WIDTH) {
+    return null
+  }
+  if (onClearingRim) {
+    return roll < RIM_LEAFY_PROBABILITY ? 'leafy' : null
+  }
+  if (riverDistance < RIVER_BANK_OUTER_DISTANCE) {
+    return roll < BANK_LEAFY_PROBABILITY ? 'leafy' : 'pine'
+  }
+  return roll < PINE_KEEP_PROBABILITY ? 'pine' : null
 }
 
 /** One candidate per grid cell, jittered inside the cell. */
-export function placeTrees(input: TreePlacementInput): TreePlacement[] {
-  const random: () => number = createSeededRandom(input.seed)
-  const rowCount: number = Math.round(
-    (input.columnCount * input.mapNaturalSize.height) /
-      input.mapNaturalSize.width,
-  )
+export function placeTrees(terrain: MapTerrain, seed: number): TreePlacement[] {
+  const random: () => number = createSeededRandom(seed)
+  const halfWidth: number = terrain.worldSize.width * HALF + terrain.margin
+  const halfDepth: number = terrain.worldSize.depth * HALF + terrain.margin
   const placements: TreePlacement[] = []
-  for (let row = 0; row < rowCount; row += 1) {
-    for (let column = 0; column < input.columnCount; column += 1) {
-      const position: NormalizedMapPoint = {
-        x: (column + CELL_CENTER_OFFSET + (random() - CELL_CENTER_OFFSET)) /
-          input.columnCount,
-        y: (row + CELL_CENTER_OFFSET + (random() - CELL_CENTER_OFFSET)) /
-          rowCount,
+  for (let z = -halfDepth; z < halfDepth; z += TREE_SPACING) {
+    for (let x = -halfWidth; x < halfWidth; x += TREE_SPACING) {
+      const position: MapGroundPoint = {
+        x: x + random() * TREE_SPACING,
+        z: z + random() * TREE_SPACING,
       }
       const scale: number = MINIMUM_TREE_SCALE + random() * TREE_SCALE_SPREAD
       const rotation: number = random() * FULL_TURN_RADIANS
-      const keepRoll: number = random()
-      if (position.y >= SCORE_TRACK_TOP_RATIO) {
-        continue
+      const kind: TreeKind | null = treeKindAt(position, terrain, random())
+      if (kind !== null) {
+        placements.push({ kind, position, scale, rotation })
       }
-      const kind: TreeKind | null = treeKindForColor(
-        input.sampleColor(position),
-      )
-      if (kind === null || isInsideClearing(position, input)) {
-        continue
-      }
-      if (kind === 'leafy' && keepRoll > LEAFY_KEEP_PROBABILITY) {
-        continue
-      }
-      placements.push({ kind, position, scale, rotation })
     }
   }
   return placements

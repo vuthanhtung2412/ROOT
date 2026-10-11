@@ -1,22 +1,32 @@
 import {
   CircleGeometry,
+  CylinderGeometry,
   Group,
   Mesh,
   MeshBasicMaterial,
+  MeshStandardMaterial,
   RingGeometry,
   Shape,
   ShapeGeometry,
+  Sprite,
+  SpriteMaterial,
+  SRGBColorSpace,
+  Texture,
+  TextureLoader,
 } from 'three'
+import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 
 /**
- * Marks painted on the ground: the ring around each clearing (ruler colour,
- * or gold when it can be picked) and the gold wash over a forest to pick.
+ * Marks of the clearings and forests: the ring around each clearing (ruler
+ * colour, or gold when it can be picked), its suit on a signpost, and the
+ * gold wash over a forest to pick.
  */
-export type ClearingGround = {
-  clearingId: number
-  center: MapGroundPoint
-  radius: number
+export type GroundMarkersInput = {
+  clearings: readonly ClearingGround[]
+  forests: readonly ForestGround[]
+  /** Suit icon of each clearing (clearing id → image path). */
+  suitTexturePaths: ReadonlyMap<number, string>
 }
 
 export type ForestGround = {
@@ -52,6 +62,21 @@ const FOREST_BASE_OPACITY = 0.34
 const PULSE_DEPTH = 0.45
 const PULSE_RADIANS_PER_SECOND = 4
 const QUARTER_TURN_RADIANS = Math.PI / 2
+const HALF = 0.5
+
+const SIGN_HEIGHT = 5.2
+const SIGN_POST_RADIUS = 0.16
+const SIGN_POST_SIDE_COUNT = 8
+const SIGN_POST_COLOR = 0x5a3f2b
+const SIGN_BOARD_RADIUS = 1.45
+const SIGN_BOARD_THICKNESS = 0.3
+const SIGN_BOARD_SIDE_COUNT = 32
+const SIGN_BOARD_COLOR = 0xf0e6d3
+const SIGN_ICON_SIZE = 2
+/** The sign stands at the back-left edge of its clearing. */
+const SIGN_SIDE_RATIO = 0.72
+const SIGN_BACK_RATIO = 0.72
+const SIGN_LEAN_RADIANS = -0.25
 
 type ClearingMark = {
   ring: Mesh
@@ -74,11 +99,59 @@ function layFlat(mesh: Mesh, center: MapGroundPoint, height: number): Mesh {
   return mesh
 }
 
-export function createGroundMarkers(
-  clearings: readonly ClearingGround[],
-  forests: readonly ForestGround[],
-): GroundMarkers {
+/** The suit of a clearing, on a signpost at its back edge. */
+function createSuitSign(clearing: ClearingGround, texture: Texture): Group {
+  const sign: Group = new Group()
+  const post: Mesh = new Mesh(
+    new CylinderGeometry(
+      SIGN_POST_RADIUS,
+      SIGN_POST_RADIUS,
+      SIGN_HEIGHT,
+      SIGN_POST_SIDE_COUNT,
+    ),
+    new MeshStandardMaterial({ color: SIGN_POST_COLOR, roughness: 1 }),
+  )
+  post.position.y = SIGN_HEIGHT * HALF
+  post.castShadow = true
+  const board: Mesh = new Mesh(
+    new CylinderGeometry(
+      SIGN_BOARD_RADIUS,
+      SIGN_BOARD_RADIUS,
+      SIGN_BOARD_THICKNESS,
+      SIGN_BOARD_SIDE_COUNT,
+    ),
+    new MeshStandardMaterial({ color: SIGN_BOARD_COLOR, roughness: 0.9 }),
+  )
+  board.rotateX(QUARTER_TURN_RADIANS)
+  board.position.y = SIGN_HEIGHT
+  board.castShadow = true
+  const icon: Sprite = new Sprite(new SpriteMaterial({ map: texture }))
+  icon.scale.set(SIGN_ICON_SIZE, SIGN_ICON_SIZE, 1)
+  icon.position.set(0, SIGN_HEIGHT, SIGN_BOARD_THICKNESS)
+  sign.add(post, board, icon)
+  sign.position.set(
+    clearing.center.x - clearing.radius * SIGN_SIDE_RATIO,
+    0,
+    clearing.center.z - clearing.radius * SIGN_BACK_RATIO,
+  )
+  sign.rotateX(SIGN_LEAN_RADIANS)
+  return sign
+}
+
+export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
+  const { clearings, forests } = input
   const group: Group = new Group()
+  const textureLoader: TextureLoader = new TextureLoader()
+  for (const clearing of clearings) {
+    const suitTexturePath: string | undefined = input.suitTexturePaths.get(
+      clearing.clearingId,
+    )
+    if (suitTexturePath !== undefined) {
+      const texture: Texture = textureLoader.load(suitTexturePath)
+      texture.colorSpace = SRGBColorSpace
+      group.add(createSuitSign(clearing, texture))
+    }
+  }
   const highlightMaterial: MeshBasicMaterial =
     createFlatMaterial(HIGHLIGHT_COLOR)
   const fillMaterial: MeshBasicMaterial = createFlatMaterial(HIGHLIGHT_COLOR)

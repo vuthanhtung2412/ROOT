@@ -1,14 +1,24 @@
 /**
- * World space of the 3D map: the painted map lies flat on the ground (y = 0),
+ * World space of the 3D map: the woodland lies on the ground (y = 0),
  * centred on the origin, x to the right and z towards the viewer.
  */
 
-/** World units across the map, left edge to right edge. */
+/** World units across the playable woodland, left edge to right edge. */
 export const MAP_WORLD_WIDTH = 100
 
 const MAP_CENTER_RATIO = 0.5
+/**
+ * The woodland is as deep as the part of the screen it is shown in: a tall
+ * map area gets a deep woodland, a wide one a shallow woodland.
+ */
+const MINIMUM_DEPTH_RATIO = 0.7
+const MAXIMUM_DEPTH_RATIO = 1.15
+/** The turn banner and the hand cover the top and bottom of the map area. */
+const VIEW_HEIGHT_FOR_MAP_RATIO = 0.86
+/** Steps of the shape, so dragging a window edge does not rebuild each pixel. */
+const DEPTH_RATIO_STEP = 0.05
 
-export type MapNaturalSize = {
+export type MapViewSize = {
   width: number
   height: number
 }
@@ -18,7 +28,7 @@ export type MapWorldSize = {
   depth: number
 }
 
-/** A point on the map art: 0..1 from the left / top edge. */
+/** A point of the clearing layout: 0..1 from the left / top edge. */
 export type NormalizedMapPoint = {
   x: number
   y: number
@@ -30,11 +40,17 @@ export type MapGroundPoint = {
   z: number
 }
 
-export function mapWorldSize(naturalSize: MapNaturalSize): MapWorldSize {
-  return {
-    width: MAP_WORLD_WIDTH,
-    depth: (MAP_WORLD_WIDTH * naturalSize.height) / naturalSize.width,
-  }
+export function mapWorldSizeForView(viewSize: MapViewSize): MapWorldSize {
+  const viewRatio: number =
+    (viewSize.height * VIEW_HEIGHT_FOR_MAP_RATIO) / viewSize.width
+  const depthRatio: number = Math.min(
+    Math.max(
+      Math.round(viewRatio / DEPTH_RATIO_STEP) * DEPTH_RATIO_STEP,
+      MINIMUM_DEPTH_RATIO,
+    ),
+    MAXIMUM_DEPTH_RATIO,
+  )
+  return { width: MAP_WORLD_WIDTH, depth: MAP_WORLD_WIDTH * depthRatio }
 }
 
 export function normalizedToGround(
@@ -47,13 +63,35 @@ export function normalizedToGround(
   }
 }
 
-/**
- * Clearing radius is a ratio of the shorter map side (same rule as the flat
- * map, see `layoutToPixelHitTargets`).
- */
-export function normalizedRadiusToWorld(
-  radiusRatio: number,
-  worldSize: MapWorldSize,
+export function groundDistance(
+  left: MapGroundPoint,
+  right: MapGroundPoint,
 ): number {
-  return radiusRatio * Math.min(worldSize.width, worldSize.depth)
+  return Math.hypot(left.x - right.x, left.z - right.z)
+}
+
+/** Distance from a point to the segment between two ground points. */
+export function distanceToSegment(
+  point: MapGroundPoint,
+  start: MapGroundPoint,
+  end: MapGroundPoint,
+): number {
+  const segmentX: number = end.x - start.x
+  const segmentZ: number = end.z - start.z
+  const lengthSquared: number = segmentX * segmentX + segmentZ * segmentZ
+  if (lengthSquared === 0) {
+    return groundDistance(point, start)
+  }
+  const along: number = Math.min(
+    Math.max(
+      ((point.x - start.x) * segmentX + (point.z - start.z) * segmentZ) /
+        lengthSquared,
+      0,
+    ),
+    1,
+  )
+  return groundDistance(point, {
+    x: start.x + segmentX * along,
+    z: start.z + segmentZ * along,
+  })
 }

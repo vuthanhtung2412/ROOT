@@ -1,21 +1,16 @@
 import { useEffect, useMemo, useRef, type JSX } from 'react'
-import { GAME_ASSET_KEYS, imagePathForAssetKey } from '#assets/gameAssets.ts'
-import {
-  FALL_BOARD_LAYOUT,
-  fallClearingSuit,
-  type BoardLayout,
-  type ClearingSuit,
-} from '#game/boardLayout.ts'
-import { clearingOpenSlotCount } from '#game/clearingIndicators.ts'
+import { FALL_BOARD_LAYOUT, type BoardLayout } from '#game/boardLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import type {
-  ClearingGround,
   ClearingRingStyle,
   ForestGround,
 } from '#game/map3d/groundMarkers.ts'
-import type { MapViewSize } from '#game/map3d/mapCamera.ts'
 import type { MapScene, MapViewPoint } from '#game/map3d/mapScene.ts'
-import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
+import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
+import type {
+  MapGroundPoint,
+  MapViewSize,
+} from '#game/map3d/mapWorldSpace.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import type { BoardMapProps } from '#react/BoardMap.tsx'
 import {
@@ -24,6 +19,10 @@ import {
 } from '#react/BoardEffectsLayer.tsx'
 import { mapPiecesForBoard } from '#react/map3d/mapPieces.ts'
 import { useMapScene, type MapSceneHandle } from '#react/map3d/useMapScene.ts'
+import {
+  useTapOrDrag,
+  type TapOrDragHandlers,
+} from '#react/map3d/useTapOrDrag.ts'
 import {
   computeRulerByClearing,
   type ClearingHitCenter,
@@ -37,17 +36,7 @@ const RULER_RING_OPACITY = 0.95
 /** The click target is a little smaller than the ring it sits on. */
 const HIT_RADIUS_RATIO = 0.9
 const HALF = 0.5
-/** The suit plate hangs just in front of the clearing ring. */
-const PLATE_DISTANCE_RATIO = 1.12
 
-const SUIT_TEXTURE_KEY_BY_SUIT: Readonly<Record<ClearingSuit, string>> = {
-  fox: GAME_ASSET_KEYS.suitFox,
-  mouse: GAME_ASSET_KEYS.suitMouse,
-  rabbit: GAME_ASSET_KEYS.suitRabbit,
-}
-
-const CLEARING_PLATE_CLASS_NAME =
-  'pointer-events-none absolute z-3 flex -translate-x-1/2 items-center gap-1 rounded-full bg-[#1a2438cc] px-1.5 py-0.5 font-mono text-[11px] font-bold text-parchment'
 const RESET_VIEW_CLASS_NAME =
   'map-3d-reset-view pointer-events-auto absolute top-2 right-2 z-6 cursor-pointer rounded border border-parchment-shadow bg-[#1a2438cc] px-2 py-1 font-body text-xs font-bold text-parchment'
 
@@ -56,7 +45,6 @@ type ProjectedClearing = {
   clearingId: number
   center: MapViewPoint
   radius: number
-  plate: MapViewPoint
 }
 
 function distanceBetween(left: MapViewPoint, right: MapViewPoint): number {
@@ -84,7 +72,6 @@ function projectClearing(
     clearingId: clearing.clearingId,
     center,
     radius: radius * HIT_RADIUS_RATIO,
-    plate: { x: center.x, y: center.y + radius * PLATE_DISTANCE_RATIO },
   }
 }
 
@@ -138,15 +125,13 @@ export function BoardMap3D(props: BoardMapProps): JSX.Element {
       return
     }
     scene.setPieces(
-      clearings === undefined || factions === undefined
-        ? []
-        : mapPiecesForBoard({
-            clearings,
-            factions,
-            clearingGrounds,
-            forestGrounds,
-            forestPawns: forestPawns ?? [],
-          }),
+      mapPiecesForBoard({
+        clearings: clearings ?? [],
+        factions: factions ?? [],
+        clearingGrounds,
+        forestGrounds,
+        forestPawns: forestPawns ?? [],
+      }),
     )
   }, [scene, clearings, factions, forestPawns, clearingGrounds, forestGrounds])
 
@@ -243,11 +228,13 @@ export function BoardMap3D(props: BoardMapProps): JSX.Element {
 
   const onClearingSelected = props.onClearingSelected
   const onForestSelected = props.onForestSelected
+  const tapOrDragHandlers: TapOrDragHandlers = useTapOrDrag()
 
   return (
     <div
       className="relative shrink-0 overflow-hidden pointer-events-none"
       style={{ width: viewWidth, height: viewHeight }}
+      {...tapOrDragHandlers}
     >
       <canvas
         ref={canvasReference}
@@ -289,48 +276,24 @@ export function BoardMap3D(props: BoardMapProps): JSX.Element {
         />
       ) : null}
       {projectedClearings.map((clearing: ProjectedClearing) => {
-        const suit: ClearingSuit | null = fallClearingSuit(clearing.clearingId)
-        const suitPath: string | null =
-          suit === null
-            ? null
-            : imagePathForAssetKey(SUIT_TEXTURE_KEY_BY_SUIT[suit])
-        const openSlots: number = clearingOpenSlotCount(
-          clearing.clearingId,
-          clearings?.[clearing.clearingId],
-        )
         const diameter: number = clearing.radius * 2
         return (
-          <div key={clearing.clearingId}>
-            <button
-              type="button"
-              className="pointer-events-auto absolute z-4 m-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
-              aria-label={`Clearing ${String(clearing.clearingId)}`}
-              data-clearing-id={clearing.clearingId}
-              onClick={() => {
-                onClearingSelected?.(clearing.clearingId)
-              }}
-              style={{
-                left: clearing.center.x - clearing.radius,
-                top: clearing.center.y - clearing.radius,
-                width: diameter,
-                height: diameter,
-              }}
-            />
-            <span
-              className={CLEARING_PLATE_CLASS_NAME}
-              style={{ left: clearing.plate.x, top: clearing.plate.y }}
-            >
-              {suitPath !== null ? (
-                <img
-                  className="block h-3.5 w-auto select-none"
-                  src={suitPath}
-                  alt=""
-                  draggable={false}
-                />
-              ) : null}
-              {openSlots > 0 ? String(openSlots) : null}
-            </span>
-          </div>
+          <button
+            key={clearing.clearingId}
+            type="button"
+            className="pointer-events-auto absolute z-4 m-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
+            aria-label={`Clearing ${String(clearing.clearingId)}`}
+            data-clearing-id={clearing.clearingId}
+            onClick={() => {
+              onClearingSelected?.(clearing.clearingId)
+            }}
+            style={{
+              left: clearing.center.x - clearing.radius,
+              top: clearing.center.y - clearing.radius,
+              width: diameter,
+              height: diameter,
+            }}
+          />
         )
       })}
     </div>

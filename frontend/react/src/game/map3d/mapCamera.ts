@@ -1,26 +1,18 @@
-import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
+import { MathUtils, MOUSE, PerspectiveCamera, TOUCH, Vector3 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import type {
   MapGroundPoint,
+  MapViewSize,
   MapWorldSize,
 } from '#game/map3d/mapWorldSpace.ts'
 
 /**
- * Camera of the 3D map: looks down at the board at a tilt, like the digital
- * game. Drag turns it, wheel / pinch zooms, right-drag or two fingers pan.
+ * Camera of the 3D map: looks down at the woodland at a fixed tilt, like the
+ * digital game. It never turns: wheel / pinch zooms, drag pans.
  */
 
-export type MapViewSize = {
-  width: number
-  height: number
-}
-
-/** Where the camera is, as an orbit around a point of the board. */
+/** Where the camera is: how far, and which point of the ground it aims at. */
 export type MapViewPose = {
-  /** Tilt from straight down, radians. */
-  polarAngle: number
-  /** Turn around the board, radians. */
-  azimuthAngle: number
   distance: number
   target: MapGroundPoint
 }
@@ -31,56 +23,35 @@ export type MapCameraRig = {
   resize: (viewSize: MapViewSize) => void
   /** Glide back to the opening view. */
   resetView: () => void
-  glideTo: (pose: MapViewPose) => void
-  currentPose: () => MapViewPose
-  homePose: () => MapViewPose
   /** Advance a running glide; call once per frame. */
   update: (deltaSeconds: number) => void
   dispose: () => void
 }
 
-const FIELD_OF_VIEW_DEGREES = 32
+const FIELD_OF_VIEW_DEGREES = 30
 const NEAR_PLANE = 1
 const FAR_PLANE = 900
 const HALF = 0.5
 
-const HOME_POLAR_ANGLE = MathUtils.degToRad(36)
-/** The map opens seen from straight above, then tilts into the home view. */
-const OPENING_POLAR_ANGLE = MathUtils.degToRad(2)
-const MINIMUM_POLAR_ANGLE = MathUtils.degToRad(2)
-const MAXIMUM_POLAR_ANGLE = MathUtils.degToRad(72)
-/** Room around the board at the home view. */
-const HOME_FIT_MARGIN = 1.12
-const OPENING_DISTANCE_RATIO = 1.15
-const MINIMUM_DISTANCE = 22
-const MAXIMUM_DISTANCE_RATIO = 1.5
-const DAMPING_FACTOR = 0.12
-const GLIDE_SECONDS = 1.6
-/** The tilted board looks centred when the camera aims a little south. */
-const HOME_TARGET_DEPTH_RATIO = 0.1
+/** Tilt from straight down. */
+const TILT_ANGLE = MathUtils.degToRad(38)
+/** Room around the woodland at the home view. */
+const HOME_FIT_MARGIN = 1.04
+/** The tilted woodland looks centred when the camera aims a little south. */
+const HOME_TARGET_DEPTH_RATIO = 0.03
+/** The map opens from a little higher up and settles into the home view. */
+const OPENING_DISTANCE_RATIO = 1.35
+const MINIMUM_DISTANCE = 26
+const DAMPING_FACTOR = 0.14
+const GLIDE_SECONDS = 1.4
 
 function easeInOut(progress: number): number {
   return progress * progress * (3 - 2 * progress)
 }
 
-function mixPoses(
-  from: MapViewPose,
-  to: MapViewPose,
-  progress: number,
-): MapViewPose {
-  return {
-    polarAngle: MathUtils.lerp(from.polarAngle, to.polarAngle, progress),
-    azimuthAngle: MathUtils.lerp(from.azimuthAngle, to.azimuthAngle, progress),
-    distance: MathUtils.lerp(from.distance, to.distance, progress),
-    target: {
-      x: MathUtils.lerp(from.target.x, to.target.x, progress),
-      z: MathUtils.lerp(from.target.z, to.target.z, progress),
-    },
-  }
-}
-
 export function createMapCameraRig(
-  canvas: HTMLCanvasElement,
+  /** Listens for wheel and drag: the map and everything laid over it. */
+  controlElement: HTMLElement,
   worldSize: MapWorldSize,
   initialViewSize: MapViewSize,
 ): MapCameraRig {
@@ -90,29 +61,38 @@ export function createMapCameraRig(
     NEAR_PLANE,
     FAR_PLANE,
   )
-  const controls: OrbitControls = new OrbitControls(camera, canvas)
+  const controls: OrbitControls = new OrbitControls(
+    camera,
+    controlElement,
+  )
+  controls.enableRotate = false
   controls.enableDamping = true
   controls.dampingFactor = DAMPING_FACTOR
   controls.screenSpacePanning = false
-  controls.minPolarAngle = MINIMUM_POLAR_ANGLE
-  controls.maxPolarAngle = MAXIMUM_POLAR_ANGLE
+  controls.zoomToCursor = true
   controls.minDistance = MINIMUM_DISTANCE
+  controls.mouseButtons = {
+    LEFT: MOUSE.PAN,
+    MIDDLE: MOUSE.DOLLY,
+    RIGHT: MOUSE.PAN,
+  }
+  controls.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }
 
-  /** Distance at which the whole board fits the view, seen from above. */
-  const fitDistance = (): number => {
+  /** Distance at which the whole woodland fits the view. */
+  const homeDistance = (): number => {
     const halfViewTangent: number = Math.tan(
       MathUtils.degToRad(FIELD_OF_VIEW_DEGREES) * HALF,
     )
-    const fitDepth: number = (worldSize.depth * HALF) / halfViewTangent
+    // Seen at a tilt, the depth of the ground is foreshortened.
+    const fitDepth: number =
+      (worldSize.depth * Math.cos(TILT_ANGLE) * HALF) / halfViewTangent
     const fitWidth: number =
       (worldSize.width * HALF) / (halfViewTangent * camera.aspect)
-    return Math.max(fitDepth, fitWidth)
+    return Math.max(fitDepth, fitWidth) * HOME_FIT_MARGIN
   }
 
   const homePose = (): MapViewPose => ({
-    polarAngle: HOME_POLAR_ANGLE,
-    azimuthAngle: 0,
-    distance: fitDistance() * HOME_FIT_MARGIN,
+    distance: homeDistance(),
     target: { x: 0, z: worldSize.depth * HOME_TARGET_DEPTH_RATIO },
   })
 
@@ -120,16 +100,14 @@ export function createMapCameraRig(
     controls.target.set(pose.target.x, 0, pose.target.z)
     const offset: Vector3 = new Vector3().setFromSphericalCoords(
       pose.distance,
-      pose.polarAngle,
-      pose.azimuthAngle,
+      TILT_ANGLE,
+      0,
     )
     camera.position.copy(controls.target).add(offset)
     camera.lookAt(controls.target)
   }
 
   const currentPose = (): MapViewPose => ({
-    polarAngle: controls.getPolarAngle(),
-    azimuthAngle: controls.getAzimuthalAngle(),
     distance: controls.getDistance(),
     target: { x: controls.target.x, z: controls.target.z },
   })
@@ -137,68 +115,81 @@ export function createMapCameraRig(
   let glide: { from: MapViewPose; to: MapViewPose; elapsed: number } | null =
     null
 
-  const glideTo = (pose: MapViewPose): void => {
-    glide = { from: currentPose(), to: pose, elapsed: 0 }
-  }
-
-  /** The camera never leaves the board behind. */
-  const keepTargetOnBoard = (): void => {
+  /**
+   * Zoomed out, the whole woodland is in view and there is nowhere to pan;
+   * the closer the camera, the further it may wander — never off the map.
+   */
+  const keepTargetOnMap = (): void => {
+    const home: MapViewPose = homePose()
+    const freedom: number = MathUtils.clamp(
+      1 - controls.getDistance() / home.distance,
+      0,
+      1,
+    )
+    const reachX: number = worldSize.width * HALF * freedom
+    const reachZ: number = worldSize.depth * HALF * freedom
     controls.target.x = MathUtils.clamp(
       controls.target.x,
-      -worldSize.width * HALF,
-      worldSize.width * HALF,
+      home.target.x - reachX,
+      home.target.x + reachX,
     )
     controls.target.z = MathUtils.clamp(
       controls.target.z,
-      -worldSize.depth * HALF,
-      worldSize.depth * HALF,
+      home.target.z - reachZ,
+      home.target.z + reachZ,
     )
     controls.target.y = 0
   }
   const stopGlide = (): void => {
     glide = null
+    controls.maxDistance = homeDistance()
   }
-  controls.addEventListener('change', keepTargetOnBoard)
   controls.addEventListener('start', stopGlide)
 
   const resize = (viewSize: MapViewSize): void => {
     camera.aspect = viewSize.width / viewSize.height
     camera.updateProjectionMatrix()
-    controls.maxDistance = fitDistance() * MAXIMUM_DISTANCE_RATIO
+    controls.maxDistance = homeDistance()
   }
 
   resize(initialViewSize)
+  controls.maxDistance = Number.POSITIVE_INFINITY
   applyPose({
     ...homePose(),
-    polarAngle: OPENING_POLAR_ANGLE,
-    distance: fitDistance() * OPENING_DISTANCE_RATIO,
+    distance: homeDistance() * OPENING_DISTANCE_RATIO,
   })
   controls.update()
-  glideTo(homePose())
+  glide = { from: currentPose(), to: homePose(), elapsed: 0 }
 
   return {
     camera,
     controls,
     resize,
     resetView: (): void => {
-      glideTo(homePose())
+      glide = { from: currentPose(), to: homePose(), elapsed: 0 }
     },
-    glideTo,
-    currentPose,
-    homePose,
     update: (deltaSeconds: number): void => {
       if (glide !== null) {
         glide.elapsed += deltaSeconds
         const progress: number = Math.min(glide.elapsed / GLIDE_SECONDS, 1)
-        applyPose(mixPoses(glide.from, glide.to, easeInOut(progress)))
+        const eased: number = easeInOut(progress)
+        applyPose({
+          distance: MathUtils.lerp(glide.from.distance, glide.to.distance, eased),
+          target: {
+            x: MathUtils.lerp(glide.from.target.x, glide.to.target.x, eased),
+            z: MathUtils.lerp(glide.from.target.z, glide.to.target.z, eased),
+          },
+        })
         if (progress >= 1) {
           glide = null
+          controls.maxDistance = homeDistance()
         }
+      } else {
+        keepTargetOnMap()
       }
       controls.update()
     },
     dispose: (): void => {
-      controls.removeEventListener('change', keepTargetOnBoard)
       controls.removeEventListener('start', stopGlide)
       controls.dispose()
     },

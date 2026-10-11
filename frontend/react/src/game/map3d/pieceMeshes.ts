@@ -1,31 +1,36 @@
 import {
+  BoxGeometry,
   CanvasTexture,
   CylinderGeometry,
-  DoubleSide,
   Group,
   Mesh,
-  MeshDepthMaterial,
   MeshStandardMaterial,
   Object3D,
-  PlaneGeometry,
-  RGBADepthPacking,
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
   Texture,
   TextureLoader,
+  type BufferGeometry,
+  type Material,
 } from 'three'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 
 /**
- * Pieces standing on the map. A warrior or pawn is a wooden meeple; any
- * other piece is its token art on a stand. One figure per stack, with the
- * stack size on a badge — like the digital game.
+ * Everything standing in the clearings:
+ * - `slot`: an empty building plot (one per building slot of the clearing);
+ * - `tile`: a building — a square cardboard tile standing on its plot;
+ * - `disc`: a round cardboard token (wood, sympathy, keep, ruin …);
+ * - `figure`: a warrior or pawn — a wooden meeple.
+ * One piece per stack, with the stack size on a badge.
  */
+export type MapPieceShape = 'slot' | 'tile' | 'disc' | 'figure'
+
 export type MapPiece = {
   key: string
-  /** Token texture key: picks the meeple model when one exists. */
+  shape: MapPieceShape
+  /** Token texture key: picks the meeple model of a figure. */
   textureKey: string
   texturePath: string | null
   /** Faction colour, 0xRRGGBB. */
@@ -37,25 +42,39 @@ export type MapPiece = {
 export type PieceLayer = {
   group: Group
   setPieces: (pieces: readonly MapPiece[]) => void
-  /** Turn every piece to face the camera (turn around the board, radians). */
-  faceCamera: (azimuthAngle: number) => void
   dispose: () => void
 }
 
 /** Meeple models are 2.3 units tall. */
 const MEEPLE_MODEL_SCALE = 1.9
-const TOKEN_SIZE = 3.6
-const TOKEN_ALPHA_CUTOFF = 0.5
-const STAND_RADIUS = 1.25
-const STAND_HEIGHT = 0.22
-const STAND_SIDE_COUNT = 24
-const STAND_COLOR = 0x2a2018
-const FALLBACK_TOKEN_OPACITY = 1
+const TOKEN_SIZE = 3.7
+const TOKEN_THICKNESS = 0.42
+/** Cardboard leans back a little so its face meets the camera. */
+const TOKEN_LEAN_RADIANS = -0.6
+const DISC_SIDE_COUNT = 40
+const CARDBOARD_EDGE_COLOR = 0xcdb98c
+const QUARTER_TURN_RADIANS = Math.PI / 2
+
+const SLOT_SIZE = 4.1
+const SLOT_HEIGHT = 0.28
+const SLOT_COLOR = 0x8a7550
+const SLOT_FLOOR_SIZE = 3.3
+const SLOT_FLOOR_COLOR = 0x5c4c34
+const SLOT_POST_SIZE = 0.5
+const SLOT_POST_HEIGHT = 0.95
+const SLOT_POST_COLOR = 0xe9dfc4
+/** Corner posts stand at (±1, ±1) × this offset. */
+const SLOT_CORNER_SIGNS: ReadonlyArray<readonly [number, number]> = [
+  [-1, -1],
+  [1, -1],
+  [-1, 1],
+  [1, 1],
+]
 
 const BADGE_TEXTURE_SIZE_PIXELS = 96
 const BADGE_SIZE = 2
 const BADGE_HEIGHT = 4.8
-const BADGE_SIDE_OFFSET = 1.5
+const BADGE_SIDE_OFFSET = 1.6
 const BADGE_BORDER_WIDTH_PIXELS = 7
 const BADGE_BORDER_COLOR = '#f0e6d3'
 const BADGE_TEXT_COLOR = '#ffffff'
@@ -107,43 +126,149 @@ function createBadgeTexture(count: number, color: number): CanvasTexture {
   return texture
 }
 
+function standardMaterial(color: number): MeshStandardMaterial {
+  return new MeshStandardMaterial({ color, roughness: 0.9 })
+}
+
+function shadowedMesh(
+  geometry: BufferGeometry,
+  material: Material | Material[],
+): Mesh {
+  const mesh: Mesh = new Mesh(geometry, material)
+  mesh.castShadow = true
+  mesh.receiveShadow = true
+  return mesh
+}
+
 export function createPieceLayer(
   meepleModels: ReadonlyMap<string, Group>,
 ): PieceLayer {
   const group: Group = new Group()
   const textureLoader: TextureLoader = new TextureLoader()
-  const tokenTextures: Map<string, Texture> = new Map<string, Texture>()
+  const faceMaterials: Map<string, MeshStandardMaterial> = new Map<
+    string,
+    MeshStandardMaterial
+  >()
   const badgeTextures: Map<string, CanvasTexture> = new Map<
     string,
     CanvasTexture
   >()
-  const tokenGeometry: PlaneGeometry = new PlaneGeometry(TOKEN_SIZE, TOKEN_SIZE)
-  const standGeometry: CylinderGeometry = new CylinderGeometry(
-    STAND_RADIUS,
-    STAND_RADIUS,
-    STAND_HEIGHT,
-    STAND_SIDE_COUNT,
+  const tileGeometry: BoxGeometry = new BoxGeometry(
+    TOKEN_SIZE,
+    TOKEN_SIZE,
+    TOKEN_THICKNESS,
   )
-  const standMaterial: MeshStandardMaterial = new MeshStandardMaterial({
-    color: STAND_COLOR,
-    roughness: 1,
-  })
-  /** The parts that turn with the camera. */
-  let figures: Object3D[] = []
-  let facingAngle = 0
+  const discGeometry: CylinderGeometry = new CylinderGeometry(
+    TOKEN_SIZE * HALF,
+    TOKEN_SIZE * HALF,
+    TOKEN_THICKNESS,
+    DISC_SIDE_COUNT,
+  )
+  const slotGeometry: BoxGeometry = new BoxGeometry(
+    SLOT_SIZE,
+    SLOT_HEIGHT,
+    SLOT_SIZE,
+  )
+  const slotFloorGeometry: BoxGeometry = new BoxGeometry(
+    SLOT_FLOOR_SIZE,
+    SLOT_HEIGHT,
+    SLOT_FLOOR_SIZE,
+  )
+  const slotPostGeometry: BoxGeometry = new BoxGeometry(
+    SLOT_POST_SIZE,
+    SLOT_POST_HEIGHT,
+    SLOT_POST_SIZE,
+  )
+  const edgeMaterial: MeshStandardMaterial =
+    standardMaterial(CARDBOARD_EDGE_COLOR)
+  const slotMaterial: MeshStandardMaterial = standardMaterial(SLOT_COLOR)
+  const slotFloorMaterial: MeshStandardMaterial =
+    standardMaterial(SLOT_FLOOR_COLOR)
+  const slotPostMaterial: MeshStandardMaterial =
+    standardMaterial(SLOT_POST_COLOR)
 
-  const tokenTexture = (path: string): Texture => {
-    const cached: Texture | undefined = tokenTextures.get(path)
+  /** The printed face of a cardboard piece. */
+  const faceMaterial = (piece: MapPiece): MeshStandardMaterial => {
+    const materialKey: string = piece.texturePath ?? colorToCss(piece.color)
+    const cached: MeshStandardMaterial | undefined =
+      faceMaterials.get(materialKey)
     if (cached !== undefined) {
       return cached
     }
-    const texture: Texture = textureLoader.load(path)
-    texture.colorSpace = SRGBColorSpace
-    tokenTextures.set(path, texture)
-    return texture
+    const material: MeshStandardMaterial = standardMaterial(
+      piece.texturePath === null ? piece.color : 0xffffff,
+    )
+    if (piece.texturePath !== null) {
+      const texture: Texture = textureLoader.load(piece.texturePath)
+      texture.colorSpace = SRGBColorSpace
+      material.map = texture
+    }
+    faceMaterials.set(materialKey, material)
+    return material
   }
 
-  const createMeeple = (model: Group): Object3D => {
+  /** An empty building slot: a plot staked out with four corner posts. */
+  const createSlot = (): Object3D => {
+    const slot: Group = new Group()
+    const plot: Mesh = shadowedMesh(slotGeometry, slotMaterial)
+    plot.position.y = SLOT_HEIGHT * HALF
+    const floor: Mesh = new Mesh(slotFloorGeometry, slotFloorMaterial)
+    floor.position.y = SLOT_HEIGHT * HALF + 0.02
+    floor.receiveShadow = true
+    slot.add(plot, floor)
+    const postOffset: number = (SLOT_SIZE - SLOT_POST_SIZE) * HALF
+    for (const [signX, signZ] of SLOT_CORNER_SIGNS) {
+      const post: Mesh = shadowedMesh(slotPostGeometry, slotPostMaterial)
+      post.position.set(
+        signX * postOffset,
+        SLOT_POST_HEIGHT * HALF,
+        signZ * postOffset,
+      )
+      slot.add(post)
+    }
+    return slot
+  }
+
+  /** A square building tile, standing on the plot it was built on. */
+  const createTile = (piece: MapPiece): Object3D => {
+    const face: MeshStandardMaterial = faceMaterial(piece)
+    // Box faces: +x, -x, +y, -y, +z (front), -z (back).
+    const materials: Material[] = [
+      edgeMaterial,
+      edgeMaterial,
+      edgeMaterial,
+      edgeMaterial,
+      face,
+      face,
+    ]
+    const tile: Mesh = shadowedMesh(tileGeometry, materials)
+    tile.position.y = TOKEN_SIZE * HALF
+    const holder: Group = new Group()
+    holder.add(tile)
+    holder.rotation.x = TOKEN_LEAN_RADIANS
+    return holder
+  }
+
+  /** A round token, standing on its edge. */
+  const createDisc = (piece: MapPiece): Object3D => {
+    const face: MeshStandardMaterial = faceMaterial(piece)
+    // Cylinder faces: side, top cap, bottom cap.
+    const disc: Mesh = shadowedMesh(discGeometry, [edgeMaterial, face, face])
+    // Stand the disc up: its printed top cap turns towards the camera, and a
+    // quarter turn about its own axis brings the art upright.
+    disc.rotation.set(QUARTER_TURN_RADIANS, QUARTER_TURN_RADIANS, 0)
+    disc.position.y = TOKEN_SIZE * HALF
+    const holder: Group = new Group()
+    holder.add(disc)
+    holder.rotation.x = TOKEN_LEAN_RADIANS
+    return holder
+  }
+
+  const createFigure = (piece: MapPiece): Object3D => {
+    const model: Group | undefined = meepleModels.get(piece.textureKey)
+    if (model === undefined) {
+      return createDisc(piece)
+    }
     const meeple: Object3D = model.clone()
     meeple.scale.setScalar(MEEPLE_MODEL_SCALE)
     for (const part of meshesOf(meeple)) {
@@ -151,36 +276,6 @@ export function createPieceLayer(
       part.receiveShadow = true
     }
     return meeple
-  }
-
-  const createToken = (piece: MapPiece): Object3D => {
-    const token: Group = new Group()
-    const faceMaterial: MeshStandardMaterial = new MeshStandardMaterial({
-      color: piece.texturePath === null ? piece.color : 0xffffff,
-      roughness: 0.9,
-      side: DoubleSide,
-      alphaTest: TOKEN_ALPHA_CUTOFF,
-      opacity: FALLBACK_TOKEN_OPACITY,
-    })
-    const face: Mesh = new Mesh(tokenGeometry, faceMaterial)
-    if (piece.texturePath !== null) {
-      const texture: Texture = tokenTexture(piece.texturePath)
-      faceMaterial.map = texture
-      // Shadow of the art, not of the square it is painted on.
-      face.customDepthMaterial = new MeshDepthMaterial({
-        depthPacking: RGBADepthPacking,
-        map: texture,
-        alphaTest: TOKEN_ALPHA_CUTOFF,
-      })
-    }
-    face.position.y = STAND_HEIGHT + TOKEN_SIZE * HALF
-    face.castShadow = true
-    const stand: Mesh = new Mesh(standGeometry, standMaterial)
-    stand.position.y = STAND_HEIGHT * HALF
-    stand.castShadow = true
-    stand.receiveShadow = true
-    token.add(face, stand)
-    return token
   }
 
   const createBadge = (piece: MapPiece): Sprite => {
@@ -198,46 +293,57 @@ export function createPieceLayer(
     return badge
   }
 
-  const setPieces = (pieces: readonly MapPiece[]): void => {
-    group.clear()
-    figures = pieces.map((piece: MapPiece): Object3D => {
-      const meepleModel: Group | undefined = meepleModels.get(piece.textureKey)
-      const figure: Group = new Group()
-      figure.add(
-        meepleModel !== undefined
-          ? createMeeple(meepleModel)
-          : createToken(piece),
-      )
-      if (piece.count > 1) {
-        figure.add(createBadge(piece))
-      }
-      figure.position.set(piece.ground.x, 0, piece.ground.z)
-      figure.rotation.y = facingAngle
-      group.add(figure)
-      return figure
-    })
+  const createPiece = (piece: MapPiece): Object3D => {
+    if (piece.shape === 'slot') {
+      return createSlot()
+    }
+    if (piece.shape === 'tile') {
+      return createTile(piece)
+    }
+    if (piece.shape === 'disc') {
+      return createDisc(piece)
+    }
+    return createFigure(piece)
   }
 
   return {
     group,
-    setPieces,
-    faceCamera: (azimuthAngle: number): void => {
-      facingAngle = azimuthAngle
-      for (const figure of figures) {
-        figure.rotation.y = azimuthAngle
+    setPieces: (pieces: readonly MapPiece[]): void => {
+      group.clear()
+      for (const piece of pieces) {
+        const holder: Group = new Group()
+        holder.add(createPiece(piece))
+        if (piece.count > 1) {
+          holder.add(createBadge(piece))
+        }
+        holder.position.set(piece.ground.x, 0, piece.ground.z)
+        group.add(holder)
       }
     },
     dispose: (): void => {
       group.clear()
-      tokenGeometry.dispose()
-      standGeometry.dispose()
-      standMaterial.dispose()
-      tokenTextures.forEach((texture: Texture): void => {
+      for (const geometry of [
+        tileGeometry,
+        discGeometry,
+        slotGeometry,
+        slotFloorGeometry,
+        slotPostGeometry,
+      ]) {
+        geometry.dispose()
+      }
+      for (const material of [
+        edgeMaterial,
+        slotMaterial,
+        slotFloorMaterial,
+        slotPostMaterial,
+        ...faceMaterials.values(),
+      ]) {
+        material.map?.dispose()
+        material.dispose()
+      }
+      for (const texture of badgeTextures.values()) {
         texture.dispose()
-      })
-      badgeTextures.forEach((texture: CanvasTexture): void => {
-        texture.dispose()
-      })
+      }
     },
   }
 }

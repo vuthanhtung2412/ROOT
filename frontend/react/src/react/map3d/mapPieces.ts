@@ -3,14 +3,15 @@ import {
   imagePathForAssetKey,
   vagabondPawnTextureKey,
 } from '#assets/gameAssets.ts'
-import { clearingHasRuin } from '#game/clearingIndicators.ts'
+import {
+  clearingHasRuin,
+  FALL_CLEARING_SLOT_COUNTS,
+} from '#game/clearingIndicators.ts'
 import type { ForestPawnMarker } from '#game/forestLayout.ts'
-import type {
-  ClearingGround,
-  ForestGround,
-} from '#game/map3d/groundMarkers.ts'
+import type { ForestGround } from '#game/map3d/groundMarkers.ts'
+import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
-import type { MapPiece } from '#game/map3d/pieceMeshes.ts'
+import type { MapPiece, MapPieceShape } from '#game/map3d/pieceMeshes.ts'
 import { factionColorForSeat, FACTION_COLORS } from '#game/theme.ts'
 import {
   pieceViewModelsForClearing,
@@ -20,6 +21,7 @@ import {
 import {
   groupPiecesIntoStacks,
   type PieceStackViewModel,
+  type PieceViewModel,
 } from '#ui/PieceView.ts'
 
 export type MapPiecesInput = {
@@ -30,26 +32,151 @@ export type MapPiecesInput = {
   forestPawns: readonly ForestPawnMarker[]
 }
 
-/** Stacks stand on a circle this far from the clearing centre. */
-const STACK_CIRCLE_RADIUS_RATIO = 0.52
-const FULL_TURN_RADIANS = Math.PI * 2
-/** First stack at the back of the clearing, the rest follow clockwise. */
-const FIRST_STACK_ANGLE_RADIANS = -Math.PI / 2
-/** Piece kinds drawn as meeples: they stand in front of the cardboard. */
-const MEEPLE_KINDS: ReadonlySet<string> = new Set<string>(['warrior', 'pawn'])
+const BUILDING_KIND = 'building'
+/** Piece kinds drawn as meeples. */
+const FIGURE_KINDS: ReadonlySet<string> = new Set<string>(['warrior', 'pawn'])
 
-/** Where each of `count` stacks stands: one in the middle, more on a circle. */
-function stackGrounds(clearing: ClearingGround, count: number): MapGroundPoint[] {
-  if (count === 1) {
-    return [clearing.center]
+/** Building slots stand in a row across the back of the clearing. */
+const SLOT_ROW_DEPTH_RATIO = -0.42
+const SLOT_SPACING = 4.7
+/** Tokens and meeples stand in rows across the front of the clearing. */
+const STACK_ROW_DEPTH_RATIO = 0.3
+const STACK_ROW_SPACING = 3.9
+const STACK_SPACING = 3.6
+const STACKS_PER_ROW = 4
+const HALF = 0.5
+
+/** `count` spots in a row, centred on the clearing, `spacing` apart. */
+function rowGrounds(
+  clearing: ClearingGround,
+  row: { count: number; spacing: number; depth: number },
+): MapGroundPoint[] {
+  return Array.from(
+    { length: row.count },
+    (_, index: number): MapGroundPoint => ({
+      x: clearing.center.x + (index - (row.count - 1) * HALF) * row.spacing,
+      z: clearing.center.z + row.depth,
+    }),
+  )
+}
+
+/** One piece (not a stack) as a map piece: a building owns a whole slot. */
+function singlePiece(
+  piece: PieceViewModel,
+  clearingId: number,
+  shape: MapPieceShape,
+): MapPiece {
+  const [stack]: PieceStackViewModel[] = groupPiecesIntoStacks([piece])
+  const textureKey: string =
+    stack === undefined ? '' : textureKeyForStack(stack, clearingId)
+  return {
+    key: `${String(clearingId)}-${piece.id}`,
+    shape,
+    textureKey,
+    texturePath: imagePathForAssetKey(textureKey),
+    color: piece.color,
+    count: 1,
+    ground: { x: 0, z: 0 },
   }
-  const circleRadius: number = clearing.radius * STACK_CIRCLE_RADIUS_RATIO
-  return Array.from({ length: count }, (_, index: number): MapGroundPoint => {
-    const angle: number =
-      FIRST_STACK_ANGLE_RADIANS + (index / count) * FULL_TURN_RADIANS
+}
+
+/**
+ * The building slots of a clearing: the ruin and each building take one,
+ * every slot left over shows as an empty plot. Rule: Board > Slots
+ */
+function slotPieces(
+  clearingGround: ClearingGround,
+  clearing: BoardClearingPieces,
+  pieces: readonly PieceViewModel[],
+): MapPiece[] {
+  const clearingId: number = clearingGround.clearingId
+  const ruin: MapPiece[] = clearingHasRuin(clearing)
+    ? [
+        {
+          key: `${String(clearingId)}-ruin`,
+          shape: 'disc',
+          textureKey: GAME_ASSET_KEYS.markerRuin,
+          texturePath: imagePathForAssetKey(GAME_ASSET_KEYS.markerRuin),
+          color: FACTION_COLORS.neutral,
+          count: 1,
+          ground: clearingGround.center,
+        },
+      ]
+    : []
+  const buildings: MapPiece[] = pieces
+    .filter((piece: PieceViewModel): boolean => piece.kind === BUILDING_KIND)
+    .map(
+      (piece: PieceViewModel): MapPiece =>
+        singlePiece(piece, clearingId, 'tile'),
+    )
+  const occupants: MapPiece[] = [...ruin, ...buildings]
+  const slotCount: number = Math.max(
+    FALL_CLEARING_SLOT_COUNTS[clearingId] ?? 0,
+    occupants.length,
+  )
+  const grounds: MapGroundPoint[] = rowGrounds(clearingGround, {
+    count: slotCount,
+    spacing: SLOT_SPACING,
+    depth: clearingGround.radius * SLOT_ROW_DEPTH_RATIO,
+  })
+  return grounds.map((ground: MapGroundPoint, slotIndex: number): MapPiece => {
+    const occupant: MapPiece | undefined = occupants[slotIndex]
+    if (occupant !== undefined) {
+      return { ...occupant, ground }
+    }
     return {
-      x: clearing.center.x + Math.cos(angle) * circleRadius,
-      z: clearing.center.z + Math.sin(angle) * circleRadius,
+      key: `${String(clearingId)}-slot-${String(slotIndex)}`,
+      shape: 'slot',
+      textureKey: '',
+      texturePath: null,
+      color: FACTION_COLORS.neutral,
+      count: 1,
+      ground,
+    }
+  })
+}
+
+/** Tokens, then warriors and pawns, as stacks in rows at the front. */
+function stackPieces(
+  clearingGround: ClearingGround,
+  pieces: readonly PieceViewModel[],
+): MapPiece[] {
+  const clearingId: number = clearingGround.clearingId
+  const stacks: PieceStackViewModel[] = groupPiecesIntoStacks(
+    pieces.filter(
+      (piece: PieceViewModel): boolean => piece.kind !== BUILDING_KIND,
+    ),
+  )
+  const ordered: PieceStackViewModel[] = [
+    ...stacks.filter(
+      (stack: PieceStackViewModel): boolean => !FIGURE_KINDS.has(stack.kind),
+    ),
+    ...stacks.filter((stack: PieceStackViewModel): boolean =>
+      FIGURE_KINDS.has(stack.kind),
+    ),
+  ]
+  return ordered.map((stack: PieceStackViewModel, index: number): MapPiece => {
+    const rowIndex: number = Math.floor(index / STACKS_PER_ROW)
+    const rowCount: number = Math.min(
+      ordered.length - rowIndex * STACKS_PER_ROW,
+      STACKS_PER_ROW,
+    )
+    const grounds: MapGroundPoint[] = rowGrounds(clearingGround, {
+      count: rowCount,
+      spacing: STACK_SPACING,
+      depth:
+        clearingGround.radius * STACK_ROW_DEPTH_RATIO +
+        rowIndex * STACK_ROW_SPACING,
+    })
+    const textureKey: string = textureKeyForStack(stack, clearingId)
+    return {
+      key: `${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`,
+      shape: FIGURE_KINDS.has(stack.kind) ? 'figure' : 'disc',
+      textureKey,
+      texturePath: imagePathForAssetKey(textureKey),
+      color: stack.color,
+      count: stack.count,
+      ground: grounds[index % STACKS_PER_ROW] ?? clearingGround.center,
     }
   })
 }
@@ -65,70 +192,21 @@ function averageGround(points: readonly MapGroundPoint[]): MapGroundPoint {
   return { x: total.x / points.length, z: total.z / points.length }
 }
 
-function clearingPieces(
-  clearingGround: ClearingGround,
-  clearing: BoardClearingPieces,
-  factions: readonly string[],
-): MapPiece[] {
-  const clearingId: number = clearingGround.clearingId
-  const stacks: PieceStackViewModel[] = groupPiecesIntoStacks(
-    pieceViewModelsForClearing(clearing, factions),
-  )
-  // Buildings and tokens at the back, warriors and pawns in front of them.
-  const backStacks: PieceStackViewModel[] = stacks.filter(
-    (stack: PieceStackViewModel): boolean => !MEEPLE_KINDS.has(stack.kind),
-  )
-  const frontStacks: PieceStackViewModel[] = stacks.filter(
-    (stack: PieceStackViewModel): boolean => MEEPLE_KINDS.has(stack.kind),
-  )
-  const pieces: MapPiece[] = [...backStacks, ...frontStacks].map(
-    (stack: PieceStackViewModel): MapPiece => {
-      const textureKey: string = textureKeyForStack(stack, clearingId)
-      return {
-        key: `${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`,
-        textureKey,
-        texturePath: imagePathForAssetKey(textureKey),
-        color: stack.color,
-        count: stack.count,
-        ground: clearingGround.center,
-      }
-    },
-  )
-  const ruinPieces: MapPiece[] = clearingHasRuin(clearing)
-    ? [
-        {
-          key: `${String(clearingId)}-ruin`,
-          textureKey: GAME_ASSET_KEYS.markerRuin,
-          texturePath: imagePathForAssetKey(GAME_ASSET_KEYS.markerRuin),
-          color: FACTION_COLORS.neutral,
-          count: 1,
-          ground: clearingGround.center,
-        },
-      ]
-    : []
-  const allPieces: MapPiece[] = [...ruinPieces, ...pieces]
-  const grounds: MapGroundPoint[] = stackGrounds(
-    clearingGround,
-    allPieces.length,
-  )
-  return allPieces.map(
-    (piece: MapPiece, index: number): MapPiece => ({
-      ...piece,
-      ground: grounds[index] ?? clearingGround.center,
-    }),
-  )
-}
-
-/** Every figure to stand on the 3D map for the current board. */
+/** Everything to stand on the 3D map for the current board. */
 export function mapPiecesForBoard(input: MapPiecesInput): MapPiece[] {
   const pieces: MapPiece[] = input.clearingGrounds.flatMap(
     (clearingGround: ClearingGround): MapPiece[] => {
-      const clearing: BoardClearingPieces | undefined =
-        input.clearings[clearingGround.clearingId]
-      if (clearing === undefined) {
-        return []
-      }
-      return clearingPieces(clearingGround, clearing, input.factions)
+      const clearing: BoardClearingPieces = input.clearings[
+        clearingGround.clearingId
+      ] ?? { pieces: [] }
+      const viewModels: PieceViewModel[] = pieceViewModelsForClearing(
+        clearing,
+        input.factions,
+      )
+      return [
+        ...slotPieces(clearingGround, clearing, viewModels),
+        ...stackPieces(clearingGround, viewModels),
+      ]
     },
   )
   const forestPawnPieces: MapPiece[] = input.forestPawns.flatMap(
@@ -144,6 +222,7 @@ export function mapPiecesForBoard(input: MapPiecesInput): MapPiece[] {
       return [
         {
           key: `forest-pawn-${String(marker.seat)}`,
+          shape: 'figure',
           textureKey,
           texturePath: imagePathForAssetKey(textureKey),
           color: factionColorForSeat(marker.seat, input.factions),

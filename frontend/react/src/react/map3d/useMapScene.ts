@@ -1,30 +1,30 @@
 import { useEffect, useMemo, useState, type RefObject } from 'react'
-import { autumnMapPublicPath } from '#assets/gameAssets.ts'
-import type { BoardLayout, ClearingLayoutPoint } from '#game/boardLayout.ts'
-import type {
-  ClearingGround,
-  ForestGround,
-} from '#game/map3d/groundMarkers.ts'
-import type { MapViewSize } from '#game/map3d/mapCamera.ts'
+import { GAME_ASSET_KEYS, imagePathForAssetKey } from '#assets/gameAssets.ts'
+import {
+  fallClearingSuit,
+  type BoardLayout,
+  type ClearingSuit,
+} from '#game/boardLayout.ts'
+import type { ForestGround } from '#game/map3d/groundMarkers.ts'
 import { loadMapModels, type MapModels } from '#game/map3d/mapModels.ts'
 import { createMapScene, type MapScene } from '#game/map3d/mapScene.ts'
 import {
-  mapWorldSize,
-  normalizedRadiusToWorld,
+  createMapTerrain,
+  type ClearingGround,
+  type MapTerrain,
+} from '#game/map3d/mapTerrain.ts'
+import {
+  mapWorldSizeForView,
   normalizedToGround,
+  type MapGroundPoint,
+  type MapViewSize,
   type MapWorldSize,
   type NormalizedMapPoint,
 } from '#game/map3d/mapWorldSpace.ts'
 import { fallForestLayouts, type FallForestLayout } from '@root/lib/fall-metadata'
 
-/** What the 3D map needs before it can be drawn. */
-type MapSceneAssets = {
-  mapImage: HTMLImageElement
-  models: MapModels
-}
-
 export type MapSceneHandle = {
-  /** Null until the map art and the models are loaded. */
+  /** Null until the models are loaded. */
   scene: MapScene | null
   clearingGrounds: readonly ClearingGround[]
   forestGrounds: readonly ForestGround[]
@@ -32,100 +32,88 @@ export type MapSceneHandle = {
   viewVersion: number
 }
 
-function loadMapImage(path: string): Promise<HTMLImageElement> {
-  return new Promise<HTMLImageElement>(
-    (resolve: (image: HTMLImageElement) => void, reject: () => void): void => {
-      const image: HTMLImageElement = new Image()
-      image.onload = (): void => {
-        resolve(image)
-      }
-      image.onerror = reject
-      image.src = path
-    },
-  )
-}
-
-function clearingGroundsForLayout(
-  layout: BoardLayout,
-  worldSize: MapWorldSize,
-): ClearingGround[] {
-  return Object.entries(layout.clearings).map(
-    ([clearingId, point]: [string, ClearingLayoutPoint]): ClearingGround => ({
-      clearingId: Number(clearingId),
-      center: normalizedToGround(point, worldSize),
-      radius: normalizedRadiusToWorld(point.r, worldSize),
-    }),
-  )
+const SUIT_TEXTURE_KEY_BY_SUIT: Readonly<Record<ClearingSuit, string>> = {
+  fox: GAME_ASSET_KEYS.suitFox,
+  mouse: GAME_ASSET_KEYS.suitMouse,
+  rabbit: GAME_ASSET_KEYS.suitRabbit,
 }
 
 function forestGroundsForWorld(worldSize: MapWorldSize): ForestGround[] {
   return fallForestLayouts().map(
     (forest: FallForestLayout): ForestGround => ({
       forestIndex: forest.forestIndex,
-      corners: forest.corners.map((corner: NormalizedMapPoint) =>
-        normalizedToGround(corner, worldSize),
+      corners: forest.corners.map(
+        (corner: NormalizedMapPoint): MapGroundPoint =>
+          normalizedToGround(corner, worldSize),
       ),
     }),
   )
 }
 
-/** Loads the assets, then owns the three.js scene drawn on the canvas. */
+function suitTexturePathsFor(
+  clearings: readonly ClearingGround[],
+): Map<number, string> {
+  const paths: Map<number, string> = new Map<number, string>()
+  for (const clearing of clearings) {
+    const suit: ClearingSuit | null = fallClearingSuit(clearing.clearingId)
+    const path: string | null =
+      suit === null ? null : imagePathForAssetKey(SUIT_TEXTURE_KEY_BY_SUIT[suit])
+    if (path !== null) {
+      paths.set(clearing.clearingId, path)
+    }
+  }
+  return paths
+}
+
+/** Loads the models, then owns the three.js scene drawn on the canvas. */
 export function useMapScene(
   canvasReference: RefObject<HTMLCanvasElement | null>,
   layout: BoardLayout,
   viewSize: MapViewSize,
 ): MapSceneHandle {
-  const [assets, setAssets] = useState<MapSceneAssets | null>(null)
+  const [models, setModels] = useState<MapModels | null>(null)
   const [scene, setScene] = useState<MapScene | null>(null)
   const [viewVersion, setViewVersion] = useState<number>(0)
 
   useEffect(() => {
     let cancelled = false
-    void Promise.all([loadMapImage(autumnMapPublicPath()), loadMapModels()]).then(
-      ([mapImage, models]: [HTMLImageElement, MapModels]): void => {
-        if (!cancelled) {
-          setAssets({ mapImage, models })
-        }
-      },
-    )
+    void loadMapModels().then((loaded: MapModels): void => {
+      if (!cancelled) {
+        setModels(loaded)
+      }
+    })
     return (): void => {
       cancelled = true
     }
   }, [])
 
-  const worldSize: MapWorldSize | null = useMemo(
-    () =>
-      assets === null
-        ? null
-        : mapWorldSize({
-            width: assets.mapImage.naturalWidth,
-            height: assets.mapImage.naturalHeight,
-          }),
-    [assets],
+  // The woodland takes the shape of the part of the screen it fills.
+  const worldSize: MapWorldSize = useMemo(
+    () => mapWorldSizeForView(viewSize),
+    [viewSize],
   )
-  const clearingGrounds: ClearingGround[] = useMemo(
-    () => (worldSize === null ? [] : clearingGroundsForLayout(layout, worldSize)),
+  const terrain: MapTerrain = useMemo(
+    () => createMapTerrain(layout, worldSize),
     [layout, worldSize],
   )
   const forestGrounds: ForestGround[] = useMemo(
-    () => (worldSize === null ? [] : forestGroundsForWorld(worldSize)),
+    () => forestGroundsForWorld(worldSize),
     [worldSize],
   )
 
   useEffect(() => {
     const canvas: HTMLCanvasElement | null = canvasReference.current
-    if (canvas === null || assets === null || worldSize === null) {
+    if (canvas === null || models === null) {
       return undefined
     }
     const created: MapScene = createMapScene({
       canvas,
-      mapImage: assets.mapImage,
-      models: assets.models,
-      worldSize,
+      controlElement: canvas.parentElement ?? canvas,
+      models,
+      terrain,
       viewSize,
-      clearingLayoutPoints: Object.values(layout.clearings),
-      clearings: clearingGrounds,
       forests: forestGrounds,
+      suitTexturePaths: suitTexturePathsFor(terrain.clearings),
     })
     const stopListening: () => void = created.onViewChanged((): void => {
       setViewVersion((version: number): number => version + 1)
@@ -136,12 +124,17 @@ export function useMapScene(
       created.dispose()
       setScene(null)
     }
-    // The view size is applied by the resize effect below, not by a rebuild.
-  }, [assets, canvasReference, clearingGrounds, forestGrounds, layout, worldSize])
+    // A new view size only rebuilds the scene through `terrain`.
+  }, [canvasReference, forestGrounds, models, terrain])
 
   useEffect(() => {
     scene?.resize(viewSize)
   }, [scene, viewSize])
 
-  return { scene, clearingGrounds, forestGrounds, viewVersion }
+  return {
+    scene,
+    clearingGrounds: terrain.clearings,
+    forestGrounds,
+    viewVersion,
+  }
 }

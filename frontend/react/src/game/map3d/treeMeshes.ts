@@ -8,17 +8,12 @@ import {
   Object3D,
 } from 'three'
 import type { TreeModels } from '#game/map3d/mapModels.ts'
-import {
-  normalizedToGround,
-  type MapGroundPoint,
-  type MapWorldSize,
-} from '#game/map3d/mapWorldSpace.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 import type { TreePlacement } from '#game/map3d/treePlacement.ts'
 
 /** Model units → world units: a pine stands a bit over a meeple. */
 const TREE_MODEL_SCALE = 2.5
-/** Share of trees swapped for an orange one, like the dots on the map art. */
+/** Share of trees swapped for an orange one: it is Autumn, after all. */
 const AUTUMN_TREE_SHARE = 0.012
 const FULL_TURN_RADIANS = Math.PI * 2
 
@@ -104,10 +99,7 @@ function isFoliage(mesh: Mesh): boolean {
 }
 
 /** All trees of one variant: one instanced mesh per part of the model. */
-function buildVariantMeshes(
-  variant: TreeVariant,
-  worldSize: MapWorldSize,
-): InstancedMesh[] {
+function buildVariantMeshes(variant: TreeVariant): InstancedMesh[] {
   variant.model.updateMatrixWorld(true)
   const parts: Mesh[] = meshesOf(variant.model)
   const transform: Object3D = new Object3D()
@@ -127,11 +119,7 @@ function buildVariantMeshes(
     )
     variant.placements.forEach(
       (placement: TreePlacement, index: number): void => {
-        const ground: MapGroundPoint = normalizedToGround(
-          placement.position,
-          worldSize,
-        )
-        transform.position.set(ground.x, 0, ground.z)
+        transform.position.set(placement.position.x, 0, placement.position.z)
         transform.rotation.y = placement.rotation
         transform.scale.setScalar(TREE_MODEL_SCALE * placement.scale)
         transform.updateMatrix()
@@ -154,13 +142,12 @@ function buildVariantMeshes(
 /** The whole woodland: a few instanced meshes, one draw call each. */
 export function createTreeMeshes(
   placements: readonly TreePlacement[],
-  worldSize: MapWorldSize,
   models: TreeModels,
 ): Group {
   const trees: Group = new Group()
   for (const variant of sortPlacementsIntoVariants(placements, models)) {
     if (variant.placements.length > 0) {
-      trees.add(...buildVariantMeshes(variant, worldSize))
+      trees.add(...buildVariantMeshes(variant))
     }
   }
   return trees

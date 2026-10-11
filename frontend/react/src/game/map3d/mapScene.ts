@@ -1,46 +1,39 @@
 import { PCFSoftShadowMap, Vector3, WebGLRenderer, type Scene } from 'three'
-import type { ClearingLayoutPoint } from '#game/boardLayout.ts'
 import {
   createGroundMarkers,
-  type ClearingGround,
   type ClearingRingStyle,
   type ForestGround,
   type GroundMarkers,
 } from '#game/map3d/groundMarkers.ts'
-import {
-  createMapCameraRig,
-  type MapCameraRig,
-  type MapViewPose,
-  type MapViewSize,
-} from '#game/map3d/mapCamera.ts'
-import { createMapColorSampler } from '#game/map3d/mapColorSampler.ts'
+import { createMapCameraRig, type MapCameraRig } from '#game/map3d/mapCamera.ts'
 import type { MapModels } from '#game/map3d/mapModels.ts'
+import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type {
   MapGroundPoint,
-  MapWorldSize,
+  MapViewSize,
 } from '#game/map3d/mapWorldSpace.ts'
 import {
   createPieceLayer,
   type MapPiece,
   type PieceLayer,
 } from '#game/map3d/pieceMeshes.ts'
-import {
-  createMapEnvironment,
-  createMapTexture,
-} from '#game/map3d/sceneEnvironment.ts'
+import { createMapGroundScene } from '#game/map3d/sceneGround.ts'
 import { createTreeMeshes } from '#game/map3d/treeMeshes.ts'
 import { placeTrees } from '#game/map3d/treePlacement.ts'
 
 export type MapSceneInput = {
   canvas: HTMLCanvasElement
-  mapImage: HTMLImageElement
+  /**
+   * Takes the wheel and drag gestures. The element around the canvas, so a
+   * gesture that starts on a clearing button still moves the camera.
+   */
+  controlElement: HTMLElement
   models: MapModels
-  worldSize: MapWorldSize
+  terrain: MapTerrain
   viewSize: MapViewSize
-  /** Clearings as drawn on the art (0..1), to keep them free of trees. */
-  clearingLayoutPoints: readonly ClearingLayoutPoint[]
-  clearings: readonly ClearingGround[]
   forests: readonly ForestGround[]
+  /** Suit icon of each clearing (clearing id → image path). */
+  suitTexturePaths: ReadonlyMap<number, string>
 }
 
 /** A point of the view, in CSS pixels from its top-left corner. */
@@ -54,18 +47,14 @@ export type MapScene = {
   setPieces: (pieces: readonly MapPiece[]) => void
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
   setHighlightedForests: (forestIndexes: ReadonlySet<number>) => void
-  /** Where a point above the board shows up in the view. */
+  /** Where a point above the ground shows up in the view. */
   projectToView: (ground: MapGroundPoint, height: number) => MapViewPoint
   /** Called whenever the camera moved, so overlays can follow. */
   onViewChanged: (listener: () => void) => () => void
   resetView: () => void
-  glideTo: (pose: MapViewPose) => void
-  homePose: () => MapViewPose
   dispose: () => void
 }
 
-/** Trees per map width: about the density of the painted pines. */
-const TREE_COLUMN_COUNT = 78
 const TREE_SEED = 1894
 const MAXIMUM_PIXEL_RATIO = 2
 const MILLISECONDS_PER_SECOND = 1000
@@ -82,37 +71,22 @@ export function createMapScene(input: MapSceneInput): MapScene {
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = PCFSoftShadowMap
 
-  const scene: Scene = createMapEnvironment(
-    input.worldSize,
-    createMapTexture(input.mapImage),
-  )
-  const groundMarkers: GroundMarkers = createGroundMarkers(
-    input.clearings,
-    input.forests,
-  )
+  const scene: Scene = createMapGroundScene(input.terrain)
+  const groundMarkers: GroundMarkers = createGroundMarkers({
+    clearings: input.terrain.clearings,
+    forests: input.forests,
+    suitTexturePaths: input.suitTexturePaths,
+  })
   const pieceLayer: PieceLayer = createPieceLayer(input.models.meeples)
   scene.add(
-    createTreeMeshes(
-      placeTrees({
-        sampleColor: createMapColorSampler(input.mapImage),
-        mapNaturalSize: {
-          width: input.mapImage.naturalWidth,
-          height: input.mapImage.naturalHeight,
-        },
-        clearings: input.clearingLayoutPoints,
-        columnCount: TREE_COLUMN_COUNT,
-        seed: TREE_SEED,
-      }),
-      input.worldSize,
-      input.models.trees,
-    ),
+    createTreeMeshes(placeTrees(input.terrain, TREE_SEED), input.models.trees),
     groundMarkers.group,
     pieceLayer.group,
   )
 
   const cameraRig: MapCameraRig = createMapCameraRig(
-    input.canvas,
-    input.worldSize,
+    input.controlElement,
+    input.terrain.worldSize,
     input.viewSize,
   )
   let viewSize: MapViewSize = input.viewSize
@@ -142,7 +116,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
     )
     previousMilliseconds = nowMilliseconds
     cameraRig.update(deltaSeconds)
-    pieceLayer.faceCamera(cameraRig.controls.getAzimuthalAngle())
     groundMarkers.update(
       (nowMilliseconds - startMilliseconds) / MILLISECONDS_PER_SECOND,
     )
@@ -171,8 +144,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
       }
     },
     resetView: cameraRig.resetView,
-    glideTo: cameraRig.glideTo,
-    homePose: cameraRig.homePose,
     dispose: (): void => {
       cancelAnimationFrame(animationFrame)
       cameraRig.controls.removeEventListener('change', notifyViewChanged)
