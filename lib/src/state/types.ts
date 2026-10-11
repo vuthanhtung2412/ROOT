@@ -103,6 +103,11 @@ export type GameState = {
   phase: Phase
   step: Step
   factions: FactionId[]
+  /**
+   * The game was created with no faction set: each player picks an untaken
+   * faction when joining, and `factions` grows seat by seat.
+   */
+  openLobby?: true
   players: PlayerState[]
   clearings: ClearingState[]
   deck: DeckState

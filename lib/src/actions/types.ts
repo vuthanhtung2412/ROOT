@@ -1,6 +1,6 @@
 import type { ActionOption } from '#actions/options.js'
 import type { ClearingId, Suit } from '#map/types.js'
-import type { BuildingType, ItemType, Seat } from '#pieces/types.js'
+import type { BuildingType, FactionId, ItemType, Seat } from '#pieces/types.js'
 import type {
   DecreeColumn,
   EyrieLeader,
@@ -140,7 +140,11 @@ export type ActionChoiceParams = {
 }
 
 export type Action =
-  | { type: 'join'; playerId: string }
+  /**
+   * Take a seat. Open lobby: `faction` is the player's pick (joining again
+   * changes it). Preset lobby: the seat's faction is already decided.
+   */
+  | { type: 'join'; playerId: string; faction?: FactionId }
   | { type: 'start' }
   | { type: 'birdsongWood' }
   | { type: 'eveningDraw' }

@@ -19,8 +19,8 @@ import {
 import { DEFAULT_FACTIONS } from '#state/constants.js'
 import { createFactionBoard } from '#state/boards.js'
 import type { GameSnapshot } from '#state/snapshot.js'
-import type { Seat } from '#pieces/types.js'
-import type { GameState, Phase } from '#state/types.js'
+import type { FactionId, Seat } from '#pieces/types.js'
+import type { GameState, Phase, PlayerState } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import { eyrieEmigreForcedMove } from '#effects/eyrieEmigre.js'
 import '#effects/register.js'
@@ -34,6 +34,8 @@ import type { Ctx } from '#game/ctx.js'
 import { SignalBus } from '#triggers/SignalBus.js'
 
 const PHASES: Phase[] = ['birdsong', 'daylight', 'evening']
+/** Seats at the table (`Seat` is 0–3). */
+const MAX_PLAYERS = 4
 
 type UndoCheckpoint = {
   wasPlaying: boolean
@@ -75,17 +77,23 @@ export class Game {
     this.signalBus = args.signalBus ?? new SignalBus()
   }
 
+  /**
+   * `factions` decides the seats in advance; an empty list opens the lobby:
+   * each player then picks an untaken faction when joining.
+   */
   static create(args: { seed: number; factions?: GameState['factions']; id?: string }): Game {
     const factions = args.factions ?? [...DEFAULT_FACTIONS]
     for (const faction of factions) {
       factionFor(faction)
     }
+    const initialState: GameState = createInitialState({
+      id: args.id ?? `game-${args.seed}`,
+      seed: args.seed,
+      factions,
+    })
     return new Game({
-      state: createInitialState({
-        id: args.id ?? `game-${args.seed}`,
-        seed: args.seed,
-        factions,
-      }),
+      state:
+        factions.length === 0 ? { ...initialState, openLobby: true } : initialState,
       history: [],
       log: [],
       rng: new SeededRng({ seed: args.seed, cursor: 0 }),
@@ -145,7 +153,7 @@ export class Game {
 
     if (state.status === 'waiting') {
       const specs: ActionSpec[] = []
-      if (state.players.length < state.factions.length) {
+      if (state.players.length < this.lobbySeatCount()) {
         specs.push({ type: 'join', actor: requireSeat(state.players.length) })
       }
       if (state.players.length > 1) {
@@ -349,7 +357,12 @@ export class Game {
     }
     const seed = this.state.seed
     const actions = this.history.slice(0, -1)
-    const restored = Game.replay(seed, actions, this.state.factions)
+    // An open lobby is rebuilt open: its joins carry the faction picks.
+    const restored = Game.replay(
+      seed,
+      actions,
+      this.state.openLobby === true ? [] : this.state.factions,
+    )
     this.state = restored.state
     this.history = restored.history
     this.choiceHistory = restored.choiceHistory
@@ -393,9 +406,8 @@ export class Game {
   private validate(action: Action): void {
     if (action.type === 'join') {
       if (this.state.status !== 'waiting') throw new RuleError('NOT_WAITING')
-      if (this.state.players.length >= this.state.factions.length) {
-        throw new RuleError('LOBBY_FULL')
-      }
+      // Seat and faction checks: `applyJoin` (an open lobby lets a seated
+      // player pick again).
       return
     }
     if (action.type === 'start') {
@@ -438,7 +450,7 @@ export class Game {
   private execute(action: Action): LogEntry[] {
     switch (action.type) {
       case 'join':
-        return this.applyJoin(action.playerId)
+        return this.applyJoin(action.playerId, action.faction)
       case 'start':
         return this.applyStart()
       case 'endPhase':
@@ -464,14 +476,60 @@ export class Game {
     }
   }
 
-  private applyJoin(playerId: string): LogEntry[] {
+  /** Seats of the lobby: the preset factions, or the table size when open. */
+  private lobbySeatCount(): number {
+    return this.state.openLobby === true
+      ? MAX_PLAYERS
+      : this.state.factions.length
+  }
+
+  /**
+   * Open lobby: a player picks an untaken faction, and may pick again while
+   * the game has not started.
+   */
+  private pickFactionInOpenLobby(playerId: string, faction: FactionId): LogEntry[] {
+    const { state } = this
+    factionFor(faction)
+    const takenBy = state.players.find(
+      (player: PlayerState): boolean => player.faction === faction,
+    )
+    if (takenBy !== undefined && takenBy.playerId !== playerId) {
+      throw new RuleError('FACTION_TAKEN', { faction })
+    }
+    const seated = state.players.find(
+      (player: PlayerState): boolean => player.playerId === playerId,
+    )
+    if (seated !== undefined) {
+      seated.faction = faction
+      seated.board = createFactionBoard(faction)
+      state.factions[seated.seat] = faction
+      return [{ t: 'join', playerId, faction }]
+    }
+    if (state.players.length >= MAX_PLAYERS) throw new RuleError('LOBBY_FULL')
+    state.factions.push(faction)
+    return this.seatPlayer(playerId, faction)
+  }
+
+  private applyJoin(playerId: string, pickedFaction?: FactionId): LogEntry[] {
     const { state } = this
     if (state.status !== 'waiting') throw new RuleError('NOT_WAITING')
+    if (state.openLobby === true) {
+      if (pickedFaction === undefined) throw new RuleError('MISSING_FACTION')
+      return this.pickFactionInOpenLobby(playerId, pickedFaction)
+    }
     if (state.players.length >= state.factions.length) {
       throw new RuleError('LOBBY_FULL')
     }
+    const faction = state.factions[state.players.length]!
+    if (pickedFaction !== undefined && pickedFaction !== faction) {
+      throw new RuleError('WRONG_FACTION', { faction: pickedFaction })
+    }
+    return this.seatPlayer(playerId, faction)
+  }
+
+  private seatPlayer(playerId: string, faction: FactionId): LogEntry[] {
+    const { state } = this
     const seat = requireSeat(state.players.length)
-    const faction = state.factions[seat]!
     state.players.push({
       playerId,
       seat,
