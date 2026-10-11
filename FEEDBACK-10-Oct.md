@@ -59,9 +59,9 @@ Cards:
   - Rule mismatch: card says take a random card, *then* give a card (the taken card may be given back). `lib` asks for the given card before the taken card is known. Take first, then ask which card to give.
   - [x] **C4.1 — Rule fix.** `swapMeet` takes the random card and opens a pending `swapMeetGive` event; any hand card can be given, the taken one included. Works with an empty hand.
   - [x] **C4.2 — Frontend:** tray button → pick player; then a forced "pick a card to give" prompt.
-- [ ] **C5 — Charm Offensive** (`charmOffensive`, Evening, once). Pick another player to score 1 point.
+- [x] **C5 — Charm Offensive** (`charmOffensive`, Evening, once). Pick another player to score 1 point.
   - [x] **C5.1 — Rule fix: "At start of Evening".** `lib` allowed it at any point of Evening, also after the draw. Now the Evening draw waits while the card can be used; drawing (or any other Evening action) ends the offer; using the card lets the draw go on by itself.
-  - [ ] **C5.2 — `lib` lists legal payloads** (done), then frontend flow, tray label, icon.
+  - [x] **C5.2 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
 - [ ] **C6 — Informants** (`informantsTakeAmbush`, Evening draw step). Pick an ambush card from the Discarded pile instead of drawing.
 - [ ] **C7 — False Orders** (`falseOrders`, Birdsong). Pick enemy → origin clearing with their warriors → adjacent destination.
 - [ ] **C8 — Eyrie Émigré** (`eyrieEmigre`, Birdsong). Pick origin → destination → count → defender.

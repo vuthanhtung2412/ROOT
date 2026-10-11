@@ -115,6 +115,7 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   establishTradePost: LuStore,
   setServiceCosts: LuCoins,
   // Crafted persistent cards
+  charmOffensive: LuHeartHandshake,
   leagueMove: LuFootprints,
   leagueBattle: LuSwords,
   propagandaBureau: LuMegaphone,

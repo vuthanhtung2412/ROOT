@@ -138,6 +138,28 @@ describe('Propaganda Bureau flow', () => {
   })
 })
 
+describe('Charm Offensive flow', () => {
+  const spec: ActionSpec = makeActionSpec({
+    type: 'charmOffensive',
+    params: { options: [{ target: 0 }] },
+  })
+
+  it('asks who scores the point, even with a single other player', () => {
+    const { composer, promptOptions } = composerUnderTest()
+
+    expectIncomplete(composer.begin(spec))
+    expect(promptOptions()).toEqual([{ label: 'marquise', value: 'choice:0' }])
+    expect(composer.chooseColumn('choice:0')).toEqual({
+      kind: 'ready',
+      action: { type: 'charmOffensive', target: 0 },
+    })
+  })
+
+  it('has a tray label', () => {
+    expect(formatActionLabel(spec)).toBe('charm offensive')
+  })
+})
+
 describe('League of Adventurous Mice flows', () => {
   const moveSpec: ActionSpec = makeActionSpec({
     type: 'leagueMove',

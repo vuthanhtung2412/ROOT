@@ -49,6 +49,19 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
       { field: 'cardId', kind: 'card', prompt: 'pick matching card to spend' },
     ],
   },
+  // Charm Offensive: draw a card, another player scores one point.
+  charmOffensive: {
+    title: 'Charm Offensive',
+    asksEveryStep: true,
+    steps: [
+      {
+        field: 'target',
+        kind: 'choice',
+        prompt: 'who scores one point?',
+        label: seatLabel,
+      },
+    ],
+  },
   // League of Adventurous Mice: exhaust a crafted item to move or battle.
   leagueMove: {
     title: 'League of Adventurous Mice',
@@ -109,6 +122,7 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
 
 /** Tray labels of the card actions. */
 export const CARD_ACTION_LABELS: Readonly<Record<string, string>> = {
+  charmOffensive: 'charm offensive',
   leagueMove: 'league: move',
   leagueBattle: 'league: battle',
   propagandaBureau: 'propaganda bureau',
