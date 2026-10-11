@@ -80,13 +80,22 @@ Same `Action` types as §1, once composer emits `ready`:
 | `join` | seat join |
 | `start` | start game |
 
-### In `Action` union, not wired in React composers yet
+### Crafted persistent cards (option flows)
 
-Persistent / dominance-style (backend types exist; no frontend under-resolution list yet):
+Each spec lists its complete legal payloads in `params.options`; the option composer asks one field at a time (`resolution/cardActionFlows.ts`). Every step is asked, also one with a single possible value.
 
-- `swapMeet`, `charmOffensive`, `informantsTakeAmbush`
-- `leagueMove`, `leagueBattle`
-- `propagandaBureau`, `saboteurs`, `falseOrders`, `eyrieEmigre`
+| Action | Card | When | Picks |
+|--------|------|------|-------|
+| `saboteurs` | Saboteurs | start of Birdsong | enemy → their crafted card |
+| `swapMeet` | Swap Meet | Birdsong, once | player; then forced pending `swapMeetGive` → card to give |
+| `falseOrders` | False Orders | Birdsong | enemy → their origin → destination |
+| `eyrieEmigre` | Eyrie Émigré | end of Birdsong, **forced** | origin → destination → count → defender (if any) |
+| `leagueMove` / `leagueBattle` | League of Adventurous Mice | Daylight, once | item → move or battle |
+| `propagandaBureau` | Propaganda Bureau | Daylight, once | clearing → enemy → card to spend |
+| `charmOffensive` | Charm Offensive | start of Evening | player who scores |
+| `informantsTakeAmbush` | Informants | Evening draw | ambush card of the Discarded pile |
+
+Forced ones (`swapMeetGive`, `eyrieEmigre`) open by themselves through `AutoPromptController` and cannot be cancelled; the others start from a tray button.
 
 ---
 
