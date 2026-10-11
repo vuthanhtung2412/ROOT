@@ -38,15 +38,15 @@ After all cards: **one video for all of them**, `card-fe-support.qa`, recorded b
 
 Cards:
 
-- [ ] **C1 — Propaganda Bureau** (`propagandaBureau`, Daylight, once). Tray button → clearing → enemy (one banner button per faction) → hand card to spend.
+- [x] **C1 — Propaganda Bureau** (`propagandaBureau`, Daylight, once). Tray button → clearing → enemy (one banner button per faction) → hand card to spend.
   - Card text: "Once in Daylight, you may spend a card to replace an enemy warrior in a matching clearing with a warrior of your faction."
   - Needs a label lookup: warrior piece id → owner faction name.
   - Rule, checked online: replace = remove then place (Law of Root G.1.21; Root Database glossary). Ruling: a replaced warrior triggers Field Hospitals, and does not go to Coffin Makers (Convert, Propaganda Bureau).
   - Rule mismatches in `lib`, fix first:
-    - [ ] **C1.1 — Replace must be completable.** No clearing offered where the owner cannot place (e.g. the Keep); card not offered when the owner's warrior supply is empty. Today the card is spent and the enemy warrior removed before the action fails.
-    - [ ] **C1.2 — Replace is a real remove.** Propaganda Bureau returns the warrior to supply by itself, so Field Hospitals is never offered. Use the shared remove.
-    - [ ] **C1.3 — Coffin Makers skips replaced warriors.** Today it collects them, for Propaganda Bureau and for Lizard Cult Convert. One fix for both, since both go through the shared remove after C1.2.
-  - [ ] **C1.4 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
+    - [x] **C1.1 — Replace must be completable.** No clearing offered where the owner cannot place (e.g. the Keep); card not offered when the owner's warrior supply is empty. Today the card is spent and the enemy warrior removed before the action fails.
+    - [x] **C1.2 — Replace is a real remove.** Propaganda Bureau returns the warrior to supply by itself, so Field Hospitals is never offered. Use the shared remove.
+    - [x] **C1.3 — Coffin Makers skips replaced warriors.** Today it collects them, for Propaganda Bureau and for Lizard Cult Convert. One fix for both, since both go through the shared remove after C1.2.
+  - [x] **C1.4 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
 - [ ] **C2 — Saboteurs** (`saboteurs`, Birdsong). Pick enemy → pick one of their crafted cards to discard.
 - [ ] **C3 — League of Adventurous Mice** (`leagueMove`, `leagueBattle`, Daylight, once). Pick crafted item to exhaust → move (origin → destination → count) or battle (clearing → defender).
   - Needs a label lookup: crafted item index → item name. Offer one index per item type.

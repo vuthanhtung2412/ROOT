@@ -274,3 +274,32 @@ describe('Propaganda Bureau — Coffin Makers: "Warriors removed, not replaced"'
     expect(coffinMakers.heldWarriors ?? 0).toBe(0)
   })
 })
+
+describe('Propaganda Bureau — legal payloads', () => {
+  it('lists one option per hand card, matching clearing and enemy faction', () => {
+    const state: GameState = bureauState()
+    state.clearings[MOUSE_CLEARING]!.pieces.push({
+      id: 'second-cat-on-mouse',
+      kind: 'warrior',
+      owner: MARQUISE_SEAT,
+    })
+
+    const specs: ActionSpec[] = grantedSpecs(state)
+
+    expect(specs).toEqual([
+      {
+        type: 'propagandaBureau',
+        actor: EYRIE_SEAT,
+        params: {
+          options: [
+            {
+              cardId: card(MOUSE_CARD_DEF_ID).id,
+              clearing: MOUSE_CLEARING,
+              pieceId: MOUSE_WARRIOR_ID,
+            },
+          ],
+        },
+      },
+    ])
+  })
+})

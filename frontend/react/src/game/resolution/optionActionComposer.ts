@@ -46,6 +46,8 @@ export type OptionComposerOptions = SeatLabelOptions & {
   pendingType?: () => string | null
   /** Cost a Riverfolk service marker stands on; null when not known. */
   currentServiceCost?: (service: string) => number | null
+  /** Seat owning a warrior on the map; null when the piece is not found. */
+  warriorOwnerSeat?: (pieceId: string) => number | null
 }
 
 function distinctValues(
@@ -83,11 +85,17 @@ export function createOptionComposerHooks(options?: OptionComposerOptions): {
   let cardPilePick: AllianceSupporterPilePick | null = null
   let optionPresentation: TurnBannerOptionPresentation | undefined = undefined
 
+  const seatName = (seat: number): string =>
+    options?.factionNameForSeat?.(seat) ?? fallbackSeatLabel(seat)
   const labels: OptionLabels = {
-    seatName: (seat: number): string =>
-      options?.factionNameForSeat?.(seat) ?? fallbackSeatLabel(seat),
+    seatName,
     currentServiceCost: (service: string): number | null =>
       options?.currentServiceCost?.(service) ?? null,
+    warriorOwnerName: (pieceId: string): string | null => {
+      const ownerSeat: number | null =
+        options?.warriorOwnerSeat?.(pieceId) ?? null
+      return ownerSeat === null ? null : seatName(ownerSeat)
+    },
   }
 
   const clear = (): void => {

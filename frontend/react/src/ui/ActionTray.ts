@@ -2,6 +2,7 @@ import type { ActionSpec, GameState } from '#api/client.ts'
 import { lookupCardCatalog } from '#assets/gameAssets.ts'
 import { pendingEventType } from '#game/expansionPendingPrompts.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
+import { CARD_ACTION_LABELS } from '#game/resolution/cardActionFlows.ts'
 import { QUEST_ACTION_TYPE } from '#game/vagabondQuest.ts'
 import { REARRANGE_ACTION_TYPE } from '#game/vagabondRearrange.ts'
 
@@ -92,6 +93,8 @@ function formatActionLabel(
   if (spec.type === 'overwork') return 'overwork'
   const expansionLabel = EXPANSION_ACTION_LABELS[spec.type]
   if (expansionLabel !== undefined) return expansionLabel
+  const cardActionLabel = CARD_ACTION_LABELS[spec.type]
+  if (cardActionLabel !== undefined) return cardActionLabel
   if (spec.type === 'resolveEvent') {
     if (pendingType === 'buyServices') {
       return params.decline !== undefined ? 'skip service' : 'buy service'

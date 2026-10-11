@@ -1,5 +1,6 @@
 import type { ActionSpec } from '#api/client.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
+import { CARD_ACTION_FLOWS } from '#game/resolution/cardActionFlows.ts'
 
 /** One complete legal payload of an action (every field but `type`). */
 export type ActionOptionView = Record<string, string | number | boolean>
@@ -42,6 +43,8 @@ export type OptionLabels = {
   seatName: (seat: number) => string
   /** Cost a Riverfolk service marker stands on; null when not known. */
   currentServiceCost: (service: string) => number | null
+  /** Faction owning a warrior on the map; null when the piece is not found. */
+  warriorOwnerName: (pieceId: string) => string | null
 }
 
 /** A staged action: its legal payloads and the order their fields are picked. */
@@ -55,9 +58,11 @@ export type OptionFlow = {
   autoPickSingle: boolean
 }
 
-type FlowDefinition = {
+export type FlowDefinition = {
   title: string
   steps: readonly OptionStep[]
+  /** Ask every step, even one with a single possible value. Default: skip it. */
+  asksEveryStep?: boolean
 }
 
 function seatLabel(value: OptionValue, labels: OptionLabels): string {
@@ -195,8 +200,12 @@ const TURN_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
   },
 }
 
-export const OPTION_ACTION_TYPES: readonly string[] =
-  Object.keys(TURN_ACTION_FLOWS)
+const ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
+  ...TURN_ACTION_FLOWS,
+  ...CARD_ACTION_FLOWS,
+}
+
+export const OPTION_ACTION_TYPES: readonly string[] = Object.keys(ACTION_FLOWS)
 
 const RESOLVE_EVENT_TYPE = 'resolveEvent'
 
@@ -329,7 +338,7 @@ export function optionFlowForSpec(
   if (spec.type === RESOLVE_EVENT_TYPE) {
     return resolveEventFlow(spec, pendingType)
   }
-  const definition = TURN_ACTION_FLOWS[spec.type]
+  const definition = ACTION_FLOWS[spec.type]
   if (definition === undefined) return null
   const options = optionsOf(spec)
   if (options.length === 0) return null
@@ -339,6 +348,6 @@ export function optionFlowForSpec(
     steps: definition.steps,
     options,
     cancellable: true,
-    autoPickSingle: true,
+    autoPickSingle: definition.asksEveryStep !== true,
   }
 }

@@ -12,6 +12,7 @@ import {
   showCardPile,
 } from '#game/cardGalleryBridge.ts'
 import { shouldDisableActionTray } from '#game/actionTrayDisable.ts'
+import { warriorOwnerSeat } from '#game/cardActionLabels.ts'
 import { hideFactionBoard } from '#game/factionBoardBridge.ts'
 import { isActionUnderResolution } from '#game/resolution/actionUnderResolution.ts'
 import { paintGameSceneHud } from '#game/gameSceneHudPaint.ts'
@@ -223,6 +224,8 @@ export class ReactGameController {
         pendingEventType(this.latestSnapshot?.state?.pending[0]),
       currentServiceCost: (service: string): number | null =>
         riverfolkServiceCost(this.latestSnapshot?.state?.players ?? [], service),
+      warriorOwnerSeat: (pieceId: string): number | null =>
+        warriorOwnerSeat(this.latestSnapshot?.state?.clearings ?? [], pieceId),
     })
     this.eventComposer = createEventComposerHooks()
     this.autoPrompts = new AutoPromptController({

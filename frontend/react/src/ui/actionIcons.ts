@@ -18,6 +18,7 @@ import {
   LuHandHelping,
   LuHeartHandshake,
   LuLayers,
+  LuMegaphone,
   LuPickaxe,
   LuPlay,
   LuRefreshCw,
@@ -111,6 +112,8 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   riverfolkRecruit: LuUserPlus,
   establishTradePost: LuStore,
   setServiceCosts: LuCoins,
+  // Crafted persistent cards
+  propagandaBureau: LuMegaphone,
 }
 
 export function actionIconFor(actionType: string): IconType {

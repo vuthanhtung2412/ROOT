@@ -1,4 +1,5 @@
-import type { Action } from '#actions/types.js'
+import type { ActionOption } from '#actions/options.js'
+import type { Action, ActionSpec } from '#actions/types.js'
 import { Deck } from '#cards/Deck.js'
 import { matchesSuit } from '#cards/suit.js'
 import type { CardEffect } from '#triggers/effects.js'
@@ -60,6 +61,28 @@ function enemyWarriorTargets(
     }
   }
   return targets
+}
+
+/**
+ * Every legal payload: hand card × matching clearing × enemy faction there.
+ * Warriors of one faction are alike, so one of them stands for the faction.
+ */
+function propagandaOptions(state: GameState, ownerSeat: Seat): ActionOption[] {
+  const options: ActionOption[] = []
+  for (const handCard of playerOf(state, ownerSeat).hand) {
+    const offered: Set<string> = new Set<string>()
+    for (const target of enemyWarriorTargets(state, ownerSeat, handCard.id)) {
+      const key: string = `${String(target.clearing)}:${String(target.defender)}`
+      if (offered.has(key)) continue
+      offered.add(key)
+      options.push({
+        cardId: handCard.id,
+        clearing: target.clearing,
+        pieceId: target.pieceId,
+      })
+    }
+  }
+  return options
 }
 
 /** Rule: Cards > Craft — Propaganda Bureau: spend card → replace enemy warrior. */
@@ -128,11 +151,13 @@ export const propagandaBureauEffect: CardEffect = {
     if (!propagandaAvailable(state)) return []
     const ownerSeat = propagandaOwner(state)
     if (ownerSeat === null) return []
-    for (const handCard of playerOf(state, ownerSeat).hand) {
-      if (enemyWarriorTargets(state, ownerSeat, handCard.id).length > 0) {
-        return [{ type: 'propagandaBureau', actor: ownerSeat }]
-      }
+    const options: ActionOption[] = propagandaOptions(state, ownerSeat)
+    if (options.length === 0) return []
+    const spec: ActionSpec = {
+      type: 'propagandaBureau',
+      actor: ownerSeat,
+      params: { options },
     }
-    return []
+    return [spec]
   },
 }
