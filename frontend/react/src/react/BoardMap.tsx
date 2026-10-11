@@ -50,6 +50,13 @@ export type ForestSelectedHandler = (forestIndex: number) => void
 const MAP_BORDER_WIDTH_PIXELS = 4
 /** Gap between the clearing ring and its suit marker. */
 const SUIT_MARKER_GAP_PIXELS = 2
+/** Themed finger cursor; only on clearings / forests the player can pick. */
+const CLICKABLE_CLEARING_CLASS_NAME =
+  'pointer-events-auto absolute z-4 m-0 cursor-clearing-point rounded-full border-0 bg-transparent p-0'
+const IDLE_CLEARING_CLASS_NAME =
+  'pointer-events-none absolute z-4 m-0 cursor-default rounded-full border-0 bg-transparent p-0'
+const CLICKABLE_FOREST_CLASS_NAME =
+  'pointer-events-auto absolute inset-0 z-5 m-0 cursor-clearing-point border-0 bg-transparent p-0'
 
 function suitTextureKey(suit: ClearingSuit): string {
   if (suit === 'fox') {
@@ -285,7 +292,7 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
                   <button
                     key={`forest-hit-${String(layout.forestIndex)}`}
                     type="button"
-                    className="pointer-events-auto absolute inset-0 z-5 m-0 cursor-pointer border-0 bg-transparent p-0"
+                    className={CLICKABLE_FOREST_CLASS_NAME}
                     aria-label={`Forest ${String(layout.forestIndex)}`}
                     onClick={() => {
                       handleForestClick(layout.forestIndex)
@@ -341,10 +348,18 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               <button
                 key={target.clearingId}
                 type="button"
-                className="pointer-events-auto absolute z-4 m-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
+                className={
+                  isHighlighted
+                    ? CLICKABLE_CLEARING_CLASS_NAME
+                    : IDLE_CLEARING_CLASS_NAME
+                }
                 aria-label={`Clearing ${String(target.clearingId)}`}
                 data-clearing-id={target.clearingId}
+                tabIndex={isHighlighted ? 0 : -1}
                 onClick={() => {
+                  if (!isHighlighted) {
+                    return
+                  }
                   handleClearingClick(target.clearingId)
                 }}
                 style={{

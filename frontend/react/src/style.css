@@ -116,6 +116,16 @@
   --root-paper-radius: 9999px;
 }
 
+/*
+ * Themed pointy-finger cursor for clickable map clearings / forests.
+ * Hotspot = gold fingertip (6, 1) on public/assets/cursors/clearing-point.png.
+ */
+@utility cursor-clearing-point {
+  cursor:
+    url('/assets/cursors/clearing-point.png') 6 1,
+    pointer;
+}
+
 /* Press feedback for paper pieces that are buttons. */
 @utility root-paper-press {
   cursor: pointer;
