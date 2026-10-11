@@ -8,7 +8,10 @@ import {
   ActionComposer,
   type ComposerOutcome,
 } from '#game/resolution/ActionComposer.ts'
+import { AutoPromptController } from '#game/resolution/autoPromptController.ts'
+import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
 import { createOptionComposerHooks } from '#game/resolution/optionActionComposer.ts'
+import type { GameSessionSnapshot } from '#game/GameSession.ts'
 import { makeActionSpec, makeGameState } from '#test/factories.ts'
 import { formatActionLabel } from '#ui/ActionTray.ts'
 import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
@@ -35,8 +38,9 @@ type ComposerUnderTest = {
   shownPileCardIds: () => string[]
 }
 
-function composerUnderTest(): ComposerUnderTest {
+function composerUnderTest(pendingType: string | null = null): ComposerUnderTest {
   const option = createOptionComposerHooks({
+    pendingType: (): string | null => pendingType,
     factionNameForSeat: (seat: number): string | null => FACTIONS[seat] ?? null,
     warriorOwnerSeat: (pieceId: string): number | null =>
       WARRIOR_OWNER_SEATS[pieceId] ?? null,
@@ -231,6 +235,96 @@ describe('craftedItemTypeOfCurrentPlayer', () => {
     expect(craftedItemTypeOfCurrentPlayer(state, 0)).toBe('sword')
     expect(craftedItemTypeOfCurrentPlayer(state, 1)).toBe('tea')
     expect(craftedItemTypeOfCurrentPlayer(state, 2)).toBeNull()
+  })
+})
+
+describe('Swap Meet flow', () => {
+  const SWAP_MEET_GIVE_PENDING_TYPE = 'swapMeetGive'
+  const spec: ActionSpec = makeActionSpec({
+    type: 'swapMeet',
+    params: { options: [{ target: 0 }, { target: 2 }] },
+  })
+  const giveSpec: ActionSpec = makeActionSpec({
+    type: 'resolveEvent',
+    params: { cardIds: [MOUSE_CARD_ID, SWORD_CARD_ID] },
+  })
+
+  it('asks which player to take a random card from', () => {
+    const { composer, promptOptions } = composerUnderTest()
+
+    expectIncomplete(composer.begin(spec))
+    expect(promptOptions()).toEqual([
+      { label: 'marquise', value: 'choice:0' },
+      { label: 'eyrie', value: 'choice:1' },
+    ])
+    expect(composer.chooseColumn('choice:1')).toEqual({
+      kind: 'ready',
+      action: { type: 'swapMeet', target: 2 },
+    })
+  })
+
+  it('then asks for the card to give: any hand card, and it cannot be cancelled', () => {
+    const { composer } = composerUnderTest(SWAP_MEET_GIVE_PENDING_TYPE)
+
+    const begun = expectIncomplete(composer.begin(giveSpec))
+    expect(begun.prompt.message).toBe('Swap Meet — pick a card to give')
+    expect(begun.prompt.enabledCardIds).toEqual([MOUSE_CARD_ID, SWORD_CARD_ID])
+    expect(begun.prompt.canCancel).toBe(false)
+    expect(composer.cancel().kind).toBe('incomplete')
+
+    expect(composer.chooseCard(SWORD_CARD_ID)).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', cardId: SWORD_CARD_ID },
+    })
+  })
+
+  it('asks even when a single card can be given', () => {
+    const { composer } = composerUnderTest(SWAP_MEET_GIVE_PENDING_TYPE)
+    const singleCardSpec: ActionSpec = makeActionSpec({
+      type: 'resolveEvent',
+      params: { cardIds: [MOUSE_CARD_ID] },
+    })
+
+    expect(composer.begin(singleCardSpec).kind).toBe('incomplete')
+  })
+
+  it('opens the give prompt by itself, with no tray click', () => {
+    const { composer } = composerUnderTest(SWAP_MEET_GIVE_PENDING_TYPE)
+    const applied: ComposerOutcome[] = []
+    const controller = new AutoPromptController({
+      applyComposerOutcome: (outcome: ComposerOutcome): void => {
+        applied.push(outcome)
+      },
+      composer,
+      eventComposer: createEventComposerHooks(),
+      submitEndPhase: () => undefined,
+      isBattleResultFlashActive: () => false,
+      isBoardReady: () => true,
+    })
+    const snapshot: GameSessionSnapshot = {
+      state: makeGameState({
+        phase: 'birdsong',
+        pending: [{ type: SWAP_MEET_GIVE_PENDING_TYPE, seat: 0, target: 1 }],
+      }),
+      legalActions: [giveSpec],
+      historyLength: 0,
+      log: [],
+      error: null,
+      loading: false,
+    }
+
+    controller.runAfterHudPaint(snapshot, 0, true)
+    controller.runAfterHudPaint(snapshot, 0, true)
+
+    expect(applied).toHaveLength(1)
+    expect(expectIncomplete(applied[0]!).prompt.enabledCardIds).toEqual([
+      MOUSE_CARD_ID,
+      SWORD_CARD_ID,
+    ])
+  })
+
+  it('has a tray label', () => {
+    expect(formatActionLabel(spec)).toBe('swap meet')
   })
 })
 

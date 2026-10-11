@@ -1,4 +1,4 @@
-/** Pending events of the Lizard Cult and the Riverfolk Company. */
+/** Pending events of the Lizard Cult, the Riverfolk Company and crafted cards. */
 
 /** `type` of an opaque pending event; null when it has none. */
 export function pendingEventType(pending: unknown): string | null {
@@ -15,6 +15,7 @@ const EXPANSION_PENDING_PROMPTS: Readonly<Record<string, string>> = {
   placeRiverfolkWarrior: 'Riverfolk Company — place a warrior on the river',
   setStartingCosts: 'Riverfolk Company — set starting service costs',
   buyServices: 'Riverfolk services — buy or decline',
+  swapMeetGive: 'Swap Meet — pick a card to give',
 }
 
 /** Banner prompt for an expansion pending event; null for any other event. */

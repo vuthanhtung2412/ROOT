@@ -74,6 +74,19 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
       },
     ],
   },
+  // Swap Meet: take a random card; the card to give is asked next.
+  swapMeet: {
+    title: 'Swap Meet',
+    asksEveryStep: true,
+    steps: [
+      {
+        field: 'target',
+        kind: 'choice',
+        prompt: 'take a random card from…',
+        label: seatLabel,
+      },
+    ],
+  },
   // Saboteurs: discard it to discard a crafted card of an enemy.
   saboteurs: {
     title: 'Saboteurs',
@@ -100,4 +113,5 @@ export const CARD_ACTION_LABELS: Readonly<Record<string, string>> = {
   leagueBattle: 'league: battle',
   propagandaBureau: 'propaganda bureau',
   saboteurs: 'saboteurs',
+  swapMeet: 'swap meet',
 }

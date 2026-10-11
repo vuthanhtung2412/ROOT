@@ -23,6 +23,7 @@ import {
   LuPickaxe,
   LuPlay,
   LuRefreshCw,
+  LuRepeat,
   LuScrollText,
   LuSearch,
   LuShield,
@@ -118,6 +119,7 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   leagueBattle: LuSwords,
   propagandaBureau: LuMegaphone,
   saboteurs: LuBomb,
+  swapMeet: LuRepeat,
 }
 
 export function actionIconFor(actionType: string): IconType {

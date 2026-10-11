@@ -17,7 +17,9 @@ import {
   isBattleRemovalPending,
   isFieldHospitalPending,
 } from '#game/resolution/eventActionComposer.ts'
+import { pendingEventType } from '#game/expansionPendingPrompts.ts'
 import { soleEndPhaseAction } from '#game/resolution/forcedAction.ts'
+import { FORCED_CARD_PENDING_TYPES } from '#game/resolution/optionActionFlows.ts'
 import type { GameSessionSnapshot } from '#game/GameSession.ts'
 
 export type EventComposerAutoPromptHooks = {
@@ -51,6 +53,7 @@ export class AutoPromptController {
   private ambushKey: string | null = null
   private battleRemovalKey: string | null = null
   private setupPromptKey: string | null = null
+  private forcedCardPromptKey: string | null = null
   private endPhaseKey: string | null = null
   private itemDamageKey: string | null = null
 
@@ -62,6 +65,7 @@ export class AutoPromptController {
     localControlsActor: boolean,
   ): void {
     this.maybeBeginSetupPrompt(snapshot, actorSeat, localControlsActor)
+    this.maybeBeginForcedCardPrompt(snapshot, actorSeat, localControlsActor)
     this.maybeBeginFieldHospitalPrompt(snapshot, actorSeat, localControlsActor)
     this.maybeBeginAmbushPrompt(snapshot, actorSeat, localControlsActor)
     this.maybeBeginBattleRemoval(snapshot, actorSeat, localControlsActor)
@@ -243,6 +247,38 @@ export class AutoPromptController {
     }
     this.endPhaseKey = key
     this.deps.submitEndPhase()
+  }
+
+  /** A crafted card left a forced choice pending (Swap Meet: card to give). */
+  private maybeBeginForcedCardPrompt(
+    snapshot: GameSessionSnapshot,
+    actorSeat: number,
+    localControlsActor: boolean,
+  ): void {
+    const pending: unknown = snapshot.state?.pending[0]
+    const pendingType: string | null = pendingEventType(pending)
+    if (
+      !localControlsActor ||
+      pendingType === null ||
+      !FORCED_CARD_PENDING_TYPES.has(pendingType)
+    ) {
+      this.forcedCardPromptKey = null
+      return
+    }
+    const forcedSpec: ActionSpec | undefined = snapshot.legalActions.find(
+      (spec: ActionSpec): boolean =>
+        spec.type === 'resolveEvent' && spec.actor === actorSeat,
+    )
+    if (forcedSpec === undefined) {
+      this.forcedCardPromptKey = null
+      return
+    }
+    const key: string = JSON.stringify({ pending, params: forcedSpec.params })
+    if (key === this.forcedCardPromptKey) {
+      return
+    }
+    this.forcedCardPromptKey = key
+    this.deps.applyComposerOutcome(this.deps.composer.begin(forcedSpec))
   }
 
   private maybeBeginSetupPrompt(

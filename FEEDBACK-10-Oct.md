@@ -55,10 +55,10 @@ Cards:
   - Needs a label lookup: crafted item index → item name. Offer one index per item type.
   - [x] **C3.1 — Rule fix: an illegal move or battle must not cost the item.** `lib` exhausted the item and marked the card used before checking the move; a battle target was not checked at all. The whole payload is now checked first.
   - [x] **C3.2 — `lib` lists legal payloads**, then frontend flows (move, battle), tray labels, icons.
-- [ ] **C4 — Swap Meet** (`swapMeet`, Birdsong, once). Pick another player → pick hand card to give.
+- [x] **C4 — Swap Meet** (`swapMeet`, Birdsong, once). Pick another player → pick hand card to give.
   - Rule mismatch: card says take a random card, *then* give a card (the taken card may be given back). `lib` asks for the given card before the taken card is known. Take first, then ask which card to give.
   - [x] **C4.1 — Rule fix.** `swapMeet` takes the random card and opens a pending `swapMeetGive` event; any hand card can be given, the taken one included. Works with an empty hand.
-  - [ ] **C4.2 — Frontend:** tray button → pick player; then a forced "pick a card to give" prompt.
+  - [x] **C4.2 — Frontend:** tray button → pick player; then a forced "pick a card to give" prompt.
 - [ ] **C5 — Charm Offensive** (`charmOffensive`, Evening, once). Pick another player to score 1 point.
 - [ ] **C6 — Informants** (`informantsTakeAmbush`, Evening draw step). Pick an ambush card from the Discarded pile instead of drawing.
 - [ ] **C7 — False Orders** (`falseOrders`, Birdsong). Pick enemy → origin clearing with their warriors → adjacent destination.

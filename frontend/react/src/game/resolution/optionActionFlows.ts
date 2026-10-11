@@ -210,6 +210,15 @@ const ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
 export const OPTION_ACTION_TYPES: readonly string[] = Object.keys(ACTION_FLOWS)
 
 const RESOLVE_EVENT_TYPE = 'resolveEvent'
+const SWAP_MEET_GIVE_PENDING_TYPE = 'swapMeetGive'
+
+/**
+ * Pending events of a crafted card that the actor must answer at once: their
+ * prompt opens by itself, with no tray button.
+ */
+export const FORCED_CARD_PENDING_TYPES: ReadonlySet<string> = new Set<string>([
+  SWAP_MEET_GIVE_PENDING_TYPE,
+])
 
 function isActionOptionView(value: unknown): value is ActionOptionView {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -298,6 +307,14 @@ function resolveEventFlow(
         valuesAreSuits: true,
       },
       singleFieldOptions(spec, 'suits', 'suit'),
+    )
+  }
+  if (pendingType === SWAP_MEET_GIVE_PENDING_TYPE) {
+    // Swap Meet: the random card is taken; any hand card may go back.
+    return setupFlow(
+      'Swap Meet',
+      { field: 'cardId', kind: 'card', prompt: 'pick a card to give' },
+      singleFieldOptions(spec, 'cardIds', 'cardId'),
     )
   }
   if (pendingType === 'setStartingCosts') {
