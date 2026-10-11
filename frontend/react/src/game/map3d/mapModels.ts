@@ -68,7 +68,7 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-riverfolk-trade-post-fox': structure('quaternius/trade-post'),
   'token-riverfolk-trade-post-mouse': structure('quaternius/trade-post'),
   'token-riverfolk-trade-post-rabbit': structure('quaternius/trade-post'),
-  'marker-ruin': structure('nature/ruin'),
+  'marker-ruin': structure('quaternius/ruin'),
 }
 
 export type TreeModels = {

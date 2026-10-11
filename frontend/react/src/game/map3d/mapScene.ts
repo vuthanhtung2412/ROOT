@@ -130,6 +130,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     previousMilliseconds = nowMilliseconds
     cameraRig.update(deltaSeconds)
     pieceLayer.setZoom(cameraRig.zoom())
+    groundMarkers.setZoom(cameraRig.zoom())
     daylight.update(deltaSeconds)
     groundMarkers.update(
       (nowMilliseconds - startMilliseconds) / MILLISECONDS_PER_SECOND,

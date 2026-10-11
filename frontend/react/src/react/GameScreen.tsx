@@ -1,8 +1,21 @@
-import { lazy, Suspense, useEffect, useState, type JSX } from 'react'
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type JSX,
+} from 'react'
 import {
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
 } from '#assets/gameAssets.ts'
+import {
+  getHudSnapshot,
+  patchHud,
+  subscribeHud,
+  type MapViewMode,
+} from '#game/hudStore.ts'
 import type { BoardEffectBatch } from '#game/boardEffects.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
@@ -18,7 +31,6 @@ import {
   type ViewportLayoutMode,
 } from '#game/viewportLayout.ts'
 import { BoardMap, type BoardMapProps } from '#react/BoardMap.tsx'
-import { useMapViewMode } from '#react/map3d/useMapViewMode.ts'
 import type { BoardClearingPieces } from '#react/PieceStack.tsx'
 import type { ForestPawnMarker } from '#game/forestLayout.ts'
 
@@ -30,11 +42,14 @@ const BoardMap3D = lazy(async () => {
 
 /**
  * Share of the screen width kept free of clearings in landscape: the player
- * rail hugs the left edge; on the right the action tray fills the bottom
- * corner, so the clearing down there must stay clear of it.
+ * rail hugs the left edge.
  */
 const MAP_3D_LEFT_HUD_WIDTH_RATIO = 0.07
-const MAP_3D_RIGHT_HUD_WIDTH_RATIO = 0.15
+/**
+ * A thin margin only: the map never moves when the action tray folds or
+ * unfolds. An open tray lies over the bottom right clearing; fold it to see.
+ */
+const MAP_3D_RIGHT_HUD_WIDTH_RATIO = 0.04
 const HALF = 0.5
 /** Gap between the toggle and the corner of the map area. */
 const MAP_VIEW_TOGGLE_INSET_PIXELS = 8
@@ -83,7 +98,14 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
   const landscapeHost = landscapeMapHostSize(viewport)
   const mapHost = isPortrait ? portraitHost : landscapeHost
 
-  const { mapViewMode, toggleMapViewMode } = useMapViewMode()
+  const mapViewMode: MapViewMode = useSyncExternalStore(
+    subscribeHud,
+    (): MapViewMode => getHudSnapshot().mapViewMode,
+    (): MapViewMode => getHudSnapshot().mapViewMode,
+  )
+  const toggleMapViewMode = (): void => {
+    patchHud({ mapViewMode: mapViewMode === 'flat' ? '3d' : 'flat' })
+  }
   const is3d = mapViewMode === '3d'
 
   const mapProps: BoardMapProps | null =

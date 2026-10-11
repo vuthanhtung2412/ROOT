@@ -34,8 +34,9 @@ const FOREST_FLOOR_PATCH_OPACITY = 0.35
 const OPEN_GROUND_COLOR = '#c2a871'
 const OPEN_GROUND_EDGE_COLOR = '#8d8452'
 const CLEARING_CENTER_COLOR = '#d6bf88'
-const PATH_WIDTH = 2.6
-const PATH_EDGE_WIDTH = 3.8
+/** A path is little more than its line of stones (as in the digital game). */
+const PATH_WIDTH = 1.15
+const PATH_EDGE_WIDTH = 1.7
 const RIVER_BANK_COLOR = '#7b7a4c'
 const RIVER_BANK_WIDTH = 7.2
 const RIVER_WATER_COLOR = '#5fa9c4'

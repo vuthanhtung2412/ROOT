@@ -68,8 +68,8 @@ const SLOT_ROW_SPACING = 2.6
 const SLOT_SEED_STEP = 7919
 /** Tokens and meeples stand in rows across the front of the clearing. */
 const STACK_ROW_DEPTH_RATIO = 0.24
-const STACK_ROW_SPACING = 2.5
-const STACK_SPACING = 2.5
+const STACK_ROW_SPACING = 2.1
+const STACK_SPACING = 2.1
 const STACKS_PER_ROW = 4
 const HALF = 0.5
 const DOUBLE = 2

@@ -30,7 +30,10 @@ Zero (CC0 1.0), downloaded from Poly Pizza:
 | `quaternius/garden.glb` | Temple | https://poly.pizza/m/JsZnPztvRl |
 | `quaternius/trade-post.glb` | Market Stalls | https://poly.pizza/m/jSqGy8V0MQ |
 
-`nature/ruin.glb` — Kenney Nature Kit 2.1 (CC0), `stone_tallB.glb`.
+`quaternius/ruin.glb` — put together in Blender from five pieces of the
+Quaternius **Modular Ruins Pack** (CC0, https://poly.pizza/m/F2LAK03B0r):
+`Wall_ArchRound_Overgrown_Broken`, `Wall_Broken`, `Column_Round_Short`,
+`Bricks`, `Floor_Hole_Corner`.
 
 ## Git
 

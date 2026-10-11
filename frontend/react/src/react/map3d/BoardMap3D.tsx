@@ -47,6 +47,8 @@ const HALF = 0.5
 
 /** Gap between the reset button and the right edge of the focus. */
 const RESET_VIEW_INSET_PIXELS = 8
+/** Never under the discard pile chip in the top right corner. */
+const RESET_VIEW_MINIMUM_RIGHT_PIXELS = 170
 const RESET_VIEW_CLASS_NAME =
   'map-3d-reset-view pointer-events-auto absolute top-2 z-6 cursor-pointer rounded border border-parchment-shadow bg-[#1a2438cc] px-2 py-1 font-body text-xs font-bold text-parchment'
 
@@ -284,10 +286,12 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
           type="button"
           className={RESET_VIEW_CLASS_NAME}
           style={{
-            right:
+            right: Math.max(
               (viewWidth - focusWidth) * HALF -
-              focusOffsetX +
-              RESET_VIEW_INSET_PIXELS,
+                focusOffsetX +
+                RESET_VIEW_INSET_PIXELS,
+              RESET_VIEW_MINIMUM_RIGHT_PIXELS,
+            ),
           }}
           onClick={() => {
             scene.resetView()

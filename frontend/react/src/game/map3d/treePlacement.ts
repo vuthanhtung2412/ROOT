@@ -23,8 +23,8 @@ export type TreePlacement = {
 /** Distance between neighbouring trees, before jitter. */
 const TREE_SPACING = 1.3
 /** A few gaps keep the carpet from looking combed. */
-const PINE_KEEP_PROBABILITY = 0.93
-const PATH_FREE_HALF_WIDTH = 1.6
+const PINE_KEEP_PROBABILITY = 0.97
+const PATH_FREE_HALF_WIDTH = 0.8
 const RIVER_FREE_HALF_WIDTH = 3.1
 /** Leafy trees stand in this band round a clearing (ratios of its radius). */
 const CLEARING_RIM_OUTER_RATIO = 1.3

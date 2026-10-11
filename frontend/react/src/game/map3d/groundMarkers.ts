@@ -1,13 +1,15 @@
 import {
+  CanvasTexture,
   CircleGeometry,
   Group,
+  MathUtils,
   Mesh,
   MeshBasicMaterial,
-  MeshStandardMaterial,
-  PlaneGeometry,
   RingGeometry,
   Shape,
   ShapeGeometry,
+  Sprite,
+  SpriteMaterial,
   SRGBColorSpace,
   Texture,
   TextureLoader,
@@ -17,7 +19,7 @@ import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 
 /**
  * Marks of the clearings and forests: the ring around each clearing (ruler
- * colour, or gold when it can be picked), its suit on a medallion, and the
+ * colour, or gold when it can be picked), its suit as an icon over it, and the
  * gold wash over a forest to pick.
  */
 export type GroundMarkersInput = {
@@ -45,6 +47,8 @@ export type GroundMarkers = {
   setHighlightedForests: (forestIndexes: ReadonlySet<number>) => void
   /** Pulse the highlights; call once per frame. */
   update: (elapsedSeconds: number) => void
+  /** 0 = zoomed all the way out, 1 = all the way in: sizes the suit badges. */
+  setZoom: (zoom: number) => void
 }
 
 const RING_INNER_RADIUS_RATIO = 0.93
@@ -61,13 +65,22 @@ const PULSE_DEPTH = 0.45
 const PULSE_RADIANS_PER_SECOND = 4
 const QUARTER_TURN_RADIANS = Math.PI / 2
 
-const SUIT_MEDALLION_RADIUS = 1.3
-const SUIT_MEDALLION_SEGMENT_COUNT = 40
-const SUIT_MEDALLION_COLOR = 0xf0e6d3
-const SUIT_ICON_SIZE = 1.75
-/** Above the ring it is set into; the icon a hair above the medallion. */
-const SUIT_MEDALLION_HEIGHT = 0.08
-const SUIT_ICON_HEIGHT = 0.1
+const HALF = 0.5
+const FULL_TURN_RADIANS = Math.PI * 2
+
+/** Suit badge size (world units) zoomed out and zoomed in. */
+const SUIT_BADGE_FAR_SIZE = 2.1
+const SUIT_BADGE_NEAR_SIZE = 1.15
+const SUIT_BADGE_HEIGHT = 0.9
+/** The suit icon, relative to the chip it sits on. */
+const SUIT_ICON_RELATIVE_SIZE = 0.7
+const SUIT_CHIP_TEXTURE_SIZE_PIXELS = 128
+const SUIT_CHIP_BORDER_WIDTH_PIXELS = 6
+const SUIT_CHIP_COLOR = '#f0e6d3'
+const SUIT_CHIP_BORDER_COLOR = '#5b4630'
+/** Over the woodland, under the piece icons. */
+const SUIT_CHIP_RENDER_ORDER = 7
+const SUIT_ICON_RENDER_ORDER = 8
 
 type ClearingMark = {
   ring: Mesh
@@ -90,41 +103,66 @@ function layFlat(mesh: Mesh, center: MapGroundPoint, height: number): Mesh {
   return mesh
 }
 
-/**
- * The suit of a clearing, lying on the ground: a parchment medallion set
- * into the back of the clearing's ring, with the suit drawn on it.
- */
-function createSuitMark(clearing: ClearingGround, texture: Texture): Group {
-  const mark: Group = new Group()
-  const center: MapGroundPoint = {
-    x: clearing.center.x,
-    z: clearing.center.z - clearing.radius,
+/** A round parchment chip, drawn once, behind every suit icon. */
+function createSuitChipTexture(): CanvasTexture {
+  const canvas: HTMLCanvasElement = document.createElement('canvas')
+  canvas.width = SUIT_CHIP_TEXTURE_SIZE_PIXELS
+  canvas.height = SUIT_CHIP_TEXTURE_SIZE_PIXELS
+  const context: CanvasRenderingContext2D | null = canvas.getContext('2d')
+  if (context !== null) {
+    const center: number = SUIT_CHIP_TEXTURE_SIZE_PIXELS * HALF
+    context.beginPath()
+    context.arc(
+      center,
+      center,
+      center - SUIT_CHIP_BORDER_WIDTH_PIXELS,
+      0,
+      FULL_TURN_RADIANS,
+    )
+    context.fillStyle = SUIT_CHIP_COLOR
+    context.fill()
+    context.lineWidth = SUIT_CHIP_BORDER_WIDTH_PIXELS
+    context.strokeStyle = SUIT_CHIP_BORDER_COLOR
+    context.stroke()
   }
-  const medallion: Mesh = layFlat(
-    new Mesh(
-      new CircleGeometry(SUIT_MEDALLION_RADIUS, SUIT_MEDALLION_SEGMENT_COUNT),
-      new MeshStandardMaterial({ color: SUIT_MEDALLION_COLOR, roughness: 1 }),
-    ),
-    center,
-    SUIT_MEDALLION_HEIGHT,
+  const texture: CanvasTexture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  return texture
+}
+
+/**
+ * The suit of a clearing: an icon laid over the map (like the piece icons),
+ * on a parchment chip, at the back of the clearing's ring.
+ */
+function createSuitBadge(
+  clearing: ClearingGround,
+  textures: { suit: Texture; chip: Texture },
+): Group {
+  const badge: Group = new Group()
+  const chip: Sprite = new Sprite(
+    new SpriteMaterial({ map: textures.chip, depthTest: false }),
   )
-  medallion.receiveShadow = true
-  const icon: Mesh = layFlat(
-    new Mesh(
-      new PlaneGeometry(SUIT_ICON_SIZE, SUIT_ICON_SIZE),
-      new MeshBasicMaterial({ map: texture, transparent: true }),
-    ),
-    center,
-    SUIT_ICON_HEIGHT,
+  chip.renderOrder = SUIT_CHIP_RENDER_ORDER
+  const icon: Sprite = new Sprite(
+    new SpriteMaterial({ map: textures.suit, depthTest: false }),
   )
-  mark.add(medallion, icon)
-  return mark
+  icon.scale.setScalar(SUIT_ICON_RELATIVE_SIZE)
+  icon.renderOrder = SUIT_ICON_RENDER_ORDER
+  badge.add(chip, icon)
+  badge.position.set(
+    clearing.center.x,
+    SUIT_BADGE_HEIGHT,
+    clearing.center.z - clearing.radius,
+  )
+  return badge
 }
 
 export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
   const { clearings, forests } = input
   const group: Group = new Group()
   const textureLoader: TextureLoader = new TextureLoader()
+  const suitChipTexture: CanvasTexture = createSuitChipTexture()
+  const suitBadges: Group[] = []
   for (const clearing of clearings) {
     const suitTexturePath: string | undefined = input.suitTexturePaths.get(
       clearing.clearingId,
@@ -132,7 +170,13 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
     if (suitTexturePath !== undefined) {
       const texture: Texture = textureLoader.load(suitTexturePath)
       texture.colorSpace = SRGBColorSpace
-      group.add(createSuitMark(clearing, texture))
+      const badge: Group = createSuitBadge(clearing, {
+        suit: texture,
+        chip: suitChipTexture,
+      })
+      badge.scale.setScalar(SUIT_BADGE_FAR_SIZE)
+      suitBadges.push(badge)
+      group.add(badge)
     }
   }
   const highlightMaterial: MeshBasicMaterial =
@@ -238,6 +282,16 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
       highlightMaterial.opacity = pulse
       fillMaterial.opacity = FILL_BASE_OPACITY * pulse
       forestMaterial.opacity = FOREST_BASE_OPACITY * pulse
+    },
+    setZoom: (zoom: number): void => {
+      const size: number = MathUtils.lerp(
+        SUIT_BADGE_FAR_SIZE,
+        SUIT_BADGE_NEAR_SIZE,
+        zoom,
+      )
+      for (const badge of suitBadges) {
+        badge.scale.setScalar(size)
+      }
     },
   }
 }

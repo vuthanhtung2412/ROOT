@@ -39,7 +39,7 @@ export type MapTerrain = {
 }
 
 /** Clearing radius in world units: room for three slots and three armies. */
-const CLEARING_RADIUS = 5.8
+const CLEARING_RADIUS = 4.8
 /** Woodland past the playable area when the view shows nothing but it. */
 const BASE_MARGIN_RATIO = 0.3
 /**

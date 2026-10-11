@@ -152,6 +152,15 @@ async function drive(page) {
   await page.locator('.map-3d-reset-view').click()
   await page.waitForTimeout(2800)
 
+  await caption(page, 'Hide actions: the tray folds, the map stays put')
+  await page.locator('.action-tray__collapse').click()
+  await page.waitForSelector('.map-3d-reset-view', { timeout: 30_000 })
+  await page.waitForTimeout(4200)
+  await caption(page, 'Show them again')
+  await page.locator('.action-tray__collapse').click()
+  await page.waitForSelector('.map-3d-reset-view', { timeout: 30_000 })
+  await page.waitForTimeout(3600)
+
   // The light follows the phase of the turn: daylight fades to evening …
   await caption(page, 'End Phase → evening: low orange sun, violet dusk')
   await page.getByRole('button', { name: /end phase/i }).first().click()
@@ -170,6 +179,8 @@ async function drive(page) {
     body: birdsongSnapshot,
   })
   await page.reload()
+  // The map choice is page state: a reload starts on the flat map again.
+  await page.locator('.map-view-toggle').click()
   await page.waitForSelector('.map-3d-reset-view', { timeout: 30_000 })
   await caption(page, 'Birdsong: pink dawn sun, morning mist')
   await page.waitForTimeout(4600)
@@ -195,13 +206,6 @@ async function main() {
     console.error('page error:', error.message)
   })
   await installAutonomousClickHighlight(page)
-  // Start on the flat map once; a later page load keeps the chosen map.
-  await page.addInitScript(() => {
-    if (window.sessionStorage.getItem('qa-demo-started') === null) {
-      window.sessionStorage.setItem('qa-demo-started', 'yes')
-      window.localStorage.setItem('root.mapViewMode', 'flat')
-    }
-  })
   try {
     await drive(page)
   } finally {
