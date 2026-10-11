@@ -19,6 +19,7 @@ import {
 import { clearingRuler } from '#game/clearingRuler.ts'
 import { factionColorForSeat, PIECE_DRAW } from '#game/theme.ts'
 import {
+  BUILDING_PIECE_KIND,
   groupPiecesIntoStacks,
   stackOffsets,
   type PieceStackViewModel,
@@ -39,7 +40,7 @@ function textureKeyForStack(
   stack: PieceStackViewModel,
   clearingId: number,
 ): string {
-  if (stack.kind === 'building' && stack.type === 'base') {
+  if (stack.kind === BUILDING_PIECE_KIND && stack.type === 'base') {
     const suit = fallClearingSuit(clearingId) ?? 'fox'
     return allianceBaseTextureKey(suit)
   }
@@ -80,7 +81,7 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
     pieceTokenTextureKey(props.stack.kind, props.stack.type) !== null ||
     (props.stack.kind === 'warrior' &&
       warriorTokenTextureKey(props.stack.factionId) !== null) ||
-    (props.stack.kind === 'building' && props.stack.type === 'base') ||
+    (props.stack.kind === BUILDING_PIECE_KIND && props.stack.type === 'base') ||
     isSuitScopedPieceType(props.stack.type)
   const size = usesTokenArt
     ? PIECE_DRAW.buildingIconSize
@@ -121,12 +122,14 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
           }}
         />
       )}
-      <span
-        className="pointer-events-none absolute inset-0 flex items-center justify-center font-body font-bold text-white text-shadow-outline"
-        style={{ fontSize: Math.round(size * 0.55) }}
-      >
-        {String(props.stack.count)}
-      </span>
+      {props.stack.kind !== BUILDING_PIECE_KIND ? (
+        <span
+          className="pointer-events-none absolute inset-0 flex items-center justify-center font-body font-bold text-white text-shadow-outline"
+          style={{ fontSize: Math.round(size * 0.55) }}
+        >
+          {String(props.stack.count)}
+        </span>
+      ) : null}
     </div>
   )
 }

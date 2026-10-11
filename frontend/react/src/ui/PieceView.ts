@@ -4,6 +4,9 @@ import {
 } from '#assets/gameAssets.ts'
 import { PIECE_DRAW } from '#game/theme.ts'
 
+/** Board piece kind that occupies a building slot (sawmill, roost, garden, …). */
+export const BUILDING_PIECE_KIND = 'building'
+
 export type PieceViewModel = {
   id: string
   kind: string
@@ -28,16 +31,25 @@ export type PieceStackViewModel = {
   sampleIds: string[]
 }
 
+function stackKeyForPiece(piece: PieceViewModel): string {
+  // Buildings: one icon each (clearing holds at most 3). Warriors/tokens stack.
+  if (piece.kind === BUILDING_PIECE_KIND) {
+    return `${BUILDING_PIECE_KIND}:${piece.id}`
+  }
+  const typeKey = piece.type ?? ''
+  return `${String(piece.owner)}:${piece.kind}:${typeKey}`
+}
+
 /**
  * Stack pieces by owner + kind + type for board rendering.
+ * Buildings stay unstacked so each shows as its own icon.
  */
 export function groupPiecesIntoStacks(
   pieces: readonly PieceViewModel[],
 ): PieceStackViewModel[] {
   const stacks = new Map<string, PieceStackViewModel>()
   for (const piece of pieces) {
-    const typeKey = piece.type ?? ''
-    const key = `${piece.owner}:${piece.kind}:${typeKey}`
+    const key = stackKeyForPiece(piece)
     const existing = stacks.get(key)
     if (existing !== undefined) {
       stacks.set(key, {
