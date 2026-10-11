@@ -10,7 +10,6 @@ import {
 } from '#game/hudStore.ts'
 import { factionColorCss } from '#game/theme.ts'
 import {
-  battleResultFlashPrompt,
   battleStrapText,
   type BattleOverlayViewModel,
   type BattleRole,
@@ -86,11 +85,8 @@ export function BattleOverlay(): JSX.Element | null {
     return null
   }
   const isOutcomeFlash = viewModel.outcomeMessage !== null
-  // Result flash: the dice and hit marks tell the outcome; the strap only
-  // speaks when nothing was removed.
-  const strapText: string = isOutcomeFlash
-    ? battleResultFlashPrompt(viewModel.hits)
-    : battleStrapText(viewModel)
+  // Result flash: dice and hit marks tell the outcome; no strap copy.
+  const strapText: string = isOutcomeFlash ? '' : battleStrapText(viewModel)
   const callbacks = getHudCallbacks()
   // Rule: 8.2.2 Guerrilla War — defending Alliance uses the higher die.
   const defenderUsesHigherDie =

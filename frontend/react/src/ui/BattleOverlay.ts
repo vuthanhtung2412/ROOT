@@ -7,7 +7,7 @@ export type BattleOverlayViewModel = {
   rolls: readonly [number, number] | null
   hits: { attacker: number; defender: number }
   prompt: string | null
-  /** Brief post-battle message (e.g. zero hits). */
+  /** Non-null while the post-battle result flash is up. */
   outcomeMessage: string | null
 }
 
@@ -19,16 +19,6 @@ export const BATTLE_STAGE_LABELS: Record<string, string> = {
   effects: 'Battle card effect?',
   removeDefender: 'Remove defender pieces',
   removeAttacker: 'Remove attacker pieces',
-}
-
-export function battleResultFlashPrompt(hits: {
-  attacker: number
-  defender: number
-}): string {
-  if (hits.attacker === 0 && hits.defender === 0) {
-    return 'No pieces removed'
-  }
-  return ''
 }
 
 export type BattleRole = 'attacker' | 'defender'
