@@ -2,9 +2,9 @@ import type { Group } from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 
 /**
- * 3D models of the map (see `public/assets/models/SOURCES.md`): trees and
- * structures from Kenney's kits (CC0), meeples extruded in Blender from the
- * warrior token art.
+ * 3D models of the map (see `public/assets/models/SOURCES.md`): trees from
+ * Kenney's Nature Kit and buildings by Quaternius (both CC0), meeples
+ * extruded in Blender from the warrior token art.
  */
 const MODEL_ROOT = '/assets/models'
 const MODEL_FILE_EXTENSION = '.glb'
@@ -53,21 +53,21 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-vagabond-pawn': meeple('vagabond-pawn'),
   'token-vagabond-pawn-tinker': meeple('vagabond-pawn-tinker'),
   'token-vagabond-pawn-ranger': meeple('vagabond-pawn-ranger'),
-  'token-marquise-sawmill': structure('town/sawmill'),
-  'token-marquise-workshop': structure('hexagon/workshop'),
-  'token-marquise-recruiter': structure('nature/recruiter'),
-  'token-marquise-keep': structure('hexagon/keep'),
-  'token-marquise-wood': structure('nature/wood'),
-  'token-eyrie-roost': structure('hexagon/roost'),
-  'token-alliance-base-fox': structure('hexagon/base'),
-  'token-alliance-base-mouse': structure('hexagon/base'),
-  'token-alliance-base-rabbit': structure('hexagon/base'),
-  'token-lizard-garden-fox': structure('town/garden'),
-  'token-lizard-garden-mouse': structure('town/garden'),
-  'token-lizard-garden-rabbit': structure('town/garden'),
-  'token-riverfolk-trade-post-fox': structure('town/trade-post'),
-  'token-riverfolk-trade-post-mouse': structure('town/trade-post'),
-  'token-riverfolk-trade-post-rabbit': structure('town/trade-post'),
+  'token-marquise-sawmill': structure('quaternius/sawmill'),
+  'token-marquise-workshop': structure('quaternius/workshop'),
+  'token-marquise-recruiter': structure('quaternius/recruiter'),
+  'token-marquise-keep': structure('quaternius/keep'),
+  'token-marquise-wood': structure('quaternius/wood'),
+  'token-eyrie-roost': structure('quaternius/roost'),
+  'token-alliance-base-fox': structure('quaternius/base'),
+  'token-alliance-base-mouse': structure('quaternius/base'),
+  'token-alliance-base-rabbit': structure('quaternius/base'),
+  'token-lizard-garden-fox': structure('quaternius/garden'),
+  'token-lizard-garden-mouse': structure('quaternius/garden'),
+  'token-lizard-garden-rabbit': structure('quaternius/garden'),
+  'token-riverfolk-trade-post-fox': structure('quaternius/trade-post'),
+  'token-riverfolk-trade-post-mouse': structure('quaternius/trade-post'),
+  'token-riverfolk-trade-post-rabbit': structure('quaternius/trade-post'),
   'marker-ruin': structure('nature/ruin'),
 }
 

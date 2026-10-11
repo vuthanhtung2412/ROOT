@@ -53,6 +53,8 @@ const HOME_TARGET_DEPTH_RATIO = 0.035
 /** The map opens from a little higher up and settles into the home view. */
 const OPENING_DISTANCE_RATIO = 1.35
 const MINIMUM_DISTANCE = 26
+/** Half-way zoomed in, the camera may already reach every corner. */
+const PAN_REACH_GAIN = 2
 const DAMPING_FACTOR = 0.14
 const GLIDE_SECONDS = 1.4
 
@@ -162,7 +164,7 @@ export function createMapCameraRig(
   const keepTargetOnMap = (): void => {
     const home: MapViewPose = homePose()
     const freedom: number = MathUtils.clamp(
-      1 - controls.getDistance() / home.distance,
+      (1 - controls.getDistance() / home.distance) * PAN_REACH_GAIN,
       0,
       1,
     )

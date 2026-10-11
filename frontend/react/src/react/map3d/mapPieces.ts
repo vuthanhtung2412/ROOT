@@ -12,6 +12,7 @@ import type { ForestGround } from '#game/map3d/groundMarkers.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import type { MapPiece, MapPieceShape } from '#game/map3d/pieceMeshes.ts'
+import { createSeededRandom } from '#game/map3d/treePlacement.ts'
 import { factionColorForSeat, FACTION_COLORS } from '#game/theme.ts'
 import {
   pieceViewModelsForClearing,
@@ -36,15 +37,77 @@ const BUILDING_KIND = 'building'
 /** Piece kinds drawn as meeples. */
 const FIGURE_KINDS: ReadonlySet<string> = new Set<string>(['warrior', 'pawn'])
 
-/** Building slots stand in a row across the back of the clearing. */
+/**
+ * Where the building slots of a clearing lie, by how many it has: loosely
+ * dotted over the back half, as ratios of the clearing radius (x right,
+ * z towards the viewer). Each clearing then shifts and turns them a little
+ * its own way, so no two clearings look laid out with a ruler.
+ */
+const SLOT_SPOTS_BY_COUNT: Readonly<
+  Record<number, ReadonlyArray<readonly [number, number]>>
+> = {
+  1: [[-0.12, -0.44]],
+  2: [
+    [-0.4, -0.5],
+    [0.3, -0.3],
+  ],
+  3: [
+    [-0.54, -0.26],
+    [-0.04, -0.62],
+    [0.47, -0.36],
+  ],
+}
+/** How far a slot may shift from its spot (ratio of the clearing radius). */
+const SLOT_JITTER_RATIO = 0.07
+/** How far a slot may turn either way, radians. */
+const SLOT_MAXIMUM_TURN = 0.5
+/** Clearings with more slots than a pattern knows fall back to a row. */
 const SLOT_ROW_DEPTH_RATIO = -0.42
-const SLOT_SPACING = 4.7
+const SLOT_ROW_SPACING = 3.6
+/** Each clearing rolls its own dice. */
+const SLOT_SEED_STEP = 7919
 /** Tokens and meeples stand in rows across the front of the clearing. */
-const STACK_ROW_DEPTH_RATIO = 0.3
-const STACK_ROW_SPACING = 3.9
-const STACK_SPACING = 3.6
+const STACK_ROW_DEPTH_RATIO = 0.24
+const STACK_ROW_SPACING = 3.3
+const STACK_SPACING = 3.3
 const STACKS_PER_ROW = 4
 const HALF = 0.5
+const DOUBLE = 2
+
+type SlotSpot = {
+  ground: MapGroundPoint
+  /** Turn of the plot (and of the building on it), radians. */
+  rotation: number
+}
+
+/** The slots of a clearing: same every time for the same clearing. */
+function slotSpots(clearing: ClearingGround, count: number): SlotSpot[] {
+  const random: () => number = createSeededRandom(
+    (clearing.clearingId + 1) * SLOT_SEED_STEP,
+  )
+  // Every other clearing mirrors the pattern.
+  const mirror: number = clearing.clearingId % DOUBLE === 0 ? 1 : -1
+  const pattern: ReadonlyArray<readonly [number, number]> | undefined =
+    SLOT_SPOTS_BY_COUNT[count]
+  const jitter = (): number =>
+    (random() - HALF) * DOUBLE * SLOT_JITTER_RATIO * clearing.radius
+  if (pattern === undefined) {
+    return rowGrounds(clearing, {
+      count,
+      spacing: SLOT_ROW_SPACING,
+      depth: clearing.radius * SLOT_ROW_DEPTH_RATIO,
+    }).map((ground: MapGroundPoint): SlotSpot => ({ ground, rotation: 0 }))
+  }
+  return pattern.map(
+    ([ratioX, ratioZ]: readonly [number, number]): SlotSpot => ({
+      ground: {
+        x: clearing.center.x + mirror * ratioX * clearing.radius + jitter(),
+        z: clearing.center.z + ratioZ * clearing.radius + jitter(),
+      },
+      rotation: (random() - HALF) * DOUBLE * SLOT_MAXIMUM_TURN,
+    }),
+  )
+}
 
 /** `count` spots in a row, centred on the clearing, `spacing` apart. */
 function rowGrounds(
@@ -114,26 +177,24 @@ function slotPieces(
     FALL_CLEARING_SLOT_COUNTS[clearingId] ?? 0,
     occupants.length,
   )
-  const grounds: MapGroundPoint[] = rowGrounds(clearingGround, {
-    count: slotCount,
-    spacing: SLOT_SPACING,
-    depth: clearingGround.radius * SLOT_ROW_DEPTH_RATIO,
-  })
-  return grounds.map((ground: MapGroundPoint, slotIndex: number): MapPiece => {
-    const occupant: MapPiece | undefined = occupants[slotIndex]
-    if (occupant !== undefined) {
-      return { ...occupant, ground }
-    }
-    return {
-      key: `${String(clearingId)}-slot-${String(slotIndex)}`,
-      shape: 'slot',
-      textureKey: '',
-      texturePath: null,
-      color: FACTION_COLORS.neutral,
-      count: 1,
-      ground,
-    }
-  })
+  return slotSpots(clearingGround, slotCount).map(
+    (spot: SlotSpot, slotIndex: number): MapPiece => {
+      const occupant: MapPiece | undefined = occupants[slotIndex]
+      if (occupant !== undefined) {
+        return { ...occupant, ground: spot.ground, rotation: spot.rotation }
+      }
+      return {
+        key: `${String(clearingId)}-slot-${String(slotIndex)}`,
+        shape: 'slot',
+        textureKey: '',
+        texturePath: null,
+        color: FACTION_COLORS.neutral,
+        count: 1,
+        ground: spot.ground,
+        rotation: spot.rotation,
+      }
+    },
+  )
 }
 
 /** Tokens, then warriors and pawns, as stacks in rows at the front. */

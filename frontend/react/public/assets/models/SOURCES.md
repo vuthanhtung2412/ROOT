@@ -12,24 +12,31 @@ foliage is repainted at load time (`src/game/map3d/treeMeshes.ts`).
 
 ## `buildings/` — structures standing for buildings and tokens
 
-All Kenney, Creative Commons Zero (CC0), unmodified files renamed after the
-piece they stand for (mapping in `src/game/map3d/mapModels.ts`):
+Unmodified files, renamed after the piece they stand for (mapping in
+`src/game/map3d/mapModels.ts`).
 
-| File | Kit | Original |
-|------|-----|----------|
-| `town/sawmill.glb` | Fantasy Town Kit 2.0 — https://kenney.nl/assets/fantasy-town-kit | `watermill.glb` |
-| `town/trade-post.glb` | Fantasy Town Kit 2.0 | `stall-red.glb` |
-| `town/garden.glb` | Fantasy Town Kit 2.0 | `fountain-round.glb` |
-| `hexagon/workshop.glb` | Hexagon Kit 2.0 — https://kenney.nl/assets/hexagon-kit | `unit-house.glb` |
-| `hexagon/roost.glb` | Hexagon Kit 2.0 | `unit-tower.glb` |
-| `hexagon/base.glb` | Hexagon Kit 2.0 | `unit-mansion.glb` |
-| `hexagon/keep.glb` | Hexagon Kit 2.0 | `unit-wall-tower.glb` |
-| `nature/recruiter.glb` | Nature Kit 2.1 | `tent_detailedOpen.glb` |
-| `nature/wood.glb` | Nature Kit 2.1 | `log_stack.glb` |
-| `nature/ruin.glb` | Nature Kit 2.1 | `stone_tallB.glb` |
+`quaternius/` — by **Quaternius** (https://quaternius.com), Creative Commons
+Zero (CC0 1.0), downloaded from Poly Pizza:
 
-`town/Textures/colormap.png` and `hexagon/Textures/colormap.png` are the
-colour maps the models of each kit point at.
+| File | Model | Page |
+|------|-------|------|
+| `quaternius/sawmill.glb` | Fantasy Sawmill | https://poly.pizza/m/alxTTFjKDM |
+| `quaternius/workshop.glb` | Blacksmith | https://poly.pizza/m/bV52eTG1Aj |
+| `quaternius/recruiter.glb` | Fantasy Barracks | https://poly.pizza/m/wTDbVozPAj |
+| `quaternius/keep.glb` | Tower | https://poly.pizza/m/iuMDwgTRMU |
+| `quaternius/wood.glb` | Logs | https://poly.pizza/m/fei4I7FfrJ |
+| `quaternius/roost.glb` | Bell Tower | https://poly.pizza/m/ux44tbeQvj |
+| `quaternius/base.glb` | Tent | https://poly.pizza/m/5Q7qIrfDxA |
+| `quaternius/garden.glb` | Temple | https://poly.pizza/m/JsZnPztvRl |
+| `quaternius/trade-post.glb` | Market Stalls | https://poly.pizza/m/jSqGy8V0MQ |
+
+`nature/ruin.glb` — Kenney Nature Kit 2.1 (CC0), `stone_tallB.glb`.
+
+## Git
+
+`*.glb` is ignored by the repository's `.gitignore`, so the model files of
+this directory live on disk only. Fetch them again from the pages above (and
+the kit for `nature/`), or re-export the meeples, on a fresh checkout.
 
 ## `meeples/` — warriors and Vagabond pawns
 

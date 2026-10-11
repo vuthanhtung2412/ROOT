@@ -5,11 +5,16 @@ import {
   PlaneGeometry,
   SRGBColorSpace,
 } from 'three'
-import type {
-  ClearingGround,
-  MapTerrain,
-  PathGround,
-} from '#game/map3d/mapTerrain.ts'
+import {
+  paintClearingDetail,
+  paintForestFloorDetail,
+  paintPathDetail,
+  paintPathStones,
+  paintRiverDetail,
+  type CanvasPoint,
+  type GroundBrush,
+} from '#game/map3d/groundDetail.ts'
+import type { ClearingGround, MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import { createSeededRandom } from '#game/map3d/treePlacement.ts'
 
@@ -31,21 +36,16 @@ const OPEN_GROUND_EDGE_COLOR = '#8d8452'
 const CLEARING_CENTER_COLOR = '#d6bf88'
 const PATH_WIDTH = 4.6
 const PATH_EDGE_WIDTH = 6.4
-const PATH_STONE_COLOR = '#f1e9d2'
-const PATH_STONE_WIDTH = 0.75
-const PATH_STONE_GAP = 1.5
 const RIVER_BANK_COLOR = '#7b7a4c'
 const RIVER_BANK_WIDTH = 7.2
 const RIVER_WATER_COLOR = '#5fa9c4'
 const RIVER_WATER_WIDTH = 5
 const RIVER_SHALLOW_COLOR = '#8fcbd9'
 const RIVER_SHALLOW_WIDTH = 2.6
-const RIVER_RIPPLE_COLOR = '#d9f1f3'
-const RIVER_RIPPLE_WIDTH = 0.3
-const RIVER_RIPPLE_DASH: readonly number[] = [2.2, 3.4]
 /** The clearing's sand spreads a little past its ring. */
 const CLEARING_SAND_RADIUS_RATIO = 1.12
 const GROUND_SEED = 607
+const GROUND_DETAIL_SEED = 2203
 const FULL_TURN_RADIANS = Math.PI * 2
 const QUARTER_TURN_RADIANS = Math.PI / 2
 const HALF = 0.5
@@ -135,7 +135,20 @@ function paintClearing(painter: GroundPainter, clearing: ClearingGround): void {
 
 function paintGround(painter: GroundPainter): void {
   const { terrain } = painter
+  const brush: GroundBrush = {
+    context: painter.context,
+    scale: painter.scale,
+    random: createSeededRandom(GROUND_DETAIL_SEED),
+    toCanvas: (ground: MapGroundPoint): CanvasPoint => ({
+      x: canvasX(painter, ground),
+      y: canvasY(painter, ground),
+    }),
+  }
   paintForestFloor(painter)
+  paintForestFloorDetail(brush, {
+    halfWidth: terrain.worldSize.width * HALF + terrain.marginX,
+    halfDepth: terrain.worldSize.depth * HALF + terrain.marginZ,
+  })
   strokeLine(painter, terrain.river, {
     color: RIVER_BANK_COLOR,
     width: RIVER_BANK_WIDTH,
@@ -155,6 +168,12 @@ function paintGround(painter: GroundPainter): void {
   for (const clearing of terrain.clearings) {
     paintClearing(painter, clearing)
   }
+  for (const path of terrain.paths) {
+    paintPathDetail(brush, path)
+  }
+  for (const clearing of terrain.clearings) {
+    paintClearingDetail(brush, clearing)
+  }
   strokeLine(painter, terrain.river, {
     color: RIVER_WATER_COLOR,
     width: RIVER_WATER_WIDTH,
@@ -163,19 +182,11 @@ function paintGround(painter: GroundPainter): void {
     color: RIVER_SHALLOW_COLOR,
     width: RIVER_SHALLOW_WIDTH,
   })
-  strokeLine(painter, terrain.river, {
-    color: RIVER_RIPPLE_COLOR,
-    width: RIVER_RIPPLE_WIDTH,
-    dash: RIVER_RIPPLE_DASH,
-  })
+  paintRiverDetail(brush, terrain.river)
   // Stones last: where a path meets the river they read as stepping stones.
-  terrain.paths.forEach((path: PathGround): void => {
-    strokeLine(painter, [path.start, path.end], {
-      color: PATH_STONE_COLOR,
-      width: PATH_STONE_WIDTH,
-      dash: [0, PATH_STONE_GAP],
-    })
-  })
+  for (const path of terrain.paths) {
+    paintPathStones(brush, path)
+  }
 }
 
 export function createGround(terrain: MapTerrain): Mesh {

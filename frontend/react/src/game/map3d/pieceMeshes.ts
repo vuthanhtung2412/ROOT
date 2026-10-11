@@ -41,6 +41,8 @@ export type MapPiece = {
   color: number
   count: number
   ground: MapGroundPoint
+  /** Turn of a building plot and of the structure on it, radians. */
+  rotation?: number
 }
 
 export type PieceLayer = {
@@ -61,23 +63,24 @@ type PieceView = {
 }
 
 /** Meeple models are 2.3 units tall. */
-const MEEPLE_MODEL_SCALE = 1.9
+const MEEPLE_MODEL_SCALE = 1.25
 /** A structure is scaled to this footprint (its larger side) … */
-const STRUCTURE_FOOTPRINT = 3.7
+const STRUCTURE_FOOTPRINT = 2.6
 /** … but never taller than this. */
-const STRUCTURE_MAXIMUM_HEIGHT = 5.6
-const STRUCTURE_BASE_RADIUS = 2.35
+const STRUCTURE_MAXIMUM_HEIGHT = 4.1
+const STRUCTURE_BASE_RADIUS = 1.45
 const STRUCTURE_BASE_HEIGHT = 0.2
 const STRUCTURE_BASE_SIDE_COUNT = 32
+const MATTE_MINIMUM_ROUGHNESS = 0.8
 
 /** Icon size (world units) zoomed out, and zoomed in over a 3D model. */
-const LABEL_FAR_SIZE = 4.3
-const LABEL_NEAR_SIZE = 1.5
+const LABEL_FAR_SIZE = 3.2
+const LABEL_NEAR_SIZE = 1.15
 /** A piece without a 3D model keeps a large icon when zoomed in. */
-const LABEL_NEAR_SIZE_WITHOUT_MODEL = 3.3
+const LABEL_NEAR_SIZE_WITHOUT_MODEL = 2.4
 const LABEL_FAR_HEIGHT = 0.8
 /** Gap between the top of a model and its label. */
-const LABEL_CLEARANCE = 1.2
+const LABEL_CLEARANCE = 0.9
 /** The models grow in over this part of the zoom. */
 const MODEL_RISE_START_ZOOM = 0.12
 const MODEL_RISE_END_ZOOM = 0.5
@@ -89,14 +92,14 @@ const BADGE_RENDER_ORDER = 10
 const BADGE_RELATIVE_SIZE = 0.5
 const BADGE_SPRITE_CENTER = -0.3
 
-const SLOT_SIZE = 4.1
-const SLOT_HEIGHT = 0.28
+const SLOT_SIZE = 3
+const SLOT_HEIGHT = 0.22
 const SLOT_COLOR = 0x8a7550
-const SLOT_FLOOR_SIZE = 3.3
+const SLOT_FLOOR_SIZE = 2.4
 const SLOT_FLOOR_COLOR = 0x5c4c34
 const SLOT_FLOOR_LIFT = 0.02
-const SLOT_POST_SIZE = 0.5
-const SLOT_POST_HEIGHT = 0.95
+const SLOT_POST_SIZE = 0.36
+const SLOT_POST_HEIGHT = 0.7
 const SLOT_POST_COLOR = 0xe9dfc4
 /** Corner posts stand at (±1, ±1) × the post offset. */
 const SLOT_CORNER_SIGNS: ReadonlyArray<readonly [number, number]> = [
@@ -187,6 +190,7 @@ export function createPieceLayer(
     number,
     MeshStandardMaterial
   >()
+  const matteMaterials: Map<Material, Material> = new Map<Material, Material>()
   const baseGeometry: CylinderGeometry = new CylinderGeometry(
     STRUCTURE_BASE_RADIUS,
     STRUCTURE_BASE_RADIUS,
@@ -288,6 +292,24 @@ export function createPieceLayer(
     return slot
   }
 
+  /**
+   * Downloaded models often come fully metallic, which renders near black
+   * without an environment to reflect: painted wood and stone are matte.
+   */
+  const matteMaterial = (material: Material): Material => {
+    const cached: Material | undefined = matteMaterials.get(material)
+    if (cached !== undefined) {
+      return cached
+    }
+    const matte: Material = material.clone()
+    if (matte instanceof MeshStandardMaterial) {
+      matte.metalness = 0
+      matte.roughness = Math.max(matte.roughness, MATTE_MINIMUM_ROUGHNESS)
+    }
+    matteMaterials.set(material, matte)
+    return matte
+  }
+
   const baseMaterial = (color: number): MeshStandardMaterial => {
     const cached: MeshStandardMaterial | undefined = baseMaterials.get(color)
     if (cached !== undefined) {
@@ -307,6 +329,9 @@ export function createPieceLayer(
     for (const part of meshesOf(figure)) {
       part.castShadow = true
       part.receiveShadow = true
+      part.material = Array.isArray(part.material)
+        ? part.material.map(matteMaterial)
+        : matteMaterial(part.material)
     }
     if (pieceModel.kind === 'meeple') {
       const height: number = new Box3()
@@ -337,6 +362,7 @@ export function createPieceLayer(
     base.position.y = (STRUCTURE_BASE_HEIGHT * HALF) / scale
     const structure: Group = new Group()
     structure.add(figure, base)
+    structure.rotation.y = piece.rotation ?? 0
     return {
       model: structure,
       scale,
@@ -381,7 +407,9 @@ export function createPieceLayer(
         holder.position.set(piece.ground.x, 0, piece.ground.z)
         group.add(holder)
         if (piece.shape === 'slot') {
-          holder.add(createSlot())
+          const slot: Object3D = createSlot()
+          slot.rotation.y = piece.rotation ?? 0
+          holder.add(slot)
           continue
         }
         const label: Group = createLabel(piece)
