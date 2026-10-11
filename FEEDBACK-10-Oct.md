@@ -64,9 +64,9 @@ Cards:
   - [x] **C5.2 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
 - [x] **C6 — Informants** (`informantsTakeAmbush`, Evening draw step). Pick an ambush card from the Discarded pile instead of drawing.
   - Rule check: no mismatch. The Evening draw already waits while an ambush card is in the Discarded pile; taking it replaces the whole draw.
-- [ ] **C7 — False Orders** (`falseOrders`, Birdsong). Pick enemy → origin clearing with their warriors → adjacent destination.
+- [x] **C7 — False Orders** (`falseOrders`, Birdsong). Pick enemy → origin clearing with their warriors → adjacent destination.
   - [x] **C7.1 — Rule fix: Use of Force (1.5.5).** The forced move is resolved as if the enemy chose it: `lib` only allowed paths, so an enemy with Boat Builders could not be sent along a river. A move the enemy cannot make no longer discards the card.
-  - [ ] **C7.2 — `lib` lists legal payloads** (done), then frontend flow, tray label, icon.
+  - [x] **C7.2 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
 - [ ] **C8 — Eyrie Émigré** (`eyrieEmigre`, Birdsong). Pick origin → destination → count → defender.
   - Rule mismatch: card says the move is mandatory at end of Birdsong, then a battle in the destination, discard if both were not taken. `lib` only offers moves into a clearing that already holds an enemy, and lets the player skip the move. Force the move when any move is legal; battle if the destination holds an enemy; otherwise discard the card.
 - [ ] **C9 — Update `resources/notes/frontend-vs-registered-actions.md`.** Remove these actions from "not wired in React composers yet".

@@ -160,6 +160,44 @@ describe('Charm Offensive flow', () => {
   })
 })
 
+describe('False Orders flow', () => {
+  const spec: ActionSpec = makeActionSpec({
+    type: 'falseOrders',
+    params: {
+      options: [
+        { target: 0, from: 1, to: 4 },
+        { target: 0, from: 1, to: 5 },
+        { target: 0, from: 6, to: 7 },
+        { target: 2, from: 9, to: 0 },
+      ],
+    },
+  })
+
+  it('asks the enemy, then only their clearings, then where they can go', () => {
+    const { composer, promptOptions } = composerUnderTest()
+
+    expectIncomplete(composer.begin(spec))
+    expect(promptOptions()).toEqual([
+      { label: 'marquise', value: 'choice:0' },
+      { label: 'eyrie', value: 'choice:1' },
+    ])
+
+    const afterEnemy = expectIncomplete(composer.chooseColumn('choice:0'))
+    expect(afterEnemy.prompt.highlightClearings).toEqual([1, 6])
+    const afterOrigin = expectIncomplete(composer.chooseClearing(1))
+    expect(afterOrigin.prompt.highlightClearings).toEqual([4, 5])
+
+    expect(composer.chooseClearing(5)).toEqual({
+      kind: 'ready',
+      action: { type: 'falseOrders', target: 0, from: 1, to: 5 },
+    })
+  })
+
+  it('has a tray label', () => {
+    expect(formatActionLabel(spec)).toBe('false orders')
+  })
+})
+
 describe('Informants flow', () => {
   const FOX_AMBUSH_ID = 'ROOT-202#1'
   const BIRD_AMBUSH_ID = 'ROOT-200#1'

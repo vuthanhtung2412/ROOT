@@ -62,6 +62,21 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
       },
     ],
   },
+  // False Orders: discard it to move half of an enemy's warriors.
+  falseOrders: {
+    title: 'False Orders',
+    asksEveryStep: true,
+    steps: [
+      {
+        field: 'target',
+        kind: 'choice',
+        prompt: 'pick enemy to move',
+        label: seatLabel,
+      },
+      { field: 'from', kind: 'clearing', prompt: 'pick their origin' },
+      { field: 'to', kind: 'clearing', prompt: 'pick their destination' },
+    ],
+  },
   // Informants: take an ambush card from the Discarded pile instead of drawing.
   informantsTakeAmbush: {
     title: 'Informants',
@@ -135,6 +150,7 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
 /** Tray labels of the card actions. */
 export const CARD_ACTION_LABELS: Readonly<Record<string, string>> = {
   charmOffensive: 'charm offensive',
+  falseOrders: 'false orders',
   informantsTakeAmbush: 'informants',
   leagueMove: 'league: move',
   leagueBattle: 'league: battle',
