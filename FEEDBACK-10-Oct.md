@@ -83,7 +83,7 @@ Cards:
 - [x] **F2 — Undo.** Only the player whose turn it is can undo. The undo history is cleared after a battle and when the player ends their turn.
   - **Undo** button next to "End game", shown only while something can be taken back. Works online (server checks the seat) and in hotseat.
   - Also cleared when another player answers a prompt (their choice is not the turn player's to rewind).
-  - Also cleared when an action reveals hidden information: dice rolled, a draw from the deck, a card taken from another player (Swap Meet). Such an action cannot be taken back.
+  - Also cleared when an action reveals hidden information: dice rolled, a draw from the deck or the quest deck, a card leaving another player's hand (Swap Meet, Steal, a Cult card discarded at random). Such an action cannot be taken back.
   - A phase the UI ends by itself (only "end phase" on offer) is not a decision: Undo goes back to the last real choice.
   - Limit: undo replays the game from its seed, so it does not work on a QA snapshot whose state was edited by hand.
 - [x] **F3 + F4 — One start flow, players choose their faction.**

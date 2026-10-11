@@ -319,7 +319,7 @@ export class Game {
   /**
    * An action stays undoable while the turn goes on with nothing others saw
    * resolved and nothing hidden revealed: no battle, no answer from another
-   * player, no dice, no draw, no card taken from another player, same turn.
+   * player, no dice, no draw, no card out of another player's hand, same turn.
    */
   private keepsUndoHistory(before: UndoCheckpoint): boolean {
     const { state } = this

@@ -8,45 +8,53 @@ export type HiddenInformationMark = {
   /** Dice rolled so far (battle rolls, random takes, shuffles). */
   diceRolled: number
   drawPileSize: number
-  /** Hand that held each card, by card id. */
-  handSeatByCardId: ReadonlyMap<string, Seat>
+  questDeckSize: number
+  /** Card ids in each hand, by seat. */
+  handCardIdsBySeat: ReadonlyMap<Seat, readonly string[]>
 }
 
 export function markHiddenInformation(
   state: GameState,
   rng: Rng,
 ): HiddenInformationMark {
-  const handSeatByCardId: Map<string, Seat> = new Map<string, Seat>()
+  const handCardIdsBySeat: Map<Seat, readonly string[]> = new Map<
+    Seat,
+    readonly string[]
+  >()
   for (const player of state.players) {
-    for (const handCard of player.hand) {
-      handSeatByCardId.set(handCard.id, player.seat)
-    }
+    handCardIdsBySeat.set(
+      player.seat,
+      player.hand.map((handCard: Card): string => handCard.id),
+    )
   }
   return {
     diceRolled: rng.toJSON().cursor,
     drawPileSize: state.deck.draw.length,
-    handSeatByCardId,
+    questDeckSize: state.questDeck.length,
+    handCardIdsBySeat,
   }
 }
 
-/** The player whose turn it is now holds a card another player held. */
-function tookCardOfAnotherPlayer(
+/** A player other than the one whose turn it is no longer holds a card. */
+function anotherPlayerLostCard(
   before: HiddenInformationMark,
   state: GameState,
 ): boolean {
-  const turnPlayer: PlayerState | undefined = state.players.find(
-    (player: PlayerState): boolean => player.seat === state.currentSeat,
-  )
-  if (turnPlayer === undefined) return false
-  return turnPlayer.hand.some((handCard: Card): boolean => {
-    const seatBefore: Seat | undefined = before.handSeatByCardId.get(handCard.id)
-    return seatBefore !== undefined && seatBefore !== turnPlayer.seat
+  return state.players.some((player: PlayerState): boolean => {
+    if (player.seat === state.currentSeat) return false
+    const heldNow: ReadonlySet<string> = new Set<string>(
+      player.hand.map((handCard: Card): string => handCard.id),
+    )
+    const heldBefore: readonly string[] =
+      before.handCardIdsBySeat.get(player.seat) ?? []
+    return heldBefore.some((cardId: string): boolean => !heldNow.has(cardId))
   })
 }
 
 /**
  * An action whose outcome the player could not know cannot be taken back:
- * it rolled dice, drew from the deck, or took a card of another player.
+ * it rolled dice, drew from the deck or the quest deck, or took a card out
+ * of another player's hand.
  */
 export function revealedHiddenInformation(
   before: HiddenInformationMark,
@@ -56,6 +64,7 @@ export function revealedHiddenInformation(
   return (
     rng.toJSON().cursor !== before.diceRolled ||
     state.deck.draw.length !== before.drawPileSize ||
-    tookCardOfAnotherPlayer(before, state)
+    state.questDeck.length !== before.questDeckSize ||
+    anotherPlayerLostCard(before, state)
   )
 }
