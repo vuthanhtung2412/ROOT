@@ -10,6 +10,7 @@
     "dev": "tsx watch src/index.ts",
     "test:watch": "vitest",
     "gen:cards": "tsx scripts/gen-cards.ts",
+    "replay:log": "tsx scripts/replay-game-log.ts",
     "lint": "eslint src scripts"
   },
   "keywords": [],

@@ -5,7 +5,7 @@
 
 ## 0. Repro tooling (do first)
 
-- [ ] **T1 — Replay from a saved game log.** Replay the event list of a `game.json` up to a chosen event, to check whether a reported problem still persists. Dice must come out the same as in the logged game. Needed to reproduce B2.
+- [x] **T1 — Replay from a saved game log.** `pnpm --filter @root/lib replay:log <game.json> [seq]`, then `pnpm --filter @root/cli start -- load <printed path>`. Replay the event list of a `game.json` up to a chosen event, to check whether a reported problem still persists. Dice must come out the same as in the logged game. Needed to reproduce B2.
 
 ## 1. Bugs (latest game, turn 13)
 
