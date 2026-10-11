@@ -16,6 +16,7 @@ import { outrageResolver } from '#events/outrage.js'
 import { placeRiverfolkWarriorResolver } from '#events/placeRiverfolkWarrior.js'
 import { placeStartingBuildingResolver } from '#events/placeStartingBuilding.js'
 import { setStartingCostsResolver } from '#events/setStartingCosts.js'
+import { swapMeetGiveResolver } from '#events/swapMeetGive.js'
 import { vagabondDamageResolver } from '#events/vagabondDamage.js'
 import type { Event } from '#events/types.js'
 import {
@@ -32,6 +33,7 @@ import {
   isPlaceRiverfolkWarriorEvent,
   isPlaceStartingBuildingEvent,
   isSetStartingCostsEvent,
+  isSwapMeetGiveEvent,
   isVagabondDamageEvent,
 } from '#typeGuards.js'
 
@@ -88,6 +90,7 @@ function guardedResolver<SpecificEvent extends Event>(
 }
 
 export const RESOLVERS: Record<Event['type'], AnyEventResolver> = {
+  swapMeetGive: guardedResolver(isSwapMeetGiveEvent, swapMeetGiveResolver),
   buyServices: guardedResolver(isBuyServicesEvent, buyServicesResolver),
   chooseCultCorner: guardedResolver(
     isChooseCultCornerEvent,

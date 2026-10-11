@@ -119,7 +119,17 @@ export type BuyServicesEvent = {
   bought: number
 }
 
+/** Swap Meet — the owner took a random card and now gives one back. */
+export type SwapMeetGiveEvent = {
+  type: 'swapMeetGive'
+  /** Owner of Swap Meet: gives the card. */
+  seat: Seat
+  /** Player the card was taken from: receives the card. */
+  target: Seat
+}
+
 export type Event =
+  | SwapMeetGiveEvent
   | BuyServicesEvent
   | ChooseCultCornerEvent
   | ChooseOutcastEvent

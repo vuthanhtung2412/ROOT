@@ -286,9 +286,8 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
         (player) => player.seat !== seat && player.hand.length > 0,
       )
       const target = pick(targets)
-      const give = pick(state.players[seat]?.hand ?? [])
-      if (!target || !give) return null
-      return { type: 'swapMeet', target: target.seat, giveCardId: give.id }
+      if (!target) return null
+      return { type: 'swapMeet', target: target.seat }
     }
     case 'emergencyOrders':
       return { type: 'emergencyOrders' }

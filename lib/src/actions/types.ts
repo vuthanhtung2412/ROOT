@@ -154,7 +154,8 @@ export type Action =
   | { type: 'overwork'; clearing: ClearingId; cardId: string }
   | { type: 'craft'; cardId: string }
   | { type: 'battle'; clearing: ClearingId; defender: Seat }
-  | { type: 'swapMeet'; target: Seat; giveCardId: string }
+  /** Take a random card from `target`; the card to give is a pending event. */
+  | { type: 'swapMeet'; target: Seat }
   | { type: 'charmOffensive'; target: Seat }
   | { type: 'informantsTakeAmbush'; cardId: string }
   | {

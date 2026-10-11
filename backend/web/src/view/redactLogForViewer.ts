@@ -27,8 +27,6 @@ function hideSecretCard(action: Action): Action {
       }
     case 'aid':
       return { ...action, cardId: HIDDEN_CARD_DEFINITION_ID }
-    case 'swapMeet':
-      return { ...action, giveCardId: HIDDEN_CARD_DEFINITION_ID }
     case 'resolveEvent':
       return action.cardId === undefined
         ? action

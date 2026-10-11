@@ -77,9 +77,11 @@ describe('Saboteurs — card text: "At the start of Birdsong"', () => {
   it('is no longer offered once the owner took another Birdsong action', () => {
     const game: Game = saboteursGame()
 
-    game.apply({ type: 'swapMeet', target: ENEMY_SEAT, giveCardId: 'ROOT-209#1' })
+    game.apply({ type: 'swapMeet', target: ENEMY_SEAT })
+    game.apply({ type: 'resolveEvent', cardId: 'ROOT-209#1' })
 
     expect(game.state.phase).toBe('birdsong')
+    expect(game.state.pending).toEqual([])
     expect(saboteursSpec(game)).toBeUndefined()
     expect(() =>
       game.apply({
@@ -106,7 +108,8 @@ describe('Saboteurs — card text: "At the start of Birdsong"', () => {
 
   it('a new phase starts with no action taken in it', () => {
     const game: Game = saboteursGame()
-    game.apply({ type: 'swapMeet', target: ENEMY_SEAT, giveCardId: 'ROOT-209#1' })
+    game.apply({ type: 'swapMeet', target: ENEMY_SEAT })
+    game.apply({ type: 'resolveEvent', cardId: 'ROOT-209#1' })
     expect(game.state.turnScratch.phaseActionTaken).toBe(true)
 
     game.apply({ type: 'endPhase' })

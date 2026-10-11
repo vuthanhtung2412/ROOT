@@ -14,6 +14,7 @@ import type {
   PlaceRiverfolkWarriorEvent,
   PlaceStartingBuildingEvent,
   SetStartingCostsEvent,
+  SwapMeetGiveEvent,
 } from '#events/types.js'
 import type { ClearingId, Suit } from '#map/types.js'
 import type { LizardBoard } from '#state/lizardBoard.js'
@@ -119,6 +120,10 @@ export function isSetStartingCostsEvent(
   event: Event,
 ): event is SetStartingCostsEvent {
   return event.type === 'setStartingCosts'
+}
+
+export function isSwapMeetGiveEvent(event: Event): event is SwapMeetGiveEvent {
+  return event.type === 'swapMeetGive'
 }
 
 export function isMarquiseBoard(board: FactionBoard): board is MarquiseBoard {
