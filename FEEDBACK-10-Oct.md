@@ -63,7 +63,8 @@ Cards:
   - [x] **C5.1 — Rule fix: "At start of Evening".** `lib` allowed it at any point of Evening, also after the draw. Now the Evening draw waits while the card can be used; drawing (or any other Evening action) ends the offer; using the card lets the draw go on by itself.
   - [x] **C5.2 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
 - [x] **C6 — Informants** (`informantsTakeAmbush`, Evening draw step). Pick an ambush card from the Discarded pile instead of drawing.
-  - Rule check: no mismatch. The Evening draw already waits while an ambush card is in the Discarded pile; taking it replaces the whole draw.
+  - Rule check: the Evening draw already waits while an ambush card is in the Discarded pile; taking it replaces the whole draw.
+  - [x] **C6.1 — Rule fix: "you may instead".** Found by the QA dry-run: for every faction but the Marquise the held draw was not offered as an action, so the owner could only take the ambush card or skip the draw. A step a card holds back is now offered by hand (also the draw behind Charm Offensive).
 - [x] **C7 — False Orders** (`falseOrders`, Birdsong). Pick enemy → origin clearing with their warriors → adjacent destination.
   - [x] **C7.1 — Rule fix: Use of Force (1.5.5).** The forced move is resolved as if the enemy chose it: `lib` only allowed paths, so an enemy with Boat Builders could not be sent along a river. A move the enemy cannot make no longer discards the card.
   - [x] **C7.2 — `lib` lists legal payloads**, then frontend flow, tray label, icon.

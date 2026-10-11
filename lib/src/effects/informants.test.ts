@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import '#effects/register.js'
-import { card, createPlayingGame } from '#test/fixtures.js'
+import { Game } from '#game/Game.js'
+import { card, createPlayingGame, finishSetup } from '#test/fixtures.js'
 
 describe('Informants', () => {
   it('Rule: Informants — Evening may take ambush from discard instead of draw', () => {
@@ -56,5 +57,55 @@ describe('Informants — legal payloads', () => {
       { cardId: foxAmbush.id },
       { cardId: birdAmbush.id },
     ])
+  })
+})
+
+describe('Informants — "you may instead": the normal draw stays possible', () => {
+  const MAX_PHASES = 12
+  const ALLIANCE_SEAT = 1
+
+  /** Woodland Alliance (its Evening draw is automatic) at its draw step. */
+  function allianceAtEveningDraw(): Game {
+    const game: Game = Game.create({ seed: 5, factions: ['marquise', 'alliance'] })
+    game.join('marquise')
+    game.join('alliance')
+    game.start()
+    finishSetup(game)
+    let phases = 0
+    while (game.state.currentSeat !== ALLIANCE_SEAT && phases++ < MAX_PHASES) {
+      game.apply({ type: 'endPhase' })
+    }
+    game.state.players[ALLIANCE_SEAT]!.playArea.push(card('ROOT-79'))
+    game.state.deck.discard.push(card('ROOT-200'))
+    phases = 0
+    while (
+      !(game.state.phase === 'evening' && game.state.step === 'draw') &&
+      phases++ < MAX_PHASES
+    ) {
+      game.apply({ type: 'endPhase' })
+    }
+    return game
+  }
+
+  it('offers the held Evening draw as an action of its own', () => {
+    const game: Game = allianceAtEveningDraw()
+
+    const types: string[] = game.legalActions().map((spec) => spec.type)
+
+    expect(game.state.turnScratch.eveningDrawDone).toBe(false)
+    expect(types).toContain('informantsTakeAmbush')
+    expect(types).toContain('eveningDraw')
+  })
+
+  it('drawing by hand draws from the deck and ends the Informants offer', () => {
+    const game: Game = allianceAtEveningDraw()
+    const handBefore: number = game.state.players[ALLIANCE_SEAT]!.hand.length
+
+    game.apply({ type: 'eveningDraw' })
+
+    expect(game.state.players[ALLIANCE_SEAT]!.hand.length).toBeGreaterThan(handBefore)
+    expect(
+      game.legalActions().some((spec) => spec.type === 'informantsTakeAmbush'),
+    ).toBe(false)
   })
 })

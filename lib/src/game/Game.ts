@@ -40,11 +40,6 @@ const START_OF_PHASE_NEUTRAL_ACTIONS: ReadonlySet<Action['type']> = new Set<
   Action['type']
 >(['resolveEvent', 'join', 'start', 'saboteurs', 'charmOffensive'])
 
-type PhasePosition = {
-  phase: Phase
-  seat: Seat
-}
-
 export class Game {
   state: GameState
   history: Action[]
@@ -163,7 +158,22 @@ export class Game {
     )
     pushTakeDominanceActions(state, state.currentSeat, specs)
     pushActivateDominanceActions(state, state.currentSeat, specs)
+    this.pushHeldAutoActions(specs)
     return specs
+  }
+
+  /**
+   * An automatic step a card holds back (Evening draw behind Informants or
+   * Charm Offensive) is the player's to take by hand: "may" stays a choice.
+   */
+  private pushHeldAutoActions(specs: ActionSpec[]): void {
+    const { state } = this
+    const faction = factionFor(factionOf(state, state.currentSeat))
+    for (const auto of faction.autoActions(state, state.phase, state.step)) {
+      if (!this.isAutoBlocked(auto)) continue
+      if (specs.some((spec: ActionSpec): boolean => spec.type === auto.type)) continue
+      specs.push({ type: auto.type, actor: state.currentSeat })
+    }
   }
 
   apply(action: Action): ActionResult {
@@ -183,9 +193,13 @@ export class Game {
     }
 
     this.validate(action)
-    const phaseBefore: Phase = this.state.phase
-    const seatBefore: Seat = this.state.currentSeat
     logs.push(...this.execute(action))
+    // "At the start of Birdsong / Evening" lasts until the player takes an
+    // action in that phase. Answers to pending events and the start-of-phase
+    // effects themselves do not end it; a new phase starts it again.
+    if (!START_OF_PHASE_NEUTRAL_ACTIONS.has(action.type)) {
+      this.state.turnScratch.phaseActionTaken = true
+    }
 
     if (this.state.status === 'playing') {
       logs.push(...this.checkWin())
@@ -223,8 +237,6 @@ export class Game {
     ) {
       logs.push(...this.runAutoActions())
     }
-
-    this.trackStartOfPhase(action, { phase: phaseBefore, seat: seatBefore })
 
     this.history.push(action)
     this.log.push(...logs)
@@ -427,22 +439,6 @@ export class Game {
     const faction = factionFor(factionOf(this.state, this.state.currentSeat))
     faction.validate(this.state, { type: 'endPhase' }, ctx)
     return faction.apply(this.state, { type: 'endPhase' }, ctx)
-  }
-
-  /**
-   * "At the start of Birdsong / Evening" lasts until the player takes an
-   * action in that phase. Answers to pending events and the start-of-phase
-   * effects themselves do not end it.
-   */
-  private trackStartOfPhase(action: Action, before: PhasePosition): void {
-    const { state } = this
-    if (state.phase !== before.phase || state.currentSeat !== before.seat) {
-      state.turnScratch.phaseActionTaken = false
-      return
-    }
-    if (!START_OF_PHASE_NEUTRAL_ACTIONS.has(action.type)) {
-      state.turnScratch.phaseActionTaken = true
-    }
   }
 
   /**
