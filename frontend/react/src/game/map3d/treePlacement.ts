@@ -29,6 +29,11 @@ const RIVER_FREE_HALF_WIDTH = 3.1
 /** Leafy trees stand in this band round a clearing (ratios of its radius). */
 const CLEARING_RIM_OUTER_RATIO = 1.3
 const RIM_LEAFY_PROBABILITY = 0.4
+/**
+ * Rim trees stay short so clearing pieces stay readable. Forest pines keep
+ * full height; only the ring around a clearing is shrunk.
+ */
+const CLEARING_RIM_HEIGHT_FACTOR = 0.35
 /** … and in this band along the river bank. */
 const RIVER_BANK_OUTER_DISTANCE = 4.6
 const BANK_LEAFY_PROBABILITY = 0.3
@@ -37,6 +42,12 @@ const MINIMUM_TREE_SCALE = 0.75
 const TREE_SCALE_SPREAD = 0.6
 const FULL_TURN_RADIANS = Math.PI * 2
 const HALF = 0.5
+
+/** What grows at a point, and whether it hugs a clearing. */
+type TreeSite = {
+  kind: TreeKind
+  onClearingRim: boolean
+}
 
 const UINT32_RANGE = 4294967296
 const MULBERRY_INCREMENT = 0x6d2b79f5
@@ -66,11 +77,11 @@ function distanceToRiver(point: MapGroundPoint, terrain: MapTerrain): number {
 }
 
 /** What may grow at a point: nothing, a pine, or a leafy tree. */
-function treeKindAt(
+function treeSiteAt(
   point: MapGroundPoint,
   terrain: MapTerrain,
   roll: number,
-): TreeKind | null {
+): TreeSite | null {
   let onClearingRim = false
   for (const clearing of terrain.clearings) {
     const distance: number = groundDistance(point, clearing.center)
@@ -93,12 +104,19 @@ function treeKindAt(
     return null
   }
   if (onClearingRim) {
-    return roll < RIM_LEAFY_PROBABILITY ? 'leafy' : null
+    return roll < RIM_LEAFY_PROBABILITY
+      ? { kind: 'leafy', onClearingRim: true }
+      : null
   }
   if (riverDistance < RIVER_BANK_OUTER_DISTANCE) {
-    return roll < BANK_LEAFY_PROBABILITY ? 'leafy' : 'pine'
+    return {
+      kind: roll < BANK_LEAFY_PROBABILITY ? 'leafy' : 'pine',
+      onClearingRim: false,
+    }
   }
-  return roll < PINE_KEEP_PROBABILITY ? 'pine' : null
+  return roll < PINE_KEEP_PROBABILITY
+    ? { kind: 'pine', onClearingRim: false }
+    : null
 }
 
 /** One candidate per grid cell, jittered inside the cell. */
@@ -113,11 +131,22 @@ export function placeTrees(terrain: MapTerrain, seed: number): TreePlacement[] {
         x: x + random() * TREE_SPACING,
         z: z + random() * TREE_SPACING,
       }
-      const scale: number = MINIMUM_TREE_SCALE + random() * TREE_SCALE_SPREAD
+      // Same RNG draws every cell (scale, turn, kind) so the forest layout
+      // stays put when only rim height changes.
+      const baseScale: number =
+        MINIMUM_TREE_SCALE + random() * TREE_SCALE_SPREAD
       const rotation: number = random() * FULL_TURN_RADIANS
-      const kind: TreeKind | null = treeKindAt(position, terrain, random())
-      if (kind !== null) {
-        placements.push({ kind, position, scale, rotation })
+      const site: TreeSite | null = treeSiteAt(position, terrain, random())
+      if (site !== null) {
+        const scale: number = site.onClearingRim
+          ? baseScale * CLEARING_RIM_HEIGHT_FACTOR
+          : baseScale
+        placements.push({
+          kind: site.kind,
+          position,
+          scale,
+          rotation,
+        })
       }
     }
   }
