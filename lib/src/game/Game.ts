@@ -34,6 +34,16 @@ import { SignalBus } from '#triggers/SignalBus.js'
 
 const PHASES: Phase[] = ['birdsong', 'daylight', 'evening']
 
+/** Actions that leave the player "at the start of" the phase they are in. */
+const START_OF_PHASE_NEUTRAL_ACTIONS: ReadonlySet<Action['type']> = new Set<
+  Action['type']
+>(['resolveEvent', 'join', 'start', 'saboteurs', 'charmOffensive'])
+
+type PhasePosition = {
+  phase: Phase
+  seat: Seat
+}
+
 export class Game {
   state: GameState
   history: Action[]
@@ -167,6 +177,8 @@ export class Game {
     }
 
     this.validate(action)
+    const phaseBefore: Phase = this.state.phase
+    const seatBefore: Seat = this.state.currentSeat
     logs.push(...this.execute(action))
 
     if (this.state.status === 'playing') {
@@ -196,6 +208,8 @@ export class Game {
     if (action.type === 'turmoil' && this.state.status === 'playing') {
       logs.push(...this.runAutoActions())
     }
+
+    this.trackStartOfPhase(action, { phase: phaseBefore, seat: seatBefore })
 
     this.history.push(action)
     this.log.push(...logs)
@@ -395,6 +409,22 @@ export class Game {
     return faction.apply(this.state, { type: 'endPhase' }, ctx)
   }
 
+  /**
+   * "At the start of Birdsong / Evening" lasts until the player takes an
+   * action in that phase. Answers to pending events and the start-of-phase
+   * effects themselves do not end it.
+   */
+  private trackStartOfPhase(action: Action, before: PhasePosition): void {
+    const { state } = this
+    if (state.phase !== before.phase || state.currentSeat !== before.seat) {
+      state.turnScratch.phaseActionTaken = false
+      return
+    }
+    if (!START_OF_PHASE_NEUTRAL_ACTIONS.has(action.type)) {
+      state.turnScratch.phaseActionTaken = true
+    }
+  }
+
   private advanceStepOrPhase(): LogEntry[] {
     const { state } = this
     const ctx = this.makeCtx()
@@ -413,6 +443,9 @@ export class Game {
           actionsLeft: 3,
           riverboats: state.turnScratch.riverboats,
           mercenaries: state.turnScratch.mercenaries,
+          // "Once in Daylight" cards may already be used in the craft step.
+          leagueUsed: state.turnScratch.leagueUsed,
+          propagandaUsed: state.turnScratch.propagandaUsed,
         })
       }
       if (state.phase === 'daylight' && state.step === 'decree') {

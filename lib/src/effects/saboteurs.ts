@@ -1,4 +1,5 @@
-import type { Action } from '#actions/types.js'
+import type { ActionOption } from '#actions/options.js'
+import type { Action, ActionSpec } from '#actions/types.js'
 import { Deck } from '#cards/Deck.js'
 import type { CardEffect } from '#triggers/effects.js'
 import type { Ctx } from '#game/ctx.js'
@@ -36,6 +37,8 @@ function saboteursAvailable(state: GameState): boolean {
   const ownerSeat = saboteursOwner(state)
   if (ownerSeat === null || ownerSeat !== state.currentSeat) return false
   if (state.phase !== 'birdsong') return false
+  // Card text: "At the start of Birdsong".
+  if (state.turnScratch.phaseActionTaken) return false
   if (state.turnScratch.saboteursUsed) return false
   return enemyCraftedCards(state, ownerSeat).length > 0
 }
@@ -48,6 +51,9 @@ export function tryApplySaboteurs(state: GameState, action: Action, _ctx: Ctx): 
     throw new RuleError('ILLEGAL_ACTION', { action })
   }
   if (state.phase !== 'birdsong') throw new RuleError('WRONG_PHASE', { phase: state.phase })
+  if (state.turnScratch.phaseActionTaken) {
+    throw new RuleError('NOT_START_OF_PHASE', { phase: state.phase })
+  }
   if (state.turnScratch.saboteursUsed) throw new RuleError('SABOTEURS_USED')
 
   const targets = enemyCraftedCards(state, ownerSeat)
@@ -86,6 +92,13 @@ export const saboteursEffect: CardEffect = {
     if (!saboteursAvailable(state)) return []
     const ownerSeat = saboteursOwner(state)
     if (ownerSeat === null) return []
-    return [{ type: 'saboteurs', actor: ownerSeat }]
+    // Every legal payload: an enemy × one of the cards in their play area.
+    const options: ActionOption[] = enemyCraftedCards(state, ownerSeat)
+    const spec: ActionSpec = {
+      type: 'saboteurs',
+      actor: ownerSeat,
+      params: { options },
+    }
+    return [spec]
   },
 }

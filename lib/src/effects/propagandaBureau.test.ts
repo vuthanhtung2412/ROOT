@@ -303,3 +303,18 @@ describe('Propaganda Bureau — legal payloads', () => {
     ])
   })
 })
+
+describe('Propaganda Bureau — card text: "Once in Daylight"', () => {
+  it('stays used when Daylight goes from the craft step to the actions step', () => {
+    const game = createPlayingGame({ seed: 23 })
+    game.apply({ type: 'endPhase' })
+    expect(game.state.phase).toBe('daylight')
+    expect(game.state.step).toBe('craft')
+    game.state.turnScratch.propagandaUsed = true
+
+    game.apply({ type: 'endPhase' })
+
+    expect(game.state.step).toBe('actions')
+    expect(game.state.turnScratch.propagandaUsed).toBe(true)
+  })
+})

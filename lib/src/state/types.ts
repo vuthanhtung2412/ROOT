@@ -57,6 +57,11 @@ export type TurnScratch = {
   saboteursUsed: boolean
   falseOrdersUsed: boolean
   eyrieEmigreCompleted: boolean
+  /**
+   * The current player already took an action in this phase, so "at the start
+   * of Birdsong / Evening" effects (Saboteurs, Charm Offensive) are over.
+   */
+  phaseActionTaken: boolean
   emergencyOrdersDone: boolean
   eveningScoreDone: boolean
   decree: DecreeCursor | null

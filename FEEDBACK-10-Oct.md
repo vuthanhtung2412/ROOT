@@ -47,7 +47,10 @@ Cards:
     - [x] **C1.2 — Replace is a real remove.** Propaganda Bureau returns the warrior to supply by itself, so Field Hospitals is never offered. Use the shared remove.
     - [x] **C1.3 — Coffin Makers skips replaced warriors.** Today it collects them, for Propaganda Bureau and for Lizard Cult Convert. One fix for both, since both go through the shared remove after C1.2.
   - [x] **C1.4 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
+  - [x] **C1.5 — "Once in Daylight" survives the craft → actions step.** The turn scratch was rebuilt there, so the card (and League of Adventurous Mice) could be used twice.
 - [ ] **C2 — Saboteurs** (`saboteurs`, Birdsong). Pick enemy → pick one of their crafted cards to discard.
+  - [x] **C2.1 — Rule fix: "At the start of Birdsong".** `lib` allowed it at any point of Birdsong. Now only before the owner takes another action in that phase (answers to pending events do not count).
+  - [ ] **C2.2 — `lib` lists legal payloads** (done), then frontend flow, tray label, icon.
 - [ ] **C3 — League of Adventurous Mice** (`leagueMove`, `leagueBattle`, Daylight, once). Pick crafted item to exhaust → move (origin → destination → count) or battle (clearing → defender).
   - Needs a label lookup: crafted item index → item name. Offer one index per item type.
 - [ ] **C4 — Swap Meet** (`swapMeet`, Birdsong, once). Pick another player → pick hand card to give.

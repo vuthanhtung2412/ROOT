@@ -16,6 +16,7 @@ export function createTurnScratch(
     saboteursUsed: false,
     falseOrdersUsed: false,
     eyrieEmigreCompleted: false,
+    phaseActionTaken: false,
     emergencyOrdersDone: false,
     eveningScoreDone: false,
     decree: null,
