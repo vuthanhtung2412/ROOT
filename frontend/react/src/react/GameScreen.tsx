@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { lazy, Suspense, useEffect, useState, type JSX } from 'react'
 import {
   GAME_ASSET_KEYS,
   imagePathForAssetKey,
@@ -17,9 +17,18 @@ import {
   type ViewportLayoutMode,
 } from '#game/viewportLayout.ts'
 import { BoardMap } from '#react/BoardMap.tsx'
+import { useMapViewMode } from '#react/map3d/useMapViewMode.ts'
 import type { BoardClearingPieces } from '#react/PieceStack.tsx'
 import type { ForestPawnMarker } from '#game/forestLayout.ts'
-import type { ClearingFlash } from '#game/clearingFlash.ts'
+
+/** Loaded on demand: three.js stays out of the bundle of the flat map. */
+const BoardMap3D = lazy(async () => {
+  const module = await import('#react/map3d/BoardMap3D.tsx')
+  return { default: module.BoardMap3D }
+})
+
+const MAP_VIEW_TOGGLE_CLASS_NAME =
+  'map-view-toggle pointer-events-auto absolute top-2 left-2 z-6 cursor-pointer rounded border border-parchment-shadow bg-[#1a2438cc] px-2 py-1 font-body text-xs font-bold text-parchment'
 
 export type GameScreenProps = {
   layout: BoardLayout | null
@@ -28,7 +37,6 @@ export type GameScreenProps = {
   factions: readonly string[] | null
   forestPawns: readonly ForestPawnMarker[]
   effects: BoardEffectBatch
-  flashedClearing: ClearingFlash | null
   highlightedClearingIds: readonly number[]
   highlightedForestIndexes: readonly number[]
   onClearingSelected: (clearingId: number) => void
@@ -64,23 +72,35 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
   const landscapeHost = landscapeMapHostSize(viewport)
   const mapHost = isPortrait ? portraitHost : landscapeHost
 
+  const { mapViewMode, toggleMapViewMode } = useMapViewMode()
+  const MapComponent = mapViewMode === '3d' ? BoardMap3D : BoardMap
+
   const boardMap =
     props.layout !== null ? (
-      <BoardMap
-        layout={props.layout}
-        layoutMode={props.layoutMode}
-        viewWidth={mapHost.width}
-        viewHeight={mapHost.height}
-        {...(props.clearings !== null ? { clearings: props.clearings } : {})}
-        {...(props.factions !== null ? { factions: props.factions } : {})}
-        forestPawns={props.forestPawns}
-        effects={props.effects}
-        flashedClearing={props.flashedClearing}
-        highlightedClearingIds={props.highlightedClearingIds}
-        highlightedForestIndexes={props.highlightedForestIndexes}
-        onClearingSelected={props.onClearingSelected}
-        onForestSelected={props.onForestSelected}
-      />
+      <Suspense fallback={null}>
+        <button
+          type="button"
+          className={MAP_VIEW_TOGGLE_CLASS_NAME}
+          aria-pressed={mapViewMode === '3d'}
+          onClick={toggleMapViewMode}
+        >
+          {mapViewMode === '3d' ? '2D map' : '3D map'}
+        </button>
+        <MapComponent
+          layout={props.layout}
+          layoutMode={props.layoutMode}
+          viewWidth={mapHost.width}
+          viewHeight={mapHost.height}
+          {...(props.clearings !== null ? { clearings: props.clearings } : {})}
+          {...(props.factions !== null ? { factions: props.factions } : {})}
+          forestPawns={props.forestPawns}
+          effects={props.effects}
+          highlightedClearingIds={props.highlightedClearingIds}
+          highlightedForestIndexes={props.highlightedForestIndexes}
+          onClearingSelected={props.onClearingSelected}
+          onForestSelected={props.onForestSelected}
+        />
+      </Suspense>
     ) : null
 
   return (
