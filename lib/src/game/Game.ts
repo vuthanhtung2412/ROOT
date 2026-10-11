@@ -158,22 +158,38 @@ export class Game {
     )
     pushTakeDominanceActions(state, state.currentSeat, specs)
     pushActivateDominanceActions(state, state.currentSeat, specs)
-    this.pushHeldAutoActions(specs)
-    return specs
+    return this.withHeldAutoActions(specs)
   }
 
   /**
    * An automatic step a card holds back (Evening draw behind Informants or
    * Charm Offensive) is the player's to take by hand: "may" stays a choice.
+   * The step itself is not optional, so the phase cannot end before it.
    */
-  private pushHeldAutoActions(specs: ActionSpec[]): void {
+  private withHeldAutoActions(specs: ActionSpec[]): ActionSpec[] {
     const { state } = this
     const faction = factionFor(factionOf(state, state.currentSeat))
-    for (const auto of faction.autoActions(state, state.phase, state.step)) {
-      if (!this.isAutoBlocked(auto)) continue
-      if (specs.some((spec: ActionSpec): boolean => spec.type === auto.type)) continue
-      specs.push({ type: auto.type, actor: state.currentSeat })
-    }
+    const heldTypes: Action['type'][] = faction
+      .autoActions(state, state.phase, state.step)
+      .filter((auto: Action): boolean => this.isAutoBlocked(auto))
+      .map((auto: Action): Action['type'] => auto.type)
+    if (heldTypes.length === 0) return specs
+
+    const heldSpecs: ActionSpec[] = heldTypes
+      .filter(
+        (heldType: Action['type']): boolean =>
+          !specs.some((spec: ActionSpec): boolean => spec.type === heldType),
+      )
+      .map(
+        (heldType: Action['type']): ActionSpec => ({
+          type: heldType,
+          actor: state.currentSeat,
+        }),
+      )
+    return [
+      ...specs.filter((spec: ActionSpec): boolean => spec.type !== 'endPhase'),
+      ...heldSpecs,
+    ]
   }
 
   apply(action: Action): ActionResult {

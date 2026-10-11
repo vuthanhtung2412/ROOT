@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import '#effects/register.js'
 import { Game } from '#game/Game.js'
+import { RuleError } from '#rules/RuleError.js'
 import { card, createPlayingGame, finishSetup } from '#test/fixtures.js'
 
 describe('Informants', () => {
@@ -95,6 +96,13 @@ describe('Informants — "you may instead": the normal draw stays possible', () 
     expect(game.state.turnScratch.eveningDrawDone).toBe(false)
     expect(types).toContain('informantsTakeAmbush')
     expect(types).toContain('eveningDraw')
+  })
+
+  it('the draw is not optional: the phase cannot end before it', () => {
+    const game: Game = allianceAtEveningDraw()
+
+    expect(game.legalActions().map((spec) => spec.type)).not.toContain('endPhase')
+    expect(() => game.apply({ type: 'endPhase' })).toThrow(RuleError)
   })
 
   it('drawing by hand draws from the deck and ends the Informants offer', () => {
