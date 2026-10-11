@@ -90,4 +90,35 @@ describe('syncPlaceIdsFromState', () => {
     expect(warriorIds).toEqual(['w-2', 'w-14', 'w-15'])
     expect(new Set(warriorIds).size).toBe(warriorIds.length)
   })
+
+  it('resets the counter down when a snapshot uses lower ids than the last game', () => {
+    const keep = FALL.corners[0]!
+    const lateGame = withPieces(minimalState(), keep, [
+      { id: 'w-200', kind: 'warrior', owner: 0 },
+    ])
+    syncPlaceIdsFromState(lateGame)
+    placeReturning(lateGame, {
+      seat: 0,
+      clearing: keep,
+      spec: { kind: 'warrior' },
+      count: 1,
+    })
+    expect(
+      lateGame.clearings[keep]!.pieces.map((piece) => piece.id),
+    ).toContain('w-201')
+
+    const earlySnapshot = withPieces(minimalState(), keep, [
+      { id: 'w-2', kind: 'warrior', owner: 0 },
+    ])
+    syncPlaceIdsFromState(earlySnapshot)
+    placeReturning(earlySnapshot, {
+      seat: 0,
+      clearing: keep,
+      spec: { kind: 'warrior' },
+      count: 1,
+    })
+    expect(
+      earlySnapshot.clearings[keep]!.pieces.map((piece) => piece.id),
+    ).toEqual(['w-2', 'w-3'])
+  })
 })

@@ -41,11 +41,13 @@ export function resetPlaceIds(): void {
 const GENERATED_PIECE_ID_PATTERN = /^(?:w|t|b)-(\d+)$/
 
 /**
- * Advance the place-id counter past any `w-N` / `t-N` / `b-N` already on the map.
- * Prevents collisions after Game.fromJSON / snapshot load (Field Hospitals, recruit, …).
+ * Set the place-id counter to the highest `w-N` / `t-N` / `b-N` on the map.
+ * After Game.fromJSON / snapshot load this must match the loaded state — also when
+ * the previous in-process game had used higher ids (otherwise new pieces drift
+ * and logged battle removals miss).
  */
 export function syncPlaceIdsFromState(state: GameState): void {
-  let highestGeneratedId = nextPieceId
+  let highestGeneratedId = 0
   for (const clearing of state.clearings) {
     for (const piece of clearing.pieces) {
       const match = GENERATED_PIECE_ID_PATTERN.exec(piece.id)
