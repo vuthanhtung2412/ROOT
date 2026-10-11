@@ -66,6 +66,15 @@
   --text-shadow-outline:
     -1px -1px 0 #1a1a1a, 1px -1px 0 #1a1a1a, -1px 1px 0 #1a1a1a,
     1px 1px 0 #1a1a1a;
+  /*
+   * Themed cursors: `cursor-root-default`, `cursor-root-pointer`,
+   * `cursor-root-not-allowed` (variants work: `disabled:cursor-root-not-allowed`).
+   * Raw CSS reuses the same token: `cursor: var(--cursor-root-pointer)`.
+   * Art lives in public/assets/cursors; numbers after the url are the hotspot.
+   */
+  --cursor-root-default: default;
+  --cursor-root-pointer: url('/assets/cursors/clearing-point.png') 6 1, pointer;
+  --cursor-root-not-allowed: not-allowed;
 }
 
 /* Paper grain multiplied over the element's background colour. */
@@ -116,19 +125,9 @@
   --root-paper-radius: 9999px;
 }
 
-/*
- * Themed pointy-finger cursor for clickable map clearings / forests.
- * Hotspot = gold fingertip (6, 1) on public/assets/cursors/clearing-point.png.
- */
-@utility cursor-clearing-point {
-  cursor:
-    url('/assets/cursors/clearing-point.png') 6 1,
-    pointer;
-}
-
 /* Press feedback for paper pieces that are buttons. */
 @utility root-paper-press {
-  cursor: pointer;
+  cursor: var(--cursor-root-pointer);
   transition:
     filter 80ms ease-out,
     transform 80ms ease-out;
@@ -142,7 +141,7 @@
   }
 
   &:disabled {
-    cursor: default;
+    cursor: var(--cursor-root-not-allowed);
     opacity: 0.55;
   }
 }
@@ -158,6 +157,7 @@
     background: var(--color-forest-deep);
     color: var(--color-parchment);
     font-family: var(--font-body);
+    cursor: var(--cursor-root-default);
   }
 
   #app {
@@ -202,7 +202,7 @@
 
   .root-button {
     margin: 0;
-    cursor: pointer;
+    cursor: var(--cursor-root-pointer);
     border: 2px solid var(--color-ink);
     background-color: var(--color-parchment);
     background-image: var(--root-paper-grain);
@@ -230,7 +230,7 @@
   }
 
   .root-button:disabled {
-    cursor: default;
+    cursor: var(--cursor-root-not-allowed);
     opacity: 0.55;
     transform: none;
   }

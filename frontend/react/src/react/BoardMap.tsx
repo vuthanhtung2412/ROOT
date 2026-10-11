@@ -52,11 +52,11 @@ const MAP_BORDER_WIDTH_PIXELS = 4
 const SUIT_MARKER_GAP_PIXELS = 2
 /** Themed finger cursor; only on clearings / forests the player can pick. */
 const CLICKABLE_CLEARING_CLASS_NAME =
-  'pointer-events-auto absolute z-4 m-0 cursor-clearing-point rounded-full border-0 bg-transparent p-0'
+  'pointer-events-auto absolute z-4 m-0 cursor-root-pointer rounded-full border-0 bg-transparent p-0'
 const IDLE_CLEARING_CLASS_NAME =
-  'pointer-events-none absolute z-4 m-0 cursor-default rounded-full border-0 bg-transparent p-0'
+  'pointer-events-none absolute z-4 m-0 cursor-root-default rounded-full border-0 bg-transparent p-0'
 const CLICKABLE_FOREST_CLASS_NAME =
-  'pointer-events-auto absolute inset-0 z-5 m-0 cursor-clearing-point border-0 bg-transparent p-0'
+  'pointer-events-auto absolute inset-0 z-5 m-0 cursor-root-pointer border-0 bg-transparent p-0'
 
 function suitTextureKey(suit: ClearingSuit): string {
   if (suit === 'fox') {
