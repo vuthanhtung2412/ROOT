@@ -7,6 +7,7 @@ import {
   patchHud,
   subscribeHud,
 } from '#game/hudStore.ts'
+import { ItemSupplyButton } from '#react/ItemSupply.tsx'
 import {
   setupCardPickOptions,
   setupCardPickTitle,
@@ -51,16 +52,19 @@ export function GameDrawer(): JSX.Element | null {
         <LuFlag aria-hidden="true" />
         {drawer.endGameArmed ? 'Confirm end?' : 'End game'}
       </button>
-      <button
-        type="button"
-        className={`${DRAWER_BUTTON_CLASS_NAME} ml-auto`}
-        onClick={() => {
-          callbacks.onOpenDiscardPile()
-        }}
-      >
-        <GiCardBurn aria-hidden="true" />
-        {`Discarded (${String(drawer.discardCount)})`}
-      </button>
+      <div className="ml-auto flex flex-row items-center gap-2">
+        <ItemSupplyButton className={DRAWER_BUTTON_CLASS_NAME} />
+        <button
+          type="button"
+          className={DRAWER_BUTTON_CLASS_NAME}
+          onClick={() => {
+            callbacks.onOpenDiscardPile()
+          }}
+        >
+          <GiCardBurn aria-hidden="true" />
+          {`Discarded (${String(drawer.discardCount)})`}
+        </button>
+      </div>
     </div>
   )
 }

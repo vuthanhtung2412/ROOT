@@ -66,6 +66,8 @@ export type GameState = {
   deck?: {
     discard: Array<{ id: string; defId: string }>
   }
+  /** Items left in the supply on the map, by item type. */
+  itemSupply?: Record<string, number>
   pending: unknown[]
   winner?: number
   turnScratch?: unknown
