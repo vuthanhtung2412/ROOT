@@ -71,11 +71,14 @@ const STRUCTURE_MAXIMUM_HEIGHT = 2.8
 const MATTE_MINIMUM_ROUGHNESS = 0.8
 const DECAL_ALPHA_CUTOFF = 0.5
 
-/** Icon size (world units) zoomed out, and zoomed in over a 3D model. */
-const LABEL_FAR_SIZE = 2.05
-const LABEL_NEAR_SIZE = 0.8
-/** A piece without a 3D model keeps a large icon when zoomed in. */
-const LABEL_NEAR_SIZE_WITHOUT_MODEL = 1.7
+/**
+ * Icon size (world units). Shrinks with the whole zoom range: big when the
+ * map is a flat overview, tiny when the camera is among the 3D pieces.
+ */
+const LABEL_FAR_SIZE = 2.3
+const LABEL_NEAR_SIZE = 0.36
+/** A piece without a 3D model still shrinks, but stays a bit more readable. */
+const LABEL_NEAR_SIZE_WITHOUT_MODEL = 0.55
 const LABEL_FAR_HEIGHT = 0.8
 /** Gap between the top of a model and its label. */
 const LABEL_CLEARANCE = 0.6
@@ -355,10 +358,17 @@ export function createPieceLayer(
       MODEL_RISE_START_ZOOM,
       MODEL_RISE_END_ZOOM,
     )
+    // Icons track the full zoom (0..1), not only the model-rise window, so
+    // they keep getting smaller the closer the camera gets.
+    const iconShrink: number = MathUtils.smoothstep(currentZoom, 0, 1)
     for (const view of views) {
       if (view.model === null) {
         view.label.scale.setScalar(
-          MathUtils.lerp(LABEL_FAR_SIZE, LABEL_NEAR_SIZE_WITHOUT_MODEL, growth),
+          MathUtils.lerp(
+            LABEL_FAR_SIZE,
+            LABEL_NEAR_SIZE_WITHOUT_MODEL,
+            iconShrink,
+          ),
         )
         view.label.position.y = LABEL_FAR_HEIGHT
         continue
@@ -366,7 +376,7 @@ export function createPieceLayer(
       view.model.visible = growth > MODEL_HIDDEN_BELOW_GROWTH
       view.model.scale.setScalar(view.modelScale * growth)
       view.label.scale.setScalar(
-        MathUtils.lerp(LABEL_FAR_SIZE, LABEL_NEAR_SIZE, growth),
+        MathUtils.lerp(LABEL_FAR_SIZE, LABEL_NEAR_SIZE, iconShrink),
       )
       view.label.position.y = MathUtils.lerp(
         LABEL_FAR_HEIGHT,
