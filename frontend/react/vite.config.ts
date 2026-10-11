@@ -4,8 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { DEFAULT_ROOT_DEV_API_BASE_URL } from '@root/web-client'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import type { Plugin, ViteDevServer } from 'vite'
+import type { IndexHtmlTransformContext, Plugin, ViteDevServer } from 'vite'
 import { defineConfig } from 'vitest/config'
+import { nativeCompileTimePreloadImagePaths } from './src/assets/gameAssets.ts'
 import {
   QA_SNAPSHOT_PATH_PARAMETER,
   QA_SNAPSHOT_ROUTE,
@@ -17,6 +18,9 @@ const repositoryRoot = path.resolve(packageRoot, '../..')
 const SNAPSHOT_FILE_EXTENSION = '.json'
 const HTTP_STATUS_BAD_REQUEST = 400
 const HTTP_STATUS_NOT_FOUND = 404
+/** Set by `build:ios` so only the native Capacitor build injects image preloads. */
+const NATIVE_ASSET_PRELOAD_ENV_KEY = 'ROOT_NATIVE_ASSET_PRELOAD'
+const NATIVE_ASSET_PRELOAD_ENABLED_VALUE = '1'
 
 /**
  * Dev server only: serves a repository snapshot JSON file so
@@ -55,11 +59,52 @@ function qaSnapshotPlugin(): Plugin {
   }
 }
 
+function publicImageHref(assetPath: string): string {
+  return assetPath.startsWith('/') ? assetPath : `/${assetPath}`
+}
+
+/**
+ * Capacitor iOS only: bake image preloads into index.html at compile time.
+ * Web builds leave this off so mobile Safari is unchanged.
+ */
+function nativeAssetPreloadPlugin(): Plugin {
+  return {
+    name: 'root-native-asset-preload',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(
+        html: string,
+        _context: IndexHtmlTransformContext,
+      ): string {
+        if (
+          process.env[NATIVE_ASSET_PRELOAD_ENV_KEY] !==
+          NATIVE_ASSET_PRELOAD_ENABLED_VALUE
+        ) {
+          return html
+        }
+        const preloadTags = nativeCompileTimePreloadImagePaths()
+          .map((assetPath) => {
+            const href = publicImageHref(assetPath)
+            return `    <link rel="preload" as="image" href="${href}" />`
+          })
+          .join('\n')
+        return html.replace('</head>', `${preloadTags}\n  </head>`)
+      },
+    },
+  }
+}
+
 /** Vite + Vitest config for @root/react — proxies game/map/ws API to @root/web. */
 export default defineConfig({
   /** Expose `ROOT_*` from env / `.env` (via mise) to `import.meta.env`. */
   envPrefix: ['VITE_', 'ROOT_'],
-  plugins: [react(), tailwindcss(), qaSnapshotPlugin()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    qaSnapshotPlugin(),
+    nativeAssetPreloadPlugin(),
+  ],
   resolve: {
     alias: [
       {

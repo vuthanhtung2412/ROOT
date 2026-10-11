@@ -86,6 +86,8 @@ function main(): void {
   const buildEnvironment: NodeJS.ProcessEnv = {
     ...process.env,
     [ROOT_PROD_API_ENV_KEY]: prodApiUrl,
+    /** Vite injects `<link rel="preload">` for game images into index.html. */
+    ROOT_NATIVE_ASSET_PRELOAD: '1',
   }
 
   console.log(
