@@ -1,3 +1,4 @@
+import { actionMatchesOption, type ActionOption } from '#actions/options.js'
 import type { Action, ActionSpec, MarchMove } from '#actions/types.js'
 import type { CardEffect } from '#triggers/effects.js'
 import type { Ctx } from '#game/ctx.js'
@@ -10,7 +11,7 @@ import { openBattle } from '#events/battle.js'
 import { moveWarriors } from '#rules/move.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
-import type { Seat } from '#pieces/types.js'
+import type { ItemType, Seat } from '#pieces/types.js'
 import { buildRuleHooks } from '#triggers/buildHooks.js'
 import type { ClearingId } from '#map/types.js'
 
@@ -30,6 +31,23 @@ function readyCraftedItemIndexes(state: GameState, seat: Seat): number[] {
   playerOf(state, seat).craftedItems.forEach((item, index) => {
     if (!item.exhausted) indexes.push(index)
   })
+  return indexes
+}
+
+/**
+ * Items offered to exhaust: items of one type are alike, so the first ready
+ * one stands for its type.
+ */
+function offeredItemIndexes(state: GameState, seat: Seat): number[] {
+  const craftedItems = playerOf(state, seat).craftedItems
+  const offeredTypes: Set<ItemType> = new Set<ItemType>()
+  const indexes: number[] = []
+  for (const itemIndex of readyCraftedItemIndexes(state, seat)) {
+    const itemType: ItemType = craftedItems[itemIndex]!.type
+    if (offeredTypes.has(itemType)) continue
+    offeredTypes.add(itemType)
+    indexes.push(itemIndex)
+  }
   return indexes
 }
 
@@ -71,6 +89,37 @@ function legalLeagueBattles(
   return targets
 }
 
+/** Every legal move payload: item to exhaust × origin × destination × count. */
+function leagueMoveOptions(state: GameState, seat: Seat): ActionOption[] {
+  const moves: MarchMove[] = legalLeagueMoves(state, seat)
+  return offeredItemIndexes(state, seat).flatMap(
+    (itemIndex: number): ActionOption[] =>
+      moves.map(
+        (move: MarchMove): ActionOption => ({
+          itemIndex,
+          from: move.from,
+          to: move.to,
+          count: move.count,
+        }),
+      ),
+  )
+}
+
+/** Every legal battle payload: item to exhaust × clearing × defender. */
+function leagueBattleOptions(state: GameState, seat: Seat): ActionOption[] {
+  const battles = legalLeagueBattles(state, seat)
+  return offeredItemIndexes(state, seat).flatMap(
+    (itemIndex: number): ActionOption[] =>
+      battles.map(
+        (battle): ActionOption => ({
+          itemIndex,
+          clearing: battle.clearing,
+          defender: battle.defender,
+        }),
+      ),
+  )
+}
+
 function exhaustCraftedItem(state: GameState, seat: Seat, itemIndex: number): void {
   const item = playerOf(state, seat).craftedItems[itemIndex]
   if (!item || item.exhausted) {
@@ -88,6 +137,16 @@ export function tryApplyLeague(state: GameState, action: Action, ctx: Ctx): bool
   }
   if (state.phase !== 'daylight') throw new RuleError('WRONG_PHASE', { phase: state.phase })
   if (state.turnScratch.leagueUsed) throw new RuleError('LEAGUE_USED')
+
+  // Check the whole payload first: an illegal move or battle must not cost
+  // the item or the once-in-Daylight use.
+  const options: ActionOption[] =
+    action.type === 'leagueMove'
+      ? leagueMoveOptions(state, ownerSeat)
+      : leagueBattleOptions(state, ownerSeat)
+  if (!actionMatchesOption(action, options)) {
+    throw new RuleError('ILLEGAL_ACTION', { action })
+  }
 
   exhaustCraftedItem(state, ownerSeat, action.itemIndex)
   state.turnScratch.leagueUsed = true
@@ -129,11 +188,21 @@ export const leagueOfAdventurousMiceEffect: CardEffect = {
     const ownerSeat = leagueOwner(state)
     if (ownerSeat === null) return []
     const specs: ActionSpec[] = []
-    if (legalLeagueMoves(state, ownerSeat).length > 0) {
-      specs.push({ type: 'leagueMove', actor: ownerSeat })
+    const moveOptions: ActionOption[] = leagueMoveOptions(state, ownerSeat)
+    if (moveOptions.length > 0) {
+      specs.push({
+        type: 'leagueMove',
+        actor: ownerSeat,
+        params: { options: moveOptions },
+      })
     }
-    if (legalLeagueBattles(state, ownerSeat).length > 0) {
-      specs.push({ type: 'leagueBattle', actor: ownerSeat })
+    const battleOptions: ActionOption[] = leagueBattleOptions(state, ownerSeat)
+    if (battleOptions.length > 0) {
+      specs.push({
+        type: 'leagueBattle',
+        actor: ownerSeat,
+        params: { options: battleOptions },
+      })
     }
     return specs
   },

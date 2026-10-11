@@ -53,6 +53,8 @@ Cards:
   - [x] **C2.2 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
 - [ ] **C3 — League of Adventurous Mice** (`leagueMove`, `leagueBattle`, Daylight, once). Pick crafted item to exhaust → move (origin → destination → count) or battle (clearing → defender).
   - Needs a label lookup: crafted item index → item name. Offer one index per item type.
+  - [x] **C3.1 — Rule fix: an illegal move or battle must not cost the item.** `lib` exhausted the item and marked the card used before checking the move; a battle target was not checked at all. The whole payload is now checked first.
+  - [ ] **C3.2 — `lib` lists legal payloads** (done), then frontend flows (move, battle), tray labels, icons.
 - [ ] **C4 — Swap Meet** (`swapMeet`, Birdsong, once). Pick another player → pick hand card to give.
   - Rule mismatch: card says take a random card, *then* give a card (the taken card may be given back). `lib` asks for the given card before the taken card is known. Take first, then ask which card to give.
 - [ ] **C5 — Charm Offensive** (`charmOffensive`, Evening, once). Pick another player to score 1 point.
