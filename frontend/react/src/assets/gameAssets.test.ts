@@ -4,9 +4,12 @@ import {
   CARD_CATALOG,
   CORE_IMAGE_ASSETS,
   CRAFTED_ITEM_TEXTURE_TYPES,
+  MENU_BOOT_IMAGE_ASSETS,
+  WARM_GAME_IMAGE_ASSETS,
   cardImageAssetForDefId,
   cardImageAssets,
   itemTextureKey,
+  nativeCompileTimePreloadImagePaths,
   preloadCoreGameAssets,
   queueAutumnMapImage,
   queueMissingCardImages,
@@ -52,6 +55,50 @@ describe('warriorTokenTextureKey', () => {
     expect(warriorTokenTextureKey('eyrie')).toBe('token-eyrie-warrior')
     expect(warriorTokenTextureKey('alliance')).toBe('token-alliance-warrior')
     expect(warriorTokenTextureKey('vagabond')).toBeNull()
+  })
+})
+
+describe('menu vs warm image splits', () => {
+  it('menu boot is a thin lobby-only set', () => {
+    expect(MENU_BOOT_IMAGE_ASSETS.length).toBeLessThan(CORE_IMAGE_ASSETS.length)
+    expect(MENU_BOOT_IMAGE_ASSETS.map((asset) => asset.key)).toEqual(
+      expect.arrayContaining([
+        'root-banner',
+        'menu-wallpaper',
+        'faction-marquise',
+        'faction-lizard',
+        'faction-riverfolk',
+      ]),
+    )
+    expect(MENU_BOOT_IMAGE_ASSETS.map((asset) => asset.key)).not.toContain(
+      'game-wallpaper',
+    )
+    expect(MENU_BOOT_IMAGE_ASSETS.map((asset) => asset.key)).not.toContain(
+      AUTUMN_MAP_ASSET.key,
+    )
+  })
+
+  it('warm set covers remaining core art plus the autumn map', () => {
+    expect(WARM_GAME_IMAGE_ASSETS.map((asset) => asset.key)).toContain(
+      AUTUMN_MAP_ASSET.key,
+    )
+    expect(WARM_GAME_IMAGE_ASSETS.map((asset) => asset.key)).toContain(
+      'game-wallpaper',
+    )
+    for (const asset of MENU_BOOT_IMAGE_ASSETS) {
+      expect(WARM_GAME_IMAGE_ASSETS.map((entry) => entry.key)).not.toContain(
+        asset.key,
+      )
+    }
+  })
+
+  it('native compile-time preload lists menu boot then warm art', () => {
+    const paths = nativeCompileTimePreloadImagePaths()
+    expect(paths[0]).toBe(MENU_BOOT_IMAGE_ASSETS[0]?.path)
+    expect(paths).toContain(AUTUMN_MAP_ASSET.path)
+    expect(paths).toHaveLength(
+      MENU_BOOT_IMAGE_ASSETS.length + WARM_GAME_IMAGE_ASSETS.length,
+    )
   })
 })
 

@@ -10,8 +10,8 @@ import {
 import { createFrontendApi } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import {
-  autumnMapPublicPath,
-  CORE_IMAGE_ASSETS,
+  MENU_BOOT_IMAGE_ASSETS,
+  WARM_GAME_IMAGE_ASSETS,
 } from '#assets/gameAssets.ts'
 import { GameSession, type GameSessionSnapshot } from '#game/GameSession.ts'
 import {
@@ -59,21 +59,36 @@ function prefetchImage(path: string): Promise<void> {
   })
 }
 
-async function prefetchBootAssets(
-  onProgress: (value: number) => void,
+async function prefetchImagePaths(
+  paths: readonly string[],
+  onProgress: ((value: number) => void) | null,
 ): Promise<void> {
-  const paths = [
-    ...CORE_IMAGE_ASSETS.map((asset) => asset.path),
-    autumnMapPublicPath(),
-  ]
   let loaded = 0
   const total = Math.max(paths.length, 1)
   await Promise.all(
     paths.map(async (path) => {
       await prefetchImage(path)
       loaded += 1
-      onProgress(loaded / total)
+      if (onProgress !== null) {
+        onProgress(loaded / total)
+      }
     }),
+  )
+}
+
+async function prefetchMenuBootAssets(
+  onProgress: (value: number) => void,
+): Promise<void> {
+  await prefetchImagePaths(
+    MENU_BOOT_IMAGE_ASSETS.map((asset) => asset.path),
+    onProgress,
+  )
+}
+
+async function prefetchWarmGameAssets(): Promise<void> {
+  await prefetchImagePaths(
+    WARM_GAME_IMAGE_ASSETS.map((asset) => asset.path),
+    null,
   )
 }
 
@@ -104,6 +119,8 @@ export function App(): JSX.Element {
   const resumeHotseatGameRef = useRef<() => Promise<void>>(() =>
     Promise.resolve(),
   )
+  /** Boards / tokens / map warming after the menu; enterGame waits on it. */
+  const warmGameAssetsPromiseRef = useRef<Promise<void> | null>(null)
 
   if (controllerRef.current === null) {
     controllerRef.current = new ReactGameController()
@@ -170,12 +187,18 @@ export function App(): JSX.Element {
   }, [])
 
   const enterGame = useCallback((): void => {
-    clearLobbyWait()
-    const session = ensureSession()
-    void controller.start(session, () => {
-      clearHotseatGameOpen()
-      showMenu()
-    })
+    void (async (): Promise<void> => {
+      clearLobbyWait()
+      const warmGameAssets = warmGameAssetsPromiseRef.current
+      if (warmGameAssets !== null) {
+        await warmGameAssets
+      }
+      const session = ensureSession()
+      void controller.start(session, () => {
+        clearHotseatGameOpen()
+        showMenu()
+      })
+    })()
   }, [clearLobbyWait, controller, ensureSession, showMenu])
 
   const rebindSessionApi = useCallback(
@@ -427,7 +450,7 @@ export function App(): JSX.Element {
     let cancelled = false
     void (async () => {
       syncBootLoading(0)
-      await prefetchBootAssets((value) => {
+      await prefetchMenuBootAssets((value) => {
         if (!cancelled) {
           syncBootLoading(value)
         }
@@ -437,6 +460,8 @@ export function App(): JSX.Element {
       }
       clearBootLoading()
       showMenu()
+      // Boards / map / tokens: fetch while the player is on the menu.
+      warmGameAssetsPromiseRef.current = prefetchWarmGameAssets()
       // Reload in an online game: take the stored seat back.
       await resumeOnlineGameRef.current()
       // Reload in a hotseat / QA game (dev code edit): go straight back in.

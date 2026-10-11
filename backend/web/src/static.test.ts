@@ -18,7 +18,7 @@ describe('cacheControlForStaticPath', () => {
 
   it('short-caches map and card images', () => {
     expect(
-      cacheControlForStaticPath('assets/map/autumn-map.jpg'),
+      cacheControlForStaticPath('assets/map/autumn-map.webp'),
     ).toBe('public, max-age=86400')
     expect(
       cacheControlForStaticPath('assets/cards/ambush-bird.png'),

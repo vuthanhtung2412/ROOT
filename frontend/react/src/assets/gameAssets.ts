@@ -2,6 +2,7 @@ import cardCatalog from '#assets/cardCatalog.json'
 import {
   expansionFactionTextureKey,
   expansionWarriorTextureKey,
+  RIVERFOLK_EXPANSION_ASSET_KEYS,
   RIVERFOLK_EXPANSION_IMAGE_ASSETS,
 } from '#assets/riverfolkExpansionAssets.ts'
 
@@ -234,10 +235,25 @@ export function cardTextureKey(defId: string): string {
 
 export const AUTUMN_MAP_ASSET: GameImageAsset = {
   key: GAME_ASSET_KEYS.autumnMap,
-  path: 'assets/map/autumn-map.jpg',
+  path: 'assets/map/autumn-map.webp',
 }
 
-/** Boot tokens/factions only — autumn map loads later (Menu warm / GameScene). */
+/**
+ * Menu shell only — banner, wallpaper, faction heads for the lobby picker.
+ * Keeps first paint under a thin download; game art warms after the menu.
+ */
+export const MENU_BOOT_IMAGE_ASSET_KEYS: ReadonlySet<string> = new Set([
+  GAME_ASSET_KEYS.rootBanner,
+  GAME_ASSET_KEYS.menuWallpaper,
+  GAME_ASSET_KEYS.factionMarquise,
+  GAME_ASSET_KEYS.factionEyrie,
+  GAME_ASSET_KEYS.factionAlliance,
+  GAME_ASSET_KEYS.factionVagabond,
+  RIVERFOLK_EXPANSION_ASSET_KEYS.factionLizard,
+  RIVERFOLK_EXPANSION_ASSET_KEYS.factionRiverfolk,
+])
+
+/** All in-game images except card faces and the autumn map. */
 export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.rootBanner,
@@ -413,6 +429,34 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   },
   ...RIVERFOLK_EXPANSION_IMAGE_ASSETS,
 ]
+
+/** Images the boot screen waits on before the menu. */
+export const MENU_BOOT_IMAGE_ASSETS: readonly GameImageAsset[] =
+  CORE_IMAGE_ASSETS.filter((asset) =>
+    MENU_BOOT_IMAGE_ASSET_KEYS.has(asset.key),
+  )
+
+/**
+ * Images warmed after the menu (boards, tokens, game wallpaper, autumn map).
+ * Menu assets are skipped — the boot pass already fetched them.
+ */
+export const WARM_GAME_IMAGE_ASSETS: readonly GameImageAsset[] = [
+  ...CORE_IMAGE_ASSETS.filter(
+    (asset) => !MENU_BOOT_IMAGE_ASSET_KEYS.has(asset.key),
+  ),
+  AUTUMN_MAP_ASSET,
+]
+
+/**
+ * Native iOS build: paths to `<link rel="preload">` at compile time.
+ * Menu boot first, then warm art (same set the web app fetches after boot).
+ */
+export function nativeCompileTimePreloadImagePaths(): readonly string[] {
+  return [
+    ...MENU_BOOT_IMAGE_ASSETS.map((asset) => asset.path),
+    ...WARM_GAME_IMAGE_ASSETS.map((asset) => asset.path),
+  ]
+}
 
 export function cardImageAssets(): GameImageAsset[] {
   const assets: GameImageAsset[] = []
