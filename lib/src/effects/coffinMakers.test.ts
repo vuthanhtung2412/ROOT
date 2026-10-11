@@ -66,3 +66,32 @@ describe('Coffin Makers', () => {
     expect(coffin.heldWarriors).toBe(0)
   })
 })
+
+describe('Coffin Makers — "Warriors removed, not replaced"', () => {
+  it('Rule: G.1.21 Replace — a replaced warrior is not placed on the card', () => {
+    const coffin = card('ROOT-62')
+    const state = withPieces(
+      minimalState({
+        players: [
+          player(0, 'marquise', { playArea: [coffin], board: marquiseBoard() }),
+          player(1, 'marquise', { board: marquiseBoard() }),
+        ],
+      }),
+      4,
+      [{ id: 'replaced-warrior', kind: 'warrior', owner: 1 }],
+    )
+
+    removePieces(
+      state,
+      {
+        clearing: 4,
+        pieceIds: ['replaced-warrior'],
+        scorer: 0,
+        options: { skipFieldHospital: true, replaced: true },
+      },
+      buildCraftContext(state),
+    )
+
+    expect(coffin.heldWarriors ?? 0).toBe(0)
+  })
+})

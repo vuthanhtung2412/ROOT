@@ -97,7 +97,12 @@ export function tryApplyPropagandaBureau(
   // (6.2.3 Field Hospitals may answer it).
   removePieces(
     state,
-    { clearing: action.clearing, pieceIds: [action.pieceId], scorer: ownerSeat },
+    {
+      clearing: action.clearing,
+      pieceIds: [action.pieceId],
+      scorer: ownerSeat,
+      options: { replaced: true },
+    },
     ctx,
   )
 

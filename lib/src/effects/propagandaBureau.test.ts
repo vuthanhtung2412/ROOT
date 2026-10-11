@@ -6,7 +6,9 @@ import {
   propagandaBureauEffect,
   tryApplyPropagandaBureau,
 } from '#effects/propagandaBureau.js'
+import { fieldHospitalResolver } from '#events/fieldHospital.js'
 import { FALL } from '#map/fall.js'
+import { isFieldHospitalEvent } from '#typeGuards.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { warriors } from '#queries/pieces.js'
@@ -190,6 +192,7 @@ describe('Propaganda Bureau — Rule: G.1.21 Replace is remove then place', () =
         victim: MARQUISE_SEAT,
         clearing: MOUSE_CLEARING,
         count: 1,
+        replaced: true,
       },
     ])
     expect(warriors(state, MOUSE_CLEARING, EYRIE_SEAT)).toBe(1)
@@ -209,5 +212,65 @@ describe('Propaganda Bureau — Rule: G.1.21 Replace is remove then place', () =
       supplyBefore + 1,
     )
     expect(warriors(state, MOUSE_CLEARING, EYRIE_SEAT)).toBe(1)
+  })
+})
+
+describe('Propaganda Bureau — Coffin Makers: "Warriors removed, not replaced"', () => {
+  const COFFIN_MAKERS_DEF_ID = 'ROOT-62'
+
+  function stateWithCoffinMakers(marquiseHand: Card[]): {
+    state: GameState
+    coffinMakers: Card
+  } {
+    const coffinMakers: Card = card(COFFIN_MAKERS_DEF_ID)
+    const state: GameState = bureauState({
+      marquiseHand,
+      eyriePlayArea: [card(PROPAGANDA_BUREAU_DEF_ID), coffinMakers],
+    })
+    return { state, coffinMakers }
+  }
+
+  function replaceMouseWarrior(state: GameState): void {
+    tryApplyPropagandaBureau(
+      state,
+      {
+        type: 'propagandaBureau',
+        cardId: card(MOUSE_CARD_DEF_ID).id,
+        clearing: MOUSE_CLEARING,
+        pieceId: MOUSE_WARRIOR_ID,
+      },
+      buildCraftContext(state),
+    )
+  }
+
+  it('does not put the replaced warrior on Coffin Makers', () => {
+    const { state, coffinMakers } = stateWithCoffinMakers([])
+
+    replaceMouseWarrior(state)
+
+    expect(coffinMakers.heldWarriors ?? 0).toBe(0)
+  })
+
+  it('does not put it there either when Field Hospitals is declined', () => {
+    const { state, coffinMakers } = stateWithCoffinMakers([
+      card(MOUSE_CARD_DEF_ID, 2),
+    ])
+    replaceMouseWarrior(state)
+    const fieldHospital = state.pending[0]
+    if (fieldHospital === undefined || !isFieldHospitalEvent(fieldHospital)) {
+      throw new Error('expected a Field Hospitals prompt')
+    }
+
+    fieldHospitalResolver.apply(
+      state,
+      {
+        event: fieldHospital,
+        action: { type: 'resolveEvent', decline: true },
+        actor: MARQUISE_SEAT,
+      },
+      buildCraftContext(state),
+    )
+
+    expect(coffinMakers.heldWarriors ?? 0).toBe(0)
   })
 })

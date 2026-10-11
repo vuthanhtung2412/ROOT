@@ -63,6 +63,7 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
 
     const pendingIndex = state.pending.findIndex((pending) => pending === event)
     if (pendingIndex >= 0) state.pending.splice(pendingIndex, 1)
+    const replaced: boolean = event.replaced === true
 
     if (action.decline) {
       returnWarriorsToSupply(state, event.victim, event.count)
@@ -73,6 +74,7 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
         clearing: event.clearing,
         count: event.count,
         toSupply: true,
+        replaced,
       })
       return [{ t: 'event', event }]
     }
@@ -99,6 +101,7 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
         clearing: event.clearing,
         count: event.count,
         toSupply: true,
+        replaced,
       })
     } else {
       // Rule: Marquise > Field Hospitals — warriors already off map; do not pull supply.
@@ -118,6 +121,7 @@ export const fieldHospitalResolver: FieldHospitalResolver = {
           clearing: event.clearing,
           count: leftover,
           toSupply: true,
+          replaced,
         })
       }
     }

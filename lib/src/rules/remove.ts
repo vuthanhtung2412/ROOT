@@ -41,6 +41,8 @@ export type PieceRemoval = {
     defendingInBattle?: boolean
     /** Seat taking these hits with hired Riverfolk warriors among them. */
     mercenaryBuyer?: Seat
+    /** Rule: G.1.21 Replace — the removal is the first half of a replace. */
+    replaced?: boolean
   }
 }
 
@@ -296,6 +298,7 @@ export function removePieces(
     }
   }
 
+  const replaced: boolean = options?.replaced === true
   for (const [victim, count] of victims) {
     if (count <= 0) continue
     const faction = playerOf(state, victim).faction
@@ -318,6 +321,7 @@ export function removePieces(
         victim,
         clearing,
         count,
+        ...(replaced ? { replaced } : {}),
       })
     }
 
@@ -328,6 +332,7 @@ export function removePieces(
       clearing,
       count,
       toSupply: sentToSupply,
+      replaced,
     })
   }
 

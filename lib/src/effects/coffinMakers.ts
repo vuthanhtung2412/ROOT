@@ -29,6 +29,9 @@ export const coffinMakersEffect: CardEffect = {
     const found = findCoffinMakersCard(state)
     if (!found) return
 
+    // Card text: "Warriors removed, not replaced, … are placed here."
+    if (signal.s === 'warriors.removed' && signal.replaced) return
+
     if (signal.s === 'warriors.removed' && signal.toSupply) {
       const supply = warriorSupplyOf(playerOf(state, signal.victim).board)
       if (!supply) return

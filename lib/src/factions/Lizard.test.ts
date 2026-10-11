@@ -19,6 +19,7 @@ import type { LizardBoard } from '#state/lizardBoard.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import type { GameState, Phase, Step } from '#state/types.js'
 import {
+  buildCraftContext,
   card,
   eyrieBoard,
   finishSetup,
@@ -188,6 +189,26 @@ describe('Lizard Cult Birdsong', () => {
     expect(warriors(state, FOX_CLEARING, ENEMY)).toBe(0)
     expect(warriors(state, FOX_CLEARING, CULT)).toBe(1)
     expect(lizardBoardOf(state, CULT).acolytes).toBe(0)
+  })
+
+  it('Rule: G.1.21 Replace — a converted warrior is not placed on Coffin Makers', () => {
+    const coffinMakers = card('ROOT-62')
+    const base = cultState({
+      phase: 'birdsong',
+      step: 'conspiracies',
+      board: { acolytes: 2 },
+    })
+    base.players[CULT]!.playArea = [coffinMakers]
+    const state = withPieces(base, FOX_CLEARING, [enemyWarrior('e1')])
+
+    LIZARD.apply(
+      state,
+      { type: 'convert', clearing: FOX_CLEARING, target: ENEMY },
+      buildCraftContext(state),
+    )
+
+    expect(warriors(state, FOX_CLEARING, CULT)).toBe(1)
+    expect(coffinMakers.heldWarriors ?? 0).toBe(0)
   })
 
   it('Rule: 10.4.3 — conspiracies only target Outcast clearings', () => {

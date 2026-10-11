@@ -217,7 +217,13 @@ export class Lizard extends Faction {
         if (warrior === undefined) throw new RuleError('NO_WARRIOR')
         const logs = removePieces(
           state,
-          { clearing: action.clearing, pieceIds: [warrior.id], scorer: seat },
+          {
+            clearing: action.clearing,
+            pieceIds: [warrior.id],
+            scorer: seat,
+            // Rule: G.1.21 Replace — not a removal for Coffin Makers.
+            options: { replaced: true },
+          },
           ctx,
         )
         placeUpTo(state, {

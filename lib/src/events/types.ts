@@ -36,6 +36,8 @@ export type FieldHospitalEvent = {
   victim: Seat
   clearing: ClearingId
   count: number
+  /** Rule: G.1.21 Replace — the warriors were replaced, not just removed. */
+  replaced?: true
 }
 
 /** Rule: Marquise > Setup 2 — choose keep corner. */

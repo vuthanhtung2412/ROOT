@@ -15,6 +15,8 @@ export type GameSignal =
       clearing: ClearingId
       count: number
       toSupply: boolean
+      /** Rule: G.1.21 Replace — removed as the first half of a replace. */
+      replaced: boolean
     }
   | { s: 'battle.start'; ev: BattleEvent }
   | { s: 'battle.hits'; ev: BattleEvent; side: 'attacker' | 'defender' }
