@@ -3,10 +3,7 @@ import type { AutoPromptController } from '#game/resolution/autoPromptController
 import type { GameSceneModals } from '#game/gameSceneModals.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { collapsePieceIdsRemovalSpecs } from '#game/battleRemovalStepper.ts'
-import {
-  syncGameDrawerDiscardCount,
-  syncWinnerOverlay,
-} from '#react/HudChrome.tsx'
+import { syncGameDrawer, syncWinnerOverlay } from '#react/HudChrome.tsx'
 import { syncActionTray } from '#react/ActionTray.tsx'
 import { syncCardHand } from '#react/CardHand.tsx'
 import { syncPlayerRail } from '#react/PlayerRail.tsx'
@@ -61,7 +58,13 @@ export function paintGameSceneHud(
   deps.getModals()?.refreshFactionBoard(snapshot.state)
   deps.getModals()?.refreshCraftedCards(snapshot.state)
   deps.getModals()?.refreshCompletedQuests(snapshot.state)
-  syncGameDrawerDiscardCount(snapshot.state.deck?.discard.length ?? 0)
+  syncGameDrawer({
+    discardCount: snapshot.state.deck?.discard.length ?? 0,
+    canUndo: canUndoTurnAction(
+      snapshot.state,
+      deps.localPlayerControlsSeat(snapshot.state.currentSeat),
+    ),
+  })
   deps.syncBattleOverlay()
   deps.syncBattleClearingHighlight(snapshot.state)
   syncWinner(snapshot.state)
@@ -74,6 +77,23 @@ export function paintGameSceneHud(
     localControlsActor
       ? snapshot.error
       : (snapshot.error ?? 'Waiting for other player…'),
+  )
+}
+
+const PLAYING_STATUS = 'playing'
+
+/**
+ * Undo is for the player whose turn it is, and only for actions of that turn
+ * the server still counts as undoable (none after a battle or a new turn).
+ */
+export function canUndoTurnAction(
+  state: GameState,
+  localControlsCurrentSeat: boolean,
+): boolean {
+  return (
+    localControlsCurrentSeat &&
+    state.status === PLAYING_STATUS &&
+    (state.undoableActions ?? 0) > 0
   )
 }
 

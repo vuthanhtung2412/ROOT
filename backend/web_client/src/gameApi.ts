@@ -68,6 +68,8 @@ export type GameState = {
   }
   /** Items left in the supply on the map, by item type. */
   itemSupply?: Record<string, number>
+  /** Latest actions the player whose turn it is may take back; absent = none. */
+  undoableActions?: number
   pending: unknown[]
   winner?: number
   turnScratch?: unknown
@@ -120,7 +122,10 @@ export type GameApi = {
   submitAction: (action: unknown) => Promise<ActionResult>
   gameLog: () => Promise<{ log: unknown[] }>
   formattedGameLog: () => Promise<string>
+  /** Hotseat dev tool: rewind any action. */
   undo: () => Promise<{ state: GameState }>
+  /** What a player may do: take back the latest action of the current turn. */
+  undoTurnAction: () => Promise<{ state: GameState }>
   fallLayout: () => Promise<FallLayout>
   deleteGame: () => Promise<void>
 }
@@ -393,6 +398,15 @@ export function createGameApi(
 
     async undo(): Promise<{ state: GameState }> {
       const data = requireData(await client.POST('/game/undo'))
+      return { state: parseGameState(data.state) }
+    },
+
+    async undoTurnAction(): Promise<{ state: GameState }> {
+      const data = requireData(
+        await client.POST('/game/undo', {
+          params: { query: { scope: 'turn' } },
+        }),
+      )
       return { state: parseGameState(data.state) }
     },
 

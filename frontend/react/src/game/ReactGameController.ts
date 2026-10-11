@@ -300,6 +300,9 @@ export class ReactGameController {
       onEndGame: () => {
         void this.handleEndGame()
       },
+      onUndo: () => {
+        void this.handleUndo()
+      },
       onOpenDiscardPile: () => {
         const state = this.latestSnapshot?.state
         if (state !== null && state !== undefined) {
@@ -632,6 +635,13 @@ export class ReactGameController {
         this.eventComposer.getDraft(),
       ])
     )
+  }
+
+  /** Drop any half-picked action, then take back the latest turn action. */
+  private async handleUndo(): Promise<void> {
+    this.composer.reset()
+    this.applyComposerOutcome({ kind: 'idle' })
+    await this.session?.undoTurnAction()
   }
 
   private async cancelActionUnderResolution(): Promise<void> {

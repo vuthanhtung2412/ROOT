@@ -80,7 +80,11 @@ Cards:
 
 - [x] **F1 — Do not auto-resolve craft when there is only 1 viable option.** Always let the player choose.
   - Only the Riverfolk craft did it (one craftable card was picked, and "Craft" chosen, without a click). Marquise, Eyrie, Lizard Cult and Vagabond craft already asked for the card.
-- [ ] **F2 — Undo.** Only the player whose turn it is can undo. The undo history is cleared after a battle and when the player ends their turn.
+- [x] **F2 — Undo.** Only the player whose turn it is can undo. The undo history is cleared after a battle and when the player ends their turn.
+  - **Undo** button next to "End game", shown only while something can be taken back. Works online (server checks the seat) and in hotseat.
+  - Also cleared when another player answers a prompt (their choice is not the turn player's to rewind).
+  - A phase the UI ends by itself (only "end phase" on offer) is not a decision: Undo goes back to the last real choice.
+  - Limit: undo replays the game from its seed, so it does not work on a QA snapshot whose state was edited by hand.
 - [ ] **F3 + F4 — One start flow, players choose their faction.**
   - Start screen has a single button: **Create** when no game is in the lobby state, **Join** when one is.
   - One player creates the game; for every other player the button becomes **Join**.

@@ -36,6 +36,8 @@ export type LeaderPickHudState = {
 export type GameDrawerHudState = {
   discardCount: number
   endGameArmed: boolean
+  /** The local player has an action of this turn to take back. */
+  canUndo: boolean
 } | null
 
 export type PlayerRailHudState = {
@@ -113,6 +115,8 @@ export type MenuCallbacks = {
 
 export type HudCallbacks = {
   onEndGame: () => void
+  /** Take back the latest action of the current turn. */
+  onUndo: () => void
   onOpenDiscardPile: () => void
   onReturnToMenu: () => void
   onLeaderPicked: (leaderId: string) => void
@@ -198,6 +202,7 @@ const CLEARED_GAME_HUD_STATE: HudState = {
 
 const NOOP_CALLBACKS: HudCallbacks = {
   onEndGame: () => undefined,
+  onUndo: () => undefined,
   onOpenDiscardPile: () => undefined,
   onReturnToMenu: () => undefined,
   onLeaderPicked: () => undefined,

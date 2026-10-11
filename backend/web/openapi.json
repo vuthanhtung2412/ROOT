@@ -1026,6 +1026,21 @@
           "game"
         ],
         "summary": "Undo last action",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "turn"
+              ],
+              "description": "turn = take back the latest action of the current turn (what a player may do). Omitted = rewind any action (hotseat dev tool)."
+            },
+            "required": false,
+            "description": "turn = take back the latest action of the current turn (what a player may do). Omitted = rewind any action (hotseat dev tool).",
+            "name": "scope",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Restored state",

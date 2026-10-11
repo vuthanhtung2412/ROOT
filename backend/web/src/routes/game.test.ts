@@ -85,6 +85,8 @@ describe('game routes', () => {
     const HOST_PLAYER_ID = 'host-secret'
     const GUEST_PLAYER_ID = 'guest-secret'
     const KEEP_CORNER_ACTION = { type: 'resolveEvent', clearing: 0 }
+    const TURN_UNDO_ROUTE = '/game/undo?scope=turn'
+    const MAX_SETUP_EVENTS = 20
 
     function asPlayer(playerId: string, method: string, body?: object): RequestInit {
       return {
@@ -160,10 +162,62 @@ describe('game routes', () => {
 
       const hostUndo = await app.request('/game/undo', asPlayer(HOST_PLAYER_ID, 'POST'))
       expect(hostUndo.status).toBe(403)
+      expect(await hostUndo.json()).toMatchObject({ code: 'ONLINE_MODE' })
 
       const hostDelete = await app.request('/game', asPlayer(HOST_PLAYER_ID, 'DELETE'))
       expect(hostDelete.status).toBe(204)
       expect(store.game).toBeNull()
+    })
+
+    /** Resolve setup straight on the store: the online game reaches turn 1. */
+    function finishSetupOnStore(): void {
+      const game = store.game
+      if (game === null) throw new Error('no game in the store')
+      let guard = 0
+      while (game.state.pending.length > 0 && guard++ < MAX_SETUP_EVENTS) {
+        const spec = game.legalActions()[0]
+        const clearing = spec?.params?.clearing?.[0]
+        const leader = spec?.params?.leaders?.[0]
+        if (clearing !== undefined) {
+          game.apply({ type: 'resolveEvent', clearing })
+        } else if (leader !== undefined) {
+          game.apply({ type: 'resolveEvent', leader })
+        } else {
+          throw new Error(`setup event not handled: ${JSON.stringify(spec)}`)
+        }
+      }
+    }
+
+    it('undo of the turn: only the player whose turn it is, only their own actions', async () => {
+      await createOnlineLobby()
+      await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
+      finishSetupOnStore()
+
+      const nothingYet = await app.request(TURN_UNDO_ROUTE, asPlayer(HOST_PLAYER_ID, 'POST'))
+      expect(nothingYet.status).toBe(400)
+      expect(await nothingYet.json()).toMatchObject({ code: 'NOTHING_TO_UNDO' })
+
+      // Two phase ends bring the Marquise to her Daylight actions; recruiting
+      // is her first real decision of the turn.
+      for (const action of [{ type: 'endPhase' }, { type: 'endPhase' }, { type: 'recruit' }]) {
+        const hostAction = await app.request(
+          '/game/actions',
+          asPlayer(HOST_PLAYER_ID, 'POST', action),
+        )
+        expect(hostAction.status).toBe(200)
+      }
+      const historyBeforeRecruit = (store.game?.history.length ?? 0) - 1
+
+      const guestUndo = await app.request(TURN_UNDO_ROUTE, asPlayer(GUEST_PLAYER_ID, 'POST'))
+      expect(guestUndo.status).toBe(403)
+      expect(await guestUndo.json()).toMatchObject({ code: 'NOT_YOUR_TURN' })
+
+      const anonymousUndo = await app.request(TURN_UNDO_ROUTE, { method: 'POST' })
+      expect(anonymousUndo.status).toBe(403)
+
+      const hostUndo = await app.request(TURN_UNDO_ROUTE, asPlayer(HOST_PLAYER_ID, 'POST'))
+      expect(hostUndo.status).toBe(200)
+      expect(store.game?.history.length).toBe(historyBeforeRecruit)
     })
 
     it('rejects an action from a seat that is not the actor', async () => {

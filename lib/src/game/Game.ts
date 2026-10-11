@@ -41,6 +41,8 @@ type UndoCheckpoint = {
   /** Seat sending the action: the pending event's responder, else the turn's. */
   actingSeat: Seat
   battlePending: boolean
+  /** False for a phase end taken with no other action on offer. */
+  isChoice: boolean
 }
 
 /** Actions that leave the player "at the start of" the phase they are in. */
@@ -52,6 +54,8 @@ export class Game {
   state: GameState
   history: Action[]
   log: LogEntry[]
+  /** Per action of `history`: false for a phase end that was the only action. */
+  private choiceHistory: boolean[]
   private rng: SeededRng
   private signalBus: SignalBus
 
@@ -64,6 +68,8 @@ export class Game {
   }) {
     this.state = args.state
     this.history = args.history
+    // A loaded snapshot does not say which actions were forced: all count.
+    this.choiceHistory = args.history.map((): boolean => true)
     this.log = args.log
     this.rng = args.rng
     this.signalBus = args.signalBus ?? new SignalBus()
@@ -217,7 +223,7 @@ export class Game {
     }
 
     this.validate(action)
-    const before: UndoCheckpoint = this.undoCheckpoint()
+    const before: UndoCheckpoint = this.undoCheckpoint(action)
     logs.push(...this.execute(action))
     // "At the start of Birdsong / Evening" lasts until the player takes an
     // action in that phase. Answers to pending events and the start-of-phase
@@ -264,24 +270,34 @@ export class Game {
     }
 
     this.history.push(action)
+    this.choiceHistory.push(before.isChoice)
     this.log.push(...logs)
-    this.state.undoableActions = this.keepsUndoHistory(before)
-      ? (this.state.undoableActions ?? 0) + 1
-      : 0
+    if (!this.keepsUndoHistory(before)) {
+      this.state.undoableActions = 0
+    } else if (before.isChoice) {
+      this.state.undoableActions = (this.state.undoableActions ?? 0) + 1
+    }
 
     return { state: this.state, log: logs }
   }
 
   /** What decides, before an action, whether it can be taken back later. */
-  private undoCheckpoint(): UndoCheckpoint {
+  private undoCheckpoint(action: Action): UndoCheckpoint {
     const { state } = this
     const answeringSeat: Seat | undefined =
       state.pending.length > 0 ? this.pendingLegalActions()[0]?.actor : undefined
+    // Ending a phase with nothing else to do is no decision to take back.
+    const isForcedEndPhase: boolean =
+      action.type === 'endPhase' &&
+      this.legalActions().every(
+        (spec: ActionSpec): boolean => spec.type === 'endPhase',
+      )
     return {
       wasPlaying: state.status === 'playing',
       turn: state.turn,
       actingSeat: answeringSeat ?? state.currentSeat,
       battlePending: state.pending.some(isBattleEvent),
+      isChoice: !isForcedEndPhase,
     }
   }
 
@@ -306,12 +322,20 @@ export class Game {
     return (this.state.undoableActions ?? 0) > 0 && this.history.length > 0
   }
 
-  /** Take back the latest action of the current turn (see `undoableActions`). */
+  /**
+   * Take back the latest decision of the current turn (see `undoableActions`),
+   * with the forced phase ends that followed it: the player is back where
+   * that decision was made.
+   */
   undoTurnAction(): void {
     if (!this.canUndoTurnAction()) {
       throw new RuleError('NOTHING_TO_UNDO')
     }
-    this.undo()
+    let tookBackChoice = false
+    while (!tookBackChoice && this.history.length > 0) {
+      tookBackChoice = this.choiceHistory.at(-1) ?? true
+      this.undo()
+    }
   }
 
   /** Subscribe to emitted game signals (tests / diagnostics). */
@@ -328,6 +352,7 @@ export class Game {
     const restored = Game.replay(seed, actions, this.state.factions)
     this.state = restored.state
     this.history = restored.history
+    this.choiceHistory = restored.choiceHistory
     this.log = restored.log
     this.rng = restored.rng
   }

@@ -559,6 +559,21 @@ export class GameSession {
     }
   }
 
+  /** Take back the latest action of the current turn (server checks the seat). */
+  async undoTurnAction(): Promise<void> {
+    this.setLoading(true)
+    try {
+      await this.api.undoTurnAction()
+      this.publish({
+        ...this.snapshot,
+        loading: false,
+        error: null,
+      })
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+    }
+  }
+
   /** Online: this browser holds a seat that is not the host's. */
   private isOnlineGuest(): boolean {
     const localSeat = this.getLocalSeat()

@@ -22,6 +22,13 @@ export const ReplaceQuerySchema = z.object({
   }),
 })
 
+export const UndoQuerySchema = z.object({
+  scope: z.enum(['turn']).optional().openapi({
+    description:
+      'turn = take back the latest action of the current turn (what a player may do). Omitted = rewind any action (hotseat dev tool).',
+  }),
+})
+
 export const errorResponses = {
   400: {
     description: 'Rule or request error',

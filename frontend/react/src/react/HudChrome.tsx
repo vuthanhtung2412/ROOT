@@ -1,6 +1,6 @@
 import { useSyncExternalStore, type JSX } from 'react'
 import { GiCardBurn } from 'react-icons/gi'
-import { LuFlag } from 'react-icons/lu'
+import { LuFlag, LuUndo2 } from 'react-icons/lu'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -52,6 +52,18 @@ export function GameDrawer(): JSX.Element | null {
         <LuFlag aria-hidden="true" />
         {drawer.endGameArmed ? 'Confirm end?' : 'End game'}
       </button>
+      {drawer.canUndo ? (
+        <button
+          type="button"
+          className={`game-drawer__undo ${DRAWER_BUTTON_CLASS_NAME} ml-2`}
+          onClick={() => {
+            callbacks.onUndo()
+          }}
+        >
+          <LuUndo2 aria-hidden="true" />
+          Undo
+        </button>
+      ) : null}
       <div className="ml-auto flex flex-row items-center gap-2">
         <ItemSupplyButton className={DRAWER_BUTTON_CLASS_NAME} />
         <button
@@ -163,24 +175,26 @@ export function LeaderPickOverlay(): JSX.Element | null {
   )
 }
 
-export function syncGameDrawerDiscardCount(discardCount: number): void {
+/** What the drawer shows of the game state: Discarded pile size, Undo. */
+export type GameDrawerSync = {
+  discardCount: number
+  canUndo: boolean
+}
+
+export function syncGameDrawer(next: GameDrawerSync): void {
   const current = getHudSnapshot().gameDrawer
-  if (current !== null) {
-    if (current.discardCount === discardCount) {
-      return
-    }
-    patchHud({
-      gameDrawer: {
-        discardCount,
-        endGameArmed: current.endGameArmed,
-      },
-    })
+  if (
+    current !== null &&
+    current.discardCount === next.discardCount &&
+    current.canUndo === next.canUndo
+  ) {
     return
   }
   patchHud({
     gameDrawer: {
-      discardCount,
-      endGameArmed: false,
+      discardCount: next.discardCount,
+      canUndo: next.canUndo,
+      endGameArmed: current?.endGameArmed ?? false,
     },
   })
 }

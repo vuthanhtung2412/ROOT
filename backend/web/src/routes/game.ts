@@ -23,7 +23,11 @@ import {
   PLAYER_ID_HEADER,
   seatForPlayerId,
 } from '#view/actionSeatGuard.js'
-import { errorResponses, ReplaceQuerySchema } from '#schemas/common.js'
+import {
+  errorResponses,
+  ReplaceQuerySchema,
+  UndoQuerySchema,
+} from '#schemas/common.js'
 import {
   ActionResultSchema,
   ActionSchema,
@@ -125,6 +129,9 @@ function requireSeatForAction(
     notYourSeat()
   }
 }
+
+/** `POST /game/undo?scope=turn`: the undo a player may use. */
+const TURN_UNDO_SCOPE = 'turn'
 
 export const gameRoutes = new OpenAPIHono()
 
@@ -456,6 +463,7 @@ const undoRoute = createRoute({
   path: '/undo',
   tags: ['game'],
   summary: 'Undo last action',
+  request: { query: UndoQuerySchema },
   responses: {
     200: {
       description: 'Restored state',
@@ -467,14 +475,27 @@ const undoRoute = createRoute({
 
 gameRoutes.openapi(undoRoute, (context) => {
   const game = requireGame()
-  if (store.mode === 'online') {
-    // Undo would rewind draws and reveals other players have already seen.
-    throw new HttpError(403, 'ONLINE_MODE', 'undo is hotseat-only')
+  const playerId = context.req.header(PLAYER_ID_HEADER)
+  if (context.req.valid('query').scope === TURN_UNDO_SCOPE) {
+    // A player takes back an action of their own turn (see `undoableActions`).
+    if (
+      store.mode === 'online' &&
+      (playerId === undefined ||
+        seatForPlayerId(game.state, playerId) !== game.state.currentSeat)
+    ) {
+      throw new HttpError(403, 'NOT_YOUR_TURN', 'only the player whose turn it is may undo')
+    }
+    game.undoTurnAction()
+  } else {
+    if (store.mode === 'online') {
+      // Rewinding at will would undo draws and reveals other players have seen.
+      throw new HttpError(403, 'ONLINE_MODE', 'full undo is hotseat-only')
+    }
+    game.undo()
   }
-  game.undo()
   logGameEvent('UNDO', game.state)
   publishGameChange()
-  return context.json({ state: game.state }, 200)
+  return context.json({ state: stateForCaller(game, playerId) }, 200)
 })
 
 const mapSvgRoute = createRoute({

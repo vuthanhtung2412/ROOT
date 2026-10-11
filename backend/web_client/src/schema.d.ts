@@ -399,6 +399,12 @@ export interface paths {
   "/game/undo": {
     /** Undo last action */
     post: {
+      parameters: {
+        query?: {
+          /** @description turn = take back the latest action of the current turn (what a player may do). Omitted = rewind any action (hotseat dev tool). */
+          scope?: "turn";
+        };
+      };
       responses: {
         /** @description Restored state */
         200: {
