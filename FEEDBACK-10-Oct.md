@@ -109,16 +109,21 @@ Cards:
   - Card-back badge on the top right of every seat of the player rail.
   - Online, the server sent opponents' hands as empty, so their size was hidden too. It now sends face-down cards: the size is open, the cards are not.
 - [ ] **U3 — Reduce verbosity of the action banner.** Deferred.
-- [ ] **U4 — Remove the number in the middle of a building.** One icon per building, no count badge: a clearing holds at most 3 buildings, so repeated icons are fine.
-- [ ] **U5 — Pointy finger in clearing.** Pointer cursor only when hovering a clickable clearing.
-- [ ] **U6 — Theme the cursor to the game.** Create the cursor art that fits the game best. Do together with U5.
+- [x] **U4 — Remove the number in the middle of a building.** One icon per building, no count badge: a clearing holds at most 3 buildings, so repeated icons are fine.
+- [x] **U5 — Pointy finger in clearing.** Pointer cursor only when hovering a clickable clearing.
+- [x] **U6 — Theme the cursor to the game.** Create the cursor art that fits the game best. Do together with U5.
+  - Asset: `frontend/react/public/assets/cursors/clearing-point.png` (parchment hand, gold tip). Utility `cursor-clearing-point` in `style.css`.
 
 ## 5. Performance
 
-- [ ] **P1 — Initial loading takes more than 10s.** Measure on the prod build first, then cut.
+- [x] **P1 — Initial loading takes more than 10s.** Measure on the prod build first, then cut.
+  - Prod measure: JS ~547 KiB; blocking boot was 58 images / 7.44 MiB (~12.8 s @ 5 Mbps).
+  - Cut: menu boot = banner + wallpaper + faction heads only (~0.8 MiB / ~1.2 s); warm boards/tokens/map after menu; `enterGame` waits on warm. Autumn map → 2048w webp (3.3 MiB → 0.95 MiB).
 - [ ] **P2 — Preload assets for the potential next game states.** Deferred.
-- [ ] **P3 — Mobile build: preload assets at compile time.** Native build only; mobile web is unchanged.
+- [x] **P3 — Mobile build: preload assets at compile time.** Native build only; mobile web is unchanged.
+  - `build:ios` sets `ROOT_NATIVE_ASSET_PRELOAD=1`; Vite injects `<link rel="preload" as="image">` for menu+warm paths into `index.html`. Plain `pnpm build` (web) injects none.
 
 ## 6. Backend
 
-- [ ] **K1 — Log game end in the backend:** winner, VP of every player, number of turns, duration.
+- [x] **K1 — Log game end in the backend:** winner, VP of every player, number of turns, duration.
+  - On `status === 'finished'`, console + `game.md` get a `GAME END` block (winner, VP per seat, turns, duration from START). Once per log folder.
