@@ -231,6 +231,32 @@ describe('describeLogEntry / formatTurnLog', () => {
     expect(formatTurnLog(log, state).split('\n')).toHaveLength(8)
   })
 
+  it('names the card of an action and keeps its id', () => {
+    const state = minimalState()
+    const craftRootTea: LogEntry = {
+      t: 'action',
+      actor: 0,
+      action: { type: 'craft', cardId: 'ROOT-222#1' },
+    }
+
+    expect(describeLogEntry(craftRootTea, state)).toBe(
+      's0 CRAFT Root Tea [mouse] item:tea +2vp (ROOT-222#1)',
+    )
+  })
+
+  it('shows the bare id of a card it does not know', () => {
+    const state = minimalState()
+    const spendVizier: LogEntry = {
+      t: 'action',
+      actor: 0,
+      action: { type: 'spendBird', cardId: 'vizier-0' },
+    }
+
+    expect(describeLogEntry(spendVizier, state)).toBe(
+      's0 SPEND BIRD vizier-0 (+1 action)',
+    )
+  })
+
   it('empty log', () => {
     expect(formatTurnLog([], minimalState())).toBe('(empty log)')
   })

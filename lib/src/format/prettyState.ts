@@ -193,17 +193,15 @@ function describePawnDestination(
 
 /** Human-readable action line (no card ids). */
 export function describeAction(action: Action, state: GameState): string {
+  /** Card of an action as `name … (card id)`: readable, and exact for a replay. */
   const findCard = (id: string): string => {
     for (const p of state.players) {
       const c = [...p.hand, ...p.playArea].find((x) => x.id === id)
-      if (c) return cardLabel(c)
+      if (c) return `${cardLabel(c)} (${id})`
     }
-    try {
-      const defId = id.split('#')[0]!
-      return cardLabel({ id, defId })
-    } catch {
-      return id
-    }
+    const label: string = cardLabel({ id, defId: id.split('#')[0]! })
+    // `cardLabel` falls back to the id for a card it does not know.
+    return label === id ? id : `${label} (${id})`
   }
 
   switch (action.type) {
