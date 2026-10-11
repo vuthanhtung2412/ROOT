@@ -125,9 +125,9 @@ export type GameState = {
   turnScratch: TurnScratch
   /**
    * Latest actions the player whose turn it is may take back. Starts again
-   * from zero after a battle, when the turn ends, when another player
-   * answers, and when an action reveals hidden information (dice, a draw,
-   * a card leaving another player's hand). Absent = none.
+   * from zero after a battle, when the turn ends, when another player is
+   * prompted, and when an action reveals hidden information (dice, a draw,
+   * a change to another player's hand). Absent = none.
    */
   undoableActions?: number
 }

@@ -73,11 +73,16 @@ export class Game {
     log: LogEntry[]
     rng: SeededRng
     signalBus?: SignalBus
+    /** Parallel to `history`. Absent or wrong length: every action counts. */
+    choiceHistory?: boolean[]
   }) {
     this.state = args.state
     this.history = args.history
-    // A loaded snapshot does not say which actions were forced: all count.
-    this.choiceHistory = args.history.map((): boolean => true)
+    this.choiceHistory =
+      args.choiceHistory !== undefined &&
+      args.choiceHistory.length === args.history.length
+        ? [...args.choiceHistory]
+        : args.history.map((): boolean => true)
     this.log = args.log
     this.rng = args.rng
     this.signalBus = args.signalBus ?? new SignalBus()
@@ -127,6 +132,10 @@ export class Game {
       history: [...snapshot.history],
       log: [...snapshot.log],
       rng: SeededRng.fromJSON(snapshot.rng),
+      choiceHistory:
+        snapshot.choiceHistory === undefined
+          ? undefined
+          : [...snapshot.choiceHistory],
     })
     syncPlaceIdsFromState(game.state)
     // Snapshot may land mid-step (evening score, birdsong wood) — fire pending autos.
@@ -143,6 +152,7 @@ export class Game {
       history: [...this.history],
       log: [...this.log],
       rng: this.rng.toJSON(),
+      choiceHistory: [...this.choiceHistory],
     }
   }
 
@@ -318,11 +328,13 @@ export class Game {
 
   /**
    * An action stays undoable while the turn goes on with nothing others saw
-   * resolved and nothing hidden revealed: no battle, no answer from another
-   * player, no dice, no draw, no card out of another player's hand, same turn.
+   * resolved and nothing hidden revealed: no battle, no prompt for another
+   * player, no dice, no draw, no change to another player's hand, same turn.
    */
   private keepsUndoHistory(before: UndoCheckpoint): boolean {
     const { state } = this
+    const pendingActor: Seat | undefined =
+      state.pending.length > 0 ? this.pendingLegalActions()[0]?.actor : undefined
     return (
       before.wasPlaying &&
       state.status === 'playing' &&
@@ -330,6 +342,7 @@ export class Game {
       before.actingSeat === state.currentSeat &&
       !before.battlePending &&
       !state.pending.some(isBattleEvent) &&
+      (pendingActor === undefined || pendingActor === state.currentSeat) &&
       !revealedHiddenInformation(before.hiddenInformation, state, this.rng)
     )
   }

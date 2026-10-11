@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import type { ActionSpec, AddToDecreeCard } from '#actions/types.js'
-import type { Game } from '#game/Game.js'
+import { Game } from '#game/Game.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { RuleError } from '#rules/RuleError.js'
+import { isFieldHospitalEvent } from '#typeGuards.js'
 import { card, createPlayingGame } from '#test/fixtures.js'
 
 const SWAP_MEET_DEF_ID = 'ROOT-103'
 const TAKEN_CARD_DEF_ID = 'ROOT-211'
+const PROPAGANDA_BUREAU_DEF_ID = 'ROOT-86'
+const MOUSE_CARD_DEF_ID = 'ROOT-218'
 const MARQUISE_SEAT: Seat = 0
 const EYRIE_SEAT: Seat = 1
 const BATTLE_CLEARING: ClearingId = 9
+/** Mouse clearing away from the Keep so Eyrie can replace there. */
+const MOUSE_CLEARING: ClearingId = 6
 const MAX_PHASES_PER_TURN = 12
 const SEED = 11
 
@@ -132,6 +137,56 @@ describe('undo of turn actions', () => {
 
     expect(game.state.currentSeat).toBe(EYRIE_SEAT)
     expect(game.state.step).toBe('decreeAdd')
+    expect(game.canUndoTurnAction()).toBe(false)
+  })
+
+  it('forced phase ends still peel after a snapshot load', () => {
+    const game: Game = createPlayingGame({ seed: SEED })
+    endTurnOf(game, MARQUISE_SEAT)
+    game.apply({ type: 'endPhase' })
+    game.apply({ type: 'addToDecree', cards: [firstDecreeCard(game)] })
+    expect(isEndPhaseTheOnlyAction(game)).toBe(true)
+    game.apply({ type: 'endPhase' })
+    expect(game.state.undoableActions).toBe(1)
+
+    const restored: Game = Game.fromJSON(game.toJSON())
+    restored.undoTurnAction()
+
+    expect(restored.state.step).toBe('decreeAdd')
+    expect(restored.canUndoTurnAction()).toBe(false)
+  })
+
+  it('a Field Hospitals prompt for another seat clears undo', () => {
+    const game: Game = createPlayingGame({ seed: SEED })
+    endTurnOf(game, MARQUISE_SEAT)
+    game.apply({ type: 'endPhase' })
+    game.apply({ type: 'addToDecree', cards: [firstDecreeCard(game)] })
+    expect(game.state.undoableActions).toBe(1)
+    while (game.state.phase !== 'daylight' && game.state.currentSeat === EYRIE_SEAT) {
+      game.apply({ type: 'endPhase' })
+    }
+    expect(game.state.phase).toBe('daylight')
+    expect(game.canUndoTurnAction()).toBe(true)
+
+    game.state.players[EYRIE_SEAT]!.playArea.push(card(PROPAGANDA_BUREAU_DEF_ID))
+    const mouseCard = card(MOUSE_CARD_DEF_ID)
+    game.state.players[EYRIE_SEAT]!.hand.push(mouseCard)
+    game.state.clearings[MOUSE_CLEARING]!.pieces.push({
+      id: 'undo-fh-cat',
+      kind: 'warrior',
+      owner: MARQUISE_SEAT,
+    })
+    // Matching suit so Field Hospitals can answer the replace.
+    game.state.players[MARQUISE_SEAT]!.hand.push(card(MOUSE_CARD_DEF_ID, 2))
+
+    game.apply({
+      type: 'propagandaBureau',
+      cardId: mouseCard.id,
+      clearing: MOUSE_CLEARING,
+      pieceId: 'undo-fh-cat',
+    })
+
+    expect(game.state.pending.some(isFieldHospitalEvent)).toBe(true)
     expect(game.canUndoTurnAction()).toBe(false)
   })
 

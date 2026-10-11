@@ -94,7 +94,7 @@ describe('hidden information revealed by an action', () => {
     expect(revealedHiddenInformation(before, after, rng)).toBe(true)
   })
 
-  it('the turn player spending or giving a card reveals nothing', () => {
+  it('a card entering the hand of another player reveals', () => {
     const state: GameState = stateWithHands()
     const rng: Rng = createTestRng()
     const before: HiddenInformationMark = markHiddenInformation(state, rng)
@@ -104,6 +104,16 @@ describe('hidden information revealed by an action', () => {
       [],
       [OTHER_PLAYER_CARD, TURN_PLAYER_CARD],
     )
+
+    expect(revealedHiddenInformation(before, after, rng)).toBe(true)
+  })
+
+  it('the turn player spending a card reveals nothing', () => {
+    const state: GameState = stateWithHands()
+    const rng: Rng = createTestRng()
+    const before: HiddenInformationMark = markHiddenInformation(state, rng)
+
+    const after: GameState = withHands(state, [], [OTHER_PLAYER_CARD])
 
     expect(revealedHiddenInformation(before, after, rng)).toBe(false)
   })

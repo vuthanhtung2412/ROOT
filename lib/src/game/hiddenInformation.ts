@@ -35,8 +35,11 @@ export function markHiddenInformation(
   }
 }
 
-/** A player other than the one whose turn it is no longer holds a card. */
-function anotherPlayerLostCard(
+/**
+ * A player other than the one whose turn it is gained or lost a card: the
+ * hand they show (or hide) changed.
+ */
+function anotherPlayerHandChanged(
   before: HiddenInformationMark,
   state: GameState,
 ): boolean {
@@ -47,14 +50,15 @@ function anotherPlayerLostCard(
     )
     const heldBefore: readonly string[] =
       before.handCardIdsBySeat.get(player.seat) ?? []
+    if (heldBefore.length !== heldNow.size) return true
     return heldBefore.some((cardId: string): boolean => !heldNow.has(cardId))
   })
 }
 
 /**
  * An action whose outcome the player could not know cannot be taken back:
- * it rolled dice, drew from the deck or the quest deck, or took a card out
- * of another player's hand.
+ * it rolled dice, drew from the deck or the quest deck, or changed another
+ * player's hand (a card taken or given).
  */
 export function revealedHiddenInformation(
   before: HiddenInformationMark,
@@ -65,6 +69,6 @@ export function revealedHiddenInformation(
     rng.toJSON().cursor !== before.diceRolled ||
     state.deck.draw.length !== before.drawPileSize ||
     state.questDeck.length !== before.questDeckSize ||
-    anotherPlayerLostCard(before, state)
+    anotherPlayerHandChanged(before, state)
   )
 }
