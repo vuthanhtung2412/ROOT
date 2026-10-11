@@ -209,6 +209,15 @@ export class Game {
       logs.push(...this.runAutoActions())
     }
 
+    // A card action can unblock an automatic step it was holding back
+    // (Charm Offensive holds the Evening draw).
+    if (
+      effectForAction(action) !== undefined &&
+      this.state.status === 'playing'
+    ) {
+      logs.push(...this.runAutoActions())
+    }
+
     this.trackStartOfPhase(action, { phase: phaseBefore, seat: seatBefore })
 
     this.history.push(action)
@@ -474,6 +483,8 @@ export class Game {
       const nextPhase = PHASES[pi + 1]!
       state.phase = nextPhase
       state.step = faction.steps[nextPhase][0]!
+      // Before the autos of the new phase: they may wait on a start-of-phase card.
+      state.turnScratch.phaseActionTaken = false
       if (nextPhase === 'evening' && state.step === 'military') {
         const board = playerOf(state, state.currentSeat).board
         if (board.kind === 'alliance') {
@@ -495,6 +506,7 @@ export class Game {
     const nextFaction = factionFor(factionOf(state, nextSeat))
     state.phase = 'birdsong'
     state.step = nextFaction.steps.birdsong[0]!
+    state.turnScratch.phaseActionTaken = false
 
     ctx.emit({ s: 'phase.start', actor: nextSeat, phase: 'birdsong' })
     logs.push({ t: 'phase', actor: nextSeat, phase: 'birdsong', step: state.step })
