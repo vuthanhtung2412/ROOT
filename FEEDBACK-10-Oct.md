@@ -5,13 +5,13 @@
 
 ## 0. Repro tooling (do first)
 
-- [ ] **T1 — Replay from a saved game log.** Load a mocked / logged game state and replay the game, to check whether a reported problem still persists. Needed to reproduce B2.
+- [ ] **T1 — Replay from a saved game log.** Replay the event list of a `game.json` up to a chosen event, to check whether a reported problem still persists. Dice must come out the same as in the logged game. Needed to reproduce B2.
 
 ## 1. Bugs (latest game, turn 13)
 
-- [ ] **B1 — Show the item supply more explicitly**, so an exhausted item is obvious.
+- [ ] **B1 — Show the item supply more explicitly**, so an exhausted item is obvious. Add a supply button that works like the Discarded pile button.
   - Context: Root Tea could not be crafted after buying from Riverfolk. Rule checked, behaviour is correct; only the UI is missing.
-- [ ] **B2 — Eyrie UI does not show the skip ambush button.**
+- [ ] **B2 — Eyrie UI does not show the skip ambush button.** It should be below the banner at the top; in that game it was not shown.
 
 ## 2. Unsupported cards
 
@@ -62,26 +62,31 @@ Cards:
 ## 3. Game rules / flow
 
 - [ ] **F1 — Do not auto-resolve craft when there is only 1 viable option.** Always let the player choose.
-- [ ] **F2 — Undo.** Add undo; clear the undo history after any non-deterministic step.
-- [ ] **F3 — Players choose which faction they want.**
-- [ ] **F4 — Merge "start game" and "join game" into one flow.**
+- [ ] **F2 — Undo.** Only the player whose turn it is can undo. The undo history is cleared after a battle and when the player ends their turn.
+- [ ] **F3 + F4 — One start flow, players choose their faction.**
+  - Start screen has a single button: **Create** when no game is in the lobby state, **Join** when one is.
+  - One player creates the game; for every other player the button becomes **Join**.
+  - No faction set is chosen in advance. After joining, each player picks a faction; a faction already taken cannot be picked.
+  - Assumed, not confirmed: all 6 factions can be picked; the creator starts the game once at least 2 players have picked; hotseat stays, with the creator picking every faction.
 - [ ] **F5 — End game is too accessible.** Only the game host can end the game, behind a confirmation modal.
 
 ## 4. In-game UI
 
-- [ ] **U1 — Game log visible to the player in the frontend.**
+- [ ] **U1 — Game log visible to the player in the frontend.** Full log, actions only, no game state.
+  - An action that concerns a card shows the card name not ID show card name (card ID) in server log too.
+  - An action that concerns a clearing shows it as a "clearing highlight" component: clicking e.g. "C7" highlights clearing 7 on the map.
 - [ ] **U2 — Show how many cards are in hand**, for the player's own hand and every opponent's hand.
-- [ ] **U3 — Reduce verbosity of the action banner.**
-- [ ] **U4 — Remove the number in the middle of a building.** A clearing holds at most 3 buildings so duplicate icon is still fine.
+- [ ] **U3 — Reduce verbosity of the action banner.** Deferred.
+- [ ] **U4 — Remove the number in the middle of a building.** One icon per building, no count badge: a clearing holds at most 3 buildings, so repeated icons are fine.
 - [ ] **U5 — Pointy finger in clearing.** Pointer cursor only when hovering a clickable clearing.
-- [ ] **U6 — Theme the cursor to the game.** Do together with U5.
+- [ ] **U6 — Theme the cursor to the game.** Create the cursor art that fits the game best. Do together with U5.
 
 ## 5. Performance
 
-- [ ] **P1 — Initial loading takes more than 10s.** Measure first, then cut.
-- [ ] **P2 — Preload assets for the potential next game states.**
+- [ ] **P1 — Initial loading takes more than 10s.** Measure on the prod build first, then cut.
+- [ ] **P2 — Preload assets for the potential next game states.** Deferred.
 - [ ] **P3 — Mobile build: preload assets at compile time.** Native build only; mobile web is unchanged.
 
 ## 6. Backend
 
-- [ ] **K1 — Log game end in the backend.**
+- [ ] **K1 — Log game end in the backend:** winner, VP of every player, number of turns, duration.
