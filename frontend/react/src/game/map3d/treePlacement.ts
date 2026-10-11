@@ -46,7 +46,7 @@ const LEAFY_MINIMUM_GREEN_OVER_BLUE = 40
 const COLOR_CHANNEL_COUNT = 3
 
 /** Pieces stand in the middle of a clearing: keep that part free of trees. */
-const CLEARING_TREE_FREE_RADIUS_RATIO = 0.8
+const CLEARING_TREE_FREE_RADIUS_RATIO = 0.95
 /** Leafy trees are sparser in the art than the pine carpet. */
 const LEAFY_KEEP_PROBABILITY = 0.35
 /** The score track and its border are not woodland. */
