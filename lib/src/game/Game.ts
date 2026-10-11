@@ -1,6 +1,11 @@
 import type { Action, ActionResult, ActionSpec } from '#actions/types.js'
 import { factionFor } from '#factions/index.js'
 import { beginFactionSetup } from '#game/factionSetup.js'
+import {
+  markHiddenInformation,
+  revealedHiddenInformation,
+  type HiddenInformationMark,
+} from '#game/hiddenInformation.js'
 import { createInitialState, runSharedSetup } from '#game/setup.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
@@ -43,6 +48,7 @@ type UndoCheckpoint = {
   /** Seat sending the action: the pending event's responder, else the turn's. */
   actingSeat: Seat
   battlePending: boolean
+  hiddenInformation: HiddenInformationMark
   /** False for a phase end taken with no other action on offer. */
   isChoice: boolean
 }
@@ -305,13 +311,15 @@ export class Game {
       turn: state.turn,
       actingSeat: answeringSeat ?? state.currentSeat,
       battlePending: state.pending.some(isBattleEvent),
+      hiddenInformation: markHiddenInformation(state, this.rng),
       isChoice: !isForcedEndPhase,
     }
   }
 
   /**
    * An action stays undoable while the turn goes on with nothing others saw
-   * resolved: no battle, no answer from another player, same turn.
+   * resolved and nothing hidden revealed: no battle, no answer from another
+   * player, no dice, no draw, no card taken from another player, same turn.
    */
   private keepsUndoHistory(before: UndoCheckpoint): boolean {
     const { state } = this
@@ -321,7 +329,8 @@ export class Game {
       state.turn === before.turn &&
       before.actingSeat === state.currentSeat &&
       !before.battlePending &&
-      !state.pending.some(isBattleEvent)
+      !state.pending.some(isBattleEvent) &&
+      !revealedHiddenInformation(before.hiddenInformation, state, this.rng)
     )
   }
 

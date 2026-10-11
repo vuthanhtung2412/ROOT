@@ -4,8 +4,10 @@ import type { Game } from '#game/Game.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { RuleError } from '#rules/RuleError.js'
-import { createPlayingGame } from '#test/fixtures.js'
+import { card, createPlayingGame } from '#test/fixtures.js'
 
+const SWAP_MEET_DEF_ID = 'ROOT-103'
+const TAKEN_CARD_DEF_ID = 'ROOT-211'
 const MARQUISE_SEAT: Seat = 0
 const EYRIE_SEAT: Seat = 1
 const BATTLE_CLEARING: ClearingId = 9
@@ -79,18 +81,40 @@ describe('undo of turn actions', () => {
   it('each decision of the turn can be taken back, latest first', () => {
     const game: Game = gameInDaylightActions()
     const undoableBefore: number = game.state.undoableActions ?? 0
+    const beforeRecruit = structuredClone(game.state)
     game.apply({ type: 'recruit' })
-    const afterRecruit = structuredClone(game.state)
-    game.apply({ type: 'endPhase' })
-    expect(game.state.phase).toBe('evening')
-    expect(game.state.undoableActions).toBe(undoableBefore + 2)
+    expect(game.state.undoableActions).toBe(undoableBefore + 1)
 
     game.undoTurnAction()
 
-    expect(game.state).toEqual(afterRecruit)
+    expect(game.state).toEqual(beforeRecruit)
     game.undoTurnAction()
-    expect(game.state.step).toBe('actions')
-    expect(game.state.undoableActions).toBe(undoableBefore)
+    expect(game.state.step).not.toBe('actions')
+    expect(game.state.undoableActions).toBe(undoableBefore - 1)
+  })
+
+  it('a draw from the deck clears the undo history', () => {
+    const game: Game = gameInDaylightActions()
+    game.apply({ type: 'recruit' })
+    const drawPileSize: number = game.state.deck.draw.length
+    expect(game.canUndoTurnAction()).toBe(true)
+
+    game.apply({ type: 'endPhase' }) // daylight → evening draw
+
+    expect(game.state.currentSeat).toBe(MARQUISE_SEAT)
+    expect(game.state.deck.draw.length).toBeLessThan(drawPileSize)
+    expect(game.canUndoTurnAction()).toBe(false)
+  })
+
+  it('a card taken from another player clears the undo history', () => {
+    const game: Game = createPlayingGame({ seed: SEED })
+    game.state.players[MARQUISE_SEAT]!.playArea.push(card(SWAP_MEET_DEF_ID))
+    game.state.players[EYRIE_SEAT]!.hand = [card(TAKEN_CARD_DEF_ID)]
+
+    game.apply({ type: 'swapMeet', target: EYRIE_SEAT })
+
+    expect(game.state.players[EYRIE_SEAT]!.hand).toEqual([])
+    expect(game.canUndoTurnAction()).toBe(false)
   })
 
   it('taking back a decision also rewinds the forced phase ends after it', () => {
