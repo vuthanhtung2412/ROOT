@@ -12,6 +12,10 @@ import {
   type GameState,
   type LogEntry,
 } from '@root/lib'
+import {
+  buildGameEndSummary,
+  formatGameEndSummary,
+} from '#debug/gameEndSummary.js'
 
 /** Repo root `./logs` (…/Root/logs), not cwd. */
 const LOGS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../../logs')
@@ -20,6 +24,8 @@ const LOGS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../../logs
 let currentLogDir: string | null = null
 let prevLogState: GameState | null = null
 let session: GameSessionLog | null = null
+/** One GAME END block per log folder. */
+let gameEndSummaryLogged = false
 
 export type GameLogEventLabel = 'CREATE' | 'JOIN' | 'START' | 'ACT' | 'UNDO' | 'LOAD'
 
@@ -77,6 +83,7 @@ export function beginGameLog(): string {
   currentLogDir = newLogDir()
   mkdirSync(currentLogDir, { recursive: true })
   prevLogState = null
+  gameEndSummaryLogged = false
   const openedAt = new Date().toISOString()
   session = {
     version: 1,
@@ -91,6 +98,33 @@ export function beginGameLog(): string {
   )
   writeJson()
   return currentLogDir
+}
+
+function sessionStartedAtIso(activeSession: GameSessionLog): string {
+  const startEvent = activeSession.events.find(
+    (event) => event.label === 'START',
+  )
+  if (startEvent !== undefined) {
+    return startEvent.at
+  }
+  return activeSession.openedAt
+}
+
+/** Winner, VP, turns, duration — once when the game finishes. */
+function logGameEndSummaryIfNeeded(state: GameState): void {
+  if (state.status !== 'finished' || gameEndSummaryLogged || session === null) {
+    return
+  }
+  gameEndSummaryLogged = true
+  const endedAtIso = new Date().toISOString()
+  const summary = buildGameEndSummary({
+    state,
+    startedAtIso: sessionStartedAtIso(session),
+    endedAtIso,
+  })
+  const text = formatGameEndSummary(summary)
+  console.log(text)
+  appendFileSync(mdPath(), `\n## Game end\n\n${text}\n`, 'utf8')
 }
 
 /** Console + `game.md` / `game.json` after each mutating game call. */
@@ -130,4 +164,5 @@ export function logGameEvent(
   writeJson()
 
   prevLogState = structuredClone(state)
+  logGameEndSummaryIfNeeded(state)
 }
