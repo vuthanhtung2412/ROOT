@@ -10,6 +10,7 @@ import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { warriors } from '#queries/pieces.js'
+import { warriorSupplyOf } from '#queries/supply.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
 import {
@@ -159,5 +160,54 @@ describe('Propaganda Bureau — Rule: G.1.21 Replace must be completable', () =>
     eyrie.hand = [card(RABBIT_CARD_DEF_ID)]
 
     expect(grantedSpecs(state)).toEqual([])
+  })
+})
+
+describe('Propaganda Bureau — Rule: G.1.21 Replace is remove then place', () => {
+  function replaceMouseWarrior(state: GameState): void {
+    tryApplyPropagandaBureau(
+      state,
+      {
+        type: 'propagandaBureau',
+        cardId: card(MOUSE_CARD_DEF_ID).id,
+        clearing: MOUSE_CLEARING,
+        pieceId: MOUSE_WARRIOR_ID,
+      },
+      buildCraftContext(state),
+    )
+  }
+
+  it('Rule: 6.2.3 Field Hospitals — the Marquise may answer the removal', () => {
+    const state: GameState = bureauState({
+      marquiseHand: [card(MOUSE_CARD_DEF_ID, 2)],
+    })
+
+    replaceMouseWarrior(state)
+
+    expect(state.pending).toEqual([
+      {
+        type: 'fieldHospital',
+        victim: MARQUISE_SEAT,
+        clearing: MOUSE_CLEARING,
+        count: 1,
+      },
+    ])
+    expect(warriors(state, MOUSE_CLEARING, EYRIE_SEAT)).toBe(1)
+    expect(warriors(state, MOUSE_CLEARING, MARQUISE_SEAT)).toBe(0)
+  })
+
+  it('returns the warrior to its supply when Field Hospitals cannot answer', () => {
+    const state: GameState = bureauState()
+    const marquiseBoardBefore = state.players[MARQUISE_SEAT]!.board
+    const supplyBefore: number =
+      warriorSupplyOf(marquiseBoardBefore)?.warriors ?? 0
+
+    replaceMouseWarrior(state)
+
+    expect(state.pending).toEqual([])
+    expect(warriorSupplyOf(state.players[MARQUISE_SEAT]!.board)?.warriors).toBe(
+      supplyBefore + 1,
+    )
+    expect(warriors(state, MOUSE_CLEARING, EYRIE_SEAT)).toBe(1)
   })
 })

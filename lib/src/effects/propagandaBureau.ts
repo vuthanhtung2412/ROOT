@@ -10,7 +10,7 @@ import { canPlace } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { warriorSupplyOf, type WarriorSupply } from '#queries/supply.js'
 import { placeUpTo } from '#rules/place.js'
-import { returnWarriorsToSupply } from '#rules/remove.js'
+import { removePieces } from '#rules/remove.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
 
@@ -93,22 +93,13 @@ export function tryApplyPropagandaBureau(
     onDominance: (dominanceCard) => state.dominanceAvailable.push(dominanceCard),
   })
 
-  const clearingState = state.clearings[action.clearing]!
-  const pieceIndex = clearingState.pieces.findIndex((piece) => piece.id === action.pieceId)
-  if (pieceIndex < 0) throw new RuleError('PIECE_NOT_FOUND', { pieceId: action.pieceId })
-  const [removed] = clearingState.pieces.splice(pieceIndex, 1)
-  if (!removed || removed.kind !== 'warrior') {
-    throw new RuleError('INVALID_PROPAGANDA_TARGET')
-  }
-  returnWarriorsToSupply(state, removed.owner, 1)
-  ctx.emit({
-    s: 'warriors.removed',
-    victim: removed.owner,
-    faction: playerOf(state, removed.owner).faction,
-    clearing: action.clearing,
-    count: 1,
-    toSupply: true,
-  })
+  // Rule: G.1.21 Replace — remove then place: the removal is a real one
+  // (6.2.3 Field Hospitals may answer it).
+  removePieces(
+    state,
+    { clearing: action.clearing, pieceIds: [action.pieceId], scorer: ownerSeat },
+    ctx,
+  )
 
   const placed = placeUpTo(state, {
     seat: ownerSeat,
