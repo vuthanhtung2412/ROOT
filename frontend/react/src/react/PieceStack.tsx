@@ -36,7 +36,7 @@ export type BoardClearingPieces = {
   ruin?: { items: string[] }
 }
 
-function textureKeyForStack(
+export function textureKeyForStack(
   stack: PieceStackViewModel,
   clearingId: number,
 ): string {
@@ -137,7 +137,7 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
   )
 }
 
-function pieceViewModelsForClearing(
+export function pieceViewModelsForClearing(
   clearing: BoardClearingPieces,
   factions: readonly string[],
 ): PieceViewModel[] {
