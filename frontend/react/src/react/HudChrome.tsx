@@ -1,6 +1,12 @@
-import { useState, useSyncExternalStore, type JSX } from 'react'
+import {
+  useState,
+  useSyncExternalStore,
+  type JSX,
+  type MouseEvent,
+} from 'react'
+import { createPortal } from 'react-dom'
 import { GiCardBurn } from 'react-icons/gi'
-import { LuFlag, LuLogOut, LuUndo2 } from 'react-icons/lu'
+import { LuFlag, LuLogOut, LuUndo2, LuX } from 'react-icons/lu'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -48,7 +54,24 @@ const LEAVE_GAME_WORDING: ExitGameWording = {
 }
 
 const KEEP_PLAYING_LABEL = 'Keep playing'
-const EXIT_MODAL_BUTTON_CLASS_NAME = 'root-button px-3.5 py-2 font-display text-lg'
+
+/** Same shell as discard / crafted card gallery. */
+const EXIT_MODAL_CLASS_NAME =
+  'exit-game-modal pointer-events-auto fixed inset-0 z-400 flex items-center justify-center'
+const EXIT_VEIL_CLASS_NAME = 'absolute inset-0 bg-forest-deep/72'
+const EXIT_CLOSE_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press absolute top-2.5 right-3 z-2 m-0 flex size-10 items-center justify-center p-0 text-2xl text-parchment [--root-paper-color:var(--color-rust)]'
+const EXIT_PANEL_CLASS_NAME =
+  'exit-game-modal__panel root-paper relative z-1 m-3 box-border flex w-[min(92vw,28rem)] flex-col gap-3 px-[18px] py-4 text-ink [--root-paper-color:var(--color-cream)]'
+const EXIT_TITLE_CLASS_NAME =
+  'm-0 border-b-2 border-dashed border-ink/35 pb-1.5 font-display text-[22px] font-normal capitalize'
+const EXIT_BODY_CLASS_NAME = 'm-0 font-body text-base text-ink-soft'
+const EXIT_ACTIONS_CLASS_NAME =
+  'flex flex-row flex-wrap justify-end gap-2 pt-1'
+const EXIT_QUIET_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press m-0 px-3.5 py-2 font-display text-base text-ink [--root-paper-color:var(--color-parchment)]'
+const EXIT_CONFIRM_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press m-0 px-3.5 py-2 font-display text-base text-parchment [--root-paper-color:var(--color-rust)]'
 
 /** Asks before leaving the game: one stray click must not end it. */
 function ExitGameModal(props: {
@@ -56,37 +79,53 @@ function ExitGameModal(props: {
   onConfirm: () => void
   onCancel: () => void
 }): JSX.Element {
-  return (
+  return createPortal(
     <div
-      className="exit-game-modal pointer-events-auto fixed inset-0 z-400 flex items-center justify-center"
+      className={EXIT_MODAL_CLASS_NAME}
       role="alertdialog"
       aria-modal="true"
       aria-label={props.wording.question}
+      onClick={props.onCancel}
     >
-      <div className={`absolute ${VEIL_CLASS_NAME}`} onClick={props.onCancel} />
-      <div className="root-panel relative z-1 m-3 flex max-w-[min(92vw,460px)] flex-col gap-3 px-5 py-4 text-ink">
-        <h2 className="m-0 font-display text-2xl font-normal">
-          {props.wording.question}
-        </h2>
-        <p className="m-0 font-body text-base">{props.wording.consequence}</p>
-        <div className="flex flex-row flex-wrap justify-end gap-2">
+      <div className={EXIT_VEIL_CLASS_NAME} aria-hidden="true" />
+      <button
+        type="button"
+        className={EXIT_CLOSE_BUTTON_CLASS_NAME}
+        aria-label={KEEP_PLAYING_LABEL}
+        onClick={(event: MouseEvent<HTMLButtonElement>): void => {
+          event.stopPropagation()
+          props.onCancel()
+        }}
+      >
+        <LuX aria-hidden="true" />
+      </button>
+      <div
+        className={EXIT_PANEL_CLASS_NAME}
+        onClick={(event: MouseEvent<HTMLDivElement>): void => {
+          event.stopPropagation()
+        }}
+      >
+        <h2 className={EXIT_TITLE_CLASS_NAME}>{props.wording.question}</h2>
+        <p className={EXIT_BODY_CLASS_NAME}>{props.wording.consequence}</p>
+        <div className={EXIT_ACTIONS_CLASS_NAME}>
           <button
             type="button"
-            className={`${EXIT_MODAL_BUTTON_CLASS_NAME} root-button--quiet`}
+            className={EXIT_QUIET_BUTTON_CLASS_NAME}
             onClick={props.onCancel}
           >
             {KEEP_PLAYING_LABEL}
           </button>
           <button
             type="button"
-            className={`${EXIT_MODAL_BUTTON_CLASS_NAME} root-button--accent`}
+            className={EXIT_CONFIRM_BUTTON_CLASS_NAME}
             onClick={props.onConfirm}
           >
             {props.wording.confirm}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
