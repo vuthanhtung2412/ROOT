@@ -184,6 +184,8 @@ const TURN_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
   },
   riverfolkCraft: {
     title: 'Craft',
+    // A craft is never resolved for the player, even with one craftable card.
+    asksEveryStep: true,
     steps: [
       { field: 'cardId', kind: 'card', prompt: 'pick card' },
       {

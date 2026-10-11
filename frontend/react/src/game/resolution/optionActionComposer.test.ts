@@ -89,6 +89,29 @@ describe('optionActionComposer turn actions', () => {
     ).toEqual({ kind: 'ready', action: { type: 'riverfolkDraw', fundOwner: 1 } })
   })
 
+  it('craft is never resolved for the player: one craftable card is still asked', () => {
+    const { composer, option } = composerFor()
+
+    const begun = expectIncomplete(
+      composer.begin(
+        makeActionSpec({
+          type: 'riverfolkCraft',
+          params: { options: [{ cardId: FOX_CARD_ID, exportCard: false }] },
+        }),
+      ),
+    )
+    expect(begun.prompt.enabledCardIds).toEqual([FOX_CARD_ID])
+
+    expectIncomplete(composer.chooseCard(FOX_CARD_ID))
+    expect(option.getPromptOptions()).toEqual([
+      { label: 'Craft', value: 'choice:0' },
+    ])
+    expect(composer.chooseColumn('choice:0')).toEqual({
+      kind: 'ready',
+      action: { type: 'riverfolkCraft', cardId: FOX_CARD_ID, exportCard: false },
+    })
+  })
+
   it('Rule: 11.6.2 Set Costs — one action picks the cost of all three services', () => {
     const { composer, option } = composerFor()
     const costs = [1, 2, 3, 4]
