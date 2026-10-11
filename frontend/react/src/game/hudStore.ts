@@ -128,6 +128,8 @@ export type HudCallbacks = {
   onEndGame: () => void
   /** Take back the latest action of the current turn. */
   onUndo: () => void
+  /** Game log: a clearing reference was clicked; show it on the map. */
+  onLogClearingClick: (clearingId: number) => void
   onOpenDiscardPile: () => void
   onReturnToMenu: () => void
   onLeaderPicked: (leaderId: string) => void
@@ -172,6 +174,8 @@ export type HudState = {
   /** Crafted / revealed cards flying out of the rail (last server update). */
   cardFlights: CardFlightBatch
   cardHand: CardHandHudState
+  /** Server log entries the viewer may see (other players' secrets redacted). */
+  gameLog: readonly unknown[]
   statusMessage: StatusMessageHudState
   shell: HudShell
   bootLoading: BootLoadingHudState
@@ -197,6 +201,7 @@ const INITIAL_HUD_STATE: HudState = {
   battleMark: null,
   cardFlights: EMPTY_CARD_FLIGHT_BATCH,
   cardHand: null,
+  gameLog: [],
   statusMessage: null,
   shell: 'boot',
   bootLoading: { progress: 0 },
@@ -214,6 +219,7 @@ const CLEARED_GAME_HUD_STATE: HudState = {
 const NOOP_CALLBACKS: HudCallbacks = {
   onEndGame: () => undefined,
   onUndo: () => undefined,
+  onLogClearingClick: () => undefined,
   onOpenDiscardPile: () => undefined,
   onReturnToMenu: () => undefined,
   onLeaderPicked: () => undefined,

@@ -3,6 +3,7 @@ import type { AutoPromptController } from '#game/resolution/autoPromptController
 import type { GameSceneModals } from '#game/gameSceneModals.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import { collapsePieceIdsRemovalSpecs } from '#game/battleRemovalStepper.ts'
+import { syncGameLog } from '#react/GameLog.tsx'
 import { syncGameDrawer, syncWinnerOverlay } from '#react/HudChrome.tsx'
 import { syncActionTray } from '#react/ActionTray.tsx'
 import { syncCardHand } from '#react/CardHand.tsx'
@@ -67,6 +68,7 @@ export function paintGameSceneHud(
       deps.localPlayerControlsSeat(snapshot.state.currentSeat),
     ),
   })
+  syncGameLog(snapshot.log)
   deps.syncBattleOverlay()
   deps.syncBattleClearingHighlight(snapshot.state)
   syncWinner(snapshot.state)

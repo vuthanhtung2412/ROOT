@@ -8,6 +8,7 @@ import {
   subscribeHud,
   type GameDrawerHudState,
 } from '#game/hudStore.ts'
+import { GameLogButton } from '#react/GameLog.tsx'
 import { ItemSupplyButton } from '#react/ItemSupply.tsx'
 import {
   setupCardPickOptions,
@@ -145,6 +146,7 @@ export function GameDrawer(): JSX.Element | null {
         </button>
       ) : null}
       <div className="ml-auto flex flex-row items-center gap-2">
+        <GameLogButton className={DRAWER_BUTTON_CLASS_NAME} />
         <ItemSupplyButton className={DRAWER_BUTTON_CLASS_NAME} />
         <button
           type="button"

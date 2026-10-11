@@ -106,6 +106,9 @@ type BoardListener = () => void
 /**
  * GameScene logic without Phaser — owns session composers + board snapshot for React.
  */
+/** How long a clearing clicked in the game log stays highlighted on the map. */
+const LOG_CLEARING_FLASH_MS = 2500
+
 export class ReactGameController {
   private session: GameSession | null = null
   private layout: BoardLayout | null = null
@@ -303,6 +306,9 @@ export class ReactGameController {
       onUndo: () => {
         void this.handleUndo()
       },
+      onLogClearingClick: (clearingId) => {
+        this.flashClearing(clearingId)
+      },
       onOpenDiscardPile: () => {
         const state = this.latestSnapshot?.state
         if (state !== null && state !== undefined) {
@@ -448,6 +454,22 @@ export class ReactGameController {
   private setHighlightedClearings(clearingIds: readonly number[]): void {
     this.highlightedClearingIds = clearingIds
     this.notifyBoard()
+  }
+
+  /**
+   * Game log: point at a clearing on the map for a moment, then give the
+   * highlight back to whatever the board was showing (prompt, battle).
+   */
+  private flashClearing(clearingId: number): void {
+    const flashed: readonly number[] = [clearingId]
+    const before: readonly number[] = this.highlightedClearingIds
+    this.setHighlightedClearings(flashed)
+    window.setTimeout((): void => {
+      // Untouched since the flash: nothing else claimed the highlight.
+      if (this.highlightedClearingIds === flashed) {
+        this.setHighlightedClearings(before)
+      }
+    }, LOG_CLEARING_FLASH_MS)
   }
 
   private setHighlightedForests(forestIndexes: readonly number[]): void {

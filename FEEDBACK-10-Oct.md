@@ -99,7 +99,10 @@ Cards:
 
 ## 4. In-game UI
 
-- [ ] **U1 — Game log visible to the player in the frontend.** Full log, actions only, no game state.
+- [x] **U1 — Game log visible to the player in the frontend.** Full log, actions only, no game state.
+  - **Log** button in the drawer opens a panel beside the map (the map stays visible for the clearing highlight). One heading per turn; "end phase" is left out.
+  - A card of another player the viewer may not see reads "a card".
+  - Server log: `CRAFT Root Tea [mouse] item:tea +2vp (ROOT-222#1)`.
   - An action that concerns a card shows the card name not ID show card name (card ID) in server log too.
   - An action that concerns a clearing shows it as a "clearing highlight" component: clicking e.g. "C7" highlights clearing 7 on the map.
 - [ ] **U2 — Show how many cards are in hand**, for the player's own hand and every opponent's hand.
