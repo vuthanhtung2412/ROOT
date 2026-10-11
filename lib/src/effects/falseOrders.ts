@@ -1,16 +1,21 @@
-import type { Action } from '#actions/types.js'
+import { actionMatchesOption, type ActionOption } from '#actions/options.js'
+import type { Action, ActionSpec } from '#actions/types.js'
 import { Deck } from '#cards/Deck.js'
 import type { CardEffect } from '#triggers/effects.js'
 import type { Ctx } from '#game/ctx.js'
 import { FALL } from '#map/fall.js'
 import type { Seat } from '#pieces/types.js'
+import { canMove } from '#queries/move.js'
 import { warriors } from '#queries/pieces.js'
 import { playerOf } from '#queries/seat.js'
 import { moveWarriors } from '#rules/move.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
+import { buildRuleHooks } from '#triggers/buildHooks.js'
+import type { RuleHooks } from '#triggers/hooks.js'
 
 const FALSE_ORDERS_DEF_ID = 'ROOT-72'
+const CLEARING_COUNT: number = FALL.clearings.length
 
 function falseOrdersOwner(state: GameState): Seat | null {
   for (const player of state.players) {
@@ -25,14 +30,38 @@ function falseOrdersAvailable(state: GameState): boolean {
   const ownerSeat = falseOrdersOwner(state)
   if (ownerSeat === null || ownerSeat !== state.currentSeat) return false
   if (state.phase !== 'birdsong') return false
-  if (state.turnScratch.falseOrdersUsed) return false
-  for (const player of state.players) {
-    if (player.seat === ownerSeat) continue
-    for (let clearing = 0; clearing < 12; clearing++) {
-      if (warriors(state, clearing, player.seat) > 0) return true
+  return !state.turnScratch.falseOrdersUsed
+}
+
+/** Card text: the forced move is made "ignoring rule". */
+function hooksIgnoringRule(hooks: RuleHooks): RuleHooks {
+  return { ...hooks, needsRuleToMove: (): boolean => false }
+}
+
+/**
+ * Every legal payload: enemy × clearing with their warriors × destination.
+ * Rule: 1.5.5 Use of Force — the move is resolved as if the enemy chose it,
+ * so the enemy's own adjacency applies (rivers with Boat Builders, …).
+ */
+function falseOrdersOptions(
+  state: GameState,
+  ownerSeat: Seat,
+  hooks: RuleHooks,
+): ActionOption[] {
+  const forcedHooks: RuleHooks = hooksIgnoringRule(hooks)
+  const options: ActionOption[] = []
+  for (const enemy of state.players) {
+    if (enemy.seat === ownerSeat) continue
+    for (let from = 0; from < CLEARING_COUNT; from++) {
+      if (warriors(state, from, enemy.seat) < 1) continue
+      for (let to = 0; to < CLEARING_COUNT; to++) {
+        if (to === from) continue
+        if (!canMove(state, { seat: enemy.seat, from, to }, forcedHooks)) continue
+        options.push({ target: enemy.seat, from, to })
+      }
     }
   }
-  return false
+  return options
 }
 
 /** Rule: Cards > Craft — False Orders: discard self → force half enemy warriors move, ignore rule. */
@@ -44,14 +73,14 @@ export function tryApplyFalseOrders(state: GameState, action: Action, ctx: Ctx):
   }
   if (state.phase !== 'birdsong') throw new RuleError('WRONG_PHASE', { phase: state.phase })
   if (state.turnScratch.falseOrdersUsed) throw new RuleError('FALSE_ORDERS_USED')
-  if (action.target === ownerSeat) throw new RuleError('INVALID_FALSE_ORDERS_TARGET')
-  if (action.from === action.to) throw new RuleError('INVALID_FALSE_ORDERS_PATH')
-  if (!FALL.isAdjacent(action.from, action.to)) {
-    throw new RuleError('NOT_ADJACENT', { from: action.from, to: action.to })
+  // Check the forced move first: the card is only discarded for a legal one.
+  if (
+    !actionMatchesOption(action, falseOrdersOptions(state, ownerSeat, ctx.hooks))
+  ) {
+    throw new RuleError('INVALID_FALSE_ORDERS_MOVE', { action })
   }
 
   const available = warriors(state, action.from, action.target)
-  if (available < 1) throw new RuleError('NO_WARRIORS', { clearing: action.from })
   const moveCount = Math.ceil(available / 2)
 
   const owner = playerOf(state, ownerSeat)
@@ -62,11 +91,7 @@ export function tryApplyFalseOrders(state: GameState, action: Action, ctx: Ctx):
     onDominance: (dominanceCard) => state.dominanceAvailable.push(dominanceCard),
   })
 
-  const ignoreRuleHooks = {
-    ...ctx.hooks,
-    needsRuleToMove: () => false,
-  }
-  const forcedCtx: Ctx = { ...ctx, hooks: ignoreRuleHooks }
+  const forcedCtx: Ctx = { ...ctx, hooks: hooksIgnoringRule(ctx.hooks) }
   moveWarriors(
     state,
     { seat: action.target, from: action.from, to: action.to, count: moveCount },
@@ -87,6 +112,17 @@ export const falseOrdersEffect: CardEffect = {
     if (!falseOrdersAvailable(state)) return []
     const ownerSeat = falseOrdersOwner(state)
     if (ownerSeat === null) return []
-    return [{ type: 'falseOrders', actor: ownerSeat }]
+    const options: ActionOption[] = falseOrdersOptions(
+      state,
+      ownerSeat,
+      buildRuleHooks(state, FALL),
+    )
+    if (options.length === 0) return []
+    const spec: ActionSpec = {
+      type: 'falseOrders',
+      actor: ownerSeat,
+      params: { options },
+    }
+    return [spec]
   },
 }
