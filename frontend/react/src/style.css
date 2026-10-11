@@ -72,9 +72,10 @@
    * Raw CSS reuses the same token: `cursor: var(--cursor-root-pointer)`.
    * Art lives in public/assets/cursors; numbers after the url are the hotspot.
    */
-  --cursor-root-default: default;
-  --cursor-root-pointer: url('/assets/cursors/clearing-point.png') 6 1, pointer;
-  --cursor-root-not-allowed: not-allowed;
+  --cursor-root-default: url('/assets/cursors/sword-default.png') 2 2, default;
+  --cursor-root-pointer: url('/assets/cursors/sword-pointer.png') 9 9, pointer;
+  --cursor-root-not-allowed:
+    url('/assets/cursors/shield-not-allowed.png') 24 21, not-allowed;
 }
 
 /* Paper grain multiplied over the element's background colour. */

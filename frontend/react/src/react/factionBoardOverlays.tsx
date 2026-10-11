@@ -430,7 +430,7 @@ function SupportersPileOverlay(props: {
   return (
     <button
       type="button"
-      className="faction-board-modal__supporters-hit pointer-events-auto absolute cursor-pointer overflow-hidden disabled:cursor-not-allowed"
+      className="faction-board-modal__supporters-hit pointer-events-auto absolute cursor-root-pointer overflow-hidden disabled:cursor-root-not-allowed"
       style={layoutRegionStyle(props.region, props.layout)}
       aria-label={
         props.view.supportersFaceDown

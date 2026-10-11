@@ -5,7 +5,7 @@ import { filterTrayActions } from '#ui/ActionTray.ts'
 
 /** Outline on a faction-board piece the acting player may click. */
 export const BOARD_CLICKABLE_OUTLINE_CLASS_NAME =
-  'pointer-events-auto cursor-pointer rounded-md ring-[3px] ring-rust'
+  'pointer-events-auto cursor-root-pointer rounded-md ring-[3px] ring-rust'
 
 /** Outlined small piece (item token) that also grows on hover. */
 export const BOARD_CLICKABLE_CLASS_NAME = `${BOARD_CLICKABLE_OUTLINE_CLASS_NAME} transition-transform hover:scale-110`

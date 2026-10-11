@@ -28,7 +28,7 @@ const SEAT_TILE_CLASS_NAME =
 /** Seat whose turn it is: a little bigger, under the sun badge. */
 const SEAT_TILE_ACTIVE_CLASS_NAME = 'scale-110'
 const SEAT_PORTRAIT_BUTTON_CLASS_NAME =
-  'm-0 box-border flex size-full cursor-pointer items-center justify-center border-0 bg-transparent p-1'
+  'm-0 box-border flex size-full cursor-root-pointer items-center justify-center border-0 bg-transparent p-1'
 /** Faction colour softened toward parchment so the head art stays readable. */
 const PORTRAIT_TINT_PERCENT = 55
 const SEAT_BADGE_CLASS_NAME =

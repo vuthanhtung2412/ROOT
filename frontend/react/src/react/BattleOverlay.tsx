@@ -111,7 +111,7 @@ export function BattleOverlay(): JSX.Element | null {
         {isOutcomeFlash ? (
           <button
             type="button"
-            className="battle-overlay__veil pointer-events-auto absolute inset-0 m-0 cursor-pointer border-0 bg-transparent p-0"
+            className="battle-overlay__veil pointer-events-auto absolute inset-0 m-0 cursor-root-pointer border-0 bg-transparent p-0"
             aria-label="Dismiss battle result"
             onClick={() => {
               callbacks.onBattleOutsideClick()

@@ -27,7 +27,7 @@ const CARD_HOLD_MILLISECONDS = 350
 const HAND_CLASS_NAME =
   'pointer-events-none fixed bottom-3 left-1/2 z-120 box-border flex max-w-[calc(100vw-16px)] -translate-x-1/2 flex-row items-end overflow-x-auto px-3 pt-4 md:-bottom-14 md:max-w-none md:overflow-x-visible md:px-0 md:pt-0'
 const HAND_CARD_CLASS_NAME =
-  'pointer-events-auto relative -mx-1 box-border h-22 w-16 shrink-0 origin-bottom cursor-pointer overflow-hidden rounded-md border-2 border-ink-deep bg-ink p-0 shadow-card transition-[translate] duration-100 ease-out hover:z-1 md:-mx-2.5 md:h-39 md:w-28 md:shrink md:border-3 md:hover:-translate-y-12'
+  'pointer-events-auto relative -mx-1 box-border h-22 w-16 shrink-0 origin-bottom cursor-root-pointer overflow-hidden rounded-md border-2 border-ink-deep bg-ink p-0 shadow-card transition-[translate] duration-100 ease-out hover:z-1 md:-mx-2.5 md:h-39 md:w-28 md:shrink md:border-3 md:hover:-translate-y-12'
 const HAND_CARD_SELECTED_CLASS_NAME =
   'z-1 border-gold -translate-y-3 shadow-card-selected md:-translate-y-12'
 /** Tilt between neighbouring cards, and the widest the whole fan may open. */

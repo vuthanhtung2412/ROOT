@@ -100,7 +100,7 @@
   padding: 0;
   border: 3px solid transparent;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-root-pointer);
   box-sizing: border-box;
 }
 

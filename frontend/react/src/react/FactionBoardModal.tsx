@@ -107,7 +107,7 @@ export function FactionBoardModal(): JSX.Element | null {
     >
       <button
         type="button"
-        className="absolute inset-0 cursor-pointer bg-forest-deep/72"
+        className="absolute inset-0 cursor-root-pointer bg-forest-deep/72"
         aria-label="Close faction board"
         onClick={() => {
           hideFactionBoard()
@@ -115,7 +115,7 @@ export function FactionBoardModal(): JSX.Element | null {
       />
       <button
         type="button"
-        className="faction-board-modal__close absolute top-2.5 right-3 z-2 cursor-pointer bg-parchment px-2 py-1 font-display text-[16px] text-ink"
+        className="faction-board-modal__close absolute top-2.5 right-3 z-2 cursor-root-pointer bg-parchment px-2 py-1 font-display text-[16px] text-ink"
         aria-label="Close"
         onClick={() => {
           hideFactionBoard()

@@ -40,7 +40,7 @@ import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 
 /** An empty pile shows the printed Lost Souls art; a card covers it otherwise. */
 const LOST_SOULS_PILE_CLASS_NAME =
-  'pointer-events-auto absolute z-2 cursor-pointer hover:brightness-110'
+  'pointer-events-auto absolute z-2 cursor-root-pointer hover:brightness-110'
 /** Fills the whole frame (a button gives no height to percentages). */
 const LOST_SOULS_TOP_CARD_CLASS_NAME =
   'pointer-events-none absolute inset-0 block size-full rounded-[5%] object-fill select-none'

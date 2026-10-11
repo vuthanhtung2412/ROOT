@@ -211,7 +211,7 @@ export function TurnBanner(): JSX.Element | null {
 }
 
 const ITEM_OPTION_BASE_CLASS =
-  'relative m-0 box-border size-14 cursor-pointer border-2 bg-parchment p-0.5 transition-transform duration-75 ease-out md:size-16'
+  'relative m-0 box-border size-14 cursor-root-pointer border-2 bg-parchment p-0.5 transition-transform duration-75 ease-out md:size-16'
 const TEXT_OPTION_BUTTON_CLASS_NAME =
   'root-paper root-paper-fine root-paper-press m-0 flex flex-row items-center gap-1.5 px-3 py-1 font-display text-sm text-ink'
 const OPTION_ICON_CLASS_NAME = 'shrink-0 text-base text-rust'

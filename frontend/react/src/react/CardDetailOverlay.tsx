@@ -61,7 +61,7 @@ export function CardDetailOverlay(): JSX.Element | null {
     >
       <button
         type="button"
-        className="card-detail-overlay__veil absolute inset-0 m-0 cursor-pointer border-0 bg-forest-deep/72 p-0"
+        className="card-detail-overlay__veil absolute inset-0 m-0 cursor-root-pointer border-0 bg-forest-deep/72 p-0"
         aria-label="Close card detail"
         onClick={() => {
           hideCardDetail()

@@ -227,7 +227,7 @@ export function LeaderPickOverlay(): JSX.Element | null {
             <button
               key={option.id}
               type="button"
-              className="m-0 flex cursor-pointer flex-col items-center gap-2 border-0 bg-transparent p-0 text-parchment"
+              className="m-0 flex cursor-root-pointer flex-col items-center gap-2 border-0 bg-transparent p-0 text-parchment"
               onClick={() => {
                 getHudCallbacks().onLeaderPicked(option.id)
               }}

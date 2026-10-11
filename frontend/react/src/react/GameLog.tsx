@@ -39,7 +39,7 @@ const ACTION_LINE_CLASS_NAME =
 const CARD_NAME_CLASS_NAME = 'game-log__card font-semibold italic'
 /** A clearing of the log: click it and the map shows where it is. */
 const CLEARING_REFERENCE_CLASS_NAME =
-  'clearing-highlight root-button root-button--quiet mx-0.5 inline-block cursor-pointer px-1.5 py-0 font-mono text-sm leading-tight'
+  'clearing-highlight root-button root-button--quiet mx-0.5 inline-block cursor-root-pointer px-1.5 py-0 font-mono text-sm leading-tight'
 
 function cardNameOf(cardId: string): string | null {
   if (cardId.startsWith(VIZIER_CARD_ID_PREFIX)) return VIZIER_CARD_NAME
