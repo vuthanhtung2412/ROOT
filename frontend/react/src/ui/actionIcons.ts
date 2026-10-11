@@ -6,6 +6,7 @@ import {
   LuBan,
   LuBedDouble,
   LuBird,
+  LuBomb,
   LuChurch,
   LuCircleDot,
   LuCoins,
@@ -114,6 +115,7 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   setServiceCosts: LuCoins,
   // Crafted persistent cards
   propagandaBureau: LuMegaphone,
+  saboteurs: LuBomb,
 }
 
 export function actionIconFor(actionType: string): IconType {

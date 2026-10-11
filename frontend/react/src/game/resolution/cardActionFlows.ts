@@ -4,6 +4,11 @@ import type {
   OptionValue,
 } from '#game/resolution/optionActionFlows.ts'
 
+/** Label of a player, for a seat choice. */
+function seatLabel(value: OptionValue, labels: OptionLabels): string {
+  return typeof value === 'number' ? labels.seatName(value) : String(value)
+}
+
 /** Label of the enemy a warrior belongs to, for a `pieceId` choice. */
 function warriorOwnerLabel(value: OptionValue, labels: OptionLabels): string {
   return labels.warriorOwnerName(String(value)) ?? String(value)
@@ -29,9 +34,28 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
       { field: 'cardId', kind: 'card', prompt: 'pick matching card to spend' },
     ],
   },
+  // Saboteurs: discard it to discard a crafted card of an enemy.
+  saboteurs: {
+    title: 'Saboteurs',
+    asksEveryStep: true,
+    steps: [
+      {
+        field: 'target',
+        kind: 'choice',
+        prompt: 'pick enemy',
+        label: seatLabel,
+      },
+      {
+        field: 'cardId',
+        kind: 'pileCard',
+        prompt: 'Pick a crafted card to discard',
+      },
+    ],
+  },
 }
 
 /** Tray labels of the card actions. */
 export const CARD_ACTION_LABELS: Readonly<Record<string, string>> = {
   propagandaBureau: 'propaganda bureau',
+  saboteurs: 'saboteurs',
 }

@@ -8,6 +8,7 @@ import {
 import { createOptionComposerHooks } from '#game/resolution/optionActionComposer.ts'
 import { makeActionSpec, makeGameState } from '#test/factories.ts'
 import { formatActionLabel } from '#ui/ActionTray.ts'
+import type { CardGalleryFace } from '#ui/cardGalleryTypes.ts'
 import type { TurnBannerOption } from '#ui/TurnBanner.ts'
 
 const MOUSE_CARD_ID = 'ROOT-218#1'
@@ -23,6 +24,8 @@ const WARRIOR_OWNER_SEATS: Readonly<Record<string, number>> = {
 type ComposerUnderTest = {
   composer: ActionComposer
   promptOptions: () => TurnBannerOption[]
+  /** Cards of the pile the player is asked to pick from. */
+  shownPileCardIds: () => string[]
 }
 
 function composerUnderTest(): ComposerUnderTest {
@@ -33,7 +36,14 @@ function composerUnderTest(): ComposerUnderTest {
   })
   const composer = new ActionComposer()
   composer.setHooks(option.hooks)
-  return { composer, promptOptions: option.getPromptOptions }
+  return {
+    composer,
+    promptOptions: option.getPromptOptions,
+    shownPileCardIds: (): string[] =>
+      (option.getCardPilePick()?.cards ?? []).map(
+        (pileCard: CardGalleryFace): string => pileCard.id,
+      ),
+  }
 }
 
 function expectIncomplete(
@@ -112,6 +122,44 @@ describe('Propaganda Bureau flow', () => {
 
   it('has a tray label', () => {
     expect(formatActionLabel(spec)).toBe('propaganda bureau')
+  })
+})
+
+describe('Saboteurs flow', () => {
+  const BOAT_BUILDERS_ID = 'ROOT-57#1'
+  const TUNNELS_ID = 'ROOT-108#1'
+  const COFFIN_MAKERS_ID = 'ROOT-62#1'
+  const spec: ActionSpec = makeActionSpec({
+    type: 'saboteurs',
+    params: {
+      options: [
+        { target: 0, cardId: BOAT_BUILDERS_ID },
+        { target: 0, cardId: TUNNELS_ID },
+        { target: 2, cardId: COFFIN_MAKERS_ID },
+      ],
+    },
+  })
+
+  it('asks the enemy, then shows only the crafted cards of that enemy', () => {
+    const { composer, promptOptions, shownPileCardIds } = composerUnderTest()
+
+    expectIncomplete(composer.begin(spec))
+    expect(promptOptions()).toEqual([
+      { label: 'marquise', value: 'choice:0' },
+      { label: 'eyrie', value: 'choice:1' },
+    ])
+
+    expectIncomplete(composer.chooseColumn('choice:0'))
+    expect(shownPileCardIds()).toEqual([BOAT_BUILDERS_ID, TUNNELS_ID])
+
+    expect(composer.chooseCard(TUNNELS_ID)).toEqual({
+      kind: 'ready',
+      action: { type: 'saboteurs', target: 0, cardId: TUNNELS_ID },
+    })
+  })
+
+  it('has a tray label', () => {
+    expect(formatActionLabel(spec)).toBe('saboteurs')
   })
 })
 
