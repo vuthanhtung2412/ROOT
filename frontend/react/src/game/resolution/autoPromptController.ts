@@ -19,7 +19,10 @@ import {
 } from '#game/resolution/eventActionComposer.ts'
 import { pendingEventType } from '#game/expansionPendingPrompts.ts'
 import { soleEndPhaseAction } from '#game/resolution/forcedAction.ts'
-import { FORCED_CARD_PENDING_TYPES } from '#game/resolution/optionActionFlows.ts'
+import {
+  FORCED_CARD_ACTION_TYPES,
+  FORCED_CARD_PENDING_TYPES,
+} from '#game/resolution/optionActionFlows.ts'
 import type { GameSessionSnapshot } from '#game/GameSession.ts'
 
 export type EventComposerAutoPromptHooks = {
@@ -249,7 +252,10 @@ export class AutoPromptController {
     this.deps.submitEndPhase()
   }
 
-  /** A crafted card left a forced choice pending (Swap Meet: card to give). */
+  /**
+   * A crafted card forces a choice: a pending event (Swap Meet: card to give)
+   * or a forced turn action (Eyrie Émigré: move at the end of Birdsong).
+   */
   private maybeBeginForcedCardPrompt(
     snapshot: GameSessionSnapshot,
     actorSeat: number,
@@ -257,23 +263,28 @@ export class AutoPromptController {
   ): void {
     const pending: unknown = snapshot.state?.pending[0]
     const pendingType: string | null = pendingEventType(pending)
-    if (
-      !localControlsActor ||
-      pendingType === null ||
-      !FORCED_CARD_PENDING_TYPES.has(pendingType)
-    ) {
-      this.forcedCardPromptKey = null
-      return
-    }
-    const forcedSpec: ActionSpec | undefined = snapshot.legalActions.find(
-      (spec: ActionSpec): boolean =>
-        spec.type === 'resolveEvent' && spec.actor === actorSeat,
-    )
+    const answersForcedPending: boolean =
+      pendingType !== null && FORCED_CARD_PENDING_TYPES.has(pendingType)
+    const forcedSpec: ActionSpec | undefined = !localControlsActor
+      ? undefined
+      : snapshot.legalActions.find(
+          (spec: ActionSpec): boolean =>
+            spec.actor === actorSeat &&
+            (answersForcedPending
+              ? spec.type === 'resolveEvent'
+              : // Eyrie Émigré at the end of Birdsong: a forced turn action.
+                pendingType === null && FORCED_CARD_ACTION_TYPES.has(spec.type)),
+        )
     if (forcedSpec === undefined) {
       this.forcedCardPromptKey = null
       return
     }
-    const key: string = JSON.stringify({ pending, params: forcedSpec.params })
+    const key: string = JSON.stringify({
+      pending,
+      turn: snapshot.state?.turn,
+      type: forcedSpec.type,
+      params: forcedSpec.params,
+    })
     if (key === this.forcedCardPromptKey) {
       return
     }

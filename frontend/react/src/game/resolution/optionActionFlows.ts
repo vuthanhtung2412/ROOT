@@ -65,6 +65,8 @@ export type FlowDefinition = {
   steps: readonly OptionStep[]
   /** Ask every step, even one with a single possible value. Default: skip it. */
   asksEveryStep?: boolean
+  /** The action must be taken: its prompt cannot be cancelled. */
+  forced?: boolean
 }
 
 function seatLabel(value: OptionValue, labels: OptionLabels): string {
@@ -220,6 +222,16 @@ export const FORCED_CARD_PENDING_TYPES: ReadonlySet<string> = new Set<string>([
   SWAP_MEET_GIVE_PENDING_TYPE,
 ])
 
+/** Card actions the actor must take when they are offered: same, no tray button. */
+export const FORCED_CARD_ACTION_TYPES: ReadonlySet<string> = new Set<string>(
+  Object.entries(CARD_ACTION_FLOWS)
+    .filter(
+      ([, definition]: [string, FlowDefinition]): boolean =>
+        definition.forced === true,
+    )
+    .map(([actionType]: [string, FlowDefinition]): string => actionType),
+)
+
 function isActionOptionView(value: unknown): value is ActionOptionView {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false
@@ -366,7 +378,7 @@ export function optionFlowForSpec(
     title: definition.title,
     steps: definition.steps,
     options,
-    cancellable: true,
+    cancellable: definition.forced !== true,
     autoPickSingle: definition.asksEveryStep !== true,
   }
 }

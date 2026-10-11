@@ -160,6 +160,93 @@ describe('Charm Offensive flow', () => {
   })
 })
 
+describe('Eyrie Émigré flow', () => {
+  const spec: ActionSpec = makeActionSpec({
+    type: 'eyrieEmigre',
+    params: {
+      options: [
+        { from: 9, to: 1, count: 1, defender: 0 },
+        { from: 9, to: 1, count: 2, defender: 0 },
+        { from: 9, to: 1, count: 1, defender: 2 },
+        { from: 9, to: 1, count: 2, defender: 2 },
+        { from: 9, to: 0, count: 1 },
+        { from: 9, to: 0, count: 2 },
+      ],
+    },
+  })
+
+  it('cannot be cancelled: the move is forced', () => {
+    const { composer } = composerUnderTest()
+
+    const begun = expectIncomplete(composer.begin(spec))
+    expect(begun.prompt.canCancel).toBe(false)
+    expect(begun.prompt.highlightClearings).toEqual([9])
+    expect(composer.cancel().kind).toBe('incomplete')
+  })
+
+  it('destination with enemies: origin, destination, count, then the defender', () => {
+    const { composer, promptOptions } = composerUnderTest()
+    composer.begin(spec)
+
+    const afterOrigin = expectIncomplete(composer.chooseClearing(9))
+    expect(afterOrigin.prompt.highlightClearings).toEqual([1, 0])
+    expectIncomplete(composer.chooseClearing(1))
+    expectIncomplete(composer.chooseColumn('2'))
+    expect(promptOptions()).toEqual([
+      { label: 'marquise', value: 'choice:0' },
+      { label: 'eyrie', value: 'choice:1' },
+    ])
+
+    expect(composer.chooseColumn('choice:1')).toEqual({
+      kind: 'ready',
+      action: { type: 'eyrieEmigre', from: 9, to: 1, count: 2, defender: 2 },
+    })
+  })
+
+  it('destination with no enemy: no defender is asked', () => {
+    const { composer } = composerUnderTest()
+    composer.begin(spec)
+    composer.chooseClearing(9)
+    composer.chooseClearing(0)
+
+    expect(composer.chooseColumn('1')).toEqual({
+      kind: 'ready',
+      action: { type: 'eyrieEmigre', from: 9, to: 0, count: 1 },
+    })
+  })
+
+  it('opens by itself when it is the forced action at the end of Birdsong', () => {
+    const { composer } = composerUnderTest()
+    const applied: ComposerOutcome[] = []
+    const controller = new AutoPromptController({
+      applyComposerOutcome: (outcome: ComposerOutcome): void => {
+        applied.push(outcome)
+      },
+      composer,
+      eventComposer: createEventComposerHooks(),
+      submitEndPhase: () => undefined,
+      isBattleResultFlashActive: () => false,
+      isBoardReady: () => true,
+    })
+    const snapshot: GameSessionSnapshot = {
+      state: makeGameState({ phase: 'birdsong' }),
+      legalActions: [spec],
+      historyLength: 0,
+      log: [],
+      error: null,
+      loading: false,
+    }
+
+    controller.runAfterHudPaint(snapshot, 0, true)
+    controller.runAfterHudPaint(snapshot, 0, true)
+
+    expect(applied).toHaveLength(1)
+    expect(expectIncomplete(applied[0]!).prompt.message).toBe(
+      'Eyrie Émigré — you must move: pick origin',
+    )
+  })
+})
+
 describe('False Orders flow', () => {
   const spec: ActionSpec = makeActionSpec({
     type: 'falseOrders',

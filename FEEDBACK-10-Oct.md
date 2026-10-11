@@ -67,10 +67,10 @@ Cards:
 - [x] **C7 — False Orders** (`falseOrders`, Birdsong). Pick enemy → origin clearing with their warriors → adjacent destination.
   - [x] **C7.1 — Rule fix: Use of Force (1.5.5).** The forced move is resolved as if the enemy chose it: `lib` only allowed paths, so an enemy with Boat Builders could not be sent along a river. A move the enemy cannot make no longer discards the card.
   - [x] **C7.2 — `lib` lists legal payloads**, then frontend flow, tray label, icon.
-- [ ] **C8 — Eyrie Émigré** (`eyrieEmigre`, Birdsong). Pick origin → destination → count → defender.
+- [x] **C8 — Eyrie Émigré** (`eyrieEmigre`, Birdsong). Pick origin → destination → count → defender.
   - Rule mismatch: card says the move is mandatory at end of Birdsong, then a battle in the destination, discard if both were not taken. `lib` only offers moves into a clearing that already holds an enemy, and lets the player skip the move. Force the move when any move is legal; battle if the destination holds an enemy; otherwise discard the card.
   - [x] **C8.1 — Rule fix.** The card is no longer usable during Birdsong. Ending Birdsong holds the phase and leaves the forced move as the only action; a destination with an enemy comes with its battle, one without discards the card; then only "end phase" is left. No possible move → Birdsong ends and the card is discarded. The CLI auto player now plays any action that lists its payloads, so it is not stuck on the forced move.
-  - [ ] **C8.2 — Frontend:** the forced move opens by itself when Birdsong ends: origin → destination → count → defender.
+  - [x] **C8.2 — Frontend:** the forced move opens by itself when Birdsong ends: origin → destination → count → defender.
 - [ ] **C9 — Update `resources/notes/frontend-vs-registered-actions.md`.** Remove these actions from "not wired in React composers yet".
 - [ ] **C10 — QA run + video.** Snapshot builder and replay script for `resources/notes/QA-plan-card-fe-support.md`; record `tmp/artifacts/card-fe-support-qa/card-fe-support.qa.mp4`.
 

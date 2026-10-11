@@ -62,6 +62,24 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
       },
     ],
   },
+  // Eyrie Émigré: at the end of Birdsong, a move then a battle, both forced.
+  eyrieEmigre: {
+    title: 'Eyrie Émigré',
+    asksEveryStep: true,
+    forced: true,
+    steps: [
+      { field: 'from', kind: 'clearing', prompt: 'you must move: pick origin' },
+      { field: 'to', kind: 'clearing', prompt: 'pick destination' },
+      { field: 'count', kind: 'count', prompt: 'how many warriors?' },
+      // Absent when the destination holds no enemy: the card is then discarded.
+      {
+        field: 'defender',
+        kind: 'choice',
+        prompt: 'you must battle: pick defender',
+        label: seatLabel,
+      },
+    ],
+  },
   // False Orders: discard it to move half of an enemy's warriors.
   falseOrders: {
     title: 'False Orders',
@@ -150,6 +168,7 @@ export const CARD_ACTION_FLOWS: Readonly<Record<string, FlowDefinition>> = {
 /** Tray labels of the card actions. */
 export const CARD_ACTION_LABELS: Readonly<Record<string, string>> = {
   charmOffensive: 'charm offensive',
+  eyrieEmigre: 'eyrie émigré',
   falseOrders: 'false orders',
   informantsTakeAmbush: 'informants',
   leagueMove: 'league: move',
