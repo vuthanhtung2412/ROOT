@@ -241,6 +241,9 @@ export function createMapCameraRig(
     dispose: (): void => {
       controls.removeEventListener('start', stopGlide)
       controls.dispose()
+      // OrbitControls leaves `cursor: auto` inline; clear so the themed
+      // sword cursor from CSS can show again.
+      controlElement.style.cursor = ''
     },
   }
 }

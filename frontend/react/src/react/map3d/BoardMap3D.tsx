@@ -50,7 +50,14 @@ const RESET_VIEW_INSET_PIXELS = 8
 /** Never under the discard pile chip in the top right corner. */
 const RESET_VIEW_MINIMUM_RIGHT_PIXELS = 170
 const RESET_VIEW_CLASS_NAME =
-  'map-3d-reset-view pointer-events-auto absolute top-2 z-6 cursor-pointer rounded border border-parchment-shadow bg-[#1a2438cc] px-2 py-1 font-body text-xs font-bold text-parchment'
+  'map-3d-reset-view pointer-events-auto absolute top-2 z-6 cursor-root-pointer rounded border border-parchment-shadow bg-[#1a2438cc] px-2 py-1 font-body text-xs font-bold text-parchment'
+/** Themed sword over the woodland; finger over a clearing the player can pick. */
+const MAP_CANVAS_CLASS_NAME =
+  'map-3d-canvas pointer-events-auto absolute inset-0 z-0 block cursor-root-default touch-none'
+const CLICKABLE_CLEARING_CLASS_NAME =
+  'pointer-events-auto absolute z-4 m-0 cursor-root-pointer rounded-full border-0 bg-transparent p-0'
+const CLICKABLE_FOREST_CLASS_NAME =
+  'pointer-events-auto absolute inset-0 z-5 m-0 cursor-root-pointer border-0 bg-transparent p-0'
 
 /** A clearing as it shows up in the view right now. */
 type ProjectedClearing = {
@@ -279,7 +286,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
     >
       <canvas
         ref={canvasReference}
-        className="map-3d-canvas pointer-events-auto absolute inset-0 z-0 block touch-none"
+        className={MAP_CANVAS_CLASS_NAME}
       />
       {scene !== null ? (
         <button
@@ -306,7 +313,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
               <button
                 key={`forest-hit-${String(forest.forestIndex)}`}
                 type="button"
-                className="pointer-events-auto absolute inset-0 z-5 m-0 cursor-pointer border-0 bg-transparent p-0"
+                className={CLICKABLE_FOREST_CLASS_NAME}
                 aria-label={`Forest ${String(forest.forestIndex)}`}
                 onClick={() => {
                   onForestSelected?.(forest.forestIndex)
@@ -330,7 +337,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
           <button
             key={clearing.clearingId}
             type="button"
-            className="pointer-events-auto absolute z-4 m-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
+            className={CLICKABLE_CLEARING_CLASS_NAME}
             aria-label={`Clearing ${String(clearing.clearingId)}`}
             data-clearing-id={clearing.clearingId}
             onClick={() => {
