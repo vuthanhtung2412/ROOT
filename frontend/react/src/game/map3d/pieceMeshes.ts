@@ -73,6 +73,7 @@ const STRUCTURE_BASE_RADIUS = 0.94
 const STRUCTURE_BASE_HEIGHT = 0.14
 const STRUCTURE_BASE_SIDE_COUNT = 32
 const MATTE_MINIMUM_ROUGHNESS = 0.8
+const DECAL_ALPHA_CUTOFF = 0.5
 
 /** Icon size (world units) zoomed out, and zoomed in over a 3D model. */
 const LABEL_FAR_SIZE = 2.05
@@ -307,6 +308,12 @@ export function createPieceLayer(
       matte.metalness = 0
       matte.roughness = Math.max(matte.roughness, MATTE_MINIMUM_ROUGHNESS)
     }
+    // A decal (a face painted on a statue) is cut out, not blended: blended
+    // faces sort badly against the woodland behind them.
+    if (matte.transparent) {
+      matte.transparent = false
+      matte.alphaTest = DECAL_ALPHA_CUTOFF
+    }
     matteMaterials.set(material, matte)
     return matte
   }
@@ -349,25 +356,25 @@ export function createPieceLayer(
     const bounds: Box3 = new Box3().setFromObject(figure)
     const size: Vector3 = bounds.getSize(new Vector3())
     const center: Vector3 = bounds.getCenter(new Vector3())
-    const scale: number = Math.min(
-      STRUCTURE_FOOTPRINT / Math.max(size.x, size.z),
-      STRUCTURE_MAXIMUM_HEIGHT / size.y,
-    )
-    figure.position.set(
-      -center.x,
-      STRUCTURE_BASE_HEIGHT / scale - bounds.min.y,
-      -center.z,
-    )
+    const sizeFactor: number = pieceModel.sizeFactor
+    const scale: number =
+      Math.min(
+        STRUCTURE_FOOTPRINT / Math.max(size.x, size.z),
+        STRUCTURE_MAXIMUM_HEIGHT / size.y,
+      ) * sizeFactor
+    // The base plate grows with the structure; both live in model units.
+    const baseHeight: number = STRUCTURE_BASE_HEIGHT * sizeFactor
+    figure.position.set(-center.x, baseHeight / scale - bounds.min.y, -center.z)
     const base: Mesh = shadowedMesh(baseGeometry, baseMaterial(piece.color))
-    base.scale.setScalar(1 / scale)
-    base.position.y = (STRUCTURE_BASE_HEIGHT * HALF) / scale
+    base.scale.setScalar(sizeFactor / scale)
+    base.position.y = (baseHeight * HALF) / scale
     const structure: Group = new Group()
     structure.add(figure, base)
     structure.rotation.y = piece.rotation ?? 0
     return {
       model: structure,
       scale,
-      top: size.y * scale + STRUCTURE_BASE_HEIGHT,
+      top: size.y * scale + baseHeight,
     }
   }
 

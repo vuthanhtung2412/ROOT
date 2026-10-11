@@ -2,9 +2,10 @@ import type { Group } from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 
 /**
- * 3D models of the map (see `public/assets/models/SOURCES.md`): trees from
- * Kenney's Nature Kit and buildings by Quaternius (both CC0), meeples
- * extruded in Blender from the warrior token art.
+ * 3D models of the map (see `public/assets/models/SOURCES.md` for where each
+ * comes from and its licence): trees from Kenney's Nature Kit, buildings
+ * exported from the project's Blender file, meeples extruded from the
+ * warrior token art.
  */
 const MODEL_ROOT = '/assets/models'
 const MODEL_FILE_EXTENSION = '.glb'
@@ -31,14 +32,33 @@ export type PieceModelKind = 'meeple' | 'structure'
 type PieceModelSource = {
   kind: PieceModelKind
   name: string
+  /** Size next to the other structures: 1 for all but the keep. */
+  sizeFactor: number
 }
+
+const STANDARD_SIZE_FACTOR = 1
+/** The keep is the biggest building of the game. */
+const KEEP_SIZE_FACTOR = 1.6
+/** A pile of wood is a token, not a building: it stays small. */
+const WOOD_SIZE_FACTOR = 0.6
 
 function meeple(name: string): PieceModelSource {
-  return { kind: 'meeple', name: `meeples/${name}` }
+  return {
+    kind: 'meeple',
+    name: `meeples/${name}`,
+    sizeFactor: STANDARD_SIZE_FACTOR,
+  }
 }
 
-function structure(name: string): PieceModelSource {
-  return { kind: 'structure', name: `buildings/${name}` }
+/**
+ * A building model as exported from `root-map-models.blend`, already in the
+ * colours of the faction that owns it.
+ */
+function structure(
+  name: string,
+  sizeFactor: number = STANDARD_SIZE_FACTOR,
+): PieceModelSource {
+  return { kind: 'structure', name: `buildings/final/${name}`, sizeFactor }
 }
 
 /** Token texture key → the 3D model that stands for that piece. */
@@ -53,22 +73,22 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-vagabond-pawn': meeple('vagabond-pawn'),
   'token-vagabond-pawn-tinker': meeple('vagabond-pawn-tinker'),
   'token-vagabond-pawn-ranger': meeple('vagabond-pawn-ranger'),
-  'token-marquise-sawmill': structure('quaternius/sawmill'),
-  'token-marquise-workshop': structure('quaternius/workshop'),
-  'token-marquise-recruiter': structure('quaternius/recruiter'),
-  'token-marquise-keep': structure('quaternius/keep'),
-  'token-marquise-wood': structure('quaternius/wood'),
-  'token-eyrie-roost': structure('quaternius/roost'),
-  'token-alliance-base-fox': structure('quaternius/base'),
-  'token-alliance-base-mouse': structure('quaternius/base'),
-  'token-alliance-base-rabbit': structure('quaternius/base'),
-  'token-lizard-garden-fox': structure('quaternius/garden'),
-  'token-lizard-garden-mouse': structure('quaternius/garden'),
-  'token-lizard-garden-rabbit': structure('quaternius/garden'),
-  'token-riverfolk-trade-post-fox': structure('quaternius/trade-post'),
-  'token-riverfolk-trade-post-mouse': structure('quaternius/trade-post'),
-  'token-riverfolk-trade-post-rabbit': structure('quaternius/trade-post'),
-  'marker-ruin': structure('quaternius/ruin'),
+  'token-marquise-sawmill': structure('sawmill'),
+  'token-marquise-workshop': structure('workshop'),
+  'token-marquise-recruiter': structure('recruiter'),
+  'token-marquise-keep': structure('keep', KEEP_SIZE_FACTOR),
+  'token-marquise-wood': structure('wood', WOOD_SIZE_FACTOR),
+  'token-eyrie-roost': structure('roost'),
+  'token-alliance-base-fox': structure('base'),
+  'token-alliance-base-mouse': structure('base'),
+  'token-alliance-base-rabbit': structure('base'),
+  'token-lizard-garden-fox': structure('garden'),
+  'token-lizard-garden-mouse': structure('garden'),
+  'token-lizard-garden-rabbit': structure('garden'),
+  'token-riverfolk-trade-post-fox': structure('trade-post'),
+  'token-riverfolk-trade-post-mouse': structure('trade-post'),
+  'token-riverfolk-trade-post-rabbit': structure('trade-post'),
+  'marker-ruin': structure('ruin'),
 }
 
 export type TreeModels = {
@@ -81,6 +101,7 @@ export type TreeModels = {
 export type PieceModel = {
   kind: PieceModelKind
   model: Group
+  sizeFactor: number
 }
 
 export type MapModels = {
@@ -134,7 +155,11 @@ export async function loadMapModels(): Promise<MapModels> {
     const model: Group | undefined =
       pieceModels[pieceModelNames.indexOf(source.name)]
     if (model !== undefined) {
-      pieces.set(textureKey, { kind: source.kind, model })
+      pieces.set(textureKey, {
+        kind: source.kind,
+        model,
+        sizeFactor: source.sizeFactor,
+      })
     }
   }
   return { trees: { pine, leafy, autumn }, pieces }
