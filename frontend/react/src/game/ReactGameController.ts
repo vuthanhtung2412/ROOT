@@ -469,7 +469,9 @@ export class ReactGameController {
       const combos = collectPieceIdsCombosFromSpecs(removalSpecs)
       const piecesById = buildPiecesByIdFromClearings(snapshot.state.clearings)
       const choices = buildBattleRemovalStepperChoices(combos, piecesById)
-      this.applyComposerOutcome(this.eventComposer.beginBattleRemoval(choices))
+      this.applyComposerOutcome(
+        this.composer.adopt(this.eventComposer.beginBattleRemoval(choices)),
+      )
       return
     }
     this.applyComposerOutcome(this.composer.begin(spec))

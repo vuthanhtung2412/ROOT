@@ -11,7 +11,8 @@
 
 - [ ] **B1 — Show the item supply more explicitly**, so an exhausted item is obvious. Add a supply button that works like the Discarded pile button.
   - Context: Root Tea could not be crafted after buying from Riverfolk. Rule checked, behaviour is correct; only the UI is missing.
-- [ ] **B2 — Eyrie UI does not show the skip ambush button.** It should be below the banner at the top; in that game it was not shown.
+- [x] **B2 — Eyrie UI does not show the skip ambush button.** It should be below the banner at the top; in that game it was not shown.
+  - Cause: a click on the map while the prompt was up wiped it (same for Field Hospitals and battle removal). Reproduced from event 156 of the log.
 
 ## 2. Unsupported cards
 

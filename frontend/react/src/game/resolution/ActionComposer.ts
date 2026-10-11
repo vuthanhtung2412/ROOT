@@ -429,6 +429,16 @@ export class ActionComposer {
     return this.activeSpec
   }
 
+  /**
+   * Take over a prompt a faction/event composer opened by itself (forced
+   * prompts: Ambush, Field Hospitals, battle removal). A click the prompt does
+   * not answer (map, other card) then keeps it instead of falling back to idle.
+   */
+  adopt(outcome: ComposerOutcome): ComposerOutcome {
+    this.outcome = outcome
+    return this.outcome
+  }
+
   begin(spec: ActionSpec): ComposerOutcome {
     this.activeSpec = spec
     const hooked = this.hooks.begin?.(spec) ?? null

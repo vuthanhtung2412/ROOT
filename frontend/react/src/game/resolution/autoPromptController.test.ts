@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ActionComposer } from '#game/resolution/ActionComposer.ts'
+import {
+  ActionComposer,
+  type ComposerOutcome,
+} from '#game/resolution/ActionComposer.ts'
 import { AutoPromptController } from '#game/resolution/autoPromptController.ts'
+import { createEventComposerHooks } from '#game/resolution/eventActionComposer.ts'
 import type { GameSessionSnapshot } from '#game/GameSession.ts'
-import { makeGameState } from '#test/factories.ts'
+import { makeActionSpec, makeGameState } from '#test/factories.ts'
 
 function setupSnapshot(): GameSessionSnapshot {
   return {
@@ -54,5 +58,60 @@ describe('AutoPromptController setup keep', () => {
     controller.runAfterHudPaint(snapshot, 0, true)
     expect(beginSpy).toHaveBeenCalledTimes(1)
     expect(applyComposerOutcome).toHaveBeenCalledTimes(1)
+  })
+})
+
+const DEFENDER_SEAT = 1
+const UNRELATED_CLEARING = 3
+
+function ambushSnapshot(): GameSessionSnapshot {
+  return {
+    state: makeGameState({
+      pending: [
+        {
+          type: 'battle',
+          clearing: 6,
+          attacker: 0,
+          defender: DEFENDER_SEAT,
+          stage: 'ambush',
+        },
+      ],
+    }),
+    legalActions: [
+      makeActionSpec({
+        type: 'resolveEvent',
+        actor: DEFENDER_SEAT,
+        params: { decline: [true] },
+      }),
+    ],
+    historyLength: 0,
+    log: [],
+    error: null,
+    loading: false,
+  }
+}
+
+describe('AutoPromptController ambush', () => {
+  it('keeps the Skip ambush prompt when the defender clicks the map', () => {
+    const events = createEventComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(events.hooks)
+    const controller = new AutoPromptController({
+      applyComposerOutcome: () => undefined,
+      composer,
+      eventComposer: events,
+      submitEndPhase: () => undefined,
+      isBattleResultFlashActive: () => false,
+      isBoardReady: () => true,
+    })
+
+    controller.runAfterHudPaint(ambushSnapshot(), DEFENDER_SEAT, true)
+    const afterMapClick: ComposerOutcome =
+      composer.chooseClearing(UNRELATED_CLEARING)
+
+    expect(afterMapClick.kind).toBe('incomplete')
+    expect(events.getPromptOptions()).toEqual([
+      { label: 'Skip ambush', value: 'decline' },
+    ])
   })
 })

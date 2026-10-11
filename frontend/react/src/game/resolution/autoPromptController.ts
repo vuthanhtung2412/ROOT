@@ -97,7 +97,9 @@ export class AutoPromptController {
     this.fieldHospitalKey = key
     const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
     this.deps.applyComposerOutcome(
-      this.deps.eventComposer.beginFieldHospital(cardIds),
+      this.deps.composer.adopt(
+        this.deps.eventComposer.beginFieldHospital(cardIds),
+      ),
     )
   }
 
@@ -130,7 +132,9 @@ export class AutoPromptController {
     this.ambushKey = key
     const cardIds = fieldHospitalCardIdsFromSpecs(forActor)
     this.deps.applyComposerOutcome(
-      this.deps.eventComposer.beginAmbush(cardIds, role),
+      this.deps.composer.adopt(
+        this.deps.eventComposer.beginAmbush(cardIds, role),
+      ),
     )
   }
 
@@ -169,7 +173,9 @@ export class AutoPromptController {
     const piecesById = buildPiecesByIdFromClearings(snapshot.state.clearings)
     const choices = buildBattleRemovalStepperChoices(combos, piecesById)
     this.deps.applyComposerOutcome(
-      this.deps.eventComposer.beginBattleRemoval(choices),
+      this.deps.composer.adopt(
+        this.deps.eventComposer.beginBattleRemoval(choices),
+      ),
     )
   }
 
