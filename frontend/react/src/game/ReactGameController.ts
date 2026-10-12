@@ -70,10 +70,10 @@ import {
   boardEffectsBetween,
   EMPTY_BOARD_EFFECT_BATCH,
   logEntriesAddedSince,
-  PLACE_STEP_MS,
   type BoardEffect,
   type BoardEffectBatch,
 } from '#game/boardEffects.ts'
+import { placementHoldMs } from '#game/recruitJoin.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
 import { CLEARING_FLASH_MS, type ClearingFlash } from '#game/clearingFlash.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
@@ -921,11 +921,16 @@ export class ReactGameController {
 
   /**
    * Pieces placed one clearing after the other (wood at each sawmill) stay
-   * off the board until their step starts, so they appear with their effect.
+   * off the board until their step starts, so they appear with their effect;
+   * recruits stay off it until they have walked up to the warriors they join.
    */
   private holdBackLaterPlacements(effects: readonly BoardEffect[]): void {
     for (const effect of effects) {
-      if (effect.kind !== 'place' || effect.step === 0) {
+      if (effect.kind !== 'place') {
+        continue
+      }
+      const holdMs: number = placementHoldMs(effect)
+      if (holdMs === 0) {
         continue
       }
       const pieceIds: readonly string[] = effect.pieceIds
@@ -940,7 +945,7 @@ export class ReactGameController {
         if (this.latestSnapshot !== null) {
           this.syncBoardPieces(this.latestSnapshot)
         }
-      }, effect.step * PLACE_STEP_MS)
+      }, holdMs)
       this.placementTimers.add(timer)
     }
   }

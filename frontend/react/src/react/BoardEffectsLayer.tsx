@@ -7,6 +7,7 @@ import type {
   BoardRemoveEffect,
   BoardStackSlot,
 } from '#game/boardEffects.ts'
+import { joinsStandingWarriors } from '#game/recruitJoin.ts'
 import {
   batchLifetime,
   EFFECT_LIFETIME_MS,
@@ -20,6 +21,7 @@ import {
 import { factionColorForSeat } from '#game/theme.ts'
 import { MoveMarch } from '#react/MoveMarch.tsx'
 import { PieceStack, type ClearingHitCenter } from '#react/PieceStack.tsx'
+import { RecruitJoin } from '#react/RecruitJoin.tsx'
 import { useKeyframes } from '#react/useKeyframes.ts'
 import { stackOffsets, type PieceStackViewModel } from '#ui/PieceView.ts'
 
@@ -303,6 +305,33 @@ function PlaceEffectView(
   )
 }
 
+/** Recruits walking up to the warriors of theirs already in the clearing. */
+function JoinEffectView(
+  props: EffectContext & { effect: BoardPlaceEffect },
+): JSX.Element | null {
+  const position: BoardEffectPosition | undefined = stackPositionIn(props, {
+    effect: props.effect,
+    clearing: props.effect.clearing,
+    slot: props.effect.slot,
+  })
+  if (position === undefined) {
+    return null
+  }
+  const recruits: PieceStackViewModel = stackFor(props.effect, props.factions)
+  return (
+    <RecruitJoin
+      recruits={recruits}
+      standing={{
+        ...recruits,
+        count: props.effect.stackCount - props.effect.count,
+      }}
+      clearingId={props.effect.clearing}
+      position={position}
+      delayMs={placeStartDelay(props.effect)}
+    />
+  )
+}
+
 function RemoveEffectView(
   props: EffectContext & { effect: BoardRemoveEffect },
 ): JSX.Element | null {
@@ -413,7 +442,9 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
           )
         }
         if (entry.effect.kind === 'place') {
-          return (
+          return joinsStandingWarriors(entry.effect) ? (
+            <JoinEffectView key={entry.key} {...context} effect={entry.effect} />
+          ) : (
             <PlaceEffectView key={entry.key} {...context} effect={entry.effect} />
           )
         }
