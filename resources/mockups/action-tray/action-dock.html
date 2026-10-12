@@ -1,0 +1,596 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Action tray mockups - faction dock</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="react-icons.js"></script>
+<style>
+:root {
+  --ink: #2c2118; --ink-deep: #1a1408; --parchment: #f0e6d3; --parchment-deep: #e4d4b8; --wood: #5b3d26; --gold: #c9a04a;
+  --slate: #cfcbc0; --slate-deep: #b9b4a6; --confirm: #7da453;
+  --marquise: #c45c26; --eyrie: #3a5f8a; --alliance: #3d7a4a;
+  --display: 'IM Fell English', Palatino, Georgia, serif;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.2 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #14110e; color: var(--parchment); font-family: Georgia, serif; width: 1340px; }
+.board { padding: 22px 30px 34px; border-bottom: 1px solid #3a3129; }
+.board > h1 { font: 32px var(--display); margin: 0 0 2px; }
+.board > p.sub { margin: 0 0 16px; font: 14px Georgia, serif; color: #9fb0a6; max-width: 900px; }
+.row { display: flex; gap: 22px; align-items: flex-start; }
+.card { flex: 1; border: 1px solid #3a3129; background: #1b1814; }
+.card > h2 { margin: 0; padding: 10px 14px; font: 21px var(--display); color: #f6d13a; border-bottom: 1px solid #3a3129; }
+.card > h2 code { font: 12px 'Courier New', monospace; color: #9fb0a6; margin-left: 8px; }
+.stage { padding: 34px 20px 26px; display: flex; justify-content: center; align-items: flex-end; min-height: 370px;
+  background: linear-gradient(rgba(20,17,14,.35), rgba(20,17,14,.35)), url('../../../frontend/react/public/assets/map/autumn-map.webp') 30% 80% / 900px; }
+.card ul { margin: 0; padding: 12px 14px 14px 30px; font: 13px/1.5 Georgia, serif; color: #d8ccb4; }
+.card ul b { color: #fff; }
+
+/* ---------- paper kit (same recipe as `root-paper`) ---------- */
+.paper { position: relative; isolation: isolate; color: var(--ink); }
+.paper::before { content: ''; position: absolute; inset: 0; z-index: -1; background-color: var(--bg, var(--parchment)); background-image: var(--grain);
+  border: var(--edge-width, 3px) solid var(--ink-deep); border-radius: var(--radius, 0); filter: url(#rough) drop-shadow(2px 3px 0 rgba(0,0,0,.4)); }
+.paper.fine::before { filter: url(#rough-fine) drop-shadow(1px 2px 0 rgba(0,0,0,.35)); }
+.marquise { --faction: var(--marquise); } .eyrie { --faction: var(--eyrie); } .alliance { --faction: var(--alliance); }
+.vagabond { --faction: #5a5a5a; } .lizard { --faction: #c9b530; } .riverfolk { --faction: #2f9a94; }
+
+/* ---------- every faction x phase ---------- */
+.matrix { display: grid; grid-template-columns: 130px repeat(3, 1fr); gap: 1px; background: #3a3129; border: 1px solid #3a3129; }
+.matrix > div { background: #1b1814; }
+.matrix .corner, .matrix .phase-head { padding: 9px 14px; font: 20px var(--display); color: #f6d13a; display: flex; align-items: center; gap: 8px; }
+.matrix .phase-head svg { width: 18px; height: 18px; }
+.matrix .who { padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: 17px/1.1 var(--display); text-align: center; }
+.matrix .who img { width: 54px; height: 54px; object-fit: contain; }
+.matrix .cell { padding: 44px 10px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+.matrix .cell .dock { zoom: .8; }
+.matrix .cell p { margin: 0; font: 12px/1.4 Georgia, serif; color: #9fb0a6; text-align: center; max-width: 330px; }
+.tile.fresh::before { outline: 2px dashed #f6d13a; outline-offset: 2px; }
+.legend { margin: 12px 0 0; padding-left: 18px; font: 13px/1.6 Georgia, serif; color: #d8ccb4; } .legend b { color: #fff; }
+
+/* ---------- tile: square slate paper, one icon ---------- */
+.tile { width: 54px; height: 54px; flex: none; display: flex; align-items: center; justify-content: center; --bg: #f6e7bd; cursor: pointer; }
+.tile svg { width: 30px; height: 30px; stroke-width: 2; }
+.tile img { width: 40px; height: 40px; object-fit: contain; }
+.tile.spent { opacity: .38; cursor: default; }
+.tile.picked::before { box-shadow: 0 0 0 3px var(--gold); --bg: #fff8e6; }
+.tile:not(.spent):hover::before { --bg: #fff8e6; }
+.tile .count { position: absolute; right: -6px; bottom: -6px; min-width: 20px; padding: 0 4px; height: 18px; border-radius: 9px; background: var(--ink-deep); color: var(--parchment); font: 700 11px/18px 'Courier New', monospace; text-align: center; }
+.tile .suit { position: absolute; right: -8px; bottom: -8px; width: 24px; height: 24px; }
+
+/* ---------- dock: faction frame, tile grid, preview slot ---------- */
+.dock { display: inline-flex; gap: 10px; padding: 12px; --bg: var(--faction); --edge-width: 4px; }
+.dock .grid { display: grid; grid-template-columns: repeat(var(--columns, 3), 54px); gap: 8px; align-content: center; }
+/* big square: turn actions (end phase, spend bird, undo) */
+.slot { align-self: stretch; display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, 54px); grid-auto-columns: 54px; gap: 8px; align-content: start; }
+.slot::before { display: none; }
+.tile.end, .side .tile.end { --bg: #b55238; color: var(--parchment); padding: 0; }
+.tile.end:hover::before { --bg: #c9634a; }
+/* ink line: phase actions | turn actions */
+.line { flex: none; width: 4px; align-self: stretch; background: var(--ink-deep); border-radius: 2px; filter: url(#rough-fine); }
+.side .line { width: 100%; height: 4px; }
+/* name on hover, now that tiles carry no label */
+[data-name] { position: relative; }
+[data-name]:hover::after { content: attr(data-name) ' · ' attr(data-left); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 9; padding: 3px 8px; border-radius: 3px; background: var(--ink-deep); color: var(--parchment); font: 14px var(--display); white-space: nowrap; }
+/* card actions: tab on the frame, panel opens upward */
+.tab.cards { right: 10px; --bg: var(--parchment); cursor: pointer; }
+.tab svg { width: 16px; height: 16px; }
+.tab small { font: 11px 'Courier New', monospace; opacity: .75; }
+.open > .tab.cards .chevron { transform: rotate(180deg); }
+.card-panel { display: none; position: absolute; left: 6px; right: 6px; bottom: calc(100% + 32px); padding: 9px 10px; flex-direction: column; gap: 8px; --bg: var(--parchment); }
+.open > .card-panel { display: flex; }
+.filled, .stroked { display: contents; } .tile .filled svg { stroke-width: 0; }
+/* uses left of an action (Vagabond: ready items of the kind it exhausts) */
+.tile .tally { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); z-index: 1; height: 15px; padding: 0 5px; border-radius: 8px; background: var(--ink-deep); color: var(--parchment); font: 700 10px/15px 'Courier New', monospace; white-space: nowrap; }
+.dock.tallied { padding-top: 20px; } .dock.tallied .grid { row-gap: 16px; } .dock.tallied .slot { row-gap: 16px; }
+/* scrolls inside the paper, so the torn sheet itself stays put */
+.card-list { display: flex; flex-direction: column; gap: 8px; max-height: 204px; overflow-y: auto; padding-right: 8px; }
+.card-list::-webkit-scrollbar { width: 8px; }
+.card-list::-webkit-scrollbar-track { background: #cbb892; border-radius: 4px; }
+.card-list::-webkit-scrollbar-thumb { background: var(--ink); border-radius: 4px; }
+.card-row { display: flex; align-items: center; gap: 10px; cursor: pointer; flex: none; }
+.card-row.later { opacity: .42; }
+.card-row { padding: 3px 6px; border-radius: 3px; user-select: none; }
+/* lit on hover only; click and hold do not restyle the line (.hovered = the same look, pinned for the static shot) */
+/* inverted ink line: unlike the gold ring of a staged action tile */
+.card-row:hover, .card-row.hovered { background: var(--ink); color: var(--parchment); opacity: 1; }
+.card-row:hover small, .card-row.hovered small { color: #e4d4b8; }
+.card-row:hover .tile, .card-row.hovered .tile { color: var(--ink); }
+/* a line of another phase: hover stays pale, dashed, not clickable (hold still shows the card) */
+.card-row.later:hover, .card-row.later.hovered { background: #d9c9a6; color: var(--ink); opacity: .6; outline: 2px dashed var(--ink-soft, #4a3a2c); outline-offset: -2px; cursor: not-allowed; }
+.card-row.later:hover small, .card-row.later.hovered small { color: #4a3a2c; }
+/* crafted card shown while a line is held */
+.card-preview { display: none; position: absolute; right: calc(100% + 16px); bottom: calc(100% + 32px); width: 176px; border: 3px solid var(--ink-deep); border-radius: 8px; box-shadow: 3px 4px 0 rgba(0,0,0,.45); transform: rotate(-2deg); z-index: 5; }
+.card-preview.shown, .card-preview.demo { display: block; }
+.card-row em { margin-left: auto; padding-left: 8px; font: 700 10px 'Courier New', monospace; font-style: normal; text-transform: uppercase; white-space: nowrap; }
+.card-row > div:nth-child(2) { min-width: 0; }
+.card-row .tile { width: 40px; height: 40px; } .card-row .tile svg { width: 22px; height: 22px; }
+.card-row b { display: block; font: 16px/1.1 var(--display); } .card-row small { font: 11px/1.2 Georgia, serif; color: #4a3a2c; }
+/* tabs riding the top edge of the frame */
+.tab { position: absolute; top: -24px; height: 30px; padding: 0 10px; display: flex; align-items: center; gap: 6px; font: 17px var(--display); white-space: nowrap; }
+.tab.phase { left: 10px; --bg: var(--parchment); }
+.tab.phase svg { width: 16px; height: 16px; color: #a8791c; }
+.tab.phase small { font: 11px 'Courier New', monospace; opacity: .75; margin-left: 4px; }
+
+/* ---------- Eyrie decree columns ---------- */
+.decree { display: flex; gap: 10px; }
+.column { width: 62px; display: flex; flex-direction: column; align-items: center; }
+.column .head { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; --bg: var(--eyrie); --radius: 50%; color: var(--parchment); z-index: 1; }
+.column .head svg { width: 28px; height: 28px; }
+.column .strip { width: 58px; min-height: 84px; margin-top: -12px; padding: 18px 4px 8px; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 3px; --bg: #c9ab72; }
+.column .strip img { width: 22px; height: 22px; }
+.column .strip img.done { opacity: .35; filter: grayscale(1); }
+.column.now .head::before { box-shadow: 0 0 0 3px var(--gold); }
+.column.done .head { opacity: .5; }
+
+/* ---------- side column variant ---------- */
+.side { width: 236px; padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 10px; --bg: var(--faction); --edge-width: 4px; }
+.side .slot { width: 100%; grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(3, 1fr); justify-items: center; }
+.side .tab.cards { position: relative; top: auto; right: auto; align-self: stretch; margin: -2px -2px 0; }
+.side .tab.cards .chevron { margin-left: auto; }
+.side .card-panel { position: relative; left: auto; right: auto; bottom: auto; margin: 0 -2px; }
+.side .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 6px; justify-items: center; }
+.side .act { display: flex; flex-direction: column; align-items: center; gap: 4px; font: 14px var(--display); color: var(--parchment); text-shadow: 1px 1px 0 rgba(26,20,8,.7); }
+.side .act.off { opacity: .45; }
+.side .end { padding: 7px; display: flex; align-items: center; justify-content: center; gap: 8px; font: 17px var(--display); --bg: var(--parchment-deep); }
+.side .end svg { width: 16px; height: 16px; }
+.side .tab.phase { position: relative; top: auto; left: auto; align-self: flex-start; margin: -2px 0 0 -2px; }
+
+/* ---------- in-context screen ---------- */
+.screen { position: relative; width: 1280px; height: 720px; overflow: hidden; background: #1a1a1a; border: 1px solid #3a3129; margin-top: 8px; }
+.screen .map { position: absolute; left: 256px; width: 768px; top: 0; bottom: 0; background: url('../../../frontend/react/public/assets/map/autumn-map.webp') center / cover; }
+.screen .rail { position: absolute; left: 14px; top: 56px; width: 228px; display: flex; flex-direction: column; gap: 18px; }
+.screen .seat { height: 92px; padding: 12px; display: flex; align-items: center; gap: 12px; font: 19px var(--display); }
+.screen .seat img { width: 58px; height: 58px; object-fit: contain; }
+.screen .hand { position: absolute; left: 640px; bottom: -70px; transform: translateX(-50%); display: flex; }
+.screen .hand i { width: 112px; height: 156px; margin: 0 -10px; border: 3px solid var(--ink-deep); border-radius: 6px; background: var(--parchment) var(--grain); box-shadow: 2px 3px 0 rgba(0,0,0,.4); }
+.screen .hand i:nth-child(1) { transform: rotate(-6deg) translateY(8px); } .screen .hand i:nth-child(3) { transform: rotate(6deg) translateY(8px); }
+.screen .tag { position: absolute; font: 12px 'Courier New', monospace; color: #fff; background: rgba(0,0,0,.78); padding: 2px 6px; border-left: 3px solid #f6d13a; }
+.two { display: flex; gap: 20px; } .two .screen { zoom: .5; flex: none; }
+.two figure { margin: 0; } .two figcaption { font: 13px/1.5 Georgia, serif; color: #d8ccb4; margin-top: 8px; max-width: 640px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <filter id="rough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4" /><feDisplacementMap in="SourceGraphic" scale="8" /></filter>
+  <filter id="rough-fine" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="9" /><feDisplacementMap in="SourceGraphic" scale="4" /></filter>
+</svg>
+
+<!-- ============================================================ -->
+<div class="board">
+  <h1>12 · Action tray - faction dock</h1>
+  <p class="sub">From the Steam trays: frame in the faction colour, square slate tiles, one big square on the right. Here the square holds the turn actions, an ink line parts it from the phase actions, and card actions fold into a panel above. Existing paper kit, icons from react-icons only.</p>
+  <div class="row">
+
+    <div class="card">
+      <h2>A · Dock <code>Marquise · daylight</code></h2>
+      <div class="stage" style="min-height: 460px; justify-content: flex-end; padding-right: 36px">
+        <div class="paper dock marquise" style="--columns: 3" data-cards-open>
+          <div class="paper fine tab phase"><i data-lucide="sun"></i>Daylight<small>2/3</small></div>
+          <div class="paper fine tab end">End phase <i data-lucide="play"></i></div>
+          <div class="grid">
+            <div class="paper fine tile" data-name="March" data-rule="Take two moves." data-left="1 action"><i data-lucide="footprints"></i></div>
+            <div class="paper fine tile" data-name="Build" data-rule="Spend wood, place a building in a clearing you rule." data-left="1 action"><i data-lucide="hammer"></i></div>
+            <div class="paper fine tile spent" data-name="Recruit" data-rule="Already used this turn." data-left="once per turn"><i data-lucide="user-plus"></i></div>
+            <div class="paper fine tile picked" data-name="Battle" data-rule="Start a battle in a clearing with your warriors." data-left="1 action"><i data-lucide="swords"></i></div>
+            <div class="paper fine tile" data-name="Overwork" data-rule="Spend a card, place wood at a matching sawmill." data-left="1 action"><i data-lucide="axe"></i></div>
+            <div class="paper fine tile spent" data-name="Craft" data-rule="Start of daylight only." data-left="done"><i data-lucide="anvil"></i></div>
+          </div>
+          <div class="paper fine slot"></div>
+        </div>
+      </div>
+      <ul>
+        <li><b>Big square = turn actions</b>: End phase, Undo, Spend bird, same tiles on the same grid; ink line parts them from the phase actions</li>
+        <li><b>Cards tab</b> opens a panel upward with crafted-card actions (click it); collapsed = tab + count</li>
+        <li>Panel shown at its worst case: all 8 card actions held by one seat. About 3 rows tall, the rest scrolls; it opens on the first action of the current phase</li>
+        <li>Phase tag on the right; rows of another phase are faded</li>
+        <li><b>Line lights up on hover only</b> (cream + gold ring), not on click or hold. Click = start the action. <b>Hold a line (350 ms)</b> = its crafted card shows until release, as holding a hand card does (try it; Propaganda Bureau is shown held)</li>
+        <li>No labels: name on hover</li>
+        <li>Spent action stays in place, faded (Recruit)</li>
+        <li>Gold ring = action being staged</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>B · Whole turn <code>Alliance · evening</code></h2>
+      <div class="stage">
+        <div class="paper dock alliance" style="--columns: 4">
+          <div class="paper fine tab phase"><i data-lucide="moon"></i>Evening<small>2/3</small></div>
+          <div class="paper fine tab end">End phase <i data-lucide="play"></i></div>
+          <div class="grid">
+            <div class="paper fine tile spent" data-name="Craft" data-rule="Daylight action." data-left="not this phase"><i data-lucide="anvil"></i></div>
+            <div class="paper fine tile spent" data-name="Mobilize" data-rule="Daylight action." data-left="not this phase"><i data-lucide="users"></i></div>
+            <div class="paper fine tile spent" data-name="Train" data-rule="Daylight action." data-left="not this phase"><i data-lucide="graduation-cap"></i></div>
+            <div class="paper fine tile spent" data-name="Revolt" data-rule="Birdsong action." data-left="not this phase"><i data-lucide="flame"></i></div>
+            <div class="paper fine tile" data-name="Move" data-rule="Military operation: take one move." data-left="2 ops left"><i data-lucide="footprints"></i></div>
+            <div class="paper fine tile" data-name="Battle" data-rule="Military operation: start a battle." data-left="2 ops left"><i data-lucide="swords"></i></div>
+            <div class="paper fine tile" data-name="Recruit" data-rule="Military operation: place a warrior at a base." data-left="2 ops left"><i data-lucide="user-plus"></i></div>
+            <div class="paper fine tile" data-name="Organize" data-rule="Military operation: swap a warrior for a sympathy token." data-left="2 ops left"><i data-lucide="flag"></i></div>
+          </div>
+          <div class="paper fine slot"></div>
+        </div>
+      </div>
+      <ul>
+        <li><b>Every action of the faction's turn</b> has a fixed tile; other phases are faded, as in the Steam Alliance tray</li>
+        <li>Tiles never move, so position is learned once</li>
+        <li>Costs more: needs a per-faction action list on the client</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="board">
+  <h1>13 · Eyrie decree in the tray</h1>
+  <p class="sub">From the Steam Eyrie tray: the four decree columns are the tray. A medallion per column, its cards as suit marks on the strip below, resolved ones greyed.</p>
+  <div class="row">
+
+    <div class="card">
+      <h2>C · Decree columns <code>Eyrie · daylight · chosen</code></h2>
+      <div class="stage">
+        <div class="paper dock eyrie">
+          <div class="paper fine tab phase"><i data-lucide="sun"></i>Daylight<small>2/6</small></div>
+          <div class="decree">
+            <div class="column done" data-name="Recruit" data-rule="Column resolved." data-left="1/1 done">
+              <div class="paper fine head"><i data-lucide="user-plus"></i></div>
+              <div class="paper fine strip"><img class="done" src="../../../frontend/react/public/assets/suits/rabbit.png" alt="" /></div>
+            </div>
+            <div class="column now" data-name="Move" data-rule="Move from a fox clearing, or any clearing for the bird." data-left="1/2 done">
+              <div class="paper fine head"><i data-lucide="footprints"></i></div>
+              <div class="paper fine strip"><img class="done" src="../../../frontend/react/public/assets/suits/fox.png" alt="" /><img src="../../../frontend/react/public/assets/suits/fox.png" alt="" /><img src="../../../frontend/react/public/assets/suits/bird.png" alt="" /></div>
+            </div>
+            <div class="column" data-name="Battle" data-rule="Battle in a mouse clearing." data-left="0/1 done">
+              <div class="paper fine head"><i data-lucide="swords"></i></div>
+              <div class="paper fine strip"><img src="../../../frontend/react/public/assets/suits/mouse.png" alt="" /></div>
+            </div>
+            <div class="column" data-name="Build" data-rule="Build a roost in a rabbit clearing you rule." data-left="0/1 done">
+              <div class="paper fine head"><i data-lucide="hammer"></i></div>
+              <div class="paper fine strip"><img src="../../../frontend/react/public/assets/suits/rabbit.png" alt="" /></div>
+            </div>
+          </div>
+          <div class="paper fine slot"></div>
+        </div>
+      </div>
+      <ul>
+        <li>Gold ring = column the decree is resolving now; click its medallion to act</li>
+        <li>Remaining cards visible at a glance, no faction board trip</li>
+        <li>Turmoil risk readable: a card nobody can resolve stays lit</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>D · Decree as tiles <code>smaller change</code></h2>
+      <div class="stage">
+        <div class="paper dock eyrie" style="--columns: 3">
+          <div class="paper fine tab phase"><i data-lucide="sun"></i>Daylight<small>2/6</small></div>
+          <div class="grid">
+            <div class="paper fine tile" data-name="Move · fox" data-rule="Move from a fox clearing." data-left="decree card"><i data-lucide="footprints"></i><img class="suit" src="../../../frontend/react/public/assets/suits/fox.png" alt="" /></div>
+            <div class="paper fine tile" data-name="Move · bird" data-rule="Move from any clearing." data-left="decree card"><i data-lucide="footprints"></i><img class="suit" src="../../../frontend/react/public/assets/suits/bird.png" alt="" /></div>
+            <div class="paper fine tile spent" data-name="Battle · mouse" data-rule="Resolve Move first." data-left="later column"><i data-lucide="swords"></i><img class="suit" src="../../../frontend/react/public/assets/suits/mouse.png" alt="" /></div>
+            <div class="paper fine tile spent" data-name="Build · rabbit" data-rule="Resolve Move and Battle first." data-left="later column"><i data-lucide="hammer"></i><img class="suit" src="../../../frontend/react/public/assets/suits/rabbit.png" alt="" /></div>
+          </div>
+          <div class="paper fine slot"></div>
+        </div>
+      </div>
+      <ul>
+        <li>Same component as A: one tile per unresolved decree card, suit pinned on the corner (today's badge)</li>
+        <li>Later columns shown faded, so the order of the decree reads left to right</li>
+        <li>No new layout code, loses the column picture</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="board">
+  <h1>15 · Tray for every faction</h1>
+  <p class="sub">Layout A for all, decree columns (C) for the Eyrie. One dock per phase: phase actions, ink line, turn actions (End phase, Undo, then Draw or Spend bird when legal). Only what is legal now is shown; a spent action stays faded.</p>
+  <div class="matrix" id="matrix"></div>
+  <ul class="legend">
+    <li><b>Dashed gold</b> = action has no entry in <code>actionIcons.ts</code> yet; icon shown is a proposal</li>
+    <li>Non-Lucide icons are the real react-icons glyphs: <code>FaBed</code> rest, <code>GiTorch</code> explore, <code>GiRobber</code> steal, <code>TfiReload</code> convert, <code>MdPlusOne</code> Lizard score, <code>TbHexagonalPyramidPlus</code> sanctify, <code>FaRegDizzy</code> turmoil, <code>GiCardDiscard</code> discard</li>
+    <li>Vagabond: pill on top of each action = ready items / items of the kind it exhausts (Move 2/3 = two of three boots ready); 0 left fades the tile</li>
+    <li>Vagabond quests and item moves stay on the faction board (board-only today)</li>
+    <li>Forced prompts (ambush, field hospitals, Eyrie Émigré) stay on banner / hand, never in the tray</li>
+    <li>Cards tab only appears when the seat holds a crafted card with an action</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="board" hidden>
+  <h1>14 · Side column, minimal change (dropped)</h1>
+  <p class="sub">Tray stays where it is today (right 20% column). Only the skin changes: faction frame, slate tiles in place of the wooden medallions, labels kept.</p>
+  <div class="row">
+
+    <div class="card">
+      <h2>E · Frame + tiles <code>labels kept</code></h2>
+      <div class="stage" style="align-items:center">
+        <div class="paper side marquise" data-cards-open>
+          <div class="paper fine tab phase"><i data-lucide="sun"></i>Daylight<small>2/3</small></div>
+          <div class="grid">
+            <div class="act"><div class="paper fine tile"><i data-lucide="footprints"></i></div>March</div>
+            <div class="act"><div class="paper fine tile"><i data-lucide="hammer"></i></div>Build</div>
+            <div class="act off"><div class="paper fine tile"><i data-lucide="user-plus"></i></div>Recruit</div>
+            <div class="act"><div class="paper fine tile"><i data-lucide="swords"></i></div>Battle</div>
+            <div class="act"><div class="paper fine tile"><i data-lucide="axe"></i></div>Overwork</div>
+          </div>
+          <div class="paper fine end">End phase <i data-lucide="play"></i></div>
+        </div>
+      </div>
+      <ul>
+        <li>Class constants only in <code>ActionTray.tsx</code>, plus the faction colour on the sheet</li>
+        <li>Keeps the labels new players need</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>F · Frame + tiles + slot <code>no labels</code></h2>
+      <div class="stage" style="align-items:center">
+        <div class="paper side alliance" data-dock>
+          <div class="paper fine tab phase"><i data-lucide="moon"></i>Evening<small>2/3</small></div>
+          <div class="paper fine slot"></div>
+          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 8px 4px">
+            <div class="paper fine tile" style="width:46px;height:46px" data-name="Move" data-rule="Take one move." data-left="2 ops left"><i data-lucide="footprints"></i></div>
+            <div class="paper fine tile" style="width:46px;height:46px" data-name="Battle" data-rule="Start a battle." data-left="2 ops left"><i data-lucide="swords"></i></div>
+            <div class="paper fine tile" style="width:46px;height:46px" data-name="Recruit" data-rule="Place a warrior at a base." data-left="2 ops left"><i data-lucide="user-plus"></i></div>
+            <div class="paper fine tile" style="width:46px;height:46px" data-name="Organize" data-rule="Swap a warrior for a sympathy token." data-left="2 ops left"><i data-lucide="flag"></i></div>
+          </div>
+          <div class="paper fine end">End phase <i data-lucide="play"></i></div>
+        </div>
+      </div>
+      <ul>
+        <li>Dock A folded into the side column: cards panel on top, four tiles a row, line, turn actions</li>
+        <li>No labels: name on hover</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Icon source</h2>
+      <div class="stage" style="align-items:center; gap: 14px">
+        <div class="paper fine tile"><i data-lucide="footprints"></i></div>
+        <div class="paper fine tile" style="--bg: var(--wood); color: var(--parchment); --radius: 50%"><i data-lucide="footprints"></i></div>
+      </div>
+      <ul>
+        <li><b>Left</b>: new slate tile, icon from <code>react-icons</code> (the <code>actionIcons.ts</code> map, unchanged)</li>
+        <li><b>Right</b>: today's wooden medallion, same icon</li>
+        <li>No reference art in the tray; suit marks stay (game data, already in use)</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="board">
+  <h1>14 · In context, 1280 × 720</h1>
+  <p class="sub">Shown at half size. Dock bottom right, right column freed.</p>
+  <div class="two">
+    <figure>
+      <div class="screen">
+        <div class="map"></div>
+        <div class="rail">
+          <div class="paper seat"><img src="../../../frontend/react/public/assets/factions/marquise.png" alt="" />Marquise</div>
+          <div class="paper seat"><img src="../../../frontend/react/public/assets/factions/eyrie.png" alt="" />Eyrie</div>
+          <div class="paper seat"><img src="../../../frontend/react/public/assets/factions/alliance.png" alt="" />Alliance</div>
+        </div>
+        <div class="hand"><i></i><i></i><i></i></div>
+        <div class="paper dock marquise" style="--columns: 3; position:absolute; right: 14px; bottom: 16px">
+          <div class="paper fine tab phase"><i data-lucide="sun"></i>Daylight<small>2/3</small></div>
+          <div class="paper fine tab end">End phase <i data-lucide="play"></i></div>
+          <div class="grid">
+            <div class="paper fine tile" data-name="March" data-rule="Take two moves." data-left="1 action"><i data-lucide="footprints"></i></div>
+            <div class="paper fine tile" data-name="Build" data-rule="Spend wood, place a building." data-left="1 action"><i data-lucide="hammer"></i></div>
+            <div class="paper fine tile spent" data-name="Recruit" data-rule="Already used this turn." data-left="once per turn"><i data-lucide="user-plus"></i></div>
+            <div class="paper fine tile picked" data-name="Battle" data-rule="Start a battle in a clearing with your warriors." data-left="1 action"><i data-lucide="swords"></i></div>
+            <div class="paper fine tile" data-name="Overwork" data-rule="Spend a card, place wood." data-left="1 action"><i data-lucide="axe"></i></div>
+            <div class="paper fine tile spent" data-name="Craft" data-rule="Start of daylight only." data-left="done"><i data-lucide="anvil"></i></div>
+          </div>
+          <div class="paper fine slot"></div>
+        </div>
+        <span class="tag" style="right: 14px; bottom: 200px">A · dock, bottom right, 96px over the map</span>
+        <span class="tag" style="right: 14px; top: 70px">right column free: log / crafted cards</span>
+      </div>
+      <figcaption><b>Dock (A, B, C, D)</b>: as Steam. 352px wide, wider than the 256px side column, so it covers a corner of the map and sits beside the hand. Right column is freed.</figcaption>
+    </figure>
+    <figure hidden>
+      <div class="screen">
+        <div class="map"></div>
+        <div class="rail">
+          <div class="paper seat"><img src="../../../frontend/react/public/assets/factions/marquise.png" alt="" />Marquise</div>
+          <div class="paper seat"><img src="../../../frontend/react/public/assets/factions/eyrie.png" alt="" />Eyrie</div>
+          <div class="paper seat"><img src="../../../frontend/react/public/assets/factions/alliance.png" alt="" />Alliance</div>
+        </div>
+        <div class="hand"><i></i><i></i><i></i></div>
+        <div class="paper side marquise" style="position:absolute; right: 10px; top: 76px">
+          <div class="paper fine tab phase"><i data-lucide="sun"></i>Daylight<small>2/3</small></div>
+          <div class="grid">
+            <div class="act"><div class="paper fine tile"><i data-lucide="footprints"></i></div>March</div>
+            <div class="act"><div class="paper fine tile"><i data-lucide="hammer"></i></div>Build</div>
+            <div class="act off"><div class="paper fine tile"><i data-lucide="user-plus"></i></div>Recruit</div>
+            <div class="act"><div class="paper fine tile"><i data-lucide="swords"></i></div>Battle</div>
+            <div class="act"><div class="paper fine tile"><i data-lucide="axe"></i></div>Overwork</div>
+          </div>
+          <div class="paper fine end">End phase <i data-lucide="play"></i></div>
+        </div>
+        <span class="tag" style="right: 14px; top: 44px">E · same place as today</span>
+      </div>
+      <figcaption><b>Side column (E, F)</b>: today's layout, new skin. Nothing covers the map.</figcaption>
+    </figure>
+  </div>
+</div>
+
+<script>
+// Icons Lucide lacks come from react-icons.js (rendered from the installed react-icons package).
+// Stroke-drawn packs (Tabler) keep their stroke; filled packs (Fa, Gi, Md, Tfi) get none.
+const reactIconMarkup = (svg) => `<span class="${/^<svg[^>]*fill="none"/.test(svg) ? 'stroked' : 'filled'}">${svg}</span>`
+const iconMarkup = (icon) => icon in window.REACT_ICONS ? reactIconMarkup(window.REACT_ICONS[icon]) : `<i data-lucide="${icon}"></i>`
+// Every crafted card with an action of its own (icons as in actionIcons.ts). Worst case: one seat holds them all.
+const CURRENT_PHASE = 'Daylight'
+const CARD_HOLD_MILLISECONDS = 350
+const CARD_ACTIONS = [
+  { art: 'saboteurs', name: 'Saboteurs', phase: 'Birdsong', rule: 'Discard it to remove an enemy crafted card.' },
+  { art: 'swapmeet', name: 'Swap Meet', phase: 'Birdsong', rule: 'Take a card from a player, give one back.' },
+  { art: 'falseorders', name: 'False Orders', phase: 'Birdsong', rule: 'Discard it to move half of an enemy\'s warriors.' },
+  { art: 'leagueofadventrousmice', name: 'League of Adventurous Mice: move', phase: 'Daylight', rule: 'Exhaust a crafted item to move.' },
+  { art: 'leagueofadventrousmice', name: 'League of Adventurous Mice: battle', phase: 'Daylight', rule: 'Exhaust a crafted item to battle.' },
+  { art: 'propagandabureau', name: 'Propaganda Bureau', phase: 'Daylight', rule: 'Spend a card, swap an enemy warrior for yours.' },
+  { art: 'charmoffensive', name: 'Charm Offensive', phase: 'Evening', rule: 'Another player scores 1, you draw a card.' },
+  { art: 'informants', name: 'Informants', phase: 'Evening', rule: 'Take an ambush from the discard pile instead of drawing.' },
+]
+// Icon per card action, as in actionIcons.ts.
+const CARD_ACTION_ICONS = {
+  'Saboteurs': 'bomb',
+  'Swap Meet': 'repeat',
+  'False Orders': 'scroll-text',
+  'League of Adventurous Mice: move': 'footprints',
+  'League of Adventurous Mice: battle': 'swords',
+  'Propaganda Bureau': 'megaphone',
+  'Charm Offensive': 'heart-handshake',
+  'Informants': 'search',
+}
+// A line: click starts the action, hold shows the crafted card (as holding a hand card does).
+const cardRows = CARD_ACTIONS.map((card) => `<div class="card-row ${card.phase === CURRENT_PHASE ? '' : 'later'}" data-art="${card.art}"><div class="paper fine tile">${iconMarkup(CARD_ACTION_ICONS[card.name])}</div><div><b>${card.name}</b><small>${card.rule}</small></div><em>${card.phase}</em></div>`).join('')
+const cardsMarkup = `<div class="paper fine tab cards"><i data-lucide="layers"></i>Cards<small>${CARD_ACTIONS.length}</small><i data-lucide="chevron-up" class="chevron"></i></div><div class="paper fine card-panel"><div class="card-list">${cardRows}</div></div><img class="card-preview" alt="" />`
+const turnMarkup = (hasBird) => `<i class="line"></i><div class="paper fine slot">
+  <div class="paper fine tile end" data-name="End phase" data-left="to evening"><i data-lucide="play"></i></div>
+  <div class="paper fine tile" data-name="Undo" data-left="last action"><i data-lucide="undo-2"></i></div>
+  ${hasBird ? '<div class="paper fine tile" data-name="Spend bird" data-left="extra action"><i data-lucide="bird"></i><span class="count">3</span></div>' : ''}
+</div>`
+// Every tray: cards tab + panel on top, then phase actions, ink line, turn-action square.
+for (const tray of document.querySelectorAll('.dock, .side')) {
+  for (const stale of tray.querySelectorAll('.slot, .end')) stale.remove()
+  tray.insertAdjacentHTML('afterbegin', cardsMarkup)
+  tray.insertAdjacentHTML('beforeend', turnMarkup(tray.matches('.marquise')))
+  if ('cardsOpen' in tray.dataset) tray.classList.add('open')
+}
+
+// ---------- 15: every faction x phase ----------
+// Action: [icon, name, note, state]. state: 'spent' | 'picked' | 'fresh' (no icon in actionIcons.ts yet).
+const TURN_TILES = {
+  end: ['play', 'End phase', 'next phase', 'end'],
+  undo: ['undo-2', 'Undo', 'last action', ''],
+  draw: ['layers', 'Draw', 'evening draw', ''],
+  bird: ['bird', 'Spend bird', 'extra action', ''],
+}
+const PHASE_ICONS = { Birdsong: 'sunrise', Daylight: 'sun', Evening: 'moon' }
+const FACTION_TRAYS = [
+  { faction: 'marquise', name: 'Marquise de Cat', phases: [
+    { counter: '', actions: [['trees', 'Place wood', 'every sawmill', 'fresh']], turn: 'end,undo' },
+    { counter: '2/3', actions: [['footprints', 'March', '1 action'], ['swords', 'Battle', '1 action', 'picked'], ['user-plus', 'Recruit', 'once per turn', 'spent'], ['hammer', 'Build', '1 action'], ['axe', 'Overwork', '1 action'], ['anvil', 'Craft', 'free']], turn: 'end,undo,bird' },
+    { counter: '', actions: [['discard', 'Discard', 'down to 5']], turn: 'end,undo,draw' },
+  ] },
+  { faction: 'eyrie', name: 'Eyrie Dynasties', phases: [
+    { counter: '', actions: [['scroll-text', 'Add to Decree', '1 or 2 cards'], ['home', 'A New Roost', 'no roost on map', 'fresh']], turn: 'end,undo' },
+    { counter: '2/6', actions: [['anvil', 'Craft', 'free'], ['dizzy', 'Turmoil', 'decree cannot resolve', 'fresh']], decree: true, turn: 'end,undo' },
+    { counter: '', actions: [['star', 'Score roosts', 'roost track', 'fresh'], ['discard', 'Discard', 'down to 5']], turn: 'end,undo,draw' },
+  ] },
+  { faction: 'alliance', name: 'Woodland Alliance', phases: [
+    { counter: '', actions: [['flame', 'Revolt', 'spend 2 supporters'], ['heart-handshake', 'Spread Sympathy', 'spend supporters']], turn: 'end,undo' },
+    { counter: '', actions: [['anvil', 'Craft', 'free'], ['users', 'Mobilize', 'card to supporters'], ['graduation-cap', 'Train', 'card for an officer']], turn: 'end,undo' },
+    { counter: '2/3', actions: [['footprints', 'Move', '2 ops left'], ['swords', 'Battle', '2 ops left'], ['user-plus', 'Recruit', '2 ops left'], ['flag', 'Organize', '2 ops left']], turn: 'end,undo,draw' },
+  ] },
+  { faction: 'vagabond', name: 'Vagabond', phases: [
+    { counter: '', actions: [['refresh-cw', 'Refresh', 'items'], ['wind', 'Slip', 'free move']], turn: 'end,undo' },
+    { counter: '', actions: [['footprints', 'Move', 'exhaust boot', '', '2/3'], ['swords', 'Battle', 'exhaust sword', '', '1/2'], ['torch', 'Explore', 'exhaust torch', '', '1/1'], ['hand-helping', 'Aid', 'exhaust item + card', '', '5/8'], ['crosshair', 'Strike', 'exhaust crossbow', '', '1/1'], ['wrench', 'Repair', 'exhaust hammer', 'spent', '0/1'], ['anvil', 'Craft', 'exhaust hammers', 'spent', '0/1'], ['robber', 'Steal', 'Thief: exhaust torch', '', '1/1']], turn: 'end,undo' },
+    { counter: '', actions: [['bed', 'Rest', 'in a forest'], ['trash-2', 'Remove items', 'over capacity'], ['discard', 'Discard', 'down to 5']], turn: 'end,undo,draw' },
+  ] },
+  { faction: 'lizard', name: 'Lizard Cult', phases: [
+    { counter: '', actions: [['swords', 'Crusade: battle', 'spend 2 acolytes'], ['footprints', 'Crusade: move', 'spend 2 acolytes'], ['reload', 'Convert', 'spend 2 acolytes'], ['pyramidPlus', 'Sanctify', 'spend 3 acolytes']], turn: 'end,undo' },
+    { counter: '', actions: [['sprout', 'Build', 'reveal a card'], ['user-plus', 'Recruit', 'reveal a card'], ['plusOne', 'Score', 'reveal a card'], ['skull', 'Sacrifice', 'reveal a bird']], turn: 'end,undo' },
+    { counter: '', actions: [['anvil', 'Craft', 'outcast gardens'], ['discard', 'Discard', 'down to 5']], turn: 'end,undo,draw' },
+  ] },
+  { faction: 'riverfolk', name: 'Riverfolk Company', phases: [
+    { counter: '', actions: [], turn: 'end,undo', note: 'Protectionism, dividends and funds resolve by themselves.' },
+    { counter: '4 funds', actions: [['footprints', 'Move', 'commit 1 fund'], ['swords', 'Battle', 'commit 1 fund'], ['anvil', 'Craft', 'commit funds'], ['layers', 'Draw', 'commit 1 fund'], ['user-plus', 'Recruit', 'spend 1 fund'], ['store', 'Trade post', 'spend 2 funds']], turn: 'end,undo' },
+    { counter: '', actions: [['coins', 'Set costs', 'service prices'], ['discard', 'Discard', 'down to 5']], turn: 'end,undo' },
+  ] },
+]
+const DECREE_COLUMNS = [
+  { icon: 'user-plus', name: 'Recruit', left: '1/1 done', state: 'done', suits: [['rabbit', true]] },
+  { icon: 'footprints', name: 'Move', left: '1/2 done', state: 'now', suits: [['fox', true], ['fox', false], ['bird', false]] },
+  { icon: 'swords', name: 'Battle', left: '0/1 done', state: '', suits: [['mouse', false]] },
+  { icon: 'hammer', name: 'Build', left: '0/1 done', state: '', suits: [['rabbit', false]] },
+]
+const tileMarkup = ([icon, name, left, state = '', tally = '']) => `<div class="paper fine tile ${state}" data-name="${name}" data-left="${left}">${iconMarkup(icon)}${tally !== '' ? `<span class="tally">${tally}</span>` : ''}</div>`
+const decreeMarkup = () => `<div class="decree">${DECREE_COLUMNS.map((column) => `<div class="column ${column.state}" data-name="${column.name}" data-left="${column.left}"><div class="paper fine head"><i data-lucide="${column.icon}"></i></div><div class="paper fine strip">${column.suits.map(([suit, done]) => `<img ${done ? 'class="done"' : ''} src="../../../frontend/react/public/assets/suits/${suit}.png" alt="" />`).join('')}</div></div>`).join('')}</div>`
+const dockMarkup = (faction, phaseName, phase) => {
+  // Decree docks keep their extra tiles in one column; others fill two rows, row first.
+  const columns = phase.decree === true ? 1 : Math.ceil(phase.actions.length / 2)
+  const grid = phase.actions.length > 0 ? `<div class="grid" style="--columns: ${columns}">${phase.actions.map(tileMarkup).join('')}</div>` : ''
+  const body = grid + (phase.decree === true ? decreeMarkup() : '')
+  const turnTiles = phase.turn.split(',').map((key) => tileMarkup(TURN_TILES[key])).join('')
+  const hasTally = phase.actions.some((action) => action[4] !== undefined)
+  return `<div class="paper dock ${faction} ${hasTally ? 'tallied' : ''}">
+    <div class="paper fine tab phase"><i data-lucide="${PHASE_ICONS[phaseName]}"></i>${phaseName}${phase.counter !== '' ? `<small>${phase.counter}</small>` : ''}</div>
+    ${body}${body !== '' ? '<i class="line"></i>' : ''}<div class="slot">${turnTiles}</div>
+  </div>${phase.note !== undefined ? `<p>${phase.note}</p>` : ''}`
+}
+const phaseNames = Object.keys(PHASE_ICONS)
+document.getElementById('matrix').innerHTML =
+  `<div class="corner"></div>${phaseNames.map((phaseName) => `<div class="phase-head"><i data-lucide="${PHASE_ICONS[phaseName]}"></i>${phaseName}</div>`).join('')}` +
+  FACTION_TRAYS.map((tray) => `<div class="who"><img src="../../../frontend/react/public/assets/factions/${tray.faction}.png" alt="" />${tray.name}</div>${tray.phases.map((phase, index) => `<div class="cell">${dockMarkup(tray.faction, phaseNames[index], phase)}</div>`).join('')}`).join('')
+
+// Opening the panel scrolls to the first action of the current phase.
+const scrollToCurrentPhase = (tray) => {
+  const list = tray.querySelector('.card-list')
+  const firstLive = list.querySelector('.card-row:not(.later)')
+  if (firstLive !== null) list.scrollTop = firstLive.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop
+}
+for (const cardsTab of document.querySelectorAll('.tab.cards')) {
+  const tray = cardsTab.parentElement
+  cardsTab.addEventListener('click', () => {
+    tray.classList.toggle('open')
+    scrollToCurrentPhase(tray)
+  })
+  // Row heights settle once the display font has loaded.
+  window.addEventListener('load', () => {
+    scrollToCurrentPhase(tray)
+    setTimeout(() => scrollToCurrentPhase(tray), 400)
+  })
+
+  // Hold a line: its crafted card shows until release (same delay as a hand card).
+  const preview = tray.querySelector('.card-preview')
+  const showCard = (row) => {
+    preview.src = `../../../frontend/react/public/assets/cards/card-${row.dataset.art}.png`
+    preview.classList.add('shown')
+  }
+  const hideCard = () => {
+    preview.classList.remove('shown')
+  }
+  // The pinned demo state goes away at the first real press in this tray.
+  const clearDemo = () => {
+    preview.classList.remove('demo')
+    for (const pinned of tray.querySelectorAll('.card-row.hovered')) pinned.classList.remove('hovered')
+  }
+  for (const row of tray.querySelectorAll('.card-row')) {
+    let holdTimer = null
+    const release = () => {
+      clearTimeout(holdTimer)
+      hideCard()
+    }
+    row.addEventListener('pointerdown', () => {
+      clearDemo()
+      hideCard()
+      holdTimer = setTimeout(() => showCard(row), CARD_HOLD_MILLISECONDS)
+    })
+    row.addEventListener('pointerup', release)
+    row.addEventListener('pointerleave', release)
+  }
+  // Static shot: the open tray shows one line as if hovered and held.
+  if (tray.classList.contains('open')) {
+    const demoRow = tray.querySelector('.card-row:not(.later) ~ .card-row:not(.later) ~ .card-row:not(.later)')
+    demoRow.classList.add('hovered')
+    // Next line belongs to another phase: pinned too, to compare both hover looks.
+    demoRow.nextElementSibling?.classList.add('hovered')
+    showCard(demoRow)
+    preview.classList.add('demo')
+  }
+}
+lucide.createIcons()
+</script>
+</body>
+</html>
