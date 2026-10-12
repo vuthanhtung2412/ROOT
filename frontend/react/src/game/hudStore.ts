@@ -76,6 +76,17 @@ export type DecreePanelHudState = {
   isOpen: boolean
 } | null
 
+/** A card dragged towards a Decree panel slot; null when none is. */
+export type DecreeDragHudState = {
+  cardId: string
+  defId: string
+  /** Pointer position, in viewport pixels. */
+  x: number
+  y: number
+  /** Slot under the pointer that takes the card. */
+  overColumn: string | null
+} | null
+
 export type StatusMessageHudState = {
   text: string
 } | null
@@ -190,6 +201,7 @@ export type HudState = {
   cardFlights: CardFlightBatch
   cardHand: CardHandHudState
   decreePanel: DecreePanelHudState
+  decreeDrag: DecreeDragHudState
   /** Server log entries the viewer may see (other players' secrets redacted). */
   gameLog: readonly unknown[]
   statusMessage: StatusMessageHudState
@@ -218,6 +230,7 @@ const INITIAL_HUD_STATE: HudState = {
   cardFlights: EMPTY_CARD_FLIGHT_BATCH,
   cardHand: null,
   decreePanel: null,
+  decreeDrag: null,
   gameLog: [],
   statusMessage: null,
   shell: 'boot',
