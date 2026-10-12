@@ -23,24 +23,24 @@ import { createSeededRandom } from '#game/map3d/treePlacement.ts'
  * clearings, stone-dotted paths and the river.
  */
 const GROUND_TEXTURE_WIDTH_PIXELS = 4096
-/** The board's parchment, shared by the forest floor and the clearings. */
-const GROUND_COLOR = '#bfac8b'
+/** The forest floor: dark olive earth under the trees. */
+const GROUND_COLOR = '#565a44'
 const FOREST_FLOOR_PATCH_COLORS: readonly string[] = [
-  '#c7b594',
-  '#b5a281',
-  '#bba887',
+  '#5f634b',
+  '#4c503c',
+  '#535742',
 ]
 const FOREST_FLOOR_PATCH_COUNT = 900
 const FOREST_FLOOR_PATCH_OPACITY = 0.35
-/** Clearing soil is a little paler than the forest floor it fades into. */
-const CLEARING_SOIL_COLOR = '#d3c29f'
-const CLEARING_SOIL_FADED_COLOR = 'rgba(211, 194, 159, 0)'
+/** Clearing soil is pale khaki, fading into the dark forest floor. */
+const CLEARING_SOIL_COLOR = '#b3ab8a'
+const CLEARING_SOIL_FADED_COLOR = 'rgba(179, 171, 138, 0)'
 /** Share of the clearing's radius that is solid soil before the fade. */
 const CLEARING_SOIL_SOLID_RATIO = 0.55
 /** A path is little more than its line of stones (as in the digital game). */
 const PATH_WIDTH = 1.15
-/** Paths are beds of grey pebbles. */
-const PATH_GRAVEL_COLOR = '#8f8f8a'
+/** Paths are bare dirt, the clearings' khaki, under their stones. */
+const PATH_GRAVEL_COLOR = '#a39b7c'
 const RIVER_WATER_COLOR = '#5fa9c4'
 const RIVER_WATER_WIDTH = 3
 const RIVER_SHALLOW_COLOR = '#8fcbd9'

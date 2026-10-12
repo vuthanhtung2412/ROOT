@@ -38,23 +38,23 @@ type Dab = {
 const FULL_TURN_RADIANS = Math.PI * 2
 const HALF = 0.5
 
-const MOSS_COLORS: readonly string[] = ['#5f6f3c', '#3a4630', '#6b7442']
+const MOSS_COLORS: readonly string[] = ['#4f5a3e', '#3a4234', '#5c6447']
 const MOSS_DENSITY = 0.14
 const LITTER_COLORS: readonly string[] = [
-  '#b5562a',
-  '#d08a35',
-  '#7c5a2c',
-  '#2f3a26',
-  '#8b9a52',
+  '#6e3a30',
+  '#7d6a46',
+  '#5a4c36',
+  '#353b2c',
+  '#6c7350',
 ]
 const LITTER_DENSITY = 1.6
 
-const DIRT_COLORS: readonly string[] = ['#a98f58', '#dcc894', '#b79c62']
+const DIRT_COLORS: readonly string[] = ['#9c9474', '#c2ba9a', '#a8a080']
 const DIRT_DABS_PER_CLEARING = 110
-const PEBBLE_COLORS: readonly string[] = ['#e9e1cb', '#a79c84', '#cfc5ab']
-const PEBBLE_OUTLINE_COLOR = '#6f6248'
+const PEBBLE_COLORS: readonly string[] = ['#dcd9c8', '#9c9884', '#c4c0ac']
+const PEBBLE_OUTLINE_COLOR = '#5f5b4a'
 const PEBBLES_PER_CLEARING = 46
-const GRASS_COLORS: readonly string[] = ['#6f8f3a', '#8aa648', '#5b7a33']
+const GRASS_COLORS: readonly string[] = ['#5f7350', '#748764', '#4f6246']
 const GRASS_TUFTS_PER_CLEARING = 90
 const GRASS_BLADE_COUNT = 4
 const GRASS_BLADE_LENGTH = 0.55
@@ -66,13 +66,13 @@ const GRASS_OUTER_RADIUS_RATIO = 1.1
 const PATH_HALF_WIDTH = 0.52
 const PATH_PEBBLES_PER_UNIT = 26
 const PATH_PEBBLE_COLORS: readonly string[] = [
-  '#a9aaa5',
-  '#7f817c',
-  '#c3c4be',
-  '#96958f',
-  '#6d6f6b',
+  '#dcd9c8',
+  '#c4c1ae',
+  '#e6e3d4',
+  '#cfccba',
+  '#b4b09c',
 ]
-const PATH_PEBBLE_SHADOW_COLOR = '#4a4c48'
+const PATH_PEBBLE_SHADOW_COLOR = '#6a664f'
 const PATH_PEBBLE_SHADOW_OFFSET = 0.03
 const PATH_PEBBLE_MINIMUM_RADIUS = 0.06
 const PATH_PEBBLE_RADIUS_SPREAD = 0.1
@@ -80,7 +80,7 @@ const PATH_STONE_SPACING = 0.9
 const PATH_STONE_JITTER = 0.1
 const PATH_STONE_MINIMUM_RADIUS = 0.13
 const PATH_STONE_RADIUS_SPREAD = 0.09
-const PATH_STONE_SHADOW_COLOR = '#4a4c48'
+const PATH_STONE_SHADOW_COLOR = '#6a664f'
 const PATH_STONE_SHADOW_OFFSET = 0.08
 
 const RIVER_HALF_WIDTH = 1.4

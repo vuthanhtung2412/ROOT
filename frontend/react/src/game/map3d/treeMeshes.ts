@@ -19,12 +19,12 @@ const FULL_TURN_RADIANS = Math.PI * 2
 
 /** The kit's teal foliage, repainted in the greens of the Root woodland. */
 const FOLIAGE_MATERIAL_NAME_PREFIX = 'leafs'
-const PINE_DARK_COLOR = 0x1d4535
-const PINE_LIGHT_COLOR = 0x3a7153
-const LEAFY_DARK_COLOR = 0x6c9f3d
-const LEAFY_LIGHT_COLOR = 0xa6cc5a
-const AUTUMN_DARK_COLOR = 0xc8571f
-const AUTUMN_LIGHT_COLOR = 0xeb9a35
+const PINE_DARK_COLOR = 0x2a4a46
+const PINE_LIGHT_COLOR = 0x55806c
+const LEAFY_DARK_COLOR = 0x5d7550
+const LEAFY_LIGHT_COLOR = 0x869a68
+const AUTUMN_DARK_COLOR = 0x6e2f2a
+const AUTUMN_LIGHT_COLOR = 0x9a4a3c
 const BARK_COLOR = 0x5a3f2b
 
 type FoliagePalette = {
