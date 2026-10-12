@@ -62,7 +62,7 @@ const FULL_TURN_RADIANS = Math.PI * 2
 
 /** Suit badge size (world units) zoomed out and zoomed in. */
 const SUIT_BADGE_FAR_SIZE = 2.1
-const SUIT_BADGE_NEAR_SIZE = 1.15
+const SUIT_BADGE_NEAR_SIZE = 0.55
 const SUIT_BADGE_HEIGHT = 0.9
 /** The suit icon, relative to the chip it sits on. */
 const SUIT_ICON_RELATIVE_SIZE = 0.7
