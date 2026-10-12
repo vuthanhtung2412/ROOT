@@ -34,40 +34,77 @@ describe('eyrieActionComposer', () => {
     })
   })
 
-  it('addToDecree can be cancelled with a card staged, then started over', () => {
+  it('addToDecree sends nothing before confirm, even with two cards staged', () => {
     const eyrie = createEyrieComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(eyrie.hooks)
-    const spec = makeActionSpec({
-      type: 'addToDecree',
-      params: {
-        options: [
-          { cardId: 'c1', column: 'recruit' },
-          { cardId: 'c2', column: 'battle' },
-        ],
-        birdCardIds: [],
-      },
-    })
+    composer.begin(
+      makeActionSpec({
+        type: 'addToDecree',
+        params: {
+          options: [
+            { cardId: 'c1', column: 'recruit' },
+            { cardId: 'c2', column: 'battle' },
+          ],
+          birdCardIds: [],
+        },
+      }),
+    )
 
-    const begun = composer.begin(spec)
-    expect(begun.kind === 'incomplete' && begun.prompt.canCancel).toBe(true)
     composer.chooseCard('c1')
-    const staged = composer.chooseColumn('recruit')
-    expect(staged.kind === 'incomplete' && staged.prompt.canCancel).toBe(true)
-
-    expect(composer.cancel()).toEqual({ kind: 'idle' })
-    expect(eyrie.getDraft()).toEqual({ type: 'idle' })
-
-    composer.begin(spec)
+    composer.chooseColumn('recruit')
     composer.chooseCard('c2')
-    composer.chooseColumn('battle')
+    const afterSecondCard = composer.chooseColumn('battle')
+
+    expect(afterSecondCard.kind).toBe('incomplete')
     expect(composer.confirm()).toEqual({
       kind: 'ready',
       action: {
         type: 'addToDecree',
-        cards: [{ cardId: 'c2', column: 'battle' }],
+        cards: [
+          { cardId: 'c1', column: 'recruit' },
+          { cardId: 'c2', column: 'battle' },
+        ],
       },
     })
+  })
+
+  it('addToDecree panel lays, moves and takes back a card without a pick', () => {
+    const eyrie = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(eyrie.hooks)
+    composer.begin(
+      makeActionSpec({
+        type: 'addToDecree',
+        params: {
+          options: [
+            { cardId: 'c1', column: 'recruit' },
+            { cardId: 'c1', column: 'move' },
+            { cardId: 'c2', column: 'battle' },
+          ],
+          birdCardIds: [],
+        },
+      }),
+    )
+
+    eyrie.decreeStaging.stage({ cardId: 'c1', column: 'recruit' })
+    eyrie.decreeStaging.stage({ cardId: 'c1', column: 'move' })
+    eyrie.decreeStaging.stage({ cardId: 'c2', column: 'battle' })
+    eyrie.decreeStaging.takeBack('c2')
+
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'addToDecree',
+        cards: [{ cardId: 'c1', column: 'move' }],
+      },
+    })
+  })
+
+  it('addToDecree staging is null when no Add to Decree is staged', () => {
+    const eyrie = createEyrieComposerHooks()
+
+    expect(eyrie.decreeStaging.clear()).toBeNull()
   })
 
   it('newRoost picks clearing', () => {

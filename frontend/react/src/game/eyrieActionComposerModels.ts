@@ -41,6 +41,32 @@ export function isDecreeCardOption(
   return typeof cardId === 'string' && typeof column === 'string'
 }
 
+export type AddToDecreeDraft = Extract<EyrieDraft, { type: 'addToDecree' }>
+
+/** Cards added to the Decree in one Birdsong, at most. Rule: Eyrie 7.4.2. */
+export const MAXIMUM_DECREE_CARDS_ADDED = 2
+
+/**
+ * Hand cards that may still be staged: a place is left and the card would not
+ * be a second bird. Rule: Eyrie 7.4.2.
+ */
+export function stageableDecreeCardIds(draft: AddToDecreeDraft): string[] {
+  if (draft.selected.length >= MAXIMUM_DECREE_CARDS_ADDED) {
+    return []
+  }
+  const stagedCardIds: ReadonlySet<string> = new Set(
+    draft.selected.map((entry) => entry.cardId),
+  )
+  const hasStagedBird: boolean = draft.selected.some((entry) =>
+    draft.birdCardIds.has(entry.cardId),
+  )
+  return uniqueCardIds(draft.options).filter(
+    (cardId) =>
+      !stagedCardIds.has(cardId) &&
+      !(hasStagedBird && draft.birdCardIds.has(cardId)),
+  )
+}
+
 export function uniqueNumbers(values: number[]): number[] {
   return [...new Set(values)]
 }
