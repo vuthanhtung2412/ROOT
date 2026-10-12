@@ -32,7 +32,7 @@ Sizes are the longest side of the model, in metres of the Blender file:
 
 | File | Piece | Made from | Licence |
 |------|-------|-----------|---------|
-| `keep.glb` | Marquise keep | "Low poly medieval castle" by assetfactory — https://sketchfab.com/3d-models/low-poly-medieval-castle-6f50a7d5c61045bd8e64cd80d4eef84d — reds, spires and battlements recoloured orange | **Sketchfab Standard**: usable in the game, the model file itself must not be redistributed |
+| `keep-rebuilt.glb` | Marquise keep | "Low poly medieval castle" by assetfactory — https://sketchfab.com/3d-models/low-poly-medieval-castle-6f50a7d5c61045bd8e64cd80d4eef84d — reds, spires and battlements recoloured orange; rebuilt as 29 named parts, entry hall shortened, barbican replaced by a gate between the gate towers, bases brought down to one ground plane | **Sketchfab Standard**: usable in the game, the model file itself must not be redistributed |
 | `recruiter.glb` | Marquise recruiter | "Stylised Medieval Buildings - Barracks" by Cleo Renshaw — https://sketchfab.com/3d-models/stylised-medieval-buildings-barracks-b08bda65efee488bab07c86d292323f3 — banner and thatch recoloured orange | **CC-BY-4.0**: credit required (line below) |
 | `workshop.glb` | Marquise workshop | Quaternius "Blacksmith" (https://poly.pizza/m/bV52eTG1Aj) with Kenney Survival Kit anvil and hammer; roof recoloured orange | CC0 |
 | `base.glb` | Woodland Alliance base | Quaternius "Barracks" (https://poly.pizza/m/puD1kbV4kf); banners, flags and hall roof recoloured green | CC0 |
@@ -63,8 +63,9 @@ this directory live on disk only. The buildings and meeples are kept, one file
 per piece, in `resources/reference/models/` with Git LFS, sorted by kind of
 piece: `buildings/`, `tokens/` (keep, wood, sympathy, trade post), `markers/`
 (ruin), `meeples/` and `items/`. Copy them from there on a fresh checkout:
-buildings, tokens and markers all go to `buildings/final/` (`sympathy.glb` is
-a link to its reference file). The `nature/` trees come
+buildings, tokens and markers all go to `buildings/final/` (`sympathy.glb` and
+`keep-rebuilt.glb` are links to their reference files; `keep.glb`, the castle
+before it was rebuilt, stays in `tokens/` and is not in the game). The `nature/` trees come
 from the kit above.
 
 ## `meeples/` — warriors and Vagabond pawns

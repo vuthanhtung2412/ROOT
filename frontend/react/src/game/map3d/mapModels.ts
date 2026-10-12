@@ -64,7 +64,7 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-marquise-sawmill': structure('sawmill'),
   'token-marquise-workshop': structure('workshop'),
   'token-marquise-recruiter': structure('recruiter'),
-  'token-marquise-keep': structure('keep'),
+  'token-marquise-keep': structure('keep-rebuilt'),
   'token-marquise-wood': structure('wood'),
   'token-eyrie-roost': structure('roost'),
   'token-alliance-base-fox': structure('base'),
