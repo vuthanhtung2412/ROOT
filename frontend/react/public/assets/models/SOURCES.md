@@ -101,3 +101,14 @@ token's body colour. Feet on the ground, front towards +Z.
 stand in the sympathy crowd) are made the same way from art drawn for this
 project, in the colour of their suit. `items/sword.glb` is the sword they
 carry, modelled after the sword item.
+
+The three Vagabond pawns hold a torch at their right side. `items/torch.glb`
+is that torch on its own: "Minecraft Torch" by Blender3D —
+https://sketchfab.com/3d-models/minecraft-torch-e88c4214d4bc4437ae6d249237591071
+— 0.45 tall (the pawn is 0.75), foot at the origin, textures reduced to
+128 px; its head glows (emissive texture). **CC-BY-4.0**: credit required:
+
+> This work is based on "Minecraft Torch"
+> (https://sketchfab.com/3d-models/minecraft-torch-e88c4214d4bc4437ae6d249237591071)
+> by Blender3D (https://sketchfab.com/Blender3D) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)

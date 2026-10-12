@@ -77,6 +77,8 @@ export type MapScene = {
 }
 
 const TREE_SEED = 1894
+/** The Vagabond takes its torch out when the campfires are lit. */
+const TORCH_TIME_OF_DAY: TimeOfDay = 'evening'
 const MAXIMUM_PIXEL_RATIO = 2
 const MILLISECONDS_PER_SECOND = 1000
 /** A tab coming back from the background must not jump the glide. */
@@ -103,6 +105,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     timeOfDay: input.timeOfDay,
   })
   const pieceLayer: PieceLayer = createPieceLayer(input.models.pieces)
+  pieceLayer.setTorchesShown(input.timeOfDay === TORCH_TIME_OF_DAY)
   const riverFlow: RiverFlow = createRiverFlow(input.terrain.river)
   const campfires: Campfires = createCampfires({
     model: input.models.campfire,
@@ -191,6 +194,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
       daylight.setTimeOfDay(timeOfDay)
       campfires.setTimeOfDay(timeOfDay)
       groundMarkers.setTimeOfDay(timeOfDay)
+      pieceLayer.setTorchesShown(timeOfDay === TORCH_TIME_OF_DAY)
     },
     projectToView: (ground: MapGroundPoint, height: number): MapViewPoint => {
       projected.set(ground.x, height, ground.z).project(cameraRig.camera)

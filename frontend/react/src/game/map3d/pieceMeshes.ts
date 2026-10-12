@@ -54,6 +54,8 @@ export type MapPiece = {
 export type PieceLayer = {
   group: Group
   setPieces: (pieces: readonly MapPiece[]) => void
+  /** The Vagabond holds a torch: out in the evening, put away otherwise. */
+  setTorchesShown: (shown: boolean) => void
   /** 0 = zoomed all the way out, 1 = all the way in. Call once per frame. */
   setZoom: (zoom: number) => void
   /** The pieces with these keys were just built: play them going up. */
@@ -80,6 +82,8 @@ type PieceView = {
  */
 const MODEL_WORLD_SCALE = 0.9
 const MATTE_MINIMUM_ROUGHNESS = 0.8
+/** Name of the torch inside a pawn model ends with this (Blender file). */
+const TORCH_PART_NAME_SUFFIX = '_torch'
 const DECAL_ALPHA_CUTOFF = 0.5
 
 /**
@@ -177,6 +181,7 @@ export function createPieceLayer(
   let currentZoom = 0
   /** How much of their full size the models show at the current zoom. */
   let currentGrowth = 0
+  let torchesShown = false
 
   const iconMaterial = (piece: MapPiece): SpriteMaterial => {
     const roundedCorners: boolean = piece.isBuilding === true
@@ -327,6 +332,19 @@ export function createPieceLayer(
     }
   }
 
+  /** The torch a pawn holds is a part of its model: show or hide them all. */
+  const applyTorches = (): void => {
+    const torches: Object3D[] = []
+    group.traverse((part: Object3D): void => {
+      if (part.name.endsWith(TORCH_PART_NAME_SUFFIX)) {
+        torches.push(part)
+      }
+    })
+    for (const torch of torches) {
+      torch.visible = torchesShown
+    }
+  }
+
   const buildSiteOf = (pieceKey: string): BuildSite | undefined => {
     const view: PieceView | undefined = viewsByKey.get(pieceKey)
     return view === undefined
@@ -387,6 +405,11 @@ export function createPieceLayer(
         })
       }
       applyZoom()
+      applyTorches()
+    },
+    setTorchesShown: (shown: boolean): void => {
+      torchesShown = shown
+      applyTorches()
     },
     setZoom: (zoom: number): void => {
       if (zoom === currentZoom) {
