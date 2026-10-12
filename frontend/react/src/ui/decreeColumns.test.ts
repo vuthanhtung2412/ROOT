@@ -56,6 +56,12 @@ describe('decreeColumnViews', () => {
     expect(decreeColumnViews(birdsong, EYRIE_SEAT, [])).toBeNull()
   })
 
+  it('is null in the Daylight craft step, before the Decree is resolved', () => {
+    const craftStep = makeEyrieDecreeState({ step: 'craft' })
+
+    expect(decreeColumnViews(craftStep, EYRIE_SEAT, [])).toBeNull()
+  })
+
   it('orders the columns and tells resolved, current and later apart', () => {
     const columns = decreeColumnViews(makeEyrieDecreeState(), EYRIE_SEAT, [])
 

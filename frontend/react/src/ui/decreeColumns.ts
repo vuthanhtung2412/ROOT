@@ -5,6 +5,8 @@ import { decreeCardSuit } from '#ui/ActionTray.ts'
 export const DECREE_ACTION_TYPE = 'decree'
 const EYRIE_FACTION = 'eyrie'
 const DAYLIGHT_PHASE = 'daylight'
+/** Daylight step that resolves the Decree (the craft step comes before it). */
+const DECREE_STEP = 'decree'
 /** Decree columns, resolved left to right. Rule: Eyrie 7.5.2. */
 const DECREE_COLUMN_ORDER: readonly string[] = ['recruit', 'move', 'battle', 'build']
 
@@ -92,14 +94,19 @@ function columnState(column: string, progress: DecreeProgress): DecreeColumnStat
 
 /**
  * The four Decree columns of the Eyrie taking its Daylight, with what is
- * resolved and what can be resolved now. Null for any other seat or phase.
+ * resolved and what can be resolved now. Null for any other seat, phase or
+ * step.
  */
 export function decreeColumnViews(
   state: GameState | undefined,
   actorSeat: number,
   legalActions: readonly ActionSpec[],
 ): DecreeColumnView[] | null {
-  if (state === undefined || state.phase !== DAYLIGHT_PHASE) {
+  if (
+    state === undefined ||
+    state.phase !== DAYLIGHT_PHASE ||
+    state.step !== DECREE_STEP
+  ) {
     return null
   }
   const actor = state.players.find((player) => player.seat === actorSeat)
