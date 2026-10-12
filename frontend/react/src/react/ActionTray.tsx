@@ -71,9 +71,9 @@ const META_REGION_ID: TrayActionRegion['id'] = 'meta'
 const END_PHASE_ACTION_TYPE = 'endPhase'
 const UNDO_LABEL = 'undo'
 
-/** Narrow: centred above the hand. Wide: bottom right corner, above the drawer buttons. */
+/** Narrow: centred above the hand. Wide: bottom right corner. */
 const DOCK_POSITION_CLASS_NAME =
-  'fixed bottom-(--root-portrait-tray-bottom) left-1/2 z-115 flex max-w-[calc(100vw-16px)] -translate-x-1/2 md:right-3 md:bottom-36 md:left-auto md:z-110 md:translate-x-0'
+  'fixed bottom-(--root-portrait-tray-bottom) left-1/2 z-115 flex max-w-[calc(100vw-16px)] -translate-x-1/2 md:right-3 md:bottom-4 md:left-auto md:z-110 md:translate-x-0'
 /** Frame in the colour of the faction taking the turn. */
 const DOCK_FRAME_CLASS_NAME =
   'action-dock root-paper flex flex-row items-stretch gap-2.5 p-2.5'

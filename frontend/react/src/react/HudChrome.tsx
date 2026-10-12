@@ -54,6 +54,9 @@ const LEAVE_GAME_WORDING: ExitGameWording = {
 }
 
 const KEEP_PLAYING_LABEL = 'Keep playing'
+/** Log, items, discard pile. Narrow: right of the drawer row. Wide: top right corner. */
+const DRAWER_INFO_GROUP_CLASS_NAME =
+  'ml-auto flex flex-row items-center gap-2 md:fixed md:top-3 md:right-3'
 
 /** Same shell as discard / crafted card gallery. */
 const EXIT_MODAL_CLASS_NAME =
@@ -172,7 +175,7 @@ export function GameDrawer(): JSX.Element | null {
           }}
         />
       ) : null}
-      <div className="ml-auto flex flex-row items-center gap-2">
+      <div className={DRAWER_INFO_GROUP_CLASS_NAME}>
         <GameLogButton className={DRAWER_BUTTON_CLASS_NAME} />
         <ItemSupplyButton className={DRAWER_BUTTON_CLASS_NAME} />
         <button
