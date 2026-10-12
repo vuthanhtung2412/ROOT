@@ -14,6 +14,7 @@ import {
  * - daylight: a high warm sun, clear air;
  * - evening: blue moonlight from the west, night-blue sky (the clearings
  *   are lit by their campfires).
+ *   In the evening a soft light also shines from the camera.
  * A change of phase fades from one to the next.
  */
 export type TimeOfDay = 'birdsong' | 'daylight' | 'evening'
@@ -24,6 +25,8 @@ export type DaylightRig = {
   /** To set as the scene's fog and background. */
   fog: Fog
   backdrop: Color
+  /** Keep the camera's own light on the camera; call once per frame. */
+  followCamera: (cameraPosition: Vector3, lookedAt: Vector3) => void
   setTimeOfDay: (timeOfDay: TimeOfDay) => void
   /** Advance the fade; call once per frame. */
   update: (deltaSeconds: number) => void
@@ -40,6 +43,8 @@ type LightingPreset = {
   fogColor: number
   fogNear: number
   fogFar: number
+  /** Strength of the light that shines from the camera onto what it shows. */
+  cameraLightIntensity: number
 }
 
 const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
@@ -53,6 +58,7 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     fogColor: 0xc08a5c,
     fogNear: 140,
     fogFar: 520,
+    cameraLightIntensity: 0,
   },
   daylight: {
     sunColor: 0xfff0d2,
@@ -64,20 +70,24 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     fogColor: 0x2a4034,
     fogNear: 230,
     fogFar: 520,
+    cameraLightIntensity: 0,
   },
   evening: {
     sunColor: 0x6f9cff,
-    sunIntensity: 1.5,
+    sunIntensity: 0.95,
     sunPosition: { x: -100, y: 36, z: 35 },
     skyColor: 0x5b7fe0,
     groundColor: 0x1b2a55,
-    skyIntensity: 1.25,
-    fogColor: 0x15234a,
+    skyIntensity: 0.8,
+    fogColor: 0x101a38,
     fogNear: 190,
     fogFar: 520,
+    cameraLightIntensity: 0.35,
   },
 }
 
+/** Cool white: shows the night woodland without tinting it. */
+const CAMERA_LIGHT_COLOR = 0xdfe8ff
 /** Share of the remaining difference closed per second. */
 const FADE_RATE_PER_SECOND = 2.2
 const SHADOW_MAP_SIZE_PIXELS = 4096
@@ -120,6 +130,11 @@ export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
   sun.shadow.camera.far = SHADOW_CAMERA_FAR
   sun.shadow.bias = SHADOW_BIAS
   sun.shadow.normalBias = SHADOW_NORMAL_BIAS
+  // No shadows: it lights what the viewer looks at, whatever stands there.
+  const cameraLight: DirectionalLight = new DirectionalLight(
+    CAMERA_LIGHT_COLOR,
+    initial.cameraLightIntensity,
+  )
   const fog: Fog = new Fog(initial.fogColor, initial.fogNear, initial.fogFar)
   const backdrop: Color = new Color(initial.fogColor)
 
@@ -128,9 +143,15 @@ export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
   const targetSunPosition: Vector3 = new Vector3()
 
   return {
-    lights: [sky, sun],
+    lights: [sky, sun, cameraLight],
     fog,
     backdrop,
+    followCamera: (cameraPosition: Vector3, lookedAt: Vector3): void => {
+      cameraLight.position.copy(cameraPosition)
+      cameraLight.target.position.copy(lookedAt)
+      // The target is not in the scene, so nothing else updates it.
+      cameraLight.target.updateMatrixWorld()
+    },
     setTimeOfDay: (timeOfDay: TimeOfDay): void => {
       target = LIGHTING_PRESETS[timeOfDay]
     },
@@ -153,6 +174,11 @@ export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
       fog.near = MathUtils.lerp(fog.near, target.fogNear, step)
       fog.far = MathUtils.lerp(fog.far, target.fogFar, step)
       backdrop.copy(fog.color)
+      cameraLight.intensity = MathUtils.lerp(
+        cameraLight.intensity,
+        target.cameraLightIntensity,
+        step,
+      )
     },
   }
 }

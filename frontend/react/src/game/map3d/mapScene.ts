@@ -151,6 +151,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     pieceLayer.setZoom(cameraRig.zoom())
     pieceLayer.update(deltaSeconds)
     groundMarkers.setZoom(cameraRig.zoom())
+    daylight.followCamera(cameraRig.camera.position, cameraRig.controls.target)
     daylight.update(deltaSeconds)
     riverFlow.update(deltaSeconds)
     campfires.update(deltaSeconds)
