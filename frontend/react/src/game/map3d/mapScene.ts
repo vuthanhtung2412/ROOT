@@ -62,7 +62,6 @@ export type MapScene = {
   projectToView: (ground: MapGroundPoint, height: number) => MapViewPoint
   /** Called whenever the camera moved, so overlays can follow. */
   onViewChanged: (listener: () => void) => () => void
-  resetView: () => void
   dispose: () => void
 }
 
@@ -168,7 +167,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
         viewListeners.delete(listener)
       }
     },
-    resetView: cameraRig.resetView,
     dispose: (): void => {
       cancelAnimationFrame(animationFrame)
       cameraRig.controls.removeEventListener('change', notifyViewChanged)

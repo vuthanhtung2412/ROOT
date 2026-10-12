@@ -4,7 +4,7 @@
  * Plays on a very crowded four-faction board (Marquise, Eyrie, Alliance,
  * Vagabond): flat map → 3D map seen from above with 2D icons → zoom into the
  * fullest clearing (the camera tilts, the 3D models rise) → pan to the keep →
- * reset → End Phase for the evening light → a birdsong game for the dawn.
+ * End Phase for the evening light → a birdsong game for the dawn.
  *
  * Usage (spare web backend + react dev server, see SKILL.md):
  *   cd lib && pnpm exec tsx ../.agents/skills/QA/make-ui-busy-snapshot.ts
@@ -33,6 +33,8 @@ const BIRDSONG_SNAPSHOT_PATH = 'tmp/qa/snapshots/alliance-birdsong-revolt.json'
 const VIDEO_NAME = 'demo-3d-map'
 const VIEWPORT = { width: 1440, height: 900 }
 const DRAG_STEP_PAUSE_MS = 16
+/** The clearings of the 3D map show up once its scene is loaded. */
+const MAP_3D_READY_SELECTOR = '.map-3d-canvas ~ [data-clearing-id]'
 /** The fullest clearing: three slots taken, three armies, the pawn. */
 const CROWDED_CLEARING_ID = 10
 /** The keep: the other packed clearing, up in the corner. */
@@ -122,7 +124,7 @@ async function drive(page) {
 
   await caption(page, '3D map: the whole background, seen from above, 2D icons')
   await page.locator('.map-view-toggle').click()
-  await page.waitForSelector('.map-3d-reset-view', { timeout: 30_000 })
+  await page.waitForSelector(MAP_3D_READY_SELECTOR, { timeout: 30_000 })
   await page.waitForTimeout(4200)
 
   await caption(page, 'Zoom in: the camera tilts, 3D models rise, icons shrink')
@@ -150,17 +152,13 @@ async function drive(page) {
   console.log(`keep on screen at ${String(Math.round(keep.x))},${String(Math.round(keep.y))}`)
   await page.waitForTimeout(1800)
 
-  await caption(page, 'Reset view')
-  await page.locator('.map-3d-reset-view').click()
-  await page.waitForTimeout(2800)
-
   await caption(page, 'Hide actions: the tray folds, the map stays put')
   await page.locator('.action-tray__collapse').click()
-  await page.waitForSelector('.map-3d-reset-view', { timeout: 30_000 })
+  await page.waitForSelector(MAP_3D_READY_SELECTOR, { timeout: 30_000 })
   await page.waitForTimeout(4200)
   await caption(page, 'Show them again')
   await page.locator('.action-tray__collapse').click()
-  await page.waitForSelector('.map-3d-reset-view', { timeout: 30_000 })
+  await page.waitForSelector(MAP_3D_READY_SELECTOR, { timeout: 30_000 })
   await page.waitForTimeout(3600)
 
   // The light follows the phase of the turn: daylight fades to evening …
@@ -182,7 +180,7 @@ async function drive(page) {
   })
   await page.reload()
   // The map choice is page state: a reload starts on the 3D map again.
-  await page.waitForSelector('.map-3d-reset-view', { timeout: 30_000 })
+  await page.waitForSelector(MAP_3D_READY_SELECTOR, { timeout: 30_000 })
   await caption(page, 'Birdsong: pink dawn sun, morning mist')
   await page.waitForTimeout(4600)
 

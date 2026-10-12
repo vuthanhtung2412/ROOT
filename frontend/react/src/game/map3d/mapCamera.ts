@@ -21,8 +21,6 @@ export type MapCameraRig = {
   camera: PerspectiveCamera
   controls: OrbitControls
   resize: (frame: MapViewFrame) => void
-  /** Glide back to the opening view. */
-  resetView: () => void
   /** Advance a running glide; call once per frame. */
   update: (deltaSeconds: number) => void
   /** 0 = zoomed all the way out, 1 = all the way in. */
@@ -208,9 +206,6 @@ export function createMapCameraRig(
     camera,
     controls,
     resize,
-    resetView: (): void => {
-      glide = { from: currentPose(), to: homePose(), elapsed: 0 }
-    },
     update: (deltaSeconds: number): void => {
       if (glide !== null) {
         glide.elapsed += deltaSeconds

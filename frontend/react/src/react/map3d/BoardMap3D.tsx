@@ -50,12 +50,6 @@ const RULER_RING_OPACITY = 0.95
 const HIT_RADIUS_RATIO = 0.9
 const HALF = 0.5
 
-/** Gap between the reset button and the right edge of the focus. */
-const RESET_VIEW_INSET_PIXELS = 8
-/** Never under the log / items / discard chips in the top right corner. */
-const RESET_VIEW_MINIMUM_RIGHT_PIXELS = 360
-const RESET_VIEW_CLASS_NAME =
-  'map-3d-reset-view pointer-events-auto absolute top-2 z-6 cursor-root-pointer rounded border border-parchment-shadow bg-[#1a2438cc] px-2 py-1 font-body text-xs font-bold text-parchment'
 /** Themed sword over the woodland; finger over a clearing the player can pick. */
 const MAP_CANVAS_CLASS_NAME =
   'map-3d-canvas pointer-events-auto absolute inset-0 z-0 block cursor-root-default touch-none'
@@ -323,25 +317,6 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
         ref={canvasReference}
         className={MAP_CANVAS_CLASS_NAME}
       />
-      {scene !== null ? (
-        <button
-          type="button"
-          className={RESET_VIEW_CLASS_NAME}
-          style={{
-            right: Math.max(
-              (viewWidth - focusWidth) * HALF -
-                focusOffsetX +
-                RESET_VIEW_INSET_PIXELS,
-              RESET_VIEW_MINIMUM_RIGHT_PIXELS,
-            ),
-          }}
-          onClick={() => {
-            scene.resetView()
-          }}
-        >
-          Reset view
-        </button>
-      ) : null}
       {scene !== null
         ? forestGrounds.map((forest: ForestGround) =>
             highlightedForests.has(forest.forestIndex) ? (
