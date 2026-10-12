@@ -53,7 +53,7 @@ const DIRT_COLORS: readonly string[] = ['#9c9474', '#c2ba9a', '#a8a080']
 const DIRT_DABS_PER_CLEARING = 110
 const PEBBLE_COLORS: readonly string[] = ['#dcd9c8', '#9c9884', '#c4c0ac']
 const PEBBLE_OUTLINE_COLOR = '#5f5b4a'
-const PEBBLES_PER_CLEARING = 46
+const PEBBLES_PER_CLEARING = 14
 const GRASS_COLORS: readonly string[] = ['#5f7350', '#748764', '#4f6246']
 const GRASS_TUFTS_PER_CLEARING = 90
 const GRASS_BLADE_COUNT = 4
@@ -63,25 +63,36 @@ const GRASS_BLADE_WIDTH = 0.09
 const GRASS_INNER_RADIUS_RATIO = 0.78
 const GRASS_OUTER_RADIUS_RATIO = 1.1
 
-const PATH_HALF_WIDTH = 0.52
-const PATH_PEBBLES_PER_UNIT = 26
+const PATH_HALF_WIDTH = 0.9
+const PATH_PEBBLES_PER_UNIT = 4
+/** Specks of the dirt itself: the path stays dirt, only its stones are pale. */
 const PATH_PEBBLE_COLORS: readonly string[] = [
-  '#dcd9c8',
-  '#c4c1ae',
-  '#e6e3d4',
-  '#cfccba',
-  '#b4b09c',
+  '#858066',
+  '#9a9478',
+  '#8a846a',
+  '#a39d80',
+  '#7d785f',
 ]
 const PATH_PEBBLE_SHADOW_COLOR = '#6a664f'
 const PATH_PEBBLE_SHADOW_OFFSET = 0.03
 const PATH_PEBBLE_MINIMUM_RADIUS = 0.06
 const PATH_PEBBLE_RADIUS_SPREAD = 0.1
-const PATH_STONE_SPACING = 0.9
+const PATH_STONE_SPACING = 0.42
 const PATH_STONE_JITTER = 0.1
-const PATH_STONE_MINIMUM_RADIUS = 0.13
-const PATH_STONE_RADIUS_SPREAD = 0.09
+/** Stones lie this far either side of the middle of the path. */
+const PATH_STONE_SIDE_SPREAD = 0.3
+/** A stone is a slab with rounded corners, laid roughly along the path. */
+const PATH_STONE_MINIMUM_LENGTH = 0.3
+const PATH_STONE_LENGTH_SPREAD = 0.16
+const PATH_STONE_MINIMUM_WIDTH = 0.2
+const PATH_STONE_WIDTH_SPREAD = 0.1
+/** Corner radius of a slab, as a share of its width. */
+const PATH_STONE_CORNER_RATIO = 0.38
+/** How far a slab may turn off the line of the path, radians. */
+const PATH_STONE_MAXIMUM_TURN = 0.4
 const PATH_STONE_SHADOW_COLOR = '#6a664f'
-const PATH_STONE_SHADOW_OFFSET = 0.08
+const PATH_STONE_SHADOW_OPACITY = 0.8
+const PATH_STONE_SHADOW_OFFSET = 0.05
 
 const RIVER_HALF_WIDTH = 1.4
 const RIVER_BANK_PEBBLE_STEP = 3
@@ -106,6 +117,43 @@ function dab(brush: GroundBrush, mark: Dab): void {
   context.arc(center.x, center.y, mark.radius * scale, 0, FULL_TURN_RADIANS)
   context.fill()
   context.globalAlpha = 1
+}
+
+type SlabShape = {
+  length: number
+  width: number
+  /** Turn of the slab on the canvas, radians. */
+  turn: number
+}
+
+type Slab = {
+  center: MapGroundPoint
+  shape: SlabShape
+  color: string
+  opacity: number
+}
+
+/** A rectangle with rounded corners, turned its own way. */
+function slab(brush: GroundBrush, mark: Slab): void {
+  const { context, scale } = brush
+  const center: CanvasPoint = brush.toCanvas(mark.center)
+  const length: number = mark.shape.length * scale
+  const width: number = mark.shape.width * scale
+  context.save()
+  context.translate(center.x, center.y)
+  context.rotate(mark.shape.turn)
+  context.globalAlpha = mark.opacity
+  context.fillStyle = mark.color
+  context.beginPath()
+  context.roundRect(
+    -length * HALF,
+    -width * HALF,
+    length,
+    width,
+    width * PATH_STONE_CORNER_RATIO,
+  )
+  context.fill()
+  context.restore()
 }
 
 /** A point at a random spot of a disc, evenly spread over its area. */
@@ -235,7 +283,7 @@ function pathPoint(
   }
 }
 
-/** A bed of grey pebbles, each with a sliver of shadow. */
+/** Specks in the dirt of the path, each with a sliver of shadow. */
 export function paintPathDetail(brush: GroundBrush, path: PathGround): void {
   const length: number = groundDistance(path.start, path.end)
   for (let index = 0; index < length * PATH_PEBBLES_PER_UNIT; index += 1) {
@@ -268,26 +316,37 @@ export function paintPathDetail(brush: GroundBrush, path: PathGround): void {
 export function paintPathStones(brush: GroundBrush, path: PathGround): void {
   const length: number = groundDistance(path.start, path.end)
   const stoneCount: number = Math.floor(length / PATH_STONE_SPACING)
+  // On the canvas, x runs with the world's x and y with its z.
+  const pathTurn: number = Math.atan2(
+    path.end.z - path.start.z,
+    path.end.x - path.start.x,
+  )
   for (let stone = 1; stone < stoneCount; stone += 1) {
     const center: MapGroundPoint = pathPoint(
       path,
       stone / stoneCount + ((brush.random() - HALF) * PATH_STONE_JITTER) / length,
-      (brush.random() - HALF) * PATH_STONE_JITTER * 2,
+      (brush.random() - HALF) * PATH_STONE_SIDE_SPREAD * 2,
     )
-    const radius: number =
-      PATH_STONE_MINIMUM_RADIUS + brush.random() * PATH_STONE_RADIUS_SPREAD
-    dab(brush, {
+    const shape: SlabShape = {
+      length:
+        PATH_STONE_MINIMUM_LENGTH + brush.random() * PATH_STONE_LENGTH_SPREAD,
+      width:
+        PATH_STONE_MINIMUM_WIDTH + brush.random() * PATH_STONE_WIDTH_SPREAD,
+      turn:
+        pathTurn + (brush.random() - HALF) * PATH_STONE_MAXIMUM_TURN * 2,
+    }
+    slab(brush, {
       center: {
         x: center.x + PATH_STONE_SHADOW_OFFSET,
         z: center.z + PATH_STONE_SHADOW_OFFSET,
       },
-      radius,
+      shape,
       color: PATH_STONE_SHADOW_COLOR,
-      opacity: 0.8,
+      opacity: PATH_STONE_SHADOW_OPACITY,
     })
-    dab(brush, {
+    slab(brush, {
       center,
-      radius,
+      shape,
       color: pick(brush, PEBBLE_COLORS),
       opacity: 1,
     })

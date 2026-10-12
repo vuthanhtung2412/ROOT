@@ -14,7 +14,11 @@ import {
   type CanvasPoint,
   type GroundBrush,
 } from '#game/map3d/groundDetail.ts'
-import type { ClearingGround, MapTerrain } from '#game/map3d/mapTerrain.ts'
+import type {
+  ClearingGround,
+  MapTerrain,
+  PathGround,
+} from '#game/map3d/mapTerrain.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import { createSeededRandom } from '#game/map3d/treePlacement.ts'
 
@@ -37,10 +41,18 @@ const CLEARING_SOIL_COLOR = '#b3ab8a'
 const CLEARING_SOIL_FADED_COLOR = 'rgba(179, 171, 138, 0)'
 /** Share of the clearing's radius that is solid soil before the fade. */
 const CLEARING_SOIL_SOLID_RATIO = 0.55
-/** A path is little more than its line of stones (as in the digital game). */
-const PATH_WIDTH = 1.15
-/** Paths are bare dirt, the clearings' khaki, under their stones. */
-const PATH_GRAVEL_COLOR = '#a39b7c'
+/** A path is a band of dirt with stones down its middle (as in the digital game). */
+const PATH_WIDTH = 2
+/** Paths are bare dirt, a shade darker than the clearings, under their stones. */
+const PATH_GRAVEL_COLOR = '#8f896c'
+/**
+ * The dirt fades into the forest floor: it is laid in thin coats, from this
+ * much wider than the path down to this much of it.
+ */
+const PATH_FEATHER_OUTER_RATIO = 1.7
+const PATH_FEATHER_INNER_RATIO = 0.45
+const PATH_FEATHER_COAT_COUNT = 9
+const PATH_FEATHER_COAT_OPACITY = 0.28
 const RIVER_WATER_COLOR = '#5fa9c4'
 const RIVER_WATER_WIDTH = 3
 const RIVER_SHALLOW_COLOR = '#8fcbd9'
@@ -136,6 +148,23 @@ function paintClearing(painter: GroundPainter, clearing: ClearingGround): void {
   context.fill()
 }
 
+/** The dirt of a path, soft at its edges. */
+function paintPathDirt(painter: GroundPainter, path: PathGround): void {
+  const { context } = painter
+  context.globalAlpha = PATH_FEATHER_COAT_OPACITY
+  for (let coat = 0; coat < PATH_FEATHER_COAT_COUNT; coat += 1) {
+    const widthRatio: number =
+      PATH_FEATHER_OUTER_RATIO +
+      ((PATH_FEATHER_INNER_RATIO - PATH_FEATHER_OUTER_RATIO) * coat) /
+        (PATH_FEATHER_COAT_COUNT - 1)
+    strokeLine(painter, [path.start, path.end], {
+      color: PATH_GRAVEL_COLOR,
+      width: PATH_WIDTH * widthRatio,
+    })
+  }
+  context.globalAlpha = 1
+}
+
 function paintGround(painter: GroundPainter): void {
   const { terrain } = painter
   const brush: GroundBrush = {
@@ -153,10 +182,7 @@ function paintGround(painter: GroundPainter): void {
     halfDepth: terrain.worldSize.depth * HALF + terrain.marginZ,
   })
   for (const path of terrain.paths) {
-    strokeLine(painter, [path.start, path.end], {
-      color: PATH_GRAVEL_COLOR,
-      width: PATH_WIDTH,
-    })
+    paintPathDirt(painter, path)
   }
   for (const clearing of terrain.clearings) {
     paintClearing(painter, clearing)
