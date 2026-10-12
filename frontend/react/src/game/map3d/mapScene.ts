@@ -12,7 +12,7 @@ import {
 } from '#game/map3d/groundMarkers.ts'
 import { createMapCameraRig, type MapCameraRig } from '#game/map3d/mapCamera.ts'
 import type { MapModels } from '#game/map3d/mapModels.ts'
-import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
+import type { ClearingGround, MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type {
   MapGroundPoint,
   MapViewFrame,
@@ -82,7 +82,12 @@ export function createMapScene(input: MapSceneInput): MapScene {
   renderer.shadowMap.type = PCFSoftShadowMap
 
   const scene: Scene = new Scene()
-  const daylight: DaylightRig = createDaylightRig(input.timeOfDay)
+  const daylight: DaylightRig = createDaylightRig(
+    input.timeOfDay,
+    input.terrain.clearings.map(
+      (clearing: ClearingGround): MapGroundPoint => clearing.center,
+    ),
+  )
   scene.fog = daylight.fog
   scene.background = daylight.backdrop
   const groundMarkers: GroundMarkers = createGroundMarkers({
