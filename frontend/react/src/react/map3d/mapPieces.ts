@@ -83,8 +83,23 @@ const STACKS_PER_ROW = 4
  * of centre to leave it room (ratio of the clearing radius).
  */
 const STACK_ROW_SHIFT_BESIDE_FRONT_SLOT_RATIO = -0.3
+/**
+ * The keep stands in the corner of its clearing that points out of the map
+ * (top left clearing: top left corner), this far from the centre along each
+ * axis (ratio of the clearing radius).
+ */
+const KEEP_CORNER_RATIO = 0.8
 const HALF = 0.5
 const DOUBLE = 2
+
+/** The outermost corner of a clearing, away from the middle of the map. */
+function keepGround(clearing: ClearingGround): MapGroundPoint {
+  const offset: number = clearing.radius * KEEP_CORNER_RATIO
+  return {
+    x: clearing.center.x + Math.sign(clearing.center.x) * offset,
+    z: clearing.center.z + Math.sign(clearing.center.z) * offset,
+  }
+}
 
 type SlotSpot = {
   ground: MapGroundPoint
@@ -250,10 +265,27 @@ function stackPieces(
   pieces: readonly PieceViewModel[],
 ): MapPiece[] {
   const clearingId: number = clearingGround.clearingId
-  const stacks: PieceStackViewModel[] = groupPiecesIntoStacks(
+  const isKeep = (stack: PieceStackViewModel): boolean =>
+    textureKeyForStack(stack, clearingId) === GAME_ASSET_KEYS.tokenMarquiseKeep
+  const allStacks: PieceStackViewModel[] = groupPiecesIntoStacks(
     pieces.filter(
       (piece: PieceViewModel): boolean => piece.kind !== BUILDING_KIND,
     ),
+  )
+  // The keep stands in its corner, out of the rows.
+  const keeps: MapPiece[] = allStacks.filter(isKeep).map(
+    (stack: PieceStackViewModel): MapPiece => ({
+      key: `${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`,
+      shape: 'piece',
+      textureKey: GAME_ASSET_KEYS.tokenMarquiseKeep,
+      texturePath: imagePathForAssetKey(GAME_ASSET_KEYS.tokenMarquiseKeep),
+      color: stack.color,
+      count: stack.count,
+      ground: keepGround(clearingGround),
+    }),
+  )
+  const stacks: PieceStackViewModel[] = allStacks.filter(
+    (stack: PieceStackViewModel): boolean => !isKeep(stack),
   )
   const ordered: PieceStackViewModel[] = [
     ...stacks.filter(
@@ -266,31 +298,34 @@ function stackPieces(
   const rowShift: number = hasFrontSlot(clearingId)
     ? clearingGround.radius * STACK_ROW_SHIFT_BESIDE_FRONT_SLOT_RATIO
     : 0
-  return ordered.map((stack: PieceStackViewModel, index: number): MapPiece => {
-    const rowIndex: number = Math.floor(index / STACKS_PER_ROW)
-    const rowCount: number = Math.min(
-      ordered.length - rowIndex * STACKS_PER_ROW,
-      STACKS_PER_ROW,
-    )
-    const grounds: MapGroundPoint[] = rowGrounds(clearingGround, {
-      count: rowCount,
-      spacing: STACK_SPACING,
-      depth:
-        clearingGround.radius * STACK_ROW_DEPTH_RATIO +
-        rowIndex * STACK_ROW_SPACING,
-      shift: rowShift,
-    })
-    const textureKey: string = textureKeyForStack(stack, clearingId)
-    return {
-      key: `${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`,
-      shape: 'piece',
-      textureKey,
-      texturePath: imagePathForAssetKey(textureKey),
-      color: stack.color,
-      count: stack.count,
-      ground: grounds[index % STACKS_PER_ROW] ?? clearingGround.center,
-    }
-  })
+  const rows: MapPiece[] = ordered.map(
+    (stack: PieceStackViewModel, index: number): MapPiece => {
+      const rowIndex: number = Math.floor(index / STACKS_PER_ROW)
+      const rowCount: number = Math.min(
+        ordered.length - rowIndex * STACKS_PER_ROW,
+        STACKS_PER_ROW,
+      )
+      const grounds: MapGroundPoint[] = rowGrounds(clearingGround, {
+        count: rowCount,
+        spacing: STACK_SPACING,
+        depth:
+          clearingGround.radius * STACK_ROW_DEPTH_RATIO +
+          rowIndex * STACK_ROW_SPACING,
+        shift: rowShift,
+      })
+      const textureKey: string = textureKeyForStack(stack, clearingId)
+      return {
+        key: `${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`,
+        shape: 'piece',
+        textureKey,
+        texturePath: imagePathForAssetKey(textureKey),
+        color: stack.color,
+        count: stack.count,
+        ground: grounds[index % STACKS_PER_ROW] ?? clearingGround.center,
+      }
+    },
+  )
+  return [...keeps, ...rows]
 }
 
 function averageGround(points: readonly MapGroundPoint[]): MapGroundPoint {
