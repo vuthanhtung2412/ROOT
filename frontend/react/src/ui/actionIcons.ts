@@ -1,5 +1,5 @@
 import type { IconType } from 'react-icons'
-import { FaBed } from 'react-icons/fa'
+import { FaBed, FaRegDizzy } from 'react-icons/fa'
 import { GiCardDiscard, GiRobber, GiTorch } from 'react-icons/gi'
 import {
   LuAnvil,
@@ -74,6 +74,7 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   // Eyrie Dynasties
   decree: LuScrollText,
   addToDecree: LuScrollText,
+  turmoil: FaRegDizzy,
   // Woodland Alliance
   revolt: LuFlame,
   spreadSympathy: LuHeartHandshake,

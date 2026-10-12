@@ -15,6 +15,7 @@ import {
   subscribeHud,
 } from '#game/hudStore.ts'
 import { CardsPanel, CardsTab } from '#react/ActionDockCards.tsx'
+import { DecreeColumns } from '#react/ActionDockDecree.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 import type {
   ActionTrayState,
@@ -36,6 +37,12 @@ import {
   cardActionTally,
   type CardActionRow,
 } from '#ui/cardActionRows.ts'
+import {
+  DECREE_ACTION_TYPE,
+  decreeColumnViews,
+  decreeTally,
+  type DecreeColumnView,
+} from '#ui/decreeColumns.ts'
 import { phaseIconFor } from '#ui/phaseIcons.ts'
 
 function isBlockingHudModalOpen(): boolean {
@@ -220,14 +227,36 @@ export function ActionTray(): JSX.Element | null {
   const cardActionTypes: ReadonlySet<string> = new Set(
     cardRows.map((row) => row.actionType),
   )
+  // Eyrie Daylight: Decree cards are resolved from the columns, not from tiles.
+  const decreeColumns: readonly DecreeColumnView[] | null = decreeColumnViews(
+    tray.state,
+    tray.actorSeat,
+    forActor,
+  )
   const regions = partitionTrayActionRegions(
-    forActor.filter((spec) => !cardActionTypes.has(spec.type)),
+    forActor.filter(
+      (spec) =>
+        !cardActionTypes.has(spec.type) &&
+        (decreeColumns === null || spec.type !== DECREE_ACTION_TYPE),
+    ),
     tray.state,
   )
-  if (regions.length === 0 && !canUndo) {
+  const hasCardActionToPlay: boolean = cardRows.some(
+    (row) => row.spec !== null,
+  )
+  if (
+    regions.length === 0 &&
+    !canUndo &&
+    !hasCardActionToPlay &&
+    decreeColumns === null
+  ) {
     return null
   }
   const phase: string = tray.state?.phase ?? ''
+  const budgetLabel: string | null =
+    decreeColumns !== null
+      ? decreeTally(decreeColumns)
+      : trayBudgetLabel(tray.state)
   const phaseActions: readonly ActionSpec[] =
     regions.find((region) => region.id === ACTIONS_REGION_ID)?.actions ?? []
   const turnActions: readonly ActionSpec[] = endPhaseFirst(
@@ -245,7 +274,7 @@ export function ActionTray(): JSX.Element | null {
     <div className={DOCK_POSITION_CLASS_NAME}>
       <div className={`${DOCK_FRAME_CLASS_NAME} ${frameColorClassName}`}>
         <div className={TAB_ROW_CLASS_NAME}>
-          <PhaseTab phase={phase} budgetLabel={trayBudgetLabel(tray.state)} />
+          <PhaseTab phase={phase} budgetLabel={budgetLabel} />
           {cardRows.length > 0 ? (
             <CardsTab
               tally={cardActionTally(cardRows, phase)}
@@ -279,7 +308,13 @@ export function ActionTray(): JSX.Element | null {
             ))}
           </div>
         ) : null}
-        {phaseActions.length > 0 && hasTurnTiles ? (
+        {decreeColumns !== null ? (
+          <DecreeColumns
+            columns={decreeColumns}
+            onSelectAction={callbacks.onSelectAction}
+          />
+        ) : null}
+        {(phaseActions.length > 0 || decreeColumns !== null) && hasTurnTiles ? (
           <span className={DOCK_DIVIDER_CLASS_NAME} aria-hidden="true" />
         ) : null}
         {hasTurnTiles ? (

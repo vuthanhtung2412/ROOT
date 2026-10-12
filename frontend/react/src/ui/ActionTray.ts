@@ -224,7 +224,7 @@ export function trayActionArt(
   }
 }
 
-function decreeCardSuit(cardId: string, state?: GameState): string | null {
+export function decreeCardSuit(cardId: string, state?: GameState): string | null {
   const fromState = findCardDefIdInState(cardId, state)
   const defId = fromState ?? parseDefIdFromCardId(cardId)
   if (defId === null) {
