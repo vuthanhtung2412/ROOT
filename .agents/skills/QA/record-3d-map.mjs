@@ -162,7 +162,7 @@ async function drive(page) {
   await page.waitForTimeout(3600)
 
   // The light follows the phase of the turn: daylight fades to evening …
-  await caption(page, 'End Phase → evening: low orange sun, violet dusk')
+  await caption(page, 'End Phase → evening: the woodland goes dark')
   await page.getByRole('button', { name: /end phase/i }).first().click()
   await page.waitForTimeout(4200)
   console.log(`after End Phase: ${JSON.stringify(await gameSummary())}`)
@@ -181,7 +181,7 @@ async function drive(page) {
   await page.reload()
   // The map choice is page state: a reload starts on the 3D map again.
   await page.waitForSelector(MAP_3D_READY_SELECTOR, { timeout: 30_000 })
-  await caption(page, 'Birdsong: pink dawn sun, morning mist')
+  await caption(page, 'Birdsong: orange dawn sun, warm mist')
   await page.waitForTimeout(4600)
 
   await caption(page, 'Back to the flat map')

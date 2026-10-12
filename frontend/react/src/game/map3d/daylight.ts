@@ -10,9 +10,9 @@ import {
 
 /**
  * Light of the woodland, by the phase of the turn:
- * - birdsong: dawn — a low pink sun in the east, cool sky, morning mist;
+ * - birdsong: dawn — a low orange sun in the east, peach sky, warm mist;
  * - daylight: a high warm sun, clear air;
- * - evening: dusk — a low orange sun in the west, violet sky, long shadows.
+ * - evening: dark — a dim violet light from the west, night-blue sky.
  * A change of phase fades from one to the next.
  */
 export type TimeOfDay = 'birdsong' | 'daylight' | 'evening'
@@ -43,13 +43,13 @@ type LightingPreset = {
 
 const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
   birdsong: {
-    sunColor: 0xffc2a0,
-    sunIntensity: 1.5,
+    sunColor: 0xff9450,
+    sunIntensity: 2,
     sunPosition: { x: 95, y: 42, z: 30 },
-    skyColor: 0xcfe2ff,
-    groundColor: 0x40525c,
+    skyColor: 0xffc994,
+    groundColor: 0x5c4634,
     skyIntensity: 1.35,
-    fogColor: 0x9db0bd,
+    fogColor: 0xc08a5c,
     fogNear: 140,
     fogFar: 520,
   },
@@ -65,13 +65,13 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     fogFar: 520,
   },
   evening: {
-    sunColor: 0xff8a45,
-    sunIntensity: 2.4,
+    sunColor: 0x8d83c8,
+    sunIntensity: 0.9,
     sunPosition: { x: -100, y: 36, z: 35 },
-    skyColor: 0x9a8ad8,
-    groundColor: 0x4a4e7a,
-    skyIntensity: 2.3,
-    fogColor: 0x2a2444,
+    skyColor: 0x4a4c86,
+    groundColor: 0x181a30,
+    skyIntensity: 0.85,
+    fogColor: 0x0e1020,
     fogNear: 190,
     fogFar: 520,
   },
