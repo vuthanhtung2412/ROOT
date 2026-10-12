@@ -48,6 +48,7 @@ import {
   isPieceIdsRemovalSpec,
 } from '#game/battleRemovalStepper.ts'
 import { createEyrieComposerHooks } from '#game/resolution/eyrieActionComposer.ts'
+import { ADD_TO_DECREE_ACTION_TYPE } from '#game/eyrieActionComposerModels.ts'
 import {
   createMarquiseBoardComposerHooks,
   createMarquiseCardComposerHooks,
@@ -395,6 +396,9 @@ export class ReactGameController {
         this.battleOverlayController?.dismissResultFlash()
       },
       onCardSelected: (cardId) => {
+        if (this.isStagingDecree() && !this.isDecreePanelOpen) {
+          return
+        }
         this.applyComposerOutcome(this.composer.chooseCard(cardId))
       },
       onCardHold: (held) => {
@@ -513,6 +517,14 @@ export class ReactGameController {
   }
 
   private handleSelectAction(spec: ActionSpec): void {
+    if (this.isStagingDecree()) {
+      if (spec.type === ADD_TO_DECREE_ACTION_TYPE) {
+        this.toggleDecreePanel()
+        return
+      }
+      // Another action is begun instead: the staged Decree cards are dropped.
+      this.eyrieComposer.hooks.cancel?.()
+    }
     if (isPieceIdsRemovalSpec(spec)) {
       const snapshot = this.latestSnapshot
       if (snapshot === null || snapshot.state === null) {
@@ -598,7 +610,7 @@ export class ReactGameController {
         const eyrieDraft = this.eyrieComposer.getDraft()
         // Add to Decree: the picked card stands out until it is laid in a column.
         if (
-          eyrieDraft.type === 'addToDecree' &&
+          eyrieDraft.type === ADD_TO_DECREE_ACTION_TYPE &&
           eyrieDraft.pendingCardId !== null
         ) {
           return [eyrieDraft.pendingCardId]
@@ -642,9 +654,13 @@ export class ReactGameController {
     const draft = this.eyrieComposer.getDraft()
     const snapshot = this.latestSnapshot
     const state: GameState | null = snapshot?.state ?? null
-    if (draft.type !== 'addToDecree') {
+    if (draft.type !== ADD_TO_DECREE_ACTION_TYPE) {
       // The next Add to Decree opens its panel again.
       this.isDecreePanelOpen = true
+    } else if (!this.isDecreePanelOpen) {
+      // Panel toggled off: a plain hand, nothing dimmed, nothing to pick.
+      setCardHandEnabledCards(null)
+      setCardHandSelection([])
     }
     syncDecreePanel({
       draft,
@@ -657,12 +673,32 @@ export class ReactGameController {
     })
   }
 
+  private isStagingDecree(): boolean {
+    return this.eyrieComposer.getDraft().type === ADD_TO_DECREE_ACTION_TYPE
+  }
+
+  /** Dock tile of a staged Add to Decree: panel on and off, staged cards kept. */
+  private toggleDecreePanel(): void {
+    this.isDecreePanelOpen = !this.isDecreePanelOpen
+    const draft = this.eyrieComposer.getDraft()
+    const pickedCardId: string | null =
+      draft.type === ADD_TO_DECREE_ACTION_TYPE ? draft.pendingCardId : null
+    // A card picked but not laid is let go with the panel.
+    this.applyComposerOutcome(
+      pickedCardId !== null && !this.isDecreePanelOpen
+        ? this.composer.chooseCard(pickedCardId)
+        : this.composer.getOutcome(),
+    )
+  }
+
   private actionTraySyncOptions(
     localControlsActor: boolean,
     state: GameState,
   ): ActionTraySyncOptions | undefined {
     const disabled = shouldDisableActionTray({
-      isActionUnderResolution: this.isActionUnderResolution(),
+      // A staged Add to Decree keeps the dock: its tile toggles the Decree panel.
+      isActionUnderResolution:
+        this.isActionUnderResolution() && !this.isStagingDecree(),
       isAnyModalOpen: false,
       isLocalActor: localControlsActor,
       isGameFinished: state.status === 'finished',
@@ -714,6 +750,8 @@ export class ReactGameController {
 
   /** Drop any half-picked action, then take back the latest turn action. */
   private async handleUndo(): Promise<void> {
+    // The dock, and its Undo, stay up while an Add to Decree is staged.
+    this.eyrieComposer.hooks.cancel?.()
     this.composer.reset()
     this.applyComposerOutcome({ kind: 'idle' })
     await this.session?.undoTurnAction()

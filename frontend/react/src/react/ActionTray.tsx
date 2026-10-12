@@ -6,12 +6,17 @@ import {
   getCardPileSnapshot,
   isCraftedCardsOpen,
 } from '#game/cardGalleryBridge.ts'
+import {
+  ADD_TO_DECREE_ACTION_TYPE,
+  MAXIMUM_DECREE_CARDS_ADDED,
+} from '#game/eyrieActionComposerModels.ts'
 import { isFactionBoardOpen } from '#game/factionBoardBridge.ts'
 import {
   getHudCallbacks,
   getHudSnapshot,
   patchHud,
   subscribeHud,
+  type DecreePanelHudState,
 } from '#game/hudStore.ts'
 import { CardsPanel, CardsTab } from '#react/ActionDockCards.tsx'
 import { DecreeColumns } from '#react/ActionDockDecree.tsx'
@@ -110,6 +115,12 @@ const UNDO_TILE_SLOT_CLASS_NAME = 'flex -order-1'
 /** Suit of the card an action plays (Decree), pinned on the tile corner. */
 const TILE_SUIT_BADGE_CLASS_NAME =
   'pointer-events-none absolute -right-1.5 -bottom-1.5 size-6 object-contain'
+/** Gold ring: the action being staged, its panel shown. */
+const TILE_RINGED_CLASS_NAME =
+  'shadow-gold-ring [--root-paper-color:var(--color-paper-bright)]'
+/** Cards staged in the Decree panel, told on the tile while the panel is off. */
+const TILE_COUNT_BADGE_CLASS_NAME =
+  'action-tray__count pointer-events-none absolute -right-1.5 -bottom-1.5 rounded-full bg-ink-deep px-1 font-mono text-[11px] leading-4.5 font-bold text-parchment'
 /** Ink line between the phase actions and the turn controls. */
 const DOCK_DIVIDER_CLASS_NAME = 'w-1 shrink-0 self-stretch bg-ink-deep'
 /** Tabs above the frame: phase on the left, Cards on the right; a narrow dock lets them spill left. */
@@ -121,14 +132,32 @@ const PHASE_TAB_CLASS_NAME =
 const PHASE_TAB_ICON_CLASS_NAME = 'text-base text-gold'
 const PHASE_TAB_BUDGET_CLASS_NAME = 'font-mono text-xs opacity-75'
 
+/** `1/2` while the Decree panel is off with cards staged; null otherwise. */
+function stagedDecreeCountLabel(panel: DecreePanelHudState): string | null {
+  if (panel === null || panel.isOpen || panel.view.stagedCardIds.length === 0) {
+    return null
+  }
+  return `${String(panel.view.stagedCardIds.length)}/${String(MAXIMUM_DECREE_CARDS_ADDED)}`
+}
+
 function ActionTile(props: {
   spec: ActionSpec
   pending: unknown
   state: ActionTrayState['state']
   /** Taken earlier this phase and no longer legal: stays in place, faded. */
   isSpent?: boolean
+  /** The action is being staged and its panel is shown. */
+  isRinged?: boolean
+  /** Count pinned on the tile corner (cards staged while the panel is off). */
+  countLabel?: string | null
   onSelectAction: (spec: ActionSpec) => void
 }): JSX.Element {
+  const stateClassName: string =
+    props.spec.type === END_PHASE_ACTION_TYPE
+      ? END_PHASE_TILE_CLASS_NAME
+      : props.isRinged === true
+        ? TILE_RINGED_CLASS_NAME
+        : ''
   const label: string = formatActionLabel(props.spec, props.pending, props.state)
   const art: TrayActionArt = trayActionArt(
     props.spec,
@@ -144,11 +173,7 @@ function ActionTile(props: {
     >
       <button
         type="button"
-        className={
-          isEndPhase
-            ? `${TILE_CLASS_NAME} ${END_PHASE_TILE_CLASS_NAME}`
-            : TILE_CLASS_NAME
-        }
+        className={`${TILE_CLASS_NAME} ${stateClassName}`}
         disabled={props.isSpent === true}
         onClick={() => {
           props.onSelectAction(props.spec)
@@ -157,6 +182,9 @@ function ActionTile(props: {
         <ActionIcon aria-hidden="true" />
         {art.suit !== null ? (
           <SuitIcon suit={art.suit} className={TILE_SUIT_BADGE_CLASS_NAME} />
+        ) : null}
+        {props.countLabel !== undefined && props.countLabel !== null ? (
+          <span className={TILE_COUNT_BADGE_CLASS_NAME}>{props.countLabel}</span>
         ) : null}
         <span className="sr-only">{label}</span>
       </button>
@@ -213,6 +241,11 @@ export function ActionTray(): JSX.Element | null {
     subscribeHud,
     canUndoFromStore,
     canUndoFromStore,
+  )
+  const decreePanel: DecreePanelHudState = useSyncExternalStore(
+    subscribeHud,
+    () => getHudSnapshot().decreePanel,
+    () => getHudSnapshot().decreePanel,
   )
   const [isCardsPanelOpen, setIsCardsPanelOpen] = useState<boolean>(false)
   const phaseTileMemoryRef = useRef<PhaseTileMemory>(EMPTY_PHASE_TILE_MEMORY)
@@ -338,6 +371,15 @@ export function ActionTray(): JSX.Element | null {
                 pending={tray.pending}
                 state={tray.state}
                 isSpent={tile.isSpent}
+                isRinged={
+                  tile.spec.type === ADD_TO_DECREE_ACTION_TYPE &&
+                  decreePanel?.isOpen === true
+                }
+                countLabel={
+                  tile.spec.type === ADD_TO_DECREE_ACTION_TYPE
+                    ? stagedDecreeCountLabel(decreePanel)
+                    : null
+                }
                 onSelectAction={callbacks.onSelectAction}
               />
             ))}

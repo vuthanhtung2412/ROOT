@@ -41,7 +41,10 @@ export function isDecreeCardOption(
   return typeof cardId === 'string' && typeof column === 'string'
 }
 
-export type AddToDecreeDraft = Extract<EyrieDraft, { type: 'addToDecree' }>
+/** Action type, and type of its draft while it is staged. */
+export const ADD_TO_DECREE_ACTION_TYPE = 'addToDecree'
+
+export type AddToDecreeDraft =Extract<EyrieDraft, { type: 'addToDecree' }>
 
 /** Cards added to the Decree in one Birdsong, at most. Rule: Eyrie 7.4.2. */
 export const MAXIMUM_DECREE_CARDS_ADDED = 2

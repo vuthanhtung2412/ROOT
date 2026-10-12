@@ -3,7 +3,10 @@ import type { IconType } from 'react-icons'
 import { LuCheck, LuUndo2 } from 'react-icons/lu'
 import type { GameState } from '#api/client.ts'
 import { cardImagePublicPath } from '#assets/gameAssets.ts'
-import type { EyrieDraft } from '#game/eyrieActionComposerModels.ts'
+import {
+  ADD_TO_DECREE_ACTION_TYPE,
+  type EyrieDraft,
+} from '#game/eyrieActionComposerModels.ts'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -27,7 +30,6 @@ const PANEL_TITLE = 'Decree'
 const CONFIRM_LABEL = 'confirm'
 const TAKE_BACK_LABEL = 'take back'
 const PLACE_HERE_LABEL = 'Place here'
-const ADD_TO_DECREE_DRAFT_TYPE = 'addToDecree'
 /** What a column does with a card, as printed on the Eyrie faction board. */
 const COLUMN_RULES: Readonly<Record<string, string>> = {
   recruit: '…warriors in a matching clearing with a roost.',
@@ -235,7 +237,7 @@ export function syncDecreePanel(input: {
   isOpen: boolean
 }): void {
   const view: DecreePanelView | null =
-    input.draft.type === ADD_TO_DECREE_DRAFT_TYPE && input.state !== null
+    input.draft.type === ADD_TO_DECREE_ACTION_TYPE && input.state !== null
       ? decreePanelView(input.state, input.actorSeat, input.draft)
       : null
   if (view === null && getHudSnapshot().decreePanel === null) {
