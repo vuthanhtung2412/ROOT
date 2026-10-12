@@ -1,17 +1,14 @@
 import {
   Box3,
-  BoxGeometry,
   CanvasTexture,
   Group,
   MathUtils,
-  Mesh,
   MeshStandardMaterial,
   Object3D,
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
   Vector3,
-  type BufferGeometry,
   type Material,
 } from 'three'
 import {
@@ -23,6 +20,10 @@ import { createIconTexture } from '#game/map3d/iconTexture.ts'
 import type { PieceModel } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
+import {
+  createSlotDrawings,
+  type SlotDrawings,
+} from '#game/map3d/slotDrawing.ts'
 
 /**
  * Everything standing in the clearings. A piece is shown two ways at once:
@@ -30,7 +31,7 @@ import { meshesOf } from '#game/map3d/sceneObjects.ts'
  * - its 3D model: a structure for a building, a wooden meeple for a warrior.
  * Zoomed out, only the icons show, large, like on the flat map. Zooming in,
  * the models rise and the icons shrink to small labels above them.
- * An empty building slot is a staked-out plot, always in 3D.
+ * An empty building slot is a drawing on the ground, at every zoom.
  */
 export type MapPieceShape = 'slot' | 'piece'
 
@@ -103,23 +104,6 @@ const BADGE_RENDER_ORDER = 10
 const BADGE_RELATIVE_SIZE = 0.5
 const BADGE_SPRITE_CENTER = -0.3
 
-const SLOT_SIZE = 1.9
-const SLOT_HEIGHT = 0.16
-const SLOT_COLOR = 0x8a7550
-const SLOT_FLOOR_SIZE = 1.5
-const SLOT_FLOOR_COLOR = 0x5c4c34
-const SLOT_FLOOR_LIFT = 0.02
-const SLOT_POST_SIZE = 0.26
-const SLOT_POST_HEIGHT = 0.5
-const SLOT_POST_COLOR = 0xe9dfc4
-/** Corner posts stand at (±1, ±1) × the post offset. */
-const SLOT_CORNER_SIGNS: ReadonlyArray<readonly [number, number]> = [
-  [-1, -1],
-  [1, -1],
-  [-1, 1],
-  [1, 1],
-]
-
 const BADGE_TEXTURE_SIZE_PIXELS = 96
 const BADGE_BORDER_WIDTH_PIXELS = 7
 const BADGE_BORDER_COLOR = '#f0e6d3'
@@ -170,20 +154,6 @@ function createBadgeTexture(count: number, color: number): CanvasTexture {
   return texture
 }
 
-function standardMaterial(color: number): MeshStandardMaterial {
-  return new MeshStandardMaterial({ color, roughness: 0.9 })
-}
-
-function shadowedMesh(
-  geometry: BufferGeometry,
-  material: Material | Material[],
-): Mesh {
-  const mesh: Mesh = new Mesh(geometry, material)
-  mesh.castShadow = true
-  mesh.receiveShadow = true
-  return mesh
-}
-
 export function createPieceLayer(
   pieceModels: ReadonlyMap<string, PieceModel>,
 ): PieceLayer {
@@ -201,26 +171,7 @@ export function createPieceLayer(
     SpriteMaterial
   >()
   const matteMaterials: Map<Material, Material> = new Map<Material, Material>()
-  const slotGeometry: BoxGeometry = new BoxGeometry(
-    SLOT_SIZE,
-    SLOT_HEIGHT,
-    SLOT_SIZE,
-  )
-  const slotFloorGeometry: BoxGeometry = new BoxGeometry(
-    SLOT_FLOOR_SIZE,
-    SLOT_HEIGHT,
-    SLOT_FLOOR_SIZE,
-  )
-  const slotPostGeometry: BoxGeometry = new BoxGeometry(
-    SLOT_POST_SIZE,
-    SLOT_POST_HEIGHT,
-    SLOT_POST_SIZE,
-  )
-  const slotMaterial: MeshStandardMaterial = standardMaterial(SLOT_COLOR)
-  const slotFloorMaterial: MeshStandardMaterial =
-    standardMaterial(SLOT_FLOOR_COLOR)
-  const slotPostMaterial: MeshStandardMaterial =
-    standardMaterial(SLOT_POST_COLOR)
+  const slotDrawings: SlotDrawings = createSlotDrawings()
   let views: PieceView[] = []
   let viewsByKey: Map<string, PieceView> = new Map<string, PieceView>()
   let currentZoom = 0
@@ -277,28 +228,6 @@ export function createPieceLayer(
       label.add(badge)
     }
     return label
-  }
-
-  /** An empty building slot: a plot staked out with four corner posts. */
-  const createSlot = (): Object3D => {
-    const slot: Group = new Group()
-    const plot: Mesh = shadowedMesh(slotGeometry, slotMaterial)
-    plot.position.y = SLOT_HEIGHT * HALF
-    const floor: Mesh = new Mesh(slotFloorGeometry, slotFloorMaterial)
-    floor.position.y = SLOT_HEIGHT * HALF + SLOT_FLOOR_LIFT
-    floor.receiveShadow = true
-    slot.add(plot, floor)
-    const postOffset: number = (SLOT_SIZE - SLOT_POST_SIZE) * HALF
-    for (const [signX, signZ] of SLOT_CORNER_SIGNS) {
-      const post: Mesh = shadowedMesh(slotPostGeometry, slotPostMaterial)
-      post.position.set(
-        signX * postOffset,
-        SLOT_POST_HEIGHT * HALF,
-        signZ * postOffset,
-      )
-      slot.add(post)
-    }
-    return slot
   }
 
   /**
@@ -426,7 +355,7 @@ export function createPieceLayer(
         holder.position.set(piece.ground.x, 0, piece.ground.z)
         group.add(holder)
         if (piece.shape === 'slot') {
-          const slot: Object3D = createSlot()
+          const slot: Object3D = slotDrawings.create()
           slot.rotation.y = piece.rotation ?? 0
           holder.add(slot)
           continue
@@ -473,17 +402,8 @@ export function createPieceLayer(
     dispose: (): void => {
       group.clear()
       buildAnimations.dispose()
-      for (const geometry of [
-        slotGeometry,
-        slotFloorGeometry,
-        slotPostGeometry,
-      ]) {
-        geometry.dispose()
-      }
+      slotDrawings.dispose()
       for (const material of [
-        slotMaterial,
-        slotFloorMaterial,
-        slotPostMaterial,
         ...iconMaterials.values(),
         ...badgeMaterials.values(),
       ]) {
