@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type JSX } from 'react'
+import { useState, useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
 import { LuUndo2 } from 'react-icons/lu'
 import type { ActionSpec } from '#api/client.ts'
@@ -14,6 +14,7 @@ import {
   patchHud,
   subscribeHud,
 } from '#game/hudStore.ts'
+import { CardsPanel, CardsTab } from '#react/ActionDockCards.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 import type {
   ActionTrayState,
@@ -30,6 +31,11 @@ import {
 } from '#ui/ActionTray.ts'
 import { trayBudgetLabel } from '#ui/trayBudget.ts'
 import { actionIconFor } from '#ui/actionIcons.ts'
+import {
+  cardActionRows,
+  cardActionTally,
+  type CardActionRow,
+} from '#ui/cardActionRows.ts'
 import { phaseIconFor } from '#ui/phaseIcons.ts'
 
 function isBlockingHudModalOpen(): boolean {
@@ -79,9 +85,12 @@ const TILE_SUIT_BADGE_CLASS_NAME =
   'pointer-events-none absolute -right-1.5 -bottom-1.5 size-6 object-contain'
 /** Ink line between the phase actions and the turn controls. */
 const DOCK_DIVIDER_CLASS_NAME = 'w-1 shrink-0 self-stretch bg-ink-deep'
-/** Paper tab above the frame: phase mark, phase name, budget left. */
+/** Tabs above the frame: phase on the left, Cards on the right; a narrow dock lets them spill left. */
+const TAB_ROW_CLASS_NAME =
+  'absolute right-0 bottom-full flex min-w-full flex-row items-end justify-between gap-2 px-2.5'
+/** Paper tab: phase mark, phase name, budget left. */
 const PHASE_TAB_CLASS_NAME =
-  'root-paper root-paper-fine absolute bottom-full left-2.5 flex flex-row items-center gap-1.5 px-2 py-0.5 font-display text-lg whitespace-nowrap text-ink capitalize [--root-paper-color:var(--color-parchment)]'
+  'root-paper root-paper-fine flex flex-row items-center gap-1.5 px-2 py-0.5 font-display text-lg whitespace-nowrap text-ink capitalize [--root-paper-color:var(--color-parchment)]'
 const PHASE_TAB_ICON_CLASS_NAME = 'text-base text-gold'
 const PHASE_TAB_BUDGET_CLASS_NAME = 'font-mono text-xs opacity-75'
 
@@ -189,6 +198,7 @@ export function ActionTray(): JSX.Element | null {
     canUndoFromStore,
     canUndoFromStore,
   )
+  const [isCardsPanelOpen, setIsCardsPanelOpen] = useState<boolean>(false)
   // Modal open gated live from store so veil/X close re-shows tray
   // without needing a board re-sync (options.disabled stays stale otherwise).
   if (tray === null || anyModalOpen || tray.options?.disabled === true) {
@@ -201,10 +211,23 @@ export function ActionTray(): JSX.Element | null {
     tray.pending,
     tray.state,
   )
-  const regions = partitionTrayActionRegions(forActor, tray.state)
+  const cardRows: readonly CardActionRow[] = cardActionRows(
+    tray.state,
+    tray.actorSeat,
+    forActor,
+  )
+  // Card actions are played from the Cards panel, not from a tile.
+  const cardActionTypes: ReadonlySet<string> = new Set(
+    cardRows.map((row) => row.actionType),
+  )
+  const regions = partitionTrayActionRegions(
+    forActor.filter((spec) => !cardActionTypes.has(spec.type)),
+    tray.state,
+  )
   if (regions.length === 0 && !canUndo) {
     return null
   }
+  const phase: string = tray.state?.phase ?? ''
   const phaseActions: readonly ActionSpec[] =
     regions.find((region) => region.id === ACTIONS_REGION_ID)?.actions ?? []
   const turnActions: readonly ActionSpec[] = endPhaseFirst(
@@ -221,10 +244,28 @@ export function ActionTray(): JSX.Element | null {
   return (
     <div className={DOCK_POSITION_CLASS_NAME}>
       <div className={`${DOCK_FRAME_CLASS_NAME} ${frameColorClassName}`}>
-        <PhaseTab
-          phase={tray.state?.phase ?? ''}
-          budgetLabel={trayBudgetLabel(tray.state)}
-        />
+        <div className={TAB_ROW_CLASS_NAME}>
+          <PhaseTab phase={phase} budgetLabel={trayBudgetLabel(tray.state)} />
+          {cardRows.length > 0 ? (
+            <CardsTab
+              tally={cardActionTally(cardRows, phase)}
+              isOpen={isCardsPanelOpen}
+              onToggle={() => {
+                setIsCardsPanelOpen(!isCardsPanelOpen)
+              }}
+            />
+          ) : null}
+        </div>
+        {isCardsPanelOpen && cardRows.length > 0 ? (
+          <CardsPanel
+            rows={cardRows}
+            phase={phase}
+            onPlay={(spec) => {
+              setIsCardsPanelOpen(false)
+              callbacks.onSelectAction(spec)
+            }}
+          />
+        ) : null}
         {phaseActions.length > 0 ? (
           <div className={TILE_GRID_CLASS_NAME}>
             {phaseActions.map((spec, index) => (
