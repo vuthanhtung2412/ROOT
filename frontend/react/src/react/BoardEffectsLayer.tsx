@@ -70,6 +70,8 @@ type EffectContext = {
   stackPositionOf?:
     | ((stack: BoardEffectStack) => BoardEffectPosition | undefined)
     | undefined
+  /** How many pieces that map draws in a stack now; 0 when it draws none. */
+  stackCountOf?: ((stack: BoardEffectStack) => number) | undefined
 }
 
 type PieceEffect = BoardMoveEffect | BoardPlaceEffect | BoardRemoveEffect
@@ -107,6 +109,16 @@ function stackPosition(
   return { left: center.centerX + offset.x, top: center.centerY + offset.y }
 }
 
+/** The stack of an effect's pieces in a clearing. */
+function effectStack(effect: PieceEffect, clearing: number): BoardEffectStack {
+  return {
+    clearing,
+    owner: effect.owner,
+    pieceKind: effect.pieceKind,
+    pieceType: effect.pieceType,
+  }
+}
+
 type StackPlace = {
   effect: PieceEffect
   clearing: number
@@ -118,12 +130,9 @@ function stackPositionIn(
   context: EffectContext,
   place: StackPlace,
 ): BoardEffectPosition | undefined {
-  const drawn: BoardEffectPosition | undefined = context.stackPositionOf?.({
-    clearing: place.clearing,
-    owner: place.effect.owner,
-    pieceKind: place.effect.pieceKind,
-    pieceType: place.effect.pieceType,
-  })
+  const drawn: BoardEffectPosition | undefined = context.stackPositionOf?.(
+    effectStack(place.effect, place.clearing),
+  )
   if (drawn !== undefined) {
     return drawn
   }
@@ -202,6 +211,12 @@ function MoveEffectView(
     ...stackFor(props.effect, props.factions),
     count: 1,
   }
+  const standingCount: number =
+    props.effect.toForest === undefined
+      ? (props.stackCountOf?.(effectStack(props.effect, props.effect.to)) ?? 0)
+      : 0
+  // Pieces of its kind already stood there: the newcomers walk in behind them.
+  const joinsStandingStack: boolean = standingCount > props.effect.count
   const color = colorToCss(
     factionColorForSeat(props.effect.owner, props.factions),
   )
@@ -221,6 +236,16 @@ function MoveEffectView(
         delayMs={delay}
         color={color}
       />
+      {joinsStandingStack ? (
+        <div className="absolute" style={to}>
+          <PieceStack
+            stack={{ ...marcherStack, count: standingCount }}
+            left={0}
+            top={0}
+            clearingId={props.effect.to}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -380,6 +405,7 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
           hitCenters: props.hitCenters,
           forestCenters: props.forestCenters,
           stackPositionOf: props.stackPositionOf,
+          stackCountOf: props.stackCountOf,
         }
         if (entry.effect.kind === 'move') {
           return (

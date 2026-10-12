@@ -80,6 +80,16 @@ type ProjectedClearing = {
   radius: number
 }
 
+/** Key of the map piece of the stack an effect names. */
+function effectStackKey(stack: BoardEffectStack): string {
+  return stackPieceKey({
+    clearingId: stack.clearing,
+    kind: stack.pieceKind,
+    type: stack.pieceType,
+    owner: stack.owner,
+  })
+}
+
 /** The grounds remembered, and the pieces they were last read from. */
 type RememberedGrounds = {
   pieces: readonly MapPiece[]
@@ -345,12 +355,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
   const stackPositionOf = useCallback(
     (stack: BoardEffectStack): BoardEffectPosition | undefined => {
       const ground: MapGroundPoint | undefined = pieceGrounds.get(
-        stackPieceKey({
-          clearingId: stack.clearing,
-          kind: stack.pieceKind,
-          type: stack.pieceType,
-          owner: stack.owner,
-        }),
+        effectStackKey(stack),
       )
       return scene === null || ground === undefined
         ? undefined
@@ -358,6 +363,16 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
     },
     // viewVersion: the camera moved, so every projection is stale.
     [scene, pieceGrounds, viewVersion],
+  )
+  const stackCountOf = useCallback(
+    (stack: BoardEffectStack): number => {
+      const key: string = effectStackKey(stack)
+      return (
+        mapPieces.find((piece: MapPiece): boolean => piece.key === key)
+          ?.count ?? 0
+      )
+    },
+    [mapPieces],
   )
 
   const onClearingSelected = props.onClearingSelected
@@ -397,6 +412,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
           hitCenters={hitCenters}
           forestCenters={forestCenters}
           stackPositionOf={stackPositionOf}
+          stackCountOf={stackCountOf}
         />
       ) : null}
       {projectedClearings.map((clearing: ProjectedClearing) => {
