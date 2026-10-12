@@ -4,12 +4,12 @@ import {
   InstancedMesh,
   Matrix4,
   type Mesh,
-  MeshStandardMaterial,
   Object3D,
 } from 'three'
 import type { TreeModels } from '#game/map3d/mapModels.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 import type { TreePlacement } from '#game/map3d/treePlacement.ts'
+import type { TreeSightlines } from '#game/map3d/treeSightlines.ts'
 
 /** Model units → world units: a pine stands a bit over a meeple. */
 const TREE_MODEL_SCALE = 2.5
@@ -99,7 +99,10 @@ function isFoliage(mesh: Mesh): boolean {
 }
 
 /** All trees of one variant: one instanced mesh per part of the model. */
-function buildVariantMeshes(variant: TreeVariant): InstancedMesh[] {
+function buildVariantMeshes(
+  variant: TreeVariant,
+  sightlines: TreeSightlines,
+): InstancedMesh[] {
   variant.model.updateMatrixWorld(true)
   const parts: Mesh[] = meshesOf(variant.model)
   const transform: Object3D = new Object3D()
@@ -110,7 +113,7 @@ function buildVariantMeshes(variant: TreeVariant): InstancedMesh[] {
     const foliage: boolean = isFoliage(part)
     const mesh: InstancedMesh = new InstancedMesh(
       part.geometry,
-      new MeshStandardMaterial({
+      sightlines.createMaterial({
         color: foliage ? 0xffffff : BARK_COLOR,
         roughness: 1,
         flatShading: true,
@@ -139,15 +142,19 @@ function buildVariantMeshes(variant: TreeVariant): InstancedMesh[] {
   })
 }
 
-/** The whole woodland: a few instanced meshes, one draw call each. */
+/**
+ * The whole woodland: a few instanced meshes, one draw call each. The trees
+ * leave the sightlines to the pieces open.
+ */
 export function createTreeMeshes(
   placements: readonly TreePlacement[],
   models: TreeModels,
+  sightlines: TreeSightlines,
 ): Group {
   const trees: Group = new Group()
   for (const variant of sortPlacementsIntoVariants(placements, models)) {
     if (variant.placements.length > 0) {
-      trees.add(...buildVariantMeshes(variant))
+      trees.add(...buildVariantMeshes(variant, sightlines))
     }
   }
   return trees

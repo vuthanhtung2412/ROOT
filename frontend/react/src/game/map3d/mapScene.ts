@@ -30,6 +30,10 @@ import {
 import { createRiverFlow, type RiverFlow } from '#game/map3d/riverFlow.ts'
 import { createGround } from '#game/map3d/sceneGround.ts'
 import { createTreeMeshes } from '#game/map3d/treeMeshes.ts'
+import {
+  createTreeSightlines,
+  type TreeSightlines,
+} from '#game/map3d/treeSightlines.ts'
 import { placeTrees } from '#game/map3d/treePlacement.ts'
 
 export type MapSceneInput = {
@@ -106,12 +110,17 @@ export function createMapScene(input: MapSceneInput): MapScene {
     river: input.terrain.river,
     timeOfDay: input.timeOfDay,
   })
+  const treeSightlines: TreeSightlines = createTreeSightlines()
   scene.add(
     campfires.group,
     ...daylight.lights,
     createGround(input.terrain),
     riverFlow.mesh,
-    createTreeMeshes(placeTrees(input.terrain, TREE_SEED), input.models.trees),
+    createTreeMeshes(
+      placeTrees(input.terrain, TREE_SEED),
+      input.models.trees,
+      treeSightlines,
+    ),
     groundMarkers.group,
     pieceLayer.group,
   )
@@ -166,7 +175,15 @@ export function createMapScene(input: MapSceneInput): MapScene {
   const projected: Vector3 = new Vector3()
   return {
     resize,
-    setPieces: pieceLayer.setPieces,
+    setPieces: (pieces: readonly MapPiece[]): void => {
+      pieceLayer.setPieces(pieces)
+      // An empty building slot is only a drawing: nothing to keep in sight.
+      treeSightlines.setTargets(
+        pieces
+          .filter((piece: MapPiece): boolean => piece.shape === 'piece')
+          .map((piece: MapPiece): MapGroundPoint => piece.ground),
+      )
+    },
     playBuild: pieceLayer.playBuild,
     setClearingRings: groundMarkers.setClearingRings,
     setHighlightedForests: groundMarkers.setHighlightedForests,
