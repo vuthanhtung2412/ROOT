@@ -1,13 +1,12 @@
 import type { IconType } from 'react-icons'
-import { GiCardDiscard } from 'react-icons/gi'
+import { FaBed } from 'react-icons/fa'
+import { GiCardDiscard, GiRobber, GiTorch } from 'react-icons/gi'
 import {
   LuAnvil,
   LuAxe,
   LuBan,
-  LuBedDouble,
   LuBird,
   LuBomb,
-  LuChurch,
   LuCircleDot,
   LuCoins,
   LuCrosshair,
@@ -31,9 +30,7 @@ import {
   LuShoppingCart,
   LuSkipForward,
   LuSkull,
-  LuSparkles,
   LuSprout,
-  LuStar,
   LuStore,
   LuSwords,
   LuTent,
@@ -43,7 +40,9 @@ import {
   LuWind,
   LuWrench,
 } from 'react-icons/lu'
-import { MdOutlineRemoveShoppingCart } from 'react-icons/md'
+import { MdOutlineRemoveShoppingCart, MdPlusOne } from 'react-icons/md'
+import { TbHexagonalPyramidPlus } from 'react-icons/tb'
+import { TfiReload } from 'react-icons/tfi'
 
 /** Icon of a tray action whose type has no icon of its own. */
 export const FALLBACK_ACTION_ICON: IconType = LuCircleDot
@@ -88,26 +87,26 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   slip: LuWind,
   vbMove: LuFootprints,
   vbBattle: LuSwords,
-  explore: LuSearch,
+  explore: GiTorch,
   quest: LuScrollText,
   aid: LuHandHelping,
   strike: LuCrosshair,
   repair: LuWrench,
   vbCraft: LuAnvil,
-  steal: LuCoins,
+  steal: GiRobber,
   dayLabor: LuPickaxe,
   hideout: LuTent,
   vbRemoveItems: LuTrash2,
-  rest: LuBedDouble,
+  rest: FaBed,
   // Lizard Cult
   crusadeBattle: LuSwords,
   crusadeMove: LuFootprints,
   skipCrusadeBattle: LuSkipForward,
-  convert: LuSparkles,
-  sanctify: LuChurch,
+  convert: TfiReload,
+  sanctify: TbHexagonalPyramidPlus,
   ritualBuild: LuSprout,
   ritualRecruit: LuUserPlus,
-  ritualScore: LuStar,
+  ritualScore: MdPlusOne,
   ritualSacrifice: LuSkull,
   // Riverfolk Company
   riverfolkMove: LuFootprints,

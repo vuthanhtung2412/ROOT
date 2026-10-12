@@ -4,7 +4,6 @@ import {
   DECLINE_ICON_KEY,
   DECLINE_SERVICE_ICON_KEY,
   trayActionArt,
-  trayActionCountLabel,
   collapseTrayActionsByLabel,
   filterTrayActions,
   withoutBoardOnlyActions,
@@ -13,6 +12,7 @@ import {
 } from '#ui/ActionTray.ts'
 import { makeActionSpec, makeGameState } from '#test/factories.ts'
 import { actionIconFor } from '#ui/actionIcons.ts'
+import { trayActionCountLabel, trayBudgetLabel } from '#ui/trayBudget.ts'
 import { questViewsFromState } from '#ui/factionBoardViewModel.ts'
 
 describe('formatActionLabel setup', () => {
@@ -291,6 +291,42 @@ describe('partitionTrayActionRegions', () => {
     const fourButtons = 4
 
     expect(trayActionCountLabel(fourButtons, state)).toBe('1 left')
+  })
+
+  it('reads the Marquise Daylight budget as left over total on the dock tab', () => {
+    const state = makeGameState({
+      phase: 'daylight',
+      step: 'actions',
+      currentSeat: 0,
+      turnScratch: { actionsLeft: 2, extraActions: 0 },
+    })
+
+    expect(trayBudgetLabel(state)).toBe('2/3')
+  })
+
+  it('reads the Woodland Alliance military operations as left over officers', () => {
+    const state = makeGameState({
+      phase: 'evening',
+      step: 'military',
+      currentSeat: 0,
+      players: [
+        {
+          playerId: 'alliance',
+          seat: 0,
+          faction: 'alliance',
+          vp: 0,
+          hand: [],
+          board: { kind: 'alliance', officers: 3 },
+        },
+      ],
+      turnScratch: { militaryOpsLeft: 2 },
+    })
+
+    expect(trayBudgetLabel(state)).toBe('2/3')
+  })
+
+  it('has no budget on the dock tab outside a budgeted step', () => {
+    expect(trayBudgetLabel(makeGameState({ phase: 'birdsong', step: 'wood' }))).toBeNull()
   })
 
   it('omits empty Actions region when only end phase remains', () => {

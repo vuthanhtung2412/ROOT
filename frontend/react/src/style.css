@@ -24,7 +24,12 @@
   --color-cream: #f6e7bd;
   /* Text printed straight on faction board art. */
   --color-ink-deep: #1a1408;
-  /* Riverfolk Company faction color (FACTION_COLORS.riverfolk). */
+  /* Faction colors (FACTION_COLORS in game/theme.ts). */
+  --color-marquise: #c45c26;
+  --color-eyrie: #3a5f8a;
+  --color-alliance: #3d7a4a;
+  --color-vagabond: #5a5a5a;
+  --color-lizard: #c9b530;
   --color-riverfolk: #2f9a94;
   /* Parchment darkened like `.root-panel`. */
   --color-parchment-aged: color-mix(in srgb, #f0e6d3 94%, #1a1410);

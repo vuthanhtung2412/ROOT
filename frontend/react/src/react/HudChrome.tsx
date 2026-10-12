@@ -6,7 +6,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { GiCardBurn } from 'react-icons/gi'
-import { LuFlag, LuLogOut, LuUndo2, LuX } from 'react-icons/lu'
+import { LuFlag, LuLogOut, LuX } from 'react-icons/lu'
 import {
   getHudCallbacks,
   getHudSnapshot,
@@ -171,18 +171,6 @@ export function GameDrawer(): JSX.Element | null {
             setIsConfirmingExit(false)
           }}
         />
-      ) : null}
-      {drawer.canUndo ? (
-        <button
-          type="button"
-          className={`game-drawer__undo ${DRAWER_BUTTON_CLASS_NAME} ml-2`}
-          onClick={() => {
-            callbacks.onUndo()
-          }}
-        >
-          <LuUndo2 aria-hidden="true" />
-          Undo
-        </button>
       ) : null}
       <div className="ml-auto flex flex-row items-center gap-2">
         <GameLogButton className={DRAWER_BUTTON_CLASS_NAME} />

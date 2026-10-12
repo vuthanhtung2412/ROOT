@@ -5,6 +5,7 @@ import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 import { CARD_ACTION_LABELS } from '#game/resolution/cardActionFlows.ts'
 import { QUEST_ACTION_TYPE } from '#game/vagabondQuest.ts'
 import { REARRANGE_ACTION_TYPE } from '#game/vagabondRearrange.ts'
+import { turnBudgetLeft } from '#ui/trayBudget.ts'
 
 export type ActionTraySyncOptions = {
   lockToActionTypes?: readonly string[]
@@ -378,22 +379,6 @@ export function partitionTrayActionRegions(
   return regions
 }
 
-/**
- * Short count beside the phase name in the tray header: the budget left
- * (Marquise Daylight actions, Woodland Alliance military operations),
- * otherwise the number of buttons.
- */
-export function trayActionCountLabel(
-  buttonCount: number,
-  state: GameState | undefined,
-): string {
-  const actionsLeft = turnBudgetLeft(state)
-  if (actionsLeft !== null) {
-    return `${String(actionsLeft)} left`
-  }
-  return buttonCount === 1 ? '1 action' : `${String(buttonCount)} actions`
-}
-
 function primaryActionsRegionTitle(
   buttonCount: number,
   state: GameState | undefined,
@@ -403,60 +388,6 @@ function primaryActionsRegionTitle(
     return `Actions · ${String(actionsLeft)} left`
   }
   return `Actions (${String(buttonCount)})`
-}
-
-/** Actions the current seat may still take this step, when it has a budget. */
-function turnBudgetLeft(state: GameState | undefined): number | null {
-  return (
-    marquiseDaylightActionsLeft(state) ??
-    allianceMilitaryOperationsLeft(state)
-  )
-}
-
-/** Woodland Alliance Evening: military operations left (one per officer). */
-function allianceMilitaryOperationsLeft(
-  state: GameState | undefined,
-): number | null {
-  if (state === undefined) {
-    return null
-  }
-  if (state.phase !== 'evening' || state.step !== 'military') {
-    return null
-  }
-  const actor = state.players.find((player) => player.seat === state.currentSeat)
-  if (actor?.faction !== 'alliance') {
-    return null
-  }
-  const scratch = state.turnScratch
-  if (typeof scratch !== 'object' || scratch === null) {
-    return null
-  }
-  const operationsLeft = Reflect.get(scratch, 'militaryOpsLeft')
-  return typeof operationsLeft === 'number' ? operationsLeft : null
-}
-
-/** Marquise Daylight action budget (actionsLeft + spend-bird extras). */
-function marquiseDaylightActionsLeft(state: GameState | undefined): number | null {
-  if (state === undefined) {
-    return null
-  }
-  if (state.phase !== 'daylight' || state.step !== 'actions') {
-    return null
-  }
-  const actor = state.players.find((player) => player.seat === state.currentSeat)
-  if (actor?.faction !== 'marquise') {
-    return null
-  }
-  const scratch = state.turnScratch
-  if (typeof scratch !== 'object' || scratch === null) {
-    return null
-  }
-  const actionsLeft = Reflect.get(scratch, 'actionsLeft')
-  const extraActions = Reflect.get(scratch, 'extraActions')
-  if (typeof actionsLeft !== 'number' || typeof extraActions !== 'number') {
-    return null
-  }
-  return actionsLeft + extraActions
 }
 
 /**
