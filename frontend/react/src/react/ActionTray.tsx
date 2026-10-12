@@ -86,7 +86,14 @@ const FACTION_FRAME_CLASS_NAMES: Readonly<Record<string, string>> = {
   riverfolk: '[--root-paper-color:var(--color-riverfolk)]',
 }
 const NEUTRAL_FRAME_CLASS_NAME = '[--root-paper-color:var(--color-wood)]'
-/** Tiles fill top to bottom, two to a column. */
+/**
+ * Phase actions: always four tiles wide so the dock keeps its width, filled
+ * column by column, two to a column (a ninth tile opens a fifth column).
+ */
+const PHASE_TILE_GRID_CLASS_NAME =
+  'grid grid-flow-col auto-cols-[54px] grid-cols-[repeat(4,54px)] grid-rows-[repeat(2,54px)] gap-2'
+const EYRIE_FACTION = 'eyrie'
+/** Turn controls, and the Eyrie's tiles: top to bottom, two to a column, no wider than needed. */
 const TILE_GRID_CLASS_NAME =
   'grid grid-flow-col grid-rows-[repeat(2,54px)] auto-cols-[54px] gap-2'
 /** Icon-only square: the action is named by its tooltip. */
@@ -325,7 +332,13 @@ export function ActionTray(): JSX.Element | null {
           />
         ) : null}
         {phaseTiles.length > 0 ? (
-          <div className={TILE_GRID_CLASS_NAME}>
+          <div
+            className={
+              faction === EYRIE_FACTION
+                ? TILE_GRID_CLASS_NAME
+                : PHASE_TILE_GRID_CLASS_NAME
+            }
+          >
             {phaseTiles.map((tile) => (
               <ActionTile
                 key={tile.key}
