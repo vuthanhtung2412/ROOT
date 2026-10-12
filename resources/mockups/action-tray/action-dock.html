@@ -100,6 +100,8 @@ body { margin: 0; background: #14110e; color: var(--parchment); font-family: Geo
 /* a line of another phase: hover stays pale, dashed, not clickable (hold still shows the card) */
 .card-row.later:hover, .card-row.later.hovered { background: #d9c9a6; color: var(--ink); opacity: .6; outline: 2px dashed var(--ink-soft, #4a3a2c); outline-offset: -2px; cursor: not-allowed; }
 .card-row.later:hover small, .card-row.later.hovered small { color: #4a3a2c; }
+/* already played this turn: off like another phase's line, name struck through */
+.card-row.played b { text-decoration: line-through; }
 /* crafted card shown while a line is held */
 .card-preview { display: none; position: absolute; right: calc(100% + 16px); bottom: calc(100% + 32px); width: 176px; border: 3px solid var(--ink-deep); border-radius: 8px; box-shadow: 3px 4px 0 rgba(0,0,0,.45); transform: rotate(-2deg); z-index: 5; }
 .card-preview.shown, .card-preview.demo { display: block; }
@@ -183,9 +185,9 @@ body { margin: 0; background: #14110e; color: var(--parchment); font-family: Geo
       </div>
       <ul>
         <li><b>Big square = turn actions</b>: End phase, Undo, Spend bird, same tiles on the same grid; ink line parts them from the phase actions</li>
-        <li><b>Cards tab</b> opens a panel upward with crafted-card actions (click it); collapsed = tab + count</li>
+        <li><b>Cards tab</b> opens a panel upward with crafted-card actions (click it); collapsed = tab + tally. Tally = played / card actions of the current phase only (here 1/3 played)</li>
         <li>Panel shown at its worst case: all 8 card actions held by one seat. About 3 rows tall, the rest scrolls; it opens on the first action of the current phase</li>
-        <li>Phase tag on the right; rows of another phase are faded</li>
+        <li>Phase tag on the right; rows of another phase are faded. A card already played this turn is off too: faded, name struck through, tag "Played"</li>
         <li><b>Line lights up on hover only</b> (cream + gold ring), not on click or hold. Click = start the action. <b>Hold a line (350 ms)</b> = its crafted card shows until release, as holding a hand card does (try it; Propaganda Bureau is shown held)</li>
         <li>No labels: name on hover</li>
         <li>Spent action stays in place, faded (Recruit)</li>
@@ -435,7 +437,7 @@ const CARD_ACTIONS = [
   { art: 'saboteurs', name: 'Saboteurs', phase: 'Birdsong', rule: 'Discard it to remove an enemy crafted card.' },
   { art: 'swapmeet', name: 'Swap Meet', phase: 'Birdsong', rule: 'Take a card from a player, give one back.' },
   { art: 'falseorders', name: 'False Orders', phase: 'Birdsong', rule: 'Discard it to move half of an enemy\'s warriors.' },
-  { art: 'leagueofadventrousmice', name: 'League of Adventurous Mice: move', phase: 'Daylight', rule: 'Exhaust a crafted item to move.' },
+  { art: 'leagueofadventrousmice', name: 'League of Adventurous Mice: move', phase: 'Daylight', rule: 'Exhaust a crafted item to move.', played: true },
   { art: 'leagueofadventrousmice', name: 'League of Adventurous Mice: battle', phase: 'Daylight', rule: 'Exhaust a crafted item to battle.' },
   { art: 'propagandabureau', name: 'Propaganda Bureau', phase: 'Daylight', rule: 'Spend a card, swap an enemy warrior for yours.' },
   { art: 'charmoffensive', name: 'Charm Offensive', phase: 'Evening', rule: 'Another player scores 1, you draw a card.' },
@@ -453,8 +455,14 @@ const CARD_ACTION_ICONS = {
   'Informants': 'search',
 }
 // A line: click starts the action, hold shows the crafted card (as holding a hand card does).
-const cardRows = CARD_ACTIONS.map((card) => `<div class="card-row ${card.phase === CURRENT_PHASE ? '' : 'later'}" data-art="${card.art}"><div class="paper fine tile">${iconMarkup(CARD_ACTION_ICONS[card.name])}</div><div><b>${card.name}</b><small>${card.rule}</small></div><em>${card.phase}</em></div>`).join('')
-const cardsMarkup = `<div class="paper fine tab cards"><i data-lucide="layers"></i>Cards<small>${CARD_ACTIONS.length}</small><i data-lucide="chevron-up" class="chevron"></i></div><div class="paper fine card-panel"><div class="card-list">${cardRows}</div></div><img class="card-preview" alt="" />`
+// Off (.later) when it belongs to another phase or was already played this turn.
+const isCurrentPhase = (card) => card.phase === CURRENT_PHASE
+const isPlayable = (card) => isCurrentPhase(card) && card.played !== true
+const currentPhaseCards = CARD_ACTIONS.filter(isCurrentPhase)
+const playedTally = `${currentPhaseCards.filter((card) => card.played === true).length}/${currentPhaseCards.length} played`
+const rowClasses = (card) => ['card-row', isCurrentPhase(card) ? 'now' : '', isPlayable(card) ? '' : 'later', card.played === true ? 'played' : ''].join(' ')
+const cardRows = CARD_ACTIONS.map((card) => `<div class="${rowClasses(card)}" data-art="${card.art}"><div class="paper fine tile">${iconMarkup(CARD_ACTION_ICONS[card.name])}</div><div><b>${card.name}</b><small>${card.rule}</small></div><em>${card.played === true ? 'Played' : card.phase}</em></div>`).join('')
+const cardsMarkup = `<div class="paper fine tab cards"><i data-lucide="layers"></i>Cards<small>${playedTally}</small><i data-lucide="chevron-up" class="chevron"></i></div><div class="paper fine card-panel"><div class="card-list">${cardRows}</div></div><img class="card-preview" alt="" />`
 const turnMarkup = (hasBird) => `<i class="line"></i><div class="paper fine slot">
   <div class="paper fine tile end" data-name="End phase" data-left="to evening"><i data-lucide="play"></i></div>
   <div class="paper fine tile" data-name="Undo" data-left="last action"><i data-lucide="undo-2"></i></div>
@@ -537,7 +545,7 @@ document.getElementById('matrix').innerHTML =
 // Opening the panel scrolls to the first action of the current phase.
 const scrollToCurrentPhase = (tray) => {
   const list = tray.querySelector('.card-list')
-  const firstLive = list.querySelector('.card-row:not(.later)')
+  const firstLive = list.querySelector('.card-row.now')
   if (firstLive !== null) list.scrollTop = firstLive.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop
 }
 for (const cardsTab of document.querySelectorAll('.tab.cards')) {
@@ -582,7 +590,7 @@ for (const cardsTab of document.querySelectorAll('.tab.cards')) {
   }
   // Static shot: the open tray shows one line as if hovered and held.
   if (tray.classList.contains('open')) {
-    const demoRow = tray.querySelector('.card-row:not(.later) ~ .card-row:not(.later) ~ .card-row:not(.later)')
+    const demoRow = [...tray.querySelectorAll('.card-row:not(.later)')].at(-1)
     demoRow.classList.add('hovered')
     // Next line belongs to another phase: pinned too, to compare both hover looks.
     demoRow.nextElementSibling?.classList.add('hovered')
