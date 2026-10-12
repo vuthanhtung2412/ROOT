@@ -41,9 +41,11 @@ Required credit for the recruiter:
 
 `*.glb` is ignored by the repository's `.gitignore`, so the model files of
 this directory live on disk only. The buildings and meeples are kept, one file
-per piece, in `resources/reference/models/` (`buildings/`, `meeples/`,
-`items/`) with Git LFS: copy them from there on a fresh checkout
-(`sympathy.glb` is a link to its reference file). The `nature/` trees come
+per piece, in `resources/reference/models/` with Git LFS, sorted by kind of
+piece: `buildings/`, `tokens/` (keep, wood, sympathy, trade post), `markers/`
+(ruin), `meeples/` and `items/`. Copy them from there on a fresh checkout:
+buildings, tokens and markers all go to `buildings/final/` (`sympathy.glb` is
+a link to its reference file). The `nature/` trees come
 from the kit above.
 
 ## `meeples/` — warriors and Vagabond pawns

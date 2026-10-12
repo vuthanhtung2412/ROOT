@@ -30,7 +30,6 @@ backend/web/.data/
 /tmp
 
 # 3D assets (Blender sources, exports, renders)
-resources/models/
 *.blend
 *.blend1
 *.glb
