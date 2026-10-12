@@ -127,7 +127,10 @@ function CardActionLine(props: {
           {props.row.label}
         </span>
         {catalog !== null ? (
-          <span className={ROW_RULE_CLASS_NAME}>{catalog.description}</span>
+          // Clamped to two lines: the browser tooltip gives the full text.
+          <span className={ROW_RULE_CLASS_NAME} title={catalog.description}>
+            {catalog.description}
+          </span>
         ) : null}
       </span>
       <span className={ROW_TAG_CLASS_NAME}>
