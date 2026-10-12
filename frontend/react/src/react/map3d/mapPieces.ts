@@ -60,7 +60,8 @@ const SLOT_SPOTS_BY_COUNT: Readonly<
   3: [
     [-0.54, -0.26],
     [-0.04, -0.62],
-    [0.47, -0.36],
+    // The third sits apart, in the front right corner.
+    [0.68, 0.42],
   ],
 }
 /** How far a slot may shift from its spot (ratio of the clearing radius). */
@@ -125,7 +126,11 @@ function patternSpots(clearing: ClearingGround, count: number): SlotSpot[] {
   return pattern.map(
     ([ratioX, ratioZ]: readonly [number, number]): SlotSpot => ({
       ground: {
-        x: clearing.center.x + mirror * ratioX * clearing.radius + jitter(),
+        x:
+          clearing.center.x +
+          // A front spot keeps its side: only the back half is mirrored.
+          (ratioZ > 0 ? 1 : mirror) * ratioX * clearing.radius +
+          jitter(),
         z: clearing.center.z + ratioZ * clearing.radius + jitter(),
       },
       rotation: (random() - HALF) * DOUBLE * SLOT_MAXIMUM_TURN,
