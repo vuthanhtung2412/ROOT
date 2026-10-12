@@ -26,39 +26,27 @@ const AUTUMN_MODEL_NAMES: readonly string[] = [
   'nature/tree_oak_fall',
 ]
 
-/** A meeple stands as modelled; a structure is fitted onto a building plot. */
+/**
+ * A meeple stands as modelled; a structure is centred on a building plot.
+ * Both come out of the Blender file at their size next to the other pieces.
+ */
 export type PieceModelKind = 'meeple' | 'structure'
 
 type PieceModelSource = {
   kind: PieceModelKind
   name: string
-  /** Size next to the other structures: 1 for all but the keep. */
-  sizeFactor: number
 }
 
-const STANDARD_SIZE_FACTOR = 1
-/** The keep is the biggest building of the game. */
-const KEEP_SIZE_FACTOR = 1.6
-/** A pile of wood is a token, not a building: it stays small. */
-const WOOD_SIZE_FACTOR = 0.6
-
 function meeple(name: string): PieceModelSource {
-  return {
-    kind: 'meeple',
-    name: `meeples/${name}`,
-    sizeFactor: STANDARD_SIZE_FACTOR,
-  }
+  return { kind: 'meeple', name: `meeples/${name}` }
 }
 
 /**
  * A building model as exported from `root-map-models.blend`, already in the
  * colours of the faction that owns it.
  */
-function structure(
-  name: string,
-  sizeFactor: number = STANDARD_SIZE_FACTOR,
-): PieceModelSource {
-  return { kind: 'structure', name: `buildings/final/${name}`, sizeFactor }
+function structure(name: string): PieceModelSource {
+  return { kind: 'structure', name: `buildings/final/${name}` }
 }
 
 /** Token texture key → the 3D model that stands for that piece. */
@@ -76,8 +64,8 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-marquise-sawmill': structure('sawmill'),
   'token-marquise-workshop': structure('workshop'),
   'token-marquise-recruiter': structure('recruiter'),
-  'token-marquise-keep': structure('keep', KEEP_SIZE_FACTOR),
-  'token-marquise-wood': structure('wood', WOOD_SIZE_FACTOR),
+  'token-marquise-keep': structure('keep'),
+  'token-marquise-wood': structure('wood'),
   'token-eyrie-roost': structure('roost'),
   'token-alliance-base-fox': structure('base'),
   'token-alliance-base-mouse': structure('base'),
@@ -102,7 +90,6 @@ export type TreeModels = {
 export type PieceModel = {
   kind: PieceModelKind
   model: Group
-  sizeFactor: number
 }
 
 export type MapModels = {
@@ -156,11 +143,7 @@ export async function loadMapModels(): Promise<MapModels> {
     const model: Group | undefined =
       pieceModels[pieceModelNames.indexOf(source.name)]
     if (model !== undefined) {
-      pieces.set(textureKey, {
-        kind: source.kind,
-        model,
-        sizeFactor: source.sizeFactor,
-      })
+      pieces.set(textureKey, { kind: source.kind, model })
     }
   }
   return { trees: { pine, leafy, autumn }, pieces }

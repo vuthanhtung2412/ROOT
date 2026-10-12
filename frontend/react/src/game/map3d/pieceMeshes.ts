@@ -61,13 +61,12 @@ type PieceView = {
   modelTop: number
 }
 
-/** Meeple models are 2.3 units tall. */
-/** A warrior stands well under the roof line of a building. */
-const MEEPLE_MODEL_SCALE = 0.5
-/** A structure is scaled to this footprint (its larger side) … */
-const STRUCTURE_FOOTPRINT = 1.65
-/** … but never taller than this. */
-const STRUCTURE_MAXIMUM_HEIGHT = 2.8
+/**
+ * World units per metre of the Blender file. Every model is exported at its
+ * size next to the others (keep 6 m, building 3 m, warrior 0.75 m), so one
+ * scale fits them all.
+ */
+const MODEL_WORLD_SCALE = 0.9
 const MATTE_MINIMUM_ROUGHNESS = 0.8
 const DECAL_ALPHA_CUTOFF = 0.5
 
@@ -326,29 +325,23 @@ export function createPieceLayer(
         .getSize(new Vector3()).y
       return {
         model: figure,
-        scale: MEEPLE_MODEL_SCALE,
-        top: height * MEEPLE_MODEL_SCALE,
+        scale: MODEL_WORLD_SCALE,
+        top: height * MODEL_WORLD_SCALE,
       }
     }
-    // A structure comes at any size and origin: centre it on its plot.
+    // A structure comes at any origin: centre it on its plot.
     // Scale lives on a wrapper group so the foot offset stays in model units.
     const bounds: Box3 = new Box3().setFromObject(figure)
     const size: Vector3 = bounds.getSize(new Vector3())
     const center: Vector3 = bounds.getCenter(new Vector3())
-    const sizeFactor: number = pieceModel.sizeFactor
-    const scale: number =
-      Math.min(
-        STRUCTURE_FOOTPRINT / Math.max(size.x, size.z),
-        STRUCTURE_MAXIMUM_HEIGHT / size.y,
-      ) * sizeFactor
     figure.position.set(-center.x, -bounds.min.y, -center.z)
     const structure: Group = new Group()
     structure.add(figure)
     structure.rotation.y = piece.rotation ?? 0
     return {
       model: structure,
-      scale,
-      top: size.y * scale,
+      scale: MODEL_WORLD_SCALE,
+      top: size.y * MODEL_WORLD_SCALE,
     }
   }
 

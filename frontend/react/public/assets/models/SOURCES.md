@@ -16,6 +16,20 @@ Exported from the project's Blender file (`root-map-models.blend`, kept outside
 the repository), already recoloured for the faction that owns each piece.
 Mapping to pieces: `src/game/map3d/mapModels.ts`.
 
+Every piece is exported at its size next to the others, so the game applies
+one scale to all (`MODEL_WORLD_SCALE` in `src/game/map3d/pieceMeshes.ts`).
+Sizes are the longest side of the model, in metres of the Blender file:
+
+| Size | Longest side | Pieces |
+|------|--------------|--------|
+| XL | 6 | keep |
+| L+ | 4.2 | roost |
+| L | 3.6 | base, garden |
+| M | 3 | ruin, trade post |
+| M− | 2.6 | recruiter, sawmill, workshop |
+| S | 2 | sympathy |
+| XS | 0.75 | wood, warriors and pawns, sword |
+
 | File | Piece | Made from | Licence |
 |------|-------|-----------|---------|
 | `keep.glb` | Marquise keep | "Low poly medieval castle" by assetfactory — https://sketchfab.com/3d-models/low-poly-medieval-castle-6f50a7d5c61045bd8e64cd80d4eef84d — reds, spires and battlements recoloured orange | **Sketchfab Standard**: usable in the game, the model file itself must not be redistributed |
@@ -26,7 +40,7 @@ Mapping to pieces: `src/game/map3d/mapModels.ts`.
 | `ruin.glb` | Ruin | five pieces of the Quaternius Modular Ruins Pack (https://poly.pizza/m/F2LAK03B0r) | CC0 |
 | `sawmill.glb` | Marquise sawmill | modelled for this project (round hut, great saw, steam boiler) | own work |
 | `roost.glb` | Eyrie roost | modelled for this project (leaning tree, platform, blue canopy, lanterns) | own work |
-| `garden.glb` | Lizard Cult garden | modelled for this project (pyramids, palms, a sphinx with the lizard meeple's head) | own work |
+| `garden.glb` | Lizard Cult garden | modelled for this project (pyramids, palms, a sphinx with the lizard meeple's head; no ground slab) | own work |
 | `wood.glb` | Marquise wood | modelled for this project (stack of short logs) | own work |
 | `sympathy.glb` | Woodland Alliance sympathy | modelled for this project (a crowd of fox, rabbit and mouse meeples with swords under a green banner bearing the sympathy fist) | own work |
 
@@ -54,7 +68,7 @@ Made in Blender for this project: the outline of each warrior token
 (`public/assets/tokens/<faction>/warrior.png`, `vagabond/pawn*.png`) is traced
 (OpenCV `findContours` on the alpha channel), extruded 0.8 units deep and
 bevelled; the token art is mapped onto the front face, the rest takes the
-token's body colour. Height 2.3 units, feet on the ground, front towards +Z.
+token's body colour. Feet on the ground, front towards +Z.
 
 `fox-warrior`, `rabbit-warrior` and `mouse-warrior` (reference only: they
 stand in the sympathy crowd) are made the same way from art drawn for this
