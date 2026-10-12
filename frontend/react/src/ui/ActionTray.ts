@@ -379,14 +379,15 @@ export function partitionTrayActionRegions(
 }
 
 /**
- * Short count beside the phase name in the tray header: the Marquise
- * Daylight budget left, otherwise the number of buttons.
+ * Short count beside the phase name in the tray header: the budget left
+ * (Marquise Daylight actions, Woodland Alliance military operations),
+ * otherwise the number of buttons.
  */
 export function trayActionCountLabel(
   buttonCount: number,
   state: GameState | undefined,
 ): string {
-  const actionsLeft = marquiseDaylightActionsLeft(state)
+  const actionsLeft = turnBudgetLeft(state)
   if (actionsLeft !== null) {
     return `${String(actionsLeft)} left`
   }
@@ -397,11 +398,41 @@ function primaryActionsRegionTitle(
   buttonCount: number,
   state: GameState | undefined,
 ): string {
-  const actionsLeft = marquiseDaylightActionsLeft(state)
+  const actionsLeft = turnBudgetLeft(state)
   if (actionsLeft !== null) {
     return `Actions · ${String(actionsLeft)} left`
   }
   return `Actions (${String(buttonCount)})`
+}
+
+/** Actions the current seat may still take this step, when it has a budget. */
+function turnBudgetLeft(state: GameState | undefined): number | null {
+  return (
+    marquiseDaylightActionsLeft(state) ??
+    allianceMilitaryOperationsLeft(state)
+  )
+}
+
+/** Woodland Alliance Evening: military operations left (one per officer). */
+function allianceMilitaryOperationsLeft(
+  state: GameState | undefined,
+): number | null {
+  if (state === undefined) {
+    return null
+  }
+  if (state.phase !== 'evening' || state.step !== 'military') {
+    return null
+  }
+  const actor = state.players.find((player) => player.seat === state.currentSeat)
+  if (actor?.faction !== 'alliance') {
+    return null
+  }
+  const scratch = state.turnScratch
+  if (typeof scratch !== 'object' || scratch === null) {
+    return null
+  }
+  const operationsLeft = Reflect.get(scratch, 'militaryOpsLeft')
+  return typeof operationsLeft === 'number' ? operationsLeft : null
 }
 
 /** Marquise Daylight action budget (actionsLeft + spend-bird extras). */

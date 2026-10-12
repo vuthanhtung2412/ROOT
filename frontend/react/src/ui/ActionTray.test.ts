@@ -4,6 +4,7 @@ import {
   DECLINE_ICON_KEY,
   DECLINE_SERVICE_ICON_KEY,
   trayActionArt,
+  trayActionCountLabel,
   collapseTrayActionsByLabel,
   filterTrayActions,
   withoutBoardOnlyActions,
@@ -275,6 +276,21 @@ describe('partitionTrayActionRegions', () => {
       }),
     )
     expect(regions[0]?.title).toBe('Actions · 3 left')
+  })
+
+  it('counts the Woodland Alliance military operations left in the Evening', () => {
+    const state = makeGameState({
+      phase: 'evening',
+      step: 'military',
+      currentSeat: 0,
+      players: [
+        { playerId: 'alliance', seat: 0, faction: 'alliance', vp: 0, hand: [] },
+      ],
+      turnScratch: { militaryOpsLeft: 1 },
+    })
+    const fourButtons = 4
+
+    expect(trayActionCountLabel(fourButtons, state)).toBe('1 left')
   })
 
   it('omits empty Actions region when only end phase remains', () => {
