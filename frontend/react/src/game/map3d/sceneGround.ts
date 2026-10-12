@@ -23,25 +23,24 @@ import { createSeededRandom } from '#game/map3d/treePlacement.ts'
  * clearings, stone-dotted paths and the river.
  */
 const GROUND_TEXTURE_WIDTH_PIXELS = 4096
-const FOREST_FLOOR_COLOR = '#4a5636'
+/** The board's parchment, shared by the forest floor and the clearings. */
+const GROUND_COLOR = '#bfac8b'
 const FOREST_FLOOR_PATCH_COLORS: readonly string[] = [
-  '#55623c',
-  '#3f4a30',
-  '#5d6740',
+  '#c7b594',
+  '#b5a281',
+  '#bba887',
 ]
 const FOREST_FLOOR_PATCH_COUNT = 900
 const FOREST_FLOOR_PATCH_OPACITY = 0.35
-const OPEN_GROUND_COLOR = '#c2a871'
-const OPEN_GROUND_EDGE_COLOR = '#8d8452'
-const CLEARING_CENTER_COLOR = '#d6bf88'
+/** Clearing soil is a little paler than the forest floor it fades into. */
+const CLEARING_SOIL_COLOR = '#d3c29f'
+const CLEARING_SOIL_FADED_COLOR = 'rgba(211, 194, 159, 0)'
+/** Share of the clearing's radius that is solid soil before the fade. */
+const CLEARING_SOIL_SOLID_RATIO = 0.55
 /** A path is little more than its line of stones (as in the digital game). */
 const PATH_WIDTH = 1.15
-const PATH_EDGE_WIDTH = 1.7
 /** Paths are beds of grey pebbles. */
 const PATH_GRAVEL_COLOR = '#8f8f8a'
-const PATH_GRAVEL_EDGE_COLOR = '#5f625c'
-const RIVER_BANK_COLOR = '#7b7a4c'
-const RIVER_BANK_WIDTH = 4.4
 const RIVER_WATER_COLOR = '#5fa9c4'
 const RIVER_WATER_WIDTH = 3
 const RIVER_SHALLOW_COLOR = '#8fcbd9'
@@ -102,13 +101,13 @@ function strokeLine(
 function paintForestFloor(painter: GroundPainter): void {
   const { context } = painter
   const random: () => number = createSeededRandom(GROUND_SEED)
-  context.fillStyle = FOREST_FLOOR_COLOR
+  context.fillStyle = GROUND_COLOR
   context.fillRect(0, 0, context.canvas.width, context.canvas.height)
   context.globalAlpha = FOREST_FLOOR_PATCH_OPACITY
   for (let patch = 0; patch < FOREST_FLOOR_PATCH_COUNT; patch += 1) {
     context.fillStyle =
       FOREST_FLOOR_PATCH_COLORS[patch % FOREST_FLOOR_PATCH_COLORS.length] ??
-      FOREST_FLOOR_COLOR
+      GROUND_COLOR
     context.beginPath()
     context.arc(
       random() * context.canvas.width,
@@ -127,11 +126,11 @@ function paintClearing(painter: GroundPainter, clearing: ClearingGround): void {
   const x: number = canvasX(painter, clearing.center)
   const y: number = canvasY(painter, clearing.center)
   const radius: number = clearing.radius * CLEARING_SAND_RADIUS_RATIO * scale
-  const sand: CanvasGradient = context.createRadialGradient(x, y, 0, x, y, radius)
-  sand.addColorStop(0, CLEARING_CENTER_COLOR)
-  sand.addColorStop(0.8, OPEN_GROUND_COLOR)
-  sand.addColorStop(1, OPEN_GROUND_EDGE_COLOR)
-  context.fillStyle = sand
+  const soil: CanvasGradient = context.createRadialGradient(x, y, 0, x, y, radius)
+  soil.addColorStop(0, CLEARING_SOIL_COLOR)
+  soil.addColorStop(CLEARING_SOIL_SOLID_RATIO, CLEARING_SOIL_COLOR)
+  soil.addColorStop(1, CLEARING_SOIL_FADED_COLOR)
+  context.fillStyle = soil
   context.beginPath()
   context.arc(x, y, radius, 0, FULL_TURN_RADIANS)
   context.fill()
@@ -153,16 +152,6 @@ function paintGround(painter: GroundPainter): void {
     halfWidth: terrain.worldSize.width * HALF + terrain.marginX,
     halfDepth: terrain.worldSize.depth * HALF + terrain.marginZ,
   })
-  strokeLine(painter, terrain.river, {
-    color: RIVER_BANK_COLOR,
-    width: RIVER_BANK_WIDTH,
-  })
-  for (const path of terrain.paths) {
-    strokeLine(painter, [path.start, path.end], {
-      color: PATH_GRAVEL_EDGE_COLOR,
-      width: PATH_EDGE_WIDTH,
-    })
-  }
   for (const path of terrain.paths) {
     strokeLine(painter, [path.start, path.end], {
       color: PATH_GRAVEL_COLOR,
