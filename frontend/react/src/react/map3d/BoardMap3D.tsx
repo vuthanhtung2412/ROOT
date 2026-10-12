@@ -61,6 +61,9 @@ const MAP_CANVAS_CLASS_NAME =
   'map-3d-canvas pointer-events-auto absolute inset-0 z-0 block cursor-root-default touch-none'
 const CLICKABLE_CLEARING_CLASS_NAME =
   'pointer-events-auto absolute z-4 m-0 cursor-root-pointer rounded-full border-0 bg-transparent p-0'
+/** A clearing the player cannot pick: no finger, the gesture goes to the map. */
+const IDLE_CLEARING_CLASS_NAME =
+  'pointer-events-none absolute z-4 m-0 cursor-root-default rounded-full border-0 bg-transparent p-0'
 const CLICKABLE_FOREST_CLASS_NAME =
   'pointer-events-auto absolute inset-0 z-5 m-0 cursor-root-pointer border-0 bg-transparent p-0'
 
@@ -365,14 +368,23 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
       ) : null}
       {projectedClearings.map((clearing: ProjectedClearing) => {
         const diameter: number = clearing.radius * 2
+        const isHighlighted: boolean = highlighted.has(clearing.clearingId)
         return (
           <button
             key={clearing.clearingId}
             type="button"
-            className={CLICKABLE_CLEARING_CLASS_NAME}
+            className={
+              isHighlighted
+                ? CLICKABLE_CLEARING_CLASS_NAME
+                : IDLE_CLEARING_CLASS_NAME
+            }
             aria-label={`Clearing ${String(clearing.clearingId)}`}
             data-clearing-id={clearing.clearingId}
+            tabIndex={isHighlighted ? 0 : -1}
             onClick={() => {
+              if (!isHighlighted) {
+                return
+              }
               onClearingSelected?.(clearing.clearingId)
             }}
             style={{
