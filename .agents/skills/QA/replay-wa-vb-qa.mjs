@@ -207,7 +207,7 @@ const STEPS = [
   {
     title: '13–14 · Battle on 6, defender Marquise picked (W10 W11)',
     play: async (ui) => {
-      await ui.button('op: battle')
+      await ui.button('battle')
       await ui.clearing(6)
       await ui.button('marquise')
       await ui.button('Skip ambush')
@@ -223,9 +223,9 @@ const STEPS = [
   {
     title: '15–16 · Organize on 8, Recruit on 7 (W10)',
     play: async (ui) => {
-      await ui.button('op: organize')
+      await ui.button('organize')
       await ui.clearing(8)
-      await ui.button('op: recruit')
+      await ui.button('recruit')
       await ui.clearing(7)
     },
     verify: (state) => {
@@ -239,7 +239,7 @@ const STEPS = [
   {
     title: '12 · Move 7→3 into own sympathy: no Outrage (W8 W9)',
     play: async (ui) => {
-      await ui.button('op: move')
+      await ui.button('move')
       await ui.clearing(7)
       await ui.clearing(3)
       await ui.button('OK')

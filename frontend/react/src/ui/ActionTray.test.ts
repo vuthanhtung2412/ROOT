@@ -11,6 +11,7 @@ import {
   partitionTrayActionRegions,
 } from '#ui/ActionTray.ts'
 import { makeActionSpec, makeGameState } from '#test/factories.ts'
+import { actionIconFor } from '#ui/actionIcons.ts'
 import { questViewsFromState } from '#ui/factionBoardViewModel.ts'
 
 describe('formatActionLabel setup', () => {
@@ -344,6 +345,25 @@ describe('trayActionArt', () => {
       iconKey: 'recruit',
       suit: null,
     })
+  })
+
+  it('draws each Woodland Alliance military operation as its own icon', () => {
+    const operations: readonly string[] = [
+      'move',
+      'battle',
+      'recruit',
+      'organize',
+    ]
+
+    const iconKeys: string[] = operations.map(
+      (operation: string): string =>
+        trayActionArt(
+          makeActionSpec({ type: 'militaryOp', params: { op: [operation] } }),
+        ).iconKey,
+    )
+
+    expect(iconKeys).toEqual(operations)
+    expect(new Set(iconKeys.map(actionIconFor)).size).toBe(operations.length)
   })
 
   it('keeps the action type for any other action', () => {

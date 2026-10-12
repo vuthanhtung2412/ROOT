@@ -68,7 +68,7 @@ function formatActionLabel(
   if (spec.type === 'train') return 'train'
   if (spec.type === 'militaryOp') {
     const op = params.op?.[0]
-    return op !== undefined ? `op: ${op}` : 'military op'
+    return op ?? 'military operation'
   }
   if (spec.type === 'refresh') return 'refresh'
   if (spec.type === 'slip') return 'slip'
@@ -162,6 +162,7 @@ function formatActionLabel(
 }
 
 const DECREE_ACTION_TYPE = 'decree'
+const MILITARY_OPERATION_ACTION_TYPE = 'militaryOp'
 
 /** What a tray medallion draws: an icon key and, for a card play, its suit. */
 export type TrayActionArt = {
@@ -196,8 +197,9 @@ function resolveEventIconKey(spec: ActionSpec, pending: unknown): string {
 }
 
 /**
- * Decree: icon of the column, suit of the card. Pending event: icon of the
- * answer. Others: icon of the type.
+ * Decree: icon of the column, suit of the card. Military operation: icon of
+ * the operation (move, battle, recruit, organize). Pending event: icon of
+ * the answer. Others: icon of the type.
  */
 export function trayActionArt(
   spec: ActionSpec,
@@ -207,10 +209,13 @@ export function trayActionArt(
   if (spec.type === RESOLVE_EVENT_ACTION_TYPE) {
     return { iconKey: resolveEventIconKey(spec, pending), suit: null }
   }
+  const params = readChoiceParams(spec)
+  if (spec.type === MILITARY_OPERATION_ACTION_TYPE) {
+    return { iconKey: params.op?.[0] ?? spec.type, suit: null }
+  }
   if (spec.type !== DECREE_ACTION_TYPE) {
     return { iconKey: spec.type, suit: null }
   }
-  const params = readChoiceParams(spec)
   const cardId: string | undefined = params.cardIds?.[0]
   return {
     iconKey: params.column?.[0] ?? spec.type,

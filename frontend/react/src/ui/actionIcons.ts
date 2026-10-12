@@ -12,6 +12,7 @@ import {
   LuCoins,
   LuCrosshair,
   LuCrown,
+  LuFlag,
   LuFlame,
   LuFootprints,
   LuGraduationCap,
@@ -80,6 +81,8 @@ const ACTION_ICONS: Readonly<Record<string, IconType>> = {
   mobilize: LuUsers,
   train: LuGraduationCap,
   militaryOp: LuShield,
+  // Military operations draw as move, battle, recruit or:
+  organize: LuFlag,
   // Vagabond
   refresh: LuRefreshCw,
   slip: LuWind,
