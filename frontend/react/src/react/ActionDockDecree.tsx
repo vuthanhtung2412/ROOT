@@ -23,7 +23,19 @@ const HEAD_DONE_CLASS_NAME = 'opacity-50'
 const STRIP_CLASS_NAME =
   'root-paper root-paper-fine -mt-3 flex min-h-21 w-14.5 flex-row flex-wrap content-start justify-center gap-1 px-1 pt-4.5 pb-2 [--root-paper-color:var(--color-parchment-shadow)]'
 const MARK_CLASS_NAME = 'block size-5.5 object-contain'
-const MARK_RESOLVED_CLASS_NAME = 'opacity-35 grayscale'
+const MARK_RESOLVED_CLASS_NAME = 'grayscale'
+/** Holds a suit and, once resolved, the stroke crossing it out. */
+const MARK_FRAME_CLASS_NAME = 'relative block'
+/** A resolved suit fades, outline included; the stroke over it does not. */
+const MARK_ART_CLASS_NAME = 'block'
+const MARK_ART_RESOLVED_CLASS_NAME = 'opacity-35'
+const BIRD_SUIT = 'bird'
+/** The pale bird suit is lost on the strip: an ink line follows its shape. */
+const BIRD_MARK_OUTLINE_CLASS_NAME =
+  '[filter:drop-shadow(1px_0_0_var(--color-ink-deep))_drop-shadow(-1px_0_0_var(--color-ink-deep))_drop-shadow(0_1px_0_var(--color-ink-deep))_drop-shadow(0_-1px_0_var(--color-ink-deep))]'
+/** Diagonal stroke over a resolved card. */
+const MARK_CROSS_CLASS_NAME =
+  'pointer-events-none absolute top-1/2 left-1/2 h-0.5 w-[130%] -translate-1/2 -rotate-45 bg-ink-deep'
 /** A card that can be resolved now: its suit is the button. */
 const MARK_BUTTON_CLASS_NAME =
   'action-tray__action m-0 cursor-root-pointer rounded-full border-0 bg-transparent p-0 shadow-gold-ring hover:brightness-110'
@@ -52,18 +64,35 @@ function SuitMark(props: {
   }
   const label: string = markLabel(props.column, props.card)
   const spec: ActionSpec | null = props.card.spec
+  const outlineClassName: string =
+    props.card.suit === BIRD_SUIT
+      ? `${MARK_ART_CLASS_NAME} ${BIRD_MARK_OUTLINE_CLASS_NAME}`
+      : MARK_ART_CLASS_NAME
   if (spec === null || props.card.isResolved) {
     return (
-      <img
-        className={
-          props.card.isResolved
-            ? `${MARK_CLASS_NAME} ${MARK_RESOLVED_CLASS_NAME}`
-            : MARK_CLASS_NAME
-        }
-        src={suitImagePath}
-        alt={label}
-        draggable={false}
-      />
+      <span className={MARK_FRAME_CLASS_NAME}>
+        <span
+          className={
+            props.card.isResolved
+              ? `${outlineClassName} ${MARK_ART_RESOLVED_CLASS_NAME}`
+              : outlineClassName
+          }
+        >
+          <img
+            className={
+              props.card.isResolved
+                ? `${MARK_CLASS_NAME} ${MARK_RESOLVED_CLASS_NAME}`
+                : MARK_CLASS_NAME
+            }
+            src={suitImagePath}
+            alt={label}
+            draggable={false}
+          />
+        </span>
+        {props.card.isResolved ? (
+          <span className={MARK_CROSS_CLASS_NAME} aria-hidden="true" />
+        ) : null}
+      </span>
     )
   }
   return (
@@ -75,12 +104,14 @@ function SuitMark(props: {
           props.onSelectAction(spec)
         }}
       >
-        <img
-          className={MARK_CLASS_NAME}
-          src={suitImagePath}
-          alt=""
-          draggable={false}
-        />
+        <span className={outlineClassName}>
+          <img
+            className={MARK_CLASS_NAME}
+            src={suitImagePath}
+            alt=""
+            draggable={false}
+          />
+        </span>
         <span className="sr-only">{label}</span>
       </button>
     </Tooltip>
