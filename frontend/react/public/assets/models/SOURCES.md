@@ -44,6 +44,11 @@ Sizes are the longest side of the model, in metres of the Blender file:
 | `wood.glb` | Marquise wood | modelled for this project (stack of short logs) | own work |
 | `sympathy.glb` | Woodland Alliance sympathy | modelled for this project (a crowd of fox, rabbit and mouse meeples with swords under a green banner bearing the sympathy fist) | own work |
 
+Not in the game yet, kept in `resources/reference/models/tokens/`:
+`claude-cat-keep.glb`, a keep modelled for this project (own work): curtain wall,
+four round towers, gatehouse with drawbridge, and a great tower with the ears,
+eyes and whiskers of a cat; brick, shingle and plank textures drawn by script.
+
 Required credit for the recruiter:
 
 > This work is based on "Stylised Medieval Buildings - Barracks"
