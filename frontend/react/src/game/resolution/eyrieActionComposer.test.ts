@@ -34,6 +34,42 @@ describe('eyrieActionComposer', () => {
     })
   })
 
+  it('addToDecree can be cancelled with a card staged, then started over', () => {
+    const eyrie = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(eyrie.hooks)
+    const spec = makeActionSpec({
+      type: 'addToDecree',
+      params: {
+        options: [
+          { cardId: 'c1', column: 'recruit' },
+          { cardId: 'c2', column: 'battle' },
+        ],
+        birdCardIds: [],
+      },
+    })
+
+    const begun = composer.begin(spec)
+    expect(begun.kind === 'incomplete' && begun.prompt.canCancel).toBe(true)
+    composer.chooseCard('c1')
+    const staged = composer.chooseColumn('recruit')
+    expect(staged.kind === 'incomplete' && staged.prompt.canCancel).toBe(true)
+
+    expect(composer.cancel()).toEqual({ kind: 'idle' })
+    expect(eyrie.getDraft()).toEqual({ type: 'idle' })
+
+    composer.begin(spec)
+    composer.chooseCard('c2')
+    composer.chooseColumn('battle')
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'addToDecree',
+        cards: [{ cardId: 'c2', column: 'battle' }],
+      },
+    })
+  })
+
   it('newRoost picks clearing', () => {
     const { hooks } = createEyrieComposerHooks()
     const composer = new ActionComposer()

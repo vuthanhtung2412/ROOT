@@ -46,7 +46,7 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
             highlightClearings: [],
             enabledCardIds: uniqueCardIds(options),
             canConfirm: false,
-            canCancel: false,
+            canCancel: true,
           },
         }
       }
@@ -188,7 +188,7 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
           highlightClearings: [],
           enabledCardIds: [cardId],
           canConfirm: false,
-          canCancel: draft.selected.length > 0,
+          canCancel: true,
         },
       }
     },
@@ -209,7 +209,7 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
               highlightClearings: [],
               enabledCardIds: uniqueCardIds(draft.options),
               canConfirm: priorSelected.length >= 1,
-              canCancel: false,
+              canCancel: true,
             },
           }
         }
@@ -239,7 +239,7 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
               (id) => id !== cardId,
             ),
             canConfirm: true,
-            canCancel: false,
+            canCancel: true,
           },
         }
       }
@@ -462,24 +462,7 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
       if (draft.type === 'idle') {
         return null
       }
-      // Forced addToDecree: cancel only clears pending second pick
-      if (draft.type === 'addToDecree') {
-        if (draft.pendingCardId !== null) {
-          draft = { ...draft, pendingCardId: null }
-          promptOptions = []
-          return {
-            kind: 'incomplete',
-            prompt: {
-              message: 'Add to Decree — pick card',
-              highlightClearings: [],
-              enabledCardIds: uniqueCardIds(draft.options),
-              canConfirm: draft.selected.length >= 1,
-              canCancel: false,
-            },
-          }
-        }
-        return null
-      }
+      // Nothing is sent before confirm: cancel drops the whole staged draft.
       draft = { type: 'idle' }
       promptOptions = []
       return { kind: 'idle' }
