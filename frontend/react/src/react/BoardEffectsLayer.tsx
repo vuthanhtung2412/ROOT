@@ -50,19 +50,36 @@ export type BoardEffectPosition = {
   top: number
 }
 
+/** A stack of a clearing, as an effect names it. */
+export type BoardEffectStack = {
+  clearing: number
+  owner: number
+  pieceKind: string
+  pieceType: string | undefined
+}
+
 type EffectContext = {
   factions: readonly string[]
   hitCenters: ReadonlyMap<number, ClearingHitCenter>
   /** Where a pawn stands in each forest (forest index → position). */
   forestCenters: ReadonlyMap<number, BoardEffectPosition>
+  /**
+   * Where the map itself draws a stack, when it does not lay its stacks out
+   * by slot (the 3D map); undefined for a stack it does not know.
+   */
+  stackPositionOf?:
+    | ((stack: BoardEffectStack) => BoardEffectPosition | undefined)
+    | undefined
 }
+
+type PieceEffect = BoardMoveEffect | BoardPlaceEffect | BoardRemoveEffect
 
 function colorToCss(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`
 }
 
 function stackFor(
-  effect: BoardMoveEffect | BoardPlaceEffect | BoardRemoveEffect,
+  effect: PieceEffect,
   factions: readonly string[],
 ): PieceStackViewModel {
   const stack: PieceStackViewModel = {
@@ -90,6 +107,32 @@ function stackPosition(
   return { left: center.centerX + offset.x, top: center.centerY + offset.y }
 }
 
+type StackPlace = {
+  effect: PieceEffect
+  clearing: number
+  slot: BoardStackSlot
+}
+
+/** Where the stack of an effect is drawn: by the map itself, else by slot. */
+function stackPositionIn(
+  context: EffectContext,
+  place: StackPlace,
+): BoardEffectPosition | undefined {
+  const drawn: BoardEffectPosition | undefined = context.stackPositionOf?.({
+    clearing: place.clearing,
+    owner: place.effect.owner,
+    pieceKind: place.effect.pieceKind,
+    pieceType: place.effect.pieceType,
+  })
+  if (drawn !== undefined) {
+    return drawn
+  }
+  const center: ClearingHitCenter | undefined = context.hitCenters.get(
+    place.clearing,
+  )
+  return center === undefined ? undefined : stackPosition(center, place.slot)
+}
+
 const FADE_OUT_KEYFRAMES: Keyframe[] = [
   { opacity: 1 },
   { opacity: 1, offset: FADE_START_OFFSET },
@@ -111,6 +154,7 @@ const STARTED_EFFECT_CLASS_NAME = 'absolute inset-0'
 
 
 type MoveEnd = {
+  effect: BoardMoveEffect
   clearing: number
   /** Set when the end is a forest: the clearing is then unused. */
   forest: number | undefined
@@ -125,19 +169,20 @@ function moveEndPosition(
   if (end.forest !== undefined) {
     return context.forestCenters.get(end.forest)
   }
-  const center = context.hitCenters.get(end.clearing)
-  return center === undefined ? undefined : stackPosition(center, end.slot)
+  return stackPositionIn(context, end)
 }
 
 function MoveEffectView(
   props: EffectContext & { effect: BoardMoveEffect },
 ): JSX.Element | null {
   const from = moveEndPosition(props, {
+    effect: props.effect,
     clearing: props.effect.from,
     forest: props.effect.fromForest,
     slot: props.effect.fromSlot,
   })
   const to = moveEndPosition(props, {
+    effect: props.effect,
     clearing: props.effect.to,
     forest: props.effect.toForest,
     slot: props.effect.toSlot,
@@ -183,7 +228,11 @@ function MoveEffectView(
 function PlaceEffectView(
   props: EffectContext & { effect: BoardPlaceEffect },
 ): JSX.Element | null {
-  const center = props.hitCenters.get(props.effect.clearing)
+  const position: BoardEffectPosition | undefined = stackPositionIn(props, {
+    effect: props.effect,
+    clearing: props.effect.clearing,
+    slot: props.effect.slot,
+  })
   const delay = placeStartDelay(props.effect)
   const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, {
     ...FADE_OUT_OPTIONS,
@@ -197,7 +246,7 @@ function PlaceEffectView(
     ],
     { duration: POP_MS, delay, easing: 'ease-out', fill: 'forwards' },
   )
-  if (center === undefined) {
+  if (position === undefined) {
     return null
   }
   return (
@@ -207,11 +256,7 @@ function PlaceEffectView(
         delay > 0 ? WAITING_EFFECT_CLASS_NAME : STARTED_EFFECT_CLASS_NAME
       }
     >
-      <div
-        ref={popRef}
-        className="absolute"
-        style={stackPosition(center, props.effect.slot)}
-      >
+      <div ref={popRef} className="absolute" style={position}>
         {/* Shows the stack's new size, so it sits exactly on the real count. */}
         <PieceStack
           stack={{
@@ -236,7 +281,11 @@ function PlaceEffectView(
 function RemoveEffectView(
   props: EffectContext & { effect: BoardRemoveEffect },
 ): JSX.Element | null {
-  const center = props.hitCenters.get(props.effect.clearing)
+  const position: BoardEffectPosition | undefined = stackPositionIn(props, {
+    effect: props.effect,
+    clearing: props.effect.clearing,
+    slot: props.effect.slot,
+  })
   const driftRef = useKeyframes(
     [
       { transform: 'translateY(0px) scale(1.2)', opacity: 1 },
@@ -248,15 +297,11 @@ function RemoveEffectView(
     ],
     { duration: EFFECT_LIFETIME_MS, easing: 'ease-out', fill: 'forwards' },
   )
-  if (center === undefined) {
+  if (position === undefined) {
     return null
   }
   return (
-    <div
-      ref={driftRef}
-      className="absolute"
-      style={stackPosition(center, props.effect.slot)}
-    >
+    <div ref={driftRef} className="absolute" style={position}>
       <div className="grayscale">
         <PieceStack
           stack={stackFor(props.effect, props.factions)}
@@ -334,6 +379,7 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
           factions: props.factions,
           hitCenters: props.hitCenters,
           forestCenters: props.forestCenters,
+          stackPositionOf: props.stackPositionOf,
         }
         if (entry.effect.kind === 'move') {
           return (

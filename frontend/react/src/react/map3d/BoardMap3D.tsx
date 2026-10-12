@@ -1,7 +1,9 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
+  useState,
   useSyncExternalStore,
   type JSX,
 } from 'react'
@@ -22,15 +24,25 @@ import { getHudSnapshot, subscribeHud } from '#game/hudStore.ts'
 import { timeOfDayForPhase } from '#game/map3d/daylight.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import type { BoardMapProps } from '#react/BoardMap.tsx'
+import { LABEL_FAR_HEIGHT, type MapPiece } from '#game/map3d/pieceMeshes.ts'
 import {
   BoardEffectsLayer,
   type BoardEffectPosition,
+  type BoardEffectStack,
 } from '#react/BoardEffectsLayer.tsx'
 import {
   builtPieceKeys,
   withoutBuildEffects,
 } from '#react/map3d/buildEffects.ts'
-import { mapPiecesForBoard } from '#react/map3d/mapPieces.ts'
+import {
+  averageGround,
+  mapPiecesForBoard,
+  stackPieceKey,
+} from '#react/map3d/mapPieces.ts'
+import {
+  rememberPieceGrounds,
+  type PieceGrounds,
+} from '#react/map3d/stackGrounds.ts'
 import { useMapScene, type MapSceneHandle } from '#react/map3d/useMapScene.ts'
 import {
   useTapOrDrag,
@@ -66,6 +78,12 @@ type ProjectedClearing = {
   clearingId: number
   center: MapViewPoint
   radius: number
+}
+
+/** The grounds remembered, and the pieces they were last read from. */
+type RememberedGrounds = {
+  pieces: readonly MapPiece[]
+  grounds: PieceGrounds
 }
 
 function distanceBetween(left: MapViewPoint, right: MapViewPoint): number {
@@ -106,16 +124,13 @@ function forestClipPath(scene: MapScene, forest: ForestGround): string {
   return `polygon(${points.join(', ')})`
 }
 
-function forestCenter(scene: MapScene, forest: ForestGround): MapViewPoint {
-  const points: MapViewPoint[] = forest.corners.map(
-    (corner: MapGroundPoint): MapViewPoint => scene.projectToView(corner, 0),
-  )
-  return {
-    x: points.reduce((sum: number, point: MapViewPoint) => sum + point.x, 0) /
-      points.length,
-    y: points.reduce((sum: number, point: MapViewPoint) => sum + point.y, 0) /
-      points.length,
-  }
+/** Where the icon of a piece standing on that ground shows up in the view. */
+function piecePosition(
+  scene: MapScene,
+  ground: MapGroundPoint,
+): BoardEffectPosition {
+  const point: MapViewPoint = scene.projectToView(ground, LABEL_FAR_HEIGHT)
+  return { left: point.x, top: point.y }
 }
 
 export type BoardMap3DProps = BoardMapProps & {
@@ -176,11 +191,8 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
   )
   const { clearings, factions, forestPawns } = props
 
-  useEffect(() => {
-    if (scene === null) {
-      return
-    }
-    scene.setPieces(
+  const mapPieces: MapPiece[] = useMemo(
+    () =>
       mapPiecesForBoard({
         clearings: clearings ?? [],
         factions: factions ?? [],
@@ -189,16 +201,28 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
         forestPawns: forestPawns ?? [],
         river,
       }),
-    )
-  }, [
-    scene,
-    clearings,
-    factions,
-    forestPawns,
-    clearingGrounds,
-    forestGrounds,
-    river,
-  ])
+    [clearings, factions, forestPawns, clearingGrounds, forestGrounds, river],
+  )
+
+  useEffect(() => {
+    scene?.setPieces(mapPieces)
+  }, [scene, mapPieces])
+
+  const [remembered, setRemembered] = useState<RememberedGrounds>(
+    (): RememberedGrounds => ({
+      pieces: mapPieces,
+      grounds: rememberPieceGrounds(new Map<string, MapGroundPoint>(), mapPieces),
+    }),
+  )
+  // Brought up to date while rendering: an effect reads where its stacks
+  // stand when it starts, and never again.
+  if (remembered.pieces !== mapPieces) {
+    setRemembered({
+      pieces: mapPieces,
+      grounds: rememberPieceGrounds(remembered.grounds, mapPieces),
+    })
+  }
+  const pieceGrounds: PieceGrounds = remembered.grounds
 
   const effects: BoardEffectBatch | undefined = props.effects
   // A batch already there when the map mounts is old news: do not replay it.
@@ -307,13 +331,33 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
         scene === null
           ? []
           : forestGrounds.map(
-              (forest: ForestGround): [number, BoardEffectPosition] => {
-                const center: MapViewPoint = forestCenter(scene, forest)
-                return [forest.forestIndex, { left: center.x, top: center.y }]
-              },
+              (forest: ForestGround): [number, BoardEffectPosition] => [
+                forest.forestIndex,
+                // Where the pawn of that forest stands.
+                piecePosition(scene, averageGround(forest.corners)),
+              ],
             ),
       ),
     [scene, forestGrounds, viewVersion],
+  )
+
+  // An effect plays on the stack the scene draws, not on a flat-map slot.
+  const stackPositionOf = useCallback(
+    (stack: BoardEffectStack): BoardEffectPosition | undefined => {
+      const ground: MapGroundPoint | undefined = pieceGrounds.get(
+        stackPieceKey({
+          clearingId: stack.clearing,
+          kind: stack.pieceKind,
+          type: stack.pieceType,
+          owner: stack.owner,
+        }),
+      )
+      return scene === null || ground === undefined
+        ? undefined
+        : piecePosition(scene, ground)
+    },
+    // viewVersion: the camera moved, so every projection is stale.
+    [scene, pieceGrounds, viewVersion],
   )
 
   const onClearingSelected = props.onClearingSelected
@@ -352,6 +396,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
           factions={factions}
           hitCenters={hitCenters}
           forestCenters={forestCenters}
+          stackPositionOf={stackPositionOf}
         />
       ) : null}
       {projectedClearings.map((clearing: ProjectedClearing) => {

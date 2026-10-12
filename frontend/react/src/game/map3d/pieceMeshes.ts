@@ -94,7 +94,8 @@ const LABEL_FAR_SIZE = 2.3
 const LABEL_NEAR_SIZE = 0.36
 /** A piece without a 3D model still shrinks, but stays a bit more readable. */
 const LABEL_NEAR_SIZE_WITHOUT_MODEL = 0.55
-const LABEL_FAR_HEIGHT = 0.8
+/** The icon of a piece hovers this high over its ground, zoomed out. */
+export const LABEL_FAR_HEIGHT = 0.8
 /** Gap between the top of a model and its label. */
 const LABEL_CLEARANCE = 0.6
 /** The models grow in over this part of the zoom. */

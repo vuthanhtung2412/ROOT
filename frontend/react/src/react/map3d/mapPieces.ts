@@ -180,6 +180,19 @@ export function buildingPieceKey(clearingId: number, pieceId: string): string {
   return `${String(clearingId)}-${pieceId}`
 }
 
+/** A stack of tokens, warriors or pawns in a clearing. */
+export type StackOfClearing = {
+  clearingId: number
+  kind: string
+  type: string | undefined
+  owner: number
+}
+
+/** Key of the map piece of a stack: one per kind, type and owner. */
+export function stackPieceKey(stack: StackOfClearing): string {
+  return `${String(stack.clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`
+}
+
 /** One piece (not a stack) as a map piece: a building owns a whole slot. */
 function singlePiece(
   piece: PieceViewModel,
@@ -271,6 +284,13 @@ function stackPieces(
   pieces: readonly PieceViewModel[],
 ): MapPiece[] {
   const clearingId: number = clearingGround.clearingId
+  const keyOf = (stack: PieceStackViewModel): string =>
+    stackPieceKey({
+      clearingId,
+      kind: stack.kind,
+      type: stack.type,
+      owner: stack.owner,
+    })
   const isKeep = (stack: PieceStackViewModel): boolean =>
     textureKeyForStack(stack, clearingId) === GAME_ASSET_KEYS.tokenMarquiseKeep
   const allStacks: PieceStackViewModel[] = groupPiecesIntoStacks(
@@ -281,7 +301,7 @@ function stackPieces(
   // The keep stands in its corner, out of the rows.
   const keeps: MapPiece[] = allStacks.filter(isKeep).map(
     (stack: PieceStackViewModel): MapPiece => ({
-      key: `${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`,
+      key: keyOf(stack),
       shape: 'piece',
       textureKey: GAME_ASSET_KEYS.tokenMarquiseKeep,
       texturePath: imagePathForAssetKey(GAME_ASSET_KEYS.tokenMarquiseKeep),
@@ -321,7 +341,7 @@ function stackPieces(
       })
       const textureKey: string = textureKeyForStack(stack, clearingId)
       return {
-        key: `${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`,
+        key: keyOf(stack),
         shape: 'piece',
         textureKey,
         texturePath: imagePathForAssetKey(textureKey),
@@ -334,7 +354,7 @@ function stackPieces(
   return [...keeps, ...rows]
 }
 
-function averageGround(points: readonly MapGroundPoint[]): MapGroundPoint {
+export function averageGround(points: readonly MapGroundPoint[]): MapGroundPoint {
   const total: MapGroundPoint = points.reduce(
     (sum: MapGroundPoint, point: MapGroundPoint): MapGroundPoint => ({
       x: sum.x + point.x,
