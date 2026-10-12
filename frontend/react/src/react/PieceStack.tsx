@@ -73,6 +73,8 @@ export type PieceStackProps = {
   left: number
   top: number
   clearingId?: number
+  /** A single piece shown on its own (a meeple on the move): no number. */
+  hidesCount?: boolean
 }
 
 export function PieceStack(props: PieceStackProps): JSX.Element {
@@ -122,7 +124,8 @@ export function PieceStack(props: PieceStackProps): JSX.Element {
           }}
         />
       )}
-      {props.stack.kind !== BUILDING_PIECE_KIND ? (
+      {props.stack.kind !== BUILDING_PIECE_KIND &&
+      props.hidesCount !== true ? (
         <span
           className="pointer-events-none absolute inset-0 flex items-center justify-center font-body font-bold text-white text-shadow-outline"
           style={{ fontSize: Math.round(size * 0.55) }}
