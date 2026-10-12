@@ -41,6 +41,7 @@ import {
   DECREE_ACTION_TYPE,
   decreeColumnViews,
   decreeTally,
+  isDecreeStep,
   type DecreeColumnView,
 } from '#ui/decreeColumns.ts'
 import { phaseIconFor } from '#ui/phaseIcons.ts'
@@ -354,6 +355,7 @@ export function ActionTray(): JSX.Element | null {
         {decreeColumns !== null ? (
           <DecreeColumns
             columns={decreeColumns}
+            isDisabled={!isDecreeStep(tray.state)}
             onSelectAction={callbacks.onSelectAction}
           />
         ) : null}

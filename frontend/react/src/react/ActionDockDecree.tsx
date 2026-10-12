@@ -12,6 +12,8 @@ import type {
 
 /** The four columns side by side, as on the Eyrie faction board. */
 const DECREE_CLASS_NAME = 'action-dock__decree flex flex-row gap-2.5'
+/** Not the step that resolves the Decree: pale and grey (no card has an action yet). */
+const DECREE_DISABLED_CLASS_NAME = 'cursor-root-not-allowed opacity-45 grayscale'
 const COLUMN_CLASS_NAME = 'flex w-15.5 flex-col items-center'
 /** Round medallion naming the column by its action. */
 const HEAD_CLASS_NAME =
@@ -169,10 +171,19 @@ function DecreeColumn(props: {
 /** Eyrie Daylight: the Decree is the tray, a medallion and a strip per column. */
 export function DecreeColumns(props: {
   columns: readonly DecreeColumnView[]
+  /** Before the step that resolves the Decree: shown, not playable. */
+  isDisabled: boolean
   onSelectAction: (spec: ActionSpec) => void
 }): JSX.Element {
   return (
-    <div className={DECREE_CLASS_NAME}>
+    <div
+      className={
+        props.isDisabled
+          ? `${DECREE_CLASS_NAME} ${DECREE_DISABLED_CLASS_NAME}`
+          : DECREE_CLASS_NAME
+      }
+      aria-disabled={props.isDisabled}
+    >
       {props.columns.map((view) => (
         <DecreeColumn
           key={view.column}

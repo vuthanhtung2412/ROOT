@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { GameState } from '#api/client.ts'
 import { makeActionSpec, makeGameState } from '#test/factories.ts'
-import { decreeColumnViews, decreeTally } from '#ui/decreeColumns.ts'
+import {
+  decreeColumnViews,
+  decreeTally,
+  isDecreeStep,
+} from '#ui/decreeColumns.ts'
 
 const EYRIE_SEAT = 1
 const RECRUIT_CARD_ID = 'VIZIER#1'
@@ -56,12 +60,6 @@ describe('decreeColumnViews', () => {
     expect(decreeColumnViews(birdsong, EYRIE_SEAT, [])).toBeNull()
   })
 
-  it('is null in the Daylight craft step, before the Decree is resolved', () => {
-    const craftStep = makeEyrieDecreeState({ step: 'craft' })
-
-    expect(decreeColumnViews(craftStep, EYRIE_SEAT, [])).toBeNull()
-  })
-
   it('orders the columns and tells resolved, current and later apart', () => {
     const columns = decreeColumnViews(makeEyrieDecreeState(), EYRIE_SEAT, [])
 
@@ -106,6 +104,19 @@ describe('decreeColumnViews', () => {
     const columns = decreeColumnViews(resolved, EYRIE_SEAT, [])
 
     expect(columns?.every((view) => view.state === 'done')).toBe(true)
+  })
+})
+
+describe('isDecreeStep', () => {
+  it('is true in the Daylight step that resolves the Decree', () => {
+    expect(isDecreeStep(makeEyrieDecreeState())).toBe(true)
+  })
+
+  it('is false in the Daylight craft step: the columns show, disabled', () => {
+    const craftStep = makeEyrieDecreeState({ step: 'craft' })
+
+    expect(isDecreeStep(craftStep)).toBe(false)
+    expect(decreeColumnViews(craftStep, EYRIE_SEAT, [])).not.toBeNull()
   })
 })
 
