@@ -23,7 +23,10 @@ function addToDecreeMessage(draft: AddToDecreeDraft): string {
     : CONFIRM_MESSAGE
 }
 
-/** Prompt of an Add to Decree being staged: nothing is sent before Confirm. */
+/**
+ * Prompt of an Add to Decree being staged. Confirm and take back sit on the
+ * Decree panel, not on the banner: nothing is sent before its Confirm.
+ */
 export function addToDecreeOutcome(draft: AddToDecreeDraft): ComposerOutcome {
   return {
     kind: 'incomplete',
@@ -31,8 +34,8 @@ export function addToDecreeOutcome(draft: AddToDecreeDraft): ComposerOutcome {
       message: addToDecreeMessage(draft),
       highlightClearings: [],
       enabledCardIds: stageableDecreeCardIds(draft),
-      canConfirm: draft.selected.length > 0,
-      canCancel: true,
+      canConfirm: false,
+      canCancel: false,
     },
   }
 }

@@ -44,16 +44,15 @@ function enabledCardIdsOf(draft: AddToDecreeDraft): string[] | null {
 }
 
 describe('addToDecreeOutcome', () => {
-  it('can be confirmed once a card is staged', () => {
-    const empty = addToDecreeOutcome(makeAddToDecreeDraft())
-    const staged = addToDecreeOutcome(
+  it('leaves confirm and take back to the Decree panel', () => {
+    const outcome = addToDecreeOutcome(
       makeAddToDecreeDraft({
         selected: [{ cardId: FOX_CARD_ID, column: 'move' }],
       }),
     )
 
-    expect(empty.kind === 'incomplete' && empty.prompt.canConfirm).toBe(false)
-    expect(staged.kind === 'incomplete' && staged.prompt.canConfirm).toBe(true)
+    expect(outcome.kind === 'incomplete' && outcome.prompt.canConfirm).toBe(false)
+    expect(outcome.kind === 'incomplete' && outcome.prompt.canCancel).toBe(false)
   })
 
   it('enables every hand card while nothing is staged', () => {

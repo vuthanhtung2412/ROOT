@@ -11,6 +11,7 @@ import {
   CraftedCardsModal,
 } from '#react/CardGalleryModal.tsx'
 import { CardHand } from '#react/CardHand.tsx'
+import { DecreePanel } from '#react/DecreePanel.tsx'
 import { FactionBoardModal } from '#react/FactionBoardModal.tsx'
 import {
   GameDrawer,
@@ -36,6 +37,7 @@ export function ReactHud(): JSX.Element {
       <BattleClearingBadge />
       <PlayerRail />
       <CardFlightLayer />
+      <DecreePanel />
       <ActionTray />
       <CardHand />
       <StatusMessage />

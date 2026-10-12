@@ -47,11 +47,22 @@ function fanDegreesOf(cardIndex: number, cardCount: number): number {
   return (cardIndex - lastCardIndex / 2) * stepDegrees
 }
 
+const NO_CARD_IDS: readonly string[] = []
+
+function stagedDecreeCardIds(): readonly string[] {
+  return getHudSnapshot().decreePanel?.view.stagedCardIds ?? NO_CARD_IDS
+}
+
 export function CardHand(): JSX.Element | null {
   const hand = useSyncExternalStore(
     subscribeHud,
     () => getHudSnapshot().cardHand,
     () => getHudSnapshot().cardHand,
+  )
+  const stagedCardIds: readonly string[] = useSyncExternalStore(
+    subscribeHud,
+    stagedDecreeCardIds,
+    stagedDecreeCardIds,
   )
   if (hand === null) {
     return null
@@ -60,7 +71,10 @@ export function CardHand(): JSX.Element | null {
     hand.localSeat ??
     buildTurnBannerViewModel(hand.state, hand.legalActions).actorSeat
   const player = hand.state.players.find((entry) => entry.seat === seat)
-  const cards = player?.hand ?? []
+  // A card staged in the Decree panel lies there, not in the hand.
+  const cards = (player?.hand ?? []).filter(
+    (card) => !stagedCardIds.includes(card.id),
+  )
   if (cards.length === 0) {
     return null
   }

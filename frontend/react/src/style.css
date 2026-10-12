@@ -27,6 +27,8 @@
   /* Faction colors (FACTION_COLORS in game/theme.ts). */
   --color-marquise: #c45c26;
   --color-eyrie: #3a5f8a;
+  /* Inset of a Decree panel slot. */
+  --color-eyrie-deep: #27456a;
   --color-alliance: #3d7a4a;
   --color-vagabond: #5a5a5a;
   --color-lizard: #c9b530;

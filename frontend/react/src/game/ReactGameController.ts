@@ -77,6 +77,7 @@ import type { BoardLayout } from '#game/boardLayout.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { syncActionTray } from '#react/ActionTray.tsx'
+import { syncDecreePanel } from '#react/DecreePanel.tsx'
 import { syncBattleOverlayView } from '#react/BattleOverlay.tsx'
 import type { BattleOverlaySyncTarget } from '#game/battleOverlayController.ts'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
@@ -158,6 +159,8 @@ export class ReactGameController {
   private marquiseBoard = createMarquiseBoardComposerHooks()
   private marquiseCards = createMarquiseCardComposerHooks()
   private eyrieComposer = createEyrieComposerHooks()
+  /** Decree panel shown while an Add to Decree is staged; toggled from the dock. */
+  private isDecreePanelOpen = true
   private vagabondComposer = createVagabondComposerHooks()
   private dominanceComposer = createDominanceComposerHooks()
   private allianceComposer = createAllianceComposerHooks()
@@ -400,6 +403,17 @@ export class ReactGameController {
           catalog: held.catalog,
         })
       },
+      onDecreeCardStaged: (option) => {
+        this.applyDecreeStaging(this.eyrieComposer.decreeStaging.stage(option))
+      },
+      onDecreeCardTakenBack: (cardId) => {
+        this.applyDecreeStaging(
+          this.eyrieComposer.decreeStaging.takeBack(cardId),
+        )
+      },
+      onDecreeStagingCleared: () => {
+        this.applyDecreeStaging(this.eyrieComposer.decreeStaging.clear())
+      },
     })
 
     this.layout = await loadGameSceneBoardLayout()
@@ -581,6 +595,14 @@ export class ReactGameController {
         ...this.eventComposer.getPromptOptions(),
       ],
       getDiscardSelection: () => {
+        const eyrieDraft = this.eyrieComposer.getDraft()
+        // Add to Decree: the picked card stands out until it is laid in a column.
+        if (
+          eyrieDraft.type === 'addToDecree' &&
+          eyrieDraft.pendingCardId !== null
+        ) {
+          return [eyrieDraft.pendingCardId]
+        }
         const discardDraft = this.marquiseCards.getDraft()
         return discardDraft.type === 'discardMany'
           ? discardDraft.selected
@@ -605,7 +627,34 @@ export class ReactGameController {
       },
       getOverlayKind: () => this.eventComposer.getOverlayKind(),
     })
+    this.syncDecreePanelFromDraft()
     this.syncActionTrayFromLatestSnapshot()
+  }
+
+  /** A change staged on the Decree panel; null when no Add to Decree is staged. */
+  private applyDecreeStaging(outcome: ComposerOutcome | null): void {
+    if (outcome !== null) {
+      this.applyComposerOutcome(this.composer.adopt(outcome))
+    }
+  }
+
+  private syncDecreePanelFromDraft(): void {
+    const draft = this.eyrieComposer.getDraft()
+    const snapshot = this.latestSnapshot
+    const state: GameState | null = snapshot?.state ?? null
+    if (draft.type !== 'addToDecree') {
+      // The next Add to Decree opens its panel again.
+      this.isDecreePanelOpen = true
+    }
+    syncDecreePanel({
+      draft,
+      state,
+      actorSeat:
+        snapshot !== null && state !== null
+          ? buildTurnBannerViewModel(state, snapshot.legalActions).actorSeat
+          : 0,
+      isOpen: this.isDecreePanelOpen,
+    })
   }
 
   private actionTraySyncOptions(

@@ -44,9 +44,6 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
 
   function restage(staged: AddToDecreeDraft): ComposerOutcome {
     draft = staged
-    promptOptions = staged.options
-      .filter((option) => option.cardId === staged.pendingCardId)
-      .map((option) => ({ label: option.column, value: option.column }))
     return addToDecreeOutcome(staged)
   }
 
