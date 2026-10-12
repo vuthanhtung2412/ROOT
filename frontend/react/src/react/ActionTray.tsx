@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore, type JSX } from 'react'
+import { useRef, useState, useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
 import { LuUndo2 } from 'react-icons/lu'
 import type { ActionSpec } from '#api/client.ts'
@@ -44,6 +44,14 @@ import {
   type DecreeColumnView,
 } from '#ui/decreeColumns.ts'
 import { phaseIconFor } from '#ui/phaseIcons.ts'
+import {
+  EMPTY_PHASE_TILE_MEMORY,
+  phaseTilesOf,
+  rememberPhaseTiles,
+  type KeyedAction,
+  type PhaseTile,
+  type PhaseTileMemory,
+} from '#ui/phaseTiles.ts'
 
 function isBlockingHudModalOpen(): boolean {
   if (isFactionBoardOpen() === true || isCraftedCardsOpen() === true) {
@@ -87,6 +95,10 @@ const TILE_CLASS_NAME =
 /** End phase cannot be taken back once the next phase acts: marked rust. */
 const END_PHASE_TILE_CLASS_NAME =
   '[--root-paper-color:var(--color-rust)] text-parchment'
+/** Grid cell of a tile. The turn square reads End phase, Undo, then the rest. */
+const TILE_SLOT_CLASS_NAME = 'flex'
+const END_PHASE_TILE_SLOT_CLASS_NAME = 'flex -order-2'
+const UNDO_TILE_SLOT_CLASS_NAME = 'flex -order-1'
 /** Suit of the card an action plays (Decree), pinned on the tile corner. */
 const TILE_SUIT_BADGE_CLASS_NAME =
   'pointer-events-none absolute -right-1.5 -bottom-1.5 size-6 object-contain'
@@ -105,6 +117,8 @@ function ActionTile(props: {
   spec: ActionSpec
   pending: unknown
   state: ActionTrayState['state']
+  /** Taken earlier this phase and no longer legal: stays in place, faded. */
+  isSpent?: boolean
   onSelectAction: (spec: ActionSpec) => void
 }): JSX.Element {
   const label: string = formatActionLabel(props.spec, props.pending, props.state)
@@ -120,7 +134,10 @@ function ActionTile(props: {
     suitTexture !== null ? imagePathForAssetKey(suitTexture) : null
   const isEndPhase: boolean = props.spec.type === END_PHASE_ACTION_TYPE
   return (
-    <Tooltip label={label} className="flex">
+    <Tooltip
+      label={label}
+      className={isEndPhase ? END_PHASE_TILE_SLOT_CLASS_NAME : TILE_SLOT_CLASS_NAME}
+    >
       <button
         type="button"
         className={
@@ -128,6 +145,7 @@ function ActionTile(props: {
             ? `${TILE_CLASS_NAME} ${END_PHASE_TILE_CLASS_NAME}`
             : TILE_CLASS_NAME
         }
+        disabled={props.isSpent === true}
         onClick={() => {
           props.onSelectAction(props.spec)
         }}
@@ -149,7 +167,7 @@ function ActionTile(props: {
 
 function UndoTile(props: { onUndo: () => void }): JSX.Element {
   return (
-    <Tooltip label={UNDO_LABEL} className="flex">
+    <Tooltip label={UNDO_LABEL} className={UNDO_TILE_SLOT_CLASS_NAME}>
       <button
         type="button"
         className={`game-drawer__undo ${TILE_CLASS_NAME}`}
@@ -160,14 +178,6 @@ function UndoTile(props: { onUndo: () => void }): JSX.Element {
       </button>
     </Tooltip>
   )
-}
-
-/** End phase leads the turn square; the other turn controls follow. */
-function endPhaseFirst(actions: readonly ActionSpec[]): ActionSpec[] {
-  return [
-    ...actions.filter((spec) => spec.type === END_PHASE_ACTION_TYPE),
-    ...actions.filter((spec) => spec.type !== END_PHASE_ACTION_TYPE),
-  ]
 }
 
 function PhaseTab(props: {
@@ -206,6 +216,7 @@ export function ActionTray(): JSX.Element | null {
     canUndoFromStore,
   )
   const [isCardsPanelOpen, setIsCardsPanelOpen] = useState<boolean>(false)
+  const phaseTileMemoryRef = useRef<PhaseTileMemory>(EMPTY_PHASE_TILE_MEMORY)
   // Modal open gated live from store so veil/X close re-shows tray
   // without needing a board re-sync (options.disabled stays stale otherwise).
   if (tray === null || anyModalOpen || tray.options?.disabled === true) {
@@ -259,9 +270,27 @@ export function ActionTray(): JSX.Element | null {
       : trayBudgetLabel(tray.state)
   const phaseActions: readonly ActionSpec[] =
     regions.find((region) => region.id === ACTIONS_REGION_ID)?.actions ?? []
-  const turnActions: readonly ActionSpec[] = endPhaseFirst(
-    regions.find((region) => region.id === META_REGION_ID)?.actions ?? [],
+  const liveTiles: readonly KeyedAction[] = phaseActions.map((spec) => ({
+    key: `${spec.type}::${formatActionLabel(spec, tray.pending, tray.state)}`,
+    spec,
+  }))
+  // Answers to a pending event are not actions of the phase: nothing is kept.
+  const phaseKey: string | null =
+    tray.pending !== undefined || tray.state === undefined
+      ? null
+      : `${String(tray.state.turn)}:${String(tray.actorSeat)}:${phase}`
+  const memory: PhaseTileMemory = rememberPhaseTiles(
+    phaseTileMemoryRef.current,
+    phaseKey,
+    liveTiles,
   )
+  phaseTileMemoryRef.current = memory
+  const phaseTiles: readonly PhaseTile[] =
+    phaseKey === null
+      ? liveTiles.map((tile) => ({ ...tile, isSpent: false }))
+      : phaseTilesOf(memory, liveTiles)
+  const turnActions: readonly ActionSpec[] =
+    regions.find((region) => region.id === META_REGION_ID)?.actions ?? []
   const hasTurnTiles: boolean = turnActions.length > 0 || canUndo
   const callbacks = getHudCallbacks()
   const faction: string | undefined = tray.state?.players.find(
@@ -295,14 +324,15 @@ export function ActionTray(): JSX.Element | null {
             }}
           />
         ) : null}
-        {phaseActions.length > 0 ? (
+        {phaseTiles.length > 0 ? (
           <div className={TILE_GRID_CLASS_NAME}>
-            {phaseActions.map((spec, index) => (
+            {phaseTiles.map((tile) => (
               <ActionTile
-                key={`${spec.type}-${String(index)}`}
-                spec={spec}
+                key={tile.key}
+                spec={tile.spec}
                 pending={tray.pending}
                 state={tray.state}
+                isSpent={tile.isSpent}
                 onSelectAction={callbacks.onSelectAction}
               />
             ))}
@@ -314,7 +344,7 @@ export function ActionTray(): JSX.Element | null {
             onSelectAction={callbacks.onSelectAction}
           />
         ) : null}
-        {(phaseActions.length > 0 || decreeColumns !== null) && hasTurnTiles ? (
+        {(phaseTiles.length > 0 || decreeColumns !== null) && hasTurnTiles ? (
           <span className={DOCK_DIVIDER_CLASS_NAME} aria-hidden="true" />
         ) : null}
         {hasTurnTiles ? (
