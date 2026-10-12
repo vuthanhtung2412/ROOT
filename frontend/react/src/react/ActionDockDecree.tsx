@@ -1,7 +1,8 @@
 import type { JSX } from 'react'
 import type { IconType } from 'react-icons'
 import type { ActionSpec } from '#api/client.ts'
-import { imagePathForAssetKey, suitTextureKey } from '#assets/gameAssets.ts'
+import { suitTextureKey } from '#assets/gameAssets.ts'
+import { SuitIcon } from '#react/SuitIcon.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 import { actionIconFor } from '#ui/actionIcons.ts'
 import type {
@@ -25,16 +26,11 @@ const HEAD_DONE_CLASS_NAME = 'opacity-50'
 const STRIP_CLASS_NAME =
   'root-paper root-paper-fine -mt-3 flex min-h-21 w-14.5 flex-row flex-wrap content-start justify-center gap-1 px-1 pt-4.5 pb-2 [--root-paper-color:var(--color-parchment-shadow)]'
 const MARK_CLASS_NAME = 'block size-5.5 object-contain'
-const MARK_RESOLVED_CLASS_NAME = 'grayscale'
 /** Holds a suit and, once resolved, the stroke crossing it out. */
 const MARK_FRAME_CLASS_NAME = 'relative block'
 /** A resolved suit fades, outline included; the stroke over it does not. */
 const MARK_ART_CLASS_NAME = 'block'
-const MARK_ART_RESOLVED_CLASS_NAME = 'opacity-35'
-const BIRD_SUIT = 'bird'
-/** The pale bird suit is lost on the strip: an ink line follows its shape. */
-const BIRD_MARK_OUTLINE_CLASS_NAME =
-  '[filter:drop-shadow(1px_0_0_var(--color-ink-deep))_drop-shadow(-1px_0_0_var(--color-ink-deep))_drop-shadow(0_1px_0_var(--color-ink-deep))_drop-shadow(0_-1px_0_var(--color-ink-deep))]'
+const MARK_ART_RESOLVED_CLASS_NAME = 'opacity-35 grayscale'
 /** Diagonal stroke over a resolved card. */
 const MARK_CROSS_CLASS_NAME =
   'pointer-events-none absolute top-1/2 left-1/2 h-0.5 w-[130%] -translate-1/2 -rotate-45 bg-ink-deep'
@@ -57,39 +53,23 @@ function SuitMark(props: {
   card: DecreeCardMark
   onSelectAction: (spec: ActionSpec) => void
 }): JSX.Element | null {
-  const suitTexture: string | null =
-    props.card.suit !== null ? suitTextureKey(props.card.suit) : null
-  const suitImagePath: string | null =
-    suitTexture !== null ? imagePathForAssetKey(suitTexture) : null
-  if (suitImagePath === null) {
+  const suit: string | null = props.card.suit
+  if (suit === null || suitTextureKey(suit) === null) {
     return null
   }
   const label: string = markLabel(props.column, props.card)
   const spec: ActionSpec | null = props.card.spec
-  const outlineClassName: string =
-    props.card.suit === BIRD_SUIT
-      ? `${MARK_ART_CLASS_NAME} ${BIRD_MARK_OUTLINE_CLASS_NAME}`
-      : MARK_ART_CLASS_NAME
   if (spec === null || props.card.isResolved) {
     return (
       <span className={MARK_FRAME_CLASS_NAME}>
         <span
           className={
             props.card.isResolved
-              ? `${outlineClassName} ${MARK_ART_RESOLVED_CLASS_NAME}`
-              : outlineClassName
+              ? `${MARK_ART_CLASS_NAME} ${MARK_ART_RESOLVED_CLASS_NAME}`
+              : MARK_ART_CLASS_NAME
           }
         >
-          <img
-            className={
-              props.card.isResolved
-                ? `${MARK_CLASS_NAME} ${MARK_RESOLVED_CLASS_NAME}`
-                : MARK_CLASS_NAME
-            }
-            src={suitImagePath}
-            alt={label}
-            draggable={false}
-          />
+          <SuitIcon suit={suit} className={MARK_CLASS_NAME} alt={label} />
         </span>
         {props.card.isResolved ? (
           <span className={MARK_CROSS_CLASS_NAME} aria-hidden="true" />
@@ -106,14 +86,7 @@ function SuitMark(props: {
           props.onSelectAction(spec)
         }}
       >
-        <span className={outlineClassName}>
-          <img
-            className={MARK_CLASS_NAME}
-            src={suitImagePath}
-            alt=""
-            draggable={false}
-          />
-        </span>
+        <SuitIcon suit={suit} className={MARK_CLASS_NAME} />
         <span className="sr-only">{label}</span>
       </button>
     </Tooltip>

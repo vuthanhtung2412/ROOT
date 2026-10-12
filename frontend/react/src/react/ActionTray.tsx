@@ -2,7 +2,6 @@ import { useRef, useState, useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
 import { LuUndo2 } from 'react-icons/lu'
 import type { ActionSpec } from '#api/client.ts'
-import { imagePathForAssetKey, suitTextureKey } from '#assets/gameAssets.ts'
 import {
   getCardPileSnapshot,
   isCraftedCardsOpen,
@@ -16,6 +15,7 @@ import {
 } from '#game/hudStore.ts'
 import { CardsPanel, CardsTab } from '#react/ActionDockCards.tsx'
 import { DecreeColumns } from '#react/ActionDockDecree.tsx'
+import { SuitIcon } from '#react/SuitIcon.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 import type {
   ActionTrayState,
@@ -136,10 +136,6 @@ function ActionTile(props: {
     props.pending,
   )
   const ActionIcon: IconType = actionIconFor(art.iconKey)
-  const suitTexture: string | null =
-    art.suit !== null ? suitTextureKey(art.suit) : null
-  const suitImagePath: string | null =
-    suitTexture !== null ? imagePathForAssetKey(suitTexture) : null
   const isEndPhase: boolean = props.spec.type === END_PHASE_ACTION_TYPE
   return (
     <Tooltip
@@ -159,13 +155,8 @@ function ActionTile(props: {
         }}
       >
         <ActionIcon aria-hidden="true" />
-        {suitImagePath !== null ? (
-          <img
-            className={TILE_SUIT_BADGE_CLASS_NAME}
-            src={suitImagePath}
-            alt=""
-            draggable={false}
-          />
+        {art.suit !== null ? (
+          <SuitIcon suit={art.suit} className={TILE_SUIT_BADGE_CLASS_NAME} />
         ) : null}
         <span className="sr-only">{label}</span>
       </button>
