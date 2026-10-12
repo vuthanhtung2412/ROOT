@@ -13,7 +13,7 @@ export function isDecreeStep(state: GameState | undefined): boolean {
   return state?.phase === DAYLIGHT_PHASE && state.step === DECREE_STEP
 }
 /** Decree columns, resolved left to right. Rule: Eyrie 7.5.2. */
-const DECREE_COLUMN_ORDER: readonly string[] = ['recruit', 'move', 'battle', 'build']
+export const DECREE_COLUMN_ORDER: readonly string[] = ['recruit', 'move', 'battle', 'build']
 
 /** `done`: resolved. `now`: the column being resolved. `later`: still to come. */
 export type DecreeColumnState = 'done' | 'now' | 'later'
@@ -33,7 +33,7 @@ export type DecreeColumnView = {
   cards: readonly DecreeCardMark[]
 }
 
-type DecreeCard = { id: string }
+export type DecreeCard = { id: string }
 
 function isDecreeCard(entry: unknown): entry is DecreeCard {
   return (
@@ -43,7 +43,7 @@ function isDecreeCard(entry: unknown): entry is DecreeCard {
   )
 }
 
-function decreeCardsOfColumn(decree: object, column: string): DecreeCard[] {
+export function decreeCardsOfColumn(decree: object, column: string): DecreeCard[] {
   const cards: unknown = Reflect.get(decree, column)
   return Array.isArray(cards) ? cards.filter(isDecreeCard) : []
 }
@@ -97,6 +97,21 @@ function columnState(column: string, progress: DecreeProgress): DecreeColumnStat
     : 'later'
 }
 
+/** Decree of the Eyrie sitting at this seat; null for any other faction. */
+export function eyrieDecreeOf(state: GameState, seat: number): object | null {
+  const player = state.players.find((entry) => entry.seat === seat)
+  const board: unknown = player?.board
+  if (
+    player?.faction !== EYRIE_FACTION ||
+    typeof board !== 'object' ||
+    board === null
+  ) {
+    return null
+  }
+  const decree: unknown = Reflect.get(board, 'decree')
+  return typeof decree === 'object' && decree !== null ? decree : null
+}
+
 /**
  * The four Decree columns of the Eyrie taking its Daylight, with what is
  * resolved and what can be resolved now. Null for any other seat or phase.
@@ -109,17 +124,8 @@ export function decreeColumnViews(
   if (state === undefined || state.phase !== DAYLIGHT_PHASE) {
     return null
   }
-  const actor = state.players.find((player) => player.seat === actorSeat)
-  const board: unknown = actor?.board
-  if (
-    actor?.faction !== EYRIE_FACTION ||
-    typeof board !== 'object' ||
-    board === null
-  ) {
-    return null
-  }
-  const decree: unknown = Reflect.get(board, 'decree')
-  if (typeof decree !== 'object' || decree === null) {
+  const decree: object | null = eyrieDecreeOf(state, actorSeat)
+  if (decree === null) {
     return null
   }
   const progress: DecreeProgress = decreeProgress(state)
