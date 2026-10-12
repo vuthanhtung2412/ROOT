@@ -39,7 +39,7 @@ export type MapPiecesInput = {
   river: readonly MapGroundPoint[]
 }
 
-const BUILDING_KIND = 'building'
+export const BUILDING_KIND = 'building'
 /** Piece kinds drawn as meeples. */
 const FIGURE_KINDS: ReadonlySet<string> = new Set<string>(['warrior', 'pawn'])
 
@@ -175,6 +175,11 @@ function rowGrounds(
   )
 }
 
+/** Key of the map piece of a building: it stands alone, never in a stack. */
+export function buildingPieceKey(clearingId: number, pieceId: string): string {
+  return `${String(clearingId)}-${pieceId}`
+}
+
 /** One piece (not a stack) as a map piece: a building owns a whole slot. */
 function singlePiece(
   piece: PieceViewModel,
@@ -185,7 +190,7 @@ function singlePiece(
   const textureKey: string =
     stack === undefined ? '' : textureKeyForStack(stack, clearingId)
   return {
-    key: `${String(clearingId)}-${piece.id}`,
+    key: buildingPieceKey(clearingId, piece.id),
     shape,
     textureKey,
     texturePath: imagePathForAssetKey(textureKey),

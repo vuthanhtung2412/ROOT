@@ -5,6 +5,7 @@ import {
   useSyncExternalStore,
   type JSX,
 } from 'react'
+import type { BoardEffectBatch } from '#game/boardEffects.ts'
 import { FALL_BOARD_LAYOUT, type BoardLayout } from '#game/boardLayout.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import type {
@@ -25,6 +26,10 @@ import {
   BoardEffectsLayer,
   type BoardEffectPosition,
 } from '#react/BoardEffectsLayer.tsx'
+import {
+  builtPieceKeys,
+  withoutBuildEffects,
+} from '#react/map3d/buildEffects.ts'
 import { mapPiecesForBoard } from '#react/map3d/mapPieces.ts'
 import { useMapScene, type MapSceneHandle } from '#react/map3d/useMapScene.ts'
 import {
@@ -192,6 +197,24 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
     river,
   ])
 
+  const effects: BoardEffectBatch | undefined = props.effects
+  // A batch already there when the map mounts is old news: do not replay it.
+  const playedBuildSequence = useRef<number | undefined>(effects?.sequence)
+  useEffect(() => {
+    if (
+      effects === undefined ||
+      effects.sequence === playedBuildSequence.current
+    ) {
+      return
+    }
+    playedBuildSequence.current = effects.sequence
+    scene?.playBuild(builtPieceKeys(effects))
+  }, [scene, effects])
+  const flatEffects: BoardEffectBatch | undefined = useMemo(
+    () => (effects === undefined ? undefined : withoutBuildEffects(effects)),
+    [effects],
+  )
+
   useEffect(() => {
     if (scene === null) {
       return
@@ -332,9 +355,9 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
             ) : null,
           )
         : null}
-      {props.effects !== undefined && factions !== undefined ? (
+      {flatEffects !== undefined && factions !== undefined ? (
         <BoardEffectsLayer
-          batch={props.effects}
+          batch={flatEffects}
           factions={factions}
           hitCenters={hitCenters}
           forestCenters={forestCenters}

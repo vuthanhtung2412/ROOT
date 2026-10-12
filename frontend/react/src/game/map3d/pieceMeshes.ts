@@ -16,6 +16,11 @@ import {
   type BufferGeometry,
   type Material,
 } from 'three'
+import {
+  createBuildAnimations,
+  type BuildAnimations,
+  type BuildSite,
+} from '#game/map3d/buildAnimation.ts'
 import type { PieceModel } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
@@ -49,11 +54,16 @@ export type PieceLayer = {
   setPieces: (pieces: readonly MapPiece[]) => void
   /** 0 = zoomed all the way out, 1 = all the way in. Call once per frame. */
   setZoom: (zoom: number) => void
+  /** The pieces with these keys were just built: play them going up. */
+  playBuild: (pieceKeys: readonly string[]) => void
+  /** Call once per frame. */
+  update: (deltaSeconds: number) => void
   dispose: () => void
 }
 
 /** A piece on the map and the parts that change with the zoom. */
 type PieceView = {
+  ground: MapGroundPoint
   label: Group
   model: Object3D | null
   modelScale: number
@@ -177,6 +187,10 @@ export function createPieceLayer(
   pieceModels: ReadonlyMap<string, PieceModel>,
 ): PieceLayer {
   const group: Group = new Group()
+  const buildAnimations: BuildAnimations = createBuildAnimations()
+  // The pieces are rebuilt on every board update; the dust outlives them.
+  const layer: Group = new Group()
+  layer.add(group, buildAnimations.group)
   const textureLoader: TextureLoader = new TextureLoader()
   const iconMaterials: Map<string, SpriteMaterial> = new Map<
     string,
@@ -208,7 +222,10 @@ export function createPieceLayer(
   const slotPostMaterial: MeshStandardMaterial =
     standardMaterial(SLOT_POST_COLOR)
   let views: PieceView[] = []
+  let viewsByKey: Map<string, PieceView> = new Map<string, PieceView>()
   let currentZoom = 0
+  /** How much of their full size the models show at the current zoom. */
+  let currentGrowth = 0
 
   const iconMaterial = (piece: MapPiece): SpriteMaterial => {
     const materialKey: string = piece.texturePath ?? colorToCss(piece.color)
@@ -345,32 +362,32 @@ export function createPieceLayer(
     }
   }
 
+  /**
+   * Icons track the full zoom (0..1), not only the model-rise window, so
+   * they keep getting smaller the closer the camera gets.
+   */
+  const labelSize = (view: PieceView): number =>
+    MathUtils.lerp(
+      LABEL_FAR_SIZE,
+      view.model === null ? LABEL_NEAR_SIZE_WITHOUT_MODEL : LABEL_NEAR_SIZE,
+      MathUtils.smoothstep(currentZoom, 0, 1),
+    )
+
   const applyZoom = (): void => {
     const growth: number = MathUtils.smoothstep(
       currentZoom,
       MODEL_RISE_START_ZOOM,
       MODEL_RISE_END_ZOOM,
     )
-    // Icons track the full zoom (0..1), not only the model-rise window, so
-    // they keep getting smaller the closer the camera gets.
-    const iconShrink: number = MathUtils.smoothstep(currentZoom, 0, 1)
+    currentGrowth = growth
     for (const view of views) {
+      view.label.scale.setScalar(labelSize(view))
       if (view.model === null) {
-        view.label.scale.setScalar(
-          MathUtils.lerp(
-            LABEL_FAR_SIZE,
-            LABEL_NEAR_SIZE_WITHOUT_MODEL,
-            iconShrink,
-          ),
-        )
         view.label.position.y = LABEL_FAR_HEIGHT
         continue
       }
       view.model.visible = growth > MODEL_HIDDEN_BELOW_GROWTH
       view.model.scale.setScalar(view.modelScale * growth)
-      view.label.scale.setScalar(
-        MathUtils.lerp(LABEL_FAR_SIZE, LABEL_NEAR_SIZE, iconShrink),
-      )
       view.label.position.y = MathUtils.lerp(
         LABEL_FAR_HEIGHT,
         view.modelTop + LABEL_CLEARANCE,
@@ -379,11 +396,29 @@ export function createPieceLayer(
     }
   }
 
+  const buildSiteOf = (pieceKey: string): BuildSite | undefined => {
+    const view: PieceView | undefined = viewsByKey.get(pieceKey)
+    return view === undefined
+      ? undefined
+      : {
+          ground: view.ground,
+          model: view.model,
+          riseHeight: view.modelTop * currentGrowth,
+          label: view.label,
+          labelSize: labelSize(view),
+        }
+  }
+
   return {
-    group,
+    group: layer,
     setPieces: (pieces: readonly MapPiece[]): void => {
       group.clear()
       views = []
+      viewsByKey = new Map<string, PieceView>()
+      const addView = (pieceKey: string, view: PieceView): void => {
+        views.push(view)
+        viewsByKey.set(pieceKey, view)
+      }
       for (const piece of pieces) {
         const holder: Group = new Group()
         holder.position.set(piece.ground.x, 0, piece.ground.z)
@@ -400,13 +435,20 @@ export function createPieceLayer(
           piece.textureKey,
         )
         if (pieceModel === undefined) {
-          views.push({ label, model: null, modelScale: 1, modelTop: 0 })
+          addView(piece.key, {
+            ground: piece.ground,
+            label,
+            model: null,
+            modelScale: 1,
+            modelTop: 0,
+          })
           continue
         }
         const created: { model: Object3D; scale: number; top: number } =
           createModel(piece, pieceModel)
         holder.add(created.model)
-        views.push({
+        addView(piece.key, {
+          ground: piece.ground,
           label,
           model: created.model,
           modelScale: created.scale,
@@ -422,8 +464,13 @@ export function createPieceLayer(
       currentZoom = zoom
       applyZoom()
     },
+    playBuild: buildAnimations.play,
+    update: (deltaSeconds: number): void => {
+      buildAnimations.update(deltaSeconds, buildSiteOf)
+    },
     dispose: (): void => {
       group.clear()
+      buildAnimations.dispose()
       for (const geometry of [
         slotGeometry,
         slotFloorGeometry,

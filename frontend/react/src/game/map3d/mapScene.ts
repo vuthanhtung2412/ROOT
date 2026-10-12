@@ -52,6 +52,8 @@ export type MapViewPoint = {
 export type MapScene = {
   resize: (frame: MapViewFrame) => void
   setPieces: (pieces: readonly MapPiece[]) => void
+  /** The pieces with these keys were just built: play them going up. */
+  playBuild: (pieceKeys: readonly string[]) => void
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
   setHighlightedForests: (forestIndexes: ReadonlySet<number>) => void
   /** Fade the light to that of a phase of the turn. */
@@ -133,6 +135,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     previousMilliseconds = nowMilliseconds
     cameraRig.update(deltaSeconds)
     pieceLayer.setZoom(cameraRig.zoom())
+    pieceLayer.update(deltaSeconds)
     groundMarkers.setZoom(cameraRig.zoom())
     daylight.update(deltaSeconds)
     riverFlow.update(deltaSeconds)
@@ -148,6 +151,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
   return {
     resize,
     setPieces: pieceLayer.setPieces,
+    playBuild: pieceLayer.playBuild,
     setClearingRings: groundMarkers.setClearingRings,
     setHighlightedForests: groundMarkers.setHighlightedForests,
     setTimeOfDay: daylight.setTimeOfDay,
