@@ -5,6 +5,7 @@ import {
   type BoardLayout,
   type ClearingSuit,
 } from '#game/boardLayout.ts'
+import type { CampfireSite } from '#game/map3d/campfires.ts'
 import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import type { ForestGround } from '#game/map3d/groundMarkers.ts'
 import { loadMapModels, type MapModels } from '#game/map3d/mapModels.ts'
@@ -22,6 +23,7 @@ import {
   type MapWorldSize,
   type NormalizedMapPoint,
 } from '#game/map3d/mapWorldSpace.ts'
+import { occupiedGroundsOfClearing } from '#react/map3d/mapPieces.ts'
 import { fallForestLayouts, type FallForestLayout } from '@root/lib/fall-metadata'
 
 export type MapSceneHandle = {
@@ -124,6 +126,15 @@ export function useMapScene(
       frame,
       timeOfDay: initialTimeOfDay.current,
       forests: forestGrounds,
+      campfireSites: terrain.clearings.map(
+        (clearing: ClearingGround): CampfireSite => ({
+          clearing,
+          occupied: occupiedGroundsOfClearing({
+            clearing,
+            river: terrain.river,
+          }),
+        }),
+      ),
       suitTexturePaths: suitTexturePathsFor(terrain.clearings),
     })
     const stopListening: () => void = created.onViewChanged((): void => {

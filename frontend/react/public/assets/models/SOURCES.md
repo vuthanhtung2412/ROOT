@@ -63,6 +63,20 @@ Required credit for the ruin:
 > by indigo5367 (https://sketchfab.com/indigo5367) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+## `props/` — scenery of the clearings
+
+| File | What | Made from | Licence |
+|------|------|-----------|---------|
+| `campfire.glb` | Campfire in the middle of every clearing (logs in a ring of stones; flames and sparks are drawn by `src/game/map3d/campfires.ts`) | "Campfire" by J-Toastie — https://poly.pizza/m/bAjGJYCozp — unmodified | **CC-BY 3.0**: credit required (line below) |
+
+Required credit for the campfire:
+
+> "Campfire" (https://poly.pizza/m/bAjGJYCozp) by J-Toastie, licensed under
+> CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+
+Kept in `resources/reference/models/props/`; copy it to `props/` on a fresh
+checkout.
+
 ## Git
 
 `*.glb` is ignored by the repository's `.gitignore`, so the model files of

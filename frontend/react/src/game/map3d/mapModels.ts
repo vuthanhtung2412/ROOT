@@ -5,7 +5,7 @@ import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
  * 3D models of the map (see `public/assets/models/SOURCES.md` for where each
  * comes from and its licence): trees from Kenney's Nature Kit, buildings
  * exported from the project's Blender file, meeples extruded from the
- * warrior token art.
+ * warrior token art, the campfire from Poly Pizza.
  */
 const MODEL_ROOT = '/assets/models'
 const MODEL_FILE_EXTENSION = '.glb'
@@ -25,6 +25,7 @@ const AUTUMN_MODEL_NAMES: readonly string[] = [
   'nature/tree_default_fall',
   'nature/tree_oak_fall',
 ]
+const CAMPFIRE_MODEL_NAME = 'props/campfire'
 
 /**
  * A meeple stands as modelled; a structure is centred on a building plot.
@@ -96,6 +97,8 @@ export type MapModels = {
   trees: TreeModels
   /** Model per token texture key; a piece without one is only its icon. */
   pieces: ReadonlyMap<string, PieceModel>
+  /** Logs in a ring of stones: the fire of every clearing. */
+  campfire: Group
 }
 
 async function loadModel(loader: GLTFLoader, name: string): Promise<Group> {
@@ -127,16 +130,18 @@ export async function loadMapModels(): Promise<MapModels> {
       ),
     ),
   ]
-  const [pine, leafy, autumn, pieceModels]: [
+  const [pine, leafy, autumn, pieceModels, campfire]: [
     Group[],
     Group[],
     Group[],
     Group[],
+    Group,
   ] = await Promise.all([
     loadModels(loader, PINE_MODEL_NAMES),
     loadModels(loader, LEAFY_MODEL_NAMES),
     loadModels(loader, AUTUMN_MODEL_NAMES),
     loadModels(loader, pieceModelNames),
+    loadModel(loader, CAMPFIRE_MODEL_NAME),
   ])
   const pieces: Map<string, PieceModel> = new Map<string, PieceModel>()
   for (const [textureKey, source] of pieceEntries) {
@@ -146,5 +151,5 @@ export async function loadMapModels(): Promise<MapModels> {
       pieces.set(textureKey, { kind: source.kind, model })
     }
   }
-  return { trees: { pine, leafy, autumn }, pieces }
+  return { trees: { pine, leafy, autumn }, pieces, campfire }
 }

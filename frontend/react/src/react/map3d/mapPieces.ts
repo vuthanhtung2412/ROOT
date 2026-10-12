@@ -345,6 +345,27 @@ function averageGround(points: readonly MapGroundPoint[]): MapGroundPoint {
   return { x: total.x / points.length, z: total.z / points.length }
 }
 
+/**
+ * Ground of a clearing that pieces take: its building slots and the front
+ * row of its armies. What is put there for show (a campfire) keeps away.
+ */
+export function occupiedGroundsOfClearing(site: SlotSite): MapGroundPoint[] {
+  const clearingId: number = site.clearing.clearingId
+  return [
+    ...slotSpots(site, FALL_CLEARING_SLOT_COUNTS[clearingId] ?? 0).map(
+      (spot: SlotSpot): MapGroundPoint => spot.ground,
+    ),
+    ...rowGrounds(site.clearing, {
+      count: STACKS_PER_ROW,
+      spacing: STACK_SPACING,
+      depth: site.clearing.radius * STACK_ROW_DEPTH_RATIO,
+      shift: hasFrontSlot(clearingId)
+        ? site.clearing.radius * STACK_ROW_SHIFT_BESIDE_FRONT_SLOT_RATIO
+        : 0,
+    }),
+  ]
+}
+
 /** Everything to stand on the 3D map for the current board. */
 export function mapPiecesForBoard(input: MapPiecesInput): MapPiece[] {
   const pieces: MapPiece[] = input.clearingGrounds.flatMap(

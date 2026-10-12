@@ -1,5 +1,10 @@
 import { PCFSoftShadowMap, Scene, Vector3, WebGLRenderer } from 'three'
 import {
+  createCampfires,
+  type Campfires,
+  type CampfireSite,
+} from '#game/map3d/campfires.ts'
+import {
   createDaylightRig,
   type DaylightRig,
   type TimeOfDay,
@@ -12,7 +17,7 @@ import {
 } from '#game/map3d/groundMarkers.ts'
 import { createMapCameraRig, type MapCameraRig } from '#game/map3d/mapCamera.ts'
 import type { MapModels } from '#game/map3d/mapModels.ts'
-import type { ClearingGround, MapTerrain } from '#game/map3d/mapTerrain.ts'
+import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type {
   MapGroundPoint,
   MapViewFrame,
@@ -39,6 +44,8 @@ export type MapSceneInput = {
   frame: MapViewFrame
   timeOfDay: TimeOfDay
   forests: readonly ForestGround[]
+  /** Each clearing with the ground its campfire must keep away from. */
+  campfireSites: readonly CampfireSite[]
   /** Suit icon of each clearing (clearing id → image path). */
   suitTexturePaths: ReadonlyMap<number, string>
 }
@@ -82,12 +89,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
   renderer.shadowMap.type = PCFSoftShadowMap
 
   const scene: Scene = new Scene()
-  const daylight: DaylightRig = createDaylightRig(
-    input.timeOfDay,
-    input.terrain.clearings.map(
-      (clearing: ClearingGround): MapGroundPoint => clearing.center,
-    ),
-  )
+  const daylight: DaylightRig = createDaylightRig(input.timeOfDay)
   scene.fog = daylight.fog
   scene.background = daylight.backdrop
   const groundMarkers: GroundMarkers = createGroundMarkers({
@@ -98,7 +100,14 @@ export function createMapScene(input: MapSceneInput): MapScene {
   })
   const pieceLayer: PieceLayer = createPieceLayer(input.models.pieces)
   const riverFlow: RiverFlow = createRiverFlow(input.terrain.river)
+  const campfires: Campfires = createCampfires({
+    model: input.models.campfire,
+    sites: input.campfireSites,
+    river: input.terrain.river,
+    timeOfDay: input.timeOfDay,
+  })
   scene.add(
+    campfires.group,
     ...daylight.lights,
     createGround(input.terrain),
     riverFlow.mesh,
@@ -144,6 +153,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     groundMarkers.setZoom(cameraRig.zoom())
     daylight.update(deltaSeconds)
     riverFlow.update(deltaSeconds)
+    campfires.update(deltaSeconds)
     groundMarkers.update(
       (nowMilliseconds - startMilliseconds) / MILLISECONDS_PER_SECOND,
     )
@@ -161,6 +171,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     setHighlightedForests: groundMarkers.setHighlightedForests,
     setTimeOfDay: (timeOfDay: TimeOfDay): void => {
       daylight.setTimeOfDay(timeOfDay)
+      campfires.setTimeOfDay(timeOfDay)
       groundMarkers.setTimeOfDay(timeOfDay)
     },
     projectToView: (ground: MapGroundPoint, height: number): MapViewPoint => {
@@ -182,6 +193,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
       cameraRig.dispose()
       pieceLayer.dispose()
       riverFlow.dispose()
+      campfires.dispose()
       renderer.dispose()
     },
   }

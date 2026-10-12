@@ -4,18 +4,16 @@ import {
   Fog,
   HemisphereLight,
   MathUtils,
-  PointLight,
   Vector3,
   type Light,
 } from 'three'
-import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 
 /**
  * Light of the woodland, by the phase of the turn:
  * - birdsong: dawn — a low orange sun in the east, peach sky, warm mist;
  * - daylight: a high warm sun, clear air;
- * - evening: blue moonlight on the forest, each clearing in its own pool of
- *   natural light.
+ * - evening: blue moonlight from the west, night-blue sky (the clearings
+ *   are lit by their campfires).
  * A change of phase fades from one to the next.
  */
 export type TimeOfDay = 'birdsong' | 'daylight' | 'evening'
@@ -42,8 +40,6 @@ type LightingPreset = {
   fogColor: number
   fogNear: number
   fogFar: number
-  /** Strength of the light that hangs over each clearing. */
-  clearingLightIntensity: number
 }
 
 const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
@@ -57,7 +53,6 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     fogColor: 0xc08a5c,
     fogNear: 140,
     fogFar: 520,
-    clearingLightIntensity: 0,
   },
   daylight: {
     sunColor: 0xfff0d2,
@@ -69,7 +64,6 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     fogColor: 0x2a4034,
     fogNear: 230,
     fogFar: 520,
-    clearingLightIntensity: 0,
   },
   evening: {
     sunColor: 0x6f9cff,
@@ -81,15 +75,8 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     fogColor: 0x15234a,
     fogNear: 190,
     fogFar: 520,
-    clearingLightIntensity: 150,
   },
 }
-
-/** Warm white, so a clearing shows its own colours under the blue night. */
-const CLEARING_LIGHT_COLOR = 0xfff1d6
-const CLEARING_LIGHT_HEIGHT = 9
-/** Past this distance from its lamp the forest gets none of its light. */
-const CLEARING_LIGHT_REACH = 20
 
 /** Share of the remaining difference closed per second. */
 const FADE_RATE_PER_SECOND = 2.2
@@ -108,22 +95,8 @@ export function timeOfDayForPhase(phase: string | null): TimeOfDay {
 }
 
 /** The sky, the sun and the fog of the scene, with their dimmer. */
-export function createDaylightRig(
-  initialTimeOfDay: TimeOfDay,
-  clearingCenters: readonly MapGroundPoint[],
-): DaylightRig {
+export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
   const initial: LightingPreset = LIGHTING_PRESETS[initialTimeOfDay]
-  const clearingLights: PointLight[] = clearingCenters.map(
-    (center: MapGroundPoint): PointLight => {
-      const light: PointLight = new PointLight(
-        CLEARING_LIGHT_COLOR,
-        initial.clearingLightIntensity,
-        CLEARING_LIGHT_REACH,
-      )
-      light.position.set(center.x, CLEARING_LIGHT_HEIGHT, center.z)
-      return light
-    },
-  )
   const sky: HemisphereLight = new HemisphereLight(
     initial.skyColor,
     initial.groundColor,
@@ -155,7 +128,7 @@ export function createDaylightRig(
   const targetSunPosition: Vector3 = new Vector3()
 
   return {
-    lights: [sky, sun, ...clearingLights],
+    lights: [sky, sun],
     fog,
     backdrop,
     setTimeOfDay: (timeOfDay: TimeOfDay): void => {
@@ -180,13 +153,6 @@ export function createDaylightRig(
       fog.near = MathUtils.lerp(fog.near, target.fogNear, step)
       fog.far = MathUtils.lerp(fog.far, target.fogFar, step)
       backdrop.copy(fog.color)
-      for (const light of clearingLights) {
-        light.intensity = MathUtils.lerp(
-          light.intensity,
-          target.clearingLightIntensity,
-          step,
-        )
-      }
     },
   }
 }
