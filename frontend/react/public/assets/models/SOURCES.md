@@ -37,7 +37,7 @@ Sizes are the longest side of the model, in metres of the Blender file:
 | `workshop.glb` | Marquise workshop | Quaternius "Blacksmith" (https://poly.pizza/m/bV52eTG1Aj) with Kenney Survival Kit anvil and hammer; roof recoloured orange | CC0 |
 | `base.glb` | Woodland Alliance base | Quaternius "Barracks" (https://poly.pizza/m/puD1kbV4kf); banners, flags and hall roof recoloured green | CC0 |
 | `trade-post.glb` | Riverfolk trade post | Quaternius "Market Stalls" (https://poly.pizza/m/jSqGy8V0MQ); awnings recoloured teal | CC0 |
-| `ruin.glb` | Ruin | five pieces of the Quaternius Modular Ruins Pack (https://poly.pizza/m/F2LAK03B0r) | CC0 |
+| `ruin.glb` | Ruin | "Old fortress" by indigo5367 — https://sketchfab.com/3d-models/old-fortress-aaa7473cc4274e17b2271d179dcea063 — both walls shortened, textures at 1024 px | **CC-BY-4.0**: credit required (line below) |
 | `sawmill.glb` | Marquise sawmill | modelled for this project (round hut, great saw, steam boiler) | own work |
 | `roost.glb` | Eyrie roost | modelled for this project (leaning tree, platform, blue canopy, lanterns) | own work |
 | `garden.glb` | Lizard Cult garden | modelled for this project (pyramids, palms, a sphinx with the lizard meeple's head; no ground slab) | own work |
@@ -56,6 +56,13 @@ Required credit for the recruiter:
 > by Cleo Renshaw (https://sketchfab.com/cleorenshaw) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+Required credit for the ruin:
+
+> This work is based on "Old fortress"
+> (https://sketchfab.com/3d-models/old-fortress-aaa7473cc4274e17b2271d179dcea063)
+> by indigo5367 (https://sketchfab.com/indigo5367) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 ## Git
 
 `*.glb` is ignored by the repository's `.gitignore`, so the model files of
@@ -63,8 +70,8 @@ this directory live on disk only. The buildings and meeples are kept, one file
 per piece, in `resources/reference/models/` with Git LFS, sorted by kind of
 piece: `buildings/`, `tokens/` (keep, wood, sympathy, trade post), `markers/`
 (ruin), `meeples/` and `items/`. Copy them from there on a fresh checkout:
-buildings, tokens and markers all go to `buildings/final/` (`sympathy.glb` and
-`keep-rebuilt.glb` are links to their reference files; `keep.glb`, the castle
+buildings, tokens and markers all go to `buildings/final/` (`sympathy.glb`,
+`keep-rebuilt.glb` and `ruin.glb` are links to their reference files; `keep.glb`, the castle
 before it was rebuilt, stays in `tokens/` and is not in the game). The `nature/` trees come
 from the kit above.
 
