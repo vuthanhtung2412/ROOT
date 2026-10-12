@@ -115,6 +115,8 @@ async function drive(page) {
   await page.getByRole('button', { name: 'QA: Continue loaded game' }).click()
   await page.waitForSelector('[data-clearing-id]', { timeout: 20_000 })
   console.log(`game: ${JSON.stringify(await gameSummary())}`)
+  // The game opens on the 3D map: the demo starts from the flat one.
+  await page.locator('.map-view-toggle').click()
   await caption(page, 'Flat map — four factions, a very crowded board')
   await page.waitForTimeout(2400)
 
@@ -179,8 +181,7 @@ async function drive(page) {
     body: birdsongSnapshot,
   })
   await page.reload()
-  // The map choice is page state: a reload starts on the flat map again.
-  await page.locator('.map-view-toggle').click()
+  // The map choice is page state: a reload starts on the 3D map again.
   await page.waitForSelector('.map-3d-reset-view', { timeout: 30_000 })
   await caption(page, 'Birdsong: pink dawn sun, morning mist')
   await page.waitForTimeout(4600)

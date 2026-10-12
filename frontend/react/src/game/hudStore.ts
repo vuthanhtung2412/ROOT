@@ -250,7 +250,7 @@ const INITIAL_HUD_STATE: HudState = {
   shell: 'boot',
   bootLoading: { progress: 0 },
   menu: null,
-  mapViewMode: 'flat',
+  mapViewMode: '3d',
   actionTrayCollapsed: false,
 }
 
