@@ -28,6 +28,7 @@ Mapping to pieces: `src/game/map3d/mapModels.ts`.
 | `roost.glb` | Eyrie roost | modelled for this project (leaning tree, platform, blue canopy, lanterns) | own work |
 | `garden.glb` | Lizard Cult garden | modelled for this project (pyramids, palms, a sphinx with the lizard meeple's head) | own work |
 | `wood.glb` | Marquise wood | modelled for this project (stack of short logs) | own work |
+| `sympathy.glb` | Woodland Alliance sympathy | modelled for this project (a crowd of fox, rabbit and mouse meeples with swords under a green banner bearing the sympathy fist) | own work |
 
 Required credit for the recruiter:
 
@@ -39,8 +40,11 @@ Required credit for the recruiter:
 ## Git
 
 `*.glb` is ignored by the repository's `.gitignore`, so the model files of
-this directory live on disk only. Fetch them again from the pages above (and
-the kit for `nature/`), or re-export the meeples, on a fresh checkout.
+this directory live on disk only. The buildings and meeples are kept, one file
+per piece, in `resources/reference/models/` (`buildings/`, `meeples/`,
+`items/`) with Git LFS: copy them from there on a fresh checkout
+(`sympathy.glb` is a link to its reference file). The `nature/` trees come
+from the kit above.
 
 ## `meeples/` — warriors and Vagabond pawns
 
@@ -49,3 +53,8 @@ Made in Blender for this project: the outline of each warrior token
 (OpenCV `findContours` on the alpha channel), extruded 0.8 units deep and
 bevelled; the token art is mapped onto the front face, the rest takes the
 token's body colour. Height 2.3 units, feet on the ground, front towards +Z.
+
+`fox-warrior`, `rabbit-warrior` and `mouse-warrior` (reference only: they
+stand in the sympathy crowd) are made the same way from art drawn for this
+project, in the colour of their suit. `items/sword.glb` is the sword they
+carry, modelled after the sword item.

@@ -82,6 +82,7 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-alliance-base-fox': structure('base'),
   'token-alliance-base-mouse': structure('base'),
   'token-alliance-base-rabbit': structure('base'),
+  'token-alliance-sympathy': structure('sympathy'),
   'token-lizard-garden-fox': structure('garden'),
   'token-lizard-garden-mouse': structure('garden'),
   'token-lizard-garden-rabbit': structure('garden'),
