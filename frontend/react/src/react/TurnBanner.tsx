@@ -20,6 +20,7 @@ import type {
 } from '#ui/TurnBanner.ts'
 import type { IconType } from 'react-icons'
 import { LuCheck, LuMinus, LuPlus, LuX } from 'react-icons/lu'
+import { SuitIcon } from '#react/SuitIcon.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 import { optionIconFor } from '#ui/optionIcons.ts'
 import { phaseIconFor } from '#ui/phaseIcons.ts'
@@ -235,10 +236,7 @@ function SuitOptionButton(props: {
   suit: string
   onPick: () => void
 }): JSX.Element {
-  const textureKey: string | null = suitTextureKey(props.suit)
-  const imagePath: string | null =
-    textureKey !== null ? imagePathForAssetKey(textureKey) : null
-  if (imagePath === null) {
+  if (suitTextureKey(props.suit) === null) {
     return (
       <button
         type="button"
@@ -257,11 +255,9 @@ function SuitOptionButton(props: {
         aria-label={props.label}
         onClick={props.onPick}
       >
-        <img
+        <SuitIcon
+          suit={props.suit}
           className="pointer-events-none block size-full object-contain"
-          src={imagePath}
-          alt=""
-          draggable={false}
         />
       </button>
     </Tooltip>

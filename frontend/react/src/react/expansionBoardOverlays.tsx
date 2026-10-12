@@ -25,6 +25,7 @@ import {
   RemainingTrackTokens,
   SupplyCell,
 } from '#react/factionBoardOverlays.tsx'
+import { SuitIcon } from '#react/SuitIcon.tsx'
 import {
   BOARD_SUITS,
   LIZARD_GARDEN_TRACK_SLOT_COUNT,
@@ -136,8 +137,6 @@ function LostSoulsPile(
       <span className={LOST_SOULS_SUIT_STRIP_CLASS_NAME}>
         {props.view.lostSoulSuits.map((entry: LostSoulSuitCount) => {
           const suitKey: string | null = suitTextureKey(entry.suit)
-          const suitImagePath: string | null =
-            suitKey === null ? null : imagePathForAssetKey(suitKey)
           return (
             <span
               key={entry.suit}
@@ -148,12 +147,11 @@ function LostSoulsPile(
               }`}
               title={`${entry.suit}: ${String(entry.count)}`}
             >
-              {suitImagePath !== null ? (
-                <img
+              {suitKey !== null ? (
+                <SuitIcon
+                  suit={entry.suit}
                   className="block h-[1.4em] w-auto select-none"
-                  src={suitImagePath}
                   alt={entry.suit}
-                  draggable={false}
                 />
               ) : (
                 entry.suit

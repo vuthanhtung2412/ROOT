@@ -1,9 +1,6 @@
 import { useSyncExternalStore, type JSX } from 'react'
-import {
-  cardImagePublicPath,
-  imagePathForAssetKey,
-  suitTextureKey,
-} from '#assets/gameAssets.ts'
+import { cardImagePublicPath } from '#assets/gameAssets.ts'
+import { SuitIcon } from '#react/SuitIcon.tsx'
 import {
   getHudSnapshot,
   patchHud,
@@ -50,9 +47,6 @@ export function CardDetailOverlay(): JSX.Element | null {
     return null
   }
   const imagePath = cardImagePublicPath(content.defId)
-  const suitTexture: string | null = suitTextureKey(content.catalog.suit)
-  const suitImagePath: string | null =
-    suitTexture !== null ? imagePathForAssetKey(suitTexture) : null
   return (
     <div
       className="card-detail-overlay fixed inset-0 z-400 flex items-center justify-center"
@@ -77,14 +71,7 @@ export function CardDetailOverlay(): JSX.Element | null {
           />
         ) : null}
         <div className={NAME_ROW_CLASS_NAME}>
-          {suitImagePath !== null ? (
-            <img
-              className={SUIT_CLASS_NAME}
-              src={suitImagePath}
-              alt=""
-              draggable={false}
-            />
-          ) : null}
+          <SuitIcon suit={content.catalog.suit} className={SUIT_CLASS_NAME} />
           <h2 className={NAME_CLASS_NAME}>{content.catalog.name}</h2>
         </div>
         <p className={META_CLASS_NAME}>
