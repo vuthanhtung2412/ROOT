@@ -1,69 +1,61 @@
 import {
   CanvasTexture,
-  CircleGeometry,
   Group,
   MathUtils,
-  Mesh,
-  MeshBasicMaterial,
-  RingGeometry,
-  Shape,
-  ShapeGeometry,
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
   Texture,
   TextureLoader,
 } from 'three'
+import {
+  createClearingMarks,
+  type ClearingMarks,
+  type ClearingRingStyle,
+} from '#game/map3d/clearingMarks.ts'
+import type { TimeOfDay } from '#game/map3d/daylight.ts'
+import { createForestMarks, type ForestMarks } from '#game/map3d/forestMarks.ts'
+import type { ForestGround } from '#game/map3d/forestOutline.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
-import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
+
+export type { ClearingRingStyle } from '#game/map3d/clearingMarks.ts'
+export type { ForestGround } from '#game/map3d/forestOutline.ts'
 
 /**
- * Marks of the clearings and forests: the ring around each clearing (ruler
- * colour, or gold when it can be picked), its suit as an icon over it, and the
- * gold wash over a forest to pick.
+ * Marks of the clearings and forests: who rules each clearing, which
+ * clearings and forests can be picked, and each clearing's suit as an icon
+ * over it. The clearing marks glow out of daylight only.
  */
 export type GroundMarkersInput = {
   clearings: readonly ClearingGround[]
   forests: readonly ForestGround[]
   /** Suit icon of each clearing (clearing id → image path). */
   suitTexturePaths: ReadonlyMap<number, string>
-}
-
-export type ForestGround = {
-  forestIndex: number
-  corners: readonly MapGroundPoint[]
-}
-
-export type ClearingRingStyle = {
-  /** 0xRRGGBB. */
-  color: number
-  opacity: number
-  highlighted: boolean
+  timeOfDay: TimeOfDay
 }
 
 export type GroundMarkers = {
   group: Group
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
   setHighlightedForests: (forestIndexes: ReadonlySet<number>) => void
-  /** Pulse the highlights; call once per frame. */
+  /** Fade the glow in or out for a phase of the turn. */
+  setTimeOfDay: (timeOfDay: TimeOfDay) => void
+  /** Animate the marks; call once per frame. */
   update: (elapsedSeconds: number) => void
   /** 0 = zoomed all the way out, 1 = all the way in: sizes the suit badges. */
   setZoom: (zoom: number) => void
 }
 
-const RING_INNER_RADIUS_RATIO = 0.93
-const HIGHLIGHT_RING_INNER_RADIUS_RATIO = 0.86
-const RING_SEGMENT_COUNT = 72
-/** Just above the board, each layer a hair higher, so nothing flickers. */
-const RING_HEIGHT = 0.06
-const FILL_HEIGHT = 0.05
-const FOREST_HEIGHT = 0.04
-const HIGHLIGHT_COLOR = 0xe0b352
-const FILL_BASE_OPACITY = 0.22
-const FOREST_BASE_OPACITY = 0.34
-const PULSE_DEPTH = 0.45
-const PULSE_RADIANS_PER_SECOND = 4
-const QUARTER_TURN_RADIANS = Math.PI / 2
+/** Under the full sun no mark glows; at dawn and after dark they all do. */
+const GLOW_LEVEL_BY_TIME_OF_DAY: Readonly<Record<TimeOfDay, number>> = {
+  birdsong: 1,
+  daylight: 0,
+  evening: 1,
+}
+/** Share of the remaining difference closed per second, like the daylight. */
+const GLOW_FADE_RATE_PER_SECOND = 2.2
+/** A tab coming back from the background must not jump the fade. */
+const MAXIMUM_FRAME_SECONDS = 0.1
 
 const HALF = 0.5
 const FULL_TURN_RADIANS = Math.PI * 2
@@ -81,27 +73,6 @@ const SUIT_CHIP_BORDER_COLOR = '#5b4630'
 /** Over the woodland, under the piece icons. */
 const SUIT_CHIP_RENDER_ORDER = 7
 const SUIT_ICON_RENDER_ORDER = 8
-
-type ClearingMark = {
-  ring: Mesh
-  highlightRing: Mesh
-  fill: Mesh
-  ringMaterial: MeshBasicMaterial
-}
-
-function createFlatMaterial(color: number): MeshBasicMaterial {
-  return new MeshBasicMaterial({
-    color,
-    transparent: true,
-    depthWrite: false,
-  })
-}
-
-function layFlat(mesh: Mesh, center: MapGroundPoint, height: number): Mesh {
-  mesh.rotateX(-QUARTER_TURN_RADIANS)
-  mesh.position.set(center.x, height, center.z)
-  return mesh
-}
 
 /** A round parchment chip, drawn once, behind every suit icon. */
 function createSuitChipTexture(): CanvasTexture {
@@ -179,109 +150,34 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
       group.add(badge)
     }
   }
-  const highlightMaterial: MeshBasicMaterial =
-    createFlatMaterial(HIGHLIGHT_COLOR)
-  const fillMaterial: MeshBasicMaterial = createFlatMaterial(HIGHLIGHT_COLOR)
-  const forestMaterial: MeshBasicMaterial = createFlatMaterial(HIGHLIGHT_COLOR)
+  const clearingMarks: ClearingMarks = createClearingMarks(clearings)
+  const forestMarks: ForestMarks = createForestMarks({ forests, clearings })
+  group.add(clearingMarks.group, forestMarks.group)
 
-  const clearingMarks: Map<number, ClearingMark> = new Map<
-    number,
-    ClearingMark
-  >()
-  for (const clearing of clearings) {
-    const ringMaterial: MeshBasicMaterial = createFlatMaterial(0xffffff)
-    const mark: ClearingMark = {
-      ringMaterial,
-      ring: layFlat(
-        new Mesh(
-          new RingGeometry(
-            clearing.radius * RING_INNER_RADIUS_RATIO,
-            clearing.radius,
-            RING_SEGMENT_COUNT,
-          ),
-          ringMaterial,
-        ),
-        clearing.center,
-        RING_HEIGHT,
-      ),
-      highlightRing: layFlat(
-        new Mesh(
-          new RingGeometry(
-            clearing.radius * HIGHLIGHT_RING_INNER_RADIUS_RATIO,
-            clearing.radius,
-            RING_SEGMENT_COUNT,
-          ),
-          highlightMaterial,
-        ),
-        clearing.center,
-        RING_HEIGHT,
-      ),
-      fill: layFlat(
-        new Mesh(
-          new CircleGeometry(clearing.radius, RING_SEGMENT_COUNT),
-          fillMaterial,
-        ),
-        clearing.center,
-        FILL_HEIGHT,
-      ),
-    }
-    mark.highlightRing.visible = false
-    mark.fill.visible = false
-    clearingMarks.set(clearing.clearingId, mark)
-    group.add(mark.ring, mark.highlightRing, mark.fill)
-  }
-
-  const forestMarks: Map<number, Mesh> = new Map<number, Mesh>()
-  for (const forest of forests) {
-    // A flat shape lies in x / y; laid down, its y becomes -z.
-    const outline: Shape = new Shape()
-    forest.corners.forEach((corner: MapGroundPoint, index: number): void => {
-      if (index === 0) {
-        outline.moveTo(corner.x, -corner.z)
-      } else {
-        outline.lineTo(corner.x, -corner.z)
-      }
-    })
-    const mark: Mesh = layFlat(
-      new Mesh(new ShapeGeometry(outline), forestMaterial),
-      { x: 0, z: 0 },
-      FOREST_HEIGHT,
-    )
-    mark.visible = false
-    forestMarks.set(forest.forestIndex, mark)
-    group.add(mark)
-  }
+  let glowLevel: number = GLOW_LEVEL_BY_TIME_OF_DAY[input.timeOfDay]
+  let targetGlowLevel: number = glowLevel
+  let previousElapsedSeconds = 0
 
   return {
     group,
-    setClearingRings: (
-      styles: ReadonlyMap<number, ClearingRingStyle>,
-    ): void => {
-      for (const [clearingId, mark] of clearingMarks) {
-        const style: ClearingRingStyle | undefined = styles.get(clearingId)
-        const highlighted: boolean = style?.highlighted === true
-        mark.ring.visible = style !== undefined && !highlighted
-        mark.highlightRing.visible = highlighted
-        mark.fill.visible = highlighted
-        if (style !== undefined) {
-          mark.ringMaterial.color.set(style.color)
-          mark.ringMaterial.opacity = style.opacity
-        }
-      }
-    },
-    setHighlightedForests: (forestIndexes: ReadonlySet<number>): void => {
-      for (const [forestIndex, mark] of forestMarks) {
-        mark.visible = forestIndexes.has(forestIndex)
-      }
+    setClearingRings: clearingMarks.setStyles,
+    setHighlightedForests: forestMarks.setHighlighted,
+    setTimeOfDay: (timeOfDay: TimeOfDay): void => {
+      targetGlowLevel = GLOW_LEVEL_BY_TIME_OF_DAY[timeOfDay]
     },
     update: (elapsedSeconds: number): void => {
-      const pulse: number =
-        1 -
-        PULSE_DEPTH *
-          (0.5 + 0.5 * Math.sin(elapsedSeconds * PULSE_RADIANS_PER_SECOND))
-      highlightMaterial.opacity = pulse
-      fillMaterial.opacity = FILL_BASE_OPACITY * pulse
-      forestMaterial.opacity = FOREST_BASE_OPACITY * pulse
+      const deltaSeconds: number = Math.min(
+        elapsedSeconds - previousElapsedSeconds,
+        MAXIMUM_FRAME_SECONDS,
+      )
+      previousElapsedSeconds = elapsedSeconds
+      glowLevel = MathUtils.lerp(
+        glowLevel,
+        targetGlowLevel,
+        Math.min(GLOW_FADE_RATE_PER_SECOND * deltaSeconds, 1),
+      )
+      clearingMarks.update({ elapsedSeconds, glowLevel })
+      forestMarks.update(elapsedSeconds)
     },
     setZoom: (zoom: number): void => {
       const size: number = MathUtils.lerp(

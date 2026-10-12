@@ -41,9 +41,9 @@ import {
   type ClearingHitCenter,
 } from '#react/PieceStack.tsx'
 
+/** Dashes of a clearing to pick, when nobody is known to be picking. */
 const HIGHLIGHT_RING_COLOR = 0xe0b352
 const NEUTRAL_RING_COLOR = 0xf0e6d3
-const NEUTRAL_RING_OPACITY = 0.35
 const DIMMED_RING_OPACITY = 0.18
 const RULER_RING_OPACITY = 0.95
 /** The click target is a little smaller than the ring it sits on. */
@@ -151,6 +151,12 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
     (): string | null => getHudSnapshot().turnBanner.turn?.phase ?? null,
     (): string | null => getHudSnapshot().turnBanner.turn?.phase ?? null,
   )
+  // A clearing to pick is marked in the colour of the player picking it.
+  const pickingSeat: number | null = useSyncExternalStore(
+    subscribeHud,
+    (): number | null => getHudSnapshot().actionTray?.actorSeat ?? null,
+    (): number | null => getHudSnapshot().actionTray?.actorSeat ?? null,
+  )
   const canvasReference = useRef<HTMLCanvasElement | null>(null)
   const handle: MapSceneHandle = useMapScene(
     canvasReference,
@@ -231,33 +237,40 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
       const rulerSeat: number | null = rulers.get(clearingId) ?? null
       if (highlighted.has(clearingId)) {
         styles.set(clearingId, {
-          color: HIGHLIGHT_RING_COLOR,
+          color:
+            pickingSeat !== null && factions !== undefined
+              ? factionColorForSeat(pickingSeat, factions)
+              : HIGHLIGHT_RING_COLOR,
           opacity: 1,
           highlighted: true,
         })
+      } else if (rulerSeat === null || factions === undefined) {
+        // Nobody rules it: no mark at all.
       } else if (highlighted.size > 0) {
         styles.set(clearingId, {
           color: NEUTRAL_RING_COLOR,
           opacity: DIMMED_RING_OPACITY,
           highlighted: false,
         })
-      } else if (rulerSeat !== null && factions !== undefined) {
+      } else {
         styles.set(clearingId, {
           color: factionColorForSeat(rulerSeat, factions),
           opacity: RULER_RING_OPACITY,
-          highlighted: false,
-        })
-      } else {
-        styles.set(clearingId, {
-          color: NEUTRAL_RING_COLOR,
-          opacity: NEUTRAL_RING_OPACITY,
           highlighted: false,
         })
       }
     }
     scene.setClearingRings(styles)
     scene.setHighlightedForests(highlightedForests)
-  }, [scene, clearings, factions, clearingGrounds, highlighted, highlightedForests])
+  }, [
+    scene,
+    clearings,
+    factions,
+    clearingGrounds,
+    highlighted,
+    highlightedForests,
+    pickingSeat,
+  ])
 
   const projectedClearings: ProjectedClearing[] = useMemo(
     () =>

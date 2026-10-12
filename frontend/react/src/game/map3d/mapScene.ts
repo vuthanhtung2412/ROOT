@@ -89,6 +89,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     clearings: input.terrain.clearings,
     forests: input.forests,
     suitTexturePaths: input.suitTexturePaths,
+    timeOfDay: input.timeOfDay,
   })
   const pieceLayer: PieceLayer = createPieceLayer(input.models.pieces)
   const riverFlow: RiverFlow = createRiverFlow(input.terrain.river)
@@ -153,7 +154,10 @@ export function createMapScene(input: MapSceneInput): MapScene {
     playBuild: pieceLayer.playBuild,
     setClearingRings: groundMarkers.setClearingRings,
     setHighlightedForests: groundMarkers.setHighlightedForests,
-    setTimeOfDay: daylight.setTimeOfDay,
+    setTimeOfDay: (timeOfDay: TimeOfDay): void => {
+      daylight.setTimeOfDay(timeOfDay)
+      groundMarkers.setTimeOfDay(timeOfDay)
+    },
     projectToView: (ground: MapGroundPoint, height: number): MapViewPoint => {
       projected.set(ground.x, height, ground.z).project(cameraRig.camera)
       return {
