@@ -10,8 +10,6 @@ import {
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
-  Texture,
-  TextureLoader,
   Vector3,
   type BufferGeometry,
   type Material,
@@ -21,6 +19,7 @@ import {
   type BuildAnimations,
   type BuildSite,
 } from '#game/map3d/buildAnimation.ts'
+import { createIconTexture } from '#game/map3d/iconTexture.ts'
 import type { PieceModel } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
@@ -47,6 +46,8 @@ export type MapPiece = {
   ground: MapGroundPoint
   /** Turn of a building plot and of the structure on it, radians. */
   rotation?: number
+  /** A building: its square icon gets rounded corners. */
+  isBuilding?: boolean
 }
 
 export type PieceLayer = {
@@ -191,7 +192,6 @@ export function createPieceLayer(
   // The pieces are rebuilt on every board update; the dust outlives them.
   const layer: Group = new Group()
   layer.add(group, buildAnimations.group)
-  const textureLoader: TextureLoader = new TextureLoader()
   const iconMaterials: Map<string, SpriteMaterial> = new Map<
     string,
     SpriteMaterial
@@ -228,7 +228,8 @@ export function createPieceLayer(
   let currentGrowth = 0
 
   const iconMaterial = (piece: MapPiece): SpriteMaterial => {
-    const materialKey: string = piece.texturePath ?? colorToCss(piece.color)
+    const roundedCorners: boolean = piece.isBuilding === true
+    const materialKey: string = `${piece.texturePath ?? colorToCss(piece.color)}:${String(roundedCorners)}`
     const cached: SpriteMaterial | undefined = iconMaterials.get(materialKey)
     if (cached !== undefined) {
       return cached
@@ -238,9 +239,10 @@ export function createPieceLayer(
       depthTest: false,
     })
     if (piece.texturePath !== null) {
-      const texture: Texture = textureLoader.load(piece.texturePath)
-      texture.colorSpace = SRGBColorSpace
-      material.map = texture
+      material.map = createIconTexture({
+        imagePath: piece.texturePath,
+        roundedCorners,
+      })
     }
     iconMaterials.set(materialKey, material)
     return material

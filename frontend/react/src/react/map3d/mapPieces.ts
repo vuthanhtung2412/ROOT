@@ -197,6 +197,7 @@ function singlePiece(
     color: piece.color,
     count: 1,
     ground: { x: 0, z: 0 },
+    isBuilding: true,
   }
 }
 
