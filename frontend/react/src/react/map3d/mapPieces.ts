@@ -78,6 +78,11 @@ const STACK_ROW_DEPTH_RATIO = 0.24
 const STACK_ROW_SPACING = 2.1
 const STACK_SPACING = 2.1
 const STACKS_PER_ROW = 4
+/**
+ * Where a slot sits in the front right corner, the rows stand this far left
+ * of centre to leave it room (ratio of the clearing radius).
+ */
+const STACK_ROW_SHIFT_BESIDE_FRONT_SLOT_RATIO = -0.3
 const HALF = 0.5
 const DOUBLE = 2
 
@@ -141,12 +146,15 @@ function patternSpots(clearing: ClearingGround, count: number): SlotSpot[] {
 /** `count` spots in a row, centred on the clearing, `spacing` apart. */
 function rowGrounds(
   clearing: ClearingGround,
-  row: { count: number; spacing: number; depth: number },
+  row: { count: number; spacing: number; depth: number; shift?: number },
 ): MapGroundPoint[] {
   return Array.from(
     { length: row.count },
     (_, index: number): MapGroundPoint => ({
-      x: clearing.center.x + (index - (row.count - 1) * HALF) * row.spacing,
+      x:
+        clearing.center.x +
+        (row.shift ?? 0) +
+        (index - (row.count - 1) * HALF) * row.spacing,
       z: clearing.center.z + row.depth,
     }),
   )
@@ -227,6 +235,15 @@ function slotPieces(
   )
 }
 
+/** Whether one of the clearing's slots lies in its front half. */
+function hasFrontSlot(clearingId: number): boolean {
+  const pattern: ReadonlyArray<readonly [number, number]> =
+    SLOT_SPOTS_BY_COUNT[FALL_CLEARING_SLOT_COUNTS[clearingId] ?? 0] ?? []
+  return pattern.some(
+    ([, ratioZ]: readonly [number, number]): boolean => ratioZ > 0,
+  )
+}
+
 /** Tokens, then warriors and pawns, as stacks in rows at the front. */
 function stackPieces(
   clearingGround: ClearingGround,
@@ -246,6 +263,9 @@ function stackPieces(
       FIGURE_KINDS.has(stack.kind),
     ),
   ]
+  const rowShift: number = hasFrontSlot(clearingId)
+    ? clearingGround.radius * STACK_ROW_SHIFT_BESIDE_FRONT_SLOT_RATIO
+    : 0
   return ordered.map((stack: PieceStackViewModel, index: number): MapPiece => {
     const rowIndex: number = Math.floor(index / STACKS_PER_ROW)
     const rowCount: number = Math.min(
@@ -258,6 +278,7 @@ function stackPieces(
       depth:
         clearingGround.radius * STACK_ROW_DEPTH_RATIO +
         rowIndex * STACK_ROW_SPACING,
+      shift: rowShift,
     })
     const textureKey: string = textureKeyForStack(stack, clearingId)
     return {
