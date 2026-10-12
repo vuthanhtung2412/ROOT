@@ -12,6 +12,10 @@ import type { ForestGround } from '#game/map3d/groundMarkers.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import type { MapPiece, MapPieceShape } from '#game/map3d/pieceMeshes.ts'
+import {
+  groundClearOfRiver,
+  type SlotSite,
+} from '#game/map3d/riverClearance.ts'
 import { createSeededRandom } from '#game/map3d/treePlacement.ts'
 import { factionColorForSeat, FACTION_COLORS } from '#game/theme.ts'
 import {
@@ -31,6 +35,8 @@ export type MapPiecesInput = {
   clearingGrounds: readonly ClearingGround[]
   forestGrounds: readonly ForestGround[]
   forestPawns: readonly ForestPawnMarker[]
+  /** The river as a dense line of points: slots keep out of it. */
+  river: readonly MapGroundPoint[]
 }
 
 const BUILDING_KIND = 'building'
@@ -81,7 +87,25 @@ type SlotSpot = {
 }
 
 /** The slots of a clearing: same every time for the same clearing. */
-function slotSpots(clearing: ClearingGround, count: number): SlotSpot[] {
+function slotSpots(site: SlotSite, count: number): SlotSpot[] {
+  return patternSpots(site.clearing, count).reduce(
+    (dry: SlotSpot[], spot: SlotSpot): SlotSpot[] => [
+      ...dry,
+      {
+        ...spot,
+        ground: groundClearOfRiver(
+          spot.ground,
+          site,
+          dry.map((placed: SlotSpot): MapGroundPoint => placed.ground),
+        ),
+      },
+    ],
+    [],
+  )
+}
+
+/** The slots where the pattern puts them, river or not. */
+function patternSpots(clearing: ClearingGround, count: number): SlotSpot[] {
   const random: () => number = createSeededRandom(
     (clearing.clearingId + 1) * SLOT_SEED_STEP,
   )
@@ -148,10 +172,11 @@ function singlePiece(
  * every slot left over shows as an empty plot. Rule: Board > Slots
  */
 function slotPieces(
-  clearingGround: ClearingGround,
+  site: SlotSite,
   clearing: BoardClearingPieces,
   pieces: readonly PieceViewModel[],
 ): MapPiece[] {
+  const clearingGround: ClearingGround = site.clearing
   const clearingId: number = clearingGround.clearingId
   const ruin: MapPiece[] = clearingHasRuin(clearing)
     ? [
@@ -177,7 +202,7 @@ function slotPieces(
     FALL_CLEARING_SLOT_COUNTS[clearingId] ?? 0,
     occupants.length,
   )
-  return slotSpots(clearingGround, slotCount).map(
+  return slotSpots(site, slotCount).map(
     (spot: SlotSpot, slotIndex: number): MapPiece => {
       const occupant: MapPiece | undefined = occupants[slotIndex]
       if (occupant !== undefined) {
@@ -265,7 +290,11 @@ export function mapPiecesForBoard(input: MapPiecesInput): MapPiece[] {
         input.factions,
       )
       return [
-        ...slotPieces(clearingGround, clearing, viewModels),
+        ...slotPieces(
+          { clearing: clearingGround, river: input.river },
+          clearing,
+          viewModels,
+        ),
         ...stackPieces(clearingGround, viewModels),
       ]
     },

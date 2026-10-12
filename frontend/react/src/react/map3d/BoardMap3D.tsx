@@ -156,7 +156,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
     frame,
     timeOfDayForPhase(phase),
   )
-  const { scene, clearingGrounds, forestGrounds, viewVersion } = handle
+  const { scene, clearingGrounds, forestGrounds, river, viewVersion } = handle
 
   const highlighted: Set<number> = useMemo(
     () => new Set(props.highlightedClearingIds ?? []),
@@ -179,9 +179,18 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
         clearingGrounds,
         forestGrounds,
         forestPawns: forestPawns ?? [],
+        river,
       }),
     )
-  }, [scene, clearings, factions, forestPawns, clearingGrounds, forestGrounds])
+  }, [
+    scene,
+    clearings,
+    factions,
+    forestPawns,
+    clearingGrounds,
+    forestGrounds,
+    river,
+  ])
 
   useEffect(() => {
     if (scene === null) {

@@ -29,6 +29,7 @@ export type MapSceneHandle = {
   scene: MapScene | null
   clearingGrounds: readonly ClearingGround[]
   forestGrounds: readonly ForestGround[]
+  river: MapTerrain['river']
   /** Bumps on every camera move: overlays re-project when it changes. */
   viewVersion: number
 }
@@ -150,6 +151,7 @@ export function useMapScene(
     scene,
     clearingGrounds: terrain.clearings,
     forestGrounds,
+    river: terrain.river,
     viewVersion,
   }
 }
