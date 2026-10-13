@@ -33,6 +33,7 @@ import {
 import { BoardMap, type BoardMapProps } from '#react/BoardMap.tsx'
 import type { BoardClearingPieces } from '#react/PieceStack.tsx'
 import type { ForestPawnMarker } from '#game/forestLayout.ts'
+import type { ClearingFlash } from '#game/clearingFlash.ts'
 
 /** Loaded on demand: three.js stays out of the bundle of the flat map. */
 const BoardMap3D = lazy(async () => {
@@ -63,6 +64,7 @@ export type GameScreenProps = {
   factions: readonly string[] | null
   forestPawns: readonly ForestPawnMarker[]
   effects: BoardEffectBatch
+  flashedClearing: ClearingFlash | null
   highlightedClearingIds: readonly number[]
   highlightedForestIndexes: readonly number[]
   onClearingSelected: (clearingId: number) => void
@@ -119,6 +121,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
           ...(props.factions !== null ? { factions: props.factions } : {}),
           forestPawns: props.forestPawns,
           effects: props.effects,
+          flashedClearing: props.flashedClearing,
           highlightedClearingIds: props.highlightedClearingIds,
           highlightedForestIndexes: props.highlightedForestIndexes,
           onClearingSelected: props.onClearingSelected,
