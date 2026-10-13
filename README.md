@@ -104,6 +104,40 @@ pnpm --filter @root/web gen:openapi
 pnpm gen:api-client
 ```
 
+### AI players
+
+A seat can be played by an LLM. API keys stay on the server: clients only see model ids.
+
+Server env (`backend/web`):
+
+| Variable | Meaning |
+|---|---|
+| `ANTHROPIC_API_KEY` | Enables `anthropic:<modelId>` models |
+| `OPENAI_API_KEY` | Enables `openai:<modelId>` models |
+| `ROOT_AI_PLAYER_MODELS` | Comma list offered in the lobby, e.g. `anthropic:claude-opus-5-5,openai:<modelId>`. Unset = the default model only |
+| `ROOT_AI_PLAYER_DEFAULT_MODEL` | Preselected model. Unset = `anthropic:claude-opus-5-5` |
+
+A model whose provider has no key is not offered.
+
+- **Add one**: host's online lobby → *Add an AI player* (faction + model), or `POST /game/ai-players` `{ "faction": "eyrie", "model": "anthropic:claude-opus-5-5" }`. The model is fixed once the game starts (`PATCH /game/ai-players/{seat}` works in the lobby only).
+- **How it plays**: one session (one context window) per AI turn, dropped when the turn ends; a decision outside its turn (ambush, setup choice) gets a short session of its own. It waits 2 s after each action. Its tools are the `root-cli` commands: `show`, `actions`, `log`, `rules`, `act`.
+- **Stuck** (provider error, refusal, tool-call limit): the seat shows a warning badge and the game waits. Restart its session:
+
+```bash
+pnpm --filter @root/cli start -- ai-restart <seat>   # POST /game/ai-players/{seat}/restart
+```
+
+- **Play a seat from the terminal** with the same view an AI player has (other hands hidden, only that seat may act, also in hotseat):
+
+```bash
+pnpm --filter @root/cli start -- --player-id bob show
+pnpm --filter @root/cli start -- --player-id bob actions
+pnpm --filter @root/cli start -- --player-id bob act '{"type":"endPhase"}'
+pnpm --filter @root/cli start -- rules 4.3          # or: rules ambush defender
+```
+
+- **Add a provider**: implement `ModelProvider` in `backend/web/src/aiPlayer/providers/`, add it to `providerRegistry.ts` and to `MODEL_PROVIDER_NAMES` in `modelIdentifier.ts`.
+
 ## Resources
 
 - `resources/rules/` — Law of Root (SoT: PDF + markdown); Law of Rootbotics for Clockwork/electric bots (PDF + markdown + Electric Eyrie errata)
