@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Game } from '@root/lib'
+import type { AiPlayerSessionActivity } from '#aiPlayer/AiPlayerActivityFeed.js'
 import { ACTIONS_TOOL_NAME, SHOW_TOOL_NAME } from '#aiPlayer/aiPlayerTools.js'
 import {
   AI_PLAYER_ACTION_DELAY_MILLISECONDS,
@@ -25,10 +26,15 @@ type WaitMock = ReturnType<
   typeof vi.fn<(milliseconds: number) => Promise<void>>
 >
 
+type ActivityMock = ReturnType<
+  typeof vi.fn<(activity: AiPlayerSessionActivity) => void>
+>
+
 type SessionFixture = {
   session: AiPlayerSession
   wait: WaitMock
   abortController: AbortController
+  onActivity: ActivityMock
 }
 
 function createSession(
@@ -39,14 +45,17 @@ function createSession(
     (): Promise<void> => Promise.resolve(),
   )
   const abortController = new AbortController()
+  const onActivity: ActivityMock =
+    vi.fn<(activity: AiPlayerSessionActivity) => void>()
   const session = new AiPlayerSession({
     conversation,
     toolContext: createToolContext(game, FIRST_TEST_PLAYER_ID),
     abortSignal: abortController.signal,
     wait,
     isInScope: (): boolean => game.state.status === 'setup',
+    onActivity,
   })
-  return { session, wait, abortController }
+  return { session, wait, abortController, onActivity }
 }
 
 /** Seat 0 setup: keep corner, then three starting buildings. */
@@ -110,6 +119,47 @@ describe('AiPlayerSession', () => {
 
     expect(scripted.inputs).toHaveLength(1)
     expect(game.state.pending[0]).toMatchObject({ seat: 0 })
+  })
+
+  it('reports its message, the reply and each tool call with its result, in order', async () => {
+    const game = createStartedTwoPlayerGame()
+    const lookAndExplain: ScriptedReply = () => ({
+      ...toolCallReply(ACTIONS_TOOL_NAME, {}),
+      text: 'I check what I may do.',
+    })
+    const scripted = createScriptedConversation([
+      lookAndExplain,
+      () => answerSetupChoiceReply(game, FIRST_TEST_PLAYER_ID),
+    ])
+    const { session, onActivity } = createSession(game, scripted.conversation)
+
+    await session.play('your turn')
+
+    const reported: AiPlayerSessionActivity[] = onActivity.mock.calls.map(
+      ([activity]: [AiPlayerSessionActivity]): AiPlayerSessionActivity =>
+        activity,
+    )
+    expect(reported.slice(0, 3)).toEqual([
+      { kind: 'message', toolName: null, text: 'your turn', isError: false },
+      {
+        kind: 'reply',
+        toolName: null,
+        text: 'I check what I may do.',
+        isError: false,
+      },
+      {
+        kind: 'toolCall',
+        toolName: ACTIONS_TOOL_NAME,
+        text: '{}',
+        isError: false,
+      },
+    ])
+    expect(reported[3]).toMatchObject({
+      kind: 'toolResult',
+      toolName: ACTIONS_TOOL_NAME,
+      isError: false,
+    })
+    expect(reported[3]?.text).toContain('resolveEvent')
   })
 
   it('reminds a model that stops early, then gives up', async () => {

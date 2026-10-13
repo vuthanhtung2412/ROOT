@@ -5,6 +5,10 @@ import {
   buildResumeMessage,
   buildTurnStartMessage,
 } from '#aiPlayer/aiPlayerPrompt.js'
+import type {
+  AiPlayerSeatActivity,
+  AiPlayerSessionActivity,
+} from '#aiPlayer/AiPlayerActivityFeed.js'
 import { AI_PLAYER_TOOL_DEFINITIONS } from '#aiPlayer/aiPlayerTools.js'
 import { AiPlayerSession } from '#aiPlayer/AiPlayerSession.js'
 import {
@@ -29,6 +33,14 @@ export type AiPlayerDriverDependencies = {
   publishGameChange: () => void
   /** Push the slot to viewers (an AI seat changed status). */
   publishStatusChange: () => void
+  /** Show observers what an AI seat is doing (message, reply, tool call). */
+  publishActivity: (activity: AiPlayerSeatActivity) => void
+}
+
+const NO_USABLE_MODEL_FAILURE = 'no usable model'
+
+function failureActivity(reason: string): AiPlayerSessionActivity {
+  return { kind: 'failure', toolName: null, text: reason, isError: true }
 }
 
 /** The game turn a session plays, or null for one off-turn decision. */
@@ -38,6 +50,8 @@ type ActiveSession = {
   session: AiPlayerSession
   scope: SessionScope
   abortController: AbortController
+  /** Reports an activity of this session under its seat and model. */
+  reportActivity: (activity: AiPlayerSessionActivity) => void
 }
 
 /**
@@ -153,10 +167,18 @@ export class AiPlayerDriver {
     player: PlayerState,
     seat: AiPlayerSeat,
   ): ActiveSession | null {
+    const reportActivity = (activity: AiPlayerSessionActivity): void => {
+      this.dependencies.publishActivity({
+        ...activity,
+        seat: player.seat,
+        model: seat.model,
+      })
+    }
     const model = parseModelIdentifier(seat.model)
     const provider = model === null ? null : this.providerFor(model.provider)
     if (model === null || provider === null) {
       console.error(`AI player: no usable model for "${seat.model}"`)
+      reportActivity(failureActivity(NO_USABLE_MODEL_FAILURE))
       return null
     }
     const scope = this.currentScope(game, player)
@@ -182,8 +204,9 @@ export class AiPlayerDriver {
       abortSignal: abortController.signal,
       wait: this.dependencies.wait,
       isInScope: (): boolean => this.currentScope(game, player) === scope,
+      onActivity: reportActivity,
     })
-    return { session, scope, abortController }
+    return { session, scope, abortController, reportActivity }
   }
 
   private providerFor(providerName: ModelProviderName): ModelProvider | null {
@@ -205,6 +228,7 @@ export class AiPlayerDriver {
       }
       if (failure !== null) {
         console.error(`AI player session failed: ${failure.message}`)
+        active.reportActivity(failureActivity(failure.message))
         this.sessions.delete(playerId)
         this.stuckPlayerIds.add(playerId)
       }

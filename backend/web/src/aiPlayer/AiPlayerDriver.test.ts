@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActionSpec, Game, Seat } from '@root/lib'
+import type { AiPlayerSeatActivity } from '#aiPlayer/AiPlayerActivityFeed.js'
 import {
   AiPlayerDriver,
   type AiPlayerDriverDependencies,
 } from '#aiPlayer/AiPlayerDriver.js'
-import { SHOW_TOOL_NAME } from '#aiPlayer/aiPlayerTools.js'
+import { ACT_TOOL_NAME, SHOW_TOOL_NAME } from '#aiPlayer/aiPlayerTools.js'
 import type { ModelProvider } from '#aiPlayer/ModelProvider.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
 import {
@@ -39,6 +40,7 @@ function createDriver(provider: ModelProvider | null): DriverFixture {
     wait: (): Promise<void> => Promise.resolve(),
     publishGameChange: vi.fn<() => void>(),
     publishStatusChange: vi.fn<() => void>(),
+    publishActivity: vi.fn<(activity: AiPlayerSeatActivity) => void>(),
   }
   return { driver: new AiPlayerDriver(dependencies), dependencies }
 }
@@ -243,6 +245,48 @@ describe('AiPlayerDriver', () => {
     expect(scripted.conversations[1]?.inputs[0]).toMatchObject({
       toolResults: [],
     })
+  })
+
+  it('shows observers what its seat does, under its seat and model', async () => {
+    const game = seatAiPlayer()
+    const scripted = createScriptedProvider([
+      () => answerSetupChoiceReply(game, FIRST_TEST_PLAYER_ID),
+    ])
+    const { driver, dependencies } = createDriver(scripted.provider)
+
+    driver.handleGameChanged()
+    await vi.waitFor((): void => {
+      expect(aiPlayerStatus()).toBe('idle')
+    })
+
+    expect(dependencies.publishActivity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'toolCall',
+        toolName: ACT_TOOL_NAME,
+        seat: AI_SEAT,
+        model: AI_MODEL,
+      }),
+    )
+  })
+
+  it('shows observers why a session failed', async () => {
+    seatAiPlayer()
+    const scripted = createScriptedProvider([() => stoppedReply('refused')])
+    const { driver, dependencies } = createDriver(scripted.provider)
+
+    driver.handleGameChanged()
+    await vi.waitFor((): void => {
+      expect(aiPlayerStatus()).toBe('stuck')
+    })
+
+    expect(dependencies.publishActivity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'failure',
+        text: 'refused',
+        isError: true,
+        seat: AI_SEAT,
+      }),
+    )
   })
 
   it('restarts a session that is still thinking', () => {

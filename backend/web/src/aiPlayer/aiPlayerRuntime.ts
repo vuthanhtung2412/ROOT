@@ -1,4 +1,8 @@
 import { setTimeout as wait } from 'node:timers/promises'
+import {
+  aiPlayerActivityFeed,
+  type AiPlayerSeatActivity,
+} from '#aiPlayer/AiPlayerActivityFeed.js'
 import { AiPlayerDriver } from '#aiPlayer/AiPlayerDriver.js'
 import type { ModelProviderName } from '#aiPlayer/modelIdentifier.js'
 import type { ModelProvider } from '#aiPlayer/ModelProvider.js'
@@ -18,4 +22,7 @@ export const aiPlayerDriver = new AiPlayerDriver({
     broadcastCurrentGame()
   },
   publishStatusChange: broadcastCurrentGame,
+  publishActivity: (activity: AiPlayerSeatActivity): void => {
+    aiPlayerActivityFeed.publish(activity)
+  },
 })

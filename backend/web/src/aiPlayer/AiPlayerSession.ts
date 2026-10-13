@@ -1,3 +1,4 @@
+import type { AiPlayerSessionActivity } from '#aiPlayer/AiPlayerActivityFeed.js'
 import { buildUnfinishedMessage } from '#aiPlayer/aiPlayerPrompt.js'
 import {
   runAiPlayerTool,
@@ -42,6 +43,8 @@ export type AiPlayerSessionArguments = {
   wait: (milliseconds: number) => Promise<void>
   /** False once what the session is for (its turn, its decision) is over. */
   isInScope: () => boolean
+  /** Told of every message, reply and tool call, as it happens. */
+  onActivity: (activity: AiPlayerSessionActivity) => void
 }
 
 /**
@@ -55,6 +58,7 @@ export class AiPlayerSession {
   private readonly abortSignal: AbortSignal
   private readonly wait: (milliseconds: number) => Promise<void>
   private readonly isInScope: () => boolean
+  private readonly onActivity: (activity: AiPlayerSessionActivity) => void
   /** Results the model has not read yet: they open the next message. */
   private unreadToolResults: readonly ModelToolResult[] = []
   private toolCallCount = 0
@@ -65,6 +69,7 @@ export class AiPlayerSession {
     this.abortSignal = sessionArguments.abortSignal
     this.wait = sessionArguments.wait
     this.isInScope = sessionArguments.isInScope
+    this.onActivity = sessionArguments.onActivity
   }
 
   /**
@@ -76,8 +81,14 @@ export class AiPlayerSession {
     this.unreadToolResults = []
     let unfinishedReplyCount = 0
     for (;;) {
+      if (input.text !== null) {
+        this.report('message', input.text)
+      }
       const reply = await this.conversation.send(input, this.abortSignal)
       this.abortSignal.throwIfAborted()
+      if (reply.text !== '') {
+        this.report('reply', reply.text)
+      }
       if (reply.stopReason === 'refused' || reply.stopReason === 'truncated') {
         throw new AiPlayerSessionError(reply.stopReason)
       }
@@ -101,6 +112,10 @@ export class AiPlayerSession {
     }
   }
 
+  private report(kind: 'message' | 'reply', text: string): void {
+    this.onActivity({ kind, toolName: null, text, isError: false })
+  }
+
   private seatMayAct(): boolean {
     return (
       this.isInScope() &&
@@ -118,7 +133,19 @@ export class AiPlayerSession {
       if (this.toolCallCount > MAX_TOOL_CALLS_PER_SESSION) {
         throw new AiPlayerSessionError('toolCallLimit')
       }
+      this.onActivity({
+        kind: 'toolCall',
+        toolName: toolCall.name,
+        text: JSON.stringify(toolCall.input),
+        isError: false,
+      })
       const result = runAiPlayerTool(this.toolContext, toolCall)
+      this.onActivity({
+        kind: 'toolResult',
+        toolName: toolCall.name,
+        text: result.content,
+        isError: result.isError,
+      })
       toolResults.push({
         callId: toolCall.callId,
         content: result.content,
