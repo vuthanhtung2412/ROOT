@@ -1,5 +1,6 @@
 import {
   describeAction,
+  describeActionShape,
   type Action,
   type ActionSpec,
   type FactionId,
@@ -14,6 +15,28 @@ import { redactStateForViewer } from '#view/redactStateForViewer.js'
 
 const LOG_LINE_SEPARATOR = '\n'
 
+/** A legal action with the exact fields `act` takes for its type. */
+export type DescribedActionSpec = ActionSpec & {
+  /** Fields of the action to send; "params" only lists the values to pick. */
+  shape: string
+}
+
+/**
+ * Param names are lists ("cardIds", "clearings") while the action often takes
+ * one value ("cardId", "clearing"): the shape spells out the action itself.
+ */
+export function listDescribedLegalActions(
+  game: Game,
+  playerId: string,
+): DescribedActionSpec[] {
+  return listPlayerLegalActions(game, playerId).map(
+    (spec: ActionSpec): DescribedActionSpec => ({
+      ...spec,
+      shape: describeActionShape(spec.type) ?? `{type: "${spec.type}"}`,
+    }),
+  )
+}
+
 /** Where the game stands for one seat right after an action. */
 export type ActionReport = {
   /** The action, in the words of the game log. */
@@ -24,7 +47,7 @@ export type ActionReport = {
   phase: string
   yourTurn: boolean
   /** What the seat may do next. Empty: its part is done for now. */
-  legalActions: ActionSpec[]
+  legalActions: DescribedActionSpec[]
   /** Factions that must act before the game moves on, when the seat cannot. */
   waitingFor?: FactionId[]
 }
@@ -57,7 +80,7 @@ export function buildActionReport(request: ActionReportRequest): ActionReport {
   const seat: number | undefined = state.players.find(
     (player: PlayerState): boolean => player.playerId === playerId,
   )?.seat
-  const legalActions = listPlayerLegalActions(game, playerId)
+  const legalActions = listDescribedLegalActions(game, playerId)
   const report: ActionReport = {
     applied: describeAction(action, state),
     log:

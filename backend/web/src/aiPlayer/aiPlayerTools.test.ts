@@ -12,6 +12,7 @@ import {
   type AiPlayerToolContext,
   type AiPlayerToolDefinition,
 } from '#aiPlayer/aiPlayerTools.js'
+import { listDescribedLegalActions } from '#aiPlayer/aiPlayerActionReport.js'
 import type { RuleSection } from '#aiPlayer/rulebook.js'
 import {
   createStartedTwoPlayerGame,
@@ -146,8 +147,12 @@ describe('AI player tools', () => {
       input: { action: { ...KEEP_CORNER_ACTION } },
     })
 
-    const nextLegalActions = listPlayerLegalActions(game, FIRST_TEST_PLAYER_ID)
+    const nextLegalActions = listDescribedLegalActions(
+      game,
+      FIRST_TEST_PLAYER_ID,
+    )
     expect(nextLegalActions.length).toBeGreaterThan(0)
+    expect(nextLegalActions[0]?.shape).toContain('clearing?: number')
     expect(JSON.parse(result.content)).toEqual({
       applied: 'RESOLVE EVENT',
       log: expect.any(Array),

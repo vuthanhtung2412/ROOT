@@ -1,7 +1,10 @@
 import { DECREE_COLUMNS, RuleError, type Action } from '@root/lib'
 import { z } from 'zod'
 import { previewAction } from '#aiPlayer/aiPlayerActionPreview.js'
-import { buildActionReport } from '#aiPlayer/aiPlayerActionReport.js'
+import {
+  buildActionReport,
+  listDescribedLegalActions,
+} from '#aiPlayer/aiPlayerActionReport.js'
 import { lookUpCardDetails } from '#aiPlayer/aiPlayerCardDetail.js'
 import { checkDecree } from '#aiPlayer/aiPlayerDecreeCheck.js'
 import {
@@ -15,11 +18,7 @@ import { formatRuleLookup } from '#aiPlayer/rulebook.js'
 import { logGameEvent } from '#debug/logGame.js'
 import { isAction } from '#typeGuards.js'
 import { mayPlayerSendAction } from '#view/actionSeatGuard.js'
-import {
-  formatPlayerGameView,
-  formatPlayerLog,
-  listPlayerLegalActions,
-} from '#view/playerView.js'
+import { formatPlayerGameView, formatPlayerLog } from '#view/playerView.js'
 
 export type {
   AiPlayerToolContext,
@@ -275,12 +274,12 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
     definition: {
       name: ACTIONS_TOOL_NAME,
       description:
-        'The actions your seat may take right now. Each has a "type" and "params"; every param lists the values you may choose from. An empty list means you are waiting for another player.',
+        'The actions your seat may take right now. Each has a "type", "params" and a "shape"; every param lists the values you may choose from, and "shape" is the exact action to pass to "act" (a param named "cardIds" often fills a field named "cardId"). An empty list means you are waiting for another player.',
       inputJsonSchema: z.toJSONSchema(EmptyInputSchema),
     },
     run: (context) =>
       succeed(
-        formatJson(listPlayerLegalActions(context.game, context.playerId)),
+        formatJson(listDescribedLegalActions(context.game, context.playerId)),
       ),
   },
   {
