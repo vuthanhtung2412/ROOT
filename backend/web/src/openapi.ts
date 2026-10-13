@@ -8,6 +8,7 @@ import { aiPlayerRoutes } from '#routes/aiPlayer.js'
 import { gameRoutes } from '#routes/game.js'
 import { lobbyPlayerRoutes } from '#routes/lobbyPlayer.js'
 import { mapRoutes } from '#routes/map.js'
+import { playerToolRoutes } from '#routes/playerTools.js'
 import { rulesRoutes } from '#routes/rules.js'
 import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
 
@@ -71,6 +72,7 @@ app.route('/game', gameRoutes)
 app.route('/game', aiPlayerRoutes)
 app.route('/game', lobbyPlayerRoutes)
 app.route('/game', rulesRoutes)
+app.route('/game', playerToolRoutes)
 app.route('/map', mapRoutes)
 
 app.openAPIRegistry.registerComponent(

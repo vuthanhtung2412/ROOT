@@ -444,6 +444,20 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
   },
 ]
 
+/**
+ * Tools that only read the game and have no `root-cli` command of their own
+ * yet: one route serves them all to a player, human or not.
+ */
+export const READ_ONLY_PLAYER_TOOL_NAMES: readonly string[] = [
+  CARD_TOOL_NAME,
+  CLEARING_TOOL_NAME,
+  SCORE_TOOL_NAME,
+  WORKSHOPS_TOOL_NAME,
+  SYMPATHY_TOOL_NAME,
+  DECREE_TOOL_NAME,
+  PREVIEW_TOOL_NAME,
+]
+
 export const AI_PLAYER_TOOL_DEFINITIONS: readonly AiPlayerToolDefinition[] =
   AI_PLAYER_TOOLS.map(
     (tool: AiPlayerTool): AiPlayerToolDefinition => tool.definition,
