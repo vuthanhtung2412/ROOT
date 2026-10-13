@@ -44,7 +44,12 @@ const DRAG_STEP_PAUSE_MS = 16
 /** The clearings of the 3D map show up once its scene is loaded. */
 const MAP_3D_READY_SELECTOR = '.map-3d-canvas ~ [data-clearing-id]'
 const FOOTSTEP_SELECTOR = '.board-effects svg.overflow-visible'
+/** The dock and its tabs: everything the fold takes off the map. */
 const DOCK_SELECTOR = '.action-dock'
+const DOCK_FOLD_SELECTOR = '.action-tray__collapse'
+const CLEARING_COUNT = 12
+/** Points probed around a clearing for something drawn over it. */
+const RIM_POINT_COUNT = 8
 const MARQUISE_SEAT = 0
 const VAGABOND_SEAT = 3
 /** The keep of the buildings board: three Marquise warriors leave from here. */
@@ -151,23 +156,81 @@ async function isUnderHud(page, point) {
 }
 
 /**
- * True when the clearing and the action dock are drawn over one another.
+ * What the HUD draws over a clearing: its centre and eight points of its rim
+ * are probed. `dock` tells the action dock (it folds away) from the rest.
  * @param {import('playwright').Page} page
  * @param {number} clearingId
- * @returns {Promise<boolean>}
+ * @returns {Promise<{ dock: boolean, others: string[] }>}
  */
-async function overlapsDock(page, clearingId) {
-  const clearing = await page
+async function overlaysOnClearing(page, clearingId) {
+  const box = await page
     .locator(`[data-clearing-id="${String(clearingId)}"]`)
     .boundingBox()
-  const dock = await page.locator(DOCK_SELECTOR).first().boundingBox()
-  if (clearing === null || dock === null) return false
-  return (
-    clearing.x < dock.x + dock.width &&
-    clearing.x + clearing.width > dock.x &&
-    clearing.y < dock.y + dock.height &&
-    clearing.y + clearing.height > dock.y
+  if (box === null) return { dock: false, others: [] }
+  return page.evaluate(
+    ([centerX, centerY, radius, dockSelector, rimPointCount]) => {
+      const found = { dock: false, others: [] }
+      const points = [[centerX, centerY]]
+      for (let index = 0; index < rimPointCount; index += 1) {
+        const angle = (index / rimPointCount) * Math.PI * 2
+        points.push([
+          centerX + Math.cos(angle) * radius,
+          centerY + Math.sin(angle) * radius,
+        ])
+      }
+      for (const [x, y] of points) {
+        const top = document.elementFromPoint(x, y)
+        if (top === null || top.matches('.map-3d-canvas, [data-clearing-id]')) {
+          continue
+        }
+        if (top.closest(dockSelector) !== null) {
+          found.dock = true
+          continue
+        }
+        const name = `${top.tagName.toLowerCase()}.${top.className.toString().split(' ')[0]}`
+        if (!found.others.includes(name)) found.others.push(name)
+      }
+      return found
+    },
+    [
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+      box.width / 2,
+      DOCK_SELECTOR,
+      RIM_POINT_COUNT,
+    ],
   )
+}
+
+/**
+ * Nothing that stays on screen may lie over a clearing; the action dock may,
+ * as long as folding it gives the clearing back.
+ * @param {import('playwright').Page} page
+ * @param {(name: string) => Promise<void>} shoot
+ */
+async function checkOverlaysAtOpeningView(page, shoot) {
+  const underDock = []
+  for (let clearingId = 0; clearingId < CLEARING_COUNT; clearingId += 1) {
+    const overlays = await overlaysOnClearing(page, clearingId)
+    if (overlays.others.length > 0) {
+      report(
+        `opening view: clearing ${String(clearingId)} is under ${overlays.others.join(', ')}`,
+      )
+    }
+    if (overlays.dock) underDock.push(clearingId)
+  }
+  console.log(`  clearings under the open dock: ${JSON.stringify(underDock)}`)
+  await caption(page, 'A click on its phase tab folds the dock: the clearing under it shows')
+  await page.locator(DOCK_FOLD_SELECTOR).click()
+  await page.waitForTimeout(LOOK_MS)
+  await shoot('01b-dock-folded')
+  for (const clearingId of underDock) {
+    if ((await overlaysOnClearing(page, clearingId)).dock) {
+      report(`folded dock still lies over clearing ${String(clearingId)}`)
+    }
+  }
+  await page.locator(DOCK_FOLD_SELECTOR).click()
+  await page.waitForTimeout(600)
 }
 
 /**
@@ -289,16 +352,7 @@ async function driveMarquise(page, shoot) {
   await page.waitForTimeout(LOOK_MS + 1200)
   await shoot('01-3d-overview')
 
-  // Every clearing must stay clear of the HUD at the opening view.
-  for (let clearingId = 0; clearingId < 12; clearingId += 1) {
-    const center = await clearingCenter(page, clearingId)
-    if (await isUnderHud(page, center)) {
-      report(`opening view: the centre of clearing ${String(clearingId)} is under the HUD`)
-    }
-    if (await overlapsDock(page, clearingId)) {
-      report(`opening view: clearing ${String(clearingId)} is partly under the action dock`)
-    }
-  }
+  await checkOverlaysAtOpeningView(page, shoot)
 
   await caption(page, '2D map toggle: the flat board')
   await page.locator('.map-view-toggle').click()
