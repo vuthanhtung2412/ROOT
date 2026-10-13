@@ -4,7 +4,6 @@ import {
   Game,
   type Action,
   type GameState,
-  type LogEntry,
   formatGameView,
   formatTurnLog,
   toAscii,
@@ -26,8 +25,10 @@ import {
 } from '#view/actionSeatGuard.js'
 import {
   errorResponses,
+  PLAYER_VIEW,
   ReplaceQuerySchema,
   UndoQuerySchema,
+  ViewQuerySchema,
 } from '#schemas/common.js'
 import {
   ActionResultSchema,
@@ -67,24 +68,36 @@ function publishGameChange(): void {
   broadcastCurrentGame()
 }
 
-/** Online mode: state as the caller may see it. Hotseat: full state. */
-function stateForCaller(game: Game, playerId: string | undefined): GameState {
-  if (store.mode !== 'online') {
+/**
+ * Seat-scoped calls see and do only what the caller's seat may. Always in
+ * online mode; in hotseat only when the caller asks for the player view.
+ */
+function isSeatScoped(view: string | undefined): boolean {
+  return store.mode === 'online' || view === PLAYER_VIEW
+}
+
+/** Seat-scoped: state as the caller may see it. Otherwise: full state. */
+function stateForCaller(
+  game: Game,
+  playerId: string | undefined,
+  view?: string,
+): GameState {
+  if (!isSeatScoped(view)) {
     return game.state
   }
   return redactStateForViewer(game.state, playerId ?? '')
 }
 
-/** Online mode: log entries as the caller may see them. Hotseat: full log. */
+/** Seat-scoped: log entries as the caller may see them. Otherwise: full log. */
 function logForCaller(
   game: Game,
-  log: readonly LogEntry[],
   playerId: string | undefined,
+  view?: string,
 ): ViewerLogEntry[] {
-  if (store.mode !== 'online') {
-    return [...log]
+  if (!isSeatScoped(view)) {
+    return [...game.log]
   }
-  return redactLogForViewer(log, game.state, playerId ?? '')
+  return redactLogForViewer(game.log, game.state, playerId ?? '')
 }
 
 /** Online mode: full-slot dumps would leak hands and join ids. */
@@ -117,13 +130,14 @@ function requireHostToReplaceOnlineGame(playerId: string | undefined): void {
   }
 }
 
-/** Online mode only: reject callers whose seat may not send this action type. */
+/** Seat-scoped only: reject callers whose seat may not send this action type. */
 function requireSeatForAction(
   game: Game,
   playerId: string | undefined,
   actionType: string,
+  view?: string,
 ): void {
-  if (store.mode !== 'online') {
+  if (!isSeatScoped(view)) {
     return
   }
   if (!mayPlayerSendAction(game, playerId, actionType)) {
@@ -248,6 +262,7 @@ const getGameRoute = createRoute({
   path: '/',
   tags: ['game'],
   summary: 'Get current game',
+  request: { query: ViewQuerySchema },
   responses: {
     200: {
       description: 'Current game',
@@ -261,7 +276,11 @@ gameRoutes.openapi(getGameRoute, (context) => {
   const game = requireGame()
   return context.json(
     {
-      state: stateForCaller(game, context.req.header(PLAYER_ID_HEADER)),
+      state: stateForCaller(
+        game,
+        context.req.header(PLAYER_ID_HEADER),
+        context.req.valid('query').view,
+      ),
       historyLength: game.history.length,
       mode: store.mode,
     },
@@ -363,6 +382,7 @@ const getActionsRoute = createRoute({
   path: '/actions',
   tags: ['game'],
   summary: 'List legal actions',
+  request: { query: ViewQuerySchema },
   responses: {
     200: {
       description: 'Legal ActionSpecs',
@@ -375,7 +395,7 @@ const getActionsRoute = createRoute({
 gameRoutes.openapi(getActionsRoute, (context) => {
   const game = requireGame()
   const actions =
-    store.mode === 'online'
+    isSeatScoped(context.req.valid('query').view)
       ? redactLegalActionsForViewer(
           game.legalActions(),
           game.state,
@@ -391,6 +411,7 @@ const postActionsRoute = createRoute({
   tags: ['game'],
   summary: 'Apply action',
   request: {
+    query: ViewQuerySchema,
     body: {
       content: { 'application/json': { schema: ActionSchema } },
       required: true,
@@ -412,12 +433,13 @@ gameRoutes.openapi(postActionsRoute, async (context) => {
     throw new HttpError(400, 'BAD_ACTION', 'invalid action shape')
   }
   const playerId = context.req.header(PLAYER_ID_HEADER)
-  requireSeatForAction(game, playerId, body.type)
+  const view = context.req.valid('query').view
+  requireSeatForAction(game, playerId, body.type, view)
   const result = game.apply(body)
   logGameEvent('ACT', result.state, body, result.log)
   publishGameChange()
   return context.json(
-    { ...result, state: stateForCaller(game, playerId) },
+    { ...result, state: stateForCaller(game, playerId, view) },
     200,
   )
 })
@@ -427,6 +449,7 @@ const getLogRoute = createRoute({
   path: '/log',
   tags: ['game'],
   summary: 'Get game log',
+  request: { query: ViewQuerySchema },
   responses: {
     200: {
       description: 'Log entries',
@@ -439,7 +462,13 @@ const getLogRoute = createRoute({
 gameRoutes.openapi(getLogRoute, (context) => {
   const game = requireGame()
   return context.json(
-    { log: logForCaller(game, game.log, context.req.header(PLAYER_ID_HEADER)) },
+    {
+      log: logForCaller(
+        game,
+        context.req.header(PLAYER_ID_HEADER),
+        context.req.valid('query').view,
+      ),
+    },
     200,
   )
 })

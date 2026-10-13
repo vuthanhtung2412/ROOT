@@ -29,6 +29,16 @@ export const UndoQuerySchema = z.object({
   }),
 })
 
+/** `?view=player`: answer as the caller's seat, even in a hotseat game. */
+export const PLAYER_VIEW = 'player'
+
+export const ViewQuerySchema = z.object({
+  view: z.enum([PLAYER_VIEW]).optional().openapi({
+    description:
+      'player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped.',
+  }),
+})
+
 export const errorResponses = {
   400: {
     description: 'Rule or request error',

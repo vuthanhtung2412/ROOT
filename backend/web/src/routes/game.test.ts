@@ -282,6 +282,78 @@ describe('game routes', () => {
     })
   })
 
+  describe('player view in a hotseat game', () => {
+    const FIRST_PLAYER_ID = 'first-player'
+    const SECOND_PLAYER_ID = 'second-player'
+    const KEEP_CORNER_ACTION = { type: 'resolveEvent', clearing: 0 }
+
+    function asPlayer(playerId: string, method: string, body?: object): RequestInit {
+      return {
+        method,
+        headers: { 'Content-Type': 'application/json', 'X-Player-Id': playerId },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      }
+    }
+
+    async function startHotseatGame(): Promise<void> {
+      await app.request(
+        '/game',
+        jsonRequest('POST', { factions: ['marquise', 'eyrie'] }),
+      )
+      await app.request('/game/join', jsonRequest('POST', { playerId: FIRST_PLAYER_ID }))
+      await app.request('/game/join', jsonRequest('POST', { playerId: SECOND_PLAYER_ID }))
+      await app.request('/game/start', { method: 'POST' })
+    }
+
+    it('hides the other hand, join id and actions', async () => {
+      await startHotseatGame()
+      const firstCardId = store.game?.state.players[0]?.hand[0]?.id ?? ''
+      expect(firstCardId).not.toBe('')
+
+      const fullView = await app.request('/game', asPlayer(SECOND_PLAYER_ID, 'GET'))
+      expect(JSON.stringify(await fullView.json())).toContain(`"${firstCardId}"`)
+
+      const playerView = await app.request(
+        '/game?view=player',
+        asPlayer(SECOND_PLAYER_ID, 'GET'),
+      )
+      const playerViewBody = JSON.stringify(await playerView.json())
+      expect(playerViewBody).toContain(SECOND_PLAYER_ID)
+      expect(playerViewBody).not.toContain(FIRST_PLAYER_ID)
+      expect(playerViewBody).not.toContain(`"${firstCardId}"`)
+
+      const playerActions = await app.request(
+        '/game/actions?view=player',
+        asPlayer(SECOND_PLAYER_ID, 'GET'),
+      )
+      expect(await playerActions.json()).toEqual({ actions: [] })
+
+      const playerLog = await app.request(
+        '/game/log?view=player',
+        asPlayer(SECOND_PLAYER_ID, 'GET'),
+      )
+      expect(JSON.stringify(await playerLog.json())).not.toContain(FIRST_PLAYER_ID)
+    })
+
+    it('lets only the seat that may act send the action', async () => {
+      await startHotseatGame()
+
+      const wrongSeat = await app.request(
+        '/game/actions?view=player',
+        asPlayer(SECOND_PLAYER_ID, 'POST', KEEP_CORNER_ACTION),
+      )
+      expect(wrongSeat.status).toBe(403)
+      expect(await wrongSeat.json()).toMatchObject({ code: 'NOT_YOUR_SEAT' })
+
+      const rightSeat = await app.request(
+        '/game/actions?view=player',
+        asPlayer(FIRST_PLAYER_ID, 'POST', KEEP_CORNER_ACTION),
+      )
+      expect(rightSeat.status).toBe(200)
+      expect(JSON.stringify(await rightSeat.json())).not.toContain(SECOND_PLAYER_ID)
+    })
+  })
+
   it('defaults to hotseat mode and reports it on GET', async () => {
     const createResponse = await app.request(
       '/game',
