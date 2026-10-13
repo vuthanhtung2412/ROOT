@@ -120,7 +120,7 @@ function loadModels(
   )
 }
 
-export async function loadMapModels(): Promise<MapModels> {
+async function fetchMapModels(): Promise<MapModels> {
   const loader: GLTFLoader = new GLTFLoader()
   const [pine, leafy, autumn, campfire]: [Group[], Group[], Group[], Group] =
     await Promise.all([
@@ -136,7 +136,7 @@ export async function loadMapModels(): Promise<MapModels> {
  * The pieces are most of the download and only show once the camera zooms
  * in: they are loaded apart, so the woodland does not wait for them.
  */
-export async function loadPieceModels(): Promise<PieceModels> {
+async function fetchPieceModels(): Promise<PieceModels> {
   const loader: GLTFLoader = new GLTFLoader()
   const pieceEntries: Array<[string, PieceModelSource]> = Object.entries(
     PIECE_MODEL_SOURCE_BY_TEXTURE_KEY,
@@ -171,4 +171,28 @@ export async function loadPieceModels(): Promise<PieceModels> {
     }
   }
   return pieces
+}
+
+/**
+ * Kept for the page's lifetime: switching to the flat map and back must not
+ * download and read every file again.
+ */
+let mapModelsLoading: Promise<MapModels> | null = null
+let pieceModelsLoading: Promise<PieceModels> | null = null
+
+export function loadMapModels(): Promise<MapModels> {
+  mapModelsLoading ??= fetchMapModels().catch((error: Error): never => {
+    // A failed download is tried again the next time the map opens.
+    mapModelsLoading = null
+    throw error
+  })
+  return mapModelsLoading
+}
+
+export function loadPieceModels(): Promise<PieceModels> {
+  pieceModelsLoading ??= fetchPieceModels().catch((error: Error): never => {
+    pieceModelsLoading = null
+    throw error
+  })
+  return pieceModelsLoading
 }
