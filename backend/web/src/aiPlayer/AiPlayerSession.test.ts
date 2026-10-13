@@ -44,6 +44,7 @@ function createSession(
     toolContext: createToolContext(game, FIRST_TEST_PLAYER_ID),
     abortSignal: abortController.signal,
     wait,
+    isInScope: (): boolean => game.state.status === 'setup',
   })
   return { session, wait, abortController }
 }
@@ -91,6 +92,24 @@ describe('AiPlayerSession', () => {
     expect(resumeInput?.text).toBe('game moved on')
     expect(resumeInput?.toolResults).toHaveLength(1)
     expect(resumeInput?.toolResults[0]?.content).toContain('Applied')
+  })
+
+  it('stops as soon as its scope is over, even with legal actions left', async () => {
+    const game = createStartedTwoPlayerGame()
+    const scripted = createScriptedConversation([
+      () => {
+        const reply = answerSetupChoiceReply(game, FIRST_TEST_PLAYER_ID)
+        // Out of scope from now on (`isInScope` reads the setup status).
+        game.state.status = 'playing'
+        return reply
+      },
+    ])
+    const { session } = createSession(game, scripted.conversation)
+
+    await session.play('your turn')
+
+    expect(scripted.inputs).toHaveLength(1)
+    expect(game.state.pending[0]).toMatchObject({ seat: 0 })
   })
 
   it('reminds a model that stops early, then gives up', async () => {

@@ -40,6 +40,8 @@ export type AiPlayerSessionArguments = {
   toolContext: AiPlayerToolContext
   abortSignal: AbortSignal
   wait: (milliseconds: number) => Promise<void>
+  /** False once what the session is for (its turn, its decision) is over. */
+  isInScope: () => boolean
 }
 
 /**
@@ -52,6 +54,7 @@ export class AiPlayerSession {
   private readonly toolContext: AiPlayerToolContext
   private readonly abortSignal: AbortSignal
   private readonly wait: (milliseconds: number) => Promise<void>
+  private readonly isInScope: () => boolean
   /** Results the model has not read yet: they open the next message. */
   private unreadToolResults: readonly ModelToolResult[] = []
   private toolCallCount = 0
@@ -61,9 +64,13 @@ export class AiPlayerSession {
     this.toolContext = sessionArguments.toolContext
     this.abortSignal = sessionArguments.abortSignal
     this.wait = sessionArguments.wait
+    this.isInScope = sessionArguments.isInScope
   }
 
-  /** Resolves when the seat has no legal action left. Rejects when aborted. */
+  /**
+   * Resolves when the seat has no legal action left or the session's scope is
+   * over. Rejects when aborted.
+   */
   async play(message: string): Promise<void> {
     let input: ModelInput = { toolResults: this.unreadToolResults, text: message }
     this.unreadToolResults = []
@@ -96,6 +103,7 @@ export class AiPlayerSession {
 
   private seatMayAct(): boolean {
     return (
+      this.isInScope() &&
       listPlayerLegalActions(this.toolContext.game, this.toolContext.playerId)
         .length > 0
     )

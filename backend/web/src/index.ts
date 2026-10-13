@@ -4,6 +4,7 @@ import {
   clearStoredGame,
   enableGamePersistence,
 } from '#store/gamePersistence.js'
+import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import { serve } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
 import { app } from '#openapi.js'
@@ -26,6 +27,8 @@ const gameStoreFile: string =
   process.env[GAME_STORE_FILE_ENV_KEY] ?? DEFAULT_GAME_STORE_FILE
 if (gameStoreFile !== GAME_STORE_DISABLED_VALUE) {
   enableGamePersistence(gameStoreFile)
+  // A restored game may be waiting on an AI seat: let it play on.
+  aiPlayerDriver.handleGameChanged()
 }
 
 // Stopping the server by hand (Ctrl+C) ends the game: drop the saved slot.

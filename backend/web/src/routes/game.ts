@@ -10,6 +10,7 @@ import {
   toSvg,
 } from '@root/lib'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import { logGameEvent } from '#debug/logGame.js'
 import {
   gameExists,
@@ -62,10 +63,14 @@ function requireGame(): Game {
   return store.game
 }
 
-/** After every slot change: save to disk, then push to connected viewers. */
+/**
+ * After every slot change: save to disk, push to connected viewers, then let
+ * the AI seats play what is theirs to play.
+ */
 function publishGameChange(): void {
   persistCurrentGame()
   broadcastCurrentGame()
+  aiPlayerDriver.handleGameChanged()
 }
 
 /**
@@ -375,6 +380,7 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   store.mode = DEFAULT_LOBBY_MODE
   store.aiPlayers = []
   persistCurrentGame()
+  aiPlayerDriver.handleGameChanged()
   logGameEvent('LOAD', store.game.state)
   return context.json({ state: store.game.state, mode: store.mode }, 200)
 })

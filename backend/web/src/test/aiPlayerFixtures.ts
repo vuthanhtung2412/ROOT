@@ -107,6 +107,32 @@ export function createScriptedProvider(
   return { provider, requests, conversations }
 }
 
+export type HangingProvider = {
+  provider: ModelProvider
+  /** Abort signal of every request that is still waiting for the model. */
+  abortSignals: AbortSignal[]
+}
+
+/** Provider whose model never answers: a request ends only when aborted. */
+export function createHangingProvider(): HangingProvider {
+  const abortSignals: AbortSignal[] = []
+  const provider: ModelProvider = {
+    startConversation: (): ModelConversation => ({
+      send(_input: ModelInput, abortSignal: AbortSignal): Promise<ModelReply> {
+        abortSignals.push(abortSignal)
+        return new Promise<ModelReply>(
+          (_resolve, reject: (reason: Error) => void): void => {
+            abortSignal.addEventListener('abort', (): void => {
+              reject(new Error('aborted'))
+            })
+          },
+        )
+      },
+    }),
+  }
+  return { provider, abortSignals }
+}
+
 export function createToolContext(
   game: Game,
   playerId: string,
