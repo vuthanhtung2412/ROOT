@@ -1,6 +1,14 @@
-import { RuleError, type Game } from '@root/lib'
+import { RuleError } from '@root/lib'
 import { z } from 'zod'
-import { formatRuleLookup, type RuleSection } from '#aiPlayer/rulebook.js'
+import { buildActionReport } from '#aiPlayer/aiPlayerActionReport.js'
+import {
+  fail,
+  formatJson,
+  succeed,
+  type AiPlayerToolContext,
+  type AiPlayerToolResult,
+} from '#aiPlayer/aiPlayerToolResult.js'
+import { formatRuleLookup } from '#aiPlayer/rulebook.js'
 import { logGameEvent } from '#debug/logGame.js'
 import { isAction } from '#typeGuards.js'
 import { mayPlayerSendAction } from '#view/actionSeatGuard.js'
@@ -9,6 +17,11 @@ import {
   formatPlayerLog,
   listPlayerLegalActions,
 } from '#view/playerView.js'
+
+export type {
+  AiPlayerToolContext,
+  AiPlayerToolResult,
+} from '#aiPlayer/aiPlayerToolResult.js'
 
 /** JSON as it travels to and from a model. */
 export type JsonValue =
@@ -47,22 +60,6 @@ export type AiPlayerToolCall = {
   input: JsonValue
 }
 
-export type AiPlayerToolResult = {
-  content: string
-  isError: boolean
-  /** True when the call changed the game (an applied `act`). */
-  appliedAction: boolean
-}
-
-/** Everything a tool may touch: one game, seen and played as one seat. */
-export type AiPlayerToolContext = {
-  game: Game
-  playerId: string
-  rulebook: readonly RuleSection[]
-  /** Called after an applied action: save the slot, push it to viewers. */
-  onGameChanged: () => void
-}
-
 type AiPlayerTool = {
   definition: AiPlayerToolDefinition
   run: (context: AiPlayerToolContext, input: JsonValue) => AiPlayerToolResult
@@ -76,7 +73,6 @@ export const ACT_TOOL_NAME = 'act'
 
 const DEFAULT_LOG_ENTRY_LIMIT = 40
 const MAXIMUM_LOG_ENTRY_LIMIT = 200
-const JSON_INDENT_SPACES = 2
 
 const EmptyInputSchema = z.object({})
 
@@ -108,18 +104,6 @@ const ActInputSchema = z.object({
     ),
 })
 
-function succeed(content: string): AiPlayerToolResult {
-  return { content, isError: false, appliedAction: false }
-}
-
-function fail(content: string): AiPlayerToolResult {
-  return { content, isError: true, appliedAction: false }
-}
-
-function formatJson(value: object): string {
-  return JSON.stringify(value, null, JSON_INDENT_SPACES)
-}
-
 function runAct(
   context: AiPlayerToolContext,
   input: JsonValue,
@@ -139,7 +123,14 @@ function runAct(
     logGameEvent('ACT', result.state, action, result.log)
     context.onGameChanged()
     return {
-      content: `Applied. ${formatPlayerLog(context.game, context.playerId, result.log.length)}`,
+      content: formatJson(
+        buildActionReport({
+          game: context.game,
+          playerId: context.playerId,
+          action,
+          logEntryCount: result.log.length,
+        }),
+      ),
       isError: false,
       appliedAction: true,
     }
@@ -223,7 +214,7 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
     definition: {
       name: ACT_TOOL_NAME,
       description:
-        'Take one action as your seat. It must come from the current legal actions. A rule error is returned without changing the game, so you can correct the action and try again.',
+        'Take one action as your seat. It must come from the current legal actions. The result holds what the action caused ("log"), the phase, and "legalActions": what you may do next, so there is no need to call "actions" after it. A rule error is returned without changing the game, so you can correct the action and try again.',
       inputJsonSchema: z.toJSONSchema(ActInputSchema),
     },
     run: runAct,

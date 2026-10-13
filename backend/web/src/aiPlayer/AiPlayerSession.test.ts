@@ -100,7 +100,7 @@ describe('AiPlayerSession', () => {
     const resumeInput = scripted.inputs[messageCountAfterFirstPlay]
     expect(resumeInput?.text).toBe('game moved on')
     expect(resumeInput?.toolResults).toHaveLength(1)
-    expect(resumeInput?.toolResults[0]?.content).toContain('Applied')
+    expect(resumeInput?.toolResults[0]?.content).toContain('"applied"')
   })
 
   it('stops as soon as its scope is over, even with legal actions left', async () => {

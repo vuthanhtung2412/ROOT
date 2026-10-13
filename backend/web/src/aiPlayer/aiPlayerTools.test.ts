@@ -18,6 +18,7 @@ import {
   KEEP_CORNER_ACTION,
   SECOND_TEST_PLAYER_ID,
 } from '#test/gameStateFixtures.js'
+import { listPlayerLegalActions } from '#view/playerView.js'
 
 const RULEBOOK_FIXTURE: RuleSection[] = [
   { sectionNumber: '4.3', title: 'Battle', text: 'Roll two dice.' },
@@ -133,6 +134,49 @@ describe('AI player tools', () => {
     expect(result).toMatchObject({ isError: false, appliedAction: true })
     expect(game.history.length).toBe(historyLengthBefore + 1)
     expect(context.onGameChanged).toHaveBeenCalledTimes(1)
+  })
+
+  it('act: the result carries the next legal actions of the seat', () => {
+    const game = createStartedTwoPlayerGame()
+    const context = createToolContext(game, FIRST_TEST_PLAYER_ID)
+
+    const result = runAiPlayerTool(context, {
+      name: ACT_TOOL_NAME,
+      input: { action: { ...KEEP_CORNER_ACTION } },
+    })
+
+    const nextLegalActions = listPlayerLegalActions(game, FIRST_TEST_PLAYER_ID)
+    expect(nextLegalActions.length).toBeGreaterThan(0)
+    expect(JSON.parse(result.content)).toEqual({
+      applied: 'RESOLVE EVENT',
+      log: expect.any(Array),
+      phase: `${game.state.phase}/${game.state.step}`,
+      yourTurn: true,
+      legalActions: nextLegalActions,
+    })
+  })
+
+  it('act: with nothing left to do, the result names who the game waits for', () => {
+    const game = createStartedTwoPlayerGame()
+    const context = createToolContext(game, FIRST_TEST_PLAYER_ID)
+    let lastContent = ''
+
+    while (listPlayerLegalActions(game, FIRST_TEST_PLAYER_ID).length > 0) {
+      const clearing: number | undefined = listPlayerLegalActions(
+        game,
+        FIRST_TEST_PLAYER_ID,
+      )[0]?.params?.clearing?.[0]
+      lastContent = runAiPlayerTool(context, {
+        name: ACT_TOOL_NAME,
+        input: { action: { type: 'resolveEvent', clearing: clearing ?? 0 } },
+      }).content
+    }
+
+    expect(JSON.parse(lastContent)).toMatchObject({
+      legalActions: [],
+      waitingFor: ['eyrie'],
+    })
+    expect(lastContent).not.toContain(SECOND_TEST_PLAYER_ID)
   })
 
   it('act: refuses an action that belongs to another seat', () => {

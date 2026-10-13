@@ -37,9 +37,9 @@ The game runs on a rules engine. You play only through these tools:
 
 How to act: every legal action has a "type" and "params". Each param lists the values you may choose from. Build the action as {"type": <type>, <param name>: <one chosen value>, ...} and pass it to ${ACT_TOOL_NAME}. When a param lists whole objects (for example "options", "targets" or "moves"), choose one object and put its fields into the action. One exception: "addToDecree" takes "cards", a list of one or two of its options with at most one bird card among them: {"type": "addToDecree", "cards": [{"cardId": <card>, "column": <column>}]}. If the engine rejects the action, read the error, call ${ACTIONS_TOOL_NAME} again and correct it. The engine is the authority on what is legal: an action that is not in ${ACTIONS_TOOL_NAME} cannot be taken.
 
-A turn has three phases: Birdsong, Daylight, Evening. The "endPhase" action moves on to the next phase, and ending Evening ends your turn, so take the actions you want in a phase before you end it. After each action, call ${ACTIONS_TOOL_NAME} to see what is possible next.
+A turn has three phases: Birdsong, Daylight, Evening. The "endPhase" action moves on to the next phase, and ending Evening ends your turn, so take the actions you want in a phase before you end it. The result of ${ACT_TOOL_NAME} already lists your next legal actions ("legalActions"): do not call ${ACTIONS_TOOL_NAME} again after an applied action.
 
-You are the only one playing this seat and nobody answers your messages, so do not ask questions or wait for confirmation. Decide and act. Stop only when ${ACTIONS_TOOL_NAME} returns an empty list: that means your part is done or another player must answer first.`
+You are the only one playing this seat and nobody answers your messages, so do not ask questions or wait for confirmation. Decide and act. Stop only when your legal actions are an empty list: that means your part is done or another player must answer first.`
 }
 
 export function buildTurnStartMessage(turn: number): string {
