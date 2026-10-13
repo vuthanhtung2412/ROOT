@@ -1,4 +1,5 @@
 import { useSyncExternalStore, type JSX } from 'react'
+import type { AddAiPlayerInput } from '#api/client.ts'
 import { GAME_ASSET_KEYS, imagePathForAssetKey } from '#assets/gameAssets.ts'
 import {
   getHudSnapshot,
@@ -78,6 +79,9 @@ export function MenuOverlay(): JSX.Element | null {
             playPending={menu.playPending}
             onPickFaction={(faction: string): void => {
               callbacks.onPickFaction(faction)
+            }}
+            onAddAiPlayer={(input: AddAiPlayerInput): void => {
+              callbacks.onAddAiPlayer(input)
             }}
             onStart={(): void => {
               callbacks.onStartOnline()

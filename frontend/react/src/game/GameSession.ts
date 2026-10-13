@@ -4,6 +4,7 @@ import type {
   FrontendApiClient,
 } from '#api/client.ts'
 import { ApiError } from '#api/client.ts'
+import { setAiPlayers } from '#game/aiPlayerStore.ts'
 import {
   connectGameSocket,
   resolveWebSocketUrl,
@@ -145,6 +146,7 @@ export class GameSession {
   }
 
   applySocketPush(payload: GameSocketPush): void {
+    setAiPlayers(payload.aiPlayers ?? [])
     if (payload.state === null) {
       this.disconnectSocket()
       clearPlayerIdentity(
@@ -628,6 +630,7 @@ export class GameSession {
       if (sequence !== this.refreshSequence) {
         return
       }
+      setAiPlayers(game.aiPlayers)
       this.publish({
         state: game.state,
         legalActions: legal.actions,

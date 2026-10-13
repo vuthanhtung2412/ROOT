@@ -1,4 +1,4 @@
-import type { ActionSpec, GameState } from '#api/client.ts'
+import type { ActionSpec, AddAiPlayerInput, GameState } from '#api/client.ts'
 import type { CardCatalogEntry } from '#assets/gameAssets.ts'
 import type {
   CardPileModalContent,
@@ -102,6 +102,8 @@ export type MenuLobbySeat = {
   faction: string
   occupied: boolean
   isLocalPlayer: boolean
+  /** Model of the AI player in this seat; null for a human or a free seat. */
+  aiModel: string | null
 }
 
 /** One faction of the lobby picker and who holds it. */
@@ -138,6 +140,8 @@ export type MenuCallbacks = {
   onPlayOnline: () => void
   /** Open lobby: take a seat with this faction, or change the pick. */
   onPickFaction: (faction: string) => void
+  /** Online host: seat an AI player (faction only in an open lobby). */
+  onAddAiPlayer: (input: AddAiPlayerInput) => void
   /** Online host: start once every seat is filled. */
   onStartOnline: () => void
   /** Online lobby: host closes the lobby, guest steps out of it. */
@@ -278,6 +282,7 @@ const NOOP_MENU_CALLBACKS: MenuCallbacks = {
   onQaContinue: () => undefined,
   onPlayOnline: () => undefined,
   onPickFaction: () => undefined,
+  onAddAiPlayer: () => undefined,
   onStartOnline: () => undefined,
   onLeaveOnline: () => undefined,
 }

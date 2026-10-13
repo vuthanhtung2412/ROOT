@@ -1,4 +1,5 @@
-import type { GameState } from '#api/client.ts'
+import type { AiPlayer, GameState } from '#api/client.ts'
+import { findAiPlayer } from '#game/aiPlayerStore.ts'
 import type {
   MenuFactionChoice,
   MenuLobbyHudState,
@@ -10,14 +11,6 @@ import { MENU_FACTION_IDS } from '#game/menuPartySetup.ts'
 const MIN_PLAYERS_TO_START = 2
 
 type LobbyPlayer = GameState['players'][number]
-
-function seatOf(player: LobbyPlayer, localSeat: number | null): MenuLobbySeat {
-  return {
-    faction: player.faction,
-    occupied: true,
-    isLocalPlayer: player.seat === localSeat,
-  }
-}
 
 /** Open lobby: every faction, marked with who picked it. */
 function factionChoicesOf(
@@ -37,17 +30,24 @@ function factionChoicesOf(
  * Lobby rows for the menu.
  * Open lobby: one row per player who picked a faction; the host starts with
  * two or more. Preset lobby: one row per decided seat; starts when full.
+ * `aiPlayers`: the seats an AI player holds.
  */
 export function buildMenuLobby(
   state: GameState,
   localSeat: number | null,
   isHost: boolean,
+  aiPlayers: readonly AiPlayer[] = [],
 ): MenuLobbyHudState {
   const joinedCount: number = state.players.length
   if (state.openLobby === true) {
     return {
       seats: state.players.map(
-        (player: LobbyPlayer): MenuLobbySeat => seatOf(player, localSeat),
+        (player: LobbyPlayer): MenuLobbySeat => ({
+          faction: player.faction,
+          occupied: true,
+          isLocalPlayer: player.seat === localSeat,
+          aiModel: findAiPlayer(aiPlayers, player.seat)?.model ?? null,
+        }),
       ),
       isHost,
       canStart: isHost && joinedCount >= MIN_PLAYERS_TO_START,
@@ -60,6 +60,7 @@ export function buildMenuLobby(
         faction,
         occupied: seat < joinedCount,
         isLocalPlayer: seat === localSeat,
+        aiModel: findAiPlayer(aiPlayers, seat)?.model ?? null,
       }),
     ),
     isHost,

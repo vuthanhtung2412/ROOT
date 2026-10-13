@@ -1,4 +1,6 @@
 import type { JSX } from 'react'
+import type { AddAiPlayerInput } from '#api/client.ts'
+import { modelDisplayName } from '#game/aiPlayerStore.ts'
 import type {
   MenuFactionChoice,
   MenuLobbyHudState,
@@ -6,6 +8,7 @@ import type {
 } from '#game/hudStore.ts'
 import { factionDisplayName, isMenuFactionId } from '#game/menuPartySetup.ts'
 import { factionColorCss } from '#game/theme.ts'
+import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
 import {
   FactionBadge,
   PRIMARY_BUTTON_CLASS_NAME,
@@ -27,6 +30,7 @@ function factionName(factionId: string): string {
 }
 
 function lobbySeatStatus(seat: MenuLobbySeat): string {
+  if (seat.aiModel !== null) return `AI · ${modelDisplayName(seat.aiModel)}`
   if (seat.isLocalPlayer) return 'you'
   return seat.occupied ? 'joined' : 'waiting…'
 }
@@ -89,6 +93,7 @@ export function OnlineLobbyPanel(props: {
   lobby: MenuLobbyHudState
   playPending: boolean
   onPickFaction: (faction: string) => void
+  onAddAiPlayer: (input: AddAiPlayerInput) => void
   onStart: () => void
   onLeave: () => void
 }): JSX.Element {
@@ -126,6 +131,13 @@ export function OnlineLobbyPanel(props: {
           choices={props.lobby.factionChoices}
           disabled={props.playPending}
           onPick={props.onPickFaction}
+        />
+      ) : null}
+      {props.lobby.isHost ? (
+        <MenuAiPlayerForm
+          factionChoices={props.lobby.factionChoices}
+          disabled={props.playPending}
+          onAdd={props.onAddAiPlayer}
         />
       ) : null}
       {props.lobby.isHost ? (

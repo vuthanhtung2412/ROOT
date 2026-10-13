@@ -7,12 +7,22 @@ import {
   useSyncExternalStore,
   type JSX,
 } from 'react'
-import { createFrontendApi } from '#api/client.ts'
+import {
+  createFrontendAiPlayerApi,
+  createFrontendApi,
+  type AddAiPlayerInput,
+  type AiPlayerApi,
+} from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import {
   MENU_BOOT_IMAGE_ASSETS,
   WARM_GAME_IMAGE_ASSETS,
 } from '#assets/gameAssets.ts'
+import {
+  getAiPlayerSnapshot,
+  setAiModels,
+  setAiPlayers,
+} from '#game/aiPlayerStore.ts'
 import { GameSession, type GameSessionSnapshot } from '#game/GameSession.ts'
 import {
   clearHotseatGameOpen,
@@ -111,6 +121,9 @@ export function App(): JSX.Element {
   const handlePickFactionRef = useRef<(faction: string) => void>(
     () => undefined,
   )
+  const handleAddAiPlayerRef = useRef<(input: AddAiPlayerInput) => void>(
+    () => undefined,
+  )
   const handleStartOnlineRef = useRef<() => void>(() => undefined)
   const handleLeaveOnlineRef = useRef<() => void>(() => undefined)
   const resumeOnlineGameRef = useRef<() => Promise<void>>(() =>
@@ -137,6 +150,15 @@ export function App(): JSX.Element {
   const readRequestPlayerId = useCallback(
     (): string | null => sessionRef.current?.getRequestPlayerId() ?? null,
     [],
+  )
+
+  const createAiPlayerApi = useCallback(
+    (): AiPlayerApi =>
+      createFrontendAiPlayerApi({
+        baseUrl: resolveDefaultApiBaseUrl(),
+        playerId: readRequestPlayerId,
+      }),
+    [readRequestPlayerId],
   )
 
   const ensureSession = useCallback((): GameSession => {
@@ -176,6 +198,9 @@ export function App(): JSX.Element {
       },
       onPickFaction: (faction) => {
         handlePickFactionRef.current(faction)
+      },
+      onAddAiPlayer: (input) => {
+        handleAddAiPlayerRef.current(input)
       },
       onStartOnline: () => {
         handleStartOnlineRef.current()
@@ -229,7 +254,12 @@ export function App(): JSX.Element {
       }
       if (state.status === 'waiting') {
         syncMenuLobby(
-          buildMenuLobby(state, session.getLocalSeat(), session.isOnlineHost()),
+          buildMenuLobby(
+            state,
+            session.getLocalSeat(),
+            session.isOnlineHost(),
+            getAiPlayerSnapshot().aiPlayers,
+          ),
         )
         return
       }
@@ -242,7 +272,27 @@ export function App(): JSX.Element {
     if (session.getSnapshot().state !== null) {
       showLobby(session.getSnapshot())
     }
-  }, [clearLobbyWait, ensureSession, enterGame])
+    // Models the host may give an AI player. No model = no "Add AI" form.
+    void createAiPlayerApi()
+      .aiModels()
+      .then(setAiModels, (): void => undefined)
+  }, [clearLobbyWait, createAiPlayerApi, ensureSession, enterGame])
+
+  /** Online host: seat an AI player; the server push redraws the lobby. */
+  const handleAddAiPlayer = useCallback(
+    async (input: AddAiPlayerInput): Promise<void> => {
+      try {
+        setAiPlayers(await createAiPlayerApi().addAiPlayer(input))
+        syncMenuStatus('', '#9a9a9a')
+      } catch (error: unknown) {
+        syncMenuStatus(
+          error instanceof Error ? error.message : 'Could not add an AI player',
+          '#c44',
+        )
+      }
+    },
+    [createAiPlayerApi],
+  )
 
   const runOnlineLobbyAction = useCallback(
     async (
@@ -422,6 +472,9 @@ export function App(): JSX.Element {
   }
   handlePickFactionRef.current = (faction: string) => {
     void handlePickFaction(faction)
+  }
+  handleAddAiPlayerRef.current = (input: AddAiPlayerInput) => {
+    void handleAddAiPlayer(input)
   }
   handleLeaveOnlineRef.current = () => {
     void handleLeaveOnline()

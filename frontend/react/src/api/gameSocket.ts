@@ -1,10 +1,12 @@
-import type { ActionSpec, GameState } from '#api/client.ts'
+import type { ActionSpec, AiPlayer, GameState } from '#api/client.ts'
 
 export type GameSocketPush = {
   state: GameState | null
   historyLength: number
   legalActions: ActionSpec[]
   log: unknown[]
+  /** Seats played by an LLM. Absent on pushes of an older server. */
+  aiPlayers?: AiPlayer[]
 }
 
 export type GameSocketHandlers = {

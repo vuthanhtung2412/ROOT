@@ -368,7 +368,8 @@ export function createGameApi(
         state: parseGameState(data.state),
         historyLength: data.historyLength,
         mode: data.mode,
-        aiPlayers: data.aiPlayers,
+        // Absent on a server from before AI players.
+        aiPlayers: data.aiPlayers ?? [],
       }
     },
 

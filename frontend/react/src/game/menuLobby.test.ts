@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { GameState } from '#api/client.ts'
-import type { MenuFactionChoice } from '#game/hudStore.ts'
+import type { AiPlayer, GameState } from '#api/client.ts'
+import type { MenuFactionChoice, MenuLobbySeat } from '#game/hudStore.ts'
 import { buildMenuLobby } from '#game/menuLobby.ts'
 import { makeGameState } from '#test/factories.ts'
 
@@ -49,8 +49,8 @@ describe('buildMenuLobby — open lobby', () => {
     expect(choiceOf(lobby.factionChoices, 'riverfolk')?.takenBy).toBe('you')
     expect(choiceOf(lobby.factionChoices, 'eyrie')?.takenBy).toBeNull()
     expect(lobby.seats).toEqual([
-      { faction: 'lizard', occupied: true, isLocalPlayer: false },
-      { faction: 'riverfolk', occupied: true, isLocalPlayer: true },
+      { faction: 'lizard', occupied: true, isLocalPlayer: false, aiModel: null },
+      { faction: 'riverfolk', occupied: true, isLocalPlayer: true, aiModel: null },
     ])
   })
 
@@ -76,11 +76,25 @@ describe('buildMenuLobby — preset lobby', () => {
     const lobby = buildMenuLobby(oneJoined, 0, true)
 
     expect(lobby.seats).toEqual([
-      { faction: 'marquise', occupied: true, isLocalPlayer: true },
-      { faction: 'eyrie', occupied: false, isLocalPlayer: false },
+      { faction: 'marquise', occupied: true, isLocalPlayer: true, aiModel: null },
+      { faction: 'eyrie', occupied: false, isLocalPlayer: false, aiModel: null },
     ])
     expect(lobby.canStart).toBe(false)
     expect(lobby.factionChoices).toEqual([])
     expect(buildMenuLobby(waiting, 0, true).canStart).toBe(true)
+  })
+
+  it('marks the seat an AI player holds with its model', () => {
+    const waiting: GameState = makeGameState({ status: 'waiting' })
+    const aiPlayers: AiPlayer[] = [
+      { seat: 1, model: 'anthropic:claude-opus-5-5', status: 'idle' },
+    ]
+
+    const lobby = buildMenuLobby(waiting, 0, true, aiPlayers)
+
+    expect(lobby.seats.map((seat: MenuLobbySeat) => seat.aiModel)).toEqual([
+      null,
+      'anthropic:claude-opus-5-5',
+    ])
   })
 })
