@@ -44,9 +44,7 @@ const DRAG_STEP_PAUSE_MS = 16
 /** The clearings of the 3D map show up once its scene is loaded. */
 const MAP_3D_READY_SELECTOR = '.map-3d-canvas ~ [data-clearing-id]'
 const FOOTSTEP_SELECTOR = '.board-effects svg.overflow-visible'
-/** The dock and its tabs: everything the fold takes off the map. */
 const DOCK_SELECTOR = '.action-dock'
-const DOCK_FOLD_SELECTOR = '.action-tray__collapse'
 const CLEARING_COUNT = 12
 /** Points probed around a clearing for something drawn over it. */
 const RIM_POINT_COUNT = 8
@@ -203,34 +201,17 @@ async function overlaysOnClearing(page, clearingId) {
 }
 
 /**
- * Nothing that stays on screen may lie over a clearing; the action dock may,
- * as long as folding it gives the clearing back.
+ * Nothing that stays on screen may lie over a clearing.
  * @param {import('playwright').Page} page
- * @param {(name: string) => Promise<void>} shoot
  */
-async function checkOverlaysAtOpeningView(page, shoot) {
-  const underDock = []
+async function checkOverlaysAtOpeningView(page) {
   for (let clearingId = 0; clearingId < CLEARING_COUNT; clearingId += 1) {
     const overlays = await overlaysOnClearing(page, clearingId)
-    if (overlays.others.length > 0) {
-      report(
-        `opening view: clearing ${String(clearingId)} is under ${overlays.others.join(', ')}`,
-      )
-    }
-    if (overlays.dock) underDock.push(clearingId)
-  }
-  console.log(`  clearings under the open dock: ${JSON.stringify(underDock)}`)
-  await caption(page, 'A click on its phase tab folds the dock: the clearing under it shows')
-  await page.locator(DOCK_FOLD_SELECTOR).click()
-  await page.waitForTimeout(LOOK_MS)
-  await shoot('01b-dock-folded')
-  for (const clearingId of underDock) {
-    if ((await overlaysOnClearing(page, clearingId)).dock) {
-      report(`folded dock still lies over clearing ${String(clearingId)}`)
+    const names = overlays.dock ? ['the action dock', ...overlays.others] : overlays.others
+    if (names.length > 0) {
+      report(`opening view: clearing ${String(clearingId)} is under ${names.join(', ')}`)
     }
   }
-  await page.locator(DOCK_FOLD_SELECTOR).click()
-  await page.waitForTimeout(600)
 }
 
 /**
@@ -352,7 +333,7 @@ async function driveMarquise(page, shoot) {
   await page.waitForTimeout(LOOK_MS + 1200)
   await shoot('01-3d-overview')
 
-  await checkOverlaysAtOpeningView(page, shoot)
+  await checkOverlaysAtOpeningView(page)
 
   await caption(page, '2D map toggle: the flat board')
   await page.locator('.map-view-toggle').click()

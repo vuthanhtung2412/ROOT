@@ -1,6 +1,6 @@
 import { useRef, useState, useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
-import { LuChevronDown, LuChevronUp, LuUndo2 } from 'react-icons/lu'
+import { LuUndo2 } from 'react-icons/lu'
 import type { ActionSpec } from '#api/client.ts'
 import {
   getCardPileSnapshot,
@@ -79,7 +79,7 @@ const UNDO_LABEL = 'undo'
 
 /** Narrow: centred above the hand. Wide: bottom right corner. */
 const DOCK_POSITION_CLASS_NAME =
-  'fixed bottom-(--root-portrait-tray-bottom) left-1/2 z-115 flex max-w-[calc(100vw-16px)] -translate-x-1/2 md:right-3 md:bottom-4 md:left-auto md:z-110 md:translate-x-0'
+  'fixed bottom-(--root-portrait-tray-bottom) left-1/2 z-115 flex max-w-[calc(100vw-16px)] -translate-x-1/2 md:right-0 md:bottom-0 md:left-auto md:z-110 md:translate-x-0'
 /** Frame in the colour of the faction taking the turn. */
 const DOCK_FRAME_CLASS_NAME =
   'action-dock root-paper flex flex-row items-stretch gap-2.5 p-2.5'
@@ -118,8 +118,6 @@ const TILE_SUIT_BADGE_CLASS_NAME =
 /** Gold ring: the action being staged, its panel shown. */
 const TILE_RINGED_CLASS_NAME =
   'shadow-gold-ring [--root-paper-color:var(--color-paper-bright)]'
-/** A folded dock is its tab alone: no frame, nothing over the map. */
-const DOCK_FOLDED_FRAME_CLASS_NAME = 'action-dock relative'
 /** Cards staged in the Decree panel, told on the tile while the panel is off. */
 const TILE_COUNT_BADGE_CLASS_NAME =
   'action-tray__count pointer-events-none absolute -right-1.5 -bottom-1.5 rounded-full bg-ink-deep px-1 font-mono text-[11px] leading-4.5 font-bold text-parchment'
@@ -130,7 +128,7 @@ const TAB_ROW_CLASS_NAME =
   'absolute right-0 bottom-full flex min-w-full flex-row items-end justify-between gap-2 px-2.5'
 /** Paper tab: phase mark, phase name, budget left. */
 const PHASE_TAB_CLASS_NAME =
-  'action-tray__collapse root-paper root-paper-fine root-paper-press pointer-events-auto m-0 flex flex-row items-center gap-1.5 px-2 py-0.5 font-display text-lg whitespace-nowrap text-ink capitalize [--root-paper-color:var(--color-parchment)]'
+  'root-paper root-paper-fine flex flex-row items-center gap-1.5 px-2 py-0.5 font-display text-lg whitespace-nowrap text-ink capitalize [--root-paper-color:var(--color-parchment)]'
 const PHASE_TAB_ICON_CLASS_NAME = 'text-base text-gold'
 const PHASE_TAB_BUDGET_CLASS_NAME = 'font-mono text-xs opacity-75'
 
@@ -209,35 +207,22 @@ function UndoTile(props: { onUndo: () => void }): JSX.Element {
   )
 }
 
-/**
- * The handle of the dock: a click folds the dock down to this tab, so the
- * map under it shows, and a click on the folded tab brings the dock back.
- */
 function PhaseTab(props: {
   phase: string
   budgetLabel: string | null
-  isFolded: boolean
-  onToggle: () => void
 }): JSX.Element | null {
   const PhaseIcon: IconType | null = phaseIconFor(props.phase)
   if (PhaseIcon === null) {
     return null
   }
-  const FoldIcon: IconType = props.isFolded ? LuChevronUp : LuChevronDown
   return (
-    <button
-      type="button"
-      className={PHASE_TAB_CLASS_NAME}
-      aria-expanded={!props.isFolded}
-      onClick={props.onToggle}
-    >
+    <div className={PHASE_TAB_CLASS_NAME}>
       <PhaseIcon className={PHASE_TAB_ICON_CLASS_NAME} aria-hidden="true" />
       {props.phase}
       {props.budgetLabel !== null ? (
         <span className={PHASE_TAB_BUDGET_CLASS_NAME}>{props.budgetLabel}</span>
       ) : null}
-      <FoldIcon className="text-base" aria-hidden="true" />
-    </button>
+    </div>
   )
 }
 
@@ -261,11 +246,6 @@ export function ActionTray(): JSX.Element | null {
     subscribeHud,
     () => getHudSnapshot().decreePanel,
     () => getHudSnapshot().decreePanel,
-  )
-  const isCollapsed: boolean = useSyncExternalStore(
-    subscribeHud,
-    (): boolean => getHudSnapshot().actionTrayCollapsed,
-    (): boolean => getHudSnapshot().actionTrayCollapsed,
   )
   const [isCardsPanelOpen, setIsCardsPanelOpen] = useState<boolean>(false)
   const phaseTileMemoryRef = useRef<PhaseTileMemory>(EMPTY_PHASE_TILE_MEMORY)
@@ -316,8 +296,6 @@ export function ActionTray(): JSX.Element | null {
     return null
   }
   const phase: string = tray.state?.phase ?? ''
-  // Without its tab a folded dock could not be brought back: it stays open.
-  const isFolded: boolean = isCollapsed && phaseIconFor(phase) !== null
   const budgetLabel: string | null =
     decreeColumns !== null
       ? decreeTally(decreeColumns)
@@ -353,30 +331,11 @@ export function ActionTray(): JSX.Element | null {
   const frameColorClassName: string =
     (faction !== undefined ? FACTION_FRAME_CLASS_NAMES[faction] : undefined) ??
     NEUTRAL_FRAME_CLASS_NAME
-  const phaseTab: JSX.Element = (
-    <PhaseTab
-      phase={phase}
-      budgetLabel={budgetLabel}
-      isFolded={isFolded}
-      onToggle={() => {
-        patchHud({ actionTrayCollapsed: !isCollapsed })
-      }}
-    />
-  )
-  if (isFolded) {
-    return (
-      <div className={DOCK_POSITION_CLASS_NAME}>
-        <div className={DOCK_FOLDED_FRAME_CLASS_NAME}>
-          <div className={TAB_ROW_CLASS_NAME}>{phaseTab}</div>
-        </div>
-      </div>
-    )
-  }
   return (
     <div className={DOCK_POSITION_CLASS_NAME}>
       <div className={`${DOCK_FRAME_CLASS_NAME} ${frameColorClassName}`}>
         <div className={TAB_ROW_CLASS_NAME}>
-          {phaseTab}
+          <PhaseTab phase={phase} budgetLabel={budgetLabel} />
           {cardRows.length > 0 ? (
             <CardsTab
               tally={cardActionTally(cardRows, phase)}
