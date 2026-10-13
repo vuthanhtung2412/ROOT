@@ -9,9 +9,11 @@ import {
 import path from 'node:path'
 import { Game } from '@root/lib'
 import {
+  DEFAULT_AI_PLAYER_STATUS,
   DEFAULT_LOBBY_MODE,
   LOBBY_MODES,
   store,
+  type AiPlayerSeat,
   type LobbyMode,
 } from '#store/GameStore.js'
 import { isGameSnapshot } from '#typeGuards.js'
@@ -23,6 +25,31 @@ let persistenceFilePath: string | null = null
 
 function isLobbyMode(value: unknown): value is LobbyMode {
   return LOBBY_MODES.some((mode) => mode === value)
+}
+
+/** What is saved of an AI seat: who and which model, not its live status. */
+type StoredAiPlayerSeat = Pick<AiPlayerSeat, 'playerId' | 'model'>
+
+function isStoredAiPlayerSeat(value: unknown): value is StoredAiPlayerSeat {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof Reflect.get(value, 'playerId') === 'string' &&
+    typeof Reflect.get(value, 'model') === 'string'
+  )
+}
+
+function restoreAiPlayerSeats(value: unknown): AiPlayerSeat[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value.filter(isStoredAiPlayerSeat).map(
+    (seat: StoredAiPlayerSeat): AiPlayerSeat => ({
+      playerId: seat.playerId,
+      model: seat.model,
+      status: DEFAULT_AI_PLAYER_STATUS,
+    }),
+  )
 }
 
 /**
@@ -52,8 +79,10 @@ function restoreStoredGame(filePath: string): void {
     if (!isGameSnapshot(snapshot)) {
       return
     }
+    const aiPlayers: unknown = Reflect.get(stored, 'aiPlayers')
     store.game = Game.fromJSON(snapshot)
     store.mode = isLobbyMode(mode) ? mode : DEFAULT_LOBBY_MODE
+    store.aiPlayers = restoreAiPlayerSeats(aiPlayers)
     console.log(`Restored ${store.mode} game from ${filePath}`)
   } catch (error: unknown) {
     console.error(`Could not restore game from ${filePath}`, error)
@@ -89,7 +118,16 @@ export function persistCurrentGame(): void {
     const temporaryPath = `${filePath}${TEMPORARY_FILE_SUFFIX}`
     writeFileSync(
       temporaryPath,
-      JSON.stringify({ mode: store.mode, snapshot: store.game.toJSON() }),
+      JSON.stringify({
+        mode: store.mode,
+        aiPlayers: store.aiPlayers.map(
+          (seat: AiPlayerSeat): StoredAiPlayerSeat => ({
+            playerId: seat.playerId,
+            model: seat.model,
+          }),
+        ),
+        snapshot: store.game.toJSON(),
+      }),
       'utf8',
     )
     renameSync(temporaryPath, filePath)

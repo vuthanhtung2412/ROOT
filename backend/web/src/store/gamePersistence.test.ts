@@ -66,6 +66,38 @@ describe('game persistence', () => {
     expect(restoredFirstPlayerId()).toBe(HOST_PLAYER_ID)
   })
 
+  it('restores the AI seats; a new game starts without them', async () => {
+    enableGamePersistence(storeFile)
+    await app.request('/game', jsonRequest('POST', { factions: ['marquise', 'eyrie'] }))
+    store.aiPlayers = [
+      {
+        playerId: 'ai-seat-secret',
+        model: 'anthropic:claude-opus-5-5',
+        status: 'stuck',
+      },
+    ]
+    await app.request('/game/join', jsonRequest('POST', { playerId: 'ai-seat-secret' }))
+
+    store.game = null
+    store.aiPlayers = []
+    enableGamePersistence(storeFile)
+
+    // The live status is not saved: a restarted server starts the seat idle.
+    expect(store.aiPlayers).toEqual([
+      {
+        playerId: 'ai-seat-secret',
+        model: 'anthropic:claude-opus-5-5',
+        status: 'idle',
+      },
+    ])
+
+    await app.request(
+      '/game?replace=1',
+      jsonRequest('POST', { factions: ['marquise', 'eyrie'] }),
+    )
+    expect(store.aiPlayers).toEqual([])
+  })
+
   it('removes the file when the slot is cleared', async () => {
     enableGamePersistence(storeFile)
     await app.request('/game', jsonRequest('POST', { factions: ['marquise', 'eyrie'] }))

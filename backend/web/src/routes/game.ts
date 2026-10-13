@@ -188,6 +188,7 @@ gameRoutes.openapi(createGameRoute, async (context) => {
           })()
   store.game = Game.create({ seed, factions })
   store.mode = body.mode ?? DEFAULT_LOBBY_MODE
+  store.aiPlayers = []
   logGameEvent('CREATE', store.game.state)
   publishGameChange()
   return context.json({ state: store.game.state, mode: store.mode }, 201)
@@ -372,6 +373,7 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   }
   // Loaded snapshots are QA / dev slots: every seat is driven from one device.
   store.mode = DEFAULT_LOBBY_MODE
+  store.aiPlayers = []
   persistCurrentGame()
   logGameEvent('LOAD', store.game.state)
   return context.json({ state: store.game.state, mode: store.mode }, 200)
@@ -587,6 +589,7 @@ gameRoutes.openapi(deleteGameRoute, (context) => {
   requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
   store.game = null
   store.mode = DEFAULT_LOBBY_MODE
+  store.aiPlayers = []
   publishGameChange()
   return context.body(null, 204)
 })
