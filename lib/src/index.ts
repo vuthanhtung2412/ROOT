@@ -16,6 +16,13 @@ export {
   VAGABOND,
 } from '#factions/index.js'
 
+export type {
+  DecreeCardForecast,
+  DecreeForecast,
+  DecreeForecastRequest,
+} from '#factions/eyrie/decreeForecast.js'
+export { DECREE_COLUMNS, type DecreeColumn } from '#state/boards.js'
+
 export type { LogEntry } from '#log/types.js'
 
 export type {

@@ -1,5 +1,10 @@
 import { assertActionShape } from '#actions/actionShape.js'
 import type { Action, ActionResult, ActionSpec } from '#actions/types.js'
+import {
+  forecastDecree,
+  type DecreeForecast,
+  type DecreeForecastRequest,
+} from '#factions/eyrie/decreeForecast.js'
 import { factionFor } from '#factions/index.js'
 import { beginFactionSetup } from '#game/factionSetup.js'
 import {
@@ -369,6 +374,11 @@ export class Game {
       tookBackChoice = this.choiceHistory.at(-1) ?? true
       this.undo()
     }
+  }
+
+  /** Which Decree cards an Eyrie seat could resolve now. Reads only. */
+  forecastDecree(request: DecreeForecastRequest): DecreeForecast {
+    return forecastDecree(this.state, request, this.makeCtx())
   }
 
   /** Subscribe to emitted game signals (tests / diagnostics). */
