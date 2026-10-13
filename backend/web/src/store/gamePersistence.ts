@@ -8,6 +8,7 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import { Game } from '@root/lib'
+import { logGameEvent } from '#debug/logGame.js'
 import {
   DEFAULT_AI_PLAYER_STATUS,
   DEFAULT_LOBBY_MODE,
@@ -83,12 +84,12 @@ function restoreStoredGame(filePath: string): void {
     store.game = Game.fromJSON(snapshot)
     store.mode = isLobbyMode(mode) ? mode : DEFAULT_LOBBY_MODE
     store.aiPlayers = restoreAiPlayerSeats(aiPlayers)
-    const { id, status, turn, factions, players } = store.game.state
     console.log(
-      `Restored existing ${store.mode} game ${id} from ${filePath}: ` +
-        `status ${status}, turn ${turn}, factions ${factions.join(' + ')}, ` +
-        `${players.length} joined, ${store.aiPlayers.length} AI`,
+      `Restored existing ${store.mode} game from ${filePath} ` +
+        `(${store.aiPlayers.length} AI seats)`,
     )
+    // Same full dump as after a loaded snapshot: seats, phase, boards, map.
+    logGameEvent('LOAD', store.game.state)
   } catch (error: unknown) {
     console.error(`Could not restore game from ${filePath}`, error)
   }
