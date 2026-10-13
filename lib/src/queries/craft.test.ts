@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { minimalState, withPieces, card, player, marquiseBoard } from '#test/fixtures.js'
-import { canCraft } from '#queries/craft.js'
+import { FALL } from '#map/fall.js'
+import { canCraft, unusedCraftingSuits } from '#queries/craft.js'
 
 describe('canCraft', () => {
   it('Rule: Craft 1 — activate crafting pieces matching cost suits', () => {
@@ -127,5 +128,27 @@ describe('canCraft', () => {
     ])
     state.clearings[0]!.pieces = []
     expect(canCraft(state, 0, card('ROOT-204'))).toBe(false)
+  })
+})
+
+describe('unusedCraftingSuits', () => {
+  it('lists one suit per crafting piece that is not used yet', () => {
+    const state = withPieces(
+      withPieces(minimalState(), 0, [
+        { id: 'ws-1', kind: 'building', owner: 0, type: 'workshop', used: false },
+        { id: 'ws-2', kind: 'building', owner: 0, type: 'workshop', used: true },
+        { id: 'saw', kind: 'building', owner: 0, type: 'sawmill' },
+      ]),
+      1,
+      [
+        { id: 'ws-3', kind: 'building', owner: 0, type: 'workshop', used: false },
+        { id: 'roost', kind: 'building', owner: 1, type: 'roost', used: false },
+      ],
+    )
+
+    expect(unusedCraftingSuits(state, 0)).toEqual([
+      FALL.clearings[0]?.suit,
+      FALL.clearings[1]?.suit,
+    ])
   })
 })

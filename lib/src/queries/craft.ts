@@ -106,3 +106,10 @@ export function assignCraftSources(
 function suitMatches(need: CostSuit, have: Suit): boolean {
   return need === 'wild' || need === have
 }
+
+/** Suit of every crafting piece the seat can still activate this turn. */
+export function unusedCraftingSuits(state: GameState, seat: Seat): Suit[] {
+  return craftingSources(state, seat).map(
+    (source: CraftSource): Suit => source.suit,
+  )
+}
