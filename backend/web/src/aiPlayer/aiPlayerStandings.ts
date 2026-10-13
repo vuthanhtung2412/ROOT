@@ -1,4 +1,5 @@
 import {
+  dividendVictoryPoints,
   EYRIE_ROOST_VP,
   type FactionId,
   type Game,
@@ -25,8 +26,12 @@ export type PlayerStanding = {
   buildingsOnMap: Record<string, number>
   tokensOnMap: Record<string, number>
   craftedItems: string[]
-  /** Points the faction scores at its next Evening if the map stays as it is. */
-  sureVictoryPointsNextEvening?: { points: number; from: string }
+  /**
+   * Points the faction scores on its next turn without acting, if nothing
+   * changes: Eyrie roosts, Riverfolk dividends. Absent for factions that
+   * score only through their actions.
+   */
+  sureVictoryPointsNextTurn?: { points: number; from: string }
 }
 
 export type Standings = {
@@ -86,12 +91,22 @@ function standingOf(
       (item: PlayerState['craftedItems'][number]): string => item.type,
     ),
   }
+  if (player.board.kind === 'riverfolk') {
+    // Rule: 11.4.2 Score Dividends — at Birdsong, with a trade post on the map.
+    return {
+      ...standing,
+      sureVictoryPointsNextTurn: {
+        points: dividendVictoryPoints(state, player.board),
+        from: `${String(player.board.funds.length)} funds at Birdsong (dividends)`,
+      },
+    }
+  }
   if (player.board.kind !== 'eyrie') return standing
   // Rule: 7.6.1 — the Eyrie score their roosts on the map every Evening.
   const roosts = buildingsOnMap[ROOST_BUILDING] ?? 0
   return {
     ...standing,
-    sureVictoryPointsNextEvening: {
+    sureVictoryPointsNextTurn: {
       points:
         EYRIE_ROOST_VP[Math.min(roosts, HIGHEST_ROOST_TRACK_INDEX)] ?? 0,
       from: `${String(roosts)} roosts on the map at Evening`,

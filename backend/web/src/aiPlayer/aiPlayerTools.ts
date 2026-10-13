@@ -369,7 +369,7 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
     definition: {
       name: SCORE_TOOL_NAME,
       description:
-        'The standings: the goal, and for every faction its victory points, points still needed, hand size, warriors, buildings and tokens on the map, crafted items, and points it is sure to score at its next Evening. Also the pieces left in your supply. Use it to see who is ahead and to plan toward the goal.',
+        'The standings: the goal, and for every faction its victory points, points still needed, hand size, warriors, buildings and tokens on the map, crafted items, and the points it scores on its next turn without acting (Eyrie roosts, Riverfolk dividends). Also the pieces left in your supply. Use it to see who is ahead and to plan toward the goal.',
       inputJsonSchema: z.toJSONSchema(EmptyInputSchema),
     },
     run: (context) => {

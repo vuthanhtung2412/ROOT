@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { Game } from '@root/lib'
 import {
   buildStandings,
   VICTORY_POINT_GOAL,
+  type Standings,
 } from '#aiPlayer/aiPlayerStandings.js'
 import {
   createPlayingTwoPlayerGame,
@@ -11,6 +13,8 @@ import {
 
 const MARQUISE_SEAT = 0
 const EYRIE_SEAT = 1
+const RIVERFOLK_SEAT = 1
+const TRADE_POST_CLEARING = 5
 const EYRIE_STARTING_WARRIORS = 6
 const THREE_ROOSTS_VICTORY_POINTS = 2
 
@@ -61,15 +65,42 @@ describe('buildStandings', () => {
 
     expect(
       standings?.players.find((player) => player.faction === 'eyrie')
-        ?.sureVictoryPointsNextEvening,
+        ?.sureVictoryPointsNextTurn,
     ).toEqual({
       points: THREE_ROOSTS_VICTORY_POINTS,
       from: '3 roosts on the map at Evening',
     })
     expect(
       standings?.players.find((player) => player.faction === 'marquise')
-        ?.sureVictoryPointsNextEvening,
+        ?.sureVictoryPointsNextTurn,
     ).toBeUndefined()
+  })
+
+  it('Rule: 11.4.2 — the Riverfolk are sure of one point per two funds with a trade post out', () => {
+    const game = Game.create({ seed: 1, factions: ['marquise', 'riverfolk'] })
+    game.join(FIRST_TEST_PLAYER_ID)
+    game.join(SECOND_TEST_PLAYER_ID)
+    game.start()
+    const riverfolk = game.state.players[RIVERFOLK_SEAT]
+    if (riverfolk?.board.kind !== 'riverfolk') {
+      throw new Error('fixture: Riverfolk board expected')
+    }
+    riverfolk.board.funds = [MARQUISE_SEAT, MARQUISE_SEAT, MARQUISE_SEAT]
+    const withoutTradePost = buildStandings(game, SECOND_TEST_PLAYER_ID)
+    game.state.clearings[TRADE_POST_CLEARING]?.pieces.push({
+      id: 'test-trade-post',
+      kind: 'token',
+      type: 'tradePost',
+      owner: RIVERFOLK_SEAT,
+    })
+
+    const withTradePost = buildStandings(game, SECOND_TEST_PLAYER_ID)
+
+    const sureOf = (standings: Standings | null): number | undefined =>
+      standings?.players.find((player) => player.faction === 'riverfolk')
+        ?.sureVictoryPointsNextTurn?.points
+    expect(sureOf(withoutTradePost)).toBe(0)
+    expect(sureOf(withTradePost)).toBe(1)
   })
 
   it('shows the supply of the asking seat and never a card of a hand', () => {
