@@ -34,7 +34,6 @@ const HEAD_TILE_TAKEN_CLASS_NAME =
   '[--root-paper-color:var(--color-parchment-shadow)]'
 const HEAD_PORTRAIT_CLASS_NAME = 'block size-full object-cover select-none'
 const TAKEN_PORTRAIT_CLASS_NAME = 'opacity-35'
-const FACTION_NOTE_CLASS_NAME = 'block text-ink-soft italic'
 
 function factionName(factionId: string): string {
   return isMenuFactionId(factionId) ? factionDisplayName(factionId) : factionId
@@ -45,8 +44,6 @@ function seatTabLabel(mode: LobbyDockMode, seatIndex: number, isSeated: boolean)
   if (mode === 'ai') return `${seat} · seat an AI`
   return isSeated ? `${seat} · change your faction` : `${seat} · pick your faction`
 }
-
-const TAKEN_NOTE = 'taken'
 
 /** AI model of the seat being filled; shown only while seating an AI. */
 export type LobbyDockModelPicker = {
@@ -140,12 +137,7 @@ export function LobbyFactionDock(props: {
                   />
                 ) : null}
               </span>
-              <span>
-                {factionName(choice.faction)}
-                {isTaken ? (
-                  <span className={FACTION_NOTE_CLASS_NAME}>{TAKEN_NOTE}</span>
-                ) : null}
-              </span>
+              <span>{factionName(choice.faction)}</span>
             </button>
           )
         })}
