@@ -178,10 +178,14 @@ function boardLines(
   return [`    board: ${JSON.stringify(board)}`]
 }
 
-function playerBlock(state: GameState, p: GameState['players'][number]): string[] {
+function playerBlock(
+  state: GameState,
+  p: GameState['players'][number],
+  handDetail: boolean,
+): string[] {
   return [
     `  ${playerRef(p)} VP=${p.vp}`,
-    ...cardsBlock('    ', 'hand', p.hand, { detail: true }),
+    ...cardsBlock('    ', 'hand', p.hand, { detail: handDetail }),
     ...cardsBlock('    ', 'crafted', p.playArea, { effect: true }),
     `    items: ${p.craftedItems.length ? p.craftedItems.map((item) => `${item.type}${item.exhausted ? ' (exhausted)' : ''}`).join(', ') : '(none)'}`,
     ...boardLines(state, p),
@@ -396,8 +400,11 @@ export function formatTurnLog(log: LogEntry[], state: GameState): string {
   return log.map((e) => describeLogEntry(e, state)).join('\n')
 }
 
-function playersSection(state: GameState): string[] {
-  return ['players:', ...state.players.flatMap((p) => playerBlock(state, p))]
+function playersSection(state: GameState, handDetail = false): string[] {
+  return [
+    'players:',
+    ...state.players.flatMap((p) => playerBlock(state, p, handDetail)),
+  ]
 }
 
 function clearingsSection(state: GameState): string[] {
@@ -519,6 +526,8 @@ export type PrettyGameOpts = {
   label?: string
   action?: Action
   historyLength?: number
+  /** Hand cards with id, craft cost and whole text: the view of one player. */
+  handDetail?: boolean
 }
 
 export type FormatGameLogOpts = PrettyGameOpts & {
@@ -569,7 +578,7 @@ export function formatGameLogEntry(state: GameState, opts: FormatGameLogOpts = {
     lines.push(forests)
     lines.push(clearings)
   } else {
-    lines.push(...playersSection(state))
+    lines.push(...playersSection(state, opts.handDetail))
     lines.push(...asciiMapBlock(state))
     lines.push(...forestsSection(state))
     lines.push(...clearingsSection(state))

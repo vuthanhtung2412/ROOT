@@ -42,6 +42,24 @@ describe('formatPieceChunk', () => {
   })
 })
 
+describe('formatGameView hand', () => {
+  it('shows craft cost and card id only when hand detail is asked for', () => {
+    const state = minimalState({
+      players: [
+        player(0, 'marquise', {
+          hand: [{ id: 'ROOT-224#1', defId: 'ROOT-224' }],
+        }),
+        player(1, 'eyrie'),
+      ],
+    })
+
+    expect(formatGameView(state)).not.toContain('id=ROOT-224#1')
+    expect(formatGameView(state, { handDetail: true })).toContain(
+      'cost=fox+fox id=ROOT-224#1',
+    )
+  })
+})
+
 describe('cardLabel', () => {
   it('detail: craft cost, card id and the whole effect text', () => {
     expect(

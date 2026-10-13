@@ -28,6 +28,7 @@ function formatEdges(edges: readonly (readonly [number, number])[]): string {
 export function formatPlayerGameView(game: Game, playerId: string): string {
   const view = formatGameView(redactStateForViewer(game.state, playerId), {
     historyLength: game.history.length,
+    handDetail: true,
   })
   // The drawn map shows where clearings are; these lines say what connects.
   return [
