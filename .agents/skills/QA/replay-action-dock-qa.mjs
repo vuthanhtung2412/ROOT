@@ -48,6 +48,10 @@ const CLICK_SETTLE_MS = 600
 const ACTION_TIMEOUT_MS = 8000
 const OPTIONAL_BUTTON_WAIT_MS = 1500
 const STATE_POLL_MS = 150
+/** A drag is walked in small moves, slow enough to be watched. */
+const DRAG_STEPS = 24
+const DRAG_STEP_MS = 30
+const DRAG_HOLD_MS = 700
 
 async function fetchJson(route) {
   const response = await fetch(`${apiUrl}${route}`)
@@ -161,6 +165,38 @@ function createDriver(page) {
         .first()
         .click()
       await settle()
+    },
+    /**
+     * Press on `fromSelector`, carry it to `destination` (a selector, or a
+     * point of the page) and let go. Returns what was drawn just before the drop.
+     */
+    async drag(fromSelector, destination) {
+      const centerOf = async (selector) => {
+        const bounds = await page.locator(selector).first().boundingBox()
+        if (bounds === null) throw new Error(`nothing to drag at ${selector}`)
+        return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+      }
+      const from = await centerOf(fromSelector)
+      const to = typeof destination === 'string' ? await centerOf(destination) : destination
+      await page.mouse.move(from.x, from.y)
+      await page.waitForTimeout(DRAG_STEP_MS)
+      await page.mouse.down()
+      for (let step = 1; step <= DRAG_STEPS; step++) {
+        const progress = step / DRAG_STEPS
+        await page.mouse.move(
+          from.x + (to.x - from.x) * progress,
+          from.y + (to.y - from.y) * progress,
+        )
+        await page.waitForTimeout(DRAG_STEP_MS)
+      }
+      const seen = {
+        ghost: (await page.locator('.decree-drag-ghost').count()) > 0,
+        slotLit: (await page.locator('.decree-panel__slot.shadow-gold-ring').count()) > 0,
+      }
+      await page.waitForTimeout(DRAG_HOLD_MS)
+      await page.mouse.up()
+      await settle()
+      return seen
     },
     /** The dock as drawn: frame colour, phase tab text, size, place, tile columns. */
     async dockLook() {

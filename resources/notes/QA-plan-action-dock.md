@@ -13,17 +13,20 @@
 
 | Id | Feature | Step |
 |----|---------|------|
-| **D1** | Action tray is a dock of icon tiles in the colour of the faction taking the turn; a tile is named on hover | 1, 6, 9 |
+| **D1** | Action tray is a dock of icon tiles in the colour of the faction taking the turn; a tile is named on hover | 1, 6, 12 |
 | **D2** | Log, items and discard pile sit top right; the dock takes the bottom right corner | 1 |
 | **D3** | Crafted-card actions sit in a Cards panel above the dock, with a played tally | 2, 5 |
 | **D4** | A clamped card action description carries its full text on hover | 2 |
 | **D5** | Dock action grid is always four tiles wide | 3 |
 | **D6** | A spent action stays in its dock tile, faded; Undo is a dock tile | 3 |
-| **D7** | A move walks its meeples in a line, treading faction-coloured footsteps | 4, 8, 10 |
-| **D8** | Add to Decree can be cancelled while staging | 6 |
-| **D9** | Eyrie Daylight dock shows the Decree as its four columns | 7, 8 |
-| **D10** | Woodland Alliance military operations each have their own icon | 9 |
-| **D11** | The dock tab counts the military operations left | 9, 10 |
+| **D7** | A move walks its meeples in a line, treading faction-coloured footsteps | 4, 11, 13 |
+| **D8** | A staged Add to Decree can be taken back: nothing is sent before Confirm | 9 |
+| **D9** | Eyrie Daylight dock shows the Decree as its four columns | 10, 11 |
+| **D10** | Woodland Alliance military operations each have their own icon | 12 |
+| **D11** | The dock tab counts the military operations left | 12, 13 |
+| **D12** | Add to Decree is staged on a Decree panel over the map: four slots, a picked hand card is laid in one, up to two cards, sent on Confirm | 6, 8, 10 |
+| **D13** | The dock Add to Decree tile puts the panel off and on; staged cards are kept and counted on the tile | 7 |
+| **D14** | Cards are dragged: hand → slot, slot → slot, slot → off the panel back to the hand | 8, 10 |
 
 ## Setup
 
@@ -56,11 +59,14 @@
 | 3 | **End phase** twice (Birdsong, craft step) → hover **March** → **Recruit** | Tab `3/3`; recruit, march, build, battle fill two columns of a grid four tiles wide. After Recruit: `2/3`, the Recruit tile stays, faded; Undo tile in the dock | **D5 D6** | ☐ |
 | 4 | **March** → **2** → **5** → `>` `>` → **OK** → **OK** | Three warriors leave the keep one behind the other on orange footsteps. 4 Cat warriors on 5 | **D7** | ☐ |
 | 5 | **Cards** → **League: move** → **Boot** → **10** → **11** → **OK**; open **Cards** again | Boot exhausted, warrior on 11. Tab `2/3 played`; both League lines struck through, tagged "played" | **D3** | ☐ |
-| 6 | **End phase** → **Draw**. Eyrie: **Add to Decree** → Foxfolk Steel → **move** → **X** | Blue dock. After X nothing was sent: hand still 2, move column still 1 card, Add to Decree offered again | **D1 D8** | ☐ |
-| 7 | **Add to Decree** → Foxfolk Steel → **move** → **OK**; hover the recruit medallion | Daylight dock = four medallions (recruit, move, battle, build) over strips of suits (3 cards). Tab `0/3` | **D9** | ☐ |
-| 8 | Recruit medallion (→ **0**) → fox suit of the move column → **0** → **4** → `>` `>` → **OK** | Tab `1/3`, then `2/3`. Three Eyrie warriors walk 0 → 4 on blue footsteps | **D7 D9** | ☐ |
-| 9 | Bird suit of the move column → **0** → **8** → **OK**; (turn passes by itself to the Alliance Evening) hover the four tiles | Green dock, tab `2/2`; move, battle, recruit, organize each with their own icon | **D1 D10 D11** | ☐ |
-| 10 | **Move** → **9** → **11** → `>` → **OK** | Two Alliance warriors walk on green footsteps. Tab `1/2` | **D7 D11** | ☐ |
+| 6 | **End phase** → **Draw**. Eyrie: **Add to Decree** → click Foxfolk Steel → click the **move** slot | Blue dock, Add to Decree tile ringed in gold. Decree panel over the map: four slots. With the card picked every slot is dashed gold, "Place here". The card lies on move and is gone from the hand; server hand still 2 | **D1 D12** | ☐ |
+| 7 | Click the **Add to Decree** tile, then click it again | Panel off: the tile carries `1/2`. Panel on again: Foxfolk Steel still on move | **D13** | ☐ |
+| 8 | Drag Bake Sale from the hand onto **build**; drag it from build to **battle**; drag it off the panel onto the map | The card follows the pointer, the slot under it lights up. Two cards staged, then Bake Sale is back in the hand | **D12 D14** | ☐ |
+| 9 | Click the **take back** tile of the panel | Panel empty, both cards in the hand, Confirm off. Nothing was sent: hand 2, move column 1 card | **D8** | ☐ |
+| 10 | Drag Foxfolk Steel onto **move** → **confirm** tile; hover the recruit medallion | Daylight dock = four medallions (recruit, move, battle, build) over strips of suits (3 cards). Tab `0/3` | **D9 D12 D14** | ☐ |
+| 11 | Recruit medallion (→ **0**) → fox suit of the move column → **0** → **4** → `>` `>` → **OK** | Tab `1/3`, then `2/3`. Three Eyrie warriors walk 0 → 4 on blue footsteps | **D7 D9** | ☐ |
+| 12 | Bird suit of the move column → **0** → **8** → **OK**; (turn passes by itself to the Alliance Evening) hover the four tiles | Green dock, tab `2/2`; move, battle, recruit, organize each with their own icon | **D1 D10 D11** | ☐ |
+| 13 | **Move** → **9** → **11** → `>` → **OK** | Two Alliance warriors walk on green footsteps. Tab `1/2` | **D7 D11** | ☐ |
 
 ## Not covered by this run
 
@@ -68,3 +74,4 @@
 - The hover text of D4 is the browser's own tooltip: a headless recording does not draw it. The replay checks the `title` attribute against the full rule.
 - Holding a Cards line to see the crafted card; a ninth tile opening a fifth column (`phaseTiles.test.ts`, `cardActionRows.test.ts`).
 - Decree battle and build columns, turmoil (`decreeColumns.test.ts`).
+- Decree panel: a second bird card refused, a third card refused (`addToDecreeStaging.test.ts`, `decreePanel.test.ts`); touch drag.

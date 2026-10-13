@@ -1,7 +1,7 @@
 /**
  * Steps of the action dock demo (replay-action-dock-qa.mjs).
  * Plan: resources/notes/QA-plan-action-dock.md — titles carry the plan step
- * numbers and the feature ids (D1…D11) each step shows.
+ * numbers and the feature ids (D1…D14) each step shows.
  *
  * One step: `play` clicks through the UI and returns what it saw on the page,
  * `verify` checks the server state and the page evidence, and returns the
@@ -22,6 +22,11 @@ const BASE_CLEARING = 9
 const ALLIANCE_MOVE_DESTINATION = 11
 
 const FOXFOLK_STEEL = 'ROOT-215'
+const BAKE_SALE = 'ROOT-207'
+/** Add to Decree takes two cards at most. */
+const MAXIMUM_STAGED_CARDS = 2
+/** On the map, under the Decree panel: a staged card dropped here goes back to the hand. */
+const OFF_PANEL_POINT = { x: 720, y: 560 }
 const FACTION_COLORS = { marquise: '#c45c26', eyrie: '#3a5f8a', alliance: '#3d7a4a' }
 const MILITARY_OPERATIONS = ['move', 'battle', 'recruit', 'organize']
 const DECREE_COLUMN_COUNT = 4
@@ -51,7 +56,22 @@ const SELECTOR = {
   decreeMark: '.action-dock__decree img',
   footstep: '.board-effects svg.overflow-visible',
   infoButtons: 'button:has-text("Discarded (")',
+  decreePanel: '.decree-panel',
+  decreeSlot: '.decree-panel__slot',
+  offeredSlot: '.decree-panel__slot.border-dashed',
+  stagedCard: '.decree-panel__staged',
+  confirmTile: '.decree-panel__confirm',
+  takeBackTile: '.decree-panel__take-back',
+  ringedTile: '.action-dock button.shadow-gold-ring',
+  stagedCount: '.action-tray__count',
+  countedTile: '.action-dock button:has(.action-tray__count)',
 }
+
+const decreeSlot = (column) => `${SELECTOR.decreeSlot}[data-decree-column="${column}"]`
+const stagedCard = (cardDefinitionId) =>
+  `${SELECTOR.stagedCard}[aria-label="take back ${cardDefinitionId}"]`
+const handCard = (cardDefinitionId) =>
+  `button:not(.card-gallery-modal__card):not([aria-pressed]):has(> img[alt="${cardDefinitionId}"])`
 
 function expectThat(condition, message) {
   if (!condition) throw new Error(message)
@@ -217,7 +237,7 @@ export const ACTION_DOCK_STEPS = [
     },
   },
   {
-    title: '6 · Eyrie Birdsong: a staged Add to Decree can be cancelled (D8)',
+    title: '6 · Eyrie Birdsong: Add to Decree opens the Decree panel; a picked card is laid in a slot (D1 D12)',
     play: async (ui) => {
       await ui.button('end phase')
       await ui.waitForButton('draw')
@@ -225,31 +245,121 @@ export const ACTION_DOCK_STEPS = [
       await ui.waitForButton('add to decree')
       const dock = await ui.dockLook()
       await ui.button('add to decree')
+      await ui.waitFor(SELECTOR.decreePanel)
+      const slots = await ui.count(SELECTOR.decreeSlot)
+      const ringedTiles = await ui.count(SELECTOR.ringedTile)
+      await ui.pause(LOOK_MS)
       await ui.handCard(FOXFOLK_STEEL)
-      await ui.button('move')
+      const offeredSlots = await ui.count(SELECTOR.offeredSlot)
       await ui.pause(LOOK_MS)
-      await ui.button('X')
+      await ui.click(decreeSlot('move'))
       await ui.pause(LOOK_MS)
-      const offeredAgain = await ui.seesButton('add to decree')
-      return { dock, offeredAgain }
+      return {
+        dock,
+        slots,
+        ringedTiles,
+        offeredSlots,
+        stagedOnMove: await ui.count(`${decreeSlot('move')} ${SELECTOR.stagedCard}`),
+        steelInHand: await ui.count(handCard(FOXFOLK_STEEL)),
+      }
     },
     verify: (state, seen) => {
       expectEqual(state.currentSeat, EYRIE, 'seat')
       expectEqual(seen.dock.color, FACTION_COLORS.eyrie, 'dock frame colour')
       expectEqual(state.step, 'decreeAdd', 'step')
-      expectEqual(handOf(state, EYRIE).length, 2, 'Eyrie hand')
-      expectEqual(board(state, EYRIE).decree.move.length, 1, 'cards in the move column')
-      expectThat(seen.offeredAgain, 'Add to Decree not offered after the cancel')
-      return 'Card staged on the move column, then X: nothing sent, hand still 2, action offered again'
+      expectEqual(seen.slots, DECREE_COLUMN_COUNT, 'Decree panel slots')
+      expectEqual(seen.ringedTiles, 1, 'ringed Add to Decree tile')
+      expectEqual(seen.offeredSlots, DECREE_COLUMN_COUNT, 'slots asking for the picked card')
+      expectEqual(seen.stagedOnMove, 1, 'cards staged on the move slot')
+      expectEqual(seen.steelInHand, 0, 'staged card still drawn in the hand')
+      expectEqual(handOf(state, EYRIE).length, 2, 'Eyrie hand on the server')
+      return 'Blue dock, tile ringed; four slots over the map, all four ask for the picked card; it lies on move, out of the hand; nothing sent'
     },
   },
   {
-    title: '7 · Eyrie Daylight: the dock is the Decree, four columns (D9)',
+    title: '7 · The dock tile puts the Decree panel off and on; the staged card is kept (D13)',
     play: async (ui) => {
       await ui.button('add to decree')
-      await ui.handCard(FOXFOLK_STEEL)
-      await ui.button('move')
-      await ui.button('OK')
+      const panelsOff = await ui.count(SELECTOR.decreePanel)
+      const tileCount = await ui.textOfSelector(SELECTOR.stagedCount)
+      await ui.pause(LOOK_MS)
+      await ui.click(SELECTOR.countedTile)
+      await ui.waitFor(SELECTOR.decreePanel)
+      await ui.pause(LOOK_MS)
+      return {
+        panelsOff,
+        tileCount,
+        stagedOnMove: await ui.count(`${decreeSlot('move')} ${SELECTOR.stagedCard}`),
+      }
+    },
+    verify: (state, seen) => {
+      expectEqual(seen.panelsOff, 0, 'panels shown after the tile is clicked')
+      expectEqual(seen.tileCount, '1/2', 'staged cards told on the tile')
+      expectEqual(seen.stagedOnMove, 1, 'cards staged on the move slot')
+      expectEqual(handOf(state, EYRIE).length, 2, 'Eyrie hand on the server')
+      return 'Panel off: the tile reads 1/2. Panel on again: Foxfolk Steel still lies on move'
+    },
+  },
+  {
+    title: '8 · Cards are dragged: hand → slot, slot → slot, slot → back to the hand (D14)',
+    play: async (ui) => {
+      const toBuild = await ui.drag(handCard(BAKE_SALE), decreeSlot('build'))
+      const stagedOnBuild = await ui.count(`${decreeSlot('build')} ${SELECTOR.stagedCard}`)
+      await ui.pause(LOOK_MS)
+      await ui.drag(stagedCard(BAKE_SALE), decreeSlot('battle'))
+      const stagedOnBattle = await ui.count(`${decreeSlot('battle')} ${SELECTOR.stagedCard}`)
+      const stagedInAll = await ui.count(SELECTOR.stagedCard)
+      await ui.pause(LOOK_MS)
+      await ui.drag(stagedCard(BAKE_SALE), OFF_PANEL_POINT)
+      await ui.pause(LOOK_MS)
+      return {
+        toBuild,
+        stagedOnBuild,
+        stagedOnBattle,
+        stagedInAll,
+        stagedAfterReturn: await ui.count(SELECTOR.stagedCard),
+        bakeSaleInHand: await ui.count(handCard(BAKE_SALE)),
+      }
+    },
+    verify: (state, seen) => {
+      expectThat(seen.toBuild.ghost, 'no card follows the pointer during the drag')
+      expectThat(seen.toBuild.slotLit, 'the slot under the dragged card is not lit')
+      expectEqual(seen.stagedOnBuild, 1, 'cards on build after the first drop')
+      expectEqual(seen.stagedOnBattle, 1, 'cards on battle after the second drop')
+      expectEqual(seen.stagedInAll, MAXIMUM_STAGED_CARDS, 'cards staged, two at most')
+      expectEqual(seen.stagedAfterReturn, 1, 'cards staged after the drop off the panel')
+      expectEqual(seen.bakeSaleInHand, 1, 'Bake Sale back in the hand')
+      expectEqual(handOf(state, EYRIE).length, 2, 'Eyrie hand on the server')
+      return 'Bake Sale dragged from the hand onto build (slot lit), then to battle, then off the panel: back in the hand'
+    },
+  },
+  {
+    title: '9 · Take back empties the panel: nothing was sent (D8)',
+    play: async (ui) => {
+      await ui.click(SELECTOR.takeBackTile)
+      await ui.pause(LOOK_MS)
+      return {
+        staged: await ui.count(SELECTOR.stagedCard),
+        steelInHand: await ui.count(handCard(FOXFOLK_STEEL)),
+        confirmOff: await ui.count(`${SELECTOR.confirmTile}:disabled`),
+      }
+    },
+    verify: (state, seen) => {
+      expectEqual(seen.staged, 0, 'cards staged after take back')
+      expectEqual(seen.steelInHand, 1, 'Foxfolk Steel back in the hand')
+      expectEqual(seen.confirmOff, 1, 'Confirm tile off with nothing staged')
+      expectEqual(state.step, 'decreeAdd', 'step')
+      expectEqual(handOf(state, EYRIE).length, 2, 'Eyrie hand on the server')
+      expectEqual(board(state, EYRIE).decree.move.length, 1, 'cards in the move column')
+      return 'Both cards back in the hand, Confirm off; server untouched: hand 2, move column 1 card'
+    },
+  },
+  {
+    title: '10 · Confirm sends the Decree; Eyrie Daylight dock is the Decree, four columns (D9 D12)',
+    play: async (ui) => {
+      await ui.drag(handCard(FOXFOLK_STEEL), decreeSlot('move'))
+      await ui.pause(LOOK_MS)
+      await ui.click(SELECTOR.confirmTile)
       await ui.waitFor(SELECTOR.decree)
       const heads = await ui.count(SELECTOR.decreeHead)
       const marks = await ui.count(SELECTOR.decreeMark)
@@ -268,7 +378,7 @@ export const ACTION_DOCK_STEPS = [
     },
   },
   {
-    title: '8 · Decree resolved from the columns: recruit, then a move on blue footsteps (D7 D9)',
+    title: '11 · Decree resolved from the columns: recruit, then a move on blue footsteps (D7 D9)',
     play: async (ui) => {
       await ui.button('recruit 0/1')
       await ui.clearingIfAsked(ROOST_CLEARING, 'Decree recruit')
@@ -290,7 +400,7 @@ export const ACTION_DOCK_STEPS = [
     },
   },
   {
-    title: '9 · Alliance Evening: one icon per military operation, 2/2 left (D10 D11)',
+    title: '12 · Alliance Evening: one icon per military operation, 2/2 left (D10 D11)',
     play: async (ui) => {
       await ui.button('move: bird')
       await pickMove(ui, ROOST_CLEARING, EYRIE_SECOND_MOVE_DESTINATION, 0)
@@ -314,7 +424,7 @@ export const ACTION_DOCK_STEPS = [
     },
   },
   {
-    title: '10 · Military operation Move 9 → 11: green footsteps, 1/2 left (D7 D11)',
+    title: '13 · Military operation Move 9 → 11: green footsteps, 1/2 left (D7 D11)',
     play: async (ui) => {
       await ui.button('move')
       await pickMove(ui, BASE_CLEARING, ALLIANCE_MOVE_DESTINATION, 1)
