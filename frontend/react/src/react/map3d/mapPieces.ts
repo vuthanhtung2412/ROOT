@@ -426,6 +426,7 @@ export function mapPiecesForBoard(input: MapPiecesInput): MapPiece[] {
           color: factionColorForSeat(marker.seat, input.factions),
           count: 1,
           ground: averageGround(forest.corners),
+          isInForest: true,
         },
       ]
     },

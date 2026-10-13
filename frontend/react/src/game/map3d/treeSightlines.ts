@@ -6,10 +6,10 @@ import {
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 
 /**
- * Sightlines through the trees: between the camera and every piece on the
- * map runs a tube in which the trees are not drawn, so a tree never hides a
- * building, a token or a meeple. Trees outside the tubes, and behind the
- * pieces, stay whole.
+ * Sightlines through the trees: between the camera and every Vagabond pawn
+ * standing in a forest runs a tube in which the trees are not drawn, so a
+ * tree never hides the pawn. Trees outside the tubes, and behind the pawns,
+ * stay whole.
  */
 export type TreeSightlines = {
   /** A tree material that leaves the tubes open. */

@@ -180,10 +180,10 @@ export function createMapScene(input: MapSceneInput): MapScene {
     resize,
     setPieces: (pieces: readonly MapPiece[]): void => {
       pieceLayer.setPieces(pieces)
-      // An empty building slot is only a drawing: nothing to keep in sight.
+      // Only a Vagabond in a forest stands among the trees that would hide it.
       treeSightlines.setTargets(
         pieces
-          .filter((piece: MapPiece): boolean => piece.shape === 'piece')
+          .filter((piece: MapPiece): boolean => piece.isInForest === true)
           .map((piece: MapPiece): MapGroundPoint => piece.ground),
       )
     },

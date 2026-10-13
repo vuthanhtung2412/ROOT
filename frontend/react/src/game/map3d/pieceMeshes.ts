@@ -49,6 +49,8 @@ export type MapPiece = {
   rotation?: number
   /** A building: its square icon gets rounded corners. */
   isBuilding?: boolean
+  /** A Vagabond pawn standing in a forest, among the trees. */
+  isInForest?: boolean
 }
 
 export type PieceLayer = {
