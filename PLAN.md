@@ -36,7 +36,7 @@
   - One session per seat at a time. Capped by `MAX_TOOL_CALLS_PER_SESSION`.
   - Aborted when history length shrinks (undo) or the game is replaced; a new session starts from the new state.
 - **Failure**: provider error, refusal or cap hit → seat status `stuck`, game waits. No random fallback move, no automatic retry beyond the SDK's own.
-  - `POST /game/ai-players/{seat}/restart` (+ `root-cli ai-restart <seat>`): drop the active session and start a fresh one from the current game state. Actions already applied this turn stay. Works on a `thinking` seat too.
+  - `POST /game/ai-players/{seat}/restart` (+ `root-cli ai-restart <seat>`): drop the active session and start a fresh one from the current game state. Actions already applied this turn stay. Works on a `thinking` seat too. No seat check (operator tool, endpoint + CLI only, not in the UI).
 - **AI seats**: kept in the server store (not in `lib` game state): `playerId -> { model, status }`. Saved in the persistence slot; after a server restart the active AI turn starts a fresh session.
 - **API**:
   - `GET /game/ai-models` → `{ models, defaultModel }`.
@@ -45,7 +45,7 @@
   - `POST /game/ai-players/{seat}/restart`.
   - `GET /game/rules?query=` → rule lookup.
   - Game push payload gains `aiPlayers: [{ seat, model, status }]` (`idle | thinking | stuck`).
-- **Frontend**: lobby gets "Add AI player" + model select; seat shows an AI badge with model and thinking/stuck status, plus a restart button on the badge. Client regenerated with `pnpm gen:api-client`.
+- **Frontend**: lobby gets "Add AI player" + model select; seat shows an AI badge with model and thinking/stuck status (no restart control in the UI). Client regenerated with `pnpm gen:api-client`.
 
 ### Files to change
 - `backend/web/package.json`: add `@anthropic-ai/sdk`, `openai`.
@@ -73,7 +73,7 @@
   - `aiPlayerTools`: `show` / `log` / `actions` never contain another seat's hand; `act` rejects a wrong-seat action and returns rule errors.
   - `AiPlayerSession`: scripted tool calls end in applied actions; context grows across phases; cap hit; illegal action then corrected; delay between applied actions (fake timers).
   - `AiPlayerDriver`: one session for the whole turn, dropped at turn end; resume after another seat answers; reaction session off-turn; abort on undo; `stuck` on provider error; restart makes a fresh context.
-  - Routes: add AI player, model change rejected after start, restart, host-only in online mode, `view=player` redacts in hotseat.
+  - Routes: add AI player, model change rejected after start, add AI player host-only in online mode, restart open to any caller, `view=player` redacts in hotseat.
   - Key leak: no route response or push payload contains the env key values.
   - Adapters: request mapping tested with a mocked SDK client.
 - Checks: `pnpm typecheck`, `pnpm lint`, `pnpm --filter @root/web test`, `grep` for `API_KEY` under `frontend/` returns nothing.
@@ -110,7 +110,7 @@
   - `frontend/cli/src/index.ts`, `api/client.ts`, `commands/rules.ts`, `commands/aiRestart.ts`
 - `feat(ui): add AI player with model select in the lobby`
   - `frontend/react/src/game/menuLobby.ts` (+ test), `react/MenuLobbyPanel.tsx`, `api/client.ts`
-- `feat(ui): AI seat badge with model, status and restart`
+- `feat(ui): AI seat badge with model and status`
   - seat badge component, `frontend/react/src/game/hudStore.ts`
 - `docs: AI player env vars and usage`
   - `README.md`
