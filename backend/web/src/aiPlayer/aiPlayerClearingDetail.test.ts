@@ -10,6 +10,8 @@ import {
 /** Fixture setup: the Marquise keep stands in clearing 0, the roost in 2. */
 const KEEP_CLEARING = 0
 const ROOST_CLEARING = 2
+/** Two starting Marquise buildings fill both slots of clearing 4. */
+const FULL_CLEARING = 4
 const EYRIE_STARTING_WARRIORS = 6
 
 describe('describeClearing', () => {
@@ -59,6 +61,72 @@ describe('describeClearing', () => {
 
     expect(acting?.legalActionsHereNow).toContain('march')
     expect(waiting?.legalActionsHereNow).toEqual([])
+  })
+
+  it('says whether the seat can move out of or build in the clearing, and why not', () => {
+    const game = createPlayingTwoPlayerGame()
+
+    const ownRuled = FALL.clearings
+      .map((_clearing, clearingId: number) =>
+        describeClearing(game, FIRST_TEST_PLAYER_ID, clearingId),
+      )
+      .find(
+        (detail) =>
+          detail?.ruler === 'marquise' &&
+          detail.slots.free > 0 &&
+          detail.pieces.marquise?.tokens.length === 0,
+      )
+    const fullClearing = describeClearing(
+      game,
+      FIRST_TEST_PLAYER_ID,
+      FULL_CLEARING,
+    )
+    const enemyRuled = describeClearing(
+      game,
+      FIRST_TEST_PLAYER_ID,
+      ROOST_CLEARING,
+    )
+    const keepForEyrie = describeClearing(
+      game,
+      SECOND_TEST_PLAYER_ID,
+      KEEP_CLEARING,
+    )
+    const ownRoost = describeClearing(
+      game,
+      SECOND_TEST_PLAYER_ID,
+      ROOST_CLEARING,
+    )
+
+    expect(ownRuled?.youCanMoveFromHere).toBe(true)
+    expect(ownRuled?.youCanBuildHere).toBe(true)
+    expect(ownRuled).not.toHaveProperty('whyNotBuild')
+    expect(fullClearing?.slots.free).toBe(0)
+    expect(fullClearing?.whyNotBuild).toBe(
+      'no free building slot in this clearing',
+    )
+    expect(enemyRuled).toMatchObject({
+      youCanMoveFromHere: false,
+      whyNotBuild: 'you do not rule this clearing',
+    })
+    expect(keepForEyrie?.whyNotBuild).toContain('keep')
+    expect(ownRoost?.whyNotBuild).toBe('you already have a roost here')
+  })
+
+  it('reports a build as possible when a legal build names the clearing', () => {
+    const game = createPlayingTwoPlayerGame()
+    const target = FALL.adjacent(KEEP_CLEARING)[0] ?? 0
+    game.legalActions = (): ReturnType<typeof game.legalActions> => [
+      {
+        type: 'build',
+        actor: 0,
+        params: { options: [{ clearing: target, building: 'sawmill' }] },
+      },
+    ]
+
+    const detail = describeClearing(game, FIRST_TEST_PLAYER_ID, target)
+
+    expect(detail?.youCanBuildHere).toBe(true)
+    expect(detail).not.toHaveProperty('whyNotBuild')
   })
 
   it('knows no clearing outside the map', () => {

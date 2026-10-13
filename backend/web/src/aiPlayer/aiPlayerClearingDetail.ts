@@ -40,6 +40,88 @@ export type ClearingDetail = {
   byRiver: number[]
   /** Your legal action types that name this clearing right now. */
   legalActionsHereNow: string[]
+  /** True when a legal action moves your pieces out of this clearing now. */
+  youCanMoveFromHere: boolean
+  /** True when a legal action places one of your buildings here now. */
+  youCanBuildHere: boolean
+  /** Why you cannot build here now; absent when you can. */
+  whyNotBuild?: string
+}
+
+/** Action types that place a building of the acting faction. */
+const BUILD_ACTION_TYPES: readonly string[] = [
+  'build',
+  'newRoost',
+  'ritualBuild',
+  'sanctify',
+  'revolt',
+]
+const DECREE_ACTION_TYPE = 'decree'
+const DECREE_BUILD_COLUMN = 'build'
+/** Factions that build only in a clearing they rule. Rule: 6.5.4, 7.5.2.IV, 10.5.1. */
+const FACTIONS_BUILDING_WHERE_THEY_RULE: readonly FactionId[] = [
+  'marquise',
+  'eyrie',
+  'lizard',
+]
+const NO_SLOT_REASON = 'no free building slot in this clearing'
+const KEEP_REASON =
+  'the Marquise keep stands here: no other faction may place a piece'
+const NOT_RULER_REASON = 'you do not rule this clearing'
+const ROOST_HERE_REASON = 'you already have a roost here'
+const NOT_NOW_REASON =
+  'no build action names this clearing right now: wrong phase or step, or its cost is not met'
+
+function placesBuilding(spec: ActionSpec): boolean {
+  return (
+    BUILD_ACTION_TYPES.includes(spec.type) ||
+    (spec.type === DECREE_ACTION_TYPE &&
+      (spec.params?.column ?? []).includes(DECREE_BUILD_COLUMN))
+  )
+}
+
+function movesFrom(spec: ActionSpec, clearingId: number): boolean {
+  return (
+    (spec.params?.from ?? []).includes(clearingId) ||
+    (spec.params?.moves ?? []).some(
+      (move): boolean => move.from === clearingId,
+    )
+  )
+}
+
+type BuildCheck = {
+  state: GameState
+  viewer: PlayerState
+  clearingId: number
+  ruler: FactionId | null
+}
+
+/** First rule that stops the viewer from building in the clearing. */
+function explainNoBuild(check: BuildCheck): string {
+  const { state, viewer, clearingId, ruler } = check
+  const pieces: readonly Piece[] = state.clearings[clearingId]?.pieces ?? []
+  const foreignKeep: boolean = pieces.some(
+    (piece: Piece): boolean =>
+      piece.kind === 'token' &&
+      piece.type === 'keep' &&
+      piece.owner !== viewer.seat,
+  )
+  if (foreignKeep) return KEEP_REASON
+  const ownRoost: boolean = pieces.some(
+    (piece: Piece): boolean =>
+      piece.kind === 'building' &&
+      piece.type === 'roost' &&
+      piece.owner === viewer.seat,
+  )
+  if (ownRoost) return ROOST_HERE_REASON
+  if (
+    FACTIONS_BUILDING_WHERE_THEY_RULE.includes(viewer.faction) &&
+    ruler !== viewer.faction
+  ) {
+    return NOT_RULER_REASON
+  }
+  if (openSlots(state, clearingId) < 1) return NO_SLOT_REASON
+  return NOT_NOW_REASON
 }
 
 function factionOfSeat(state: GameState, seat: number | null): FactionId | null {
@@ -108,12 +190,23 @@ export function describeClearing(
       pieces[player.faction] = describePieces(owned)
     }
   }
+  const ruler = factionOfSeat(state, game.rulerOf(clearingId))
+  const actionsHere: ActionSpec[] = listPlayerLegalActions(
+    game,
+    playerId,
+  ).filter((spec: ActionSpec): boolean =>
+    clearingsNamedBy(spec).includes(clearingId),
+  )
+  const youCanBuildHere: boolean = actionsHere.some(placesBuilding)
+  const viewer = state.players.find(
+    (player: PlayerState): boolean => player.playerId === playerId,
+  )
   return {
     id: clearingId,
     suit: mapClearing.suit,
     slots: { total: mapClearing.slots, free: openSlots(state, clearingId) },
     ...(clearing.ruin === undefined ? {} : { ruinItems: clearing.ruin.items }),
-    ruler: factionOfSeat(state, game.rulerOf(clearingId)),
+    ruler,
     pieces,
     adjacent: FALL.adjacent(clearingId).map(
       (neighbor: number): NeighborClearing => ({
@@ -127,12 +220,15 @@ export function describeClearing(
     ),
     legalActionsHereNow: [
       ...new Set<string>(
-        listPlayerLegalActions(game, playerId)
-          .filter((spec: ActionSpec): boolean =>
-            clearingsNamedBy(spec).includes(clearingId),
-          )
-          .map((spec: ActionSpec): string => spec.type),
+        actionsHere.map((spec: ActionSpec): string => spec.type),
       ),
     ],
+    youCanMoveFromHere: actionsHere.some((spec: ActionSpec): boolean =>
+      movesFrom(spec, clearingId),
+    ),
+    youCanBuildHere,
+    ...(youCanBuildHere || viewer === undefined
+      ? {}
+      : { whyNotBuild: explainNoBuild({ state, viewer, clearingId, ruler }) }),
   }
 }
