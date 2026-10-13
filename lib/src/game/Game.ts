@@ -1,3 +1,4 @@
+import { assertActionShape } from '#actions/actionShape.js'
 import type { Action, ActionResult, ActionSpec } from '#actions/types.js'
 import { factionFor } from '#factions/index.js'
 import { beginFactionSetup } from '#game/factionSetup.js'
@@ -234,6 +235,7 @@ export class Game {
   apply(action: Action): ActionResult {
     const logs: LogEntry[] = []
 
+    assertActionShape(action)
     if (this.state.status === 'finished') {
       throw new RuleError('GAME_FINISHED')
     }
