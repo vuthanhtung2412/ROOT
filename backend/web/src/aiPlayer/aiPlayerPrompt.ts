@@ -8,8 +8,10 @@ import {
   LOG_TOOL_NAME,
   PREVIEW_TOOL_NAME,
   RULES_TOOL_NAME,
+  SCORE_TOOL_NAME,
   SHOW_TOOL_NAME,
 } from '#aiPlayer/aiPlayerTools.js'
+import { VICTORY_POINT_GOAL } from '#aiPlayer/aiPlayerStandings.js'
 
 export type AiPlayerIdentity = {
   seat: number
@@ -26,8 +28,6 @@ const FACTION_RULE_CHAPTERS: Readonly<Record<FactionId, string>> = {
   riverfolk: '11',
 }
 
-const VICTORY_POINT_GOAL = 30
-
 const DECREE_FACTION: FactionId = 'eyrie'
 const DECREE_TOOL_LINE = `- ${DECREE_TOOL_NAME}: your Decree card by card: which cards can resolve, where, and what would cause turmoil. Call it before you add to the Decree, with the cards you mean to add.\n`
 
@@ -42,6 +42,7 @@ The game runs on a rules engine. You play only through these tools:
 - ${RULES_TOOL_NAME}: the Law of Root. Your faction is chapter ${FACTION_RULE_CHAPTERS[identity.faction]}; battle is 4.3, crafting 4.1, movement 4.2.
 - ${CARD_TOOL_NAME}: your cards in full: text, craft cost, and whether you can craft each one right now.
 - ${CLEARING_TOOL_NAME}: one clearing in full: pieces, ruler, free slots, neighbors.
+- ${SCORE_TOOL_NAME}: the standings: victory points and pieces on the map of every faction, and your supply.
 ${identity.faction === DECREE_FACTION ? DECREE_TOOL_LINE : ''}- ${PREVIEW_TOOL_NAME}: dry run of one action: is it legal and what would it cause. Nothing is applied.
 - ${ACT_TOOL_NAME}: take one action.
 

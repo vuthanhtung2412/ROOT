@@ -8,6 +8,7 @@ import {
 import { lookUpCardDetails } from '#aiPlayer/aiPlayerCardDetail.js'
 import { describeClearing } from '#aiPlayer/aiPlayerClearingDetail.js'
 import { checkDecree } from '#aiPlayer/aiPlayerDecreeCheck.js'
+import { buildStandings } from '#aiPlayer/aiPlayerStandings.js'
 import {
   fail,
   formatJson,
@@ -77,6 +78,7 @@ export const CARD_TOOL_NAME = 'card'
 export const CLEARING_TOOL_NAME = 'clearing'
 export const DECREE_TOOL_NAME = 'decree'
 export const PREVIEW_TOOL_NAME = 'preview'
+export const SCORE_TOOL_NAME = 'score'
 
 const DEFAULT_LOG_ENTRY_LIMIT = 40
 const MAXIMUM_LOG_ENTRY_LIMIT = 200
@@ -359,6 +361,20 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
       inputJsonSchema: z.toJSONSchema(ClearingInputSchema),
     },
     run: runClearing,
+  },
+  {
+    definition: {
+      name: SCORE_TOOL_NAME,
+      description:
+        'The standings: the goal, and for every faction its victory points, points still needed, hand size, warriors, buildings and tokens on the map, crafted items, and points it is sure to score at its next Evening. Also the pieces left in your supply. Use it to see who is ahead and to plan toward the goal.',
+      inputJsonSchema: z.toJSONSchema(EmptyInputSchema),
+    },
+    run: (context) => {
+      const standings = buildStandings(context.game, context.playerId)
+      return standings === null
+        ? fail('You hold no seat in this game.')
+        : succeed(formatJson(standings))
+    },
   },
   {
     definition: {
