@@ -419,7 +419,7 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
     definition: {
       name: DECREE_TOOL_NAME,
       description:
-        'Eyrie only. Your Decree card by card: whether each card can resolve on the map as it stands and in which clearings ("where"; for a move, the clearings to move from), what would send you into turmoil ("turmoilRisks") and the victory points turmoil costs. Pass "adding" to test hand cards in a column before "addToDecree". Use it instead of working out turmoil by hand.',
+        'Eyrie only. Your Decree card by card: whether each card can resolve on the map as it stands and in which clearings ("where"; for a move, the clearings to move from), what would send you into turmoil ("turmoilRisks"), which cards resolve only if the recruit column first places warriors for them ("dependsOnRecruit"), and the victory points turmoil costs. Pass "adding" to test hand cards in a column before "addToDecree". Use it instead of working out turmoil by hand.',
       inputJsonSchema: z.toJSONSchema(DecreeInputSchema),
     },
     run: runDecree,

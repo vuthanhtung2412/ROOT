@@ -59,6 +59,24 @@ describe('checkDecree', () => {
     )
   })
 
+  it('sets apart a card that resolves only once the recruit column has placed warriors', () => {
+    const game = createPlayingTwoPlayerGame()
+    for (const clearing of game.state.clearings) {
+      clearing.pieces = clearing.pieces.filter(
+        (piece) => !(piece.kind === 'warrior' && piece.owner === EYRIE_SEAT),
+      )
+    }
+
+    const check = checkDecree(game, SECOND_TEST_PLAYER_ID, [])
+
+    // The starting viziers sit in recruit and move; no Eyrie warrior is left.
+    expect(check?.columns.move[0]?.resolvable).toBe(false)
+    expect(check?.dependsOnRecruit).toEqual([
+      expect.stringContaining('move: Loyal Vizier (bird) cannot resolve now'),
+    ])
+    expect(check?.turmoilRisks).toEqual([])
+  })
+
   it('answers nothing to a seat that is not the Eyrie', () => {
     expect(
       checkDecree(createPlayingTwoPlayerGame(), FIRST_TEST_PLAYER_ID, []),
