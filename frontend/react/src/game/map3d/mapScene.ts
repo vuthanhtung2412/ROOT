@@ -93,6 +93,13 @@ const MAXIMUM_PIXEL_RATIO = 2
 const MILLISECONDS_PER_SECOND = 1000
 /** A tab coming back from the background must not jump the glide. */
 const MAXIMUM_FRAME_SECONDS = 0.1
+/**
+ * Frames are at least this far apart while only the scenery moves: thirty
+ * per second, less a margin so a frame of the screen is not missed by a hair.
+ */
+const AMBIENT_FRAME_MILLISECONDS = 32
+/** The camera counts as moving this long after its last move or touch. */
+const CAMERA_SETTLE_MILLISECONDS = 300
 const HALF = 0.5
 
 export function createMapScene(input: MapSceneInput): MapScene {
@@ -188,7 +195,30 @@ export function createMapScene(input: MapSceneInput): MapScene {
   let shadowsAreStale = true
   /** Zoom the shadows were last drawn at: the models grow with it. */
   let shadowZoom: number = cameraRig.zoom()
+  /** Until then (page clock) the camera counts as moving. */
+  let cameraMovesUntilMilliseconds: number =
+    startMilliseconds + CAMERA_SETTLE_MILLISECONDS
+  const noteCameraMoved = (): void => {
+    cameraMovesUntilMilliseconds =
+      performance.now() + CAMERA_SETTLE_MILLISECONDS
+  }
+  cameraRig.controls.addEventListener('start', noteCameraMoved)
+  cameraRig.controls.addEventListener('change', noteCameraMoved)
   const renderFrame = (nowMilliseconds: number): void => {
+    // With the camera at rest only the river, the fires and the marks move:
+    // they are drawn at a slower pace, which spares the battery.
+    const onlyAmbientMotion: boolean =
+      nowMilliseconds >= cameraMovesUntilMilliseconds &&
+      !shadowsAreStale &&
+      !daylight.isSunMoving() &&
+      !pieceLayer.isBuildPlaying()
+    if (
+      onlyAmbientMotion &&
+      nowMilliseconds - previousMilliseconds < AMBIENT_FRAME_MILLISECONDS
+    ) {
+      animationFrame = requestAnimationFrame(renderFrame)
+      return
+    }
     const deltaSeconds: number = Math.min(
       (nowMilliseconds - previousMilliseconds) / MILLISECONDS_PER_SECOND,
       MAXIMUM_FRAME_SECONDS,
@@ -266,6 +296,8 @@ export function createMapScene(input: MapSceneInput): MapScene {
     dispose: (): void => {
       cancelAnimationFrame(animationFrame)
       cameraRig.controls.removeEventListener('change', notifyViewChanged)
+      cameraRig.controls.removeEventListener('start', noteCameraMoved)
+      cameraRig.controls.removeEventListener('change', noteCameraMoved)
       cameraRig.dispose()
       // First, while every part is still in the scene: the ground and its
       // texture, the trees, the marks and the shadow map have no owner else.
