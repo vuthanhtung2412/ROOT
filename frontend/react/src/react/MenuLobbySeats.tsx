@@ -61,10 +61,13 @@ function tiltClassName(seatIndex: number): string {
   return SEAT_TILT_CLASS_NAMES[seatIndex % SEAT_TILT_CLASS_NAMES.length] ?? ''
 }
 
+/** Faction colour softened toward parchment: the ground behind a head. */
+export function factionTintCss(factionId: string): string {
+  return `color-mix(in srgb, ${factionColorCss(factionId)} ${String(PORTRAIT_TINT_PERCENT)}%, var(--color-parchment))`
+}
+
 function tintStyle(factionId: string): CSSProperties {
-  return {
-    color: `color-mix(in srgb, ${factionColorCss(factionId)} ${String(PORTRAIT_TINT_PERCENT)}%, var(--color-parchment))`,
-  }
+  return { color: factionTintCss(factionId) }
 }
 
 function seatStatus(seat: MenuLobbySeat, seatIndex: number): string {

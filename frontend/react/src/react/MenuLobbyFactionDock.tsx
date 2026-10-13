@@ -3,6 +3,7 @@ import { factionPortraitPath } from '#assets/factionPortraits.ts'
 import { modelDisplayName } from '#game/aiPlayerStore.ts'
 import type { MenuFactionChoice } from '#game/hudStore.ts'
 import { factionDisplayName, isMenuFactionId } from '#game/menuPartySetup.ts'
+import { factionTintCss } from '#react/MenuLobbySeats.tsx'
 
 /** `own`: this browser picks its faction. `ai`: the host seats an AI player. */
 export type LobbyDockMode = 'own' | 'ai'
@@ -131,6 +132,7 @@ export function LobbyFactionDock(props: {
                         ? `${HEAD_PORTRAIT_CLASS_NAME} ${TAKEN_PORTRAIT_CLASS_NAME}`
                         : HEAD_PORTRAIT_CLASS_NAME
                     }
+                    style={{ backgroundColor: factionTintCss(choice.faction) }}
                     src={portraitPath}
                     alt=""
                     draggable={false}
