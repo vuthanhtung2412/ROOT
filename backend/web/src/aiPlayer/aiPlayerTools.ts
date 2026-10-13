@@ -19,7 +19,21 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue }
 
-export type JsonObject = { [key: string]: JsonValue }
+/** Narrows a parsed model payload (typed `unknown` by the SDKs). */
+export function isJsonValue(value: unknown): value is JsonValue {
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return true
+  }
+  if (Array.isArray(value)) {
+    return value.every(isJsonValue)
+  }
+  return typeof value === 'object' && Object.values(value).every(isJsonValue)
+}
 
 /** What a model is told about one tool. Same names as `root-cli` commands. */
 export type AiPlayerToolDefinition = {
