@@ -12,6 +12,7 @@ import {
 } from '#game/hudStore.ts'
 import { PUBLIC_HAND_FACTION_ID } from '#game/gameSceneModals.ts'
 import { factionColorCss } from '#game/theme.ts'
+import { AiSeatBadge } from '#react/AiSeatBadge.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 
 const VAGABOND_FACTION_ID = 'vagabond'
@@ -189,6 +190,7 @@ export function PlayerRail(): JSX.Element | null {
             >
               {String(player.hand.length)}
             </span>
+            <AiSeatBadge seat={player.seat} />
             <div className={SEAT_BUTTON_STACK_CLASS_NAME}>
               {seatButtons.map((button: SeatButtonView) => (
                 <SeatButton key={button.label} button={button} />
