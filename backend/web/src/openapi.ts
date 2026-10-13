@@ -6,6 +6,7 @@ import { onError } from '#middleware/errors.js'
 import { aiPlayerRoutes } from '#routes/aiPlayer.js'
 import { gameRoutes } from '#routes/game.js'
 import { mapRoutes } from '#routes/map.js'
+import { rulesRoutes } from '#routes/rules.js'
 
 const openApiInfo = {
   openapi: '3.0.0' as const,
@@ -59,6 +60,7 @@ app.openapi(healthRoute, (context) => {
 
 app.route('/game', gameRoutes)
 app.route('/game', aiPlayerRoutes)
+app.route('/game', rulesRoutes)
 app.route('/map', mapRoutes)
 
 app.doc('/doc', openApiInfo)

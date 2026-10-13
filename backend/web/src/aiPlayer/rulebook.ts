@@ -127,6 +127,29 @@ export function lookupRules(
     .map((scored): RuleSection => scored.section)
 }
 
+const NO_RULE_MATCH_MESSAGE =
+  'No rule matches. Try a rule number or other keywords.'
+const SECTION_SEPARATOR = '\n\n'
+
+function formatRuleSection(section: RuleSection): string {
+  const heading =
+    section.sectionNumber === null
+      ? section.title
+      : `${section.sectionNumber} ${section.title}`
+  return section.text === '' ? heading : `${heading}\n${section.text}`
+}
+
+/** `lookupRules` as readable text, for the `rules` tool and `root-cli rules`. */
+export function formatRuleLookup(
+  sections: readonly RuleSection[],
+  query: string,
+): string {
+  const found = lookupRules(sections, query)
+  return found.length === 0
+    ? NO_RULE_MATCH_MESSAGE
+    : found.map(formatRuleSection).join(SECTION_SEPARATOR)
+}
+
 let loadedRulebook: RuleSection[] | null = null
 
 /** The Law of Root (rules source of truth), parsed once per process. */

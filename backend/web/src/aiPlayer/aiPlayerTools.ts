@@ -1,6 +1,6 @@
 import { RuleError, type Game } from '@root/lib'
 import { z } from 'zod'
-import { lookupRules, type RuleSection } from '#aiPlayer/rulebook.js'
+import { formatRuleLookup, type RuleSection } from '#aiPlayer/rulebook.js'
 import { logGameEvent } from '#debug/logGame.js'
 import { isAction } from '#typeGuards.js'
 import { mayPlayerSendAction } from '#view/actionSeatGuard.js'
@@ -120,14 +120,6 @@ function formatJson(value: object): string {
   return JSON.stringify(value, null, JSON_INDENT_SPACES)
 }
 
-function formatRuleSection(section: RuleSection): string {
-  const heading =
-    section.sectionNumber === null
-      ? section.title
-      : `${section.sectionNumber} ${section.title}`
-  return section.text === '' ? heading : `${heading}\n${section.text}`
-}
-
 function runAct(
   context: AiPlayerToolContext,
   input: JsonValue,
@@ -217,11 +209,7 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
       if (!parsed.success) {
         return fail('Bad input: pass {"query": "<rule number or keywords>"}.')
       }
-      const sections = lookupRules(context.rulebook, parsed.data.query)
-      if (sections.length === 0) {
-        return succeed('No rule matches. Try a rule number or other keywords.')
-      }
-      return succeed(sections.map(formatRuleSection).join('\n\n'))
+      return succeed(formatRuleLookup(context.rulebook, parsed.data.query))
     },
   },
   {
