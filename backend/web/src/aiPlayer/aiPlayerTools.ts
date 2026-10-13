@@ -8,6 +8,7 @@ import {
 import { lookUpCardDetails } from '#aiPlayer/aiPlayerCardDetail.js'
 import { describeClearing } from '#aiPlayer/aiPlayerClearingDetail.js'
 import { checkDecree } from '#aiPlayer/aiPlayerDecreeCheck.js'
+import { forecastOwnFaction } from '#aiPlayer/aiPlayerFactionForecast.js'
 import { buildStandings } from '#aiPlayer/aiPlayerStandings.js'
 import {
   fail,
@@ -79,6 +80,8 @@ export const CLEARING_TOOL_NAME = 'clearing'
 export const DECREE_TOOL_NAME = 'decree'
 export const PREVIEW_TOOL_NAME = 'preview'
 export const SCORE_TOOL_NAME = 'score'
+export const WORKSHOPS_TOOL_NAME = 'workshops'
+export const SYMPATHY_TOOL_NAME = 'sympathy'
 
 const DEFAULT_LOG_ENTRY_LIMIT = 40
 const MAXIMUM_LOG_ENTRY_LIMIT = 200
@@ -374,6 +377,42 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
       return standings === null
         ? fail('You hold no seat in this game.')
         : succeed(formatJson(standings))
+    },
+  },
+  {
+    definition: {
+      name: WORKSHOPS_TOOL_NAME,
+      description:
+        'Marquise only. Your economy: wood in reach of each clearing you rule, what the next sawmill, workshop and recruiter cost in wood and score in victory points, the clearings where each can be built now, your unused workshops by suit (for crafting) and your recruiters.',
+      inputJsonSchema: z.toJSONSchema(EmptyInputSchema),
+    },
+    run: (context) => {
+      const forecast = forecastOwnFaction(
+        context.game,
+        context.playerId,
+        'marquise',
+      )
+      return forecast === null
+        ? fail('Only the Marquise have workshops and wood.')
+        : succeed(formatJson(forecast))
+    },
+  },
+  {
+    definition: {
+      name: SYMPATHY_TOOL_NAME,
+      description:
+        'Alliance only. Your sympathy plan: the cost and victory points of the next token, the clearings you may spread to with the supporters each costs (martial law counted) and whether you can pay, the clearings where you can revolt, and your supporters that match each suit.',
+      inputJsonSchema: z.toJSONSchema(EmptyInputSchema),
+    },
+    run: (context) => {
+      const forecast = forecastOwnFaction(
+        context.game,
+        context.playerId,
+        'alliance',
+      )
+      return forecast === null
+        ? fail('Only the Alliance spread sympathy.')
+        : succeed(formatJson(forecast))
     },
   },
   {

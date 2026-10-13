@@ -84,6 +84,8 @@ describe('anthropic provider', () => {
       { name: 'card' },
       { name: 'clearing' },
       { name: 'score' },
+      { name: 'workshops' },
+      { name: 'sympathy' },
       { name: 'decree' },
       { name: 'preview' },
       {

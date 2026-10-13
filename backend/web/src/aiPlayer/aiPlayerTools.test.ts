@@ -44,7 +44,7 @@ describe('AI player tools', () => {
       AI_PLAYER_TOOL_DEFINITIONS.map(
         (definition: AiPlayerToolDefinition): string => definition.name,
       ),
-    ).toEqual(['show', 'actions', 'log', 'rules', 'card', 'clearing', 'score', 'decree', 'preview', 'act'])
+    ).toEqual(['show', 'actions', 'log', 'rules', 'card', 'clearing', 'score', 'workshops', 'sympathy', 'decree', 'preview', 'act'])
     for (const definition of AI_PLAYER_TOOL_DEFINITIONS) {
       expect(definition.inputJsonSchema.type).toBe('object')
     }

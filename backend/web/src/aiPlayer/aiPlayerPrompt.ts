@@ -10,6 +10,8 @@ import {
   RULES_TOOL_NAME,
   SCORE_TOOL_NAME,
   SHOW_TOOL_NAME,
+  SYMPATHY_TOOL_NAME,
+  WORKSHOPS_TOOL_NAME,
 } from '#aiPlayer/aiPlayerTools.js'
 import { VICTORY_POINT_GOAL } from '#aiPlayer/aiPlayerStandings.js'
 
@@ -28,8 +30,12 @@ const FACTION_RULE_CHAPTERS: Readonly<Record<FactionId, string>> = {
   riverfolk: '11',
 }
 
-const DECREE_FACTION: FactionId = 'eyrie'
-const DECREE_TOOL_LINE = `- ${DECREE_TOOL_NAME}: your Decree card by card: which cards can resolve, where, and what would cause turmoil. Call it before you add to the Decree, with the cards you mean to add.\n`
+/** The tool only one faction can use, as its line in the tool list. */
+const FACTION_TOOL_LINES: Readonly<Partial<Record<FactionId, string>>> = {
+  marquise: `- ${WORKSHOPS_TOOL_NAME}: your wood, what each next building costs and scores, and where you can build it now.\n`,
+  eyrie: `- ${DECREE_TOOL_NAME}: your Decree card by card: which cards can resolve, where, and what would cause turmoil. Call it before you add to the Decree, with the cards you mean to add.\n`,
+  alliance: `- ${SYMPATHY_TOOL_NAME}: where you can spread sympathy or revolt, what each costs in supporters, and whether you can pay.\n`,
+}
 
 /** Stable per seat for the whole game, so providers can cache it. */
 export function buildAiPlayerSystemPrompt(identity: AiPlayerIdentity): string {
@@ -43,7 +49,7 @@ The game runs on a rules engine. You play only through these tools:
 - ${CARD_TOOL_NAME}: your cards in full: text, craft cost, and whether you can craft each one right now.
 - ${CLEARING_TOOL_NAME}: one clearing in full: pieces, ruler, free slots, neighbors.
 - ${SCORE_TOOL_NAME}: the standings: victory points and pieces on the map of every faction, and your supply.
-${identity.faction === DECREE_FACTION ? DECREE_TOOL_LINE : ''}- ${PREVIEW_TOOL_NAME}: dry run of one action: is it legal and what would it cause. Nothing is applied.
+${FACTION_TOOL_LINES[identity.faction] ?? ''}- ${PREVIEW_TOOL_NAME}: dry run of one action: is it legal and what would it cause. Nothing is applied.
 - ${ACT_TOOL_NAME}: take one action.
 
 How to act: every legal action has a "type", "params" and a "shape". Each param lists the values you may choose from; "shape" names the exact fields of the action. Build the action with the field names of "shape", each filled with one value chosen from the matching param, and pass it to ${ACT_TOOL_NAME}. Field names follow "shape", not the param names: param "cardIds" may fill a field "cardId", param "clearings" a field "clearing". When a param lists whole objects (for example "options", "targets" or "moves"), choose one object and put its fields into the action. One exception: "addToDecree" takes "cards", a list of one or two of its options with at most one bird card among them: {"type": "addToDecree", "cards": [{"cardId": <card>, "column": <column>}]}. If the engine rejects the action, read the error, call ${ACTIONS_TOOL_NAME} again and correct it. The engine is the authority on what is legal: an action that is not in ${ACTIONS_TOOL_NAME} cannot be taken.
