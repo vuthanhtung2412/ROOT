@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ActionComposer,
   type ComposerOutcome,
@@ -29,6 +29,15 @@ function setupSnapshot(): GameSessionSnapshot {
     loading: false,
   }
 }
+
+// The controller reads a QA flag on `window`; these tests run without a browser.
+beforeEach((): void => {
+  vi.stubGlobal('window', {})
+})
+
+afterEach((): void => {
+  vi.unstubAllGlobals()
+})
 
 describe('AutoPromptController setup keep', () => {
   it('does not lock setup prompt before board ready', () => {

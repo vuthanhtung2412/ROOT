@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActionSpec } from '#api/client.ts'
 import {
   craftedItemTypeOfCurrentPlayer,
@@ -67,6 +67,15 @@ function expectIncomplete(
   }
   return outcome
 }
+
+// The auto-prompt controller reads a QA flag on `window`; no browser here.
+beforeEach((): void => {
+  vi.stubGlobal('window', {})
+})
+
+afterEach((): void => {
+  vi.unstubAllGlobals()
+})
 
 describe('Propaganda Bureau flow', () => {
   const spec: ActionSpec = makeActionSpec({
