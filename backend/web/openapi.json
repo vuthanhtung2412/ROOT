@@ -462,6 +462,27 @@
           "failure"
         ]
       },
+      "PlayerToolResult": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "isError": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "content",
+          "isError"
+        ]
+      },
+      "JsonObject": {
+        "type": "object",
+        "additionalProperties": {
+          "nullable": true
+        }
+      },
       "FallMapResponse": {
         "type": "object",
         "properties": {
@@ -1786,6 +1807,78 @@
               "text/plain": {
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/player-tools/{tool}": {
+      "post": {
+        "tags": [
+          "game"
+        ],
+        "summary": "Run a read-only player tool as the seat of the X-Player-Id caller (what an AI player sees)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "One of: card, clearing, score, workshops, sympathy, decree, preview."
+            },
+            "required": true,
+            "description": "One of: card, clearing, score, workshops, sympathy, decree, preview.",
+            "name": "tool",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The answer of the tool; nothing in the game changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerToolResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }

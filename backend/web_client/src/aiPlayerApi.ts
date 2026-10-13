@@ -55,7 +55,18 @@ export type AiPlayerApi = {
   ) => Promise<void>
   /** Look up the Law of Root by rule number or keywords. */
   rules: (query: string) => Promise<string>
+  /**
+   * Run a read-only player tool (card, clearing, score, workshops, sympathy,
+   * decree, preview) as the seat of the client's `playerId`.
+   */
+  playerTool: (tool: string, input: PlayerToolInput) => Promise<PlayerToolResult>
 }
+
+/** Input of a player tool: the JSON object the tool takes. */
+export type PlayerToolInput = components['schemas']['JsonObject']
+
+/** Answer of a player tool: JSON text, or why it could not answer. */
+export type PlayerToolResult = components['schemas']['PlayerToolResult']
 
 export function createAiPlayerApi(
   options: CreateGameApiOptions = {},
@@ -117,6 +128,18 @@ export function createAiPlayerApi(
         await client.GET('/game/rules', {
           params: { query: { query } },
           parseAs: 'text',
+        }),
+      )
+    },
+
+    async playerTool(
+      tool: string,
+      input: PlayerToolInput,
+    ): Promise<PlayerToolResult> {
+      return requireData(
+        await client.POST('/game/player-tools/{tool}', {
+          params: { path: { tool } },
+          body: input,
         }),
       )
     },

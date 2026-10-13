@@ -735,6 +735,48 @@ export interface paths {
       };
     };
   };
+  "/game/player-tools/{tool}": {
+    /** Run a read-only player tool as the seat of the X-Player-Id caller (what an AI player sees) */
+    post: {
+      parameters: {
+        path: {
+          /** @description One of: card, clearing, score, workshops, sympathy, decree, preview. */
+          tool: string;
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["JsonObject"];
+        };
+      };
+      responses: {
+        /** @description The answer of the tool; nothing in the game changed */
+        200: {
+          content: {
+            "application/json": components["schemas"]["PlayerToolResult"];
+          };
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
   "/map/fall": {
     /** Fall map graph */
     get: {
@@ -883,6 +925,13 @@ export interface components {
     };
     /** @enum {string} */
     AiPlayerActivityKind: "message" | "reasoning" | "reply" | "toolCall" | "toolResult" | "failure";
+    PlayerToolResult: {
+      content: string;
+      isError: boolean;
+    };
+    JsonObject: {
+      [key: string]: unknown;
+    };
     FallMapResponse: {
       clearings: unknown[];
       paths: number[][];
