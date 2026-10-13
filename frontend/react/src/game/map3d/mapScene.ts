@@ -29,6 +29,7 @@ import {
 } from '#game/map3d/pieceMeshes.ts'
 import { createRiverFlow, type RiverFlow } from '#game/map3d/riverFlow.ts'
 import { createGround } from '#game/map3d/sceneGround.ts'
+import { disposeObjectTree } from '#game/map3d/sceneObjects.ts'
 import { createTreeMeshes } from '#game/map3d/treeMeshes.ts'
 import {
   createTreeSightlines,
@@ -239,6 +240,9 @@ export function createMapScene(input: MapSceneInput): MapScene {
       cancelAnimationFrame(animationFrame)
       cameraRig.controls.removeEventListener('change', notifyViewChanged)
       cameraRig.dispose()
+      // First, while every part is still in the scene: the ground and its
+      // texture, the trees, the marks and the shadow map have no owner else.
+      disposeObjectTree(scene)
       pieceLayer.dispose()
       riverFlow.dispose()
       campfires.dispose()
