@@ -19,6 +19,8 @@ export const MAX_TOOL_CALLS_PER_SESSION = 200
 /** Times a model may end its reply while its seat still has to act. */
 export const MAX_UNFINISHED_REPLIES = 3
 
+const FAILURE_DETAIL_SEPARATOR = ': '
+
 export type AiPlayerSessionFailure =
   | 'refused'
   | 'truncated'
@@ -29,8 +31,13 @@ export type AiPlayerSessionFailure =
 export class AiPlayerSessionError extends Error {
   readonly failure: AiPlayerSessionFailure
 
-  constructor(failure: AiPlayerSessionFailure) {
-    super(failure)
+  /** `detail`: what the provider said about the stop, when it said anything. */
+  constructor(failure: AiPlayerSessionFailure, detail: string | null = null) {
+    super(
+      detail === null || detail === ''
+        ? failure
+        : `${failure}${FAILURE_DETAIL_SEPARATOR}${detail}`,
+    )
     this.name = 'AiPlayerSessionError'
     this.failure = failure
   }
@@ -86,11 +93,17 @@ export class AiPlayerSession {
       }
       const reply = await this.conversation.send(input, this.abortSignal)
       this.abortSignal.throwIfAborted()
+      if (reply.reasoning !== undefined) {
+        this.report('reasoning', reply.reasoning)
+      }
       if (reply.text !== '') {
         this.report('reply', reply.text)
       }
       if (reply.stopReason === 'refused' || reply.stopReason === 'truncated') {
-        throw new AiPlayerSessionError(reply.stopReason)
+        throw new AiPlayerSessionError(
+          reply.stopReason,
+          reply.stopDetail ?? null,
+        )
       }
       if (reply.toolCalls.length === 0) {
         if (!this.seatMayAct()) {
@@ -112,7 +125,7 @@ export class AiPlayerSession {
     }
   }
 
-  private report(kind: 'message' | 'reply', text: string): void {
+  private report(kind: 'message' | 'reasoning' | 'reply', text: string): void {
     this.onActivity({ kind, toolName: null, text, isError: false })
   }
 

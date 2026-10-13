@@ -1,14 +1,14 @@
-import type Anthropic from '@anthropic-ai/sdk'
 import { describe, expect, it, vi } from 'vitest'
 import { AI_PLAYER_TOOL_DEFINITIONS } from '#aiPlayer/aiPlayerTools.js'
 import type { ModelConversation } from '#aiPlayer/ModelProvider.js'
 import {
   createAnthropicProvider,
   type AnthropicMessageCreator,
+  type AnthropicReplyMessage,
 } from '#aiPlayer/providers/anthropicProvider.js'
 import { createModelProvider } from '#aiPlayer/providers/providerRegistry.js'
 
-type AnthropicReply = Pick<Anthropic.Message, 'content' | 'stop_reason'>
+type AnthropicReply = AnthropicReplyMessage
 
 const TOOL_USE_REPLY: AnthropicReply = {
   stop_reason: 'tool_use',
@@ -129,9 +129,43 @@ describe('anthropic provider', () => {
     })
   })
 
+  it('asks for summarised thinking and hands it back as the reasoning', async () => {
+    const { conversation, createMessage } = createConversation([
+      {
+        stop_reason: 'end_turn',
+        content: [
+          {
+            type: 'thinking',
+            thinking: 'The roost is undefended.',
+            signature: 'thinking-signature',
+          },
+          { type: 'text', text: 'Done.', citations: null },
+        ],
+      },
+    ])
+
+    const reply = await conversation.send(
+      { toolResults: [], text: 'your turn' },
+      new AbortController().signal,
+    )
+
+    expect(reply.reasoning).toBe('The roost is undefended.')
+    expect(createMessage.mock.calls[0]?.[0]).toMatchObject({
+      thinking: { type: 'adaptive', display: 'summarized' },
+    })
+  })
+
   it('reports refusals and cut-off replies without tool calls', async () => {
     const { conversation } = createConversation([
-      { ...TOOL_USE_REPLY, stop_reason: 'refusal' },
+      {
+        ...TOOL_USE_REPLY,
+        stop_reason: 'refusal',
+        stop_details: {
+          type: 'refusal',
+          category: 'reasoning_extraction',
+          explanation: 'Asked to reproduce internal reasoning.',
+        },
+      },
       { ...TOOL_USE_REPLY, stop_reason: 'max_tokens' },
     ])
     const abortSignal = new AbortController().signal
@@ -145,8 +179,17 @@ describe('anthropic provider', () => {
       abortSignal,
     )
 
-    expect(refused).toMatchObject({ stopReason: 'refused', toolCalls: [] })
-    expect(truncated).toMatchObject({ stopReason: 'truncated', toolCalls: [] })
+    expect(refused).toMatchObject({
+      stopReason: 'refused',
+      toolCalls: [],
+      stopDetail:
+        'refusal · reasoning_extraction · Asked to reproduce internal reasoning.',
+    })
+    expect(truncated).toMatchObject({
+      stopReason: 'truncated',
+      toolCalls: [],
+      stopDetail: 'max_tokens',
+    })
   })
 
   it('does not record a failed request in the history', async () => {

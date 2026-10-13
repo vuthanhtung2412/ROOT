@@ -67,21 +67,42 @@ function parseArguments(argumentsJson: string): JsonValue {
   }
 }
 
-function isRefusal(response: OpenAiResponse): boolean {
-  return response.output.some(
-    (item: OpenAI.Responses.ResponseOutputItem): boolean =>
-      item.type === 'message' &&
-      item.content.some((part): boolean => part.type === 'refusal'),
-  )
+const REFUSAL_SEPARATOR = '\n'
+
+/** Every refusal the model wrote; empty when it refused nothing. */
+function refusalTexts(response: OpenAiResponse): string[] {
+  const texts: string[] = []
+  for (const item of response.output) {
+    if (item.type !== 'message') {
+      continue
+    }
+    for (const part of item.content) {
+      if (part.type === 'refusal') {
+        texts.push(part.refusal)
+      }
+    }
+  }
+  return texts
 }
 
 function toModelReply(response: OpenAiResponse): ModelReply {
   if (response.status !== 'completed') {
     // `incomplete` = output limit hit; anything else is equally unusable.
-    return { stopReason: 'truncated', toolCalls: [], text: response.output_text }
+    return {
+      stopReason: 'truncated',
+      toolCalls: [],
+      text: response.output_text,
+      stopDetail: `status ${String(response.status)}`,
+    }
   }
-  if (isRefusal(response)) {
-    return { stopReason: 'refused', toolCalls: [], text: response.output_text }
+  const refusals: string[] = refusalTexts(response)
+  if (refusals.length > 0) {
+    return {
+      stopReason: 'refused',
+      toolCalls: [],
+      text: response.output_text,
+      stopDetail: refusals.join(REFUSAL_SEPARATOR),
+    }
   }
   const toolCalls: ModelToolCall[] = []
   for (const item of response.output) {

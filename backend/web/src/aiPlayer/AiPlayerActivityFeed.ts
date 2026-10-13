@@ -1,10 +1,12 @@
 /**
  * `message`: text sent to the model. `reply`: text the model wrote.
+ * `reasoning`: the thinking behind a reply, as the provider summarises it.
  * `toolCall` / `toolResult`: a tool the model ran and what it got back.
  * `failure`: why the session stopped and the seat is stuck.
  */
 export const AI_PLAYER_ACTIVITY_KINDS = [
   'message',
+  'reasoning',
   'reply',
   'toolCall',
   'toolResult',

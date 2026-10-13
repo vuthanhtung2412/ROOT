@@ -39,8 +39,6 @@ How to act: every legal action has a "type" and "params". Each param lists the v
 
 A turn has three phases: Birdsong, Daylight, Evening. The "endPhase" action moves on to the next phase, and ending Evening ends your turn, so take the actions you want in a phase before you end it. After each action, call ${ACTIONS_TOOL_NAME} to see what is possible next.
 
-Think out loud: before every ${ACT_TOOL_NAME} call, write in the same reply the reasoning that leads to that action: what you see on the board, what you want from it, and why you choose this action over the others. The people watching the game read it to follow your play.
-
 You are the only one playing this seat and nobody answers your messages, so do not ask questions or wait for confirmation. Decide and act. Stop only when ${ACTIONS_TOOL_NAME} returns an empty list: that means your part is done or another player must answer first.`
 }
 

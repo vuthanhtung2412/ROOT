@@ -173,7 +173,11 @@ describe('openai provider', () => {
     )
 
     expect(truncated).toMatchObject({ stopReason: 'truncated', toolCalls: [] })
-    expect(refused).toMatchObject({ stopReason: 'refused', toolCalls: [] })
+    expect(refused).toMatchObject({
+      stopReason: 'refused',
+      toolCalls: [],
+      stopDetail: 'No.',
+    })
   })
 })
 

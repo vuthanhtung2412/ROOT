@@ -12,6 +12,7 @@ const CONTINUATION_INDENT = '    '
 
 const KIND_LABELS: Record<AiPlayerActivity['kind'], string> = {
   message: 'TOLD',
+  reasoning: 'THINKS',
   reply: 'SAYS',
   toolCall: 'CALL',
   toolResult: 'GOT',

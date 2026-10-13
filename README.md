@@ -134,7 +134,7 @@ pnpm --filter @root/cli start -- ai-stream          # GET /game/ai-players/strea
 pnpm --filter @root/cli start -- ai-stream --full   # long texts whole
 ```
 
-  The server also writes all of it, texts whole, to `logs/<game stamp>/ai-players.jsonl` (one JSON line per activity) beside `game.md`. The AI player is told to say the reasoning behind each action, so its `SAYS` lines explain its play.
+  The server also writes all of it, texts whole, to `logs/<game stamp>/ai-players.jsonl` (one JSON line per activity) beside `game.md`. `THINKS` lines are the model's own thinking summaries (Anthropic adaptive thinking); asking a model to write its reasoning in its reply is refused by the API (`reasoning_extraction`). A `FAILED` line carries what the provider said about the stop.
 
   The stream shows the AI player's hand and has no seat check (operator tool): keep it off a server opponents can reach.
 

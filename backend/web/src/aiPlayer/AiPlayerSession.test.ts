@@ -189,6 +189,51 @@ describe('AiPlayerSession', () => {
     expect(game.state.pending[0]).toMatchObject({ seat: 1 })
   })
 
+  it('reports the reasoning behind a reply before the reply', async () => {
+    const game = createStartedTwoPlayerGame()
+    const reasonAndLook: ScriptedReply = () => ({
+      ...toolCallReply(ACTIONS_TOOL_NAME, {}),
+      text: 'I check what I may do.',
+      reasoning: 'The keep corner decides where the cats spread first.',
+    })
+    const scripted = createScriptedConversation([
+      reasonAndLook,
+      () => answerSetupChoiceReply(game, FIRST_TEST_PLAYER_ID),
+    ])
+    const { session, onActivity } = createSession(game, scripted.conversation)
+
+    await session.play('your turn')
+
+    const reportedKinds: string[] = onActivity.mock.calls.map(
+      ([activity]: [AiPlayerSessionActivity]): string => activity.kind,
+    )
+    expect(reportedKinds.slice(0, 3)).toEqual(['message', 'reasoning', 'reply'])
+    expect(onActivity).toHaveBeenCalledWith({
+      kind: 'reasoning',
+      toolName: null,
+      text: 'The keep corner decides where the cats spread first.',
+      isError: false,
+    })
+  })
+
+  it('says in its failure what the provider said about the stop', async () => {
+    const scripted = createScriptedConversation([
+      () => ({
+        ...stoppedReply('refused'),
+        stopDetail: 'refusal · reasoning_extraction',
+      }),
+    ])
+    const { session } = createSession(
+      createStartedTwoPlayerGame(),
+      scripted.conversation,
+    )
+
+    await expect(session.play('your turn')).rejects.toMatchObject({
+      failure: 'refused',
+      message: 'refused: refusal · reasoning_extraction',
+    })
+  })
+
   it('fails on a refusal and on a truncated reply', async () => {
     for (const stopReason of ['refused', 'truncated'] as const) {
       const scripted = createScriptedConversation([

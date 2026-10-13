@@ -32,6 +32,10 @@ export type ModelReply = {
   stopReason: ModelStopReason
   toolCalls: readonly ModelToolCall[]
   text: string
+  /** The provider's summary of the thinking behind this reply, when it gives one. */
+  reasoning?: string
+  /** What the provider says about a `refused` / `truncated` stop, when it says anything. */
+  stopDetail?: string
 }
 
 export type ModelConversationRequest = {

@@ -14,16 +14,23 @@ import type {
   ModelToolResult,
 } from '#aiPlayer/ModelProvider.js'
 
+/** The part of an SDK message the provider reads. */
+export type AnthropicReplyMessage = Pick<
+  Anthropic.Message,
+  'content' | 'stop_reason'
+> & { stop_details?: Anthropic.RefusalStopDetails | null }
+
 /** The one SDK call the provider needs; tests pass a mock. */
 export type AnthropicMessageCreator = (
   body: Anthropic.MessageCreateParamsNonStreaming,
   options: { signal: AbortSignal },
-) => Promise<Pick<Anthropic.Message, 'content' | 'stop_reason'>>
+) => Promise<AnthropicReplyMessage>
 
 /** Room for thinking plus a few tool calls; stays under SDK HTTP timeouts. */
 const MAX_OUTPUT_TOKENS = 16000
 const OBJECT_SCHEMA_TYPE = 'object'
 const TEXT_SEPARATOR = '\n'
+const STOP_DETAIL_SEPARATOR = ' · '
 
 function toAnthropicTool(definition: AiPlayerToolDefinition): Anthropic.Tool {
   return {
@@ -63,13 +70,29 @@ function toStopReason(stopReason: Anthropic.StopReason | null): ModelStopReason 
   }
 }
 
-function toModelReply(
-  message: Pick<Anthropic.Message, 'content' | 'stop_reason'>,
-): ModelReply {
+/** The API's own words for a stop: its stop reason, refusal category and explanation. */
+function toStopDetail(message: AnthropicReplyMessage): string {
+  const details: Anthropic.RefusalStopDetails | null =
+    message.stop_details ?? null
+  return [message.stop_reason, details?.category, details?.explanation]
+    .filter(
+      (part: string | null | undefined): part is string =>
+        part !== null && part !== undefined,
+    )
+    .join(STOP_DETAIL_SEPARATOR)
+}
+
+function toModelReply(message: AnthropicReplyMessage): ModelReply {
   const stopReason = toStopReason(message.stop_reason)
+  const isUnusable: boolean =
+    stopReason === 'refused' || stopReason === 'truncated'
   const toolCalls: ModelToolCall[] = []
   const texts: string[] = []
+  const thoughts: string[] = []
   for (const block of message.content) {
+    if (block.type === 'thinking' && block.thinking !== '') {
+      thoughts.push(block.thinking)
+    }
     if (block.type === 'text') {
       texts.push(block.text)
     }
@@ -82,6 +105,8 @@ function toModelReply(
     // A cut-off or refused reply may hold half a tool call: run none of it.
     toolCalls: stopReason === 'toolCalls' ? toolCalls : [],
     text: texts.join(TEXT_SEPARATOR),
+    ...(thoughts.length > 0 ? { reasoning: thoughts.join(TEXT_SEPARATOR) } : {}),
+    ...(isUnusable ? { stopDetail: toStopDetail(message) } : {}),
   }
 }
 
@@ -109,6 +134,9 @@ class AnthropicConversation implements ModelConversation {
       {
         model: this.request.modelId,
         max_tokens: MAX_OUTPUT_TOKENS,
+        // The model's reasoning comes back as thinking summaries. Asking for it
+        // in the reply text instead is refused (`reasoning_extraction`).
+        thinking: { type: 'adaptive', display: 'summarized' },
         // Caches the growing prefix: system prompt, tools and earlier messages.
         cache_control: { type: 'ephemeral' },
         system: this.request.systemPrompt,

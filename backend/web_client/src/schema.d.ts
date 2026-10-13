@@ -882,7 +882,7 @@ export interface components {
       isError: boolean;
     };
     /** @enum {string} */
-    AiPlayerActivityKind: "message" | "reply" | "toolCall" | "toolResult" | "failure";
+    AiPlayerActivityKind: "message" | "reasoning" | "reply" | "toolCall" | "toolResult" | "failure";
     FallMapResponse: {
       clearings: unknown[];
       paths: number[][];

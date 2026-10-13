@@ -455,6 +455,7 @@
         "type": "string",
         "enum": [
           "message",
+          "reasoning",
           "reply",
           "toolCall",
           "toolResult",
