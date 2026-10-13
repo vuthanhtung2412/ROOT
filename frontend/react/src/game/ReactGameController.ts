@@ -75,6 +75,7 @@ import {
   type BoardEffectBatch,
 } from '#game/boardEffects.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
+import { CLEARING_FLASH_MS, type ClearingFlash } from '#game/clearingFlash.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { syncActionTray } from '#react/ActionTray.tsx'
@@ -101,6 +102,8 @@ export type ReactGameBoardSnapshot = {
   highlightedForestIndexes: readonly number[]
   /** What the last server update changed on the map (animated for everyone). */
   effects: BoardEffectBatch
+  /** Game log: the clearing the map points at for a moment. */
+  flashedClearing: ClearingFlash | null
 }
 
 type BoardListener = () => void
@@ -108,9 +111,6 @@ type BoardListener = () => void
 /**
  * GameScene logic without Phaser — owns session composers + board snapshot for React.
  */
-/** How long a clearing clicked in the game log stays highlighted on the map. */
-const LOG_CLEARING_FLASH_MS = 2500
-
 export class ReactGameController {
   private session: GameSession | null = null
   private layout: BoardLayout | null = null
@@ -119,6 +119,8 @@ export class ReactGameController {
   private forestPawns: readonly ForestPawnMarker[] = []
   private highlightedClearingIds: readonly number[] = []
   private highlightedForestIndexes: readonly number[] = []
+  private flashedClearing: ClearingFlash | null = null
+  private clearingFlashCount = 0
   private boardReady = false
   private boardSnapshot: ReactGameBoardSnapshot = {
     layout: null,
@@ -128,6 +130,7 @@ export class ReactGameController {
     highlightedClearingIds: [],
     highlightedForestIndexes: [],
     effects: EMPTY_BOARD_EFFECT_BATCH,
+    flashedClearing: null,
   }
   /** Last committed server state the board effects were read from. */
   private effectState: GameState | null = null
@@ -195,6 +198,7 @@ export class ReactGameController {
       highlightedClearingIds: this.highlightedClearingIds,
       highlightedForestIndexes: this.highlightedForestIndexes,
       effects: this.boardEffects,
+      flashedClearing: this.flashedClearing,
     }
     for (const listener of this.boardListeners) {
       listener()
@@ -479,19 +483,24 @@ export class ReactGameController {
   }
 
   /**
-   * Game log: point at a clearing on the map for a moment, then give the
-   * highlight back to whatever the board was showing (prompt, battle).
+   * Game log: point at a clearing on the map for a moment. The highlight of
+   * the board (prompt, battle) is left as it is.
    */
   private flashClearing(clearingId: number): void {
-    const flashed: readonly number[] = [clearingId]
-    const before: readonly number[] = this.highlightedClearingIds
-    this.setHighlightedClearings(flashed)
+    this.clearingFlashCount += 1
+    const flash: ClearingFlash = {
+      clearingId,
+      flashNumber: this.clearingFlashCount,
+    }
+    this.flashedClearing = flash
+    this.notifyBoard()
     window.setTimeout((): void => {
-      // Untouched since the flash: nothing else claimed the highlight.
-      if (this.highlightedClearingIds === flashed) {
-        this.setHighlightedClearings(before)
+      // Still this flash: no later one took its place.
+      if (this.flashedClearing === flash) {
+        this.flashedClearing = null
+        this.notifyBoard()
       }
-    }, LOG_CLEARING_FLASH_MS)
+    }, CLEARING_FLASH_MS)
   }
 
   private setHighlightedForests(forestIndexes: readonly number[]): void {

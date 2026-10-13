@@ -514,6 +514,7 @@ export function App(): JSX.Element {
         factions={board.factions}
         forestPawns={board.forestPawns}
         effects={board.effects}
+        flashedClearing={board.flashedClearing}
         highlightedClearingIds={board.highlightedClearingIds}
         highlightedForestIndexes={board.highlightedForestIndexes}
         onClearingSelected={(clearingId) => {

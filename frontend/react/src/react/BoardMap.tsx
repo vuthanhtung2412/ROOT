@@ -31,6 +31,8 @@ import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import { factionColorForSeat } from '#game/theme.ts'
 import type { ViewportLayoutMode } from '#game/viewportLayout.ts'
 import type { BoardEffectBatch } from '#game/boardEffects.ts'
+import type { ClearingFlash } from '#game/clearingFlash.ts'
+import { ClearingFlashMark } from '#react/ClearingFlashMark.tsx'
 import {
   BoardEffectsLayer,
   type BoardEffectPosition,
@@ -84,6 +86,8 @@ export type BoardMapProps = {
   forestPawns?: readonly ForestPawnMarker[]
   /** What the last server update changed on the map. */
   effects?: BoardEffectBatch
+  /** Game log: the clearing to point at for a moment. */
+  flashedClearing?: ClearingFlash | null
   onClearingSelected?: ClearingSelectedHandler
   onForestSelected?: ForestSelectedHandler
 }
@@ -118,6 +122,12 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
     }
     return clearingHitTargetsForMap(layout, metrics)
   }, [layout, metrics])
+
+  const flash: ClearingFlash | null = props.flashedClearing ?? null
+  const flashedTarget: ClearingPixelHitTarget | undefined = targets.find(
+    (target: ClearingPixelHitTarget): boolean =>
+      target.clearingId === flash?.clearingId,
+  )
 
   const hitCenters = useMemo(() => {
     const map = new Map<number, ClearingHitCenter>()
@@ -317,6 +327,9 @@ export function BoardMap(props: BoardMapProps): JSX.Element {
               hitCenters={hitCenters}
               forestCenters={forestCenters}
             />
+          ) : null}
+          {flashedTarget !== undefined && flash !== null ? (
+            <ClearingFlashMark key={flash.flashNumber} target={flashedTarget} />
           ) : null}
           {targets.map((target) => {
             const isHighlighted = highlighted.has(target.clearingId)

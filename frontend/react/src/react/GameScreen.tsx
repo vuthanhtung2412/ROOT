@@ -19,6 +19,7 @@ import {
 import { BoardMap } from '#react/BoardMap.tsx'
 import type { BoardClearingPieces } from '#react/PieceStack.tsx'
 import type { ForestPawnMarker } from '#game/forestLayout.ts'
+import type { ClearingFlash } from '#game/clearingFlash.ts'
 
 export type GameScreenProps = {
   layout: BoardLayout | null
@@ -27,6 +28,7 @@ export type GameScreenProps = {
   factions: readonly string[] | null
   forestPawns: readonly ForestPawnMarker[]
   effects: BoardEffectBatch
+  flashedClearing: ClearingFlash | null
   highlightedClearingIds: readonly number[]
   highlightedForestIndexes: readonly number[]
   onClearingSelected: (clearingId: number) => void
@@ -73,6 +75,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
         {...(props.factions !== null ? { factions: props.factions } : {})}
         forestPawns={props.forestPawns}
         effects={props.effects}
+        flashedClearing={props.flashedClearing}
         highlightedClearingIds={props.highlightedClearingIds}
         highlightedForestIndexes={props.highlightedForestIndexes}
         onClearingSelected={props.onClearingSelected}
