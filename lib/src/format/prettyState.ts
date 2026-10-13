@@ -31,6 +31,8 @@ function playerRefBySeat(state: GameState, seat: Seat): string {
 export type CardLabelOpts = {
   /** Append short card effect (for crafted / in-play cards). */
   effect?: boolean
+  /** Hand cards: card id, craft cost and the whole effect text. */
+  detail?: boolean
 }
 
 export function cardLabel(card: Card, opts: CardLabelOpts = {}): string {
@@ -40,7 +42,12 @@ export function cardLabel(card: Card, opts: CardLabelOpts = {}): string {
     if (d.type === 'item' && d.item) bits.push(`item:${d.item}`)
     if (d.vp != null && d.vp > 0) bits.push(`+${d.vp}vp`)
     if (d.type !== 'item') bits.push(`(${d.type})`)
+    if (opts.detail) {
+      if (d.cost.length > 0) bits.push(`cost=${d.cost.join('+')}`)
+      bits.push(`id=${card.id}`)
+    }
     let label = bits.join(' ')
+    if (opts.detail && d.description) return `${label} — ${d.description}`
     if (opts.effect && d.description) {
       const desc =
         d.description.length > EFFECT_MAX
@@ -174,7 +181,7 @@ function boardLines(
 function playerBlock(state: GameState, p: GameState['players'][number]): string[] {
   return [
     `  ${playerRef(p)} VP=${p.vp}`,
-    ...cardsBlock('    ', 'hand', p.hand),
+    ...cardsBlock('    ', 'hand', p.hand, { detail: true }),
     ...cardsBlock('    ', 'crafted', p.playArea, { effect: true }),
     `    items: ${p.craftedItems.length ? p.craftedItems.map((item) => `${item.type}${item.exhausted ? ' (exhausted)' : ''}`).join(', ') : '(none)'}`,
     ...boardLines(state, p),

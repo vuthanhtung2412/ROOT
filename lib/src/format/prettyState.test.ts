@@ -43,6 +43,14 @@ describe('formatPieceChunk', () => {
 })
 
 describe('cardLabel', () => {
+  it('detail: craft cost, card id and the whole effect text', () => {
+    expect(
+      cardLabel({ id: 'ROOT-224#1', defId: 'ROOT-224' }, { detail: true }),
+    ).toBe(
+      'Sword [mouse] item:sword +2vp cost=fox+fox id=ROOT-224#1 — Craft sword item, score +2 VP, then discard.',
+    )
+  })
+
   it('appends truncated effect when asked', () => {
     const label = cardLabel({ id: 'ROOT-64#1', defId: 'ROOT-64' }, { effect: true })
     expect(label).toContain('Corvid Planners')
