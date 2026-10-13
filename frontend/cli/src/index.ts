@@ -10,6 +10,7 @@ import { cmdJoin } from '#commands/join.js'
 import { cmdLoad } from '#commands/load.js'
 import { cmdLog } from '#commands/log.js'
 import { cmdNew } from '#commands/new.js'
+import { cmdPlayerTool, PLAYER_TOOL_COMMANDS } from '#commands/playerTool.js'
 import { cmdRules } from '#commands/rules.js'
 import { cmdShow } from '#commands/show.js'
 import { cmdStart } from '#commands/start.js'
@@ -47,6 +48,18 @@ commands:
   log
   rules <rule number | keywords>
     (Law of Root lookup, e.g. rules 7.2 / rules ambush defender)
+  card [cardId ...]
+    (cards in full: cost, text, craftable now; no id = your hand)
+  clearing <id>
+    (one clearing: pieces, ruler, free slots, neighbors, can you build)
+  score
+    (standings: points, pieces on the map, your supply)
+  workshops | sympathy | decree ['<json adding>']
+    (your faction's plan: Marquise wood and buildings, Alliance sympathy,
+     Eyrie Decree; decree takes [{"cardId": "...", "column": "move"}])
+  preview '<json>'
+    (dry run of an action: legal or not, what it would cause; applies nothing)
+    card ... preview need --player-id: they answer for one seat
   ai-restart <seat>
     (drop the AI player's session, start a fresh one for its turn)
   ai-stream [${FULL_TEXT_FLAG}]
@@ -128,6 +141,10 @@ async function main(): Promise<void> {
         break
       }
       default:
+        if (PLAYER_TOOL_COMMANDS.includes(cmd)) {
+          await cmdPlayerTool(cmd, rest)
+          break
+        }
         usage()
         process.exit(1)
     }

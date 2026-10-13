@@ -4,6 +4,7 @@ import {
 } from '@root/web-client/ai-player-api'
 import {
   createGameApi,
+  type CreateGameApiOptions,
   type GameApi,
 } from '@root/web-client/game-api'
 
@@ -24,10 +25,12 @@ function readPlayerIdFlag(): string | null {
 
 const playerId: string | null = readPlayerIdFlag()
 
-export const api: GameApi = createGameApi(
+const apiOptions: CreateGameApiOptions =
   playerId === null
     ? {}
-    : { playerId: (): string => playerId, playerView: true },
-)
+    : { playerId: (): string => playerId, playerView: true }
 
-export const aiPlayerApi: AiPlayerApi = createAiPlayerApi()
+export const api: GameApi = createGameApi(apiOptions)
+
+/** Same seat as `api`: the player tools answer for the `--player-id` seat. */
+export const aiPlayerApi: AiPlayerApi = createAiPlayerApi(apiOptions)
