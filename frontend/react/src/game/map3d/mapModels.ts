@@ -1,5 +1,6 @@
 import type { Group } from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
+import { mergePartsByMaterial } from '#game/map3d/mergeModelParts.ts'
 
 /**
  * 3D models of the map (see `public/assets/models/SOURCES.md` for where each
@@ -144,11 +145,23 @@ export async function loadMapModels(): Promise<MapModels> {
     loadModel(loader, CAMPFIRE_MODEL_NAME),
   ])
   const pieces: Map<string, PieceModel> = new Map<string, PieceModel>()
+  // Several pieces share a model (the three suits of a base): merge it once.
+  const mergedStructures: Map<Group, Group> = new Map<Group, Group>()
+  const mergedStructure = (model: Group): Group => {
+    const merged: Group =
+      mergedStructures.get(model) ?? mergePartsByMaterial(model)
+    mergedStructures.set(model, merged)
+    return merged
+  }
   for (const [textureKey, source] of pieceEntries) {
     const model: Group | undefined =
       pieceModels[pieceModelNames.indexOf(source.name)]
     if (model !== undefined) {
-      pieces.set(textureKey, { kind: source.kind, model })
+      pieces.set(textureKey, {
+        kind: source.kind,
+        // A meeple keeps its parts: the torch of a pawn is shown and hidden.
+        model: source.kind === 'structure' ? mergedStructure(model) : model,
+      })
     }
   }
   return { trees: { pine, leafy, autumn }, pieces, campfire }
