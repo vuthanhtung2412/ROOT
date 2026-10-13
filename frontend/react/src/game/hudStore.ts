@@ -5,6 +5,8 @@ import type {
   CompletedQuestsModalContent,
   CraftedCardsModalContent,
 } from '#ui/cardGalleryTypes.ts'
+import type { DecreeCardOption } from '#game/eyrieActionComposerModels.ts'
+import type { DecreePanelView } from '#ui/decreePanel.ts'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { TurnBannerComposerView, TurnBannerViewModel } from '#ui/TurnBanner.ts'
@@ -65,6 +67,24 @@ export type CardHandHudState = {
   localSeat: number | null
   selectedCardIds: readonly string[]
   enabledCardIds: readonly string[] | null
+} | null
+
+/** The Decree while the Eyrie stages an Add to Decree; null otherwise. */
+export type DecreePanelHudState = {
+  view: DecreePanelView
+  /** Toggled from the dock; the staging is kept while the panel is off. */
+  isOpen: boolean
+} | null
+
+/** A card dragged towards a Decree panel slot; null when none is. */
+export type DecreeDragHudState = {
+  cardId: string
+  defId: string
+  /** Pointer position, in viewport pixels. */
+  x: number
+  y: number
+  /** Slot under the pointer that takes the card. */
+  overColumn: string | null
 } | null
 
 export type StatusMessageHudState = {
@@ -150,6 +170,12 @@ export type HudCallbacks = {
   onBattleOutsideClick: () => void
   onCardSelected: (cardId: string) => void
   onCardHold: (held: { defId: string; catalog: CardCatalogEntry }) => void
+  /** Decree panel: a card is laid in a column, or moved to another one. */
+  onDecreeCardStaged: (option: DecreeCardOption) => void
+  /** Decree panel: a staged card goes back to the hand. */
+  onDecreeCardTakenBack: (cardId: string) => void
+  /** Decree panel: every staged card goes back to the hand. */
+  onDecreeStagingCleared: () => void
 }
 
 /**
@@ -174,6 +200,8 @@ export type HudState = {
   /** Crafted / revealed cards flying out of the rail (last server update). */
   cardFlights: CardFlightBatch
   cardHand: CardHandHudState
+  decreePanel: DecreePanelHudState
+  decreeDrag: DecreeDragHudState
   /** Server log entries the viewer may see (other players' secrets redacted). */
   gameLog: readonly unknown[]
   statusMessage: StatusMessageHudState
@@ -201,6 +229,8 @@ const INITIAL_HUD_STATE: HudState = {
   battleMark: null,
   cardFlights: EMPTY_CARD_FLIGHT_BATCH,
   cardHand: null,
+  decreePanel: null,
+  decreeDrag: null,
   gameLog: [],
   statusMessage: null,
   shell: 'boot',
@@ -238,6 +268,9 @@ const NOOP_CALLBACKS: HudCallbacks = {
   onBattleOutsideClick: () => undefined,
   onCardSelected: () => undefined,
   onCardHold: () => undefined,
+  onDecreeCardStaged: () => undefined,
+  onDecreeCardTakenBack: () => undefined,
+  onDecreeStagingCleared: () => undefined,
 }
 
 const NOOP_MENU_CALLBACKS: MenuCallbacks = {

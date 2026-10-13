@@ -579,6 +579,37 @@ describe('GameSession', () => {
     expect(session.getSnapshot().error).toBeNull()
   })
 
+  it('submitAction offers no legal action until the new state is pushed', async () => {
+    const state = makeGameState({ currentSeat: 0 })
+    const fetchMock = stubFetchSequence([
+      { body: { state }, status: 201 },
+      { body: { state, log: [] } },
+    ])
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ socket })
+    await session.joinMatch()
+    socket.push({
+      state,
+      historyLength: 2,
+      legalActions: [makeActionSpec()],
+      log: [],
+    })
+    fetchMock.mockResolvedValueOnce(makeFetchResponse({ state, log: [] }))
+
+    await session.submitAction({ type: 'endPhase' })
+
+    expect(session.getSnapshot().legalActions).toEqual([])
+
+    socket.push({
+      state,
+      historyLength: 3,
+      legalActions: [makeActionSpec()],
+      log: [],
+    })
+
+    expect(session.getSnapshot().legalActions).toHaveLength(1)
+  })
+
   it('restart clears snapshot and identity', async () => {
     const storage = createMemoryStorage()
     storage.setItem(

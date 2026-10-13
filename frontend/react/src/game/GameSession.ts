@@ -652,8 +652,12 @@ export class GameSession {
     this.setLoading(true)
     try {
       await this.api.submitAction(action)
+      // The action went through, so the legal actions held here are those of
+      // the state before it: offer none until the new state is pushed, or a
+      // click in between sends an action that is no longer legal.
       this.publish({
         ...this.snapshot,
+        legalActions: [],
         loading: false,
         error: null,
       })

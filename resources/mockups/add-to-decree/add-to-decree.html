@@ -1,0 +1,392 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Add to Decree mockups - decree panel</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+:root {
+  --ink: #2c2118; --ink-deep: #1a1408; --parchment: #f0e6d3; --parchment-deep: #e4d4b8; --gold: #c9a04a;
+  --confirm: #7da453; --rust: #b55238; --cream: #f6e7bd; --paper-bright: #fff8e6;
+  --marquise: #c45c26; --eyrie: #3a5f8a; --eyrie-deep: #27456a; --alliance: #3d7a4a;
+  --display: 'IM Fell English', Palatino, Georgia, serif;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.2 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #14110e; color: var(--parchment); font-family: Georgia, serif; width: 1340px; }
+.board { padding: 22px 30px 34px; border-bottom: 1px solid #3a3129; }
+.board > h1 { font: 32px var(--display); margin: 0 0 2px; }
+.board > p.sub { margin: 0 0 16px; font: 14px Georgia, serif; color: #9fb0a6; max-width: 900px; }
+.row { display: flex; gap: 18px; align-items: stretch; }
+.card { flex: 1; min-width: 0; border: 1px solid #3a3129; background: #1b1814; }
+.card > h2 { margin: 0; padding: 10px 14px; font: 21px var(--display); color: #f6d13a; border-bottom: 1px solid #3a3129; }
+.card > h2 code { font: 12px 'Courier New', monospace; color: #9fb0a6; margin-left: 8px; }
+.stage { padding: 22px 0 0; display: flex; justify-content: center; overflow: hidden; height: 310px;
+  background: linear-gradient(rgba(20,17,14,.35), rgba(20,17,14,.35)), url('../../../frontend/react/public/assets/map/autumn-map.webp') 30% 80% / 900px; }
+/* static shots: the live scene at half size, not clickable */
+.stage .scene { zoom: .52; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 64px; }
+.card ul, .legend { margin: 0; padding: 12px 14px 14px 30px; font: 13px/1.5 Georgia, serif; color: #d8ccb4; }
+.card ul b, .legend b { color: #fff; }
+
+/* ---------- paper kit (same recipe as `root-paper`) ---------- */
+.paper { position: relative; isolation: isolate; color: var(--ink); }
+.paper::before { content: ''; position: absolute; inset: 0; z-index: -1; background-color: var(--bg, var(--parchment)); background-image: var(--grain);
+  border: var(--edge-width, 3px) solid var(--ink-deep); border-radius: var(--radius, 0); filter: url(#rough) drop-shadow(2px 3px 0 rgba(0,0,0,.4)); }
+.paper.fine::before { filter: url(#rough-fine) drop-shadow(1px 2px 0 rgba(0,0,0,.35)); }
+
+/* ---------- tile: as the action dock ---------- */
+.tile { width: 54px; height: 54px; flex: none; display: flex; align-items: center; justify-content: center; --bg: var(--cream); cursor: pointer; }
+.tile svg { width: 30px; height: 30px; stroke-width: 2; }
+.tile.spent { opacity: .38; cursor: default; }
+.tile.picked::before { box-shadow: 0 0 0 3px var(--gold); --bg: var(--paper-bright); }
+.tile:not(.spent):hover::before { --bg: var(--paper-bright); }
+.tile.end { --bg: var(--rust); color: var(--parchment); }
+.tile.confirm { --bg: var(--confirm); }
+.tile.confirm:not(.spent):hover::before { --bg: #92ba66; }
+.line { flex: none; width: 4px; align-self: stretch; background: var(--ink-deep); border-radius: 2px; filter: url(#rough-fine); }
+.tab { position: absolute; top: -24px; height: 30px; padding: 0 10px; display: flex; align-items: center; gap: 6px; font: 17px var(--display); white-space: nowrap; }
+.tab svg { width: 16px; height: 16px; color: #a8791c; }
+.tab small { font: 11px 'Courier New', monospace; opacity: .75; margin-left: 4px; }
+[data-name] { position: relative; }
+[data-name]:hover::after { content: attr(data-name) ' · ' attr(data-left); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 9; padding: 3px 8px; border-radius: 3px; background: var(--ink-deep); color: var(--parchment); font: 14px var(--display); white-space: nowrap; }
+
+/* ---------- decree panel ---------- */
+.decree-panel { display: inline-flex; gap: 10px; padding: 26px 12px 12px; --bg: var(--eyrie); --edge-width: 4px; }
+/* title ribbon riding the top edge, as the Steam banner */
+.decree-panel .tab { --bg: var(--parchment); }
+.decree-panel .tab.title { left: 50%; transform: translateX(-50%); top: -26px; height: 40px; padding: 0 26px; font: 28px var(--display); }
+/* what to do next, riding the bottom edge */
+.decree-panel .tab.prompt { left: 50%; transform: translateX(-50%); top: auto; bottom: -18px; }
+.decree-panel .columns { display: flex; gap: 12px; }
+.decree-column { width: 150px; display: flex; flex-direction: column; align-items: center; color: var(--parchment); }
+/* the slot a card is laid in: dark inset, thin pale frame */
+.slot { position: relative; width: 150px; height: 170px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--eyrie-deep); border: 2px solid rgba(240,230,211,.75); outline: 1px solid rgba(240,230,211,.3); outline-offset: 3px; }
+/* cards already in the column: one suit mark per suit, with its count */
+.marks { display: flex; gap: 10px; min-height: 28px; align-items: center; font: 20px var(--display); }
+.marks span { display: flex; align-items: center; gap: 3px; }
+.marks img { width: 26px; height: 26px; object-fit: contain; }
+.marks img.bird { filter: drop-shadow(1px 0 0 var(--ink-deep)) drop-shadow(-1px 0 0 var(--ink-deep)) drop-shadow(0 1px 0 var(--ink-deep)) drop-shadow(0 -1px 0 var(--ink-deep)); }
+/* cards staged this turn: the card itself, gold ringed, click to take it back */
+.staged { position: relative; flex: 1; align-self: stretch; display: flex; justify-content: center; align-items: center; }
+.staged img { width: 80px; border: 2px solid var(--ink-deep); border-radius: 5px; box-shadow: 0 0 0 3px var(--gold), 2px 3px 0 rgba(0,0,0,.45); cursor: pointer; transform: rotate(-3deg); }
+.staged img + img { margin-left: -34px; transform: rotate(4deg); }
+.staged img:hover { filter: brightness(1.1); }
+/* a hand card is picked: every column asks for it */
+/* same look while a card is dragged (.dragging); .over = the slot under the dragged card */
+.slot.open, .dragging .slot { border: 2px dashed var(--gold); cursor: pointer; }
+.slot.open:hover, .dragging .slot.over { background: #33598a; box-shadow: 0 0 0 3px var(--gold); }
+.dragging .slot * { pointer-events: none; }
+.slot.open .staged:empty::after, .dragging .slot .staged:empty::after { content: 'Place here'; font: italic 17px var(--display); color: var(--gold); }
+.decree-column .name { display: flex; align-items: center; gap: 7px; margin-top: 12px; font: 26px/1 var(--display); text-shadow: 1px 1px 0 rgba(26,20,8,.7); }
+.decree-column .name svg { width: 22px; height: 22px; }
+.decree-column .rule { margin: 4px 0 0; font: italic 14px/1.25 var(--display); text-align: center; color: #dfe6ee; }
+.decree-panel .turn { display: flex; flex-direction: column; gap: 8px; }
+/* staged cards, told on the dock tile while the panel is toggled off */
+.tile .count { position: absolute; right: -6px; bottom: -6px; min-width: 20px; padding: 0 4px; height: 18px; border-radius: 9px; background: var(--ink-deep); color: var(--parchment); font: 700 11px/18px 'Courier New', monospace; text-align: center; }
+.tile .count:empty { display: none; }
+
+/* ---------- hand ---------- */
+.hand { display: flex; }
+.hand img { width: 124px; margin: 0 -8px; border: 3px solid var(--ink-deep); border-radius: 7px; box-shadow: 2px 3px 0 rgba(0,0,0,.4); cursor: pointer; transition: transform .12s; }
+.hand img:hover { transform: translateY(-14px); }
+.hand img.picked { transform: translateY(-34px); box-shadow: 0 0 0 3px var(--gold), 2px 4px 0 rgba(0,0,0,.45); }
+.hand img.off { filter: grayscale(.7) brightness(.6); cursor: not-allowed; }
+.hand img.off:hover { transform: none; }
+/* the card being dragged leaves a faded copy where it came from */
+.hand img.lifted, .staged img.lifted { opacity: .3; }
+/* a staged card dragged back over the hand */
+.hand-mount.over .hand { outline: 2px dashed var(--gold); outline-offset: 6px; }
+
+/* ---------- in-context screen ---------- */
+.screen { position: relative; width: 1280px; height: 720px; overflow: hidden; background: #1a1a1a; border: 1px solid #3a3129; margin-top: 8px; }
+.screen .map { position: absolute; left: 256px; width: 768px; top: 0; bottom: 0; background: url('../../../frontend/react/public/assets/map/autumn-map.webp') center / cover; }
+.screen .rail { position: absolute; left: 14px; top: 56px; width: 228px; display: flex; flex-direction: column; gap: 18px; }
+.screen .seat { height: 92px; padding: 12px; display: flex; align-items: center; gap: 12px; font: 19px var(--display); }
+.screen .seat img { width: 58px; height: 58px; object-fit: contain; }
+.screen .seat.active::before { box-shadow: 0 0 0 3px var(--gold); }
+.screen .panel-mount { position: absolute; left: 640px; top: 62px; transform: translateX(-50%); }
+.screen .hand-mount { position: absolute; left: 640px; bottom: -62px; transform: translateX(-50%); }
+.dock { display: inline-flex; gap: 10px; padding: 12px; --bg: var(--eyrie); --edge-width: 4px; position: absolute; right: 14px; bottom: 16px; }
+.dock .grid { display: grid; grid-template-columns: repeat(4, 54px); gap: 8px; align-content: start; }
+.dock .tab { left: 10px; --bg: var(--parchment); }
+.screen .tag { position: absolute; font: 12px 'Courier New', monospace; color: #fff; background: rgba(0,0,0,.78); padding: 2px 6px; border-left: 3px solid #f6d13a; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <filter id="rough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4" /><feDisplacementMap in="SourceGraphic" scale="8" /></filter>
+  <filter id="rough-fine" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="9" /><feDisplacementMap in="SourceGraphic" scale="4" /></filter>
+</svg>
+
+<!-- ============================================================ -->
+<div class="board">
+  <h1>16 · Add to Decree - decree panel</h1>
+  <p class="sub">From the Steam Decree banner: while Add to Decree is staged, the four columns open as one panel over the map. A hand card goes into a column; nothing is sent before Confirm. Same paper kit and tiles as the action dock.</p>
+  <div class="row">
+
+    <div class="card">
+      <h2>A · Panel opens <code>nothing picked</code></h2>
+      <div class="stage"><div class="scene" data-scene="idle"></div></div>
+      <ul>
+        <li><b>Slot per column</b>, in Decree order; name and rule under it, as on the faction board</li>
+        <li>Top of a slot = cards already there, one suit mark per suit with its count (Loyal Viziers included)</li>
+        <li>Confirm is off until a card is staged</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>B · Card picked <code>choose a column</code></h2>
+      <div class="stage"><div class="scene" data-scene="picked"></div></div>
+      <ul>
+        <li>Click a hand card: it lifts, gold ringed; <b>every slot turns dashed gold</b></li>
+        <li>Click a slot to lay the card there; click the card again to drop it</li>
+        <li><b>Or drag the card onto a slot</b>: slots turn dashed gold as the drag starts, the one under the card gets a gold ring</li>
+        <li>Replaces today's column buttons in the banner prompt</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>C · Two staged <code>confirm</code></h2>
+      <div class="stage"><div class="scene" data-scene="staged"></div></div>
+      <ul>
+        <li>A staged card leaves the hand and <b>shows in its slot</b>; click it there to take it back</li>
+        <li><b>At most one bird</b>: once one is staged, the other bird cards go dark</li>
+        <li>Two staged: the rest of the hand goes dark, Confirm sends both</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="board">
+  <h1>17 · In context, 1280 × 720 <span style="font-size:18px;color:#9fb0a6">option B, live: click a slot, or drag a card onto one</span></h1>
+  <p class="sub">Panel top centre, over the map, clear of the hand and the dock. The dock keeps its Birdsong tiles; Add to Decree stays ringed while the panel is open.</p>
+  <div class="screen">
+    <div class="map"></div>
+    <div class="rail">
+      <div class="paper seat"><img src="../../../frontend/react/public/assets/factions/marquise.png" alt="" />Marquise</div>
+      <div class="paper seat active"><img src="../../../frontend/react/public/assets/factions/eyrie.png" alt="" />Eyrie</div>
+      <div class="paper seat"><img src="../../../frontend/react/public/assets/factions/alliance.png" alt="" />Alliance</div>
+    </div>
+    <div class="panel-mount" data-scene="live"></div>
+    <div class="paper dock">
+      <div class="paper fine tab"><i data-lucide="sunrise"></i>Birdsong</div>
+      <div class="grid">
+        <div class="paper fine tile picked" data-begin data-name="Add to Decree" data-left="show / hide the Decree"><i data-lucide="scroll-text"></i><span class="count"></span></div>
+        <div class="paper fine tile spent" data-name="A New Roost" data-left="no roost on map"><i data-lucide="home"></i></div>
+      </div>
+      <i class="line"></i>
+      <div class="grid" style="grid-template-columns: 54px">
+        <div class="paper fine tile end spent" data-name="End phase" data-left="add to the Decree first"><i data-lucide="play"></i></div>
+        <div class="paper fine tile" data-name="Undo" data-left="last action"><i data-lucide="undo-2"></i></div>
+      </div>
+    </div>
+    <span class="tag" style="left: 270px; top: 12px">panel: 760px, over the map only while Add to Decree is staged</span>
+    <span class="tag" style="right: 14px; top: 70px">log / items / discard pile, as today</span>
+  </div>
+  <ul class="legend">
+    <li><b>Tiles on the panel</b>: Confirm (green once a card is staged) and <b>Undo</b> (slots emptied, cards back in the hand, panel stays open). No X</li>
+    <li><b>Add to Decree tile on the dock toggles the panel</b> on and off, to read the map. The staging is kept: staged cards stay out of the hand, and the tile shows their count while the panel is off</li>
+    <li>One card back only: click it in its slot, or drag it to the hand</li>
+    <li>After Confirm the staged cards become suit marks and the panel closes; here it stays open so the result can be read (Undo then resets the mockup)</li>
+    <li>Not shown: the same panel could show the Decree outside Birdsong, read only. Daylight keeps the dock columns</li>
+  </ul>
+</div>
+
+<script>
+const ASSETS = '../../../frontend/react/public/assets'
+const MAXIMUM_STAGED_CARDS = 2
+const BIRD_SUIT = 'bird'
+// Decree columns, left to right. Rule: Eyrie 7.5.2.
+const COLUMNS = [
+  { key: 'recruit', icon: 'user-plus', name: 'Recruit', rule: '…warriors in a matching clearing with a roost.' },
+  { key: 'move', icon: 'footprints', name: 'Move', rule: '…warriors from a matching clearing.' },
+  { key: 'battle', icon: 'swords', name: 'Battle', rule: '…in a matching clearing.' },
+  { key: 'build', icon: 'hammer', name: 'Build', rule: '…in a matching clearing you rule without a roost.' },
+]
+const HAND = [
+  { id: 'foxfolksteel', name: 'Foxfolk Steel', suit: 'fox' },
+  { id: 'smugglerstrail', name: "Smuggler's Trail", suit: 'rabbit' },
+  { id: 'birdybindle', name: 'Birdy Bindle', suit: 'bird' },
+  { id: 'mouseinasack', name: 'Mouse-in-a-Sack', suit: 'mouse' },
+  { id: 'crossbowbird', name: 'Crossbow', suit: 'bird' },
+]
+// Suits already in each column: two Loyal Viziers and one card of an earlier turn.
+const DECREE = { recruit: ['rabbit'], move: ['bird'], battle: [], build: ['bird'] }
+const SCENES = {
+  idle: { picked: null, staged: [], added: [], closed: false },
+  picked: { picked: 'smugglerstrail', staged: [], added: [], closed: false },
+  staged: { picked: null, staged: [{ cardId: 'smugglerstrail', column: 'recruit' }, { cardId: 'birdybindle', column: 'battle' }], added: [], closed: false },
+  live: { picked: null, staged: [], added: [], closed: false },
+}
+
+const cardOf = (cardId) => HAND.find((card) => card.id === cardId)
+const isStaged = (scene, cardId) => scene.staged.some((entry) => entry.cardId === cardId)
+const hasStagedBird = (scene) => scene.staged.some((entry) => cardOf(entry.cardId).suit === BIRD_SUIT)
+const isSent = (scene) => scene.added.length > 0
+// A hand card can be picked while a slot is left and it would not be a second bird.
+const isPickable = (scene, card) =>
+  !scene.closed && !isSent(scene) && scene.staged.length < MAXIMUM_STAGED_CARDS && !(card.suit === BIRD_SUIT && hasStagedBird(scene))
+const offReason = (scene, card) =>
+  isSent(scene) ? 'Decree updated' : scene.staged.length >= MAXIMUM_STAGED_CARDS ? '2 cards at most' : 'one bird at most'
+
+const promptOf = (scene) => {
+  if (isSent(scene)) return `Decree updated · ${scene.added.length} added`
+  if (scene.picked !== null) return `Choose a column for ${cardOf(scene.picked).name}`
+  if (scene.staged.length === 0) return 'Pick 1 or 2 cards · one bird at most'
+  return scene.staged.length < MAXIMUM_STAGED_CARDS ? 'Pick a second card, or confirm' : 'Confirm the Decree'
+}
+
+const marksMarkup = (suits) => {
+  const counts = new Map()
+  for (const suit of suits) counts.set(suit, (counts.get(suit) ?? 0) + 1)
+  return [...counts].map(([suit, count]) => `<span><img class="${suit}" src="${ASSETS}/suits/${suit}.png" alt="${suit}" />×${count}</span>`).join('')
+}
+const columnMarkup = (scene, column) => {
+  const addedSuits = scene.added.filter((entry) => entry.column === column.key).map((entry) => cardOf(entry.cardId).suit)
+  const stagedCards = scene.staged.filter((entry) => entry.column === column.key)
+  return `<div class="decree-column">
+    <div class="slot ${scene.picked !== null ? 'open' : ''}" data-column="${column.key}">
+      <div class="marks">${marksMarkup([...DECREE[column.key], ...addedSuits])}</div>
+      <div class="staged">${stagedCards.map((entry) => `<img data-staged="${entry.cardId}" src="${ASSETS}/cards/card-${entry.cardId}.png" alt="${cardOf(entry.cardId).name}" />`).join('')}</div>
+    </div>
+    <div class="name"><i data-lucide="${column.icon}"></i>${column.name}</div>
+    <p class="rule">${column.rule}</p>
+  </div>`
+}
+const panelMarkup = (scene) => {
+  const canConfirm = scene.staged.length > 0
+  const canTakeBack = canConfirm || scene.picked !== null || isSent(scene)
+  // Toggled off from the dock: no panel, the staging is kept.
+  if (scene.closed) return ''
+  return `<div class="paper decree-panel">
+    <div class="paper fine tab title">Decree</div>
+    <div class="paper fine tab prompt"><i data-lucide="scroll-text"></i><span data-prompt>${promptOf(scene)}</span><small>${scene.staged.length}/${MAXIMUM_STAGED_CARDS}</small></div>
+    <div class="columns">${COLUMNS.map((column) => columnMarkup(scene, column)).join('')}</div>
+    <i class="line"></i>
+    <div class="turn">
+      <div class="paper fine tile confirm ${canConfirm ? '' : 'spent'}" data-turn="confirm" data-name="Confirm" data-left="${canConfirm ? `add ${scene.staged.length}` : 'stage a card first'}"><i data-lucide="check"></i></div>
+      <div class="paper fine tile ${canTakeBack ? '' : 'spent'}" data-turn="take-back" data-name="Undo" data-left="empty the slots"><i data-lucide="undo-2"></i></div>
+    </div>
+  </div>`
+}
+const handCardMarkup = (scene, card) => {
+  // Panel toggled off: a plain hand, nothing dimmed, nothing to pick.
+  const state = scene.picked === card.id ? 'picked' : scene.closed || isPickable(scene, card) ? '' : 'off'
+  return `<img class="${state}" data-card="${card.id}" src="${ASSETS}/cards/card-${card.id}.png" alt="${card.name}" title="${state === 'off' ? offReason(scene, card) : card.name}" />`
+}
+const handMarkup = (scene) =>
+  `<div class="hand">${HAND.filter((card) => !isStaged(scene, card.id) && !scene.added.some((entry) => entry.cardId === card.id)).map((card) => handCardMarkup(scene, card)).join('')}</div>`
+
+// ---------- static shots ----------
+for (const mount of document.querySelectorAll('.scene')) {
+  const scene = SCENES[mount.dataset.scene]
+  mount.innerHTML = panelMarkup(scene) + handMarkup(scene)
+}
+
+// ---------- live scene: nothing is sent before Confirm ----------
+const panelMount = document.querySelector('.panel-mount')
+const handMount = document.createElement('div')
+handMount.className = 'hand-mount'
+panelMount.after(handMount)
+// Opens on option B: a card picked, every slot asking for it.
+let live = SCENES.picked
+// The dock's Add to Decree tile toggles the panel: ringed while it is on. Staged cards are kept
+// (their count shows on the tile while the panel is off); only a card picked but not laid is let go.
+const beginTile = document.querySelector('[data-begin]')
+const beginCount = beginTile.querySelector('.count')
+beginTile.addEventListener('click', () => {
+  live = { ...live, picked: null, closed: !live.closed }
+  drawLive()
+})
+const drawLive = () => {
+  panelMount.innerHTML = panelMarkup(live)
+  beginTile.classList.toggle('picked', !live.closed)
+  beginCount.textContent = live.closed && live.staged.length > 0 ? `${live.staged.length}/${MAXIMUM_STAGED_CARDS}` : ''
+  handMount.innerHTML = handMarkup(live)
+  lucide.createIcons()
+}
+handMount.addEventListener('click', (event) => {
+  const cardId = event.target.dataset.card
+  if (cardId === undefined || !isPickable(live, cardOf(cardId))) return
+  live = { ...live, picked: live.picked === cardId ? null : cardId }
+  drawLive()
+})
+const TURN_ACTIONS = {
+  confirm: (scene) => scene.staged.length > 0 ? { ...scene, added: scene.staged, staged: [], picked: null } : scene,
+  // Undo: slots emptied, cards back in the hand, the panel stays open.
+  'take-back': () => ({ ...SCENES.live }),
+}
+panelMount.addEventListener('click', (event) => {
+  const stagedCardId = event.target.dataset.staged
+  const turn = event.target.closest('[data-turn]')
+  const slot = event.target.closest('[data-column]')
+  if (stagedCardId !== undefined) {
+    live = { ...live, staged: live.staged.filter((entry) => entry.cardId !== stagedCardId) }
+  } else if (turn !== null) {
+    live = TURN_ACTIONS[turn.dataset.turn](live)
+  } else if (slot !== null && live.picked !== null) {
+    live = { ...live, staged: [...live.staged, { cardId: live.picked, column: slot.dataset.column }], picked: null }
+  } else {
+    return
+  }
+  drawLive()
+})
+
+// ---------- drag and drop: a hand card onto a slot, a staged card to another slot or back to the hand ----------
+// Nothing is redrawn during a drag (the dragged card must stay in the page): classes only.
+const screen = document.querySelector('.screen')
+let draggedCardId = null
+const clearDropTargets = () => {
+  for (const target of screen.querySelectorAll('.over')) target.classList.remove('over')
+}
+screen.addEventListener('dragstart', (event) => {
+  const cardId = event.target.dataset.card ?? event.target.dataset.staged
+  const isFromHand = event.target.dataset.card !== undefined
+  if (cardId === undefined || (isFromHand && !isPickable(live, cardOf(cardId)))) {
+    event.preventDefault()
+    return
+  }
+  draggedCardId = cardId
+  event.dataTransfer.setData('text/plain', cardId)
+  event.dataTransfer.effectAllowed = 'move'
+  event.target.classList.add('lifted')
+  panelMount.classList.add('dragging')
+  panelMount.querySelector('[data-prompt]').textContent = `Drop ${cardOf(cardId).name} on a column`
+})
+// A slot takes any dragged card; the hand takes back a staged one.
+const dropTargetOf = (event) => {
+  if (draggedCardId === null) return null
+  const slot = event.target.closest('[data-column]')
+  if (slot !== null) return slot
+  return isStaged(live, draggedCardId) ? event.target.closest('.hand-mount') : null
+}
+screen.addEventListener('dragover', (event) => {
+  const target = dropTargetOf(event)
+  clearDropTargets()
+  if (target === null) return
+  event.preventDefault()
+  target.classList.add('over')
+})
+screen.addEventListener('drop', (event) => {
+  const target = dropTargetOf(event)
+  if (target === null) return
+  event.preventDefault()
+  const others = live.staged.filter((entry) => entry.cardId !== draggedCardId)
+  const column = target.dataset.column
+  live = { ...live, picked: null, staged: column !== undefined ? [...others, { cardId: draggedCardId, column }] : others }
+})
+// Ends every drag, dropped on a target or not.
+screen.addEventListener('dragend', () => {
+  draggedCardId = null
+  panelMount.classList.remove('dragging')
+  drawLive()
+})
+drawLive()
+</script>
+</body>
+</html>

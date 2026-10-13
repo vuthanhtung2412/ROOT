@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX, type RefObject } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import type {
   BoardEffect,
   BoardEffectBatch,
@@ -10,20 +10,19 @@ import type {
 import {
   batchLifetime,
   EFFECT_LIFETIME_MS,
+  marchTiming,
   MOVE_LIFETIME_MS,
   MOVE_SLIDE_MS,
   moveStartDelay,
+  type MarchTiming,
   placeStartDelay,
 } from '#react/boardEffectTiming.ts'
 import { factionColorForSeat } from '#game/theme.ts'
+import { MoveMarch } from '#react/MoveMarch.tsx'
 import { PieceStack, type ClearingHitCenter } from '#react/PieceStack.tsx'
+import { useKeyframes } from '#react/useKeyframes.ts'
 import { stackOffsets, type PieceStackViewModel } from '#ui/PieceView.ts'
 
-const MOVE_TRAIL_WIDTH_PIXELS = 2
-const MOVE_TRAIL_OPACITY = 0.9
-/** Dark line under the trail so it reads on any part of the map. */
-const MOVE_TRAIL_BACKING_WIDTH_PIXELS = 5
-const MOVE_TRAIL_BACKING_OPACITY = 0.55
 /** Part of the lifetime an effect stays fully visible before it fades. */
 const FADE_START_OFFSET = 0.75
 const POP_MS = 450
@@ -91,27 +90,6 @@ function stackPosition(
   return { left: center.centerX + offset.x, top: center.centerY + offset.y }
 }
 
-/** Run a Web Animation on the element for as long as it is mounted. */
-function useKeyframes(
-  keyframes: Keyframe[],
-  options: KeyframeAnimationOptions,
-): RefObject<HTMLDivElement | null> {
-  const elementRef = useRef<HTMLDivElement | null>(null)
-  const keyframesRef = useRef<Keyframe[]>(keyframes)
-  const optionsRef = useRef<KeyframeAnimationOptions>(options)
-  useEffect(() => {
-    const element = elementRef.current
-    if (element === null || typeof element.animate !== 'function') {
-      return undefined
-    }
-    const animation = element.animate(keyframesRef.current, optionsRef.current)
-    return () => {
-      animation.cancel()
-    }
-  }, [])
-  return elementRef
-}
-
 const FADE_OUT_KEYFRAMES: Keyframe[] = [
   { opacity: 1 },
   { opacity: 1, offset: FADE_START_OFFSET },
@@ -121,6 +99,12 @@ const FADE_OUT_OPTIONS: KeyframeAnimationOptions = {
   duration: EFFECT_LIFETIME_MS,
   fill: 'forwards',
 }
+/** A move stays whole until its last piece has landed, then fades. */
+const MOVE_FADE_OUT_KEYFRAMES: Keyframe[] = [
+  { opacity: 1 },
+  { opacity: 1, offset: MOVE_SLIDE_MS / MOVE_LIFETIME_MS },
+  { opacity: 0 },
+]
 /** A move waiting for the moves before it stays out of sight. */
 const WAITING_EFFECT_CLASS_NAME = 'absolute inset-0 opacity-0'
 const STARTED_EFFECT_CLASS_NAME = 'absolute inset-0'
@@ -158,24 +142,20 @@ function MoveEffectView(
     forest: props.effect.toForest,
     slot: props.effect.toSlot,
   })
-  const deltaX = (to?.left ?? 0) - (from?.left ?? 0)
-  const deltaY = (to?.top ?? 0) - (from?.top ?? 0)
   const delay = moveStartDelay(props.effect)
-  // A move is gone soon after the slide lands: a thin trail, no lingering.
-  const fadeRef = useKeyframes(FADE_OUT_KEYFRAMES, {
+  // A move is gone soon after the last piece lands: a thin trail, no lingering.
+  const fadeRef = useKeyframes(MOVE_FADE_OUT_KEYFRAMES, {
     duration: MOVE_LIFETIME_MS,
     delay,
     fill: 'forwards',
   })
-  const slideRef = useKeyframes(
-    [
-      { transform: 'translate(0px, 0px)' },
-      { transform: `translate(${String(deltaX)}px, ${String(deltaY)}px)` },
-    ],
-    { duration: MOVE_SLIDE_MS, delay, easing: 'ease-in-out', fill: 'forwards' },
-  )
   if (from === undefined || to === undefined) {
     return null
+  }
+  const timing: MarchTiming = marchTiming(props.effect.count)
+  const marcherStack: PieceStackViewModel = {
+    ...stackFor(props.effect, props.factions),
+    count: 1,
   }
   const color = colorToCss(
     factionColorForSeat(props.effect.owner, props.factions),
@@ -187,46 +167,15 @@ function MoveEffectView(
         delay > 0 ? WAITING_EFFECT_CLASS_NAME : STARTED_EFFECT_CLASS_NAME
       }
     >
-      <svg
-        className="absolute inset-0 overflow-visible"
-        width="100%"
-        height="100%"
-        aria-hidden
-      >
-        <line
-          x1={from.left}
-          y1={from.top}
-          x2={to.left}
-          y2={to.top}
-          stroke="var(--color-ink-deep)"
-          strokeWidth={MOVE_TRAIL_BACKING_WIDTH_PIXELS}
-          strokeLinecap="round"
-          opacity={MOVE_TRAIL_BACKING_OPACITY}
-        />
-        <line
-          x1={from.left}
-          y1={from.top}
-          x2={to.left}
-          y2={to.top}
-          stroke={color}
-          strokeWidth={MOVE_TRAIL_WIDTH_PIXELS}
-          strokeLinecap="round"
-          strokeDasharray="4 6"
-          opacity={MOVE_TRAIL_OPACITY}
-        />
-      </svg>
-      <div
-        ref={slideRef}
-        className="absolute"
-        style={from}
-      >
-        <PieceStack
-          stack={stackFor(props.effect, props.factions)}
-          left={0}
-          top={0}
-          clearingId={props.effect.to}
-        />
-      </div>
+      <MoveMarch
+        stack={marcherStack}
+        clearingId={props.effect.to}
+        from={from}
+        to={to}
+        timing={timing}
+        delayMs={delay}
+        color={color}
+      />
     </div>
   )
 }

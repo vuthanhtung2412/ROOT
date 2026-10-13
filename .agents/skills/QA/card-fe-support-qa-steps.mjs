@@ -30,7 +30,7 @@ const CARD = {
 
 /** How long a prompt stays on screen before the next click. */
 const PROMPT_LOOK_MS = 1400
-const MOVE_SLIDE_MS = 1600
+const MOVE_SLIDE_MS = 3600
 const BATTLE_RESULT_LOOK_MS = 2400
 
 function expectThat(condition, message) {

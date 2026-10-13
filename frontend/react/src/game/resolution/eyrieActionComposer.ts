@@ -9,11 +9,26 @@ import {
   type SeatLabelOptions,
 } from '#game/resolution/ActionComposer.ts'
 import {
+  addToDecreeOutcome,
+  withDecreeCardPicked,
+  withDecreeCardStaged,
+  withDecreeCardTakenBack,
+  withDecreeStagingCleared,
+} from '#game/resolution/addToDecreeStaging.ts'
+import {
   isDecreeCardOption,
+  type AddToDecreeDraft,
+  type DecreeCardOption,
   type EyrieDraft,
-  uniqueCardIds,
   uniqueNumbers,
 } from '#game/eyrieActionComposerModels.ts'
+
+/** Each is null when no Add to Decree is being staged. */
+export type DecreeStaging = {
+  stage: (option: DecreeCardOption) => ComposerOutcome | null
+  takeBack: (cardId: string) => ComposerOutcome | null
+  clear: () => ComposerOutcome | null
+}
 
 /**
  * Eyrie birdsong + decree: forced addToDecree, newRoost, decree L→R, turmoil.
@@ -22,9 +37,31 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
   hooks: ActionComposerHooks
   getDraft: () => EyrieDraft
   getPromptOptions: () => Array<{ label: string; value: string }>
+  decreeStaging: DecreeStaging
 } {
   let draft: EyrieDraft = { type: 'idle' }
   let promptOptions: Array<{ label: string; value: string }> = []
+
+  function restage(staged: AddToDecreeDraft): ComposerOutcome {
+    draft = staged
+    return addToDecreeOutcome(staged)
+  }
+
+  /** Decree panel: staged cards laid, moved and taken back without a pick first. */
+  const decreeStaging: DecreeStaging = {
+    stage: (option: DecreeCardOption): ComposerOutcome | null =>
+      draft.type === 'addToDecree'
+        ? restage(withDecreeCardStaged(draft, option))
+        : null,
+    takeBack: (cardId: string): ComposerOutcome | null =>
+      draft.type === 'addToDecree'
+        ? restage(withDecreeCardTakenBack(draft, cardId))
+        : null,
+    clear: (): ComposerOutcome | null =>
+      draft.type === 'addToDecree'
+        ? restage(withDecreeStagingCleared(draft))
+        : null,
+  }
 
   const hooks: ActionComposerHooks = {
     begin: (spec: ActionSpec): ComposerOutcome | null => {
@@ -32,23 +69,15 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
       if (spec.type === 'addToDecree') {
         const params = readChoiceParams(spec)
         const options = (params.options ?? []).filter(isDecreeCardOption)
-        draft = {
+        const begun: AddToDecreeDraft = {
           type: 'addToDecree',
           options,
           birdCardIds: new Set(params.birdCardIds ?? []),
           selected: [],
           pendingCardId: null,
         }
-        return {
-          kind: 'incomplete',
-          prompt: {
-            message: 'Add to Decree — pick 1–2 cards (≤1 bird)',
-            highlightClearings: [],
-            enabledCardIds: uniqueCardIds(options),
-            canConfirm: false,
-            canCancel: false,
-          },
-        }
+        draft = begun
+        return addToDecreeOutcome(begun)
       }
 
       if (spec.type === 'newRoost') {
@@ -170,78 +199,15 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
       if (draft.type !== 'addToDecree') {
         return null
       }
-      const columns = draft.options
-        .filter((option) => option.cardId === cardId)
-        .map((option) => option.column)
-      if (columns.length === 0) {
-        return null
-      }
-      draft = { ...draft, pendingCardId: cardId }
-      promptOptions = columns.map((column) => ({
-        label: column,
-        value: column,
-      }))
-      return {
-        kind: 'incomplete',
-        prompt: {
-          message: 'Pick decree column',
-          highlightClearings: [],
-          enabledCardIds: [cardId],
-          canConfirm: false,
-          canCancel: draft.selected.length > 0,
-        },
-      }
+      return restage(withDecreeCardPicked(draft, cardId))
     },
 
     chooseColumn: (column: string): ComposerOutcome | null => {
       if (draft.type === 'addToDecree' && draft.pendingCardId !== null) {
-        const cardId = draft.pendingCardId
-        const birdCardIds = draft.birdCardIds
-        const priorSelected = draft.selected
-        const birdCount =
-          priorSelected.filter((entry) => birdCardIds.has(entry.cardId))
-            .length + (birdCardIds.has(cardId) ? 1 : 0)
-        if (birdCount > 1) {
-          return {
-            kind: 'incomplete',
-            prompt: {
-              message: 'At most one bird card',
-              highlightClearings: [],
-              enabledCardIds: uniqueCardIds(draft.options),
-              canConfirm: priorSelected.length >= 1,
-              canCancel: false,
-            },
-          }
-        }
-        const selected = [...priorSelected, { cardId, column }]
-        const options = draft.options
-        draft = {
-          type: 'addToDecree',
-          options,
-          birdCardIds,
-          selected,
-          pendingCardId: null,
-        }
-        promptOptions = []
-        if (selected.length >= 2) {
-          draft = { type: 'idle' }
-          return {
-            kind: 'ready',
-            action: { type: 'addToDecree', cards: selected },
-          }
-        }
-        return {
-          kind: 'incomplete',
-          prompt: {
-            message: 'Added 1 — pick 2nd card or Confirm',
-            highlightClearings: [],
-            enabledCardIds: uniqueCardIds(options).filter(
-              (id) => id !== cardId,
-            ),
-            canConfirm: true,
-            canCancel: false,
-          },
-        }
+        // The column is a slot of the Decree panel; nothing is sent before Confirm.
+        return restage(
+          withDecreeCardStaged(draft, { cardId: draft.pendingCardId, column }),
+        )
       }
 
       // Defender seat for decree battle (same channel as Marquise)
@@ -462,24 +428,7 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
       if (draft.type === 'idle') {
         return null
       }
-      // Forced addToDecree: cancel only clears pending second pick
-      if (draft.type === 'addToDecree') {
-        if (draft.pendingCardId !== null) {
-          draft = { ...draft, pendingCardId: null }
-          promptOptions = []
-          return {
-            kind: 'incomplete',
-            prompt: {
-              message: 'Add to Decree — pick card',
-              highlightClearings: [],
-              enabledCardIds: uniqueCardIds(draft.options),
-              canConfirm: draft.selected.length >= 1,
-              canCancel: false,
-            },
-          }
-        }
-        return null
-      }
+      // Nothing is sent before confirm: cancel drops the whole staged draft.
       draft = { type: 'idle' }
       promptOptions = []
       return { kind: 'idle' }
@@ -490,5 +439,6 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
     hooks,
     getDraft: () => draft,
     getPromptOptions: () => promptOptions,
+    decreeStaging,
   }
 }

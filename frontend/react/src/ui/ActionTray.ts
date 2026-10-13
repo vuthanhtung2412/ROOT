@@ -5,6 +5,7 @@ import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 import { CARD_ACTION_LABELS } from '#game/resolution/cardActionFlows.ts'
 import { QUEST_ACTION_TYPE } from '#game/vagabondQuest.ts'
 import { REARRANGE_ACTION_TYPE } from '#game/vagabondRearrange.ts'
+import { turnBudgetLeft } from '#ui/trayBudget.ts'
 
 export type ActionTraySyncOptions = {
   lockToActionTypes?: readonly string[]
@@ -68,7 +69,7 @@ function formatActionLabel(
   if (spec.type === 'train') return 'train'
   if (spec.type === 'militaryOp') {
     const op = params.op?.[0]
-    return op !== undefined ? `op: ${op}` : 'military op'
+    return op ?? 'military operation'
   }
   if (spec.type === 'refresh') return 'refresh'
   if (spec.type === 'slip') return 'slip'
@@ -162,6 +163,7 @@ function formatActionLabel(
 }
 
 const DECREE_ACTION_TYPE = 'decree'
+const MILITARY_OPERATION_ACTION_TYPE = 'militaryOp'
 
 /** What a tray medallion draws: an icon key and, for a card play, its suit. */
 export type TrayActionArt = {
@@ -196,8 +198,9 @@ function resolveEventIconKey(spec: ActionSpec, pending: unknown): string {
 }
 
 /**
- * Decree: icon of the column, suit of the card. Pending event: icon of the
- * answer. Others: icon of the type.
+ * Decree: icon of the column, suit of the card. Military operation: icon of
+ * the operation (move, battle, recruit, organize). Pending event: icon of
+ * the answer. Others: icon of the type.
  */
 export function trayActionArt(
   spec: ActionSpec,
@@ -207,10 +210,13 @@ export function trayActionArt(
   if (spec.type === RESOLVE_EVENT_ACTION_TYPE) {
     return { iconKey: resolveEventIconKey(spec, pending), suit: null }
   }
+  const params = readChoiceParams(spec)
+  if (spec.type === MILITARY_OPERATION_ACTION_TYPE) {
+    return { iconKey: params.op?.[0] ?? spec.type, suit: null }
+  }
   if (spec.type !== DECREE_ACTION_TYPE) {
     return { iconKey: spec.type, suit: null }
   }
-  const params = readChoiceParams(spec)
   const cardId: string | undefined = params.cardIds?.[0]
   return {
     iconKey: params.column?.[0] ?? spec.type,
@@ -218,7 +224,7 @@ export function trayActionArt(
   }
 }
 
-function decreeCardSuit(cardId: string, state?: GameState): string | null {
+export function decreeCardSuit(cardId: string, state?: GameState): string | null {
   const fromState = findCardDefIdInState(cardId, state)
   const defId = fromState ?? parseDefIdFromCardId(cardId)
   if (defId === null) {
@@ -373,54 +379,15 @@ export function partitionTrayActionRegions(
   return regions
 }
 
-/**
- * Short count beside the phase name in the tray header: the Marquise
- * Daylight budget left, otherwise the number of buttons.
- */
-export function trayActionCountLabel(
-  buttonCount: number,
-  state: GameState | undefined,
-): string {
-  const actionsLeft = marquiseDaylightActionsLeft(state)
-  if (actionsLeft !== null) {
-    return `${String(actionsLeft)} left`
-  }
-  return buttonCount === 1 ? '1 action' : `${String(buttonCount)} actions`
-}
-
 function primaryActionsRegionTitle(
   buttonCount: number,
   state: GameState | undefined,
 ): string {
-  const actionsLeft = marquiseDaylightActionsLeft(state)
+  const actionsLeft = turnBudgetLeft(state)
   if (actionsLeft !== null) {
     return `Actions · ${String(actionsLeft)} left`
   }
   return `Actions (${String(buttonCount)})`
-}
-
-/** Marquise Daylight action budget (actionsLeft + spend-bird extras). */
-function marquiseDaylightActionsLeft(state: GameState | undefined): number | null {
-  if (state === undefined) {
-    return null
-  }
-  if (state.phase !== 'daylight' || state.step !== 'actions') {
-    return null
-  }
-  const actor = state.players.find((player) => player.seat === state.currentSeat)
-  if (actor?.faction !== 'marquise') {
-    return null
-  }
-  const scratch = state.turnScratch
-  if (typeof scratch !== 'object' || scratch === null) {
-    return null
-  }
-  const actionsLeft = Reflect.get(scratch, 'actionsLeft')
-  const extraActions = Reflect.get(scratch, 'extraActions')
-  if (typeof actionsLeft !== 'number' || typeof extraActions !== 'number') {
-    return null
-  }
-  return actionsLeft + extraActions
 }
 
 /**

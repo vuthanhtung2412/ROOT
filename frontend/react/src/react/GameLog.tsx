@@ -29,7 +29,7 @@ const EMPTY_LOG_MESSAGE = 'No action yet.'
 
 /** Beside the map, not over it: a clicked clearing must stay in view. */
 const PANEL_CLASS_NAME =
-  'game-log root-paper pointer-events-auto fixed top-16 right-2 bottom-36 z-115 flex w-[min(86vw,340px)] flex-col gap-2 px-3 py-3 text-ink [--root-paper-color:var(--color-cream)] md:right-3'
+  'game-log root-paper pointer-events-auto fixed top-16 right-2 bottom-36 z-115 flex w-[min(86vw,340px)] flex-col gap-2 px-3 py-3 text-ink [--root-paper-color:var(--color-cream)] md:right-3 md:bottom-52'
 const CLOSE_BUTTON_CLASS_NAME =
   'root-paper root-paper-fine root-paper-press m-0 flex size-8 items-center justify-center p-0 text-xl text-parchment [--root-paper-color:var(--color-rust)]'
 const TURN_HEADING_CLASS_NAME =

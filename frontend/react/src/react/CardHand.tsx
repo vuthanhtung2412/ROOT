@@ -16,6 +16,10 @@ import {
   type CardHandHudState,
 } from '#game/hudStore.ts'
 import type { ActionSpec, GameState } from '#api/client.ts'
+import {
+  useDecreeCardDrag,
+  type DecreeCardDrag,
+} from '#react/DecreeCardDrag.tsx'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
 
 const CARD_HOLD_MILLISECONDS = 350
@@ -30,6 +34,9 @@ const HAND_CARD_CLASS_NAME =
   'pointer-events-auto relative -mx-1 box-border h-22 w-16 shrink-0 origin-bottom cursor-root-pointer overflow-hidden rounded-md border-2 border-ink-deep bg-ink p-0 shadow-card transition-[translate] duration-100 ease-out hover:z-1 md:-mx-2.5 md:h-39 md:w-28 md:shrink md:border-3 md:hover:-translate-y-12'
 const HAND_CARD_SELECTED_CLASS_NAME =
   'z-1 border-gold -translate-y-3 shadow-card-selected md:-translate-y-12'
+/** A touch drag moves the card, not the page. */
+const HAND_CARD_DRAGGABLE_CLASS_NAME = 'touch-none'
+const HAND_CARD_DRAGGED_CLASS_NAME = 'opacity-30'
 /** Tilt between neighbouring cards, and the widest the whole fan may open. */
 const FAN_STEP_DEGREES = 5
 const FAN_MAX_SPREAD_DEGREES = 24
@@ -47,11 +54,44 @@ function fanDegreesOf(cardIndex: number, cardCount: number): number {
   return (cardIndex - lastCardIndex / 2) * stepDegrees
 }
 
+const NO_CARD_IDS: readonly string[] = []
+
+function stagedDecreeCardIds(): readonly string[] {
+  return getHudSnapshot().decreePanel?.view.stagedCardIds ?? NO_CARD_IDS
+}
+
+/** Hand cards that can be dragged onto a slot of the open Decree panel. */
+function draggableDecreeCardIds(): readonly string[] {
+  const panel = getHudSnapshot().decreePanel
+  return panel !== null && panel.isOpen
+    ? panel.view.stageableCardIds
+    : NO_CARD_IDS
+}
+
+function draggedDecreeCardId(): string | null {
+  return getHudSnapshot().decreeDrag?.cardId ?? null
+}
+
 export function CardHand(): JSX.Element | null {
   const hand = useSyncExternalStore(
     subscribeHud,
     () => getHudSnapshot().cardHand,
     () => getHudSnapshot().cardHand,
+  )
+  const stagedCardIds: readonly string[] = useSyncExternalStore(
+    subscribeHud,
+    stagedDecreeCardIds,
+    stagedDecreeCardIds,
+  )
+  const draggableCardIds: readonly string[] = useSyncExternalStore(
+    subscribeHud,
+    draggableDecreeCardIds,
+    draggableDecreeCardIds,
+  )
+  const draggedCardId: string | null = useSyncExternalStore(
+    subscribeHud,
+    draggedDecreeCardId,
+    draggedDecreeCardId,
   )
   if (hand === null) {
     return null
@@ -60,7 +100,10 @@ export function CardHand(): JSX.Element | null {
     hand.localSeat ??
     buildTurnBannerViewModel(hand.state, hand.legalActions).actorSeat
   const player = hand.state.players.find((entry) => entry.seat === seat)
-  const cards = player?.hand ?? []
+  // A card staged in the Decree panel lies there, not in the hand.
+  const cards = (player?.hand ?? []).filter(
+    (card) => !stagedCardIds.includes(card.id),
+  )
   if (cards.length === 0) {
     return null
   }
@@ -81,6 +124,8 @@ export function CardHand(): JSX.Element | null {
             defId={card.defId}
             selected={isSelected}
             dimmed={isDimmed}
+            draggable={draggableCardIds.includes(card.id)}
+            dragged={draggedCardId === card.id}
             fanDegrees={fanDegreesOf(cardIndex, cards.length)}
             onSelect={() => {
               callbacks.onCardSelected(card.id)
@@ -107,6 +152,10 @@ function HandCard(props: {
   defId: string
   selected: boolean
   dimmed: boolean
+  /** May be dragged onto a Decree panel slot. */
+  draggable: boolean
+  /** Being dragged: a faded copy stays in the hand. */
+  dragged: boolean
   fanDegrees: number
   onSelect: () => void
   onHold: () => void
@@ -122,18 +171,27 @@ function HandCard(props: {
     }
   }
 
-  function onPointerDown(_event: ReactPointerEvent<HTMLButtonElement>): void {
+  const drag: DecreeCardDrag = useDecreeCardDrag({
+    cardId: props.cardId,
+    defId: props.defId,
+    isDraggable: props.draggable,
+    onDragStart: clearHoldTimer,
+  })
+
+  function onPointerDown(event: ReactPointerEvent<HTMLButtonElement>): void {
     holdFiredRef.current = false
     clearHoldTimer()
     holdTimerRef.current = setTimeout(() => {
       holdFiredRef.current = true
       props.onHold()
     }, CARD_HOLD_MILLISECONDS)
+    drag.onPointerDown(event)
   }
 
   function onPointerUp(): void {
     clearHoldTimer()
-    if (!holdFiredRef.current) {
+    // Released after a drag: the drop is handled, the card is not picked.
+    if (!holdFiredRef.current && !drag.isDragging()) {
       props.onSelect()
     }
   }
@@ -149,6 +207,8 @@ function HandCard(props: {
         HAND_CARD_CLASS_NAME,
         props.selected ? HAND_CARD_SELECTED_CLASS_NAME : '',
         props.dimmed ? 'opacity-45' : '',
+        props.draggable ? HAND_CARD_DRAGGABLE_CLASS_NAME : '',
+        props.dragged ? HAND_CARD_DRAGGED_CLASS_NAME : '',
       ]
         .filter((part) => part.length > 0)
         .join(' ')}

@@ -1,34 +1,63 @@
-import { useSyncExternalStore, type JSX } from 'react'
+import { useRef, useState, useSyncExternalStore, type JSX } from 'react'
+import type { IconType } from 'react-icons'
+import { LuUndo2 } from 'react-icons/lu'
 import type { ActionSpec } from '#api/client.ts'
 import {
   getCardPileSnapshot,
   isCraftedCardsOpen,
 } from '#game/cardGalleryBridge.ts'
+import {
+  ADD_TO_DECREE_ACTION_TYPE,
+  MAXIMUM_DECREE_CARDS_ADDED,
+} from '#game/eyrieActionComposerModels.ts'
 import { isFactionBoardOpen } from '#game/factionBoardBridge.ts'
 import {
   getHudCallbacks,
   getHudSnapshot,
   patchHud,
   subscribeHud,
+  type DecreePanelHudState,
 } from '#game/hudStore.ts'
-import type { IconType } from 'react-icons'
-import { imagePathForAssetKey, suitTextureKey } from '#assets/gameAssets.ts'
+import { CardsPanel, CardsTab } from '#react/ActionDockCards.tsx'
+import { DecreeColumns } from '#react/ActionDockDecree.tsx'
+import { SuitIcon } from '#react/SuitIcon.tsx'
+import { Tooltip } from '#react/Tooltip.tsx'
 import type {
   ActionTrayState,
   TrayActionArt,
   TrayActionRegion,
 } from '#ui/ActionTray.ts'
-import { actionIconFor } from '#ui/actionIcons.ts'
-import { phaseIconFor } from '#ui/phaseIcons.ts'
 import {
-  trayActionArt,
-  trayActionCountLabel,
   collapseTrayActionsByLabel,
   filterTrayActions,
   formatActionLabel,
   partitionTrayActionRegions,
+  trayActionArt,
   withoutBoardOnlyActions,
 } from '#ui/ActionTray.ts'
+import { trayBudgetLabel } from '#ui/trayBudget.ts'
+import { actionIconFor } from '#ui/actionIcons.ts'
+import {
+  cardActionRows,
+  cardActionTally,
+  type CardActionRow,
+} from '#ui/cardActionRows.ts'
+import {
+  DECREE_ACTION_TYPE,
+  decreeColumnViews,
+  decreeTally,
+  isDecreeStep,
+  type DecreeColumnView,
+} from '#ui/decreeColumns.ts'
+import { phaseIconFor } from '#ui/phaseIcons.ts'
+import {
+  EMPTY_PHASE_TILE_MEMORY,
+  phaseTilesOf,
+  rememberPhaseTiles,
+  type KeyedAction,
+  type PhaseTile,
+  type PhaseTileMemory,
+} from '#ui/phaseTiles.ts'
 
 function isBlockingHudModalOpen(): boolean {
   if (isFactionBoardOpen() === true || isCraftedCardsOpen() === true) {
@@ -39,103 +68,160 @@ function isBlockingHudModalOpen(): boolean {
   return pile !== null && pile.selectable !== true
 }
 
+function canUndoFromStore(): boolean {
+  return getHudSnapshot().gameDrawer?.canUndo === true
+}
+
+const ACTIONS_REGION_ID: TrayActionRegion['id'] = 'actions'
 const META_REGION_ID: TrayActionRegion['id'] = 'meta'
+const END_PHASE_ACTION_TYPE = 'endPhase'
+const UNDO_LABEL = 'undo'
 
-/** Narrow: one row of chips. Wide: medallions with a short label in the side column. */
-const ACTION_GRID_CLASS_NAME =
-  'grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 md:grid-cols-[repeat(auto-fit,minmax(68px,1fr))] md:gap-x-1 md:gap-y-3'
-const META_GRID_CLASS_NAME =
-  'grid w-full grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 md:gap-2.5'
-/** Narrow: a paper chip. Wide: the chip paper is dropped, the icon sits on a medallion. */
-const ACTION_BUTTON_CLASS_NAME =
-  'action-tray__action root-paper root-paper-fine root-paper-press m-0 flex w-full min-w-0 flex-row items-center justify-center gap-1.5 px-2.5 py-1.5 text-center font-display text-sm text-ink capitalize md:flex-col md:gap-1 md:p-0 md:text-[15px] md:leading-tight md:[--root-paper-color:transparent] md:[--root-paper-edge:transparent] md:[--root-paper-texture:none]'
-const ACTION_ICON_CLASS_NAME =
-  'relative flex shrink-0 items-center justify-center text-lg text-ink md:root-paper md:root-medallion md:size-12 md:text-2xl md:text-parchment'
-/** Suit of the card an action plays (Decree), pinned on the medallion. */
-const ACTION_SUIT_BADGE_CLASS_NAME =
-  'pointer-events-none ml-1 size-4 object-contain md:absolute md:-right-1.5 md:-bottom-1.5 md:ml-0 md:size-6'
-/** Turn control (end phase, draw): a wide paper button, icon after the label. */
-const META_BUTTON_CLASS_NAME =
-  'action-tray__action root-paper root-paper-fine root-paper-press m-0 flex w-full min-w-0 flex-row-reverse items-center justify-center gap-2 px-2.5 py-1.5 text-center font-display text-sm text-ink capitalize [--root-paper-color:var(--color-parchment-deep)] md:py-2 md:text-[17px]'
-const META_ICON_CLASS_NAME = 'flex shrink-0 items-center justify-center text-lg'
-/** Wide: the main actions sit on one sheet of paper. */
-const ACTION_REGION_CLASS_NAME =
-  'flex w-full flex-col items-center gap-2 md:root-paper md:px-2 md:pt-2 md:pb-3'
-const META_REGION_CLASS_NAME = 'flex w-full flex-col items-center gap-2'
-/** Tray header: phase mark, phase name, small action count pushed right. */
-const TRAY_HEADER_CLASS_NAME =
-  'flex w-full flex-row items-center gap-2.5 px-1.5 font-display text-lg tracking-display text-parchment text-shadow-ink md:mb-1.5 md:border-b-3 md:border-ink-deep md:pb-2.5 md:text-2xl md:text-ink md:text-shadow-none'
-/** Gold diamond holding the time-of-day icon. */
-const TRAY_HEADER_PHASE_MARK_CLASS_NAME =
-  'root-paper root-paper-fine flex size-6 shrink-0 rotate-45 items-center justify-center text-base text-ink text-shadow-none [--root-paper-color:var(--color-gold)] md:size-7 md:text-lg'
-const TRAY_HEADER_COUNT_CLASS_NAME =
-  'ml-auto font-mono text-xs tracking-normal opacity-75 md:text-[13px]'
-const ACTION_REGION_TITLE_CLASS_NAME =
-  'font-display text-base tracking-display text-parchment text-shadow-ink md:text-xl md:text-ink md:text-shadow-none'
-/** The turn-control buttons need no title; kept for screen readers. */
-const META_REGION_TITLE_CLASS_NAME = 'sr-only'
+/** Narrow: centred above the hand. Wide: bottom right corner. */
+const DOCK_POSITION_CLASS_NAME =
+  'fixed bottom-(--root-portrait-tray-bottom) left-1/2 z-115 flex max-w-[calc(100vw-16px)] -translate-x-1/2 md:right-3 md:bottom-4 md:left-auto md:z-110 md:translate-x-0'
+/** Frame in the colour of the faction taking the turn. */
+const DOCK_FRAME_CLASS_NAME =
+  'action-dock root-paper flex flex-row items-stretch gap-2.5 p-2.5'
+const FACTION_FRAME_CLASS_NAMES: Readonly<Record<string, string>> = {
+  marquise: '[--root-paper-color:var(--color-marquise)]',
+  eyrie: '[--root-paper-color:var(--color-eyrie)]',
+  alliance: '[--root-paper-color:var(--color-alliance)]',
+  vagabond: '[--root-paper-color:var(--color-vagabond)]',
+  lizard: '[--root-paper-color:var(--color-lizard)]',
+  riverfolk: '[--root-paper-color:var(--color-riverfolk)]',
+}
+const NEUTRAL_FRAME_CLASS_NAME = '[--root-paper-color:var(--color-wood)]'
+/**
+ * Phase actions: always four tiles wide so the dock keeps its width, filled
+ * column by column, two to a column (a ninth tile opens a fifth column).
+ */
+const PHASE_TILE_GRID_CLASS_NAME =
+  'grid grid-flow-col auto-cols-[54px] grid-cols-[repeat(4,54px)] grid-rows-[repeat(2,54px)] gap-2'
+const EYRIE_FACTION = 'eyrie'
+/** Turn controls, and the Eyrie's tiles: top to bottom, two to a column, no wider than needed. */
+const TILE_GRID_CLASS_NAME =
+  'grid grid-flow-col grid-rows-[repeat(2,54px)] auto-cols-[54px] gap-2'
+/** Icon-only square: the action is named by its tooltip. */
+const TILE_CLASS_NAME =
+  'action-tray__action root-paper root-paper-fine root-paper-press relative m-0 flex size-full items-center justify-center p-0 text-3xl text-ink [--root-paper-color:var(--color-cream)]'
+/** End phase cannot be taken back once the next phase acts: marked rust. */
+const END_PHASE_TILE_CLASS_NAME =
+  '[--root-paper-color:var(--color-rust)] text-parchment'
+/** Grid cell of a tile. The turn square reads End phase, Undo, then the rest. */
+const TILE_SLOT_CLASS_NAME = 'flex'
+const END_PHASE_TILE_SLOT_CLASS_NAME = 'flex -order-2'
+const UNDO_TILE_SLOT_CLASS_NAME = 'flex -order-1'
+/** Suit of the card an action plays (Decree), pinned on the tile corner. */
+const TILE_SUIT_BADGE_CLASS_NAME =
+  'pointer-events-none absolute -right-1.5 -bottom-1.5 size-6 object-contain'
+/** Gold ring: the action being staged, its panel shown. */
+const TILE_RINGED_CLASS_NAME =
+  'shadow-gold-ring [--root-paper-color:var(--color-paper-bright)]'
+/** Cards staged in the Decree panel, told on the tile while the panel is off. */
+const TILE_COUNT_BADGE_CLASS_NAME =
+  'action-tray__count pointer-events-none absolute -right-1.5 -bottom-1.5 rounded-full bg-ink-deep px-1 font-mono text-[11px] leading-4.5 font-bold text-parchment'
+/** Ink line between the phase actions and the turn controls. */
+const DOCK_DIVIDER_CLASS_NAME = 'w-1 shrink-0 self-stretch bg-ink-deep'
+/** Tabs above the frame: phase on the left, Cards on the right; a narrow dock lets them spill left. */
+const TAB_ROW_CLASS_NAME =
+  'absolute right-0 bottom-full flex min-w-full flex-row items-end justify-between gap-2 px-2.5'
+/** Paper tab: phase mark, phase name, budget left. */
+const PHASE_TAB_CLASS_NAME =
+  'root-paper root-paper-fine flex flex-row items-center gap-1.5 px-2 py-0.5 font-display text-lg whitespace-nowrap text-ink capitalize [--root-paper-color:var(--color-parchment)]'
+const PHASE_TAB_ICON_CLASS_NAME = 'text-base text-gold'
+const PHASE_TAB_BUDGET_CLASS_NAME = 'font-mono text-xs opacity-75'
 
-function TrayActionButtons(props: {
-  actions: readonly ActionSpec[]
+/** `1/2` while the Decree panel is off with cards staged; null otherwise. */
+function stagedDecreeCountLabel(panel: DecreePanelHudState): string | null {
+  if (panel === null || panel.isOpen || panel.view.stagedCardIds.length === 0) {
+    return null
+  }
+  return `${String(panel.view.stagedCardIds.length)}/${String(MAXIMUM_DECREE_CARDS_ADDED)}`
+}
+
+function ActionTile(props: {
+  spec: ActionSpec
   pending: unknown
   state: ActionTrayState['state']
-  isMetaRegion: boolean
+  /** Taken earlier this phase and no longer legal: stays in place, faded. */
+  isSpent?: boolean
+  /** The action is being staged and its panel is shown. */
+  isRinged?: boolean
+  /** Count pinned on the tile corner (cards staged while the panel is off). */
+  countLabel?: string | null
   onSelectAction: (spec: ActionSpec) => void
 }): JSX.Element {
+  const stateClassName: string =
+    props.spec.type === END_PHASE_ACTION_TYPE
+      ? END_PHASE_TILE_CLASS_NAME
+      : props.isRinged === true
+        ? TILE_RINGED_CLASS_NAME
+        : ''
+  const label: string = formatActionLabel(props.spec, props.pending, props.state)
+  const art: TrayActionArt = trayActionArt(
+    props.spec,
+    props.state,
+    props.pending,
+  )
+  const ActionIcon: IconType = actionIconFor(art.iconKey)
+  const isEndPhase: boolean = props.spec.type === END_PHASE_ACTION_TYPE
   return (
-    <div
-      className={
-        props.isMetaRegion ? META_GRID_CLASS_NAME : ACTION_GRID_CLASS_NAME
-      }
+    <Tooltip
+      label={label}
+      className={isEndPhase ? END_PHASE_TILE_SLOT_CLASS_NAME : TILE_SLOT_CLASS_NAME}
     >
-      {props.actions.map((spec, index) => {
-        const label = formatActionLabel(spec, props.pending, props.state)
-        const key = `${spec.type}-${String(spec.actor)}-${String(index)}-${label}`
-        const art: TrayActionArt = trayActionArt(
-          spec,
-          props.state,
-          props.pending,
-        )
-        const ActionIcon: IconType = actionIconFor(art.iconKey)
-        const suitTexture: string | null =
-          art.suit !== null ? suitTextureKey(art.suit) : null
-        const suitImagePath: string | null =
-          suitTexture !== null ? imagePathForAssetKey(suitTexture) : null
-        return (
-          <button
-            key={key}
-            type="button"
-            className={
-              props.isMetaRegion
-                ? META_BUTTON_CLASS_NAME
-                : ACTION_BUTTON_CLASS_NAME
-            }
-            onClick={() => {
-              props.onSelectAction(spec)
-            }}
-          >
-            <span
-              className={
-                props.isMetaRegion
-                  ? META_ICON_CLASS_NAME
-                  : ACTION_ICON_CLASS_NAME
-              }
-              aria-hidden="true"
-            >
-              <ActionIcon />
-              {suitImagePath !== null ? (
-                <img
-                  className={ACTION_SUIT_BADGE_CLASS_NAME}
-                  src={suitImagePath}
-                  alt=""
-                  draggable={false}
-                />
-              ) : null}
-            </span>
-            {label}
-          </button>
-        )
-      })}
+      <button
+        type="button"
+        className={`${TILE_CLASS_NAME} ${stateClassName}`}
+        disabled={props.isSpent === true}
+        onClick={() => {
+          props.onSelectAction(props.spec)
+        }}
+      >
+        <ActionIcon aria-hidden="true" />
+        {art.suit !== null ? (
+          <SuitIcon suit={art.suit} className={TILE_SUIT_BADGE_CLASS_NAME} />
+        ) : null}
+        {props.countLabel !== undefined && props.countLabel !== null ? (
+          <span className={TILE_COUNT_BADGE_CLASS_NAME}>{props.countLabel}</span>
+        ) : null}
+        <span className="sr-only">{label}</span>
+      </button>
+    </Tooltip>
+  )
+}
+
+function UndoTile(props: { onUndo: () => void }): JSX.Element {
+  return (
+    <Tooltip label={UNDO_LABEL} className={UNDO_TILE_SLOT_CLASS_NAME}>
+      <button
+        type="button"
+        className={`game-drawer__undo ${TILE_CLASS_NAME}`}
+        onClick={props.onUndo}
+      >
+        <LuUndo2 aria-hidden="true" />
+        <span className="sr-only">{UNDO_LABEL}</span>
+      </button>
+    </Tooltip>
+  )
+}
+
+function PhaseTab(props: {
+  phase: string
+  budgetLabel: string | null
+}): JSX.Element | null {
+  const PhaseIcon: IconType | null = phaseIconFor(props.phase)
+  if (PhaseIcon === null) {
+    return null
+  }
+  return (
+    <div className={PHASE_TAB_CLASS_NAME}>
+      <PhaseIcon className={PHASE_TAB_ICON_CLASS_NAME} aria-hidden="true" />
+      {props.phase}
+      {props.budgetLabel !== null ? (
+        <span className={PHASE_TAB_BUDGET_CLASS_NAME}>{props.budgetLabel}</span>
+      ) : null}
     </div>
   )
 }
@@ -151,6 +237,18 @@ export function ActionTray(): JSX.Element | null {
     isBlockingHudModalOpen,
     isBlockingHudModalOpen,
   )
+  const canUndo = useSyncExternalStore(
+    subscribeHud,
+    canUndoFromStore,
+    canUndoFromStore,
+  )
+  const decreePanel: DecreePanelHudState = useSyncExternalStore(
+    subscribeHud,
+    () => getHudSnapshot().decreePanel,
+    () => getHudSnapshot().decreePanel,
+  )
+  const [isCardsPanelOpen, setIsCardsPanelOpen] = useState<boolean>(false)
+  const phaseTileMemoryRef = useRef<PhaseTileMemory>(EMPTY_PHASE_TILE_MEMORY)
   // Modal open gated live from store so veil/X close re-shows tray
   // without needing a board re-sync (options.disabled stays stale otherwise).
   if (tray === null || anyModalOpen || tray.options?.disabled === true) {
@@ -163,55 +261,155 @@ export function ActionTray(): JSX.Element | null {
     tray.pending,
     tray.state,
   )
-  const regions = partitionTrayActionRegions(forActor, tray.state)
-  if (regions.length === 0) {
+  const cardRows: readonly CardActionRow[] = cardActionRows(
+    tray.state,
+    tray.actorSeat,
+    forActor,
+  )
+  // Card actions are played from the Cards panel, not from a tile.
+  const cardActionTypes: ReadonlySet<string> = new Set(
+    cardRows.map((row) => row.actionType),
+  )
+  // Eyrie Daylight: Decree cards are resolved from the columns, not from tiles.
+  const decreeColumns: readonly DecreeColumnView[] | null = decreeColumnViews(
+    tray.state,
+    tray.actorSeat,
+    forActor,
+  )
+  const regions = partitionTrayActionRegions(
+    forActor.filter(
+      (spec) =>
+        !cardActionTypes.has(spec.type) &&
+        (decreeColumns === null || spec.type !== DECREE_ACTION_TYPE),
+    ),
+    tray.state,
+  )
+  const hasCardActionToPlay: boolean = cardRows.some(
+    (row) => row.spec !== null,
+  )
+  if (
+    regions.length === 0 &&
+    !canUndo &&
+    !hasCardActionToPlay &&
+    decreeColumns === null
+  ) {
     return null
   }
-  const callbacks = getHudCallbacks()
   const phase: string = tray.state?.phase ?? ''
-  const PhaseIcon: IconType | null = phaseIconFor(phase)
+  const budgetLabel: string | null =
+    decreeColumns !== null
+      ? decreeTally(decreeColumns)
+      : trayBudgetLabel(tray.state)
+  const phaseActions: readonly ActionSpec[] =
+    regions.find((region) => region.id === ACTIONS_REGION_ID)?.actions ?? []
+  const liveTiles: readonly KeyedAction[] = phaseActions.map((spec) => ({
+    key: `${spec.type}::${formatActionLabel(spec, tray.pending, tray.state)}`,
+    spec,
+  }))
+  // Answers to a pending event are not actions of the phase: nothing is kept.
+  const phaseKey: string | null =
+    tray.pending !== undefined || tray.state === undefined
+      ? null
+      : `${String(tray.state.turn)}:${String(tray.actorSeat)}:${phase}`
+  const memory: PhaseTileMemory = rememberPhaseTiles(
+    phaseTileMemoryRef.current,
+    phaseKey,
+    liveTiles,
+  )
+  phaseTileMemoryRef.current = memory
+  const phaseTiles: readonly PhaseTile[] =
+    phaseKey === null
+      ? liveTiles.map((tile) => ({ ...tile, isSpent: false }))
+      : phaseTilesOf(memory, liveTiles)
+  const turnActions: readonly ActionSpec[] =
+    regions.find((region) => region.id === META_REGION_ID)?.actions ?? []
+  const hasTurnTiles: boolean = turnActions.length > 0 || canUndo
+  const callbacks = getHudCallbacks()
+  const faction: string | undefined = tray.state?.players.find(
+    (player) => player.seat === tray.actorSeat,
+  )?.faction
+  const frameColorClassName: string =
+    (faction !== undefined ? FACTION_FRAME_CLASS_NAMES[faction] : undefined) ??
+    NEUTRAL_FRAME_CLASS_NAME
   return (
-    <div className="fixed bottom-(--root-portrait-tray-bottom) left-1/2 z-115 box-border flex w-[calc(100vw-16px)] -translate-x-1/2 flex-col items-center gap-3 px-0 md:top-16 md:right-0 md:bottom-3 md:left-auto md:z-110 md:w-(--root-landscape-side-percent) md:translate-x-0 md:overflow-x-hidden md:overflow-y-auto md:px-2">
-      {regions.map((region) => {
-        const isMetaRegion: boolean = region.id === META_REGION_ID
-        return (
+    <div className={DOCK_POSITION_CLASS_NAME}>
+      <div className={`${DOCK_FRAME_CLASS_NAME} ${frameColorClassName}`}>
+        <div className={TAB_ROW_CLASS_NAME}>
+          <PhaseTab phase={phase} budgetLabel={budgetLabel} />
+          {cardRows.length > 0 ? (
+            <CardsTab
+              tally={cardActionTally(cardRows, phase)}
+              isOpen={isCardsPanelOpen}
+              onToggle={() => {
+                setIsCardsPanelOpen(!isCardsPanelOpen)
+              }}
+            />
+          ) : null}
+        </div>
+        {isCardsPanelOpen && cardRows.length > 0 ? (
+          <CardsPanel
+            rows={cardRows}
+            phase={phase}
+            onPlay={(spec) => {
+              setIsCardsPanelOpen(false)
+              callbacks.onSelectAction(spec)
+            }}
+          />
+        ) : null}
+        {phaseTiles.length > 0 ? (
           <div
-            key={region.id}
             className={
-              isMetaRegion ? META_REGION_CLASS_NAME : ACTION_REGION_CLASS_NAME
+              faction === EYRIE_FACTION
+                ? TILE_GRID_CLASS_NAME
+                : PHASE_TILE_GRID_CLASS_NAME
             }
           >
-            {isMetaRegion || PhaseIcon === null ? (
-              <div
-                className={
-                  isMetaRegion
-                    ? META_REGION_TITLE_CLASS_NAME
-                    : ACTION_REGION_TITLE_CLASS_NAME
+            {phaseTiles.map((tile) => (
+              <ActionTile
+                key={tile.key}
+                spec={tile.spec}
+                pending={tray.pending}
+                state={tray.state}
+                isSpent={tile.isSpent}
+                isRinged={
+                  tile.spec.type === ADD_TO_DECREE_ACTION_TYPE &&
+                  decreePanel?.isOpen === true
                 }
-              >
-                {region.title}
-              </div>
-            ) : (
-              <div className={TRAY_HEADER_CLASS_NAME} aria-label={region.title}>
-                <span className={TRAY_HEADER_PHASE_MARK_CLASS_NAME}>
-                  <PhaseIcon className="-rotate-45" aria-hidden="true" />
-                </span>
-                <span className="capitalize">{phase}</span>
-                <span className={TRAY_HEADER_COUNT_CLASS_NAME}>
-                  {trayActionCountLabel(region.actions.length, tray.state)}
-                </span>
-              </div>
-            )}
-            <TrayActionButtons
-              actions={region.actions}
-              pending={tray.pending}
-              state={tray.state}
-              isMetaRegion={isMetaRegion}
-              onSelectAction={callbacks.onSelectAction}
-            />
+                countLabel={
+                  tile.spec.type === ADD_TO_DECREE_ACTION_TYPE
+                    ? stagedDecreeCountLabel(decreePanel)
+                    : null
+                }
+                onSelectAction={callbacks.onSelectAction}
+              />
+            ))}
           </div>
-        )
-      })}
+        ) : null}
+        {decreeColumns !== null ? (
+          <DecreeColumns
+            columns={decreeColumns}
+            isDisabled={!isDecreeStep(tray.state)}
+            onSelectAction={callbacks.onSelectAction}
+          />
+        ) : null}
+        {(phaseTiles.length > 0 || decreeColumns !== null) && hasTurnTiles ? (
+          <span className={DOCK_DIVIDER_CLASS_NAME} aria-hidden="true" />
+        ) : null}
+        {hasTurnTiles ? (
+          <div className={TILE_GRID_CLASS_NAME}>
+            {turnActions.map((spec, index) => (
+              <ActionTile
+                key={`${spec.type}-${String(index)}`}
+                spec={spec}
+                pending={tray.pending}
+                state={tray.state}
+                onSelectAction={callbacks.onSelectAction}
+              />
+            ))}
+            {canUndo ? <UndoTile onUndo={callbacks.onUndo} /> : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }

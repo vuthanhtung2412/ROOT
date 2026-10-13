@@ -11,6 +11,8 @@ import {
   partitionTrayActionRegions,
 } from '#ui/ActionTray.ts'
 import { makeActionSpec, makeGameState } from '#test/factories.ts'
+import { actionIconFor } from '#ui/actionIcons.ts'
+import { trayActionCountLabel, trayBudgetLabel } from '#ui/trayBudget.ts'
 import { questViewsFromState } from '#ui/factionBoardViewModel.ts'
 
 describe('formatActionLabel setup', () => {
@@ -276,6 +278,57 @@ describe('partitionTrayActionRegions', () => {
     expect(regions[0]?.title).toBe('Actions · 3 left')
   })
 
+  it('counts the Woodland Alliance military operations left in the Evening', () => {
+    const state = makeGameState({
+      phase: 'evening',
+      step: 'military',
+      currentSeat: 0,
+      players: [
+        { playerId: 'alliance', seat: 0, faction: 'alliance', vp: 0, hand: [] },
+      ],
+      turnScratch: { militaryOpsLeft: 1 },
+    })
+    const fourButtons = 4
+
+    expect(trayActionCountLabel(fourButtons, state)).toBe('1 left')
+  })
+
+  it('reads the Marquise Daylight budget as left over total on the dock tab', () => {
+    const state = makeGameState({
+      phase: 'daylight',
+      step: 'actions',
+      currentSeat: 0,
+      turnScratch: { actionsLeft: 2, extraActions: 0 },
+    })
+
+    expect(trayBudgetLabel(state)).toBe('2/3')
+  })
+
+  it('reads the Woodland Alliance military operations as left over officers', () => {
+    const state = makeGameState({
+      phase: 'evening',
+      step: 'military',
+      currentSeat: 0,
+      players: [
+        {
+          playerId: 'alliance',
+          seat: 0,
+          faction: 'alliance',
+          vp: 0,
+          hand: [],
+          board: { kind: 'alliance', officers: 3 },
+        },
+      ],
+      turnScratch: { militaryOpsLeft: 2 },
+    })
+
+    expect(trayBudgetLabel(state)).toBe('2/3')
+  })
+
+  it('has no budget on the dock tab outside a budgeted step', () => {
+    expect(trayBudgetLabel(makeGameState({ phase: 'birdsong', step: 'wood' }))).toBeNull()
+  })
+
   it('omits empty Actions region when only end phase remains', () => {
     const regions = partitionTrayActionRegions([
       { type: 'endPhase', actor: 0 },
@@ -344,6 +397,25 @@ describe('trayActionArt', () => {
       iconKey: 'recruit',
       suit: null,
     })
+  })
+
+  it('draws each Woodland Alliance military operation as its own icon', () => {
+    const operations: readonly string[] = [
+      'move',
+      'battle',
+      'recruit',
+      'organize',
+    ]
+
+    const iconKeys: string[] = operations.map(
+      (operation: string): string =>
+        trayActionArt(
+          makeActionSpec({ type: 'militaryOp', params: { op: [operation] } }),
+        ).iconKey,
+    )
+
+    expect(iconKeys).toEqual(operations)
+    expect(new Set(iconKeys.map(actionIconFor)).size).toBe(operations.length)
   })
 
   it('keeps the action type for any other action', () => {

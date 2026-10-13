@@ -39,6 +39,7 @@ import {
   BOARD_CLICKABLE_CLASS_NAME,
   useActingPlayerActions,
 } from '#react/boardActions.ts'
+import { SuitIcon } from '#react/SuitIcon.tsx'
 
 type OverlayBaseProps = {
   view: FactionBoardViewModel
@@ -345,19 +346,14 @@ function SuitIconRow(props: { suits: readonly string[] }): JSX.Element {
       title={summary}
     >
       {sortDecreeSuits(props.suits).map((suit, index) => {
-        const textureKey = suitTextureKey(suit)
-        const imagePath =
-          textureKey !== null ? imagePathForAssetKey(textureKey) : null
-        if (imagePath === null) {
+        if (suitTextureKey(suit) === null) {
           return <span key={`${suit}-${String(index)}`}>{suit}</span>
         }
         return (
-          <img
+          <SuitIcon
             key={`${suit}-${String(index)}`}
+            suit={suit}
             className="block h-full w-auto object-contain select-none"
-            src={imagePath}
-            alt=""
-            draggable={false}
           />
         )
       })}

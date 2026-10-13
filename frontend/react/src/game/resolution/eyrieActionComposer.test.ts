@@ -34,6 +34,79 @@ describe('eyrieActionComposer', () => {
     })
   })
 
+  it('addToDecree sends nothing before confirm, even with two cards staged', () => {
+    const eyrie = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(eyrie.hooks)
+    composer.begin(
+      makeActionSpec({
+        type: 'addToDecree',
+        params: {
+          options: [
+            { cardId: 'c1', column: 'recruit' },
+            { cardId: 'c2', column: 'battle' },
+          ],
+          birdCardIds: [],
+        },
+      }),
+    )
+
+    composer.chooseCard('c1')
+    composer.chooseColumn('recruit')
+    composer.chooseCard('c2')
+    const afterSecondCard = composer.chooseColumn('battle')
+
+    expect(afterSecondCard.kind).toBe('incomplete')
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'addToDecree',
+        cards: [
+          { cardId: 'c1', column: 'recruit' },
+          { cardId: 'c2', column: 'battle' },
+        ],
+      },
+    })
+  })
+
+  it('addToDecree panel lays, moves and takes back a card without a pick', () => {
+    const eyrie = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(eyrie.hooks)
+    composer.begin(
+      makeActionSpec({
+        type: 'addToDecree',
+        params: {
+          options: [
+            { cardId: 'c1', column: 'recruit' },
+            { cardId: 'c1', column: 'move' },
+            { cardId: 'c2', column: 'battle' },
+          ],
+          birdCardIds: [],
+        },
+      }),
+    )
+
+    eyrie.decreeStaging.stage({ cardId: 'c1', column: 'recruit' })
+    eyrie.decreeStaging.stage({ cardId: 'c1', column: 'move' })
+    eyrie.decreeStaging.stage({ cardId: 'c2', column: 'battle' })
+    eyrie.decreeStaging.takeBack('c2')
+
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'addToDecree',
+        cards: [{ cardId: 'c1', column: 'move' }],
+      },
+    })
+  })
+
+  it('addToDecree staging is null when no Add to Decree is staged', () => {
+    const eyrie = createEyrieComposerHooks()
+
+    expect(eyrie.decreeStaging.clear()).toBeNull()
+  })
+
   it('newRoost picks clearing', () => {
     const { hooks } = createEyrieComposerHooks()
     const composer = new ActionComposer()
