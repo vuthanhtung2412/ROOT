@@ -5,6 +5,14 @@ import {
   type DecreeForecast,
   type DecreeForecastRequest,
 } from '#factions/eyrie/decreeForecast.js'
+import {
+  forecastSympathy,
+  type SympathyForecast,
+} from '#factions/alliance/sympathyForecast.js'
+import {
+  forecastMarquise,
+  type MarquiseForecast,
+} from '#factions/marquise/workshopForecast.js'
 import { factionFor } from '#factions/index.js'
 import { beginFactionSetup } from '#game/factionSetup.js'
 import {
@@ -381,6 +389,16 @@ export class Game {
   /** Which Decree cards an Eyrie seat could resolve now. Reads only. */
   forecastDecree(request: DecreeForecastRequest): DecreeForecast {
     return forecastDecree(this.state, request, this.makeCtx())
+  }
+
+  /** The Marquise economy of a seat as the map stands. Reads only. */
+  forecastMarquise(seat: Seat): MarquiseForecast {
+    return forecastMarquise(this.state, seat, this.makeCtx())
+  }
+
+  /** Where an Alliance seat can spread sympathy or revolt. Reads only. */
+  forecastSympathy(seat: Seat): SympathyForecast {
+    return forecastSympathy(this.state, seat)
   }
 
   /** Seat that rules the clearing, card effects counted; null when nobody does. */

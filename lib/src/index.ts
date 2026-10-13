@@ -21,6 +21,16 @@ export type {
   DecreeForecast,
   DecreeForecastRequest,
 } from '#factions/eyrie/decreeForecast.js'
+export type {
+  SympathyForecast,
+  SympathyTarget,
+  RevoltTarget,
+} from '#factions/alliance/sympathyForecast.js'
+export type {
+  MarquiseForecast,
+  MarquiseBuildingForecast,
+} from '#factions/marquise/workshopForecast.js'
+export { dividendVictoryPoints } from '#factions/riverfolk/rules.js'
 export {
   DECREE_COLUMNS,
   EYRIE_ROOST_VP,
