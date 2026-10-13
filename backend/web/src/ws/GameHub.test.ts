@@ -18,6 +18,7 @@ const samplePayload: GamePushPayload = {
   historyLength: 0,
   legalActions: [],
   log: [],
+  aiPlayers: [],
 }
 
 describe('GameHub', () => {

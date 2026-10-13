@@ -3,6 +3,7 @@ import { compress } from 'hono/compress'
 import { LIB_NAME, LIB_VERSION } from '@root/lib'
 import { corsMiddleware } from '#middleware/cors.js'
 import { onError } from '#middleware/errors.js'
+import { aiPlayerRoutes } from '#routes/aiPlayer.js'
 import { gameRoutes } from '#routes/game.js'
 import { mapRoutes } from '#routes/map.js'
 
@@ -57,6 +58,7 @@ app.openapi(healthRoute, (context) => {
 })
 
 app.route('/game', gameRoutes)
+app.route('/game', aiPlayerRoutes)
 app.route('/map', mapRoutes)
 
 app.doc('/doc', openApiInfo)

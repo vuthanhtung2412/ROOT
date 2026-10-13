@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi'
+import { AiPlayerSchema } from '#schemas/aiPlayer.js'
 import { FactionIdSchema, JsonObjectSchema } from '#schemas/common.js'
 import { LOBBY_MODES } from '#store/GameStore.js'
 
@@ -60,6 +61,7 @@ export const GetGameResponseSchema = z
     state: GameStateSchema,
     historyLength: z.number().int().nonnegative(),
     mode: LobbyModeSchema,
+    aiPlayers: z.array(AiPlayerSchema),
   })
   .openapi('GetGameResponse')
 

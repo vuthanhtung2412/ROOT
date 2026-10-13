@@ -2,12 +2,15 @@ import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.j
 import { redactLogForViewer } from '#view/redactLogForViewer.js'
 import { redactStateForViewer } from '#view/redactStateForViewer.js'
 import { store } from '#store/GameStore.js'
+import { listAiPlayerViews, type AiPlayerView } from '#view/aiPlayerView.js'
 
 export type GamePushPayload = {
   state: unknown | null
   historyLength: number
   legalActions: unknown[]
   log: unknown[]
+  /** Seats played by an LLM: model and live status, never a join id. */
+  aiPlayers: AiPlayerView[]
 }
 
 export type GameHubClient = {
@@ -21,6 +24,7 @@ const EMPTY_GAME_PUSH: GamePushPayload = {
   historyLength: 0,
   legalActions: [],
   log: [],
+  aiPlayers: [],
 }
 
 /** Build the WS push payload for one viewer (opponent hands redacted). */
@@ -38,6 +42,7 @@ export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
       playerId,
     ),
     log: redactLogForViewer(game.log, game.state, playerId),
+    aiPlayers: listAiPlayerViews(),
   }
 }
 

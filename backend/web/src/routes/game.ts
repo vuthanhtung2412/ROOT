@@ -45,6 +45,7 @@ import {
 } from '#schemas/game.js'
 import { persistCurrentGame } from '#store/gamePersistence.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
+import { listAiPlayerViews } from '#view/aiPlayerView.js'
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
 import {
   redactLogForViewer,
@@ -67,7 +68,7 @@ function requireGame(): Game {
  * After every slot change: save to disk, push to connected viewers, then let
  * the AI seats play what is theirs to play.
  */
-function publishGameChange(): void {
+export function publishGameChange(): void {
   persistCurrentGame()
   broadcastCurrentGame()
   aiPlayerDriver.handleGameChanged()
@@ -289,6 +290,7 @@ gameRoutes.openapi(getGameRoute, (context) => {
       ),
       historyLength: game.history.length,
       mode: store.mode,
+      aiPlayers: listAiPlayerViews(),
     },
     200,
   )
