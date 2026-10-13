@@ -29,3 +29,26 @@ export function createStartedTwoPlayerGame(): Game {
   game.start()
   return game
 }
+
+const DEFAULT_TEST_LEADER = 'builder'
+
+/**
+ * Same seats with setup answered (first legal clearing, Builder leader) and
+ * the Marquise in Daylight, at the step where it marches, battles and builds.
+ */
+export function createPlayingTwoPlayerGame(): Game {
+  const game = createStartedTwoPlayerGame()
+  while (game.state.status === 'setup') {
+    const clearing: number | undefined =
+      game.legalActions()[0]?.params?.clearing?.[0]
+    game.apply(
+      clearing === undefined
+        ? { type: 'resolveEvent', leader: DEFAULT_TEST_LEADER }
+        : { type: 'resolveEvent', clearing },
+    )
+  }
+  // Birdsong, then the Daylight craft step.
+  game.apply({ type: 'endPhase' })
+  game.apply({ type: 'endPhase' })
+  return game
+}

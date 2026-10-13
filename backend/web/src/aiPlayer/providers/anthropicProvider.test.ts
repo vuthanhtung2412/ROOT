@@ -82,6 +82,7 @@ describe('anthropic provider', () => {
       { name: 'log' },
       { name: 'rules' },
       { name: 'card' },
+      { name: 'preview' },
       {
         name: 'act',
         input_schema: { type: 'object', required: ['action'] },

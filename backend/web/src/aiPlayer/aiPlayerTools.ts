@@ -1,5 +1,6 @@
-import { RuleError } from '@root/lib'
+import { RuleError, type Action } from '@root/lib'
 import { z } from 'zod'
+import { previewAction } from '#aiPlayer/aiPlayerActionPreview.js'
 import { buildActionReport } from '#aiPlayer/aiPlayerActionReport.js'
 import { lookUpCardDetails } from '#aiPlayer/aiPlayerCardDetail.js'
 import {
@@ -72,6 +73,7 @@ export const LOG_TOOL_NAME = 'log'
 export const RULES_TOOL_NAME = 'rules'
 export const ACT_TOOL_NAME = 'act'
 export const CARD_TOOL_NAME = 'card'
+export const PREVIEW_TOOL_NAME = 'preview'
 
 const DEFAULT_LOG_ENTRY_LIMIT = 40
 const MAXIMUM_LOG_ENTRY_LIMIT = 200
@@ -139,9 +141,14 @@ const ActInputSchema = z.object({
     ),
 })
 
-function runAct(
+/**
+ * Shared by `act` and `preview`: reads the action, checks the seat, and turns
+ * a failure of `run` into an error the model can correct.
+ */
+function runSeatAction(
   context: AiPlayerToolContext,
   input: JsonValue,
+  run: (action: Action) => AiPlayerToolResult,
 ): AiPlayerToolResult {
   const parsed = ActInputSchema.safeParse(input)
   if (!parsed.success || !isAction(parsed.data.action)) {
@@ -154,21 +161,7 @@ function runAct(
     )
   }
   try {
-    const result = context.game.apply(action)
-    logGameEvent('ACT', result.state, action, result.log)
-    context.onGameChanged()
-    return {
-      content: formatJson(
-        buildActionReport({
-          game: context.game,
-          playerId: context.playerId,
-          action,
-          logEntryCount: result.log.length,
-        }),
-      ),
-      isError: false,
-      appliedAction: true,
-    }
+    return run(action)
   } catch (error) {
     if (error instanceof RuleError) {
       return fail(
@@ -184,6 +177,49 @@ function runAct(
       `ENGINE_ERROR: ${reason}. The action was not applied. Check the field names of ${JSON.stringify(action)} against "${ACTIONS_TOOL_NAME}".`,
     )
   }
+}
+
+function runAct(
+  context: AiPlayerToolContext,
+  input: JsonValue,
+): AiPlayerToolResult {
+  return runSeatAction(context, input, (action: Action): AiPlayerToolResult => {
+    const result = context.game.apply(action)
+    logGameEvent('ACT', result.state, action, result.log)
+    context.onGameChanged()
+    return {
+      content: formatJson(
+        buildActionReport({
+          game: context.game,
+          playerId: context.playerId,
+          action,
+          logEntryCount: result.log.length,
+        }),
+      ),
+      isError: false,
+      appliedAction: true,
+    }
+  })
+}
+
+function runPreview(
+  context: AiPlayerToolContext,
+  input: JsonValue,
+): AiPlayerToolResult {
+  return runSeatAction(
+    context,
+    input,
+    (action: Action): AiPlayerToolResult =>
+      succeed(
+        formatJson(
+          previewAction({
+            game: context.game,
+            playerId: context.playerId,
+            action,
+          }),
+        ),
+      ),
+  )
 }
 
 const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
@@ -253,6 +289,15 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
       inputJsonSchema: z.toJSONSchema(CardInputSchema),
     },
     run: runCard,
+  },
+  {
+    definition: {
+      name: PREVIEW_TOOL_NAME,
+      description:
+        'Dry run of one action: same input as "act", nothing is applied. Answers whether the action is legal, what it would cause ("wouldLog") and which action types you could take after it. An illegal action returns the same error as "act". Dice are never rolled and no card is drawn: for a battle you get the warriors of both sides and the highest hits each side can roll. Use it before an action you cannot take back.',
+      inputJsonSchema: z.toJSONSchema(ActInputSchema),
+    },
+    run: runPreview,
   },
   {
     definition: {

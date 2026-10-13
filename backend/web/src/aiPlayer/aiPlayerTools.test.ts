@@ -5,6 +5,7 @@ import {
   ACTIONS_TOOL_NAME,
   AI_PLAYER_TOOL_DEFINITIONS,
   LOG_TOOL_NAME,
+  PREVIEW_TOOL_NAME,
   RULES_TOOL_NAME,
   runAiPlayerTool,
   SHOW_TOOL_NAME,
@@ -42,7 +43,7 @@ describe('AI player tools', () => {
       AI_PLAYER_TOOL_DEFINITIONS.map(
         (definition: AiPlayerToolDefinition): string => definition.name,
       ),
-    ).toEqual(['show', 'actions', 'log', 'rules', 'card', 'act'])
+    ).toEqual(['show', 'actions', 'log', 'rules', 'card', 'preview', 'act'])
     for (const definition of AI_PLAYER_TOOL_DEFINITIONS) {
       expect(definition.inputJsonSchema.type).toBe('object')
     }
@@ -177,6 +178,35 @@ describe('AI player tools', () => {
       waitingFor: ['eyrie'],
     })
     expect(lastContent).not.toContain(SECOND_TEST_PLAYER_ID)
+  })
+
+  it('preview: answers like act but applies nothing', () => {
+    const game = createStartedTwoPlayerGame()
+    const context = createToolContext(game, FIRST_TEST_PLAYER_ID)
+    const historyLengthBefore = game.history.length
+
+    const legal = runAiPlayerTool(context, {
+      name: PREVIEW_TOOL_NAME,
+      input: { action: { ...KEEP_CORNER_ACTION } },
+    })
+    const illegal = runAiPlayerTool(context, {
+      name: PREVIEW_TOOL_NAME,
+      input: { action: { type: 'resolveEvent', clearing: 5 } },
+    })
+    const otherSeat = runAiPlayerTool(
+      createToolContext(game, SECOND_TEST_PLAYER_ID),
+      { name: PREVIEW_TOOL_NAME, input: { action: { ...KEEP_CORNER_ACTION } } },
+    )
+
+    expect(legal).toMatchObject({ isError: false, appliedAction: false })
+    expect(JSON.parse(legal.content)).toMatchObject({
+      legal: true,
+      nextLegalActionTypes: ['resolveEvent'],
+    })
+    expect(illegal).toMatchObject({ isError: true, appliedAction: false })
+    expect(otherSeat.content).toContain('NOT_YOUR_SEAT')
+    expect(game.history.length).toBe(historyLengthBefore)
+    expect(context.onGameChanged).not.toHaveBeenCalled()
   })
 
   it('act: refuses an action that belongs to another seat', () => {
