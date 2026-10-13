@@ -67,7 +67,7 @@ const EXIT_CLOSE_BUTTON_CLASS_NAME =
 const EXIT_PANEL_CLASS_NAME =
   'exit-game-modal__panel root-paper relative z-1 m-3 box-border flex w-[min(92vw,28rem)] flex-col gap-3 px-[18px] py-4 text-ink [--root-paper-color:var(--color-cream)]'
 const EXIT_TITLE_CLASS_NAME =
-  'm-0 border-b-2 border-dashed border-ink/35 pb-1.5 font-display text-[22px] font-normal capitalize'
+  'm-0 border-b-4 border-solid border-ink-deep pb-1.5 font-display text-[22px] font-normal capitalize'
 const EXIT_BODY_CLASS_NAME = 'm-0 font-body text-base text-ink-soft'
 const EXIT_ACTIONS_CLASS_NAME =
   'flex flex-row flex-wrap justify-end gap-2 pt-1'

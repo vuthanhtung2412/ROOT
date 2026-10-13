@@ -66,7 +66,7 @@ export function OptionGridModal(): JSX.Element | null {
           {rowsOf(composer.options).map((row: OptionGridRow) => (
             <div
               key={row.group}
-              className="option-grid-modal__row flex flex-row items-center justify-between gap-6 border-dashed border-ink/35 py-2.5 not-first:border-t-2"
+              className="option-grid-modal__row flex flex-row items-center justify-between gap-6 border-solid border-ink-deep py-2.5 not-first:border-t-4"
             >
               <span className="font-display text-lg font-bold text-ink">
                 {row.group}
