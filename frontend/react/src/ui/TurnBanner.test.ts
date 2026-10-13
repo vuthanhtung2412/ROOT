@@ -138,7 +138,32 @@ describe('buildTurnBannerViewModel pending actor', () => {
           ],
         }),
       ).prompt,
-    ).toBe('Battle — remove defender pieces')
+    ).toBe('Battle — remove 2 pieces')
+  })
+
+  it('counts the pieces of the legal removal, not the hits dealt', () => {
+    const removalSpec: ActionSpec = {
+      type: 'resolveEvent',
+      actor: 0,
+      params: { pieceIds: ['w-1'] },
+    }
+    expect(
+      buildTurnBannerViewModel(
+        makeState({
+          pending: [
+            {
+              type: 'battle',
+              clearing: 3,
+              attacker: 1,
+              defender: 0,
+              stage: 'removeDefender',
+              hits: { attacker: 2, defender: 0 },
+            },
+          ],
+        }),
+        [removalSpec],
+      ).prompt,
+    ).toBe('Battle — remove 1 piece')
   })
 
   it('describes daylight steps outside pending events', () => {

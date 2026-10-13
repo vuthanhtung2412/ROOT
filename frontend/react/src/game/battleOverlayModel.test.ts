@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import type { GameState } from '#api/client.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
 import {
   BATTLE_OVER_MESSAGE,
   buildBattleOverlayViewModel,
   buildFinishedBattleOverlayViewModel,
   finishedBattleOutcomeFromLog,
+  finishedOutcomeWithPiecesRemoved,
   readBattleClearingId,
   updateBattleTracker,
   ZERO_HIT_BATTLE_MESSAGE,
 } from '#game/battleOverlayModel.ts'
+import { makeActionSpec } from '#test/factories.ts'
 
 function makeState(pending: unknown[]): GameState {
   return {
@@ -27,6 +29,39 @@ function makeState(pending: unknown[]): GameState {
     clearings: [],
     pending,
   }
+}
+
+const VAGABOND_SEAT = 0
+
+function makeVagabondDefenderState(pending: unknown[]): GameState {
+  const state: GameState = makeState(pending)
+  return {
+    ...state,
+    factions: ['vagabond', 'eyrie'],
+    players: state.players.map((player) =>
+      player.seat === VAGABOND_SEAT ? { ...player, faction: 'vagabond' } : player,
+    ),
+  }
+}
+
+type BattleHits = { attacker: number; defender: number }
+
+function makeRemovalBattle(hits: BattleHits): Record<string, unknown> {
+  return {
+    type: 'battle',
+    clearing: 10,
+    attacker: 1,
+    defender: 0,
+    stage: 'removeDefender',
+    rolls: [3, 0],
+    hits,
+  }
+}
+
+function makeResolveEventSpec(
+  params: NonNullable<ActionSpec['params']>,
+): ActionSpec {
+  return makeActionSpec({ type: 'resolveEvent', params })
 }
 
 describe('buildBattleOverlayViewModel', () => {
@@ -56,9 +91,46 @@ describe('buildBattleOverlayViewModel', () => {
       defenderFaction: 'marquise',
       rolls: [2, 1],
       hits: { attacker: 2, defender: 1 },
+      removal: { count: 2, unit: 'piece' },
       prompt: 'pick pieces',
       outcomeMessage: null,
     })
+  })
+
+  it('counts the pieces of the legal removal, not the hits dealt', () => {
+    const view = buildBattleOverlayViewModel(
+      makeState([makeRemovalBattle({ attacker: 3, defender: 0 })]),
+      null,
+      [makeResolveEventSpec({ pieceIds: ['w-1', 'w-2'] })],
+    )
+    expect(view?.removal).toEqual({ count: 2, unit: 'piece' })
+    // One damage mark per piece removed.
+    expect(view?.hits).toEqual({ attacker: 2, defender: 0 })
+  })
+
+  it('counts the items a Vagabond must damage', () => {
+    const view = buildBattleOverlayViewModel(
+      makeVagabondDefenderState([makeRemovalBattle({ attacker: 3, defender: 0 })]),
+      null,
+      [makeResolveEventSpec({ itemCount: [2] })],
+    )
+    expect(view?.removal).toEqual({ count: 2, unit: 'item' })
+  })
+
+  it('counts the hits a Vagabond takes when no item is left to choose', () => {
+    const view = buildBattleOverlayViewModel(
+      makeVagabondDefenderState([makeRemovalBattle({ attacker: 3, defender: 0 })]),
+      null,
+      [makeResolveEventSpec({ decline: [true] })],
+    )
+    expect(view?.removal).toEqual({ count: 3, unit: 'hit' })
+  })
+
+  it('has no removal outside the removal stages', () => {
+    const view = buildBattleOverlayViewModel(
+      makeState([{ ...makeRemovalBattle({ attacker: 0, defender: 0 }), stage: 'roll' }]),
+    )
+    expect(view?.removal).toBeNull()
   })
 
   it('hides overlay during ambush so banner resolves first', () => {
@@ -217,15 +289,22 @@ describe('finishedBattleOutcomeFromLog', () => {
   const DEFENDER_SEAT = 1
   const BATTLE_CLEARING = 3
 
-  function loggedBattle(rolls: [number, number] | undefined): unknown {
+  type LoggedBattleSeats = { attacker: number; defender: number }
+
+  function loggedBattle(
+    rolls: [number, number] | undefined,
+    seats: LoggedBattleSeats = {
+      attacker: ATTACKER_SEAT,
+      defender: DEFENDER_SEAT,
+    },
+  ): unknown {
     return {
       t: 'event',
       event: {
         type: 'battle',
         clearing: BATTLE_CLEARING,
         stage: 'removeAttacker',
-        attacker: ATTACKER_SEAT,
-        defender: DEFENDER_SEAT,
+        ...seats,
         rolls,
         // Hits are back to zero once the pieces were taken.
         hits: { attacker: 0, defender: 0 },
@@ -257,6 +336,75 @@ describe('finishedBattleOutcomeFromLog', () => {
       rolls: [2, 1],
       hits: { attacker: 2, defender: 1 },
     })
+  })
+
+  function removedPieces(owner: number, count: number): unknown {
+    return {
+      t: 'pieces',
+      clearing: BATTLE_CLEARING,
+      removed: Array.from({ length: count }, (_: undefined, index: number) => ({
+        id: `p-${String(owner)}-${String(index)}`,
+        kind: 'warrior',
+        owner,
+      })),
+    }
+  }
+
+  it('counts the pieces removed between the opening and the roll entry', () => {
+    const outcome = finishedBattleOutcomeFromLog([
+      // An earlier loss in the same clearing is not this battle.
+      removedPieces(DEFENDER_SEAT, 1),
+      loggedBattle(undefined),
+      removedPieces(DEFENDER_SEAT, 2),
+      loggedBattle([3, 0]),
+    ])
+    expect(outcome?.hits).toEqual({ attacker: 2, defender: 0 })
+  })
+
+  it('counts the pieces removed when the opening entry carries the dice', () => {
+    const outcome = finishedBattleOutcomeFromLog([
+      loggedBattle([1, 0]),
+      removedPieces(DEFENDER_SEAT, 1),
+      loggedBattle([1, 0]),
+    ])
+    expect(outcome?.hits).toEqual({ attacker: 1, defender: 0 })
+  })
+
+  it('shows the pieces removed, not the hits dealt, on a tracked battle', () => {
+    const tracked = {
+      clearing: BATTLE_CLEARING,
+      attacker: ATTACKER_SEAT,
+      defender: DEFENDER_SEAT,
+      rolls: [3, 0] as const,
+      hits: { attacker: 3, defender: 0 },
+    }
+    const outcome = finishedOutcomeWithPiecesRemoved(makeState([]), tracked, [
+      loggedBattle(undefined),
+      removedPieces(DEFENDER_SEAT, 2),
+      loggedBattle([3, 0]),
+    ])
+    expect(outcome.hits).toEqual({ attacker: 2, defender: 0 })
+  })
+
+  it('keeps the hits a Vagabond took, as it loses no piece', () => {
+    const tracked = {
+      clearing: BATTLE_CLEARING,
+      attacker: DEFENDER_SEAT,
+      defender: ATTACKER_SEAT,
+      rolls: [3, 0] as const,
+      hits: { attacker: 3, defender: 0 },
+    }
+    const outcome = finishedOutcomeWithPiecesRemoved(
+      makeVagabondDefenderState([]),
+      tracked,
+      [
+        loggedBattle([3, 0], {
+          attacker: DEFENDER_SEAT,
+          defender: ATTACKER_SEAT,
+        }),
+      ],
+    )
+    expect(outcome.hits).toEqual({ attacker: 3, defender: 0 })
   })
 
   it('is null without a rolled battle', () => {

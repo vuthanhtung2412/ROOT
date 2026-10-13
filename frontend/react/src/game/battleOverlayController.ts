@@ -1,4 +1,4 @@
-import type { GameState } from '#api/client.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
 import { logEntriesAddedSince } from '#game/boardEffects.ts'
 import {
   battleResultFlashDurationMs,
@@ -7,6 +7,7 @@ import {
   buildBattleOverlayViewModel,
   buildFinishedBattleOverlayViewModel,
   finishedBattleOutcomeFromLog,
+  finishedOutcomeWithPiecesRemoved,
   hasPendingBattle,
   updateBattleTracker,
   type BattleTrackerState,
@@ -36,6 +37,7 @@ export class BattleOverlayController {
   private resultFlashTimer: { remove: (dispatchCallback?: boolean) => void } | null =
     null
   private onResultFlashEnded: (() => void) | null = null
+  private getLegalActions: () => readonly ActionSpec[] = () => []
   /** Length of the game log at the last sync: later entries are new. */
   private seenLogLength = 0
 
@@ -48,6 +50,11 @@ export class BattleOverlayController {
 
   setOnResultFlashEnded(callback: (() => void) | null): void {
     this.onResultFlashEnded = callback
+  }
+
+  /** Legal answers of the snapshot: they tell how many pieces a side removes. */
+  setLegalActionsSource(getLegalActions: () => readonly ActionSpec[]): void {
+    this.getLegalActions = getLegalActions
   }
 
   isResultFlashActive(): boolean {
@@ -75,10 +82,15 @@ export class BattleOverlayController {
     this.battleTracker = trackerUpdate.tracker
     const log = this.getLog()
     const finishedOutcome =
-      trackerUpdate.finishedOutcome ??
-      (hasPendingBattle(state)
-        ? null
-        : this.finishedOutcomeFromLog(previousTracker, log))
+      trackerUpdate.finishedOutcome !== null
+        ? finishedOutcomeWithPiecesRemoved(
+            state,
+            trackerUpdate.finishedOutcome,
+            log,
+          )
+        : hasPendingBattle(state)
+          ? null
+          : this.finishedOutcomeFromLog(previousTracker, log)
     this.seenLogLength = log.length
     if (finishedOutcome !== null) {
       this.beginResultFlash(finishedOutcome)
@@ -95,7 +107,9 @@ export class BattleOverlayController {
       )
       return
     }
-    overlay?.sync(buildBattleOverlayViewModel(state, prompt))
+    overlay?.sync(
+      buildBattleOverlayViewModel(state, prompt, this.getLegalActions()),
+    )
   }
 
   destroy(): void {

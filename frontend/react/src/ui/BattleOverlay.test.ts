@@ -11,6 +11,7 @@ function makeBattle(overrides: Partial<BattleStrapInput> = {}): BattleStrapInput
     attackerFaction: 'marquise',
     defenderFaction: 'eyrie',
     hits: { attacker: 2, defender: 1 },
+    removal: { count: 2, unit: 'piece' },
     ...overrides,
   }
 }
@@ -32,12 +33,41 @@ describe('battleStrapText', () => {
   })
 
   it('tells the attacker to remove the hits the defender dealt', () => {
-    expect(battleStrapText(makeBattle({ stage: 'removeAttacker' }))).toBe(
-      'marquise — remove 1 piece',
-    )
+    expect(
+      battleStrapText(
+        makeBattle({
+          stage: 'removeAttacker',
+          removal: { count: 1, unit: 'piece' },
+        }),
+      ),
+    ).toBe('marquise — remove 1 piece')
+  })
+
+  it('tells a Vagabond to damage items instead of removing pieces', () => {
+    expect(
+      battleStrapText(
+        makeBattle({
+          defenderFaction: 'vagabond',
+          removal: { count: 2, unit: 'item' },
+        }),
+      ),
+    ).toBe('vagabond — damage 2 items')
+  })
+
+  it('tells a Vagabond the hits taken when no item count is known', () => {
+    expect(
+      battleStrapText(
+        makeBattle({
+          defenderFaction: 'vagabond',
+          removal: { count: 3, unit: 'hit' },
+        }),
+      ),
+    ).toBe('vagabond — take 3 hits')
   })
 
   it('falls back to the stage label outside removal', () => {
-    expect(battleStrapText(makeBattle({ stage: 'roll' }))).toBe('Rolling…')
+    expect(battleStrapText(makeBattle({ stage: 'roll', removal: null }))).toBe(
+      'Rolling…',
+    )
   })
 })

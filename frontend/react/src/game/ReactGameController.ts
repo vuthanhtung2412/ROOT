@@ -274,6 +274,9 @@ export class ReactGameController {
       () => this.latestSnapshot?.state,
       () => this.latestSnapshot?.log ?? [],
     )
+    this.battleOverlayController.setLegalActionsSource(
+      () => this.latestSnapshot?.legalActions ?? [],
+    )
     this.battleOverlayController.setOnResultFlashEnded(() => {
       const snapshot = this.latestSnapshot
       if (snapshot === null || snapshot.state === null) {

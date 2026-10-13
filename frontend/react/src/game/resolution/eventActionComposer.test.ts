@@ -216,6 +216,9 @@ describe('eventActionComposer battle', () => {
       },
     ])
     expect(mid.kind).toBe('incomplete')
+    expect(mid.kind === 'incomplete' ? mid.prompt.message : null).toBe(
+      'Remove hits — choose 1 piece',
+    )
     expect(events.getOptionPresentation()).toBe('stepper')
     expect(composer.chooseColumn('1')).toEqual({
       kind: 'ready',

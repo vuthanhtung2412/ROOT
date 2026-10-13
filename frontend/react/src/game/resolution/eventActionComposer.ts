@@ -14,6 +14,7 @@ import {
   type VagabondItemChoiceView,
 } from '#game/resolution/ActionComposer.ts'
 import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
+import { countedNounText } from '#ui/BattleOverlay.ts'
 import type { TurnBannerOption } from '#ui/TurnBanner.ts'
 
 export {
@@ -25,6 +26,8 @@ export {
 
 const FIELD_HOSPITAL_DECLINE_VALUE = 'decline'
 const SELECTED_OPTION_PREFIX = '✓ '
+const REMOVED_PIECE_NOUN = 'piece'
+const PICKED_ITEM_NOUN = 'item'
 
 /**
  * `damage`: hits / full removal. `remove`: evening item limit (9.6.4).
@@ -67,9 +70,8 @@ function formatItemDamageMessage(
   count: number,
   selectedCount: number,
 ): string {
-  const noun = count === 1 ? 'item' : 'items'
   const verb = ITEM_PICK_VERBS[purpose]
-  const base = `Vagabond — choose ${String(count)} ${noun} ${verb}`
+  const base = `Vagabond — choose ${countedNounText(count, PICKED_ITEM_NOUN)} ${verb}`
   if (selectedCount === count) {
     return `${base} — Confirm when ready`
   }
@@ -195,10 +197,12 @@ export function createEventComposerHooks(): {
       label: choice.label,
       value: choice.value,
     }))
+    // Every legal removal takes the same number of pieces.
+    const removedPieceCount: number = choices[0]?.pieceIds.length ?? 0
     return {
       kind: 'incomplete',
       prompt: {
-        message: 'Remove hits — choose pieces',
+        message: `Remove hits — choose ${countedNounText(removedPieceCount, REMOVED_PIECE_NOUN)}`,
         highlightClearings: [],
         enabledCardIds: null,
         canConfirm: false,

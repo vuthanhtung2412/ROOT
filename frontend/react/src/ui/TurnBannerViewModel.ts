@@ -1,5 +1,7 @@
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { CHOOSE_CHARACTER_PROMPT } from '#assets/vagabondBoardCatalog.ts'
+import { pendingBattleRemoval } from '#game/battleOverlayModel.ts'
+import { battleRemovalText, type BattleRemoval } from '#ui/BattleOverlay.ts'
 import { expansionPendingPrompt } from '#game/expansionPendingPrompts.ts'
 import {
   isChooseCharacterPendingEvent,
@@ -32,7 +34,14 @@ export function buildTurnBannerViewModel(
   const actorSeat = pendingActor ?? state.currentSeat
   const actorPlayer = state.players.find((player) => player.seat === actorSeat)
   const actorFaction = actorPlayer?.faction ?? state.factions[actorSeat] ?? '?'
-  const prompt = buildPrompt(state, actorSeat, pendingActor !== null)
+  const battleRemoval: BattleRemoval | null = pendingBattleRemoval(
+    state,
+    legalActions,
+  )
+  const prompt =
+    battleRemoval === null
+      ? buildPrompt(state, actorSeat, pendingActor !== null)
+      : `${BATTLE_PROMPT_PREFIX}${battleRemovalText(battleRemoval)}`
 
   return {
     actorSeat,
@@ -139,6 +148,8 @@ function buildPrompt(
   }
   return 'Daylight actions'
 }
+
+const BATTLE_PROMPT_PREFIX = 'Battle — '
 
 const BATTLE_STAGE_PROMPTS: Record<BattleStage, string> = {
   ambush: 'Battle — play Ambush or skip',

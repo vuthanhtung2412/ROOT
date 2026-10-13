@@ -1,5 +1,11 @@
-import type { GameState } from '#api/client.ts'
-import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
+import type { ActionSpec, GameState } from '#api/client.ts'
+import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
+import {
+  battleRoleRemovingPieces,
+  type BattleOverlayViewModel,
+  type BattleRemoval,
+  type BattleRole,
+} from '#ui/BattleOverlay.ts'
 
 export const ZERO_HIT_BATTLE_MESSAGE = 'Battle over — no hits'
 export const BATTLE_OVER_MESSAGE = 'Battle over'
@@ -47,6 +53,7 @@ const BATTLE_OVERLAY_HIDDEN_STAGES = new Set(['ambush', 'foil'])
 export function buildBattleOverlayViewModel(
   state: GameState,
   prompt: string | null = null,
+  legalActions: readonly ActionSpec[] = [],
 ): BattleOverlayViewModel | null {
   const battle = readBattlePending(state.pending[0])
   if (battle === null) {
@@ -55,13 +62,19 @@ export function buildBattleOverlayViewModel(
   if (BATTLE_OVERLAY_HIDDEN_STAGES.has(battle.stage)) {
     return null
   }
+  const removal: BattleRemoval | null = battleRemovalOf(
+    state,
+    battle,
+    legalActions,
+  )
   return {
+    removal,
     clearing: battle.clearing,
     stage: battle.stage,
     attackerFaction: factionLabel(state, battle.attacker),
     defenderFaction: factionLabel(state, battle.defender),
     rolls: battle.rolls,
-    hits: battle.hits,
+    hits: hitsCostingPieces(battle, removal),
     prompt,
     outcomeMessage: null,
   }
@@ -80,9 +93,92 @@ export function buildFinishedBattleOverlayViewModel(
     defenderFaction: factionLabel(state, outcome.defender),
     rolls: outcome.rolls,
     hits: outcome.hits,
+    removal: null,
     prompt: null,
     outcomeMessage: zeroHits ? ZERO_HIT_BATTLE_MESSAGE : BATTLE_OVER_MESSAGE,
   }
+}
+
+const RESOLVE_EVENT_ACTION_TYPE = 'resolveEvent'
+const VAGABOND_FACTION = 'vagabond'
+
+/**
+ * What the game asks of the side taking hits, read from its legal answers:
+ * the pieces of one removal, or the Vagabond items to damage.
+ */
+function readLegalBattleRemoval(
+  legalActions: readonly ActionSpec[],
+): BattleRemoval | null {
+  for (const spec of legalActions) {
+    if (spec.type !== RESOLVE_EVENT_ACTION_TYPE) {
+      continue
+    }
+    const params = readChoiceParams(spec)
+    const itemCount: number | undefined = params.itemCount?.[0]
+    if (itemCount !== undefined) {
+      return { count: itemCount, unit: 'item' }
+    }
+    if (params.pieceIds !== undefined) {
+      return { count: params.pieceIds.length, unit: 'piece' }
+    }
+  }
+  return null
+}
+
+/**
+ * What the side taking hits loses; null outside the removal stages.
+ * Rule: 4.3.4 — hits past the pieces in the clearing are lost, so the legal
+ * removal is the count, not the hits. Hits stand in when no answer is known.
+ * Rule: 9.2.6 — the Vagabond damages items instead of removing pieces.
+ */
+function battleRemovalOf(
+  state: GameState,
+  battle: BattlePending,
+  legalActions: readonly ActionSpec[],
+): BattleRemoval | null {
+  const removingRole: BattleRole | null = battleRoleRemovingPieces(battle.stage)
+  if (removingRole === null) {
+    return null
+  }
+  const isDefenderRemoving: boolean = removingRole === 'defender'
+  const victim: number = isDefenderRemoving ? battle.defender : battle.attacker
+  const hits: number = isDefenderRemoving
+    ? battle.hits.attacker
+    : battle.hits.defender
+  const legalRemoval: BattleRemoval | null = readLegalBattleRemoval(legalActions)
+  if (isVagabondSeat(state, victim)) {
+    return legalRemoval?.unit === 'item'
+      ? legalRemoval
+      : { count: hits, unit: 'hit' }
+  }
+  return legalRemoval?.unit === 'piece'
+    ? legalRemoval
+    : { count: hits, unit: 'piece' }
+}
+
+/**
+ * Hits as the damage marks show them: the side removing pieces now takes as
+ * many as it removes, not the hits dealt.
+ */
+function hitsCostingPieces(
+  battle: BattlePending,
+  removal: BattleRemoval | null,
+): BattlePending['hits'] {
+  if (removal === null || removal.unit !== 'piece') {
+    return battle.hits
+  }
+  return battleRoleRemovingPieces(battle.stage) === 'defender'
+    ? { ...battle.hits, attacker: removal.count }
+    : { ...battle.hits, defender: removal.count }
+}
+
+/** What the side taking hits loses in the battle on top of the queue. */
+export function pendingBattleRemoval(
+  state: GameState,
+  legalActions: readonly ActionSpec[],
+): BattleRemoval | null {
+  const battle = readBattlePending(state.pending[0])
+  return battle === null ? null : battleRemovalOf(state, battle, legalActions)
 }
 
 /** The two sides of a battle, worn by its clearing for as long as it lasts. */
@@ -224,6 +320,54 @@ function removedPieceCount(
 }
 
 /**
+ * Where the battle rolled at `rolledIndex` opened: the entry of the same
+ * battle before it. Without one in these entries, the rolled entry itself.
+ */
+function battleOpenedIndex(
+  entries: readonly unknown[],
+  rolledIndex: number,
+  battle: BattlePending,
+): number {
+  for (let index = rolledIndex - 1; index >= 0; index -= 1) {
+    const earlier = readLoggedBattle(entries[index])
+    if (earlier === null) {
+      continue
+    }
+    // The nearest earlier battle entry: this battle opening, or another one.
+    // The opening carries the dice too once the battle rolled.
+    return isSameBattle(earlier, battle) ? index : rolledIndex
+  }
+  return rolledIndex
+}
+
+/**
+ * The outcome with the pieces each side lost for hits, so the result shows
+ * what left the map (Rule: 4.3.4 — hits past the pieces there are lost).
+ * Rule: 9.2.6 — a Vagabond loses no piece: the hits it took stand.
+ */
+export function finishedOutcomeWithPiecesRemoved(
+  state: GameState,
+  outcome: FinishedBattleOutcome,
+  entries: readonly unknown[],
+): FinishedBattleOutcome {
+  const logged = finishedBattleOutcomeFromLog(entries)
+  if (logged === null || !isSameBattle(logged, outcome)) {
+    return outcome
+  }
+  return {
+    ...outcome,
+    hits: {
+      attacker: isVagabondSeat(state, outcome.defender)
+        ? outcome.hits.attacker
+        : logged.hits.attacker,
+      defender: isVagabondSeat(state, outcome.attacker)
+        ? outcome.hits.defender
+        : logged.hits.defender,
+    },
+  }
+}
+
+/**
  * Result of the last rolled battle the log entries tell; null without one.
  * A battle nobody had to answer (no ambush, no piece to choose) opens and
  * ends inside one server update: it is never pending here, only logged.
@@ -237,9 +381,10 @@ export function finishedBattleOutcomeFromLog(
     if (battle === null || battle.rolls === null) {
       continue
     }
-    const later = entries.slice(index + 1)
+    // The pieces a battle removes are logged before its last roll entry.
+    const sinceOpened = entries.slice(battleOpenedIndex(entries, index, battle))
     const removedOf = (owner: number): number =>
-      later.reduce(
+      sinceOpened.reduce(
         (count: number, entry: unknown): number =>
           count + removedPieceCount(entry, battle.clearing, owner),
         0,
@@ -256,6 +401,18 @@ export function finishedBattleOutcomeFromLog(
     }
   }
   return null
+}
+
+function isSameBattle(left: BattleSides, right: BattleSides): boolean {
+  return (
+    left.clearing === right.clearing &&
+    left.attacker === right.attacker &&
+    left.defender === right.defender
+  )
+}
+
+function isVagabondSeat(state: GameState, seat: number): boolean {
+  return factionLabel(state, seat) === VAGABOND_FACTION
 }
 
 function factionLabel(state: GameState, seat: number): string {
