@@ -1,3 +1,4 @@
+import { swaggerUI } from '@hono/swagger-ui'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { compress } from 'hono/compress'
 import { LIB_NAME, LIB_VERSION } from '@root/lib'
@@ -7,6 +8,11 @@ import { aiPlayerRoutes } from '#routes/aiPlayer.js'
 import { gameRoutes } from '#routes/game.js'
 import { mapRoutes } from '#routes/map.js'
 import { rulesRoutes } from '#routes/rules.js'
+import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
+
+const OPEN_API_DOCUMENT_PATH = '/doc'
+const SWAGGER_UI_PATH = '/ui'
+const PLAYER_ID_SECURITY_SCHEME = 'playerId'
 
 const openApiInfo = {
   openapi: '3.0.0' as const,
@@ -15,6 +21,8 @@ const openApiInfo = {
     version: '0.0.1',
     description: 'Single-slot Root GP2 HTTP API (Marquise vs Eyrie)',
   },
+  // Lets the Swagger UI "Authorize" button send the caller's player id.
+  security: [{ [PLAYER_ID_SECURITY_SCHEME]: [] }],
 }
 
 export const app = new OpenAPIHono()
@@ -63,7 +71,14 @@ app.route('/game', aiPlayerRoutes)
 app.route('/game', rulesRoutes)
 app.route('/map', mapRoutes)
 
-app.doc('/doc', openApiInfo)
+app.openAPIRegistry.registerComponent(
+  'securitySchemes',
+  PLAYER_ID_SECURITY_SCHEME,
+  { type: 'apiKey', in: 'header', name: PLAYER_ID_HEADER },
+)
+
+app.doc(OPEN_API_DOCUMENT_PATH, openApiInfo)
+app.get(SWAGGER_UI_PATH, swaggerUI({ url: OPEN_API_DOCUMENT_PATH }))
 
 /** Dump OpenAPI JSON for `pnpm gen:openapi` / client codegen. */
 export function getOpenApiDocument(): ReturnType<typeof app.getOpenAPIDocument> {

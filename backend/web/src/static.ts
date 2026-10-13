@@ -43,7 +43,7 @@ function applyStaticCacheHeaders(filePath: string, context: Context): void {
 
 /**
  * Serve built React UI assets from `public/` when present.
- * Mount after API routes so `/game`, `/map`, `/doc`, `/health`, `/ws` win.
+ * Mount after API routes so `/game`, `/map`, `/doc`, `/ui`, `/health`, `/ws` win.
  */
 export function mountReactStatic(app: OpenAPIHono): void {
   if (!existsSync(reactPublicDirectory)) {
