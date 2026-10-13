@@ -24,7 +24,7 @@ const SEAT_TILT_CLASS_NAMES: readonly string[] = [
 const SEAT_TILE_CLASS_NAME =
   'root-paper relative box-border flex size-32 items-center justify-center p-1.5 [--root-paper-color:currentColor] md:size-50 md:p-2'
 /** The seat the faction dock is acting for. */
-const SEAT_TILE_SELECTED_CLASS_NAME = 'scale-105 shadow-gold-ring'
+const SEAT_TILE_SELECTED_CLASS_NAME = 'scale-105 shadow-gold-ring-wide'
 const SEAT_TILE_BUTTON_CLASS_NAME =
   'm-0 box-border flex size-full cursor-root-pointer flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-0 font-display text-[17px] text-ink md:text-xl'
 const SEAT_PORTRAIT_CLASS_NAME = 'block size-full object-cover select-none'
