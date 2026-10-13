@@ -71,11 +71,32 @@ describe('lookUpCardDetails', () => {
           missing: ['fox', 'fox'],
           yourCraftingPieces: { fox: 0, rabbit: 0, mouse: 0 },
         },
+        usesInHand: [
+          'craft: pay the cost with your crafting pieces for its effect',
+          'overwork: spend to place 1 wood at a sawmill in a mouse clearing',
+          'discard: at Evening when your hand is over the limit',
+        ],
         legalUsesNow: [],
       },
       expect.objectContaining({ cardId: AMBUSH_CARD.id, type: 'ambush' }),
     ])
     expect(lookup?.cards[1]).not.toHaveProperty('craft')
+  })
+
+  it('Rule: 7.4.2 / 4.3.1 — uses in hand follow the faction and the card', () => {
+    const game = createGameWithHands()
+    const eyrie = game.state.players[1]
+    if (eyrie === undefined) throw new Error('fixture: the Eyrie seat is missing')
+    eyrie.hand = [AMBUSH_CARD]
+
+    const lookup = lookUpCardDetails(game, SECOND_TEST_PLAYER_ID, [])
+
+    expect(lookup?.cards[0]?.usesInHand).toEqual([
+      'ambush: as defender in a battle in any clearing (bird is wild), play to deal 2 hits before the roll',
+      'ambush: as attacker, play a matching ambush to cancel the one of the defender',
+      'addToDecree: in any column; it then resolves every turn in any clearing (bird is wild)',
+      'discard: at Evening when your hand is over the limit',
+    ])
   })
 
   it('counts the unused crafting pieces toward the cost', () => {

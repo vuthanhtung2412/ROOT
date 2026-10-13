@@ -12,6 +12,7 @@ import {
   type PlayerState,
   type Suit,
 } from '@root/lib'
+import { describeUsesInHand } from '#aiPlayer/aiPlayerCardUses.js'
 import { listPlayerLegalActions } from '#view/playerView.js'
 import {
   HIDDEN_CARD_DEFINITION_ID,
@@ -62,6 +63,8 @@ export type CardDetail = {
   type: string
   description: string
   craft?: CardCraftDetail
+  /** What your faction can do with the card from hand, whatever the phase. */
+  usesInHand: string[]
   /** Action types that may take this card right now. */
   legalUsesNow: string[]
 }
@@ -175,6 +178,7 @@ function describeCard(context: CardDetailContext, card: Card): CardDetail {
     ...(CRAFTABLE_CARD_TYPES.includes(definition.type)
       ? { craft: describeCraft(context, card, legalUsesNow) }
       : {}),
+    usesInHand: describeUsesInHand(context.viewer.faction, definition),
     legalUsesNow,
   }
 }
