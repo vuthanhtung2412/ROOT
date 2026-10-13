@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Action, Game, PlayerState } from '@root/lib'
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
+import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import {
   listOfferedModels,
   resolveDefaultModel,
@@ -171,6 +172,30 @@ aiPlayerRoutes.openapi(setAiPlayerModelRoute, async (context) => {
       aiSeat.playerId === playerId ? { ...aiSeat, model } : aiSeat,
   )
   publishGameChange()
+  return context.json({ aiPlayers: listAiPlayerViews() }, 200)
+})
+
+const restartAiPlayerRoute = createRoute({
+  method: 'post',
+  path: '/ai-players/{seat}/restart',
+  tags: ['ai-player'],
+  summary: 'Restart the session of an AI player',
+  description:
+    'Drops what the AI player was doing (thinking or stuck) and starts a fresh session from the current game state. Actions it already took stay. Operator tool: no seat check.',
+  request: { params: AiPlayerSeatParamsSchema },
+  responses: {
+    200: {
+      description: 'Session restarted',
+      content: { 'application/json': { schema: AiPlayersResponseSchema } },
+    },
+    ...errorResponses,
+  },
+})
+
+aiPlayerRoutes.openapi(restartAiPlayerRoute, (context) => {
+  const seat = context.req.valid('param').seat
+  requireAiPlayerId(requireGame(), seat)
+  aiPlayerDriver.restart(seat)
   return context.json({ aiPlayers: listAiPlayerViews() }, 200)
 })
 

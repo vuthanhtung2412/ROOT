@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import { app } from '#openapi.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
 import { snapshotGamePushForViewer } from '#ws/GameHub.js'
@@ -171,6 +172,29 @@ describe('AI player routes', () => {
       jsonRequest('POST', {}, HOST_PLAYER_ID),
     )
     expect(byHost.status).toBe(201)
+  })
+
+  it('restarts the session of an AI seat for any caller, 404 for a human seat', async () => {
+    const restart = vi.spyOn(aiPlayerDriver, 'restart').mockReturnValue(true)
+    await createLobby({ factions: ['marquise', 'eyrie'], mode: 'online' })
+    await app.request('/game/join', jsonRequest('POST', { playerId: HOST_PLAYER_ID }))
+    await app.request('/game/ai-players', jsonRequest('POST', {}, HOST_PLAYER_ID))
+
+    const humanSeat = await app.request('/game/ai-players/0/restart', {
+      method: 'POST',
+    })
+    expect(humanSeat.status).toBe(404)
+    expect(restart).not.toHaveBeenCalled()
+
+    const aiSeat = await app.request('/game/ai-players/1/restart', {
+      method: 'POST',
+    })
+    expect(aiSeat.status).toBe(200)
+    expect(await aiSeat.json()).toEqual({
+      aiPlayers: [{ seat: 1, model: DEFAULT_MODEL, status: 'idle' }],
+    })
+    expect(restart).toHaveBeenCalledWith(1)
+    restart.mockRestore()
   })
 
   it('never sends an API key or an AI join id to a client', async () => {
