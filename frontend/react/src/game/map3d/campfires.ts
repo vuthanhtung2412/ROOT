@@ -285,6 +285,9 @@ export function createCampfires(input: CampfiresInput): Campfires {
           burnLevel * (1 + flicker),
           burnLevel,
         )
+        // A light that is out is still worked out for every pixel it could
+        // reach: take it out of the scene until the fire burns.
+        campfire.light.visible = burnLevel > BURN_LEVEL_HIDDEN_BELOW
         campfire.light.intensity =
           FIRELIGHT_INTENSITY *
           burnLevel *
