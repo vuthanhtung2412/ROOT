@@ -610,6 +610,61 @@ describe('GameSession', () => {
     expect(session.getSnapshot().legalActions).toHaveLength(1)
   })
 
+  it('submitAction keeps the legal actions of a push that lands before its response', async () => {
+    const state = makeGameState({ currentSeat: 0 })
+    const fetchMock = stubFetchSequence([
+      { body: { state }, status: 201 },
+      { body: { state, log: [] } },
+    ])
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ socket })
+    await session.joinMatch()
+    socket.push({
+      state,
+      historyLength: 2,
+      legalActions: [makeActionSpec()],
+      log: [],
+    })
+    fetchMock.mockImplementationOnce(() => {
+      socket.push({
+        state,
+        historyLength: 3,
+        legalActions: [makeActionSpec(), makeActionSpec()],
+        log: [],
+      })
+      return Promise.resolve(makeFetchResponse({ state, log: [] }))
+    })
+
+    await session.submitAction({ type: 'march' })
+
+    expect(session.getSnapshot().legalActions).toHaveLength(2)
+  })
+
+  it('submitAction keeps the legal actions when the action is rejected', async () => {
+    const state = makeGameState({ currentSeat: 0 })
+    const fetchMock = stubFetchSequence([
+      { body: { state }, status: 201 },
+      { body: { state, log: [] } },
+    ])
+    const socket: SocketController = { push: () => undefined }
+    const session = createSession({ socket })
+    await session.joinMatch()
+    socket.push({
+      state,
+      historyLength: 2,
+      legalActions: [makeActionSpec()],
+      log: [],
+    })
+    fetchMock.mockResolvedValueOnce(
+      makeFetchResponse({ code: 'ILLEGAL_ACTION', detail: null }, 400),
+    )
+
+    await session.submitAction({ type: 'march' })
+
+    expect(session.getSnapshot().error).not.toBeNull()
+    expect(session.getSnapshot().legalActions).toHaveLength(1)
+  })
+
   it('restart clears snapshot and identity', async () => {
     const storage = createMemoryStorage()
     storage.setItem(

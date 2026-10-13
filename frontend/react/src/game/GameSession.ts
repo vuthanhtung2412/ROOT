@@ -652,19 +652,29 @@ export class GameSession {
       this.setError('Not your seat')
       return
     }
-    this.setLoading(true)
+    // Once the action goes through, the legal actions held here are those of
+    // the state before it: offer none until the new state is pushed, or a
+    // click in between sends an action that is no longer legal. Emptied before
+    // the request, as the push of the new state can land before its response.
+    const legalActionsBeforeSubmit: ActionSpec[] = this.snapshot.legalActions
+    const noLegalActions: ActionSpec[] = []
+    this.publish({
+      ...this.snapshot,
+      legalActions: noLegalActions,
+      loading: true,
+      error: null,
+    })
     try {
       await this.api.submitAction(action)
-      // The action went through, so the legal actions held here are those of
-      // the state before it: offer none until the new state is pushed, or a
-      // click in between sends an action that is no longer legal.
-      this.publish({
-        ...this.snapshot,
-        legalActions: [],
-        loading: false,
-        error: null,
-      })
+      this.publish({ ...this.snapshot, loading: false, error: null })
     } catch (error: unknown) {
+      // Rejected action: the state did not change, its legal actions still hold.
+      if (this.snapshot.legalActions === noLegalActions) {
+        this.publish({
+          ...this.snapshot,
+          legalActions: legalActionsBeforeSubmit,
+        })
+      }
       this.setError(errorMessage(error))
     }
   }
