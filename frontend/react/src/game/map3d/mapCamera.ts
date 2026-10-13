@@ -17,6 +17,12 @@ export type MapViewPose = {
   target: MapGroundPoint
 }
 
+export type MapCameraOpening = {
+  frame: MapViewFrame
+  /** Start higher up and glide into the home view; else start in it. */
+  opensFromAfar: boolean
+}
+
 export type MapCameraRig = {
   camera: PerspectiveCamera
   controls: OrbitControls
@@ -69,8 +75,9 @@ export function createMapCameraRig(
   /** Listens for wheel and drag: the map and everything laid over it. */
   controlElement: HTMLElement,
   worldSize: MapWorldSize,
-  initialFrame: MapViewFrame,
+  opening: MapCameraOpening,
 ): MapCameraRig {
+  const initialFrame: MapViewFrame = opening.frame
   const camera: PerspectiveCamera = new PerspectiveCamera(
     FIELD_OF_VIEW_DEGREES,
     initialFrame.view.width / initialFrame.view.height,
@@ -203,13 +210,18 @@ export function createMapCameraRig(
   }
 
   resize(initialFrame)
-  controls.maxDistance = Number.POSITIVE_INFINITY
-  applyPose({
-    ...homePose(),
-    distance: homeDistance() * OPENING_DISTANCE_RATIO,
-  })
-  controls.update()
-  glide = { from: currentPose(), to: homePose(), elapsed: 0 }
+  if (opening.opensFromAfar) {
+    controls.maxDistance = Number.POSITIVE_INFINITY
+    applyPose({
+      ...homePose(),
+      distance: homeDistance() * OPENING_DISTANCE_RATIO,
+    })
+    controls.update()
+    glide = { from: currentPose(), to: homePose(), elapsed: 0 }
+  } else {
+    applyPose(homePose())
+    controls.update()
+  }
 
   return {
     camera,

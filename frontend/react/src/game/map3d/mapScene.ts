@@ -55,6 +55,8 @@ export type MapSceneInput = {
   terrain: MapTerrain
   frame: MapViewFrame
   timeOfDay: TimeOfDay
+  /** The camera starts higher up and settles into the home view. */
+  opensFromAfar: boolean
   forests: readonly ForestGround[]
   /** Each clearing with the ground its campfire must keep away from. */
   campfireSites: readonly CampfireSite[]
@@ -151,7 +153,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
   const cameraRig: MapCameraRig = createMapCameraRig(
     input.controlElement,
     input.terrain.worldSize,
-    input.frame,
+    { frame: input.frame, opensFromAfar: input.opensFromAfar },
   )
   /**
    * A material is built into a shader the first time it is drawn, and again
@@ -160,13 +162,17 @@ export function createMapScene(input: MapSceneInput): MapScene {
    * in the background where the browser can.
    */
   const warmUpShaders = (): void => {
+    const firelights: PointLight[] = []
+    campfires.group.traverse((part: Object3D): void => {
+      if (part instanceof PointLight) {
+        firelights.push(part)
+      }
+    })
     for (const firesLit of [true, false]) {
-      campfires.group.traverse((part: Object3D): void => {
-        if (part instanceof PointLight) {
-          // Put back by the fires themselves on their next frame.
-          part.visible = firesLit
-        }
-      })
+      for (const firelight of firelights) {
+        // Put back by the fires themselves on their next frame.
+        firelight.visible = firesLit
+      }
       void renderer.compileAsync(scene, cameraRig.camera)
     }
   }

@@ -29,6 +29,7 @@ import {
   type NormalizedMapPoint,
 } from '#game/map3d/mapWorldSpace.ts'
 import { occupiedGroundsOfClearing } from '#react/map3d/mapPieces.ts'
+import { useSettledValue } from '#react/map3d/useSettledValue.ts'
 import { fallForestLayouts, type FallForestLayout } from '@root/lib/fall-metadata'
 
 export type MapSceneHandle = {
@@ -41,6 +42,8 @@ export type MapSceneHandle = {
 
 /** Digits kept of "how much larger than its focus is the view". */
 const COVER_RATIO_DIGITS = 1
+/** The view must keep its shape this long before the woodland is rebuilt. */
+const TERRAIN_SETTLE_MILLISECONDS = 250
 
 const SUIT_TEXTURE_KEY_BY_SUIT: Readonly<Record<ClearingSuit, string>> = {
   fox: GAME_ASSET_KEYS.suitFox,
@@ -110,16 +113,22 @@ export function useMapScene(
     (frame.view.width / frame.focus.width).toFixed(COVER_RATIO_DIGITS),
     (frame.view.height / frame.focus.height).toFixed(COVER_RATIO_DIGITS),
   ].join(':')
+  // Rebuilding the woodland stalls the page: wait for the resize to end.
+  const settledTerrainShape: string = useSettledValue(
+    terrainShape,
+    TERRAIN_SETTLE_MILLISECONDS,
+  )
   const terrain: MapTerrain = useMemo(
     () => createMapTerrain(layout, frame),
     // `frame` is read when the shape it rounds to changes, not on each pixel.
-    [layout, terrainShape],
+    [layout, settledTerrainShape],
   )
   const forestGrounds: ForestGround[] = useMemo(
     () => forestGroundsForWorld(terrain.worldSize),
     [terrain],
   )
   const initialTimeOfDay = useRef<TimeOfDay>(timeOfDay)
+  const firstTerrain = useRef<MapTerrain>(terrain)
 
   useEffect(() => {
     const canvas: HTMLCanvasElement | null = canvasReference.current
@@ -133,6 +142,8 @@ export function useMapScene(
       terrain,
       frame,
       timeOfDay: initialTimeOfDay.current,
+      // Only the first woodland of the map: a rebuilt one is just there again.
+      opensFromAfar: terrain === firstTerrain.current,
       forests: forestGrounds,
       campfireSites: terrain.clearings.map(
         (clearing: ClearingGround): CampfireSite => ({
