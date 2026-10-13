@@ -22,7 +22,19 @@
   | `actions` | `actions` | legal actions where `actor` is this seat |
   | `log` | `log` | recent log, redacted (`redactLogForViewer`) |
   | `rules` | `rules <query \| sectionNumber>` | matching sections of `Law_of_Root.md` (split by numbered heading, loaded once) |
-  | `act` | `act '<json>'` | applies the action; a rule error comes back as a tool error so the model can correct itself |
+  | `act` | `act '<json>'` | applies the action and answers with what it caused, the phase and the next legal actions (no `actions` call needed after it); a rule error comes back as a tool error so the model can correct itself |
+  | `card` | `card [cardId ...]` | cards in full: text, craft cost, `craftableNow`, `missing` cost suits, uses in hand; no id = own hand |
+  | `clearing` | `clearing <id>` | one clearing: pieces per faction, ruler, slots, neighbors, can the seat move out or build and why not |
+  | `score` | `score` | standings: points, pieces on the map, own supply, points sure on the next turn |
+  | `decree` | `decree ['<json adding>']` | Eyrie: which Decree cards resolve and where, turmoil risks, hand cards tried before `addToDecree` |
+  | `workshops` | `workshops` | Marquise: wood in reach, cost and points of each next building, where it can be built |
+  | `sympathy` | `sympathy` | Alliance: cost of the next token, spread and revolt targets, whether the supporters pay |
+  | `preview` | `preview '<json>'` | dry run of an action on a copy of the game: legal or not, what it would cause; applies nothing |
+
+  - Every legal action carries a `shape`: the exact fields `act` takes (params are lists such as `cardIds`, the action often takes one `cardId`).
+  - The log a player reads is in plain words (factions by name, who gained or lost what). The engine log keeps its short voice.
+  - `preview` never tells the future: an outcome that used dice or face-down cards is withheld, and a battle answers only with the warriors of both sides, the same whether or not the defender holds an ambush card.
+  - The read-only tools are served to `root-cli` by one route: `POST /game/player-tools/{tool}`.
 
 - **Forced redaction**: a `root-cli --player-id <id>` call is always redacted and seat-checked, in hotseat too. Done with a `view=player` query on `GET /game`, `GET /game/actions`, `GET /game/log`, `POST /game/actions` (plain hotseat calls from the UI stay unchanged). The in-server tools use the same handlers.
 - **Session = one AI turn** (whole turn, not a phase):
@@ -114,3 +126,37 @@
   - seat badge component, `frontend/react/src/game/hudStore.ts`
 - `docs: AI player env vars and usage`
   - `README.md`
+
+### Follow-up: tools that make the AI player play better
+Why: in the first AI games the model called `actions` after every `act`, guessed craft costs, worked out turmoil by hand and read the drawn map wrong.
+
+- Rule kept everywhere: a tool answers only with what its seat may see at the table. Hands of others are counted, never read.
+- Lib gains read-only queries the tools sit on (`Game.forecastDecree`, `Game.forecastMarquise`, `Game.forecastSympathy`, `Game.rulerOf`, `describeActionShape`, `unusedCraftingSuits`). No rule changed.
+- Not simulated: the moves and battles a player will choose this turn. `decree` counts only the warriors the recruit column can add first; `workshops` and `sympathy` count what the seat holds now.
+
+Commits:
+- `feat(ai-player): act result carries the next legal actions`
+- `feat(lib): query the suits of the unused crafting pieces of a seat`
+- `feat(ai-player): card tool shows cost, text and whether a card is craftable now`
+- `feat(ai-player): preview tool dry-runs an action on a copy of the game`
+- `feat(lib): forecast which Eyrie Decree cards can resolve on the current map`
+- `feat(ai-player): decree tool says which Decree cards resolve and what causes turmoil`
+- `feat(lib): describe the fields an action type takes`
+- `feat(ai-player): each legal action carries the exact shape act takes`
+- `feat(lib): Game.rulerOf answers who rules a clearing`
+- `feat(ai-player): clearing tool describes one clearing without the drawn map`
+- `feat(ai-player): score tool shows the standings and the sure points next Evening`
+- `fix(lib): hand detail is an option of the game view, on for the player view only`
+- `feat(web): player log speaks in plain words`
+- `fix(ai-player): shape of a pending-event answer lists only the fields on offer`
+- `feat(ai-player): card tool lists what the faction can do with a card in hand`
+- `feat(ai-player): clearing tool says whether the seat can move out or build, and why not`
+- `feat(lib): forecast the Marquise build economy and the Alliance sympathy targets`
+- `feat(ai-player): workshops tool for the Marquise, sympathy tool for the Alliance`
+- `feat(ai-player): score tool counts the sure Riverfolk dividends too`
+- `feat(web): route runs the read-only player tools for the caller's seat`
+- `feat(web-client): regenerate client with the player tools route`
+- `feat(cli): card, clearing, score, workshops, sympathy, decree and preview commands`
+- `test(react): auto-prompt tests stub the window the controller reads`
+- `feat(lib): Decree forecast counts the warriors the recruit column adds first`
+- `feat(ai-player): decree tool sets apart cards that resolve only after a recruit`

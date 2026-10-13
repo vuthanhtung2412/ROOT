@@ -120,7 +120,7 @@ Server env (`backend/web`):
 A model whose provider has no key is not offered.
 
 - **Add one**: host's online lobby → *Add an AI player* (faction + model), or `POST /game/ai-players` `{ "faction": "eyrie", "model": "anthropic:claude-opus-5-5" }`. The model is fixed once the game starts (`PATCH /game/ai-players/{seat}` works in the lobby only).
-- **How it plays**: one session (one context window) per AI turn, dropped when the turn ends; a decision outside its turn (ambush, setup choice) gets a short session of its own. It waits 2 s after each action. Its tools are the `root-cli` commands: `show`, `actions`, `log`, `rules`, `act`.
+- **How it plays**: one session (one context window) per AI turn, dropped when the turn ends; a decision outside its turn (ambush, setup choice) gets a short session of its own. It waits 2 s after each action. Its tools are the `root-cli` commands: `show`, `actions`, `log`, `rules`, `act`, plus `card`, `clearing`, `score`, `preview` and one per faction (`decree`, `workshops`, `sympathy`).
 - **Stuck** (provider error, refusal, tool-call limit): the seat shows a warning badge and the game waits. Restart its session:
 
 ```bash
@@ -145,6 +145,11 @@ pnpm --filter @root/cli start -- --player-id bob show
 pnpm --filter @root/cli start -- --player-id bob actions
 pnpm --filter @root/cli start -- --player-id bob act '{"type":"endPhase"}'
 pnpm --filter @root/cli start -- rules 4.3          # or: rules ambush defender
+pnpm --filter @root/cli start -- --player-id bob card                 # hand: cost, text, craftable now
+pnpm --filter @root/cli start -- --player-id bob clearing 10          # pieces, ruler, slots, can I build
+pnpm --filter @root/cli start -- --player-id bob score                # standings and own supply
+pnpm --filter @root/cli start -- --player-id bob decree               # Eyrie; workshops = Marquise, sympathy = Alliance
+pnpm --filter @root/cli start -- --player-id bob preview '{"type":"endPhase"}'   # dry run, applies nothing
 ```
 
 - **Add a provider**: implement `ModelProvider` in `backend/web/src/aiPlayer/providers/`, add it to `providerRegistry.ts` and to `MODEL_PROVIDER_NAMES` in `modelIdentifier.ts`.
