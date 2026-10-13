@@ -48,6 +48,7 @@ import {
   useTapOrDrag,
   type TapOrDragHandlers,
 } from '#react/map3d/useTapOrDrag.ts'
+import { useViewVersion } from '#react/map3d/useViewVersion.ts'
 import {
   computeRulerByClearing,
   type ClearingHitCenter,
@@ -189,7 +190,8 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
     frame,
     timeOfDayForPhase(phase),
   )
-  const { scene, clearingGrounds, forestGrounds, river, viewVersion } = handle
+  const { scene, clearingGrounds, forestGrounds, river } = handle
+  const viewVersion: number = useViewVersion(scene, props.effects)
 
   const highlighted: Set<number> = useMemo(
     () => new Set(props.highlightedClearingIds ?? []),

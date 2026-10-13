@@ -32,8 +32,6 @@ export type MapSceneHandle = {
   clearingGrounds: readonly ClearingGround[]
   forestGrounds: readonly ForestGround[]
   river: MapTerrain['river']
-  /** Bumps on every camera move: overlays re-project when it changes. */
-  viewVersion: number
 }
 
 /** Digits kept of "how much larger than its focus is the view". */
@@ -81,7 +79,6 @@ export function useMapScene(
 ): MapSceneHandle {
   const [models, setModels] = useState<MapModels | null>(null)
   const [scene, setScene] = useState<MapScene | null>(null)
-  const [viewVersion, setViewVersion] = useState<number>(0)
 
   useEffect(() => {
     let cancelled = false
@@ -137,12 +134,8 @@ export function useMapScene(
       ),
       suitTexturePaths: suitTexturePathsFor(terrain.clearings),
     })
-    const stopListening: () => void = created.onViewChanged((): void => {
-      setViewVersion((version: number): number => version + 1)
-    })
     setScene(created)
     return (): void => {
-      stopListening()
       created.dispose()
       setScene(null)
     }
@@ -163,6 +156,5 @@ export function useMapScene(
     clearingGrounds: terrain.clearings,
     forestGrounds,
     river: terrain.river,
-    viewVersion,
   }
 }
