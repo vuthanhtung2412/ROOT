@@ -220,7 +220,7 @@ export type HudState = {
   menu: MenuHudState | null
   /** The flat painted map, or the 3D scene. Kept for the page's lifetime. */
   mapViewMode: MapViewMode
-  /** Wide layout: the action tray folded down to one chip. */
+  /** The action dock folded down to its phase tab, off the map. */
   actionTrayCollapsed: boolean
 }
 

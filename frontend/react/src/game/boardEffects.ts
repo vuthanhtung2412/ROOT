@@ -55,6 +55,10 @@ export type BoardMoveEffect = PieceGroup & {
   fromSlot: BoardStackSlot
   /** Stack the pieces joined, as drawn after the move. */
   toSlot: BoardStackSlot
+  /** The pieces on the move: held off the stack they join until they are in. */
+  pieceIds: readonly string[]
+  /** Size of the stack the pieces joined, once they are on it. */
+  stackCount: number
 }
 
 export type BoardPlaceEffect = PieceGroup & {
@@ -145,6 +149,26 @@ function countPiece<Effect extends BoardEffect & PieceGroup>(
   effects.set(
     key,
     existing === undefined ? create() : { ...existing, count: existing.count + 1 },
+  )
+}
+
+/** Add one moved piece to the move of its group, creating the move if needed. */
+function countMovedPiece(
+  moves: Map<string, BoardMoveEffect>,
+  key: string,
+  create: () => BoardMoveEffect,
+): void {
+  const existing = moves.get(key)
+  const move: BoardMoveEffect = create()
+  moves.set(
+    key,
+    existing === undefined
+      ? move
+      : {
+          ...existing,
+          count: existing.count + 1,
+          pieceIds: [...existing.pieceIds, ...move.pieceIds],
+        },
   )
 }
 
@@ -298,7 +322,7 @@ function moveEffectsOfSteps(
   const moves = new Map<string, BoardMoveEffect>()
   steps.forEach((step: BoardMoveStep, stepIndex: number) => {
     for (const piece of step.pieces) {
-      countPiece(
+      countMovedPiece(
         moves,
         `${String(stepIndex)}|${groupKey(piece)}`,
         (): BoardMoveEffect => ({
@@ -306,6 +330,8 @@ function moveEffectsOfSteps(
           from: step.from,
           to: step.to,
           step: stepIndex,
+          pieceIds: [piece.id],
+          stackCount: stackCountIn(boards.next[step.to], piece),
           fromSlot:
             stackSlotIn(boards.previous[step.from], piece) ??
             stackSlotIn(boards.next[step.from], piece) ??
@@ -363,7 +389,7 @@ export function pieceEffectsBetween(
       continue
     }
     if (was.clearing === now.clearing || steppedPieceIds.has(pieceId)) continue
-    countPiece(
+    countMovedPiece(
       moves,
       `${String(was.clearing)}>${String(now.clearing)}|${groupKey(now.piece)}`,
       (): BoardMoveEffect => ({
@@ -371,6 +397,8 @@ export function pieceEffectsBetween(
         from: was.clearing,
         to: now.clearing,
         step: FIRST_MOVE_STEP,
+        pieceIds: [pieceId],
+        stackCount: stackCountIn(next[now.clearing], now.piece),
         fromSlot:
           stackSlotIn(previous[was.clearing], was.piece) ?? NO_STACK_SLOT,
         toSlot: stackSlotIn(next[now.clearing], now.piece) ?? NO_STACK_SLOT,

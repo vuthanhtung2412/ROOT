@@ -102,6 +102,9 @@ function pawnMove(
     owner: player.seat,
     pieceKind: PAWN_PIECE_KIND,
     count: 1,
+    // A pawn stands alone: it joins no stack, so nothing is held back.
+    pieceIds: [],
+    stackCount: 1,
     ...(from.kind === 'forest' ? { fromForest: from.forest } : {}),
     ...(to.kind === 'forest' ? { toForest: to.forest } : {}),
   }

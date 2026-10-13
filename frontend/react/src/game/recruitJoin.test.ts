@@ -2,16 +2,21 @@ import { describe, expect, it } from 'vitest'
 import {
   NO_STACK_SLOT,
   PLACE_STEP_MS,
+  type BoardMoveEffect,
   type BoardPlaceEffect,
 } from '#game/boardEffects.ts'
 import {
   joinsStandingWarriors,
+  moveHoldMs,
   placementHoldMs,
   RECRUIT_JOIN_MS,
 } from '#game/recruitJoin.ts'
+import { MOVE_SLIDE_MS } from '#react/boardEffectTiming.ts'
 
 const CAT_SEAT = 0
 const STANDING_AND_RECRUIT_COUNT = 3
+const STANDING_AND_MOVED_COUNT = 3
+const FOREST_INDEX = 2
 const LATER_STEP = 2
 
 function placeEffect(overrides: Partial<BoardPlaceEffect>): BoardPlaceEffect {
@@ -21,6 +26,23 @@ function placeEffect(overrides: Partial<BoardPlaceEffect>): BoardPlaceEffect {
     step: 0,
     pieceIds: ['recruit'],
     slot: NO_STACK_SLOT,
+    stackCount: 1,
+    owner: CAT_SEAT,
+    pieceKind: 'warrior',
+    count: 1,
+    ...overrides,
+  }
+}
+
+function moveEffect(overrides: Partial<BoardMoveEffect>): BoardMoveEffect {
+  return {
+    kind: 'move',
+    from: 0,
+    to: 1,
+    step: 0,
+    fromSlot: NO_STACK_SLOT,
+    toSlot: NO_STACK_SLOT,
+    pieceIds: ['marcher'],
     stackCount: 1,
     owner: CAT_SEAT,
     pieceKind: 'warrior',
@@ -83,5 +105,36 @@ describe('placementHoldMs', () => {
         }),
       ),
     ).toBe(LATER_STEP * PLACE_STEP_MS + RECRUIT_JOIN_MS)
+  })
+})
+
+describe('moveHoldMs', () => {
+  it('puts warriors moved into a clearing with none of theirs on the board at once', () => {
+    expect(moveHoldMs(moveEffect({}))).toBe(0)
+  })
+
+  it('holds warriors back until they have walked into the stack they join', () => {
+    expect(
+      moveHoldMs(moveEffect({ stackCount: STANDING_AND_MOVED_COUNT })),
+    ).toBe(MOVE_SLIDE_MS)
+  })
+
+  it('holds a later move back for the moves before it and its own walk', () => {
+    expect(
+      moveHoldMs(
+        moveEffect({ step: LATER_STEP, stackCount: STANDING_AND_MOVED_COUNT }),
+      ),
+    ).toBe(LATER_STEP * MOVE_SLIDE_MS + MOVE_SLIDE_MS)
+  })
+
+  it('holds nothing back for a pawn that slips into a forest', () => {
+    expect(
+      moveHoldMs(
+        moveEffect({
+          toForest: FOREST_INDEX,
+          stackCount: STANDING_AND_MOVED_COUNT,
+        }),
+      ),
+    ).toBe(0)
   })
 })

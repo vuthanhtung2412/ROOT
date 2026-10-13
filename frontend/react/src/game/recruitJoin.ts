@@ -1,4 +1,9 @@
-import { PLACE_STEP_MS, type BoardPlaceEffect } from '#game/boardEffects.ts'
+import {
+  PLACE_STEP_MS,
+  type BoardMoveEffect,
+  type BoardPlaceEffect,
+} from '#game/boardEffects.ts'
+import { MOVE_SLIDE_MS, moveStartDelay } from '#react/boardEffectTiming.ts'
 
 /** A recruit first stands beside the warriors it joins for this long… */
 export const RECRUIT_WAIT_MS = 500
@@ -13,6 +18,21 @@ export function joinsStandingWarriors(effect: BoardPlaceEffect): boolean {
   return (
     effect.pieceKind === WARRIOR_PIECE_KIND && effect.stackCount > effect.count
   )
+}
+
+/** Pieces moved onto a stack of their kind already standing there. */
+export function joinsStandingStack(effect: BoardMoveEffect): boolean {
+  return effect.toForest === undefined && effect.stackCount > effect.count
+}
+
+/**
+ * How long moved pieces stay off the stack they join: until the last of them
+ * has walked in. 0 = on the board at once (they join nothing).
+ */
+export function moveHoldMs(effect: BoardMoveEffect): number {
+  return joinsStandingStack(effect)
+    ? moveStartDelay(effect) + MOVE_SLIDE_MS
+    : 0
 }
 
 /**

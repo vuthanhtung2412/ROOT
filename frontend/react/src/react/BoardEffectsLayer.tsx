@@ -7,7 +7,10 @@ import type {
   BoardRemoveEffect,
   BoardStackSlot,
 } from '#game/boardEffects.ts'
-import { joinsStandingWarriors } from '#game/recruitJoin.ts'
+import {
+  joinsStandingStack,
+  joinsStandingWarriors,
+} from '#game/recruitJoin.ts'
 import {
   batchLifetime,
   EFFECT_LIFETIME_MS,
@@ -213,12 +216,11 @@ function MoveEffectView(
     ...stackFor(props.effect, props.factions),
     count: 1,
   }
-  const standingCount: number =
-    props.effect.toForest === undefined
-      ? (props.stackCountOf?.(effectStack(props.effect, props.effect.to)) ?? 0)
-      : 0
   // Pieces of its kind already stood there: the newcomers walk in behind them.
-  const joinsStandingStack: boolean = standingCount > props.effect.count
+  // They are held off the board for the walk, so the map draws the old count.
+  const standingCount: number = joinsStandingStack(props.effect)
+    ? (props.stackCountOf?.(effectStack(props.effect, props.effect.to)) ?? 0)
+    : 0
   const color = colorToCss(
     factionColorForSeat(props.effect.owner, props.factions),
   )
@@ -238,7 +240,7 @@ function MoveEffectView(
         delayMs={delay}
         color={color}
       />
-      {joinsStandingStack ? (
+      {standingCount > 0 ? (
         <div className="absolute" style={to}>
           <PieceStack
             stack={{ ...marcherStack, count: standingCount }}

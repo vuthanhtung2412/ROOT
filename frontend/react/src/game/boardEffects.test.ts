@@ -105,7 +105,19 @@ describe('pieceEffectsBetween', () => {
         owner: CAT_SEAT,
         pieceKind: 'warrior',
         count: 2,
+        pieceIds: ['a', 'b'],
+        stackCount: 2,
       },
+    ])
+  })
+
+  it('counts the warriors a move joins in the size of their stack', () => {
+    const effects = pieceEffectsBetween(
+      board([warrior('a', CAT_SEAT)], [warrior('standing', CAT_SEAT)]),
+      board([], [warrior('standing', CAT_SEAT), warrior('a', CAT_SEAT)]),
+    )
+    expect(effects).toMatchObject([
+      { kind: 'move', count: 1, pieceIds: ['a'], stackCount: 2 },
     ])
   })
 
