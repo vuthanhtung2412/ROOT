@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import { DEFAULT_ROOT_DEV_API_BASE_URL } from '@root/web-client'
-import { ApiError } from '#api/client.js'
+import { ApiError, PLAYER_ID_FLAG } from '#api/client.js'
 import { cmdAct } from '#commands/act.js'
 import { cmdActions } from '#commands/actions.js'
+import { cmdAiRestart } from '#commands/aiRestart.js'
 import { cmdAuto } from '#commands/auto.js'
 import { cmdJoin } from '#commands/join.js'
 import { cmdLoad } from '#commands/load.js'
 import { cmdLog } from '#commands/log.js'
 import { cmdNew } from '#commands/new.js'
+import { cmdRules } from '#commands/rules.js'
 import { cmdShow } from '#commands/show.js'
 import { cmdStart } from '#commands/start.js'
 import { cmdUndo } from '#commands/undo.js'
@@ -18,8 +20,18 @@ function flag(args: string[], name: string): string | undefined {
   return args[i + 1]
 }
 
+/** The flag is read by the API client; commands see the arguments without it. */
+function withoutPlayerIdFlag(args: string[]): string[] {
+  const flagIndex = args.indexOf(PLAYER_ID_FLAG)
+  if (flagIndex < 0) return args
+  return [...args.slice(0, flagIndex), ...args.slice(flagIndex + 2)]
+}
+
 function usage(): void {
-  console.error(`usage: root-cli <command> [options]
+  console.error(`usage: root-cli [--player-id <id>] <command> [options]
+
+--player-id <id>: play one seat. show / actions / log hide the other hands
+  and act is checked against that seat, also in a hotseat game.
 
 commands:
   new [--factions marquise,eyrie]
@@ -30,6 +42,10 @@ commands:
   actions
   act '<json>'
   log
+  rules <rule number | keywords>
+    (Law of Root lookup, e.g. rules 7.2 / rules ambush defender)
+  ai-restart <seat>
+    (drop the AI player's session, start a fresh one for its turn)
   undo
   auto [--turns 50] [--players 2] [--factions marquise,eyrie]
     (creates game, joins as faction names, starts — no manual lobby)
@@ -38,7 +54,7 @@ env: ROOT_DEV_API (default ${DEFAULT_ROOT_DEV_API_BASE_URL}; set in .env)`)
 }
 
 async function main(): Promise<void> {
-  const argv = process.argv.slice(2)
+  const argv = withoutPlayerIdFlag(process.argv.slice(2))
   const base = argv[0] === '--' ? 1 : 0
   const cmd = argv[base]
   const rest = argv.slice(base + 1)
@@ -79,6 +95,18 @@ async function main(): Promise<void> {
       case 'log':
         await cmdLog()
         break
+      case 'rules':
+        if (rest.length === 0) throw new Error('rule number or keywords required')
+        await cmdRules(rest.join(' '))
+        break
+      case 'ai-restart': {
+        const seat = Number(rest[0])
+        if (rest[0] === undefined || !Number.isInteger(seat)) {
+          throw new Error('seat number required')
+        }
+        await cmdAiRestart(seat)
+        break
+      }
       case 'undo':
         await cmdUndo()
         break
