@@ -16,13 +16,13 @@ import { PRIMARY_BUTTON_CLASS_NAME } from '#react/MenuParts.tsx'
 /** Single-screen "Start game" and QA shortcuts only exist in dev builds. */
 const IS_DEVELOPMENT_BUILD: boolean = import.meta.env.DEV === true
 
-/** Start screen: banner and buttons on one parchment sheet. */
-const MENU_PANEL_CLASS_NAME =
-  'relative z-1 flex max-h-[96vh] max-w-[min(92vw,560px)] flex-col items-center gap-4 overflow-y-auto border-2 border-ink bg-parchment/82 px-7 py-6 paper-grain shadow-menu-panel'
-/** Lobby: paper pieces laid straight on the dimmed wallpaper, no sheet. */
-const LOBBY_STAGE_CLASS_NAME =
+/** Start screen and lobby: paper pieces laid straight on the dimmed wallpaper, no sheet. */
+const MENU_STAGE_CLASS_NAME =
   'relative z-1 box-border flex max-h-dvh w-full flex-col items-center gap-5 overflow-y-auto px-5 py-8'
-const LOBBY_DIM_CLASS_NAME = 'absolute inset-0 bg-ink-deep/50'
+const MENU_DIM_CLASS_NAME = 'absolute inset-0 bg-ink-deep/50'
+/** Status line on a paper strip, like the lobby title. */
+const STATUS_CLASS_NAME =
+  'root-paper root-paper-fine m-0 max-w-[70vw] px-5 py-1.5 text-center font-body text-[15px] italic'
 
 const CREATE_GAME_LABEL = 'Create game'
 const JOIN_GAME_LABEL = 'Join game'
@@ -68,8 +68,8 @@ export function MenuOverlay(): JSX.Element | null {
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,color-mix(in_srgb,var(--color-moss)_55%,transparent),transparent_60%),var(--color-forest-deep)]" />
       )}
-      {isInLobby ? <div className={LOBBY_DIM_CLASS_NAME} /> : null}
-      <div className={isInLobby ? LOBBY_STAGE_CLASS_NAME : MENU_PANEL_CLASS_NAME}>
+      <div className={MENU_DIM_CLASS_NAME} />
+      <div className={MENU_STAGE_CLASS_NAME}>
         {isInLobby ? null : bannerPath !== null ? (
           <img
             className="block h-auto w-[min(42vw,380px)] select-none drop-shadow-banner"
@@ -132,7 +132,7 @@ export function MenuOverlay(): JSX.Element | null {
         )}
         {menu.statusText.length > 0 ? (
           <p
-            className="m-0 max-w-[70vw] border border-ink-soft bg-parchment/70 px-3 py-1.5 text-center font-body text-[15px] text-ink-soft italic"
+            className={STATUS_CLASS_NAME}
             style={{ color: menu.statusColor }}
             role="status"
           >

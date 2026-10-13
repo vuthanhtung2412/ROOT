@@ -20,6 +20,10 @@ import {
   LobbySeatTile,
   type LobbyOpenSeatKind,
 } from '#react/MenuLobbySeats.tsx'
+import {
+  PAPER_SHEET_CLASS_NAME,
+  PRIMARY_BUTTON_CLASS_NAME,
+} from '#react/MenuParts.tsx'
 
 /** The lobby creator joins first, so the host always holds seat 0. */
 const HOST_SEAT_INDEX = 0
@@ -34,11 +38,7 @@ const FOOTER_CLASS_NAME =
 /** Close / Leave: rust, as the cancel tile of a turn. */
 const LEAVE_BUTTON_CLASS_NAME =
   'menu-leave-lobby root-paper root-paper-fine root-paper-press m-0 min-h-12 px-5 py-2 font-display text-lg text-paper-bright [--root-paper-color:var(--color-rust-deep)]'
-/** Start: green, as the confirm tile of a turn. */
-const START_BUTTON_CLASS_NAME =
-  'menu-start-online root-paper root-paper-press m-0 min-h-15 px-8 py-2.5 font-display text-[28px] tracking-display text-ink-deep [--root-paper-color:var(--color-confirm)]'
-/** Preset lobby: the "Add an AI player" form on its own sheet. */
-const AI_FORM_SHEET_CLASS_NAME = 'root-paper w-full max-w-md px-4 py-3'
+const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME}`
 
 /** Seats nobody took yet, numbered after the taken ones. */
 function openSeatIndexes(lobby: MenuLobbyHudState): number[] {
@@ -193,7 +193,7 @@ export function OnlineLobbyPanel(props: {
         />
       ) : null}
       {!isOpenLobby && lobby.isHost && model !== null ? (
-        <div className={AI_FORM_SHEET_CLASS_NAME}>
+        <div className={PAPER_SHEET_CLASS_NAME}>
           <MenuAiPlayerForm
             factionChoices={lobby.factionChoices}
             disabled={props.playPending}

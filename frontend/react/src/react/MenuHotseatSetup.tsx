@@ -14,13 +14,18 @@ import {
 import { factionColorCss } from '#game/theme.ts'
 import {
   FactionBadge,
+  PAPER_SHEET_CLASS_NAME,
   SEAT_ROW_CLASS_NAME,
   SECONDARY_BUTTON_CLASS_NAME,
   SECTION_TITLE_CLASS_NAME,
 } from '#react/MenuParts.tsx'
 
 const PLAYER_COUNT_BUTTON_CLASS_NAME =
-  'root-button min-w-18 px-3 py-1.5 font-display text-xl'
+  'root-paper root-paper-fine root-paper-press m-0 min-h-11 min-w-18 px-3 py-1.5 font-display text-xl text-ink'
+const PLAYER_COUNT_PICKED_PAPER_CLASS_NAME =
+  'shadow-gold-ring [--root-paper-color:var(--color-gold-light)]'
+const PLAYER_COUNT_PAPER_CLASS_NAME =
+  '[--root-paper-color:var(--color-parchment-deep)]'
 const DEFAULT_PLAYER_COUNT: MenuPlayerCount = 2
 
 /**
@@ -42,7 +47,7 @@ export function MenuHotseatSetup(props: {
 
   return (
     <section
-      className="m-0 flex w-full flex-col items-center gap-3 border-t border-ink-soft pt-3"
+      className={`m-0 flex flex-col items-center gap-3 ${PAPER_SHEET_CLASS_NAME}`}
       aria-label="Single-screen game (development)"
     >
       <fieldset
@@ -59,8 +64,8 @@ export function MenuHotseatSetup(props: {
                 type="button"
                 className={
                   selected
-                    ? `${PLAYER_COUNT_BUTTON_CLASS_NAME} root-button--accent`
-                    : `${PLAYER_COUNT_BUTTON_CLASS_NAME} root-button--quiet`
+                    ? `${PLAYER_COUNT_BUTTON_CLASS_NAME} ${PLAYER_COUNT_PICKED_PAPER_CLASS_NAME}`
+                    : `${PLAYER_COUNT_BUTTON_CLASS_NAME} ${PLAYER_COUNT_PAPER_CLASS_NAME}`
                 }
                 aria-pressed={selected}
                 onClick={(): void => {

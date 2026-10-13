@@ -2,12 +2,14 @@ import type { JSX } from 'react'
 import { factionTextureKey, imagePathForAssetKey } from '#assets/gameAssets.ts'
 import { factionColorCss } from '#game/theme.ts'
 
-/** Create / Join / Start: the one big call to action. */
+/** Create / Join / Start: the one big call to action, green as the confirm tile of a turn. */
 export const PRIMARY_BUTTON_CLASS_NAME =
-  'root-button root-button--accent min-w-50 px-5.5 py-2.5 font-display text-2xl tracking-display'
-/** Leave / close, QA shortcut. */
+  'root-paper root-paper-press m-0 min-h-15 px-8 py-2.5 font-display text-[28px] tracking-display text-ink-deep [--root-paper-color:var(--color-confirm)]'
+/** Dev start, QA shortcut, Add AI: a small paper tile. */
 export const SECONDARY_BUTTON_CLASS_NAME =
-  'root-button root-button--quiet px-4 py-2 font-display text-lg tracking-display'
+  'root-paper root-paper-fine root-paper-press m-0 min-h-11 px-5 py-2 font-display text-lg tracking-display text-ink [--root-paper-color:var(--color-parchment-deep)]'
+/** A form laid on its own torn sheet. */
+export const PAPER_SHEET_CLASS_NAME = 'root-paper w-full max-w-md px-5 py-4'
 
 /** One seat: a band in the faction colour runs down its left edge. */
 export const SEAT_ROW_CLASS_NAME =
