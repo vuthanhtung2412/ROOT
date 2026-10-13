@@ -99,6 +99,64 @@ describe('open lobby: players choose their faction', () => {
     expect(game.state.factions).toEqual(['marquise', 'eyrie'])
   })
 
+  it('an expelled player loses the seat and later seats move down', () => {
+    const game: Game = openLobby()
+    game.apply({ type: 'join', playerId: 'first', faction: 'marquise' })
+    game.apply({ type: 'join', playerId: 'second', faction: 'eyrie' })
+    game.apply({ type: 'join', playerId: 'third', faction: 'lizard' })
+
+    game.apply({ type: 'expel', seat: 1 })
+
+    expect(game.state.factions).toEqual(['marquise', 'lizard'])
+    expect(game.state.players[1]).toMatchObject({
+      playerId: 'third',
+      seat: 1,
+      faction: 'lizard',
+    })
+  })
+
+  it('the faction of an expelled player can be picked again', () => {
+    const game: Game = openLobby()
+    game.apply({ type: 'join', playerId: 'first', faction: 'marquise' })
+    game.apply({ type: 'join', playerId: 'second', faction: 'eyrie' })
+
+    game.apply({ type: 'expel', seat: 1 })
+    game.apply({ type: 'join', playerId: 'third', faction: 'eyrie' })
+
+    expect(factionsOfPlayers(game)).toEqual(['marquise', 'eyrie'])
+    expect(game.state.players[1]!.playerId).toBe('third')
+  })
+
+  it('the host cannot be expelled', () => {
+    const game: Game = openLobby()
+    game.apply({ type: 'join', playerId: 'first', faction: 'marquise' })
+    game.apply({ type: 'join', playerId: 'second', faction: 'eyrie' })
+
+    expect(() => game.apply({ type: 'expel', seat: 0 })).toThrow(
+      expect.objectContaining({ code: 'CANNOT_EXPEL_HOST' }),
+    )
+    expect(game.state.players).toHaveLength(2)
+  })
+
+  it('expelling an empty seat is rejected', () => {
+    const game: Game = openLobby()
+    game.apply({ type: 'join', playerId: 'first', faction: 'marquise' })
+
+    expect(() => game.apply({ type: 'expel', seat: 2 })).toThrow(
+      expect.objectContaining({ code: 'NO_PLAYER_AT_SEAT' }),
+    )
+  })
+
+  it('nobody is expelled once the game has started', () => {
+    const game: Game = openLobby()
+    game.apply({ type: 'join', playerId: 'first', faction: 'marquise' })
+    game.apply({ type: 'join', playerId: 'second', faction: 'eyrie' })
+    game.apply({ type: 'start' })
+
+    expect(() => game.apply({ type: 'expel', seat: 1 })).toThrow(RuleError)
+    expect(game.state.players).toHaveLength(2)
+  })
+
   it('undo rebuilds the open lobby from its joins', () => {
     const game: Game = openLobby()
     game.apply({ type: 'join', playerId: 'first', faction: 'marquise' })
@@ -112,6 +170,16 @@ describe('open lobby: players choose their faction', () => {
 })
 
 describe('preset lobby: seats keep their decided faction', () => {
+  it('nobody is expelled: the seats are decided in advance', () => {
+    const game: Game = Game.create({ seed: SEED, factions: ['marquise', 'eyrie'] })
+    game.apply({ type: 'join', playerId: 'first' })
+    game.apply({ type: 'join', playerId: 'second' })
+
+    expect(() => game.apply({ type: 'expel', seat: 1 })).toThrow(
+      expect.objectContaining({ code: 'NOT_OPEN_LOBBY' }),
+    )
+  })
+
   it('rejects a pick that is not the faction of the next seat', () => {
     const game: Game = Game.create({ seed: SEED, factions: ['marquise', 'eyrie'] })
 

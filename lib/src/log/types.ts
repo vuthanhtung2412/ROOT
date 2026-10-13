@@ -6,6 +6,7 @@ import type { Phase } from '#state/types.js'
 
 export type LogEntry =
   | { t: 'join'; playerId: string; faction: FactionId }
+  | { t: 'expel'; playerId: string; faction: FactionId }
   | { t: 'start' }
   | { t: 'action'; actor: Seat; action: Action }
   | { t: 'vp'; actor: Seat; delta: number; reason: string }

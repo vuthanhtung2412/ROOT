@@ -41,6 +41,8 @@ import { SignalBus } from '#triggers/SignalBus.js'
 const PHASES: Phase[] = ['birdsong', 'daylight', 'evening']
 /** Seats at the table (`Seat` is 0–3). */
 const MAX_PLAYERS = 4
+/** The lobby creator joins first: seat 0 hosts and cannot be expelled. */
+const LOBBY_HOST_SEAT = 0
 
 type UndoCheckpoint = {
   wasPlaying: boolean
@@ -56,7 +58,7 @@ type UndoCheckpoint = {
 /** Actions that leave the player "at the start of" the phase they are in. */
 const START_OF_PHASE_NEUTRAL_ACTIONS: ReadonlySet<Action['type']> = new Set<
   Action['type']
->(['resolveEvent', 'join', 'start', 'saboteurs', 'charmOffensive'])
+>(['resolveEvent', 'join', 'expel', 'start', 'saboteurs', 'charmOffensive'])
 
 export class Game {
   state: GameState
@@ -132,10 +134,9 @@ export class Game {
       history: [...snapshot.history],
       log: [...snapshot.log],
       rng: SeededRng.fromJSON(snapshot.rng),
-      choiceHistory:
-        snapshot.choiceHistory === undefined
-          ? undefined
-          : [...snapshot.choiceHistory],
+      ...(snapshot.choiceHistory === undefined
+        ? {}
+        : { choiceHistory: [...snapshot.choiceHistory] }),
     })
     syncPlaceIdsFromState(game.state)
     // Snapshot may land mid-step (evening score, birdsong wood) — fire pending autos.
@@ -432,6 +433,10 @@ export class Game {
       // player pick again).
       return
     }
+    if (action.type === 'expel') {
+      // Lobby, seat and host checks: `applyExpel`.
+      return
+    }
     if (action.type === 'start') {
       if (this.state.status !== 'waiting') throw new RuleError('NOT_WAITING')
       if (this.state.players.length <= 1) {
@@ -473,6 +478,8 @@ export class Game {
     switch (action.type) {
       case 'join':
         return this.applyJoin(action.playerId, action.faction)
+      case 'expel':
+        return this.applyExpel(action.seat)
       case 'start':
         return this.applyStart()
       case 'endPhase':
@@ -547,6 +554,35 @@ export class Game {
       throw new RuleError('WRONG_FACTION', { faction: pickedFaction })
     }
     return this.seatPlayer(playerId, faction)
+  }
+
+  /**
+   * Open lobby: the player at `seat` leaves the table and its faction is free
+   * again. Later seats move down one, so seats stay 0..n-1 in join order.
+   */
+  private applyExpel(seat: Seat): LogEntry[] {
+    const { state } = this
+    if (state.status !== 'waiting') throw new RuleError('NOT_WAITING')
+    if (state.openLobby !== true) throw new RuleError('NOT_OPEN_LOBBY')
+    if (seat === LOBBY_HOST_SEAT) throw new RuleError('CANNOT_EXPEL_HOST')
+    const expelled = state.players.find(
+      (player: PlayerState): boolean => player.seat === seat,
+    )
+    if (expelled === undefined) throw new RuleError('NO_PLAYER_AT_SEAT', { seat })
+    state.players = state.players
+      .filter((player: PlayerState): boolean => player.seat !== seat)
+      .map(
+        (player: PlayerState, index: number): PlayerState => ({
+          ...player,
+          seat: requireSeat(index),
+        }),
+      )
+    state.factions = state.players.map(
+      (player: PlayerState): FactionId => player.faction,
+    )
+    return [
+      { t: 'expel', playerId: expelled.playerId, faction: expelled.faction },
+    ]
   }
 
   private seatPlayer(playerId: string, faction: FactionId): LogEntry[] {

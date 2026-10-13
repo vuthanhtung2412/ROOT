@@ -145,6 +145,8 @@ export type Action =
    * changes it). Preset lobby: the seat's faction is already decided.
    */
   | { type: 'join'; playerId: string; faction?: FactionId }
+  /** Open lobby: the player at `seat` loses it; later seats move down one. */
+  | { type: 'expel'; seat: Seat }
   | { type: 'start' }
   | { type: 'birdsongWood' }
   | { type: 'eveningDraw' }

@@ -207,6 +207,8 @@ export function describeAction(action: Action, state: GameState): string {
   switch (action.type) {
     case 'join':
       return `JOIN player="${action.playerId}"`
+    case 'expel':
+      return `EXPEL s${action.seat}`
     case 'start':
       return 'START game'
     case 'endPhase':
@@ -356,6 +358,8 @@ export function describeLogEntry(entry: LogEntry, state: GameState): string {
   switch (entry.t) {
     case 'join':
       return `JOIN ${entry.playerId} (${entry.faction})`
+    case 'expel':
+      return `EXPEL ${entry.playerId} (${entry.faction})`
     case 'start':
       return 'START game'
     case 'action':
