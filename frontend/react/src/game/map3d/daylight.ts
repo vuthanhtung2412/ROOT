@@ -30,6 +30,8 @@ export type DaylightRig = {
   setTimeOfDay: (timeOfDay: TimeOfDay) => void
   /** Advance the fade; call once per frame. */
   update: (deltaSeconds: number) => void
+  /** The sun is still on its way to its place: the shadows turn with it. */
+  isSunMoving: () => boolean
 }
 
 type LightingPreset = {
@@ -90,6 +92,8 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
 const CAMERA_LIGHT_COLOR = 0xdfe8ff
 /** Share of the remaining difference closed per second. */
 const FADE_RATE_PER_SECOND = 2.2
+/** Nearer than this to its place (world units), the sun counts as arrived. */
+const SUN_SETTLED_DISTANCE = 0.05
 const SHADOW_MAP_SIZE_PIXELS = 4096
 const SHADOW_AREA_HALF_SIZE = 95
 const SHADOW_CAMERA_FAR = 320
@@ -180,5 +184,13 @@ export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
         step,
       )
     },
+    isSunMoving: (): boolean =>
+      sun.position.distanceTo(
+        targetSunPosition.set(
+          target.sunPosition.x,
+          target.sunPosition.y,
+          target.sunPosition.z,
+        ),
+      ) > SUN_SETTLED_DISTANCE,
   }
 }

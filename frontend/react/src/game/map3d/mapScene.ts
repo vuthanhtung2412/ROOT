@@ -93,6 +93,9 @@ export function createMapScene(input: MapSceneInput): MapScene {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAXIMUM_PIXEL_RATIO))
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = PCFSoftShadowMap
+  // The woodland stands still: its shadows are drawn again only when the sun
+  // or a piece moved, not on every frame.
+  renderer.shadowMap.autoUpdate = false
 
   const scene: Scene = new Scene()
   const daylight: DaylightRig = createDaylightRig(input.timeOfDay)
@@ -153,6 +156,9 @@ export function createMapScene(input: MapSceneInput): MapScene {
   const startMilliseconds: number = performance.now()
   let previousMilliseconds: number = startMilliseconds
   let animationFrame = 0
+  let shadowsAreStale = true
+  /** Zoom the shadows were last drawn at: the models grow with it. */
+  let shadowZoom: number = cameraRig.zoom()
   const renderFrame = (nowMilliseconds: number): void => {
     const deltaSeconds: number = Math.min(
       (nowMilliseconds - previousMilliseconds) / MILLISECONDS_PER_SECOND,
@@ -160,7 +166,19 @@ export function createMapScene(input: MapSceneInput): MapScene {
     )
     previousMilliseconds = nowMilliseconds
     cameraRig.update(deltaSeconds)
-    pieceLayer.setZoom(cameraRig.zoom())
+    const zoom: number = cameraRig.zoom()
+    // Read before the update: the last frame of a build still moves a model.
+    if (
+      shadowsAreStale ||
+      zoom !== shadowZoom ||
+      daylight.isSunMoving() ||
+      pieceLayer.isBuildPlaying()
+    ) {
+      renderer.shadowMap.needsUpdate = true
+      shadowsAreStale = false
+      shadowZoom = zoom
+    }
+    pieceLayer.setZoom(zoom)
     pieceLayer.update(deltaSeconds)
     groundMarkers.setZoom(cameraRig.zoom())
     daylight.followCamera(cameraRig.camera.position, cameraRig.controls.target)
@@ -180,6 +198,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     resize,
     setPieces: (pieces: readonly MapPiece[]): void => {
       pieceLayer.setPieces(pieces)
+      shadowsAreStale = true
       // Only a Vagabond in a forest stands among the trees that would hide it.
       treeSightlines.setTargets(
         pieces
@@ -195,6 +214,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
       campfires.setTimeOfDay(timeOfDay)
       groundMarkers.setTimeOfDay(timeOfDay)
       pieceLayer.setTorchesShown(timeOfDay === TORCH_TIME_OF_DAY)
+      shadowsAreStale = true
     },
     projectToView: (ground: MapGroundPoint, height: number): MapViewPoint => {
       projected.set(ground.x, height, ground.z).project(cameraRig.camera)

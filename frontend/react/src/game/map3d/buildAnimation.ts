@@ -33,6 +33,8 @@ export type BuildAnimations = {
     deltaSeconds: number,
     siteOf: (pieceKey: string) => BuildSite | undefined,
   ) => void
+  /** A building is still going up. */
+  isPlaying: () => boolean
   dispose: () => void
 }
 
@@ -216,6 +218,7 @@ export function createBuildAnimations(): BuildAnimations {
         running.set(pieceKey, { elapsedSeconds, dust })
       }
     },
+    isPlaying: (): boolean => running.size > 0,
     dispose: (): void => {
       for (const build of running.values()) {
         removeDust(build.dust)

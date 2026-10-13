@@ -64,6 +64,8 @@ export type PieceLayer = {
   playBuild: (pieceKeys: readonly string[]) => void
   /** Call once per frame. */
   update: (deltaSeconds: number) => void
+  /** A building is still going up. */
+  isBuildPlaying: () => boolean
   dispose: () => void
 }
 
@@ -425,6 +427,7 @@ export function createPieceLayer(
     update: (deltaSeconds: number): void => {
       buildAnimations.update(deltaSeconds, buildSiteOf)
     },
+    isBuildPlaying: buildAnimations.isPlaying,
     dispose: (): void => {
       group.clear()
       buildAnimations.dispose()
