@@ -31,6 +31,8 @@
   - Pauses while another seat must answer (e.g. defender ambush) and resumes with the same context.
   - Ends when the turn passes to the next seat; the context is dropped.
   - Off-turn decisions of an AI seat (ambush, Field Hospitals, Outrage, setup choices) get a short reaction session that ends when the decision is resolved.
+  - No memory between turns: a new turn knows only the game state and the log.
+  - Pacing: after each applied `act` the session waits `AI_PLAYER_ACTION_DELAY_MILLISECONDS` (2000) so humans can follow.
   - One session per seat at a time. Capped by `MAX_TOOL_CALLS_PER_SESSION`.
   - Aborted when history length shrinks (undo) or the game is replaced; a new session starts from the new state.
 - **Failure**: provider error, refusal or cap hit → seat status `stuck`, game waits. No random fallback move, no automatic retry beyond the SDK's own.
@@ -69,7 +71,7 @@
   - `modelIdentifier`: parse, unknown provider, provider without key dropped.
   - `rulebook`: section split and search on a small fixture markdown.
   - `aiPlayerTools`: `show` / `log` / `actions` never contain another seat's hand; `act` rejects a wrong-seat action and returns rule errors.
-  - `AiPlayerSession`: scripted tool calls end in applied actions; context grows across phases; cap hit; illegal action then corrected.
+  - `AiPlayerSession`: scripted tool calls end in applied actions; context grows across phases; cap hit; illegal action then corrected; delay between applied actions (fake timers).
   - `AiPlayerDriver`: one session for the whole turn, dropped at turn end; resume after another seat answers; reaction session off-turn; abort on undo; `stuck` on provider error; restart makes a fresh context.
   - Routes: add AI player, model change rejected after start, restart, host-only in online mode, `view=player` redacts in hotseat.
   - Key leak: no route response or push payload contains the env key values.
