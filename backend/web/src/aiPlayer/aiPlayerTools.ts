@@ -149,7 +149,13 @@ function runAct(
         `${error.code}: ${JSON.stringify(error.detail ?? null)}. The action was not applied.`,
       )
     }
-    throw error
+    // Not a rule error: the engine tripped over the shape of the action (a
+    // missing or misnamed field). The model can correct it, so the session lives.
+    const reason: string = error instanceof Error ? error.message : String(error)
+    console.error(`AI player action crashed the engine: ${reason}`)
+    return fail(
+      `MALFORMED_ACTION: ${reason}. The action was not applied. Check the field names of ${JSON.stringify(action)} against "${ACTIONS_TOOL_NAME}".`,
+    )
   }
 }
 

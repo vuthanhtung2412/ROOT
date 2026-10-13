@@ -166,6 +166,26 @@ describe('AI player tools', () => {
     expect(game.history.length).toBe(historyLengthBefore)
   })
 
+  it('act: an action that crashes the engine comes back as an error to correct', () => {
+    const game = createStartedTwoPlayerGame()
+    const context = createToolContext(game, FIRST_TEST_PLAYER_ID)
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.spyOn(game, 'apply').mockImplementation(() => {
+      throw new TypeError("Cannot read properties of undefined (reading 'length')")
+    })
+
+    const result = runAiPlayerTool(context, {
+      name: ACT_TOOL_NAME,
+      input: { action: KEEP_CORNER_ACTION },
+    })
+
+    expect(result).toMatchObject({ isError: true, appliedAction: false })
+    expect(result.content).toContain('MALFORMED_ACTION')
+    expect(result.content).toContain("reading 'length'")
+    expect(context.onGameChanged).not.toHaveBeenCalled()
+    consoleError.mockRestore()
+  })
+
   it('reports bad input and unknown tools as errors', () => {
     const context = createToolContext(
       createStartedTwoPlayerGame(),
