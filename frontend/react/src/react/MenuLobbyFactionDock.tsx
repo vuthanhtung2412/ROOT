@@ -30,7 +30,7 @@ const HEAD_TILE_CLASS_NAME =
   'root-paper root-paper-fine relative box-border block size-21 p-1.5 md:size-23'
 const HEAD_TILE_FREE_CLASS_NAME = '[--root-paper-color:var(--color-cream)]'
 const HEAD_TILE_PICKED_CLASS_NAME =
-  'shadow-gold-ring-wide [--root-paper-color:var(--color-gold)]'
+  'shadow-gold-ring-wide [--root-paper-color:var(--color-gold-light)]'
 const HEAD_TILE_TAKEN_CLASS_NAME =
   '[--root-paper-color:var(--color-parchment-shadow)]'
 const HEAD_PORTRAIT_CLASS_NAME = 'block size-full object-cover select-none'

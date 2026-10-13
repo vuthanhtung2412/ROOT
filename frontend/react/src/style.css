@@ -24,6 +24,8 @@
   --color-cream: #f6e7bd;
   /* Cream aged toward wood: lobby faction dock, empty lobby seat. */
   --color-cream-deep: #dfc99a;
+  /* Light gold paper: what is yours in the lobby (seat name strip, picked faction). */
+  --color-gold-light: #fbe9a8;
   /* Rust dark enough to carry parchment text (Close / Leave lobby). */
   --color-rust-deep: #8f3d27;
   /* Text printed straight on faction board art. */

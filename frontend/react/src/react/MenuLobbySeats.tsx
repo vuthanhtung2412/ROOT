@@ -47,7 +47,7 @@ const SEAT_LABEL_TITLE_CLASS_NAME =
   'block font-display text-[17px] leading-tight text-ink md:text-[21px]'
 const SEAT_LABEL_NOTE_CLASS_NAME =
   'block font-body text-[13px] text-ink-soft italic md:text-sm'
-const LOCAL_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-paper-bright)]'
+const LOCAL_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-gold-light)]'
 const TAKEN_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-parchment)]'
 const OPEN_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-parchment-deep)]'
 const OPEN_TILE_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-cream-deep)]'
