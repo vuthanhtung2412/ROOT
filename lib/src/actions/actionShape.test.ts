@@ -115,6 +115,15 @@ describe('describeActionShape', () => {
     expect(describeActionShape('decree')).toContain('clearing?: number')
   })
 
+  it('keeps only the offered optional fields, and every required one', () => {
+    expect(describeActionShape('resolveEvent', ['clearing'])).toBe(
+      '{type: "resolveEvent", clearing?: number}',
+    )
+    expect(describeActionShape('decree', [])).toBe(
+      '{type: "decree", column: text, cardId: text}',
+    )
+  })
+
   it('knows nothing about a type the game does not have', () => {
     expect(describeActionShape('teleport')).toBeNull()
   })

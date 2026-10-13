@@ -32,9 +32,55 @@ export function listDescribedLegalActions(
   return listPlayerLegalActions(game, playerId).map(
     (spec: ActionSpec): DescribedActionSpec => ({
       ...spec,
-      shape: describeActionShape(spec.type) ?? `{type: "${spec.type}"}`,
+      shape: describeSpecShape(spec),
     }),
   )
+}
+
+/** An answer to a pending event: every field optional, a few on offer. */
+const PENDING_ANSWER_TYPE = 'resolveEvent'
+const PLURAL_SUFFIX = 's'
+/** Params whose action field is not the param name or its singular. */
+const PARAM_FIELD_ALIASES: Readonly<Record<string, string>> = {
+  vagabondItems: 'items',
+}
+
+/** Action fields the params of a spec let the player fill. */
+function offeredFieldsOf(spec: ActionSpec): string[] {
+  return Object.entries(spec.params ?? {}).flatMap(
+    ([paramName, values]: [string, readonly object[] | readonly unknown[]]): string[] => {
+      const elementFields: string[] = values.flatMap(
+        (value: unknown): string[] =>
+          typeof value === 'object' && value !== null && !Array.isArray(value)
+            ? Object.keys(value)
+            : [],
+      )
+      return [
+        paramName,
+        paramName.endsWith(PLURAL_SUFFIX)
+          ? paramName.slice(0, -PLURAL_SUFFIX.length)
+          : paramName,
+        ...(paramName in PARAM_FIELD_ALIASES
+          ? [PARAM_FIELD_ALIASES[paramName] ?? paramName]
+          : []),
+        ...elementFields,
+      ]
+    },
+  )
+}
+
+function describeSpecShape(spec: ActionSpec): string {
+  const fullShape: string =
+    describeActionShape(spec.type) ?? `{type: "${spec.type}"}`
+  if (spec.type !== PENDING_ANSWER_TYPE) return fullShape
+  const offeredShape: string | null = describeActionShape(
+    spec.type,
+    offeredFieldsOf(spec),
+  )
+  // Nothing matched: the whole shape is safer than an empty one.
+  return offeredShape === null || offeredShape === `{type: "${spec.type}"}`
+    ? fullShape
+    : offeredShape
 }
 
 /** Where the game stands for one seat right after an action. */

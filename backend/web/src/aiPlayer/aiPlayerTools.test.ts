@@ -152,7 +152,10 @@ describe('AI player tools', () => {
       FIRST_TEST_PLAYER_ID,
     )
     expect(nextLegalActions.length).toBeGreaterThan(0)
-    expect(nextLegalActions[0]?.shape).toContain('clearing?: number')
+    // Only the field on offer, not every field an answer may ever take.
+    expect(nextLegalActions[0]?.shape).toBe(
+      '{type: "resolveEvent", clearing?: number}',
+    )
     expect(JSON.parse(result.content)).toEqual({
       applied: 'RESOLVE EVENT',
       log: expect.any(Array),

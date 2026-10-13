@@ -323,12 +323,28 @@ function isActionType(type: string): type is Action['type'] {
 /**
  * The fields an action of `type` takes, as text: `{type: "discard", cardIds:
  * list of text}`. Null for a type the game does not know.
+ *
+ * `offeredFields` shortens an action of many optional fields (an answer to a
+ * pending event) to the ones on offer; a required field is never left out.
  */
-export function describeActionShape(type: string): string | null {
+export function describeActionShape(
+  type: string,
+  offeredFields?: readonly string[],
+): string | null {
   if (!isActionType(type)) {
     return null
   }
-  const fields: string = describeFields(ACTION_FIELD_SHAPES[type])
+  const allFields: FieldShapes = ACTION_FIELD_SHAPES[type]
+  const fields: string = describeFields(
+    offeredFields === undefined
+      ? allFields
+      : Object.fromEntries(
+          Object.entries(allFields).filter(
+            ([fieldName, field]: [string, FieldShape]): boolean =>
+              field.isRequired || offeredFields.includes(fieldName),
+          ),
+        ),
+  )
   return fields === ''
     ? `{type: "${type}"}`
     : `{type: "${type}", ${fields}}`
