@@ -134,6 +134,8 @@ pnpm --filter @root/cli start -- ai-stream          # GET /game/ai-players/strea
 pnpm --filter @root/cli start -- ai-stream --full   # long texts whole
 ```
 
+  The server also writes all of it, texts whole, to `logs/<game stamp>/ai-players.jsonl` (one JSON line per activity) beside `game.md`. The AI player is told to say the reasoning behind each action, so its `SAYS` lines explain its play.
+
   The stream shows the AI player's hand and has no seat check (operator tool): keep it off a server opponents can reach.
 
 - **Play a seat from the terminal** with the same view an AI player has (other hands hidden, only that seat may act, also in hotseat):

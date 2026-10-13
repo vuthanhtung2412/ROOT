@@ -100,6 +100,11 @@ export function beginGameLog(): string {
   return currentLogDir
 }
 
+/** Log folder of the game being played; opens one when no game was logged yet. */
+export function currentGameLogDirectory(): string {
+  return currentLogDir ?? beginGameLog()
+}
+
 function sessionStartedAtIso(activeSession: GameSessionLog): string {
   const startEvent = activeSession.events.find(
     (event) => event.label === 'START',

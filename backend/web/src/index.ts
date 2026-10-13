@@ -4,7 +4,9 @@ import {
   clearStoredGame,
   enableGamePersistence,
 } from '#store/gamePersistence.js'
+import { aiPlayerActivityFeed } from '#aiPlayer/AiPlayerActivityFeed.js'
 import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
+import { logAiPlayerActivity } from '#debug/logAiPlayerActivity.js'
 import { serve } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
 import { app } from '#openapi.js'
@@ -20,6 +22,9 @@ const DEFAULT_GAME_STORE_FILE = path.resolve(
   import.meta.dirname,
   '../.data/game-slot.json',
 )
+
+// The feed keeps serving GET /game/ai-players/stream; the file gets every activity too.
+aiPlayerActivityFeed.subscribe(logAiPlayerActivity)
 
 // Survive restarts: reload the saved game slot, keep it saved on every change.
 // ROOT_GAME_STORE_FILE=<path> moves the file; =off keeps the slot in memory only.
