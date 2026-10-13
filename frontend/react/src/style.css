@@ -55,6 +55,8 @@
     2px 4px 0 color-mix(in srgb, #2c2118 35%, transparent);
   /* Gold outline: picked option / highlighted clearing. */
   --shadow-gold-ring: 0 0 0 2px color-mix(in srgb, #c9a04a 80%, #2c2118);
+  /* Wider gold outline: the faction picked in the lobby dock. */
+  --shadow-gold-ring-wide: 0 0 0 5px color-mix(in srgb, #c9a04a 80%, #2c2118);
   --shadow-gold-glow: 0 0 0 2px color-mix(in srgb, #c9a04a 75%, transparent);
   /* Hairline inside a border. */
   --shadow-inset-line: inset 0 0 0 1px #cbb892;

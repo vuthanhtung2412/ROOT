@@ -29,7 +29,7 @@ const HEAD_TILE_CLASS_NAME =
   'root-paper root-paper-fine relative box-border block size-21 p-1.5 md:size-23'
 const HEAD_TILE_FREE_CLASS_NAME = '[--root-paper-color:var(--color-cream)]'
 const HEAD_TILE_PICKED_CLASS_NAME =
-  'shadow-gold-ring [--root-paper-color:var(--color-paper-bright)]'
+  'shadow-gold-ring-wide [--root-paper-color:var(--color-paper-bright)]'
 const HEAD_TILE_TAKEN_CLASS_NAME =
   '[--root-paper-color:var(--color-parchment-shadow)]'
 const HEAD_PORTRAIT_CLASS_NAME = 'block size-full object-cover select-none'
@@ -46,10 +46,7 @@ function seatTabLabel(mode: LobbyDockMode, seatIndex: number, isSeated: boolean)
   return isSeated ? `${seat} · change your faction` : `${seat} · pick your faction`
 }
 
-function choiceNote(choice: MenuFactionChoice): string | null {
-  if (choice.takenBy === 'you') return 'yours'
-  return choice.takenBy === 'other' ? 'taken' : null
-}
+const TAKEN_NOTE = 'taken'
 
 /** AI model of the seat being filled; shown only while seating an AI. */
 export type LobbyDockModelPicker = {
@@ -108,7 +105,6 @@ export function LobbyFactionDock(props: {
           const isPicked: boolean = props.mode === 'own' && choice.takenBy === 'you'
           const isTaken: boolean = choice.takenBy !== null && !isPicked
           const portraitPath: string | null = factionPortraitPath(choice.faction)
-          const note: string | null = choiceNote(choice)
           const tileStateClassName: string = isPicked
             ? HEAD_TILE_PICKED_CLASS_NAME
             : isTaken
@@ -146,8 +142,8 @@ export function LobbyFactionDock(props: {
               </span>
               <span>
                 {factionName(choice.faction)}
-                {note !== null ? (
-                  <span className={FACTION_NOTE_CLASS_NAME}>{note}</span>
+                {isTaken ? (
+                  <span className={FACTION_NOTE_CLASS_NAME}>{TAKEN_NOTE}</span>
                 ) : null}
               </span>
             </button>
