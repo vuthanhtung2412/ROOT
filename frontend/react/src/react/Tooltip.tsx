@@ -15,7 +15,7 @@ const HALF = 0.5
 const DEFAULT_WRAPPER_CLASS_NAME = 'inline-flex'
 
 const TOOLTIP_CLASS_NAME =
-  'root-paper root-paper-fine pointer-events-none fixed z-300 m-0 px-2.5 py-0.5 font-display text-sm whitespace-nowrap text-ink capitalize [--root-paper-color:var(--color-paper-bright)] md:text-base'
+  'root-paper root-paper-fine pointer-events-none fixed z-460 m-0 px-2.5 py-0.5 font-display text-sm whitespace-nowrap text-ink capitalize [--root-paper-color:var(--color-paper-bright)] md:text-base'
 
 type TooltipAnchor = {
   centerX: number
