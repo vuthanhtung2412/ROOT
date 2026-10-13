@@ -1,4 +1,11 @@
-import { PCFSoftShadowMap, Scene, Vector3, WebGLRenderer } from 'three'
+import {
+  PCFSoftShadowMap,
+  PointLight,
+  Scene,
+  Vector3,
+  WebGLRenderer,
+  type Object3D,
+} from 'three'
 import {
   createCampfires,
   type Campfires,
@@ -139,6 +146,25 @@ export function createMapScene(input: MapSceneInput): MapScene {
     input.terrain.worldSize,
     input.frame,
   )
+  /**
+   * A material is built into a shader the first time it is drawn, and again
+   * the first time the campfires are lit: both stall a frame, in the middle
+   * of a zoom or of a change of phase. Build them all now, for both lightings,
+   * in the background where the browser can.
+   */
+  const warmUpShaders = (): void => {
+    for (const firesLit of [true, false]) {
+      campfires.group.traverse((part: Object3D): void => {
+        if (part instanceof PointLight) {
+          // Put back by the fires themselves on their next frame.
+          part.visible = firesLit
+        }
+      })
+      void renderer.compileAsync(scene, cameraRig.camera)
+    }
+  }
+  warmUpShaders()
+
   let frame: MapViewFrame = input.frame
   const viewListeners: Set<() => void> = new Set<() => void>()
   const notifyViewChanged = (): void => {
@@ -212,6 +238,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     setPieceModels: (pieceModels: PieceModels): void => {
       pieceLayer.setPieceModels(pieceModels)
       shadowsAreStale = true
+      warmUpShaders()
     },
     playBuild: pieceLayer.playBuild,
     setClearingRings: groundMarkers.setClearingRings,
