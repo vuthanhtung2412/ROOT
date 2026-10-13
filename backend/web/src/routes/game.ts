@@ -46,6 +46,7 @@ import {
 import { persistCurrentGame } from '#store/gamePersistence.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
 import { listAiPlayerViews } from '#view/aiPlayerView.js'
+import { formatPlayerGameView, formatPlayerLog } from '#view/playerView.js'
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
 import {
   redactLogForViewer,
@@ -301,6 +302,7 @@ const getGameViewRoute = createRoute({
   path: '/view',
   tags: ['game'],
   summary: 'Get formatted current game',
+  request: { query: ViewQuerySchema },
   responses: {
     200: {
       description: 'Formatted game state',
@@ -312,6 +314,12 @@ const getGameViewRoute = createRoute({
 
 gameRoutes.openapi(getGameViewRoute, (context) => {
   const game = requireGame()
+  if (context.req.valid('query').view === PLAYER_VIEW) {
+    return context.text(
+      formatPlayerGameView(game, context.req.header(PLAYER_ID_HEADER) ?? ''),
+      200,
+    )
+  }
   requireHotseatForFullDump()
   return context.text(
     formatGameView(game.state, { historyLength: game.history.length }),
@@ -488,6 +496,7 @@ const getFormattedLogRoute = createRoute({
   path: '/log/view',
   tags: ['game'],
   summary: 'Get formatted game log',
+  request: { query: ViewQuerySchema },
   responses: {
     200: {
       description: 'Formatted game log',
@@ -499,6 +508,16 @@ const getFormattedLogRoute = createRoute({
 
 gameRoutes.openapi(getFormattedLogRoute, (context) => {
   const game = requireGame()
+  if (context.req.valid('query').view === PLAYER_VIEW) {
+    return context.text(
+      formatPlayerLog(
+        game,
+        context.req.header(PLAYER_ID_HEADER) ?? '',
+        game.log.length,
+      ),
+      200,
+    )
+  }
   requireHotseatForFullDump()
   return context.text(formatTurnLog(game.log, game.state), 200)
 })

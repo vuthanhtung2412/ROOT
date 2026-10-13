@@ -335,6 +335,29 @@ describe('game routes', () => {
       expect(JSON.stringify(await playerLog.json())).not.toContain(FIRST_PLAYER_ID)
     })
 
+    it('formats the game and the log as that seat sees them', async () => {
+      await startHotseatGame()
+
+      const playerView = await app.request(
+        '/game/view?view=player',
+        asPlayer(SECOND_PLAYER_ID, 'GET'),
+      )
+      const playerLog = await app.request(
+        '/game/log/view?view=player',
+        asPlayer(SECOND_PLAYER_ID, 'GET'),
+      )
+      const fullView = await app.request('/game/view')
+
+      const playerViewText = await playerView.text()
+      expect(playerViewText).toContain(SECOND_PLAYER_ID)
+      expect(playerViewText).not.toContain(FIRST_PLAYER_ID)
+      expect(playerViewText).toContain('HIDDEN#hand-0-0')
+      const playerLogText = await playerLog.text()
+      expect(playerLogText).toContain('JOIN (marquise)')
+      expect(playerLogText).not.toContain(FIRST_PLAYER_ID)
+      expect(await fullView.text()).toContain(FIRST_PLAYER_ID)
+    })
+
     it('lets only the seat that may act send the action', async () => {
       await startHotseatGame()
 
