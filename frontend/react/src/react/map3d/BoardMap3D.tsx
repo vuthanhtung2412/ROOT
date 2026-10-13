@@ -44,6 +44,7 @@ import {
   type PieceGrounds,
 } from '#react/map3d/stackGrounds.ts'
 import { useMapScene, type MapSceneHandle } from '#react/map3d/useMapScene.ts'
+import { usePieceModels } from '#react/map3d/usePieceModels.ts'
 import {
   useTapOrDrag,
   type TapOrDragHandlers,
@@ -219,6 +220,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
   useEffect(() => {
     scene?.setPieces(mapPieces)
   }, [scene, mapPieces])
+  usePieceModels(scene, mapPieces)
 
   const [remembered, setRemembered] = useState<RememberedGrounds>(
     (): RememberedGrounds => ({

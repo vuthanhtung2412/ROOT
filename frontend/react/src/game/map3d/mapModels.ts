@@ -136,41 +136,13 @@ async function fetchMapModels(): Promise<MapModels> {
  * The pieces are most of the download and only show once the camera zooms
  * in: they are loaded apart, so the woodland does not wait for them.
  */
-async function fetchPieceModels(): Promise<PieceModels> {
-  const loader: GLTFLoader = new GLTFLoader()
-  const pieceEntries: Array<[string, PieceModelSource]> = Object.entries(
-    PIECE_MODEL_SOURCE_BY_TEXTURE_KEY,
-  )
-  // Several pieces share a file (the three suits of a base): load each once.
-  const pieceModelNames: string[] = [
-    ...new Set<string>(
-      pieceEntries.map(
-        ([, source]: [string, PieceModelSource]): string => source.name,
-      ),
-    ),
-  ]
-  const pieceModels: Group[] = await loadModels(loader, pieceModelNames)
-  const pieces: Map<string, PieceModel> = new Map<string, PieceModel>()
-  // Several pieces share a model (the three suits of a base): merge it once.
-  const mergedStructures: Map<Group, Group> = new Map<Group, Group>()
-  const mergedStructure = (model: Group): Group => {
-    const merged: Group =
-      mergedStructures.get(model) ?? mergePartsByMaterial(model)
-    mergedStructures.set(model, merged)
-    return merged
+async function fetchPieceModel(source: PieceModelSource): Promise<PieceModel> {
+  const model: Group = await loadModel(new GLTFLoader(), source.name)
+  return {
+    kind: source.kind,
+    // A meeple keeps its parts: the torch of a pawn is shown and hidden.
+    model: source.kind === 'structure' ? mergePartsByMaterial(model) : model,
   }
-  for (const [textureKey, source] of pieceEntries) {
-    const model: Group | undefined =
-      pieceModels[pieceModelNames.indexOf(source.name)]
-    if (model !== undefined) {
-      pieces.set(textureKey, {
-        kind: source.kind,
-        // A meeple keeps its parts: the torch of a pawn is shown and hidden.
-        model: source.kind === 'structure' ? mergedStructure(model) : model,
-      })
-    }
-  }
-  return pieces
 }
 
 /**
@@ -178,7 +150,23 @@ async function fetchPieceModels(): Promise<PieceModels> {
  * download and read every file again.
  */
 let mapModelsLoading: Promise<MapModels> | null = null
-let pieceModelsLoading: Promise<PieceModels> | null = null
+/** By file: several pieces share one (the three suits of a base). */
+const pieceModelLoadingByName: Map<string, Promise<PieceModel>> = new Map<
+  string,
+  Promise<PieceModel>
+>()
+
+function loadPieceModel(source: PieceModelSource): Promise<PieceModel> {
+  const loading: Promise<PieceModel> =
+    pieceModelLoadingByName.get(source.name) ??
+    fetchPieceModel(source).catch((error: Error): never => {
+      // A failed download is tried again the next time the piece is asked for.
+      pieceModelLoadingByName.delete(source.name)
+      throw error
+    })
+  pieceModelLoadingByName.set(source.name, loading)
+  return loading
+}
 
 export function loadMapModels(): Promise<MapModels> {
   mapModelsLoading ??= fetchMapModels().catch((error: Error): never => {
@@ -189,10 +177,28 @@ export function loadMapModels(): Promise<MapModels> {
   return mapModelsLoading
 }
 
-export function loadPieceModels(): Promise<PieceModels> {
-  pieceModelsLoading ??= fetchPieceModels().catch((error: Error): never => {
-    pieceModelsLoading = null
-    throw error
-  })
-  return pieceModelsLoading
+/**
+ * The models of the pieces with these token texture keys: only those of the
+ * factions in the game are downloaded, not the whole box.
+ */
+export async function loadPieceModels(
+  textureKeys: readonly string[],
+): Promise<PieceModels> {
+  const loaded: Array<[string, PieceModel] | null> = await Promise.all(
+    textureKeys.map(
+      async (textureKey: string): Promise<[string, PieceModel] | null> => {
+        const source: PieceModelSource | undefined =
+          PIECE_MODEL_SOURCE_BY_TEXTURE_KEY[textureKey]
+        return source === undefined
+          ? null
+          : [textureKey, await loadPieceModel(source)]
+      },
+    ),
+  )
+  return new Map<string, PieceModel>(
+    loaded.filter(
+      (entry: [string, PieceModel] | null): entry is [string, PieceModel] =>
+        entry !== null,
+    ),
+  )
 }

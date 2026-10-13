@@ -8,12 +8,7 @@ import {
 import type { CampfireSite } from '#game/map3d/campfires.ts'
 import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import type { ForestGround } from '#game/map3d/groundMarkers.ts'
-import {
-  loadMapModels,
-  loadPieceModels,
-  type MapModels,
-  type PieceModels,
-} from '#game/map3d/mapModels.ts'
+import { loadMapModels, type MapModels } from '#game/map3d/mapModels.ts'
 import { createMapScene, type MapScene } from '#game/map3d/mapScene.ts'
 import {
   createMapTerrain,
@@ -86,7 +81,6 @@ export function useMapScene(
   timeOfDay: TimeOfDay,
 ): MapSceneHandle {
   const [models, setModels] = useState<MapModels | null>(null)
-  const [pieceModels, setPieceModels] = useState<PieceModels | null>(null)
   const [scene, setScene] = useState<MapScene | null>(null)
 
   useEffect(() => {
@@ -94,11 +88,6 @@ export function useMapScene(
     void loadMapModels().then((loaded: MapModels): void => {
       if (!cancelled) {
         setModels(loaded)
-      }
-    })
-    void loadPieceModels().then((loaded: PieceModels): void => {
-      if (!cancelled) {
-        setPieceModels(loaded)
       }
     })
     return (): void => {
@@ -163,12 +152,6 @@ export function useMapScene(
     }
     // A new frame only rebuilds the scene through `terrain`.
   }, [canvasReference, forestGrounds, models, terrain])
-
-  useEffect(() => {
-    if (pieceModels !== null) {
-      scene?.setPieceModels(pieceModels)
-    }
-  }, [scene, pieceModels])
 
   useEffect(() => {
     scene?.resize(frame)
