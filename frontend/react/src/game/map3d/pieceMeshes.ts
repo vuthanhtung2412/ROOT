@@ -17,7 +17,7 @@ import {
   type BuildSite,
 } from '#game/map3d/buildAnimation.ts'
 import { createIconTexture } from '#game/map3d/iconTexture.ts'
-import type { PieceModel } from '#game/map3d/mapModels.ts'
+import type { PieceModel, PieceModels } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 import {
@@ -56,6 +56,8 @@ export type MapPiece = {
 export type PieceLayer = {
   group: Group
   setPieces: (pieces: readonly MapPiece[]) => void
+  /** The 3D models arrived: the pieces on the map take theirs. */
+  setPieceModels: (pieceModels: PieceModels) => void
   /** The Vagabond holds a torch: out in the evening, put away otherwise. */
   setTorchesShown: (shown: boolean) => void
   /** 0 = zoomed all the way out, 1 = all the way in. Call once per frame. */
@@ -163,10 +165,11 @@ function createBadgeTexture(count: number, color: number): CanvasTexture {
   return texture
 }
 
-export function createPieceLayer(
-  pieceModels: ReadonlyMap<string, PieceModel>,
-): PieceLayer {
+export function createPieceLayer(): PieceLayer {
   const group: Group = new Group()
+  /** Empty until they are loaded: a piece is only its icon until then. */
+  let pieceModels: PieceModels = new Map<string, PieceModel>()
+  let currentPieces: readonly MapPiece[] = []
   const buildAnimations: BuildAnimations = createBuildAnimations()
   // The pieces are rebuilt on every board update; the dust outlives them.
   const layer: Group = new Group()
@@ -363,54 +366,61 @@ export function createPieceLayer(
         }
   }
 
-  return {
-    group: layer,
-    setPieces: (pieces: readonly MapPiece[]): void => {
-      group.clear()
-      views = []
-      viewsByKey = new Map<string, PieceView>()
-      const addView = (pieceKey: string, view: PieceView): void => {
-        views.push(view)
-        viewsByKey.set(pieceKey, view)
+  const setPieces = (pieces: readonly MapPiece[]): void => {
+    currentPieces = pieces
+    group.clear()
+    views = []
+    viewsByKey = new Map<string, PieceView>()
+    const addView = (pieceKey: string, view: PieceView): void => {
+      views.push(view)
+      viewsByKey.set(pieceKey, view)
+    }
+    for (const piece of pieces) {
+      const holder: Group = new Group()
+      holder.position.set(piece.ground.x, 0, piece.ground.z)
+      group.add(holder)
+      if (piece.shape === 'slot') {
+        const slot: Object3D = slotDrawings.create()
+        slot.rotation.y = piece.rotation ?? 0
+        holder.add(slot)
+        continue
       }
-      for (const piece of pieces) {
-        const holder: Group = new Group()
-        holder.position.set(piece.ground.x, 0, piece.ground.z)
-        group.add(holder)
-        if (piece.shape === 'slot') {
-          const slot: Object3D = slotDrawings.create()
-          slot.rotation.y = piece.rotation ?? 0
-          holder.add(slot)
-          continue
-        }
-        const label: Group = createLabel(piece)
-        holder.add(label)
-        const pieceModel: PieceModel | undefined = pieceModels.get(
-          piece.textureKey,
-        )
-        if (pieceModel === undefined) {
-          addView(piece.key, {
-            ground: piece.ground,
-            label,
-            model: null,
-            modelScale: 1,
-            modelTop: 0,
-          })
-          continue
-        }
-        const created: { model: Object3D; scale: number; top: number } =
-          createModel(piece, pieceModel)
-        holder.add(created.model)
+      const label: Group = createLabel(piece)
+      holder.add(label)
+      const pieceModel: PieceModel | undefined = pieceModels.get(
+        piece.textureKey,
+      )
+      if (pieceModel === undefined) {
         addView(piece.key, {
           ground: piece.ground,
           label,
-          model: created.model,
-          modelScale: created.scale,
-          modelTop: created.top,
+          model: null,
+          modelScale: 1,
+          modelTop: 0,
         })
+        continue
       }
-      applyZoom()
-      applyTorches()
+      const created: { model: Object3D; scale: number; top: number } =
+        createModel(piece, pieceModel)
+      holder.add(created.model)
+      addView(piece.key, {
+        ground: piece.ground,
+        label,
+        model: created.model,
+        modelScale: created.scale,
+        modelTop: created.top,
+      })
+    }
+    applyZoom()
+    applyTorches()
+  }
+
+  return {
+    group: layer,
+    setPieces,
+    setPieceModels: (loaded: PieceModels): void => {
+      pieceModels = loaded
+      setPieces(currentPieces)
     },
     setTorchesShown: (shown: boolean): void => {
       torchesShown = shown

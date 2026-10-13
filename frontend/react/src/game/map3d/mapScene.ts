@@ -16,7 +16,7 @@ import {
   type GroundMarkers,
 } from '#game/map3d/groundMarkers.ts'
 import { createMapCameraRig, type MapCameraRig } from '#game/map3d/mapCamera.ts'
-import type { MapModels } from '#game/map3d/mapModels.ts'
+import type { MapModels, PieceModels } from '#game/map3d/mapModels.ts'
 import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type {
   MapGroundPoint,
@@ -63,6 +63,8 @@ export type MapViewPoint = {
 export type MapScene = {
   resize: (frame: MapViewFrame) => void
   setPieces: (pieces: readonly MapPiece[]) => void
+  /** The 3D models of the pieces arrived, after the woodland was up. */
+  setPieceModels: (pieceModels: PieceModels) => void
   /** The pieces with these keys were just built: play them going up. */
   playBuild: (pieceKeys: readonly string[]) => void
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
@@ -107,7 +109,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     suitTexturePaths: input.suitTexturePaths,
     timeOfDay: input.timeOfDay,
   })
-  const pieceLayer: PieceLayer = createPieceLayer(input.models.pieces)
+  const pieceLayer: PieceLayer = createPieceLayer()
   pieceLayer.setTorchesShown(input.timeOfDay === TORCH_TIME_OF_DAY)
   const riverFlow: RiverFlow = createRiverFlow(input.terrain.river)
   const campfires: Campfires = createCampfires({
@@ -205,6 +207,10 @@ export function createMapScene(input: MapSceneInput): MapScene {
           .filter((piece: MapPiece): boolean => piece.isInForest === true)
           .map((piece: MapPiece): MapGroundPoint => piece.ground),
       )
+    },
+    setPieceModels: (pieceModels: PieceModels): void => {
+      pieceLayer.setPieceModels(pieceModels)
+      shadowsAreStale = true
     },
     playBuild: pieceLayer.playBuild,
     setClearingRings: groundMarkers.setClearingRings,

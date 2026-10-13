@@ -94,13 +94,15 @@ export type PieceModel = {
   model: Group
 }
 
+/** The woodland itself: all the first frame needs. */
 export type MapModels = {
   trees: TreeModels
-  /** Model per token texture key; a piece without one is only its icon. */
-  pieces: ReadonlyMap<string, PieceModel>
   /** Logs in a ring of stones: the fire of every clearing. */
   campfire: Group
 }
+
+/** Model per token texture key; a piece without one is only its icon. */
+export type PieceModels = ReadonlyMap<string, PieceModel>
 
 async function loadModel(loader: GLTFLoader, name: string): Promise<Group> {
   const model: GLTF = await loader.loadAsync(
@@ -120,6 +122,22 @@ function loadModels(
 
 export async function loadMapModels(): Promise<MapModels> {
   const loader: GLTFLoader = new GLTFLoader()
+  const [pine, leafy, autumn, campfire]: [Group[], Group[], Group[], Group] =
+    await Promise.all([
+      loadModels(loader, PINE_MODEL_NAMES),
+      loadModels(loader, LEAFY_MODEL_NAMES),
+      loadModels(loader, AUTUMN_MODEL_NAMES),
+      loadModel(loader, CAMPFIRE_MODEL_NAME),
+    ])
+  return { trees: { pine, leafy, autumn }, campfire }
+}
+
+/**
+ * The pieces are most of the download and only show once the camera zooms
+ * in: they are loaded apart, so the woodland does not wait for them.
+ */
+export async function loadPieceModels(): Promise<PieceModels> {
+  const loader: GLTFLoader = new GLTFLoader()
   const pieceEntries: Array<[string, PieceModelSource]> = Object.entries(
     PIECE_MODEL_SOURCE_BY_TEXTURE_KEY,
   )
@@ -131,19 +149,7 @@ export async function loadMapModels(): Promise<MapModels> {
       ),
     ),
   ]
-  const [pine, leafy, autumn, pieceModels, campfire]: [
-    Group[],
-    Group[],
-    Group[],
-    Group[],
-    Group,
-  ] = await Promise.all([
-    loadModels(loader, PINE_MODEL_NAMES),
-    loadModels(loader, LEAFY_MODEL_NAMES),
-    loadModels(loader, AUTUMN_MODEL_NAMES),
-    loadModels(loader, pieceModelNames),
-    loadModel(loader, CAMPFIRE_MODEL_NAME),
-  ])
+  const pieceModels: Group[] = await loadModels(loader, pieceModelNames)
   const pieces: Map<string, PieceModel> = new Map<string, PieceModel>()
   // Several pieces share a model (the three suits of a base): merge it once.
   const mergedStructures: Map<Group, Group> = new Map<Group, Group>()
@@ -164,5 +170,5 @@ export async function loadMapModels(): Promise<MapModels> {
       })
     }
   }
-  return { trees: { pine, leafy, autumn }, pieces, campfire }
+  return pieces
 }
