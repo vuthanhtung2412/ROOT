@@ -1,8 +1,9 @@
-import { RuleError, type Action } from '@root/lib'
+import { DECREE_COLUMNS, RuleError, type Action } from '@root/lib'
 import { z } from 'zod'
 import { previewAction } from '#aiPlayer/aiPlayerActionPreview.js'
 import { buildActionReport } from '#aiPlayer/aiPlayerActionReport.js'
 import { lookUpCardDetails } from '#aiPlayer/aiPlayerCardDetail.js'
+import { checkDecree } from '#aiPlayer/aiPlayerDecreeCheck.js'
 import {
   fail,
   formatJson,
@@ -73,6 +74,7 @@ export const LOG_TOOL_NAME = 'log'
 export const RULES_TOOL_NAME = 'rules'
 export const ACT_TOOL_NAME = 'act'
 export const CARD_TOOL_NAME = 'card'
+export const DECREE_TOOL_NAME = 'decree'
 export const PREVIEW_TOOL_NAME = 'preview'
 
 const DEFAULT_LOG_ENTRY_LIMIT = 40
@@ -140,6 +142,42 @@ const ActInputSchema = z.object({
       'One action: "type" from a legal action, plus one value chosen from each of its params.',
     ),
 })
+
+const DecreeInputSchema = z.object({
+  adding: z
+    .array(z.object({ cardId: z.string(), column: z.enum(DECREE_COLUMNS) }))
+    .optional()
+    .describe(
+      'Hand cards to try in a column before you add them, in the shape "addToDecree" takes.',
+    ),
+})
+
+function runDecree(
+  context: AiPlayerToolContext,
+  input: JsonValue,
+): AiPlayerToolResult {
+  const parsed = DecreeInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return fail(
+      'Bad input: pass {} or {"adding": [{"cardId": "<hand card id>", "column": "recruit" | "move" | "battle" | "build"}]}.',
+    )
+  }
+  try {
+    const check = checkDecree(
+      context.game,
+      context.playerId,
+      parsed.data.adding ?? [],
+    )
+    return check === null
+      ? fail('Only the Eyrie have a Decree.')
+      : succeed(formatJson(check))
+  } catch (error) {
+    if (error instanceof RuleError) {
+      return fail(`${error.code}: ${JSON.stringify(error.detail ?? null)}.`)
+    }
+    throw error
+  }
+}
 
 /**
  * Shared by `act` and `preview`: reads the action, checks the seat, and turns
@@ -289,6 +327,15 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
       inputJsonSchema: z.toJSONSchema(CardInputSchema),
     },
     run: runCard,
+  },
+  {
+    definition: {
+      name: DECREE_TOOL_NAME,
+      description:
+        'Eyrie only. Your Decree card by card: whether each card can resolve on the map as it stands and in which clearings ("where"; for a move, the clearings to move from), what would send you into turmoil ("turmoilRisks") and the victory points turmoil costs. Pass "adding" to test hand cards in a column before "addToDecree". Use it instead of working out turmoil by hand.',
+      inputJsonSchema: z.toJSONSchema(DecreeInputSchema),
+    },
+    run: runDecree,
   },
   {
     definition: {

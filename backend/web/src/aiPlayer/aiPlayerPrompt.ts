@@ -3,6 +3,7 @@ import {
   ACT_TOOL_NAME,
   ACTIONS_TOOL_NAME,
   CARD_TOOL_NAME,
+  DECREE_TOOL_NAME,
   LOG_TOOL_NAME,
   PREVIEW_TOOL_NAME,
   RULES_TOOL_NAME,
@@ -26,6 +27,9 @@ const FACTION_RULE_CHAPTERS: Readonly<Record<FactionId, string>> = {
 
 const VICTORY_POINT_GOAL = 30
 
+const DECREE_FACTION: FactionId = 'eyrie'
+const DECREE_TOOL_LINE = `- ${DECREE_TOOL_NAME}: your Decree card by card: which cards can resolve, where, and what would cause turmoil. Call it before you add to the Decree, with the cards you mean to add.\n`
+
 /** Stable per seat for the whole game, so providers can cache it. */
 export function buildAiPlayerSystemPrompt(identity: AiPlayerIdentity): string {
   return `You are playing the board game Root as the ${identity.faction} faction, seat ${String(identity.seat)}. In logs and actions a seat is written "s${String(identity.seat)}" or as its number. The other seats are your opponents. Play to win: the first player to reach ${String(VICTORY_POINT_GOAL)} victory points wins, or a player who completes a dominance card.
@@ -36,7 +40,7 @@ The game runs on a rules engine. You play only through these tools:
 - ${LOG_TOOL_NAME}: what happened recently.
 - ${RULES_TOOL_NAME}: the Law of Root. Your faction is chapter ${FACTION_RULE_CHAPTERS[identity.faction]}; battle is 4.3, crafting 4.1, movement 4.2.
 - ${CARD_TOOL_NAME}: your cards in full: text, craft cost, and whether you can craft each one right now.
-- ${PREVIEW_TOOL_NAME}: dry run of one action: is it legal and what would it cause. Nothing is applied.
+${identity.faction === DECREE_FACTION ? DECREE_TOOL_LINE : ''}- ${PREVIEW_TOOL_NAME}: dry run of one action: is it legal and what would it cause. Nothing is applied.
 - ${ACT_TOOL_NAME}: take one action.
 
 How to act: every legal action has a "type" and "params". Each param lists the values you may choose from. Build the action as {"type": <type>, <param name>: <one chosen value>, ...} and pass it to ${ACT_TOOL_NAME}. When a param lists whole objects (for example "options", "targets" or "moves"), choose one object and put its fields into the action. One exception: "addToDecree" takes "cards", a list of one or two of its options with at most one bird card among them: {"type": "addToDecree", "cards": [{"cardId": <card>, "column": <column>}]}. If the engine rejects the action, read the error, call ${ACTIONS_TOOL_NAME} again and correct it. The engine is the authority on what is legal: an action that is not in ${ACTIONS_TOOL_NAME} cannot be taken.
