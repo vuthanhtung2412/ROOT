@@ -12,6 +12,8 @@ export type ApiAction = components['schemas']['Action']
 export type ActionSpec = components['schemas']['ActionSpec']
 export type GameSnapshot = components['schemas']['GameSnapshot']
 export type FallLayout = components['schemas']['FallLayoutResponse']
+/** A seat played by an LLM: seat, `<provider>:<modelId>`, live status. */
+export type AiPlayer = components['schemas']['AiPlayer']
 type OpenApiActionResult = components['schemas']['ActionResult']
 
 type ClientResult<T> = {
@@ -104,6 +106,11 @@ export type CreateGameApiOptions = {
   requestTimeoutMilliseconds?: number
   /** Current join id, sent on every request; null while not seated. */
   playerId?: () => string | null
+  /**
+   * Ask for the player view: see and do only what the `playerId` seat may,
+   * also in a hotseat game.
+   */
+  playerView?: boolean
 }
 
 export type GameApi = {
@@ -117,6 +124,7 @@ export type GameApi = {
     state: GameState
     historyLength: number
     mode: LobbyMode
+    aiPlayers: AiPlayer[]
   }>
   gameView: () => Promise<string>
   getSnapshot: () => Promise<GameSnapshot>
@@ -145,7 +153,7 @@ function readErrorBody(value: unknown): Partial<ErrorBody> {
   }
 }
 
-function requireData<T>(result: ClientResult<T>): T {
+export function requireData<T>(result: ClientResult<T>): T {
   if (!result.response.ok) {
     const body = readErrorBody(result.error ?? {})
     throw new ApiError(result.response.status, {
@@ -225,7 +233,7 @@ function isFactionId(value: string): value is FactionId {
   )
 }
 
-function parseFactionIds(values: string[]): FactionId[] {
+export function parseFactionIds(values: string[]): FactionId[] {
   const factionIds: FactionId[] = []
   for (const value of values) {
     if (!isFactionId(value)) {
@@ -283,7 +291,7 @@ function withPlayerIdHeader(
   }
 }
 
-function createClient(options: CreateGameApiOptions): RootWebClient {
+export function createClient(options: CreateGameApiOptions): RootWebClient {
   if (options.client !== undefined) return options.client
   const baseRequest =
     options.request ??
@@ -309,6 +317,8 @@ export function createGameApi(
   options: CreateGameApiOptions = {},
 ): GameApi {
   const client = createClient(options)
+  const viewQuery: { view?: 'player' } =
+    options.playerView === true ? { view: 'player' } : {}
 
   return {
     async createGame(
@@ -349,17 +359,26 @@ export function createGameApi(
       state: GameState
       historyLength: number
       mode: LobbyMode
+      aiPlayers: AiPlayer[]
     }> {
-      const data = requireData(await client.GET('/game'))
+      const data = requireData(
+        await client.GET('/game', { params: { query: viewQuery } }),
+      )
       return {
         state: parseGameState(data.state),
         historyLength: data.historyLength,
         mode: data.mode,
+        aiPlayers: data.aiPlayers,
       }
     },
 
     async gameView(): Promise<string> {
-      return requireData(await client.GET('/game/view', { parseAs: 'text' }))
+      return requireData(
+        await client.GET('/game/view', {
+          params: { query: viewQuery },
+          parseAs: 'text',
+        }),
+      )
     },
 
     async getSnapshot(): Promise<GameSnapshot> {
@@ -383,24 +402,34 @@ export function createGameApi(
     },
 
     async legalActions(): Promise<LegalActionsResponse> {
-      return requireData(await client.GET('/game/actions'))
+      return requireData(
+        await client.GET('/game/actions', { params: { query: viewQuery } }),
+      )
     },
 
     async submitAction(action: unknown): Promise<ActionResult> {
       if (!isApiAction(action)) {
         throw new Error('invalid action payload')
       }
-      const result = await client.POST('/game/actions', { body: action })
+      const result = await client.POST('/game/actions', {
+        params: { query: viewQuery },
+        body: action,
+      })
       return parseActionResult(requireData(result))
     },
 
     async gameLog(): Promise<{ log: unknown[] }> {
-      return requireData(await client.GET('/game/log'))
+      return requireData(
+        await client.GET('/game/log', { params: { query: viewQuery } }),
+      )
     },
 
     async formattedGameLog(): Promise<string> {
       return requireData(
-        await client.GET('/game/log/view', { parseAs: 'text' }),
+        await client.GET('/game/log/view', {
+          params: { query: viewQuery },
+          parseAs: 'text',
+        }),
       )
     },
 

@@ -160,12 +160,49 @@
           },
           "mode": {
             "$ref": "#/components/schemas/LobbyMode"
+          },
+          "aiPlayers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiPlayer"
+            }
           }
         },
         "required": [
           "state",
           "historyLength",
-          "mode"
+          "mode",
+          "aiPlayers"
+        ]
+      },
+      "AiPlayer": {
+        "type": "object",
+        "properties": {
+          "seat": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "model": {
+            "type": "string",
+            "description": "Model as <provider>:<modelId>, one of GET /game/ai-models."
+          },
+          "status": {
+            "$ref": "#/components/schemas/AiPlayerStatus"
+          }
+        },
+        "required": [
+          "seat",
+          "model",
+          "status"
+        ]
+      },
+      "AiPlayerStatus": {
+        "type": "string",
+        "enum": [
+          "idle",
+          "thinking",
+          "stuck"
         ]
       },
       "GameSnapshot": {
@@ -287,6 +324,71 @@
         },
         "required": [
           "state"
+        ]
+      },
+      "AiModelsResponse": {
+        "type": "object",
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Models an AI player may use: the server list, minus providers without an API key."
+          },
+          "defaultModel": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "models",
+          "defaultModel"
+        ]
+      },
+      "AiPlayersResponse": {
+        "type": "object",
+        "properties": {
+          "aiPlayers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiPlayer"
+            }
+          }
+        },
+        "required": [
+          "aiPlayers"
+        ]
+      },
+      "AddAiPlayerBody": {
+        "type": "object",
+        "properties": {
+          "faction": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FactionId"
+              },
+              {
+                "description": "Open lobby: the faction the AI player takes."
+              }
+            ]
+          },
+          "model": {
+            "type": "string",
+            "description": "Model as <provider>:<modelId>, one of GET /game/ai-models. Omitted = the default model."
+          }
+        }
+      },
+      "SetAiPlayerModelBody": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Model as <provider>:<modelId>, one of GET /game/ai-models."
+          }
+        },
+        "required": [
+          "model"
         ]
       },
       "FallMapResponse": {
@@ -485,6 +587,21 @@
           "game"
         ],
         "summary": "Get current game",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "player"
+              ],
+              "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped."
+            },
+            "required": false,
+            "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped.",
+            "name": "view",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Current game",
@@ -656,6 +773,21 @@
           "game"
         ],
         "summary": "Get formatted current game",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "player"
+              ],
+              "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped."
+            },
+            "required": false,
+            "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped.",
+            "name": "view",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Formatted game state",
@@ -829,6 +961,21 @@
           "game"
         ],
         "summary": "List legal actions",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "player"
+              ],
+              "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped."
+            },
+            "required": false,
+            "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped.",
+            "name": "view",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Legal ActionSpecs",
@@ -877,6 +1024,21 @@
           "game"
         ],
         "summary": "Apply action",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "player"
+              ],
+              "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped."
+            },
+            "required": false,
+            "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped.",
+            "name": "view",
+            "in": "query"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -937,6 +1099,21 @@
           "game"
         ],
         "summary": "Get game log",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "player"
+              ],
+              "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped."
+            },
+            "required": false,
+            "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped.",
+            "name": "view",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Log entries",
@@ -987,6 +1164,21 @@
           "game"
         ],
         "summary": "Get formatted game log",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "player"
+              ],
+              "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped."
+            },
+            "required": false,
+            "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped.",
+            "name": "view",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Formatted game log",
@@ -1189,6 +1381,260 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/ai-models": {
+      "get": {
+        "tags": [
+          "ai-player"
+        ],
+        "summary": "List models an AI player may use",
+        "responses": {
+          "200": {
+            "description": "Offered models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/ai-players": {
+      "post": {
+        "tags": [
+          "ai-player"
+        ],
+        "summary": "Seat an AI player in the lobby",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddAiPlayerBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "AI player seated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPlayersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/ai-players/{seat}": {
+      "patch": {
+        "tags": [
+          "ai-player"
+        ],
+        "summary": "Change the model of an AI player (lobby only)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "minimum": 0,
+              "maximum": 3,
+              "description": "Seat of the AI player."
+            },
+            "required": false,
+            "description": "Seat of the AI player.",
+            "name": "seat",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAiPlayerModelBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Model changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPlayersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/ai-players/{seat}/restart": {
+      "post": {
+        "tags": [
+          "ai-player"
+        ],
+        "summary": "Restart the session of an AI player",
+        "description": "Drops what the AI player was doing (thinking or stuck) and starts a fresh session from the current game state. Actions it already took stay. Operator tool: no seat check.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "minimum": 0,
+              "maximum": 3,
+              "description": "Seat of the AI player."
+            },
+            "required": false,
+            "description": "Seat of the AI player.",
+            "name": "seat",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session restarted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPlayersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/rules": {
+      "get": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Look up the Law of Root",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "A rule number such as 7.2 (that rule and its sub-rules) or keywords such as \"ambush defender\"."
+            },
+            "required": true,
+            "description": "A rule number such as 7.2 (that rule and its sub-rules) or keywords such as \"ambush defender\".",
+            "name": "query",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching rule sections as text",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }

@@ -23,6 +23,12 @@ export interface paths {
   "/game": {
     /** Get current game */
     get: {
+      parameters: {
+        query?: {
+          /** @description player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped. */
+          view?: "player";
+        };
+      };
       responses: {
         /** @description Current game */
         200: {
@@ -170,6 +176,12 @@ export interface paths {
   "/game/view": {
     /** Get formatted current game */
     get: {
+      parameters: {
+        query?: {
+          /** @description player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped. */
+          view?: "player";
+        };
+      };
       responses: {
         /** @description Formatted game state */
         200: {
@@ -272,6 +284,12 @@ export interface paths {
   "/game/actions": {
     /** List legal actions */
     get: {
+      parameters: {
+        query?: {
+          /** @description player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped. */
+          view?: "player";
+        };
+      };
       responses: {
         /** @description Legal ActionSpecs */
         200: {
@@ -301,6 +319,12 @@ export interface paths {
     };
     /** Apply action */
     post: {
+      parameters: {
+        query?: {
+          /** @description player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped. */
+          view?: "player";
+        };
+      };
       requestBody: {
         content: {
           "application/json": components["schemas"]["Action"];
@@ -337,6 +361,12 @@ export interface paths {
   "/game/log": {
     /** Get game log */
     get: {
+      parameters: {
+        query?: {
+          /** @description player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped. */
+          view?: "player";
+        };
+      };
       responses: {
         /** @description Log entries */
         200: {
@@ -368,6 +398,12 @@ export interface paths {
   "/game/log/view": {
     /** Get formatted game log */
     get: {
+      parameters: {
+        query?: {
+          /** @description player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped. */
+          view?: "player";
+        };
+      };
       responses: {
         /** @description Formatted game log */
         200: {
@@ -495,6 +531,156 @@ export interface paths {
       };
     };
   };
+  "/game/ai-models": {
+    /** List models an AI player may use */
+    get: {
+      responses: {
+        /** @description Offered models */
+        200: {
+          content: {
+            "application/json": components["schemas"]["AiModelsResponse"];
+          };
+        };
+      };
+    };
+  };
+  "/game/ai-players": {
+    /** Seat an AI player in the lobby */
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["AddAiPlayerBody"];
+        };
+      };
+      responses: {
+        /** @description AI player seated */
+        201: {
+          content: {
+            "application/json": components["schemas"]["AiPlayersResponse"];
+          };
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/ai-players/{seat}": {
+    /** Change the model of an AI player (lobby only) */
+    patch: {
+      parameters: {
+        path: {
+          /** @description Seat of the AI player. */
+          seat: number | null;
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["SetAiPlayerModelBody"];
+        };
+      };
+      responses: {
+        /** @description Model changed */
+        200: {
+          content: {
+            "application/json": components["schemas"]["AiPlayersResponse"];
+          };
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/ai-players/{seat}/restart": {
+    /**
+     * Restart the session of an AI player
+     * @description Drops what the AI player was doing (thinking or stuck) and starts a fresh session from the current game state. Actions it already took stay. Operator tool: no seat check.
+     */
+    post: {
+      parameters: {
+        path: {
+          /** @description Seat of the AI player. */
+          seat: number | null;
+        };
+      };
+      responses: {
+        /** @description Session restarted */
+        200: {
+          content: {
+            "application/json": components["schemas"]["AiPlayersResponse"];
+          };
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/rules": {
+    /** Look up the Law of Root */
+    get: {
+      parameters: {
+        query: {
+          /** @description A rule number such as 7.2 (that rule and its sub-rules) or keywords such as "ambush defender". */
+          query: string;
+        };
+      };
+      responses: {
+        /** @description Matching rule sections as text */
+        200: {
+          content: {
+            "text/plain": string;
+          };
+        };
+      };
+    };
+  };
   "/map/fall": {
     /** Fall map graph */
     get: {
@@ -569,7 +755,16 @@ export interface components {
       state: components["schemas"]["GameState"];
       historyLength: number;
       mode: components["schemas"]["LobbyMode"];
+      aiPlayers: components["schemas"]["AiPlayer"][];
     };
+    AiPlayer: {
+      seat: number;
+      /** @description Model as <provider>:<modelId>, one of GET /game/ai-models. */
+      model: string;
+      status: components["schemas"]["AiPlayerStatus"];
+    };
+    /** @enum {string} */
+    AiPlayerStatus: "idle" | "thinking" | "stuck";
     GameSnapshot: {
       state: components["schemas"]["GameState"];
       history: components["schemas"]["Action"][];
@@ -598,6 +793,23 @@ export interface components {
     };
     UndoResponse: {
       state: components["schemas"]["GameState"];
+    };
+    AiModelsResponse: {
+      /** @description Models an AI player may use: the server list, minus providers without an API key. */
+      models: string[];
+      defaultModel: string | null;
+    };
+    AiPlayersResponse: {
+      aiPlayers: components["schemas"]["AiPlayer"][];
+    };
+    AddAiPlayerBody: {
+      faction?: components["schemas"]["FactionId"];
+      /** @description Model as <provider>:<modelId>, one of GET /game/ai-models. Omitted = the default model. */
+      model?: string;
+    };
+    SetAiPlayerModelBody: {
+      /** @description Model as <provider>:<modelId>, one of GET /game/ai-models. */
+      model: string;
     };
     FallMapResponse: {
       clearings: unknown[];
