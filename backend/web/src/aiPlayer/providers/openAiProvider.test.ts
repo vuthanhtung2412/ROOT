@@ -87,6 +87,7 @@ describe('openai provider', () => {
       { type: 'function', name: 'actions' },
       { type: 'function', name: 'log' },
       { type: 'function', name: 'rules' },
+      { type: 'function', name: 'card' },
       {
         type: 'function',
         name: 'act',

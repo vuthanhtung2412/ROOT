@@ -1,6 +1,7 @@
 import { RuleError } from '@root/lib'
 import { z } from 'zod'
 import { buildActionReport } from '#aiPlayer/aiPlayerActionReport.js'
+import { lookUpCardDetails } from '#aiPlayer/aiPlayerCardDetail.js'
 import {
   fail,
   formatJson,
@@ -70,6 +71,7 @@ export const ACTIONS_TOOL_NAME = 'actions'
 export const LOG_TOOL_NAME = 'log'
 export const RULES_TOOL_NAME = 'rules'
 export const ACT_TOOL_NAME = 'act'
+export const CARD_TOOL_NAME = 'card'
 
 const DEFAULT_LOG_ENTRY_LIMIT = 40
 const MAXIMUM_LOG_ENTRY_LIMIT = 200
@@ -85,6 +87,39 @@ const LogInputSchema = z.object({
     .optional()
     .describe('How many of the latest log lines to return.'),
 })
+
+const CardInputSchema = z.object({
+  cards: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Card ids such as "ROOT-224#1". Leave out for your whole hand. A card must be face up for you: your hand, crafted cards, the Decree, the discard pile.',
+    ),
+})
+
+function runCard(
+  context: AiPlayerToolContext,
+  input: JsonValue,
+): AiPlayerToolResult {
+  const parsed = CardInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return fail('Bad input: pass {} or {"cards": ["<card id>", ...]}.')
+  }
+  const lookup = lookUpCardDetails(
+    context.game,
+    context.playerId,
+    parsed.data.cards ?? [],
+  )
+  if (lookup === null) {
+    return fail('You hold no seat in this game.')
+  }
+  if (lookup.unknownCardIds.length > 0) {
+    return fail(
+      `No face-up card with id ${lookup.unknownCardIds.join(', ')}. Card ids are in "${SHOW_TOOL_NAME}" and "${ACTIONS_TOOL_NAME}".`,
+    )
+  }
+  return succeed(formatJson(lookup.cards))
+}
 
 const RulesInputSchema = z.object({
   query: z
@@ -209,6 +244,15 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
       }
       return succeed(formatRuleLookup(context.rulebook, parsed.data.query))
     },
+  },
+  {
+    definition: {
+      name: CARD_TOOL_NAME,
+      description:
+        'Cards in full: suit, type, text, and for a craftable card its cost, what it gives, whether you can craft it right now ("craftableNow"), which cost suits your unused crafting pieces do not cover ("missing"), and the action types that may take the card right now ("legalUsesNow"). Call it with {} for your whole hand before you plan a turn.',
+      inputJsonSchema: z.toJSONSchema(CardInputSchema),
+    },
+    run: runCard,
   },
   {
     definition: {
