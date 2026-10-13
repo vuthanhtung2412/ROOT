@@ -26,6 +26,16 @@ describe('redactLogForViewer', () => {
     ])
   })
 
+  it('removes the join id from an expel entry', () => {
+    const log: LogEntry[] = [
+      { t: 'expel', playerId: EYRIE_PLAYER_ID, faction: 'eyrie' },
+    ]
+
+    const forMarquise = redactLogForViewer(log, state, MARQUISE_PLAYER_ID)
+
+    expect(forMarquise).toEqual([{ t: 'expel', faction: 'eyrie' }])
+  })
+
   it('hides the card of another seat hidden-card action, keeps the viewer own', () => {
     const log: LogEntry[] = [
       {

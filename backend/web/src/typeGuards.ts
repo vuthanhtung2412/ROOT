@@ -1,4 +1,4 @@
-import type { Action, FactionId, GameSnapshot } from '@root/lib'
+import type { Action, FactionId, GameSnapshot, Seat } from '@root/lib'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -15,6 +15,12 @@ const FACTION_IDS: ReadonlySet<string> = new Set([
 
 export function isFactionId(value: unknown): value is FactionId {
   return typeof value === 'string' && FACTION_IDS.has(value)
+}
+
+const SEAT_COUNT = 4
+
+export function isSeat(value: number): value is Seat {
+  return Number.isInteger(value) && value >= 0 && value < SEAT_COUNT
 }
 
 export function isFactionIdArray(value: unknown): value is FactionId[] {

@@ -27,7 +27,7 @@ let session: GameSessionLog | null = null
 /** One GAME END block per log folder. */
 let gameEndSummaryLogged = false
 
-export type GameLogEventLabel = 'CREATE' | 'JOIN' | 'START' | 'ACT' | 'UNDO' | 'LOAD'
+export type GameLogEventLabel = 'CREATE' | 'JOIN' | 'EXPEL' | 'START' | 'ACT' | 'UNDO' | 'LOAD'
 
 /** Structured event for React / DevTools timeline scrubbing. */
 export type GameLogEvent = {

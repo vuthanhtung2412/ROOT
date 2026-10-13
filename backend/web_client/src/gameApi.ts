@@ -119,6 +119,8 @@ export type GameApi = {
   ) => Promise<{ state: GameState; mode: LobbyMode }>
   /** `faction`: the player's pick in an open lobby (created with no factions). */
   join: (playerId: string, faction?: string) => Promise<ActionResult>
+  /** Open lobby, host only: free the seat of a human or AI player. */
+  expelPlayer: (seat: number) => Promise<void>
   start: () => Promise<ActionResult>
   getGame: () => Promise<{
     state: GameState
@@ -349,6 +351,14 @@ export function createGameApi(
         },
       })
       return parseActionResult(requireData(result))
+    },
+
+    async expelPlayer(seat: number): Promise<void> {
+      requireSuccess(
+        await client.DELETE('/game/players/{seat}', {
+          params: { path: { seat } },
+        }),
+      )
     },
 
     async start(): Promise<ActionResult> {

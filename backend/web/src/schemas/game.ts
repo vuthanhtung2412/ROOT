@@ -56,6 +56,13 @@ export const JoinBodySchema = z
   })
   .openapi('JoinBody')
 
+export const LobbySeatParamsSchema = z.object({
+  seat: z.coerce.number().int().min(0).max(3).openapi({
+    param: { name: 'seat', in: 'path' },
+    description: 'Seat of the player to expel.',
+  }),
+})
+
 export const GetGameResponseSchema = z
   .object({
     state: GameStateSchema,

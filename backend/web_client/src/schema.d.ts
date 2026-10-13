@@ -678,6 +678,44 @@ export interface paths {
       };
     };
   };
+  "/game/players/{seat}": {
+    /**
+     * Expel a player from the open lobby
+     * @description Frees the seat of a human or AI player; later seats move down one. Host only in online mode. The host seat (0) cannot be expelled.
+     */
+    delete: {
+      parameters: {
+        path: {
+          /** @description Seat of the player to expel. */
+          seat: number | null;
+        };
+      };
+      responses: {
+        /** @description Player expelled */
+        204: {
+          content: never;
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
   "/game/rules": {
     /** Look up the Law of Root */
     get: {

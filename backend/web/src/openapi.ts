@@ -6,6 +6,7 @@ import { corsMiddleware } from '#middleware/cors.js'
 import { onError } from '#middleware/errors.js'
 import { aiPlayerRoutes } from '#routes/aiPlayer.js'
 import { gameRoutes } from '#routes/game.js'
+import { lobbyPlayerRoutes } from '#routes/lobbyPlayer.js'
 import { mapRoutes } from '#routes/map.js'
 import { rulesRoutes } from '#routes/rules.js'
 import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
@@ -68,6 +69,7 @@ app.openapi(healthRoute, (context) => {
 
 app.route('/game', gameRoutes)
 app.route('/game', aiPlayerRoutes)
+app.route('/game', lobbyPlayerRoutes)
 app.route('/game', rulesRoutes)
 app.route('/map', mapRoutes)
 

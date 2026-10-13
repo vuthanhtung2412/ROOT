@@ -5,7 +5,19 @@
     "version": "0.0.1",
     "description": "Single-slot Root GP2 HTTP API (Marquise vs Eyrie)"
   },
+  "security": [
+    {
+      "playerId": []
+    }
+  ],
   "components": {
+    "securitySchemes": {
+      "playerId": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Player-Id"
+      }
+    },
     "schemas": {
       "ServiceInfo": {
         "type": "object",
@@ -1681,6 +1693,65 @@
               "text/event-stream": {
                 "schema": {
                   "$ref": "#/components/schemas/AiPlayerActivity"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/players/{seat}": {
+      "delete": {
+        "tags": [
+          "game"
+        ],
+        "summary": "Expel a player from the open lobby",
+        "description": "Frees the seat of a human or AI player; later seats move down one. Host only in online mode. The host seat (0) cannot be expelled.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "minimum": 0,
+              "maximum": 3,
+              "description": "Seat of the player to expel."
+            },
+            "required": false,
+            "description": "Seat of the player to expel.",
+            "name": "seat",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Player expelled"
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }

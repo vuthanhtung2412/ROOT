@@ -46,11 +46,11 @@ export function formatPlayerLog(
   const state = redactStateForViewer(game.state, playerId)
   return redactLogForViewer(game.log, game.state, playerId)
     .slice(-entryLimit)
-    .map((entry: ViewerLogEntry): string =>
-      entry.t === 'join'
-        ? `JOIN (${entry.faction})`
-        : describeLogEntry(entry, state),
-    )
+    .map((entry: ViewerLogEntry): string => {
+      if (entry.t === 'join') return `JOIN (${entry.faction})`
+      if (entry.t === 'expel') return `EXPEL (${entry.faction})`
+      return describeLogEntry(entry, state)
+    })
     .join('\n')
 }
 
