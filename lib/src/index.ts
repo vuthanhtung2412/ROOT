@@ -23,6 +23,7 @@ export type {
 } from '#factions/eyrie/decreeForecast.js'
 export { DECREE_COLUMNS, type DecreeColumn } from '#state/boards.js'
 
+export { describeActionShape } from '#actions/actionShape.js'
 export type { LogEntry } from '#log/types.js'
 
 export type {

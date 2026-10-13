@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   assertActionShape,
+  describeActionShape,
   type ActionFieldValue,
 } from '#actions/actionShape.js'
 import type { Action } from '#actions/types.js'
@@ -102,6 +103,20 @@ describe('assertActionShape', () => {
     expect(malformedDetailOf(sentAction({ type: 'summonDragon' }))).toMatchObject(
       { field: 'type' },
     )
+  })
+})
+
+describe('describeActionShape', () => {
+  it('writes the fields an action takes, optional ones marked', () => {
+    expect(describeActionShape('discard')).toBe(
+      '{type: "discard", cardIds: list of text}',
+    )
+    expect(describeActionShape('endPhase')).toBe('{type: "endPhase"}')
+    expect(describeActionShape('decree')).toContain('clearing?: number')
+  })
+
+  it('knows nothing about a type the game does not have', () => {
+    expect(describeActionShape('teleport')).toBeNull()
   })
 })
 

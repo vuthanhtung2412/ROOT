@@ -316,6 +316,24 @@ function malformedFieldName(
   return null
 }
 
+function isActionType(type: string): type is Action['type'] {
+  return Object.hasOwn(ACTION_FIELD_SHAPES, type)
+}
+
+/**
+ * The fields an action of `type` takes, as text: `{type: "discard", cardIds:
+ * list of text}`. Null for a type the game does not know.
+ */
+export function describeActionShape(type: string): string | null {
+  if (!isActionType(type)) {
+    return null
+  }
+  const fields: string = describeFields(ACTION_FIELD_SHAPES[type])
+  return fields === ''
+    ? `{type: "${type}"}`
+    : `{type: "${type}", ${fields}}`
+}
+
 /**
  * Throws `MALFORMED_ACTION` when a field of the action is missing or holds the
  * wrong kind of value, so the rule checks never read a field that is not there.
