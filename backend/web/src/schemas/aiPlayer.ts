@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi'
+import { AI_PLAYER_ACTIVITY_KINDS } from '#aiPlayer/AiPlayerActivityFeed.js'
 import { FactionIdSchema } from '#schemas/common.js'
 import { AI_PLAYER_STATUSES } from '#store/GameStore.js'
 
@@ -54,3 +55,29 @@ export const AiPlayerSeatParamsSchema = z.object({
     description: 'Seat of the AI player.',
   }),
 })
+
+export const AiPlayerActivityKindSchema = z
+  .enum(AI_PLAYER_ACTIVITY_KINDS)
+  .openapi('AiPlayerActivityKind')
+
+export const AiPlayerActivitySchema = z
+  .object({
+    sequence: z.number().int().openapi({
+      description: 'Rises by one per activity since the server started.',
+    }),
+    at: z.string().openapi({ description: 'ISO 8601 time.' }),
+    seat: z.number().int().min(0).max(3),
+    model: z.string().openapi({ description: MODEL_DESCRIPTION }),
+    kind: AiPlayerActivityKindSchema,
+    toolName: z.string().nullable().openapi({
+      description: 'Tool of a toolCall / toolResult, else null.',
+    }),
+    text: z.string().openapi({
+      description:
+        'Message to the model, its reply, tool input as JSON, tool result or failure reason.',
+    }),
+    isError: z.boolean().openapi({
+      description: 'True for a failure and for a tool result the tool rejected.',
+    }),
+  })
+  .openapi('AiPlayerActivity')

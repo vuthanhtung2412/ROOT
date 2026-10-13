@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import type { Action, Game, PlayerState } from '@root/lib'
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
+import { streamSSE, type SSEStreamingApi } from 'hono/streaming'
+import {
+  aiPlayerActivityFeed,
+  type AiPlayerActivity,
+} from '#aiPlayer/AiPlayerActivityFeed.js'
 import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import {
   listOfferedModels,
@@ -12,6 +17,7 @@ import { publishGameChange } from '#routes/game.js'
 import {
   AddAiPlayerBodySchema,
   AiModelsResponseSchema,
+  AiPlayerActivitySchema,
   AiPlayerSeatParamsSchema,
   AiPlayersResponseSchema,
   SetAiPlayerModelBodySchema,
@@ -32,6 +38,9 @@ import { listAiPlayerViews } from '#view/aiPlayerView.js'
 /** Join id of an AI seat: random, so no client can guess it and play the seat. */
 const AI_PLAYER_ID_PREFIX = 'ai-'
 const LOBBY_STATUS = 'waiting'
+export const AI_PLAYER_ACTIVITY_EVENT = 'activity'
+const KEEP_ALIVE_COMMENT = ': keep-alive\n\n'
+const KEEP_ALIVE_INTERVAL_MILLISECONDS = 15000
 
 export const aiPlayerRoutes = new OpenAPIHono()
 
@@ -197,6 +206,44 @@ aiPlayerRoutes.openapi(restartAiPlayerRoute, (context) => {
   requireAiPlayerId(requireGame(), seat)
   aiPlayerDriver.restart(seat)
   return context.json({ aiPlayers: listAiPlayerViews() }, 200)
+})
+
+const streamAiPlayerActivityRoute = createRoute({
+  method: 'get',
+  path: '/ai-players/stream',
+  tags: ['ai-player'],
+  summary: 'Stream what the AI players do',
+  description:
+    'Server-sent events, one per activity (message to the model, its reply, tool call, tool result, failure): the latest ones first, then live. Shows what an AI player sees and thinks, its hand included. Operator tool: no seat check.',
+  responses: {
+    200: {
+      description: 'Event stream; the data of each event is one AiPlayerActivity',
+      content: { 'text/event-stream': { schema: AiPlayerActivitySchema } },
+    },
+  },
+})
+
+aiPlayerRoutes.openapi(streamAiPlayerActivityRoute, (context) => {
+  return streamSSE(context, async (stream: SSEStreamingApi): Promise<void> => {
+    const send = (activity: AiPlayerActivity): void => {
+      void stream.writeSSE({
+        id: String(activity.sequence),
+        event: AI_PLAYER_ACTIVITY_EVENT,
+        data: JSON.stringify(activity),
+      })
+    }
+    aiPlayerActivityFeed.recentActivities().forEach(send)
+    const unsubscribe = aiPlayerActivityFeed.subscribe(send)
+    // Quiet streams get cut by idle timeouts: a comment line keeps them open.
+    const keepAlive = setInterval((): void => {
+      void stream.write(KEEP_ALIVE_COMMENT)
+    }, KEEP_ALIVE_INTERVAL_MILLISECONDS)
+    await new Promise<void>((resolve: () => void): void => {
+      stream.onAbort(resolve)
+    })
+    clearInterval(keepAlive)
+    unsubscribe()
+  })
 })
 
 /** Join id of the AI player at `seat`; 404 when a human (or nobody) sits there. */

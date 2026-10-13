@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  aiPlayerActivityFeed,
+  type AiPlayerSeatActivity,
+} from '#aiPlayer/AiPlayerActivityFeed.js'
 import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import { app } from '#openapi.js'
+import { AI_PLAYER_ACTIVITY_EVENT } from '#routes/aiPlayer.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
 import { snapshotGamePushForViewer } from '#ws/GameHub.js'
 
@@ -19,6 +24,17 @@ function jsonRequest(method: string, body: object, playerId?: string): RequestIn
       ...(playerId === undefined ? {} : { 'X-Player-Id': playerId }),
     },
     body: JSON.stringify(body),
+  }
+}
+
+function makeSeatActivity(text: string): AiPlayerSeatActivity {
+  return {
+    kind: 'reply',
+    toolName: null,
+    text,
+    isError: false,
+    seat: 1,
+    model: DEFAULT_MODEL,
   }
 }
 
@@ -195,6 +211,39 @@ describe('AI player routes', () => {
     })
     expect(restart).toHaveBeenCalledWith(1)
     restart.mockRestore()
+  })
+
+  it('streams the latest AI player activities, then the live ones', async () => {
+    aiPlayerActivityFeed.publish(makeSeatActivity('earlier reply'))
+    const response = await app.request('/game/ai-players/stream')
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+    let received = ''
+    const readUntil = async (expectedText: string): Promise<void> => {
+      while (!received.includes(expectedText)) {
+        const chunk = await reader?.read()
+        if (chunk === undefined || chunk.done) {
+          throw new Error(`stream ended before "${expectedText}"`)
+        }
+        received += decoder.decode(chunk.value, { stream: true })
+      }
+    }
+
+    await readUntil('earlier reply')
+    aiPlayerActivityFeed.publish(makeSeatActivity('live reply'))
+    await readUntil('live reply')
+    await reader?.cancel()
+
+    expect(response.headers.get('Content-Type')).toContain('text/event-stream')
+    expect(received).toContain(`event: ${AI_PLAYER_ACTIVITY_EVENT}`)
+    const liveData = received
+      .split('\n')
+      .find((line: string): boolean => line.includes('live reply'))
+    expect(JSON.parse((liveData ?? '').replace('data: ', ''))).toMatchObject({
+      ...makeSeatActivity('live reply'),
+      sequence: expect.any(Number),
+      at: expect.any(String),
+    })
   })
 
   it('never sends an API key or an AI join id to a client', async () => {
