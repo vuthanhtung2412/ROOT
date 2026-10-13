@@ -51,6 +51,11 @@ const HOME_TARGET_DEPTH_RATIO = 0.035
 /** The map opens from a little higher up and settles into the home view. */
 const OPENING_DISTANCE_RATIO = 1.35
 const MINIMUM_DISTANCE = 26
+/**
+ * The player may zoom out past the home view, to this many times its
+ * distance: the woodland gets smaller and stands clear of the HUD.
+ */
+const MAXIMUM_DISTANCE_RATIO = 1.2
 /** Half-way zoomed in, the camera may already reach every corner. */
 const PAN_REACH_GAIN = 2
 const DAMPING_FACTOR = 0.14
@@ -106,6 +111,10 @@ export function createMapCameraRig(
       (halfViewTangent * camera.aspect * (frame.focus.width / frame.view.width))
     return Math.max(fitDepth, fitWidth) * HOME_FIT_MARGIN
   }
+
+  /** As far as the player may zoom out: past the home view. */
+  const farthestDistance = (): number =>
+    homeDistance() * MAXIMUM_DISTANCE_RATIO
 
   const homePose = (): MapViewPose => {
     const distance: number = homeDistance()
@@ -182,7 +191,7 @@ export function createMapCameraRig(
   }
   const stopGlide = (): void => {
     glide = null
-    controls.maxDistance = homeDistance()
+    controls.maxDistance = farthestDistance()
   }
   controls.addEventListener('start', stopGlide)
 
@@ -190,7 +199,7 @@ export function createMapCameraRig(
     frame = nextFrame
     camera.aspect = nextFrame.view.width / nextFrame.view.height
     camera.updateProjectionMatrix()
-    controls.maxDistance = homeDistance()
+    controls.maxDistance = farthestDistance()
   }
 
   resize(initialFrame)
@@ -220,7 +229,7 @@ export function createMapCameraRig(
         })
         if (progress >= 1) {
           glide = null
-          controls.maxDistance = homeDistance()
+          controls.maxDistance = farthestDistance()
         }
       } else {
         keepTargetOnMap()
