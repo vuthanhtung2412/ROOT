@@ -1,6 +1,13 @@
-# Local GP2: web API + React Vite. TUI: / filter procs, F3 search logs.
+# Local GP2: web API + React Vite + AI player stream. TUI: / filter procs, F3 search logs.
 processes:
   web:
     command: pnpm --filter @root/web dev
   react:
     command: pnpm --filter @root/react dev
+  # What the AI players are told, say and do (GET /game/ai-players/stream).
+  # Waits for the web API and connects again by itself after a restart.
+  ai-stream:
+    command: pnpm --silent --filter @root/cli start -- ai-stream
+    depends_on:
+      web:
+        condition: process_started

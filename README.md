@@ -32,7 +32,7 @@ Use `Game.create` / `join` / `start` / `apply` / `legalActions` / `undo` / `toJS
 
 ```bash
 pnpm --filter @root/web dev    # http://localhost:3000
-pnpm dev                       # web + React UI (process-compose TUI)
+pnpm dev                       # web + React UI + AI player stream (process-compose TUI)
 ```
 
 Remote play (friends): **`pnpm remote`** — build + serve + Tailscale Funnel URL. See `frontend/react/README.md`.
@@ -126,6 +126,15 @@ A model whose provider has no key is not offered.
 ```bash
 pnpm --filter @root/cli start -- ai-restart <seat>   # POST /game/ai-players/{seat}/restart
 ```
+
+- **Watch it think**: every message to the model, its reply, each tool call and result, and why a session failed. `pnpm dev` shows it in the `ai-stream` process; on its own:
+
+```bash
+pnpm --filter @root/cli start -- ai-stream          # GET /game/ai-players/stream (server-sent events)
+pnpm --filter @root/cli start -- ai-stream --full   # long texts whole
+```
+
+  The stream shows the AI player's hand and has no seat check (operator tool): keep it off a server opponents can reach.
 
 - **Play a seat from the terminal** with the same view an AI player has (other hands hidden, only that seat may act, also in hotseat):
 
