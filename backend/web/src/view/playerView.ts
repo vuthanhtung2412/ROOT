@@ -1,10 +1,10 @@
 import {
   FALL,
-  describeLogEntry,
   formatGameView,
   type ActionSpec,
   type Game,
 } from '@root/lib'
+import { describePlayerLogEntry } from '#view/playerLogWords.js'
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
 import {
   redactLogForViewer,
@@ -47,11 +47,9 @@ export function formatPlayerLog(
   const state = redactStateForViewer(game.state, playerId)
   return redactLogForViewer(game.log, game.state, playerId)
     .slice(-entryLimit)
-    .map((entry: ViewerLogEntry): string => {
-      if (entry.t === 'join') return `JOIN (${entry.faction})`
-      if (entry.t === 'expel') return `EXPEL (${entry.faction})`
-      return describeLogEntry(entry, state)
-    })
+    .map((entry: ViewerLogEntry): string =>
+      describePlayerLogEntry(entry, state),
+    )
     .join('\n')
 }
 
