@@ -79,6 +79,8 @@ export type MapScene = {
   playBuild: (pieceKeys: readonly string[]) => void
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
   setHighlightedForests: (forestIndexes: ReadonlySet<number>) => void
+  /** Game log: point at a clearing for a moment. */
+  flashClearing: (clearingId: number) => void
   /** Fade the light to that of a phase of the turn. */
   setTimeOfDay: (timeOfDay: TimeOfDay) => void
   /** Where a point above the ground shows up in the view. */
@@ -279,6 +281,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     playBuild: pieceLayer.playBuild,
     setClearingRings: groundMarkers.setClearingRings,
     setHighlightedForests: groundMarkers.setHighlightedForests,
+    flashClearing: groundMarkers.flashClearing,
     setTimeOfDay: (timeOfDay: TimeOfDay): void => {
       daylight.setTimeOfDay(timeOfDay)
       campfires.setTimeOfDay(timeOfDay)

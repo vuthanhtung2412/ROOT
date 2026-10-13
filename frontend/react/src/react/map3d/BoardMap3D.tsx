@@ -9,6 +9,7 @@ import {
 } from 'react'
 import type { BoardEffectBatch } from '#game/boardEffects.ts'
 import { FALL_BOARD_LAYOUT, type BoardLayout } from '#game/boardLayout.ts'
+import type { ClearingFlash } from '#game/clearingFlash.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import type {
   ClearingRingStyle,
@@ -251,6 +252,12 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
     playedBuildSequence.current = effects.sequence
     scene?.playBuild(builtPieceKeys(effects))
   }, [scene, effects])
+  const flashedClearing: ClearingFlash | null = props.flashedClearing ?? null
+  useEffect(() => {
+    if (flashedClearing !== null) {
+      scene?.flashClearing(flashedClearing.clearingId)
+    }
+  }, [scene, flashedClearing])
   const flatEffects: BoardEffectBatch | undefined = useMemo(
     () => (effects === undefined ? undefined : withoutBuildEffects(effects)),
     [effects],

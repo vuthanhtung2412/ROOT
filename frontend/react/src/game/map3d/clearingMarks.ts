@@ -140,7 +140,9 @@ type PickParts = {
   sparks: RisingSparks
 }
 
-function createFlatMaterial(texture: CanvasTexture | null): MeshBasicMaterial {
+export function createFlatMaterial(
+  texture: CanvasTexture | null,
+): MeshBasicMaterial {
   return new MeshBasicMaterial({
     color: UNLIT_COLOR,
     map: texture,
@@ -149,7 +151,7 @@ function createFlatMaterial(texture: CanvasTexture | null): MeshBasicMaterial {
   })
 }
 
-function layFlat(mesh: Mesh, height: number): Mesh {
+export function layFlat(mesh: Mesh, height: number): Mesh {
   mesh.rotateX(-QUARTER_TURN_RADIANS)
   mesh.position.setY(height)
   return mesh

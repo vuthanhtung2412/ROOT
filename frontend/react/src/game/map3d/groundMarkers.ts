@@ -13,6 +13,10 @@ import {
   type ClearingMarks,
   type ClearingRingStyle,
 } from '#game/map3d/clearingMarks.ts'
+import {
+  createClearingFlashMark,
+  type ClearingFlashMark,
+} from '#game/map3d/clearingFlashMark.ts'
 import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import { createForestMarks, type ForestMarks } from '#game/map3d/forestMarks.ts'
 import type { ForestGround } from '#game/map3d/forestOutline.ts'
@@ -38,6 +42,8 @@ export type GroundMarkers = {
   group: Group
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
   setHighlightedForests: (forestIndexes: ReadonlySet<number>) => void
+  /** Game log: point at a clearing for a moment. */
+  flashClearing: (clearingId: number) => void
   /** Fade the glow in or out for a phase of the turn. */
   setTimeOfDay: (timeOfDay: TimeOfDay) => void
   /** Animate the marks; call once per frame. */
@@ -152,7 +158,9 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
   }
   const clearingMarks: ClearingMarks = createClearingMarks(clearings)
   const forestMarks: ForestMarks = createForestMarks({ forests, clearings })
-  group.add(clearingMarks.group, forestMarks.group)
+  const clearingFlashMark: ClearingFlashMark =
+    createClearingFlashMark(clearings)
+  group.add(clearingMarks.group, forestMarks.group, clearingFlashMark.group)
 
   let glowLevel: number = GLOW_LEVEL_BY_TIME_OF_DAY[input.timeOfDay]
   let targetGlowLevel: number = glowLevel
@@ -162,6 +170,7 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
     group,
     setClearingRings: clearingMarks.setStyles,
     setHighlightedForests: forestMarks.setHighlighted,
+    flashClearing: clearingFlashMark.flash,
     setTimeOfDay: (timeOfDay: TimeOfDay): void => {
       targetGlowLevel = GLOW_LEVEL_BY_TIME_OF_DAY[timeOfDay]
     },
@@ -178,6 +187,7 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
       )
       clearingMarks.update({ elapsedSeconds, glowLevel })
       forestMarks.update(elapsedSeconds)
+      clearingFlashMark.update(elapsedSeconds)
     },
     setZoom: (zoom: number): void => {
       const size: number = MathUtils.lerp(
