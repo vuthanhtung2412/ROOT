@@ -1,0 +1,185 @@
+import { describe, expect, it, vi } from 'vitest'
+import type { Game } from '@root/lib'
+import {
+  ACT_TOOL_NAME,
+  ACTIONS_TOOL_NAME,
+  AI_PLAYER_TOOL_DEFINITIONS,
+  LOG_TOOL_NAME,
+  RULES_TOOL_NAME,
+  runAiPlayerTool,
+  SHOW_TOOL_NAME,
+  type AiPlayerToolContext,
+  type AiPlayerToolDefinition,
+} from '#aiPlayer/aiPlayerTools.js'
+import type { RuleSection } from '#aiPlayer/rulebook.js'
+import {
+  createStartedTwoPlayerGame,
+  FIRST_TEST_PLAYER_ID,
+  KEEP_CORNER_ACTION,
+  SECOND_TEST_PLAYER_ID,
+} from '#test/gameStateFixtures.js'
+
+const RULEBOOK_FIXTURE: RuleSection[] = [
+  { sectionNumber: '4.3', title: 'Battle', text: 'Roll two dice.' },
+]
+
+function createToolContext(
+  game: Game,
+  playerId: string,
+): AiPlayerToolContext {
+  return {
+    game,
+    playerId,
+    rulebook: RULEBOOK_FIXTURE,
+    onGameChanged: vi.fn<() => void>(),
+  }
+}
+
+describe('AI player tools', () => {
+  it('offers the root-cli command names with an object input schema', () => {
+    expect(
+      AI_PLAYER_TOOL_DEFINITIONS.map(
+        (definition: AiPlayerToolDefinition): string => definition.name,
+      ),
+    ).toEqual(['show', 'actions', 'log', 'rules', 'act'])
+    for (const definition of AI_PLAYER_TOOL_DEFINITIONS) {
+      expect(definition.inputJsonSchema.type).toBe('object')
+    }
+  })
+
+  it('show: own hand in full, the other hand and join id hidden', () => {
+    const game = createStartedTwoPlayerGame()
+    const otherHandSize = game.state.players[0]?.hand.length ?? 0
+
+    const result = runAiPlayerTool(
+      createToolContext(game, SECOND_TEST_PLAYER_ID),
+      { name: SHOW_TOOL_NAME, input: {} },
+    )
+
+    expect(result.isError).toBe(false)
+    expect(otherHandSize).toBeGreaterThan(0)
+    expect(result.content).toContain(SECOND_TEST_PLAYER_ID)
+    expect(result.content).not.toContain(FIRST_TEST_PLAYER_ID)
+    expect(result.content.match(/HIDDEN#hand-0-/g)).toHaveLength(otherHandSize)
+    expect(result.content).not.toContain('HIDDEN#hand-1-')
+    expect(result.content).toContain('paths (clearing-clearing):')
+  })
+
+  it('actions: only the actions of the own seat', () => {
+    const game = createStartedTwoPlayerGame()
+
+    const waiting = runAiPlayerTool(
+      createToolContext(game, SECOND_TEST_PLAYER_ID),
+      { name: ACTIONS_TOOL_NAME, input: {} },
+    )
+    const acting = runAiPlayerTool(
+      createToolContext(game, FIRST_TEST_PLAYER_ID),
+      { name: ACTIONS_TOOL_NAME, input: {} },
+    )
+
+    expect(JSON.parse(waiting.content)).toEqual([])
+    expect(JSON.parse(acting.content)).toMatchObject([
+      { type: 'resolveEvent', actor: 0 },
+    ])
+  })
+
+  it('log: no join id of any seat, newest lines only', () => {
+    const game = createStartedTwoPlayerGame()
+
+    const result = runAiPlayerTool(
+      createToolContext(game, SECOND_TEST_PLAYER_ID),
+      { name: LOG_TOOL_NAME, input: { limit: 1 } },
+    )
+    const fullLog = runAiPlayerTool(
+      createToolContext(game, SECOND_TEST_PLAYER_ID),
+      { name: LOG_TOOL_NAME, input: {} },
+    )
+
+    expect(result.content.split('\n')).toHaveLength(1)
+    expect(fullLog.content).toContain('JOIN (marquise)')
+    expect(fullLog.content).not.toContain(FIRST_TEST_PLAYER_ID)
+  })
+
+  it('rules: returns matching sections', () => {
+    const context = createToolContext(
+      createStartedTwoPlayerGame(),
+      SECOND_TEST_PLAYER_ID,
+    )
+
+    const found = runAiPlayerTool(context, {
+      name: RULES_TOOL_NAME,
+      input: { query: '4.3' },
+    })
+    const missing = runAiPlayerTool(context, {
+      name: RULES_TOOL_NAME,
+      input: { query: 'submarine' },
+    })
+
+    expect(found.content).toBe('4.3 Battle\nRoll two dice.')
+    expect(missing.isError).toBe(false)
+    expect(missing.content).toContain('No rule matches')
+  })
+
+  it('act: applies a legal action of the own seat and reports the change', () => {
+    const game = createStartedTwoPlayerGame()
+    const context = createToolContext(game, FIRST_TEST_PLAYER_ID)
+    const historyLengthBefore = game.history.length
+
+    const result = runAiPlayerTool(context, {
+      name: ACT_TOOL_NAME,
+      input: { action: { ...KEEP_CORNER_ACTION } },
+    })
+
+    expect(result).toMatchObject({ isError: false, appliedAction: true })
+    expect(game.history.length).toBe(historyLengthBefore + 1)
+    expect(context.onGameChanged).toHaveBeenCalledTimes(1)
+  })
+
+  it('act: refuses an action that belongs to another seat', () => {
+    const game = createStartedTwoPlayerGame()
+    const context = createToolContext(game, SECOND_TEST_PLAYER_ID)
+    const historyLengthBefore = game.history.length
+
+    const result = runAiPlayerTool(context, {
+      name: ACT_TOOL_NAME,
+      input: { action: { ...KEEP_CORNER_ACTION } },
+    })
+
+    expect(result).toMatchObject({ isError: true, appliedAction: false })
+    expect(result.content).toContain('NOT_YOUR_SEAT')
+    expect(game.history.length).toBe(historyLengthBefore)
+    expect(context.onGameChanged).not.toHaveBeenCalled()
+  })
+
+  it('act: returns a rule error without changing the game', () => {
+    const game = createStartedTwoPlayerGame()
+    const context = createToolContext(game, FIRST_TEST_PLAYER_ID)
+    const historyLengthBefore = game.history.length
+
+    const result = runAiPlayerTool(context, {
+      name: ACT_TOOL_NAME,
+      input: { action: { type: 'resolveEvent', clearing: 5 } },
+    })
+
+    expect(result).toMatchObject({ isError: true, appliedAction: false })
+    expect(result.content).toContain('not applied')
+    expect(game.history.length).toBe(historyLengthBefore)
+  })
+
+  it('reports bad input and unknown tools as errors', () => {
+    const context = createToolContext(
+      createStartedTwoPlayerGame(),
+      FIRST_TEST_PLAYER_ID,
+    )
+
+    expect(
+      runAiPlayerTool(context, { name: ACT_TOOL_NAME, input: {} }).isError,
+    ).toBe(true)
+    expect(
+      runAiPlayerTool(context, { name: RULES_TOOL_NAME, input: {} }).isError,
+    ).toBe(true)
+    expect(
+      runAiPlayerTool(context, { name: 'snapshot', input: {} }).isError,
+    ).toBe(true)
+  })
+})

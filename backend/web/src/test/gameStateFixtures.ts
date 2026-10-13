@@ -15,3 +15,17 @@ export function createTwoPlayerGameState(
   game.state.players[1]!.hand = [...(players[1].hand ?? [])]
   return game.state
 }
+
+export const FIRST_TEST_PLAYER_ID = 'first-player'
+export const SECOND_TEST_PLAYER_ID = 'second-player'
+/** Seat 0 (Marquise) owes the first setup choice: the keep corner. */
+export const KEEP_CORNER_ACTION = { type: 'resolveEvent', clearing: 0 } as const
+
+/** Marquise (seat 0) vs Eyrie (seat 1), started: setup choices are pending. */
+export function createStartedTwoPlayerGame(): Game {
+  const game = Game.create({ seed: 1, factions: ['marquise', 'eyrie'] })
+  game.join(FIRST_TEST_PLAYER_ID)
+  game.join(SECOND_TEST_PLAYER_ID)
+  game.start()
+  return game
+}
