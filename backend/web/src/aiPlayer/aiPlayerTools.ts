@@ -6,6 +6,7 @@ import {
   listDescribedLegalActions,
 } from '#aiPlayer/aiPlayerActionReport.js'
 import { lookUpCardDetails } from '#aiPlayer/aiPlayerCardDetail.js'
+import { describeClearing } from '#aiPlayer/aiPlayerClearingDetail.js'
 import { checkDecree } from '#aiPlayer/aiPlayerDecreeCheck.js'
 import {
   fail,
@@ -73,6 +74,7 @@ export const LOG_TOOL_NAME = 'log'
 export const RULES_TOOL_NAME = 'rules'
 export const ACT_TOOL_NAME = 'act'
 export const CARD_TOOL_NAME = 'card'
+export const CLEARING_TOOL_NAME = 'clearing'
 export const DECREE_TOOL_NAME = 'decree'
 export const PREVIEW_TOOL_NAME = 'preview'
 
@@ -141,6 +143,28 @@ const ActInputSchema = z.object({
       'One action: "type" from a legal action, plus one value chosen from each of its params.',
     ),
 })
+
+const ClearingInputSchema = z.object({
+  clearing: z.number().int().describe('Clearing id, as on the map: 0 to 11.'),
+})
+
+function runClearing(
+  context: AiPlayerToolContext,
+  input: JsonValue,
+): AiPlayerToolResult {
+  const parsed = ClearingInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return fail('Bad input: pass {"clearing": <clearing id>}.')
+  }
+  const detail = describeClearing(
+    context.game,
+    context.playerId,
+    parsed.data.clearing,
+  )
+  return detail === null
+    ? fail(`No clearing ${String(parsed.data.clearing)} on this map.`)
+    : succeed(formatJson(detail))
+}
 
 const DecreeInputSchema = z.object({
   adding: z
@@ -326,6 +350,15 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
       inputJsonSchema: z.toJSONSchema(CardInputSchema),
     },
     run: runCard,
+  },
+  {
+    definition: {
+      name: CLEARING_TOOL_NAME,
+      description:
+        'One clearing in full: suit, building slots (total and free), ruin, who rules it, the pieces of every faction, the adjacent clearings with their suit and ruler, river links, and your legal action types that name this clearing right now. Use it instead of reading the drawn map.',
+      inputJsonSchema: z.toJSONSchema(ClearingInputSchema),
+    },
+    run: runClearing,
   },
   {
     definition: {
