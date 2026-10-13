@@ -19,6 +19,7 @@ import {
 import { createIconTexture } from '#game/map3d/iconTexture.ts'
 import type { PieceModel, PieceModels } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
+import { isSameMapPiece } from '#game/map3d/sameMapPiece.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 import {
   createSlotDrawings,
@@ -79,6 +80,14 @@ type PieceView = {
   modelScale: number
   /** Height of the model's top, at full size. */
   modelTop: number
+}
+
+/** A piece as it was last shown, and the meshes made for it. */
+type ShownPiece = {
+  piece: MapPiece
+  holder: Group
+  /** Null for an empty building slot: nothing of it changes with the zoom. */
+  view: PieceView | null
 }
 
 /**
@@ -170,6 +179,7 @@ export function createPieceLayer(): PieceLayer {
   /** Empty until they are loaded: a piece is only its icon until then. */
   let pieceModels: PieceModels = new Map<string, PieceModel>()
   let currentPieces: readonly MapPiece[] = []
+  let shownPieces: Map<string, ShownPiece> = new Map<string, ShownPiece>()
   const buildAnimations: BuildAnimations = createBuildAnimations()
   // The pieces are rebuilt on every board update; the dust outlives them.
   const layer: Group = new Group()
@@ -366,50 +376,71 @@ export function createPieceLayer(): PieceLayer {
         }
   }
 
-  const setPieces = (pieces: readonly MapPiece[]): void => {
-    currentPieces = pieces
-    group.clear()
-    views = []
-    viewsByKey = new Map<string, PieceView>()
-    const addView = (pieceKey: string, view: PieceView): void => {
-      views.push(view)
-      viewsByKey.set(pieceKey, view)
+  const showPiece = (piece: MapPiece): ShownPiece => {
+    const holder: Group = new Group()
+    holder.position.set(piece.ground.x, 0, piece.ground.z)
+    if (piece.shape === 'slot') {
+      const slot: Object3D = slotDrawings.create()
+      slot.rotation.y = piece.rotation ?? 0
+      holder.add(slot)
+      return { piece, holder, view: null }
     }
-    for (const piece of pieces) {
-      const holder: Group = new Group()
-      holder.position.set(piece.ground.x, 0, piece.ground.z)
-      group.add(holder)
-      if (piece.shape === 'slot') {
-        const slot: Object3D = slotDrawings.create()
-        slot.rotation.y = piece.rotation ?? 0
-        holder.add(slot)
-        continue
-      }
-      const label: Group = createLabel(piece)
-      holder.add(label)
-      const pieceModel: PieceModel | undefined = pieceModels.get(
-        piece.textureKey,
-      )
-      if (pieceModel === undefined) {
-        addView(piece.key, {
+    const label: Group = createLabel(piece)
+    holder.add(label)
+    const pieceModel: PieceModel | undefined = pieceModels.get(
+      piece.textureKey,
+    )
+    if (pieceModel === undefined) {
+      return {
+        piece,
+        holder,
+        view: {
           ground: piece.ground,
           label,
           model: null,
           modelScale: 1,
           modelTop: 0,
-        })
-        continue
+        },
       }
-      const created: { model: Object3D; scale: number; top: number } =
-        createModel(piece, pieceModel)
-      holder.add(created.model)
-      addView(piece.key, {
+    }
+    const created: { model: Object3D; scale: number; top: number } =
+      createModel(piece, pieceModel)
+    holder.add(created.model)
+    return {
+      piece,
+      holder,
+      view: {
         ground: piece.ground,
         label,
         model: created.model,
         modelScale: created.scale,
         modelTop: created.top,
-      })
+      },
+    }
+  }
+
+  const setPieces = (pieces: readonly MapPiece[]): void => {
+    currentPieces = pieces
+    // A board update changes a few pieces: the others keep their meshes.
+    const previouslyShown: Map<string, ShownPiece> = shownPieces
+    shownPieces = new Map<string, ShownPiece>()
+    group.clear()
+    views = []
+    viewsByKey = new Map<string, PieceView>()
+    for (const piece of pieces) {
+      const previous: ShownPiece | undefined = previouslyShown.get(piece.key)
+      const shown: ShownPiece =
+        previous !== undefined && isSameMapPiece(previous.piece, piece)
+          ? previous
+          : showPiece(piece)
+      // Kept once: a second piece under the same key gets meshes of its own.
+      previouslyShown.delete(piece.key)
+      shownPieces.set(piece.key, shown)
+      group.add(shown.holder)
+      if (shown.view !== null) {
+        views.push(shown.view)
+        viewsByKey.set(piece.key, shown.view)
+      }
     }
     applyZoom()
     applyTorches()
@@ -420,6 +451,8 @@ export function createPieceLayer(): PieceLayer {
     setPieces,
     setPieceModels: (loaded: PieceModels): void => {
       pieceModels = loaded
+      // Every piece is made again: it may now have a model.
+      shownPieces = new Map<string, ShownPiece>()
       setPieces(currentPieces)
     },
     setTorchesShown: (shown: boolean): void => {
