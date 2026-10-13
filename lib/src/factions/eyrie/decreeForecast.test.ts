@@ -119,6 +119,35 @@ describe('forecastDecree', () => {
     })
   })
 
+  it('Rule: 7.5.2 — a recruit resolved first can open a later column', () => {
+    // No Eyrie warrior on the map: only the recruit puts one at the roost.
+    const state = withPieces(
+      eyrieState({ recruit: [VIZIER!], move: [VIZIER!] }),
+      ROOST_CLEARING,
+      [ROOST],
+    )
+
+    const result = forecast(state)
+
+    expect(result.columns.move[0]).toMatchObject({
+      resolvable: false,
+      where: [],
+      whereAfterRecruit: [ROOST_CLEARING],
+    })
+    expect(result.columns.recruit[0]).not.toHaveProperty('whereAfterRecruit')
+    expect(state.clearings[ROOST_CLEARING]?.pieces).toEqual([ROOST])
+  })
+
+  it('Rule: 7.5.2 — with no recruit to resolve, nothing opens later', () => {
+    const state = withPieces(eyrieState({ move: [VIZIER!] }), ROOST_CLEARING, [
+      ROOST,
+    ])
+
+    expect(forecast(state).columns.move[0]).not.toHaveProperty(
+      'whereAfterRecruit',
+    )
+  })
+
   it('Rule: 7.7.1 Humiliate — counts every bird card, viziers included', () => {
     const result = forecast(
       eyrieState({ recruit: [VIZIER!], move: [MOUSE_CARD] }),

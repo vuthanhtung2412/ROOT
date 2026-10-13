@@ -36,6 +36,11 @@ export type DecreeCardForecast = {
   where: ClearingId[]
   /** True for a hand card tried out, not yet in the Decree. */
   adding: boolean
+  /**
+   * Only on a card that cannot resolve now: where it could resolve once the
+   * recruit column (resolved first) has placed warriors. Rule: 7.5.2.
+   */
+  whereAfterRecruit?: ClearingId[]
 }
 
 export type DecreeForecast = {
@@ -94,6 +99,42 @@ function clearingsToResolveIn(
 }
 
 /**
+ * The map once the recruit column has resolved, at its most generous: one
+ * new warrior in every clearing a recruit card may choose. A copy: `state`
+ * is not changed. Null when no recruit card can resolve.
+ */
+function withRecruitedWarriors(
+  state: GameState,
+  seat: Seat,
+  recruitColumn: readonly DecreeCardForecast[],
+): GameState | null {
+  const recruitClearings = new Set<ClearingId>(
+    recruitColumn.flatMap(
+      (forecast: DecreeCardForecast): ClearingId[] => forecast.where,
+    ),
+  )
+  if (recruitClearings.size === 0) return null
+  return {
+    ...state,
+    clearings: state.clearings.map((clearing, clearingId: number) =>
+      recruitClearings.has(clearingId)
+        ? {
+            ...clearing,
+            pieces: [
+              ...clearing.pieces,
+              {
+                id: `forecast-warrior-${clearingId}`,
+                kind: 'warrior' as const,
+                owner: seat,
+              },
+            ],
+          }
+        : clearing,
+    ),
+  }
+}
+
+/**
  * Which Decree cards the Eyrie seat could resolve on the map as it stands
  * now, with `adding` tried in. Reads only: the Decree itself is not changed.
  * The map changes while a Decree resolves, so this is a forecast, not a proof.
@@ -106,7 +147,10 @@ export function forecastDecree(
   const { seat, adding } = request
   const board = boardOf(state, seat)
   const hand = playerOf(state, seat).hand
-  const forecastColumn = (column: DecreeColumn): DecreeCardForecast[] => {
+  const forecastColumn = (
+    column: DecreeColumn,
+    afterRecruit: GameState | null,
+  ): DecreeCardForecast[] => {
     const addedCards: Card[] = adding
       .filter((entry: AddToDecreeCard): boolean => entry.column === column)
       .map((entry: AddToDecreeCard): Card => {
@@ -121,7 +165,7 @@ export function forecastDecree(
     return [...board.decree[column], ...addedCards].map(
       (card: Card): DecreeCardForecast => {
         const where = clearingsToResolveIn(state, { seat, column, card }, ctx)
-        return {
+        const forecast: DecreeCardForecast = {
           cardId: card.id,
           name: defOf(card).name,
           suit: defOf(card).suit,
@@ -129,14 +173,26 @@ export function forecastDecree(
           where,
           adding: addedCards.includes(card),
         }
+        if (where.length > 0 || afterRecruit === null) return forecast
+        return {
+          ...forecast,
+          whereAfterRecruit: clearingsToResolveIn(
+            afterRecruit,
+            { seat, column, card },
+            ctx,
+          ),
+        }
       },
     )
   }
+  // The recruit column resolves first: its warriors may open later columns.
+  const recruit = forecastColumn('recruit', null)
+  const afterRecruit = withRecruitedWarriors(state, seat, recruit)
   const columns: Record<DecreeColumn, DecreeCardForecast[]> = {
-    recruit: forecastColumn('recruit'),
-    move: forecastColumn('move'),
-    battle: forecastColumn('battle'),
-    build: forecastColumn('build'),
+    recruit,
+    move: forecastColumn('move', afterRecruit),
+    battle: forecastColumn('battle', afterRecruit),
+    build: forecastColumn('build', afterRecruit),
   }
   return {
     leader: board.leader,
