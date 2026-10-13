@@ -662,6 +662,22 @@ export interface paths {
       };
     };
   };
+  "/game/ai-players/stream": {
+    /**
+     * Stream what the AI players do
+     * @description Server-sent events, one per activity (message to the model, its reply, tool call, tool result, failure): the latest ones first, then live. Shows what an AI player sees and thinks, its hand included. Operator tool: no seat check.
+     */
+    get: {
+      responses: {
+        /** @description Event stream; the data of each event is one AiPlayerActivity */
+        200: {
+          content: {
+            "text/event-stream": components["schemas"]["AiPlayerActivity"];
+          };
+        };
+      };
+    };
+  };
   "/game/rules": {
     /** Look up the Law of Root */
     get: {
@@ -811,6 +827,24 @@ export interface components {
       /** @description Model as <provider>:<modelId>, one of GET /game/ai-models. */
       model: string;
     };
+    AiPlayerActivity: {
+      /** @description Rises by one per activity since the server started. */
+      sequence: number;
+      /** @description ISO 8601 time. */
+      at: string;
+      seat: number;
+      /** @description Model as <provider>:<modelId>, one of GET /game/ai-models. */
+      model: string;
+      kind: components["schemas"]["AiPlayerActivityKind"];
+      /** @description Tool of a toolCall / toolResult, else null. */
+      toolName: string | null;
+      /** @description Message to the model, its reply, tool input as JSON, tool result or failure reason. */
+      text: string;
+      /** @description True for a failure and for a tool result the tool rejected. */
+      isError: boolean;
+    };
+    /** @enum {string} */
+    AiPlayerActivityKind: "message" | "reply" | "toolCall" | "toolResult" | "failure";
     FallMapResponse: {
       clearings: unknown[];
       paths: number[][];

@@ -6,11 +6,30 @@ import {
   type AiPlayer,
   type CreateGameApiOptions,
 } from '@root/web-client/game-api'
+import { readServerSentEvents } from '@root/web-client/server-sent-events'
 
 export type { AiPlayer } from '@root/web-client/game-api'
 
 /** Models an AI player may use, as `<provider>:<modelId>`. */
 export type AiModels = components['schemas']['AiModelsResponse']
+
+/** One thing an AI player did: message, reply, tool call, tool result, failure. */
+export type AiPlayerActivity = components['schemas']['AiPlayerActivity']
+
+/** Narrows the parsed data of a stream event. */
+function isAiPlayerActivity(value: unknown): value is AiPlayerActivity {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof Reflect.get(value, 'sequence') === 'number' &&
+    typeof Reflect.get(value, 'at') === 'string' &&
+    typeof Reflect.get(value, 'seat') === 'number' &&
+    typeof Reflect.get(value, 'model') === 'string' &&
+    typeof Reflect.get(value, 'kind') === 'string' &&
+    typeof Reflect.get(value, 'text') === 'string' &&
+    typeof Reflect.get(value, 'isError') === 'boolean'
+  )
+}
 
 export type AddAiPlayerInput = {
   /** Open lobby: the faction the AI player takes. */
@@ -27,6 +46,13 @@ export type AiPlayerApi = {
   setAiPlayerModel: (seat: number, model: string) => Promise<AiPlayer[]>
   /** Drop the AI player's session and start a fresh one (stuck or thinking). */
   restartAiPlayer: (seat: number) => Promise<AiPlayer[]>
+  /**
+   * What the AI players do: the latest activities, then live ones, until the
+   * server closes the stream. Rejects when the server cannot be reached.
+   */
+  streamAiPlayerActivity: (
+    onActivity: (activity: AiPlayerActivity) => void,
+  ) => Promise<void>
   /** Look up the Law of Root by rule number or keywords. */
   rules: (query: string) => Promise<string>
 }
@@ -66,6 +92,24 @@ export function createAiPlayerApi(
         params: { path: { seat } },
       })
       return requireData(result).aiPlayers
+    },
+
+    async streamAiPlayerActivity(
+      onActivity: (activity: AiPlayerActivity) => void,
+    ): Promise<void> {
+      const result = await client.GET('/game/ai-players/stream', {
+        parseAs: 'stream',
+      })
+      const body = requireData(result)
+      if (body === null) {
+        return
+      }
+      await readServerSentEvents(body, (data: string): void => {
+        const activity: unknown = JSON.parse(data)
+        if (isAiPlayerActivity(activity)) {
+          onActivity(activity)
+        }
+      })
     },
 
     async rules(query: string): Promise<string> {

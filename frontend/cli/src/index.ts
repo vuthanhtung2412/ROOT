@@ -4,6 +4,7 @@ import { ApiError, PLAYER_ID_FLAG } from '#api/client.js'
 import { cmdAct } from '#commands/act.js'
 import { cmdActions } from '#commands/actions.js'
 import { cmdAiRestart } from '#commands/aiRestart.js'
+import { cmdAiStream } from '#commands/aiStream.js'
 import { cmdAuto } from '#commands/auto.js'
 import { cmdJoin } from '#commands/join.js'
 import { cmdLoad } from '#commands/load.js'
@@ -13,6 +14,8 @@ import { cmdRules } from '#commands/rules.js'
 import { cmdShow } from '#commands/show.js'
 import { cmdStart } from '#commands/start.js'
 import { cmdUndo } from '#commands/undo.js'
+
+const FULL_TEXT_FLAG = '--full'
 
 function flag(args: string[], name: string): string | undefined {
   const i = args.indexOf(name)
@@ -46,6 +49,9 @@ commands:
     (Law of Root lookup, e.g. rules 7.2 / rules ambush defender)
   ai-restart <seat>
     (drop the AI player's session, start a fresh one for its turn)
+  ai-stream [${FULL_TEXT_FLAG}]
+    (follow what the AI players are told, say and do; long texts are cut
+     unless ${FULL_TEXT_FLAG}; keeps running, reconnects by itself)
   undo
   auto [--turns 50] [--players 2] [--factions marquise,eyrie]
     (creates game, joins as faction names, starts — no manual lobby)
@@ -107,6 +113,9 @@ async function main(): Promise<void> {
         await cmdAiRestart(seat)
         break
       }
+      case 'ai-stream':
+        await cmdAiStream({ showFullText: rest.includes(FULL_TEXT_FLAG) })
+        break
       case 'undo':
         await cmdUndo()
         break
