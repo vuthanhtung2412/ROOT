@@ -3,6 +3,7 @@ import {
   Group,
   InstancedMesh,
   Matrix4,
+  type Material,
   type Mesh,
   Object3D,
 } from 'three'
@@ -16,6 +17,11 @@ const TREE_MODEL_SCALE = 2.5
 /** Share of trees swapped for an orange one: it is Autumn, after all. */
 const AUTUMN_TREE_SHARE = 0.012
 const FULL_TURN_RADIANS = Math.PI * 2
+/**
+ * Side of a patch of woodland, world units. Each patch is drawn or skipped
+ * as a whole: zoomed in, most of the forest is out of view.
+ */
+const TREE_PATCH_SIZE = 40
 
 /** The kit's teal foliage, repainted in the greens of the Root woodland. */
 const FOLIAGE_MATERIAL_NAME_PREFIX = 'leafs'
@@ -98,30 +104,54 @@ function isFoliage(mesh: Mesh): boolean {
   )
 }
 
-/** All trees of one variant: one instanced mesh per part of the model. */
+/** The trees of a variant, by the square of woodland they stand in. */
+function placementsByPatch(
+  placements: readonly TreePlacement[],
+): TreePlacement[][] {
+  const patches: Map<string, TreePlacement[]> = new Map<
+    string,
+    TreePlacement[]
+  >()
+  for (const placement of placements) {
+    const patchKey: string = [
+      Math.floor(placement.position.x / TREE_PATCH_SIZE),
+      Math.floor(placement.position.z / TREE_PATCH_SIZE),
+    ].join(':')
+    patches.set(patchKey, [...(patches.get(patchKey) ?? []), placement])
+  }
+  return [...patches.values()]
+}
+
+/**
+ * All trees of one variant: per patch of woodland, one instanced mesh per
+ * part of the model. A patch out of view is not drawn.
+ */
 function buildVariantMeshes(
   variant: TreeVariant,
   sightlines: TreeSightlines,
 ): InstancedMesh[] {
   variant.model.updateMatrixWorld(true)
   const parts: Mesh[] = meshesOf(variant.model)
+  const patches: TreePlacement[][] = placementsByPatch(variant.placements)
   const transform: Object3D = new Object3D()
   const instanceMatrix: Matrix4 = new Matrix4()
   const lightColor: Color = new Color(variant.palette.lightColor)
   const color: Color = new Color()
-  return parts.map((part: Mesh): InstancedMesh => {
+  return parts.flatMap((part: Mesh): InstancedMesh[] => {
     const foliage: boolean = isFoliage(part)
-    const mesh: InstancedMesh = new InstancedMesh(
-      part.geometry,
-      sightlines.createMaterial({
-        color: foliage ? 0xffffff : BARK_COLOR,
-        roughness: 1,
-        flatShading: true,
-      }),
-      variant.placements.length,
-    )
-    variant.placements.forEach(
-      (placement: TreePlacement, index: number): void => {
+    // One material for every patch: one shader, one set of sightlines.
+    const material: Material = sightlines.createMaterial({
+      color: foliage ? 0xffffff : BARK_COLOR,
+      roughness: 1,
+      flatShading: true,
+    })
+    return patches.map((patch: TreePlacement[]): InstancedMesh => {
+      const mesh: InstancedMesh = new InstancedMesh(
+        part.geometry,
+        material,
+        patch.length,
+      )
+      patch.forEach((placement: TreePlacement, index: number): void => {
         transform.position.set(placement.position.x, 0, placement.position.z)
         transform.rotation.y = placement.rotation
         transform.scale.setScalar(TREE_MODEL_SCALE * placement.scale)
@@ -134,16 +164,16 @@ function buildVariantMeshes(
             .lerp(lightColor, treeShade(placement))
           mesh.setColorAt(index, color)
         }
-      },
-    )
-    mesh.castShadow = true
-    mesh.receiveShadow = true
-    return mesh
+      })
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      return mesh
+    })
   })
 }
 
 /**
- * The whole woodland: a few instanced meshes, one draw call each. The trees
+ * The whole woodland as instanced meshes, one draw call each. The trees
  * leave the sightlines to the pieces open.
  */
 export function createTreeMeshes(
