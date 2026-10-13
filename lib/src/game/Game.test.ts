@@ -22,6 +22,23 @@ function startPlaying(seed = 42): Game {
   return createPlayingGame({ seed })
 }
 
+describe('Game.rulerOf', () => {
+  it('Rule: 2.6 Ruling — the seat with the most warriors and buildings rules', () => {
+    const game = startPlaying()
+    const keepClearing = game.state.clearings.findIndex((clearing) =>
+      clearing.pieces.some((piece) => piece.kind === 'token' && piece.type === 'keep'),
+    )
+    const roostClearing = game.state.clearings.findIndex((clearing) =>
+      clearing.pieces.some(
+        (piece) => piece.kind === 'building' && piece.type === 'roost',
+      ),
+    )
+
+    expect(game.rulerOf(keepClearing)).toBe(0)
+    expect(game.rulerOf(roostClearing)).toBe(1)
+  })
+})
+
 describe('Game lobby', () => {
   it('Game.create → waiting status', () => {
     const game = Game.create({ seed: 1 })

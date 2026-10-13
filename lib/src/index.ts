@@ -60,6 +60,7 @@ export { defOf } from '#cards/Deck.js'
 export type { Card, CardDef, CardSuit, CostSuit } from '#cards/types.js'
 export type { Suit, ClearingId } from '#map/types.js'
 export { craftBenefitAvailable, unusedCraftingSuits } from '#queries/craft.js'
+export { openSlots } from '#queries/slots.js'
 export { RuleError } from '#rules/RuleError.js'
 export { SeededRng, randomIndex, type Rng, type RngState } from '#rules/Rng.js'
 export {

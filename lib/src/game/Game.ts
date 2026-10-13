@@ -15,6 +15,8 @@ import {
 import { createInitialState, runSharedSetup } from '#game/setup.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
+import type { ClearingId } from '#map/types.js'
+import { ruler } from '#queries/ruler.js'
 import { factionOf, playerOf } from '#queries/seat.js'
 import { syncPlaceIdsFromState } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
@@ -379,6 +381,11 @@ export class Game {
   /** Which Decree cards an Eyrie seat could resolve now. Reads only. */
   forecastDecree(request: DecreeForecastRequest): DecreeForecast {
     return forecastDecree(this.state, request, this.makeCtx())
+  }
+
+  /** Seat that rules the clearing, card effects counted; null when nobody does. */
+  rulerOf(clearing: ClearingId): Seat | null {
+    return ruler(this.state, clearing, this.makeCtx().hooks)
   }
 
   /** Subscribe to emitted game signals (tests / diagnostics). */
