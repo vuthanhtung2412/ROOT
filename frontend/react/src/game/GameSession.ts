@@ -480,6 +480,17 @@ export class GameSession {
     }
   }
 
+  /** Open lobby, host only: free the seat of a human or AI player. */
+  async expelLobbyPlayer(seat: number): Promise<boolean> {
+    try {
+      await this.api.expelPlayer(seat)
+      return true
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+      return false
+    }
+  }
+
   /**
    * Leave the lobby screen. A browser that only watches a lobby others sit
    * in walks away; the host (or the last one in an empty lobby) closes it.

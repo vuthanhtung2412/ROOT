@@ -119,6 +119,8 @@ export type MenuLobbyHudState = {
   canStart: boolean
   /** Open lobby: every faction, to pick from. Empty when seats are preset. */
   factionChoices: MenuFactionChoice[]
+  /** Open lobby: seats nobody took yet. 0 when seats are preset. */
+  openSeatCount: number
 }
 
 export type MenuHudState = {
@@ -142,6 +144,8 @@ export type MenuCallbacks = {
   onPickFaction: (faction: string) => void
   /** Online host: seat an AI player (faction only in an open lobby). */
   onAddAiPlayer: (input: AddAiPlayerInput) => void
+  /** Open lobby, host only: free the seat of a human or AI player. */
+  onExpelPlayer: (seat: number) => void
   /** Online host: start once every seat is filled. */
   onStartOnline: () => void
   /** Online lobby: host closes the lobby, guest steps out of it. */
@@ -283,6 +287,7 @@ const NOOP_MENU_CALLBACKS: MenuCallbacks = {
   onPlayOnline: () => undefined,
   onPickFaction: () => undefined,
   onAddAiPlayer: () => undefined,
+  onExpelPlayer: () => undefined,
   onStartOnline: () => undefined,
   onLeaveOnline: () => undefined,
 }

@@ -16,6 +16,14 @@ import { PRIMARY_BUTTON_CLASS_NAME } from '#react/MenuParts.tsx'
 /** Single-screen "Start game" and QA shortcuts only exist in dev builds. */
 const IS_DEVELOPMENT_BUILD: boolean = import.meta.env.DEV === true
 
+/** Start screen: banner and buttons on one parchment sheet. */
+const MENU_PANEL_CLASS_NAME =
+  'relative z-1 flex max-h-[96vh] max-w-[min(92vw,560px)] flex-col items-center gap-4 overflow-y-auto border-2 border-ink bg-parchment/82 px-7 py-6 paper-grain shadow-menu-panel'
+/** Lobby: paper pieces laid straight on the dimmed wallpaper, no sheet. */
+const LOBBY_STAGE_CLASS_NAME =
+  'relative z-1 box-border flex max-h-dvh w-full flex-col items-center gap-5 overflow-y-auto px-5 py-8'
+const LOBBY_DIM_CLASS_NAME = 'absolute inset-0 bg-ink-deep/50'
+
 const CREATE_GAME_LABEL = 'Create game'
 const JOIN_GAME_LABEL = 'Join game'
 
@@ -46,6 +54,7 @@ export function MenuOverlay(): JSX.Element | null {
   const callbacks = getMenuCallbacks()
   const wallpaperPath = imagePathForAssetKey(GAME_ASSET_KEYS.menuWallpaper)
   const bannerPath = imagePathForAssetKey(GAME_ASSET_KEYS.rootBanner)
+  const isInLobby: boolean = menu.lobby !== null
 
   return (
     <div className="fixed inset-0 z-450 flex items-center justify-center overflow-hidden bg-forest-deep">
@@ -59,8 +68,9 @@ export function MenuOverlay(): JSX.Element | null {
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,color-mix(in_srgb,var(--color-moss)_55%,transparent),transparent_60%),var(--color-forest-deep)]" />
       )}
-      <div className="relative z-1 flex max-h-[96vh] max-w-[min(92vw,560px)] flex-col items-center gap-4 overflow-y-auto border-2 border-ink bg-parchment/82 px-7 py-6 paper-grain shadow-menu-panel">
-        {bannerPath !== null ? (
+      {isInLobby ? <div className={LOBBY_DIM_CLASS_NAME} /> : null}
+      <div className={isInLobby ? LOBBY_STAGE_CLASS_NAME : MENU_PANEL_CLASS_NAME}>
+        {isInLobby ? null : bannerPath !== null ? (
           <img
             className="block h-auto w-[min(42vw,380px)] select-none drop-shadow-banner"
             src={bannerPath}
@@ -82,6 +92,9 @@ export function MenuOverlay(): JSX.Element | null {
             }}
             onAddAiPlayer={(input: AddAiPlayerInput): void => {
               callbacks.onAddAiPlayer(input)
+            }}
+            onExpelPlayer={(seat: number): void => {
+              callbacks.onExpelPlayer(seat)
             }}
             onStart={(): void => {
               callbacks.onStartOnline()

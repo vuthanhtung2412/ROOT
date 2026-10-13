@@ -54,6 +54,14 @@ describe('buildMenuLobby — open lobby', () => {
     ])
   })
 
+  it('counts the seats of the table nobody took yet', () => {
+    expect(buildMenuLobby(openLobbyState([]), null, false).openSeatCount).toBe(4)
+    expect(
+      buildMenuLobby(openLobbyState(['lizard', 'eyrie', 'marquise']), 0, true)
+        .openSeatCount,
+    ).toBe(1)
+  })
+
   it('the host starts once two players have picked, not before', () => {
     expect(buildMenuLobby(openLobbyState(['lizard']), 0, true).canStart).toBe(false)
     expect(
@@ -81,6 +89,7 @@ describe('buildMenuLobby — preset lobby', () => {
     ])
     expect(lobby.canStart).toBe(false)
     expect(lobby.factionChoices).toEqual([])
+    expect(lobby.openSeatCount).toBe(0)
     expect(buildMenuLobby(waiting, 0, true).canStart).toBe(true)
   })
 

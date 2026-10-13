@@ -22,6 +22,10 @@
   --color-paper-bright: #fff8e6;
   /* Warm cream sheet behind cards (card detail, discard pile, crafted cards). */
   --color-cream: #f6e7bd;
+  /* Cream aged toward wood: lobby faction dock, empty lobby seat. */
+  --color-cream-deep: #dfc99a;
+  /* Rust dark enough to carry parchment text (Close / Leave lobby). */
+  --color-rust-deep: #8f3d27;
   /* Text printed straight on faction board art. */
   --color-ink-deep: #1a1408;
   /* Faction colors (FACTION_COLORS in game/theme.ts). */

@@ -9,6 +9,8 @@ import { MENU_FACTION_IDS } from '#game/menuPartySetup.ts'
 
 /** An open lobby starts once this many players have picked a faction. */
 const MIN_PLAYERS_TO_START = 2
+/** Seats of an open lobby (players pick their faction): the table size. */
+const OPEN_LOBBY_SEAT_COUNT = 4
 
 type LobbyPlayer = GameState['players'][number]
 
@@ -52,6 +54,7 @@ export function buildMenuLobby(
       isHost,
       canStart: isHost && joinedCount >= MIN_PLAYERS_TO_START,
       factionChoices: factionChoicesOf(state, localSeat),
+      openSeatCount: Math.max(OPEN_LOBBY_SEAT_COUNT - joinedCount, 0),
     }
   }
   return {
@@ -66,5 +69,6 @@ export function buildMenuLobby(
     isHost,
     canStart: isHost && joinedCount === state.factions.length,
     factionChoices: [],
+    openSeatCount: 0,
   }
 }

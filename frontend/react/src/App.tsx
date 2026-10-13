@@ -55,6 +55,7 @@ import { useViewportLayoutMode } from '#react/useViewportLayoutMode.ts'
 
 /** How often the menu asks the server whether a lobby waits to be joined. */
 const LOBBY_STATUS_POLL_MS = 2500
+const EXPELLED_FROM_LOBBY_MESSAGE = 'The host removed you from the lobby'
 
 function prefetchImage(path: string): Promise<void> {
   return new Promise((resolve) => {
@@ -124,6 +125,7 @@ export function App(): JSX.Element {
   const handleAddAiPlayerRef = useRef<(input: AddAiPlayerInput) => void>(
     () => undefined,
   )
+  const handleExpelPlayerRef = useRef<(seat: number) => void>(() => undefined)
   const handleStartOnlineRef = useRef<() => void>(() => undefined)
   const handleLeaveOnlineRef = useRef<() => void>(() => undefined)
   const resumeOnlineGameRef = useRef<() => Promise<void>>(() =>
@@ -202,6 +204,9 @@ export function App(): JSX.Element {
       onAddAiPlayer: (input) => {
         handleAddAiPlayerRef.current(input)
       },
+      onExpelPlayer: (seat) => {
+        handleExpelPlayerRef.current(seat)
+      },
       onStartOnline: () => {
         handleStartOnlineRef.current()
       },
@@ -244,6 +249,7 @@ export function App(): JSX.Element {
   const watchOnlineLobby = useCallback((): void => {
     clearLobbyWait()
     const session = ensureSession()
+    let wasSeatedInLobby: boolean = false
     const showLobby = (snapshot: GameSessionSnapshot): void => {
       const state = snapshot.state
       if (state === null) {
@@ -253,6 +259,16 @@ export function App(): JSX.Element {
         return
       }
       if (state.status === 'waiting') {
+        const isSeated: boolean = session.getLocalSeat() !== null
+        if (wasSeatedInLobby && !isSeated) {
+          // The seat is gone and we did not leave: the host expelled us.
+          clearLobbyWait()
+          void session.leaveOnlineLobby()
+          syncMenuLobby(null)
+          syncMenuStatus(EXPELLED_FROM_LOBBY_MESSAGE, '#c44')
+          return
+        }
+        wasSeatedInLobby = isSeated
         syncMenuLobby(
           buildMenuLobby(
             state,
@@ -339,6 +355,19 @@ export function App(): JSX.Element {
       syncMenuStatus(
         picked ? '' : (session.getSnapshot().error ?? 'Could not pick'),
         picked ? '#9a9a9a' : '#c44',
+      )
+    },
+    [ensureSession],
+  )
+
+  /** Open lobby, host only: expel a player; the server push redraws the lobby. */
+  const handleExpelPlayer = useCallback(
+    async (seat: number): Promise<void> => {
+      const session = ensureSession()
+      const expelled: boolean = await session.expelLobbyPlayer(seat)
+      syncMenuStatus(
+        expelled ? '' : (session.getSnapshot().error ?? 'Could not expel'),
+        expelled ? '#9a9a9a' : '#c44',
       )
     },
     [ensureSession],
@@ -475,6 +504,9 @@ export function App(): JSX.Element {
   }
   handleAddAiPlayerRef.current = (input: AddAiPlayerInput) => {
     void handleAddAiPlayer(input)
+  }
+  handleExpelPlayerRef.current = (seat: number) => {
+    void handleExpelPlayer(seat)
   }
   handleLeaveOnlineRef.current = () => {
     void handleLeaveOnline()

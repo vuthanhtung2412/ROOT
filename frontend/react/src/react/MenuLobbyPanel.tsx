@@ -1,173 +1,230 @@
-import type { JSX } from 'react'
+import { useState, useSyncExternalStore, type JSX } from 'react'
 import type { AddAiPlayerInput } from '#api/client.ts'
-import { modelDisplayName } from '#game/aiPlayerStore.ts'
+import {
+  getAiPlayerSnapshot,
+  subscribeAiPlayers,
+  type AiPlayerStoreState,
+} from '#game/aiPlayerStore.ts'
 import type {
   MenuFactionChoice,
   MenuLobbyHudState,
   MenuLobbySeat,
 } from '#game/hudStore.ts'
-import { factionDisplayName, isMenuFactionId } from '#game/menuPartySetup.ts'
-import { factionColorCss } from '#game/theme.ts'
 import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
 import {
-  FactionBadge,
-  PRIMARY_BUTTON_CLASS_NAME,
-  SEAT_ROW_CLASS_NAME,
-  SECONDARY_BUTTON_CLASS_NAME,
-  SECTION_TITLE_CLASS_NAME,
-} from '#react/MenuParts.tsx'
+  LobbyFactionDock,
+  type LobbyDockMode,
+} from '#react/MenuLobbyFactionDock.tsx'
+import {
+  LobbyOpenSeatTile,
+  LobbySeatTile,
+  type LobbyOpenSeatKind,
+} from '#react/MenuLobbySeats.tsx'
 
-/** One faction of the picker: badge, name, and who holds it. */
-const FACTION_CHOICE_CLASS_NAME =
-  'menu-faction-choice root-button root-button--quiet flex flex-row items-center gap-2 px-3 py-2 text-left font-body text-base'
-const PICKED_FACTION_CHOICE_CLASS_NAME =
-  'menu-faction-choice menu-faction-choice--picked root-button root-button--accent flex flex-row items-center gap-2 px-3 py-2 text-left font-body text-base'
-const TAKEN_BY_OTHER_NOTE = 'taken'
-const PICKED_NOTE = 'your pick'
+/** The lobby creator joins first, so the host always holds seat 0. */
+const HOST_SEAT_INDEX = 0
+const NO_SEAT_INDEX = -1
+/** Title on a paper strip, like the prompt of a turn. */
+const TITLE_CLASS_NAME =
+  'root-paper m-0 px-7 py-1.5 text-center font-display text-xl tracking-display text-ink md:text-[26px]'
+const SEAT_ROW_CLASS_NAME =
+  'm-0 grid list-none grid-cols-2 gap-x-7 gap-y-4 p-0 md:flex md:flex-row md:items-start md:gap-11'
+const FOOTER_CLASS_NAME =
+  'flex flex-row flex-wrap items-center justify-center gap-5'
+/** Close / Leave: rust, as the cancel tile of a turn. */
+const LEAVE_BUTTON_CLASS_NAME =
+  'menu-leave-lobby root-paper root-paper-fine root-paper-press m-0 min-h-12 px-5 py-2 font-display text-lg text-paper-bright [--root-paper-color:var(--color-rust-deep)]'
+/** Start: green, as the confirm tile of a turn. */
+const START_BUTTON_CLASS_NAME =
+  'menu-start-online root-paper root-paper-press m-0 min-h-15 px-8 py-2.5 font-display text-[28px] tracking-display text-ink-deep [--root-paper-color:var(--color-confirm)]'
+/** Preset lobby: the "Add an AI player" form on its own sheet. */
+const AI_FORM_SHEET_CLASS_NAME = 'root-paper w-full max-w-md px-4 py-3'
 
-function factionName(factionId: string): string {
-  return isMenuFactionId(factionId) ? factionDisplayName(factionId) : factionId
-}
-
-function lobbySeatStatus(seat: MenuLobbySeat): string {
-  if (seat.aiModel !== null) return `AI · ${modelDisplayName(seat.aiModel)}`
-  if (seat.isLocalPlayer) return 'you'
-  return seat.occupied ? 'joined' : 'waiting…'
-}
-
-function choiceNote(choice: MenuFactionChoice): string | null {
-  if (choice.takenBy === 'you') return PICKED_NOTE
-  return choice.takenBy === 'other' ? TAKEN_BY_OTHER_NOTE : null
-}
-
-/** Open lobby: pick a faction nobody else holds; picking again changes it. */
-function FactionPicker(props: {
-  choices: readonly MenuFactionChoice[]
-  disabled: boolean
-  onPick: (faction: string) => void
-}): JSX.Element {
-  return (
-    <fieldset
-      className="m-0 flex w-full flex-col gap-2 border-0 p-0"
-      disabled={props.disabled}
-    >
-      <legend className={`mb-1 ${SECTION_TITLE_CLASS_NAME}`}>
-        Choose your faction
-      </legend>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {props.choices.map((choice: MenuFactionChoice): JSX.Element => {
-          const note: string | null = choiceNote(choice)
-          return (
-            <button
-              key={choice.faction}
-              type="button"
-              className={
-                choice.takenBy === 'you'
-                  ? PICKED_FACTION_CHOICE_CLASS_NAME
-                  : FACTION_CHOICE_CLASS_NAME
-              }
-              aria-pressed={choice.takenBy === 'you'}
-              disabled={choice.takenBy === 'other'}
-              data-faction={choice.faction}
-              onClick={(): void => {
-                props.onPick(choice.faction)
-              }}
-            >
-              <FactionBadge factionId={choice.faction} />
-              <span className="flex min-w-0 flex-col">
-                <span>{factionName(choice.faction)}</span>
-                {note !== null ? (
-                  <span className="text-sm italic opacity-80">{note}</span>
-                ) : null}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </fieldset>
+/** Seats nobody took yet, numbered after the taken ones. */
+function openSeatIndexes(lobby: MenuLobbyHudState): number[] {
+  return Array.from(
+    { length: lobby.openSeatCount },
+    (_empty: unknown, offset: number): number => lobby.seats.length + offset,
   )
 }
 
-/** Online lobby: who sits where, the faction picker, the host's Start button. */
+/**
+ * Online lobby: one portrait tile per seat, the faction dock acting for the
+ * seat that is being filled, then the host's Start (or the guest's Leave).
+ */
 export function OnlineLobbyPanel(props: {
   lobby: MenuLobbyHudState
   playPending: boolean
   onPickFaction: (faction: string) => void
   onAddAiPlayer: (input: AddAiPlayerInput) => void
+  onExpelPlayer: (seat: number) => void
   onStart: () => void
   onLeave: () => void
 }): JSX.Element {
-  const isOpenLobby: boolean = props.lobby.factionChoices.length > 0
+  const lobby: MenuLobbyHudState = props.lobby
+  const aiPlayerStore: AiPlayerStoreState = useSyncExternalStore(
+    subscribeAiPlayers,
+    getAiPlayerSnapshot,
+    getAiPlayerSnapshot,
+  )
+  const [isSeatingAi, setIsSeatingAi] = useState<boolean>(false)
+  const [pickedModel, setPickedModel] = useState<string | null>(null)
+
+  const isOpenLobby: boolean = lobby.factionChoices.length > 0
+  const localSeatIndex: number = lobby.seats.findIndex(
+    (seat: MenuLobbySeat): boolean => seat.isLocalPlayer,
+  )
+  const isSeated: boolean = localSeatIndex !== NO_SEAT_INDEX
+  const nextOpenSeatIndex: number = lobby.seats.length
+  const hasOpenSeat: boolean = lobby.openSeatCount > 0
+  const hasFreeFaction: boolean = lobby.factionChoices.some(
+    (choice: MenuFactionChoice): boolean => choice.takenBy === null,
+  )
+  const model: string | null =
+    pickedModel !== null && aiPlayerStore.models.includes(pickedModel)
+      ? pickedModel
+      : (aiPlayerStore.defaultModel ?? aiPlayerStore.models[0] ?? null)
+  const canSeatAi: boolean =
+    isOpenLobby && lobby.isHost && hasOpenSeat && hasFreeFaction && model !== null
+  const dockMode: LobbyDockMode = isSeatingAi && canSeatAi ? 'ai' : 'own'
+  // A browser that only watches a full lobby has no seat to pick for.
+  const showDock: boolean = isOpenLobby && (isSeated || hasOpenSeat)
+  const takenSeatCount: number = lobby.seats.filter(
+    (seat: MenuLobbySeat): boolean => seat.occupied,
+  ).length
+  const tableSeatCount: number = lobby.seats.length + lobby.openSeatCount
+
+  function openSeatKind(seatIndex: number): LobbyOpenSeatKind {
+    if (seatIndex !== nextOpenSeatIndex) return 'waiting'
+    if (!isSeated) return 'local'
+    return canSeatAi ? 'ai' : 'waiting'
+  }
+
+  function isOpenSeatSelected(kind: LobbyOpenSeatKind): boolean {
+    if (kind === 'local') return dockMode === 'own'
+    return kind === 'ai' && dockMode === 'ai'
+  }
+
+  function pickInDock(faction: string): void {
+    if (dockMode === 'ai' && model !== null) {
+      props.onAddAiPlayer({ model, faction })
+      setIsSeatingAi(false)
+      return
+    }
+    props.onPickFaction(faction)
+  }
+
   return (
-    <section className="m-0 flex w-full flex-col gap-2" aria-label="Online lobby">
-      <h2 className={SECTION_TITLE_CLASS_NAME}>Online lobby</h2>
-      {props.lobby.seats.length === 0 ? (
-        <p className="m-0 font-body text-[15px] text-ink-soft italic">
-          Nobody has picked a faction yet.
-        </p>
-      ) : (
-        <ul className="m-0 flex list-none flex-col gap-2 p-0">
-          {props.lobby.seats.map(
-            (seat: MenuLobbySeat, seatIndex: number): JSX.Element => (
-              <li
+    <section
+      className="m-0 flex w-full flex-col items-center gap-6"
+      aria-label="Online lobby"
+    >
+      <h2 className={TITLE_CLASS_NAME}>
+        Online lobby · {takenSeatCount} of {tableSeatCount} seats
+      </h2>
+      <ol className={SEAT_ROW_CLASS_NAME}>
+        {lobby.seats.map(
+          (seat: MenuLobbySeat, seatIndex: number): JSX.Element => {
+            const isOwnSeat: boolean = isOpenLobby && seat.isLocalPlayer
+            const canExpel: boolean =
+              isOpenLobby &&
+              lobby.isHost &&
+              seat.occupied &&
+              !seat.isLocalPlayer &&
+              seatIndex !== HOST_SEAT_INDEX
+            return (
+              <LobbySeatTile
                 key={`lobby-seat-${String(seatIndex)}`}
-                className={`menu-seat ${SEAT_ROW_CLASS_NAME} justify-between gap-3 font-body text-base text-ink`}
-                style={{ borderLeftColor: factionColorCss(seat.faction) }}
-              >
-                <span className="flex flex-row items-center gap-3">
-                  <FactionBadge factionId={seat.faction} />
-                  Seat {seatIndex + 1} · {factionName(seat.faction)}
-                </span>
-                <span className="text-sm text-ink-soft italic">
-                  {lobbySeatStatus(seat)}
-                </span>
-              </li>
-            ),
-          )}
-        </ul>
-      )}
-      {isOpenLobby ? (
-        <FactionPicker
-          choices={props.lobby.factionChoices}
+                seat={seat}
+                seatIndex={seatIndex}
+                isSelected={isOwnSeat && dockMode === 'own'}
+                onSelect={
+                  isOwnSeat
+                    ? (): void => {
+                        setIsSeatingAi(false)
+                      }
+                    : null
+                }
+                onExpel={
+                  canExpel && !props.playPending
+                    ? (): void => {
+                        props.onExpelPlayer(seatIndex)
+                      }
+                    : null
+                }
+              />
+            )
+          },
+        )}
+        {openSeatIndexes(lobby).map((seatIndex: number): JSX.Element => {
+          const kind: LobbyOpenSeatKind = openSeatKind(seatIndex)
+          return (
+            <LobbyOpenSeatTile
+              key={`lobby-seat-${String(seatIndex)}`}
+              seatIndex={seatIndex}
+              kind={kind}
+              isSelected={isOpenSeatSelected(kind)}
+              onSelect={(): void => {
+                setIsSeatingAi(true)
+              }}
+            />
+          )
+        })}
+      </ol>
+      {showDock ? (
+        <LobbyFactionDock
+          choices={lobby.factionChoices}
+          mode={dockMode}
+          seatIndex={
+            dockMode === 'own' && isSeated ? localSeatIndex : nextOpenSeatIndex
+          }
+          isSeated={isSeated}
           disabled={props.playPending}
-          onPick={props.onPickFaction}
+          modelPicker={
+            dockMode === 'ai' && model !== null
+              ? {
+                  models: aiPlayerStore.models,
+                  model,
+                  onPickModel: setPickedModel,
+                }
+              : null
+          }
+          onPick={pickInDock}
         />
       ) : null}
-      {props.lobby.isHost ? (
-        <MenuAiPlayerForm
-          factionChoices={props.lobby.factionChoices}
-          disabled={props.playPending}
-          onAdd={props.onAddAiPlayer}
-        />
+      {!isOpenLobby && lobby.isHost && model !== null ? (
+        <div className={AI_FORM_SHEET_CLASS_NAME}>
+          <MenuAiPlayerForm
+            factionChoices={lobby.factionChoices}
+            disabled={props.playPending}
+            onAdd={props.onAddAiPlayer}
+          />
+        </div>
       ) : null}
-      {props.lobby.isHost ? (
+      <div className={FOOTER_CLASS_NAME}>
         <button
           type="button"
-          className={`${PRIMARY_BUTTON_CLASS_NAME} self-center`}
-          disabled={props.playPending || !props.lobby.canStart}
-          title={props.lobby.canStart ? undefined : 'Needs at least two players'}
-          onClick={props.onStart}
+          className={LEAVE_BUTTON_CLASS_NAME}
+          disabled={props.playPending}
+          title={
+            lobby.isHost ? 'Remove this lobby for everyone' : 'Go back to the menu'
+          }
+          onClick={props.onLeave}
         >
-          Start game
+          {lobby.isHost ? 'Close lobby' : 'Leave lobby'}
         </button>
-      ) : (
-        <p className="m-0 text-center font-body text-[15px] text-ink-soft italic">
-          Waiting for the host to start…
-        </p>
-      )}
-      <button
-        type="button"
-        className={`${SECONDARY_BUTTON_CLASS_NAME} self-center`}
-        disabled={props.playPending}
-        title={
-          props.lobby.isHost
-            ? 'Remove this lobby for everyone'
-            : 'Go back to the menu'
-        }
-        onClick={props.onLeave}
-      >
-        {props.lobby.isHost ? 'Close lobby' : 'Leave lobby'}
-      </button>
+        {lobby.isHost ? (
+          <button
+            type="button"
+            className={START_BUTTON_CLASS_NAME}
+            disabled={props.playPending || !lobby.canStart}
+            title={lobby.canStart ? undefined : 'Needs at least two players'}
+            onClick={props.onStart}
+          >
+            Start game
+          </button>
+        ) : null}
+      </div>
     </section>
   )
 }
