@@ -83,7 +83,12 @@ function restoreStoredGame(filePath: string): void {
     store.game = Game.fromJSON(snapshot)
     store.mode = isLobbyMode(mode) ? mode : DEFAULT_LOBBY_MODE
     store.aiPlayers = restoreAiPlayerSeats(aiPlayers)
-    console.log(`Restored ${store.mode} game from ${filePath}`)
+    const { id, status, turn, factions, players } = store.game.state
+    console.log(
+      `Restored existing ${store.mode} game ${id} from ${filePath}: ` +
+        `status ${status}, turn ${turn}, factions ${factions.join(' + ')}, ` +
+        `${players.length} joined, ${store.aiPlayers.length} AI`,
+    )
   } catch (error: unknown) {
     console.error(`Could not restore game from ${filePath}`, error)
   }
