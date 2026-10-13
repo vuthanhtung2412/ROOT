@@ -1,0 +1,12 @@
+# pnpm remote — serve the game + Tailscale Funnel URL, with the AI player stream.
+# The GAME URL is printed in the log of the `remote` process.
+processes:
+  remote:
+    command: bash scripts/remote-play.sh
+  # What the AI players are told, say and do (GET /game/ai-players/stream).
+  # Waits for the web API and connects again by itself after a restart.
+  ai-stream:
+    command: pnpm --silent --filter @root/cli start -- ai-stream
+    depends_on:
+      remote:
+        condition: process_started

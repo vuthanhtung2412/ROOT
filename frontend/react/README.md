@@ -35,6 +35,8 @@ pnpm serve:game
 
 Open `http://localhost:3000/` (or `http://<lan-ip>:3000/` from another device). Empty API base = same origin. Service JSON lives at `/health`.
 
+Runs in a process-compose TUI (`process-compose.serve.yaml`): `web` + `ai-stream` (what the AI players do). Without the TUI: `pnpm --filter @root/web serve:react`.
+
 ## Remote play (Tailscale Funnel)
 
 ```bash
@@ -42,6 +44,8 @@ pnpm remote   # Funnel URL — leave API base empty
 # FUNNEL_HTTPS_PORT=10000 pnpm remote   # if 8443 busy (443/8443/10000 only)
 pnpm remote:cloudflare   # Cloudflare quick tunnel — random URL each run, no account
 ```
+
+Both run in a process-compose TUI (`process-compose.remote.yaml`, `process-compose.remote-cloudflare.yaml`): select the `remote` process to read the GAME URL; `ai-stream` shows what the AI players do. Without the TUI: `bash scripts/remote-play.sh`.
 
 Needs Tailscale.app + Funnel enabled. Ctrl+C stops.
 
@@ -109,10 +113,10 @@ pnpm gen:api-client
 | Command | What |
 |---|---|
 | `pnpm --filter @root/react dev` | Vite + API/WS proxy |
-| `pnpm dev` | process-compose: web + React |
-| `pnpm serve:game` | build React → serve via `@root/web` |
-| `pnpm remote` | build + web serve + Tailscale Funnel → stable public URL |
-| `pnpm remote:cloudflare` | build + web serve + Cloudflare quick tunnel → random public URL |
+| `pnpm dev` | process-compose: web + React + AI player stream |
+| `pnpm serve:game` | process-compose: build React → serve via `@root/web` + AI player stream |
+| `pnpm remote` | process-compose: build + web serve + Tailscale Funnel → stable public URL + AI player stream |
+| `pnpm remote:cloudflare` | process-compose: build + web serve + Cloudflare quick tunnel → random public URL + AI player stream |
 | `pnpm build:ios` | build React → Capacitor sync → open Xcode |
 | `pnpm --filter @root/react test` | Vitest (factories + mocked fetch) |
 | `pnpm --filter @root/react typecheck` | `tsc --noEmit` |

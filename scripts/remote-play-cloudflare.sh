@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pnpm remote:cloudflare — serve:game + Cloudflare quick tunnel → random public URL
+# pnpm remote:cloudflare (process-compose.remote-cloudflare.yaml) — build + serve + Cloudflare quick tunnel → random public URL
 # No account needed. URL changes on every run (unlike `pnpm remote`).
 set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -30,8 +30,8 @@ command -v cloudflared >/dev/null || {
   exit 1
 }
 
-echo "→ pnpm serve:game :${PORT}"
-pnpm serve:game &
+echo "→ pnpm --filter @root/web serve:react :${PORT}"
+pnpm --filter @root/web serve:react &
 WEB_PID=$!
 for _ in $(seq 1 180); do
   nc -z 127.0.0.1 "$PORT" >/dev/null 2>&1 && break

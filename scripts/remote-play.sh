@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pnpm remote — serve:game + Tailscale Funnel → stable URL
+# pnpm remote (process-compose.remote.yaml) — build + serve + Tailscale Funnel → stable URL
 set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -29,8 +29,8 @@ tailscale status >/dev/null || {
   exit 1
 }
 
-echo "→ pnpm serve:game :${PORT}"
-pnpm serve:game &
+echo "→ pnpm --filter @root/web serve:react :${PORT}"
+pnpm --filter @root/web serve:react &
 WEB_PID=$!
 for _ in $(seq 1 180); do
   nc -z 127.0.0.1 "$PORT" >/dev/null 2>&1 && break
