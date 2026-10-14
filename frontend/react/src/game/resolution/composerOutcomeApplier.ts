@@ -4,6 +4,7 @@ import { mergeBattleClearingHighlight } from '#game/battleOverlayModel.ts'
 import type { GameState } from '#api/client.ts'
 import type { GameSessionSnapshot } from '#game/GameSession.ts'
 import type {
+  TurnBannerClearingStepper,
   TurnBannerOption,
   TurnBannerOptionPresentation,
 } from '#ui/TurnBanner.ts'
@@ -16,6 +17,8 @@ export type ComposerOutcomeApplierDeps = {
     canCancel: boolean
     options: TurnBannerOption[]
     optionPresentation?: TurnBannerOptionPresentation
+    clearingSteppers?: readonly TurnBannerClearingStepper[]
+    clearingStepperBudget?: number
   } | null) => void
   syncLeaderPick: (leaders: string[] | null) => void
   setHighlightedClearings: (clearingIds: number[]) => void
@@ -76,6 +79,12 @@ export function applyComposerOutcomeToHud(
       canCancel: outcome.prompt.canCancel,
       options: pickingLeader !== null ? [] : deps.getPromptOptions(),
       ...(optionPresentation !== undefined ? { optionPresentation } : {}),
+      ...(outcome.prompt.clearingSteppers !== undefined
+        ? { clearingSteppers: outcome.prompt.clearingSteppers }
+        : {}),
+      ...(outcome.prompt.clearingStepperBudget !== undefined
+        ? { clearingStepperBudget: outcome.prompt.clearingStepperBudget }
+        : {}),
     })
     deps.setHighlightedClearings(
       mergeBattleClearingHighlight(outcome.prompt.highlightClearings, state),

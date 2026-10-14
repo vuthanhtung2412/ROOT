@@ -68,6 +68,15 @@ export function mergeComposerHooks(
       }
       return null
     },
+    setClearingCount: (clearingId, count) => {
+      for (const hooks of hookSets) {
+        const outcome = hooks.setClearingCount?.(clearingId, count) ?? null
+        if (outcome !== null) {
+          return outcome
+        }
+      }
+      return null
+    },
     confirm: () => {
       for (const hooks of hookSets) {
         const outcome = hooks.confirm?.() ?? null

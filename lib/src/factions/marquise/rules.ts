@@ -5,7 +5,6 @@ import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
 import type { BuildingType, Seat } from '#pieces/types.js'
-import { connectedRuled } from '#queries/connected.js'
 import { canMove } from '#queries/move.js'
 import { canPlace } from '#queries/place.js'
 import { warriors } from '#queries/pieces.js'
@@ -16,6 +15,11 @@ import { woodReachable } from '#queries/wood.js'
 import { moveWarriors } from '#rules/move.js'
 import { placeUpTo } from '#rules/place.js'
 import { RuleError } from '#rules/RuleError.js'
+import {
+  availableWoodClearings,
+  controlMargin,
+  suggestWoodClearings,
+} from '#factions/marquise/woodPayment.js'
 import {
   MARQUISE_BUILD_COST,
   MARQUISE_RECRUITER_DRAW_BONUS_INDICES,
@@ -82,33 +86,6 @@ export function buildVictoryPoints(type: BuildingType, column: number): number {
     default:
       throw new RuleError('INVALID_BUILDING', { type })
   }
-}
-
-interface WoodPayment {
-  seat: Seat
-  buildClearing: ClearingId
-  amount: number
-}
-
-export function payWood(state: GameState, payment: WoodPayment, ctx: Ctx): void {
-  const { seat, buildClearing, amount } = payment
-  if (amount <= 0) return
-  const board = boardOf(state, seat)
-  const region = connectedRuled(state, seat, buildClearing, ctx.hooks)
-  let remaining = amount
-  for (const clearing of [...region].sort((left, right) => left - right)) {
-    const clearingState = state.clearings[clearing]!
-    clearingState.pieces = clearingState.pieces.filter((piece) => {
-      if (remaining <= 0) return true
-      if (piece.kind === 'token' && piece.type === 'wood' && piece.owner === seat) {
-        remaining -= 1
-        board.supply.wood += 1
-        return false
-      }
-      return true
-    })
-  }
-  if (remaining > 0) throw new RuleError('NOT_ENOUGH_WOOD', { amount, remaining })
 }
 
 /** Rule: 6.4 Birdsong — one wood per sawmill (multi-sawmill clearing repeats). */
@@ -262,9 +239,22 @@ export function legalBuildChoices(
   const choices: BuildChoice[] = []
   for (let clearing = 0; clearing < 12; clearing++) {
     for (const building of MARQUISE_BUILDINGS) {
-      if (canBuildAt(state, { seat, clearing, building }, ctx)) {
-        choices.push({ clearing, building })
-      }
+      if (!canBuildAt(state, { seat, clearing, building }, ctx)) continue
+      const track = boardOf(state, seat).tracks[building]
+      const woodCost = MARQUISE_BUILD_COST[buildColumn(track.placed)]!
+      const available = availableWoodClearings(state, seat, clearing, ctx)
+      choices.push({
+        clearing,
+        building,
+        woodCost,
+        availableWoodClearings: available,
+        suggestedWoodClearings: suggestWoodClearings({
+          availableWoodClearings: available,
+          amount: woodCost,
+          marginForClearing: (woodClearing: ClearingId): number =>
+            controlMargin(state, woodClearing, seat, ctx),
+        }),
+      })
     }
   }
   return choices

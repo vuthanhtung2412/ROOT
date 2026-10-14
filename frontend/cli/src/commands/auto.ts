@@ -5,7 +5,11 @@ const ATTEMPT_MULTIPLIER = 3
 const HAND_SIZE_LIMIT = 5
 const MAX_STEPS_PER_TURN = 30
 
-type BuildOption = { clearing: number; building: string }
+type BuildOption = {
+  clearing: number
+  building: string
+  woodClearings: number[]
+}
 type OverworkOption = { cardId: string; clearing: number }
 type BattleTarget = { clearing: number; defender: number }
 type MarchMove = { from: number; to: number; count: number }
@@ -76,9 +80,14 @@ function readBuildOptions(values: unknown[] | undefined): BuildOption[] {
     if (typeof item !== 'object' || item === null) continue
     const clearing = Reflect.get(item, 'clearing')
     const building = Reflect.get(item, 'building')
-    if (typeof clearing === 'number' && typeof building === 'string') {
-      options.push({ clearing, building })
-    }
+    if (typeof clearing !== 'number' || typeof building !== 'string') continue
+    const suggested = Reflect.get(item, 'suggestedWoodClearings')
+    const woodClearings =
+      Array.isArray(suggested) &&
+      suggested.every((entry: unknown): entry is number => typeof entry === 'number')
+        ? suggested
+        : []
+    options.push({ clearing, building, woodClearings })
   }
   return options
 }
@@ -263,6 +272,7 @@ function buildActionFor(state: GameState, spec: ActionSpec): unknown | null {
         type: 'build',
         clearing: choice.clearing,
         building: choice.building,
+        woodClearings: choice.woodClearings,
       }
     }
     case 'overwork': {

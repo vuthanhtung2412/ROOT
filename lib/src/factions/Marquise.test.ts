@@ -284,7 +284,12 @@ describe('Marquise turn', () => {
     })
     const vpBefore = game.state.players[seat]!.vp
     const column = buildColumn(5)
-    game.apply({ type: 'build', clearing: buildAt, building: 'sawmill' })
+    game.apply({
+      type: 'build',
+      clearing: buildAt,
+      building: 'sawmill',
+      woodClearings: [buildAt],
+    })
     expect(
       game.state.clearings[buildAt]!.pieces.some(
         (p) => p.kind === 'building' && p.type === 'sawmill' && p.owner === seat,
@@ -547,9 +552,23 @@ describe('Marquise legalActions board choices', () => {
       type: 'wood',
     })
     const buildSpec = game.legalActions().find((spec) => spec.type === 'build')
-    expect(buildSpec?.params?.options).toEqual(
-      expect.arrayContaining([{ clearing: buildAt, building: 'sawmill' }]),
+    const options = buildSpec?.params?.options ?? []
+    const sawmillOption = options.find(
+      (option) =>
+        'building' in option &&
+        option.building === 'sawmill' &&
+        option.clearing === buildAt,
     )
+    expect(sawmillOption).toMatchObject({
+      clearing: buildAt,
+      building: 'sawmill',
+      woodCost: 1,
+    })
+    expect(sawmillOption && 'suggestedWoodClearings' in sawmillOption).toBe(true)
+    if (sawmillOption && 'suggestedWoodClearings' in sawmillOption) {
+      expect(sawmillOption.suggestedWoodClearings).toHaveLength(1)
+      expect(sawmillOption.availableWoodClearings).toContain(buildAt)
+    }
   })
 
   it('exposes paired battle targets (clearing × defender)', () => {

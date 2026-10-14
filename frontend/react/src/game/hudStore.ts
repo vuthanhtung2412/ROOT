@@ -175,6 +175,8 @@ export type HudCallbacks = {
   onBannerConfirm: () => void
   onBannerCancel: () => void
   onBannerPickOption: (value: string) => void
+  /** Clearing stepper under the map: set selected count for that clearing. */
+  onClearingStepper: (clearingId: number, count: number) => void
   onBattleOutsideClick: () => void
   onCardSelected: (cardId: string) => void
   onCardHold: (held: { defId: string; catalog: CardCatalogEntry }) => void
@@ -281,6 +283,7 @@ const NOOP_CALLBACKS: HudCallbacks = {
   onBannerConfirm: () => undefined,
   onBannerCancel: () => undefined,
   onBannerPickOption: () => undefined,
+  onClearingStepper: () => undefined,
   onBattleOutsideClick: () => undefined,
   onCardSelected: () => undefined,
   onCardHold: () => undefined,

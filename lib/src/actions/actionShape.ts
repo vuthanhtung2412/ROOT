@@ -117,7 +117,11 @@ const ACTION_FIELD_SHAPES: ActionShapeTable = {
   spendBird: CARD_ONLY,
   recruit: NO_FIELDS,
   march: { moves: required(MARCH_MOVES) },
-  build: { clearing: required(NUMBER), building: required(TEXT) },
+  build: {
+    clearing: required(NUMBER),
+    building: required(TEXT),
+    woodClearings: required(listOf(NUMBER)),
+  },
   overwork: CARD_AND_CLEARING,
   craft: CARD_ONLY,
   battle: CLEARING_AND_DEFENDER,

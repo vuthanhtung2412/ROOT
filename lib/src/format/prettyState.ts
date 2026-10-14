@@ -232,8 +232,13 @@ export function describeAction(action: Action, state: GameState): string {
       return `MOVE ${action.moves.map((m) => `${m.count}w C${m.from}→C${m.to}`).join(', ')}`
     case 'battle':
       return `ATTACK C${action.clearing} vs ${playerRefBySeat(state, action.defender)}`
-    case 'build':
-      return `BUILD ${action.building} at C${action.clearing}`
+    case 'build': {
+      const woodSpent =
+        action.woodClearings.length === 0
+          ? ''
+          : ` wood[${action.woodClearings.map((clearing) => `C${clearing}`).join(',')}]`
+      return `BUILD ${action.building} at C${action.clearing}${woodSpent}`
+    }
     case 'craft':
       return `CRAFT ${findCard(action.cardId)}`
     case 'overwork':

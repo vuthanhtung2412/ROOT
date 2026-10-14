@@ -115,7 +115,7 @@ describe('marquiseActionComposer cards', () => {
 })
 
 describe('marquiseActionComposer board', () => {
-  it('build emits paired clearing and building', () => {
+  it('build emits paired clearing and building when wood cost is zero', () => {
     const { hooks } = createMarquiseBoardComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(hooks)
@@ -124,13 +124,158 @@ describe('marquiseActionComposer board', () => {
       makeActionSpec({
         type: 'build',
         params: {
-          options: [{ clearing: 3, building: 'sawmill' }],
+          options: [
+            {
+              clearing: 3,
+              building: 'sawmill',
+              woodCost: 0,
+              availableWoodClearings: [],
+              suggestedWoodClearings: [],
+            },
+          ],
         },
       }),
     )
     expect(composer.chooseClearing(3)).toEqual({
       kind: 'ready',
-      action: { type: 'build', clearing: 3, building: 'sawmill' },
+      action: {
+        type: 'build',
+        clearing: 3,
+        building: 'sawmill',
+        woodClearings: [],
+      },
+    })
+  })
+
+  it('build prompts wood spend with greedy preselection then confirm', () => {
+    const { hooks } = createMarquiseBoardComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'build',
+        params: {
+          options: [
+            {
+              clearing: 3,
+              building: 'workshop',
+              woodCost: 2,
+              availableWoodClearings: [3, 5, 5, 7],
+              suggestedWoodClearings: [5, 7],
+            },
+          ],
+        },
+      }),
+    )
+    const afterClearing = composer.chooseClearing(3)
+    expect(afterClearing).toMatchObject({
+      kind: 'incomplete',
+      prompt: {
+        message: 'Build — spend wood (2/2)',
+        canConfirm: true,
+        highlightClearings: [3, 5, 7],
+        clearingStepperBudget: 2,
+        clearingSteppers: [
+          { clearingId: 3, selected: 0, maximum: 1 },
+          { clearingId: 5, selected: 1, maximum: 2 },
+          { clearingId: 7, selected: 1, maximum: 1 },
+        ],
+      },
+    })
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'build',
+        clearing: 3,
+        building: 'workshop',
+        woodClearings: [5, 7],
+      },
+    })
+  })
+
+  it('build wood stepper sets an exact count on a clearing', () => {
+    const { hooks } = createMarquiseBoardComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'build',
+        params: {
+          options: [
+            {
+              clearing: 3,
+              building: 'workshop',
+              woodCost: 2,
+              availableWoodClearings: [3, 5, 5, 7],
+              suggestedWoodClearings: [5, 7],
+            },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(3)
+    expect(composer.setClearingCount(5, 0)).toMatchObject({
+      prompt: {
+        message: 'Build — spend wood (1/2)',
+        clearingSteppers: [
+          { clearingId: 3, selected: 0, maximum: 1 },
+          { clearingId: 5, selected: 0, maximum: 2 },
+          { clearingId: 7, selected: 1, maximum: 1 },
+        ],
+      },
+    })
+    expect(composer.setClearingCount(5, 2)).toMatchObject({
+      prompt: {
+        message: 'Build — spend wood (2/2)',
+        canConfirm: true,
+        clearingSteppers: [
+          { clearingId: 3, selected: 0, maximum: 1 },
+          { clearingId: 5, selected: 1, maximum: 2 },
+          { clearingId: 7, selected: 1, maximum: 1 },
+        ],
+      },
+    })
+  })
+
+  it('build wood spend click adds then removes from a clearing', () => {
+    const { hooks } = createMarquiseBoardComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'build',
+        params: {
+          options: [
+            {
+              clearing: 3,
+              building: 'recruiter',
+              woodCost: 1,
+              availableWoodClearings: [3, 5],
+              suggestedWoodClearings: [5],
+            },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(3)
+    // Preselected C5; click removes it, then pick C3 instead.
+    expect(composer.chooseClearing(5)).toMatchObject({
+      prompt: { message: 'Build — spend wood (0/1)', canConfirm: false },
+    })
+    expect(composer.chooseClearing(3)).toMatchObject({
+      prompt: { message: 'Build — spend wood (1/1)', canConfirm: true },
+    })
+    expect(composer.confirm()).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'build',
+        clearing: 3,
+        building: 'recruiter',
+        woodClearings: [3],
+      },
     })
   })
 

@@ -8,6 +8,17 @@ import {
   type ComposerOutcome,
   type SeatLabelOptions,
 } from '#game/resolution/ActionComposer.ts'
+import {
+  adjustWoodSelection,
+  countClearing,
+  finishBuildChoice,
+  readMarquiseBuildOption,
+  readyBuildAction,
+  setWoodCountAtClearing,
+  woodSpendPrompt,
+  type MarquiseBuildOption,
+  type MarquiseBuildWoodDraft,
+} from '#game/resolution/marquiseBuildWood.ts'
 
 /** Law Evening: "discard cards of your choice until you have five". */
 const HAND_LIMIT = 5
@@ -192,26 +203,21 @@ export function createMarquiseCardComposerHooks(): {
   }
 }
 
-type BuildOption = { clearing: number; building: string }
 type BattleTarget = { clearing: number; defender: number }
 
 type BoardDraft =
   | { type: 'idle' }
-  | { type: 'build'; options: BuildOption[]; clearing: number | null }
+  | {
+      type: 'build'
+      options: MarquiseBuildOption[]
+      clearing: number | null
+    }
+  | MarquiseBuildWoodDraft
   | {
       type: 'battle'
       targets: BattleTarget[]
       clearing: number | null
     }
-
-function isBuildOption(value: unknown): value is BuildOption {
-  if (typeof value !== 'object' || value === null) {
-    return false
-  }
-  const clearing = Reflect.get(value, 'clearing')
-  const building = Reflect.get(value, 'building')
-  return typeof clearing === 'number' && typeof building === 'string'
-}
 
 /**
  * Marquise board daylight: recruit (immediate), build (paired), battle.
@@ -229,7 +235,9 @@ export function createMarquiseBoardComposerHooks(options?: SeatLabelOptions): {
       promptOptions = []
       if (spec.type === 'build') {
         const params = readChoiceParams(spec)
-        const options = (params.options ?? []).filter(isBuildOption)
+        const options = (params.options ?? [])
+          .map(readMarquiseBuildOption)
+          .filter((option): option is MarquiseBuildOption => option !== null)
         draft = { type: 'build', options, clearing: null }
         return {
           kind: 'incomplete',
@@ -263,6 +271,20 @@ export function createMarquiseBoardComposerHooks(options?: SeatLabelOptions): {
     },
 
     chooseClearing: (clearingId: number): ComposerOutcome | null => {
+      if (draft.type === 'buildWood') {
+        if (countClearing(draft.availableWoodClearings, clearingId) < 1) {
+          return null
+        }
+        const selectedWoodClearings = adjustWoodSelection(
+          draft.selectedWoodClearings,
+          clearingId,
+          draft.availableWoodClearings,
+          draft.woodCost,
+        )
+        draft = { ...draft, selectedWoodClearings }
+        return woodSpendPrompt(draft)
+      }
+
       if (draft.type === 'build') {
         const matches = draft.options.filter(
           (option) => option.clearing === clearingId,
@@ -275,16 +297,10 @@ export function createMarquiseBoardComposerHooks(options?: SeatLabelOptions): {
           if (match === undefined) {
             return null
           }
-          draft = { type: 'idle' }
           promptOptions = []
-          return {
-            kind: 'ready',
-            action: {
-              type: 'build',
-              clearing: match.clearing,
-              building: match.building,
-            },
-          }
+          const finished = finishBuildChoice(match)
+          draft = finished.draft
+          return finished.outcome
         }
         draft = { ...draft, clearing: clearingId }
         promptOptions = matches.map((option) => ({
@@ -349,6 +365,27 @@ export function createMarquiseBoardComposerHooks(options?: SeatLabelOptions): {
       return null
     },
 
+    setClearingCount: (
+      clearingId: number,
+      count: number,
+    ): ComposerOutcome | null => {
+      if (draft.type !== 'buildWood') {
+        return null
+      }
+      if (countClearing(draft.availableWoodClearings, clearingId) < 1) {
+        return null
+      }
+      const selectedWoodClearings = setWoodCountAtClearing(
+        draft.selectedWoodClearings,
+        clearingId,
+        count,
+        draft.availableWoodClearings,
+        draft.woodCost,
+      )
+      draft = { ...draft, selectedWoodClearings }
+      return woodSpendPrompt(draft)
+    },
+
     chooseColumn: (buildingOrSeat: string): ComposerOutcome | null => {
       if (draft.type === 'build' && draft.clearing !== null) {
         const clearing = draft.clearing
@@ -359,16 +396,10 @@ export function createMarquiseBoardComposerHooks(options?: SeatLabelOptions): {
         if (match === undefined) {
           return null
         }
-        draft = { type: 'idle' }
         promptOptions = []
-        return {
-          kind: 'ready',
-          action: {
-            type: 'build',
-            clearing: match.clearing,
-            building: match.building,
-          },
-        }
+        const finished = finishBuildChoice(match)
+        draft = finished.draft
+        return finished.outcome
       }
 
       if (draft.type === 'battle' && draft.clearing !== null) {
@@ -400,6 +431,23 @@ export function createMarquiseBoardComposerHooks(options?: SeatLabelOptions): {
       }
 
       return null
+    },
+
+    confirm: (): ComposerOutcome | null => {
+      if (
+        draft.type !== 'buildWood' ||
+        draft.selectedWoodClearings.length !== draft.woodCost
+      ) {
+        return null
+      }
+      const action = readyBuildAction({
+        clearing: draft.clearing,
+        building: draft.building,
+        woodClearings: [...draft.selectedWoodClearings],
+      })
+      draft = { type: 'idle' }
+      promptOptions = []
+      return action
     },
 
     cancel: (): ComposerOutcome | null => {

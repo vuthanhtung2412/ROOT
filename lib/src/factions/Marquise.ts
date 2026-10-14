@@ -45,12 +45,15 @@ import {
   eveningDrawCards,
   legalBuildChoices,
   legalMarchMoves,
-  payWood,
   placeBirdsongWood,
   recruiterClearings,
   sawmillClearings,
   validateMarchMoves,
 } from '#factions/marquise/rules.js'
+import {
+  isValidWoodPayment,
+  payWood,
+} from '#factions/marquise/woodPayment.js'
 
 export {
   fillMarquiseSetupTracks,
@@ -233,6 +236,29 @@ export class Marquise extends Faction {
         if (!canBuildAt(state, { seat, clearing: action.clearing, building: action.building }, ctx)) {
           throw new RuleError('CANNOT_BUILD', { clearing: action.clearing, building: action.building })
         }
+        const track = boardOf(state, seat).tracks[action.building]
+        const woodCost = MARQUISE_BUILD_COST[buildColumn(track.placed)]!
+        if (action.woodClearings.length !== woodCost) {
+          throw new RuleError('NOT_ENOUGH_WOOD', {
+            amount: woodCost,
+            chosen: action.woodClearings.length,
+          })
+        }
+        if (
+          !isValidWoodPayment(
+            state,
+            {
+              seat,
+              buildClearing: action.clearing,
+              woodClearings: action.woodClearings,
+            },
+            ctx,
+          )
+        ) {
+          throw new RuleError('NOT_ENOUGH_WOOD', {
+            woodClearings: action.woodClearings,
+          })
+        }
         return
       }
       case 'overwork': {
@@ -332,8 +358,15 @@ export class Marquise extends Faction {
         const board = boardOf(state, seat)
         const track = board.tracks[action.building]
         const column = buildColumn(track.placed)
-        const cost = MARQUISE_BUILD_COST[column]!
-        payWood(state, { seat, buildClearing: action.clearing, amount: cost }, ctx)
+        payWood(
+          state,
+          {
+            seat,
+            buildClearing: action.clearing,
+            woodClearings: action.woodClearings,
+          },
+          ctx,
+        )
         track.placed -= 1
         placeUpTo(state, { seat, clearing: action.clearing, spec: { kind: 'building', type: action.building }, count: 1 })
         const vp = buildVictoryPoints(action.building, column)

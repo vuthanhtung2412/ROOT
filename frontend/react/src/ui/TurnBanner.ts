@@ -43,10 +43,20 @@ export type TurnBannerOption = {
  */
 export type TurnBannerOptionPresentation = 'stepper' | 'buttons' | 'grid'
 
+/** Count control drawn under a map clearing while composing. */
+export type TurnBannerClearingStepper = {
+  clearingId: number
+  selected: number
+  maximum: number
+}
+
 export type TurnBannerComposerView = {
   message: string
   canConfirm: boolean
   canCancel: boolean
   options: readonly TurnBannerOption[]
   optionPresentation?: TurnBannerOptionPresentation
+  clearingSteppers?: readonly TurnBannerClearingStepper[]
+  /** Cap on the sum of clearing stepper selections. */
+  clearingStepperBudget?: number
 }

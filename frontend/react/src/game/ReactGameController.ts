@@ -400,6 +400,11 @@ export class ReactGameController {
       onBannerPickOption: (value) => {
         this.applyComposerOutcome(this.composer.chooseColumn(value))
       },
+      onClearingStepper: (clearingId, count) => {
+        this.applyComposerOutcome(
+          this.composer.setClearingCount(clearingId, count),
+        )
+      },
       onBattleOutsideClick: () => {
         this.battleOverlayController?.dismissResultFlash()
       },

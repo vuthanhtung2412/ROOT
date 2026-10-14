@@ -6,11 +6,22 @@ export type ClientAction = {
   [key: string]: unknown
 }
 
+/** Per-clearing count control drawn under the map clearing (e.g. wood spend). */
+export type ClearingStepperView = {
+  clearingId: number
+  selected: number
+  maximum: number
+}
+
 export type ComposerPrompt = {
   message: string
   highlightClearings: number[]
   /** Forest indexes to highlight / click (Vagabond setup + slip). */
   highlightForests?: number[]
+  /** Steppers anchored under clearings while the prompt is open. */
+  clearingSteppers?: readonly ClearingStepperView[]
+  /** Cap on the sum of clearing stepper selections (e.g. wood cost). */
+  clearingStepperBudget?: number
   enabledCardIds: string[] | null
   canConfirm: boolean
   canCancel: boolean
@@ -404,6 +415,11 @@ export type ActionComposerHooks = {
   chooseDefender?: (defenderSeat: number) => ComposerOutcome | null
   chooseColumn?: (column: string) => ComposerOutcome | null
   choosePiece?: (pieceId: string) => ComposerOutcome | null
+  /** Set how many tokens to take from one clearing (wood spend steppers). */
+  setClearingCount?: (
+    clearingId: number,
+    count: number,
+  ) => ComposerOutcome | null
   confirm?: () => ComposerOutcome | null
   cancel?: () => ComposerOutcome | null
 }
@@ -555,6 +571,15 @@ export class ActionComposer {
 
   choosePiece(pieceId: string): ComposerOutcome {
     const hooked = this.hooks.choosePiece?.(pieceId) ?? null
+    if (hooked !== null) {
+      this.outcome = hooked
+      return this.outcome
+    }
+    return this.outcome
+  }
+
+  setClearingCount(clearingId: number, count: number): ComposerOutcome {
+    const hooked = this.hooks.setClearingCount?.(clearingId, count) ?? null
     if (hooked !== null) {
       this.outcome = hooked
       return this.outcome

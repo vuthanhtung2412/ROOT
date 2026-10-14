@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import { ActionTray } from '#react/ActionTray.tsx'
 import { BattleClearingBadge } from '#react/BattleClearingBadge.tsx'
 import { BattleOverlay } from '#react/BattleOverlay.tsx'
+import { ClearingWoodSteppers } from '#react/ClearingWoodSteppers.tsx'
 import { BootOverlay } from '#react/BootOverlay.tsx'
 import { CardDetailOverlay } from '#react/CardDetailOverlay.tsx'
 import { CardFlightLayer } from '#react/CardFlightLayer.tsx'
@@ -36,6 +37,7 @@ export function ReactHud(): JSX.Element {
       <TurnBanner />
       <BattleOverlay />
       <BattleClearingBadge />
+      <ClearingWoodSteppers />
       <PlayerRail />
       <CardFlightLayer />
       <DecreePanel />

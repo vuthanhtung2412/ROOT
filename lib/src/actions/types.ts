@@ -35,6 +35,15 @@ export type OverworkChoice = {
 export type BuildChoice = {
   clearing: ClearingId
   building: MarquiseBuildingType
+  /** Wood cost of the leftmost building of this type. Rule: 6.5.4.II. */
+  woodCost: number
+  /** Reachable wood tokens as clearing ids (one entry per token). */
+  availableWoodClearings: ClearingId[]
+  /**
+   * Greedy preselection: clearings with lowest
+   * `ownRuleStrength − max(otherRuleStrength)` first.
+   */
+  suggestedWoodClearings: ClearingId[]
 }
 
 /** Paired battle target: clearing × defender seat. */
@@ -156,7 +165,13 @@ export type Action =
   | { type: 'spendBird'; cardId: string }
   | { type: 'recruit' }
   | { type: 'march'; moves: MarchMove[] }
-  | { type: 'build'; clearing: ClearingId; building: BuildingType }
+  | {
+      type: 'build'
+      clearing: ClearingId
+      building: BuildingType
+      /** One clearing id per wood token spent; empty when cost is 0. */
+      woodClearings: ClearingId[]
+    }
   | { type: 'overwork'; clearing: ClearingId; cardId: string }
   | { type: 'craft'; cardId: string }
   | { type: 'battle'; clearing: ClearingId; defender: Seat }
