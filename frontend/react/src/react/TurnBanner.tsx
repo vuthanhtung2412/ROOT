@@ -16,12 +16,17 @@ import {
 import type {
   TurnBannerComposerView,
   TurnBannerOptionItem,
+  TurnBannerOptionPiece,
   TurnBannerViewModel,
 } from '#ui/TurnBanner.ts'
 import type { IconType } from 'react-icons'
 import { LuCheck, LuMinus, LuPlus, LuX } from 'react-icons/lu'
 import { SuitIcon } from '#react/SuitIcon.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
+import {
+  RemovalPickOption,
+  removalPickShapeForPieceKind,
+} from '#react/RemovalPickOption.tsx'
 import { optionIconFor } from '#ui/optionIcons.ts'
 import { phaseIconFor } from '#ui/phaseIcons.ts'
 import {
@@ -182,6 +187,15 @@ export function TurnBanner(): JSX.Element | null {
                   callbacks.onBannerPickOption(option.value)
                 }}
               />
+            ) : option.piece !== undefined ? (
+              <PieceOptionButton
+                key={option.value}
+                label={option.label}
+                piece={option.piece}
+                onPick={() => {
+                  callbacks.onBannerPickOption(option.value)
+                }}
+              />
             ) : option.suit !== undefined ? (
               <SuitOptionButton
                 key={option.value}
@@ -211,8 +225,6 @@ export function TurnBanner(): JSX.Element | null {
   )
 }
 
-const ITEM_OPTION_BASE_CLASS =
-  'relative m-0 box-border size-14 cursor-root-pointer border-2 bg-parchment p-0.5 transition-transform duration-75 ease-out md:size-16'
 const TEXT_OPTION_BUTTON_CLASS_NAME =
   'root-paper root-paper-fine root-paper-press m-0 flex flex-row items-center gap-1.5 px-3 py-1 font-display text-sm text-ink'
 const OPTION_ICON_CLASS_NAME = 'shrink-0 text-base text-rust'
@@ -264,12 +276,6 @@ function SuitOptionButton(props: {
   )
 }
 
-const ITEM_OPTION_SELECTED_CLASS =
-  'border-gold -translate-y-1 shadow-gold-ring'
-const ITEM_OPTION_IDLE_CLASS = 'border-ink-soft'
-/** Same dimming as exhausted items on the Vagabond faction board. */
-const ITEM_OPTION_EXHAUSTED_IMAGE_CLASS = 'opacity-40'
-
 /** Vagabond item as faction-board artwork: dim = exhausted, gold = selected. */
 function ItemOptionButton(props: {
   label: string
@@ -279,39 +285,35 @@ function ItemOptionButton(props: {
   const textureKey = itemTextureKey(props.item.type)
   const imagePath = textureKey !== null ? imagePathForAssetKey(textureKey) : null
   return (
-    <button
-      type="button"
-      className={`${ITEM_OPTION_BASE_CLASS} ${
-        props.item.selected ? ITEM_OPTION_SELECTED_CLASS : ITEM_OPTION_IDLE_CLASS
-      }`}
-      aria-label={props.label}
-      aria-pressed={props.item.selected}
-      title={props.label}
-      onClick={props.onPick}
-    >
-      {imagePath !== null ? (
-        <img
-          className={`pointer-events-none block size-full object-contain ${
-            props.item.exhausted ? ITEM_OPTION_EXHAUSTED_IMAGE_CLASS : ''
-          }`}
-          src={imagePath}
-          alt={props.item.type}
-          draggable={false}
-        />
-      ) : (
-        <span className="font-mono text-xs text-ink">{props.item.type}</span>
-      )}
-      {props.item.damaged ? (
-        <span className="pointer-events-none absolute right-0 bottom-0 left-0 bg-ink/80 text-center font-mono text-[9px] leading-tight text-parchment">
-          damaged
-        </span>
-      ) : null}
-      {props.item.selected ? (
-        <span className="pointer-events-none absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full border border-ink bg-gold font-mono text-xs text-ink">
-          ✓
-        </span>
-      ) : null}
-    </button>
+    <RemovalPickOption
+      label={props.label}
+      imagePath={imagePath}
+      shape="item"
+      selected={props.item.selected}
+      exhausted={props.item.exhausted}
+      damaged={props.item.damaged}
+      fallbackText={props.item.type}
+      onPick={props.onPick}
+    />
+  )
+}
+
+/** Battle piece tile: same click-to-toggle chrome as Vagabond items. */
+function PieceOptionButton(props: {
+  label: string
+  piece: TurnBannerOptionPiece
+  onPick: () => void
+}): JSX.Element {
+  return (
+    <RemovalPickOption
+      label={props.label}
+      imagePath={props.piece.imagePath}
+      shape={removalPickShapeForPieceKind(props.piece.kind)}
+      selected={props.piece.selected}
+      disabled={props.piece.locked === true}
+      fallbackText={props.piece.type ?? props.piece.kind}
+      onPick={props.onPick}
+    />
   )
 }
 

@@ -9,10 +9,22 @@ export type TurnBannerOptionItem = {
   selected: boolean
 }
 
+/** Map piece (warrior / building / token) shown as click-to-remove artwork. */
+export type TurnBannerOptionPiece = {
+  kind: string
+  type?: string
+  selected: boolean
+  /** Pre-resolved so warriors can use faction meeple art. */
+  imagePath: string | null
+  /** When true, tile is shown but cannot be toggled (forced removals). */
+  locked?: boolean
+}
+
 export type TurnBannerOption = {
   label: string
   value: string
   item?: TurnBannerOptionItem
+  piece?: TurnBannerOptionPiece
   /** Suit drawn as its icon in place of the label (fox / mouse / rabbit / bird). */
   suit?: string
   /** Icon drawn before the label (see `optionIconFor`). */
