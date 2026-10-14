@@ -13,7 +13,6 @@ import {
 import {
   FALL_BOARD_LAYOUT,
   fallClearingSuit,
-  type BoardLayout,
   type ClearingPixelHitTarget,
   type ClearingSuit,
 } from '#game/boardLayout.ts'
@@ -24,14 +23,11 @@ import {
 } from '#game/boardMapLayout.ts'
 import {
   allForestPixelLayouts,
-  type ForestPawnMarker,
   type ForestPixelLayout,
 } from '#game/forestLayout.ts'
+import type { GameMapProps } from '#game/gameMapProps.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import { factionColorForSeat } from '#game/theme.ts'
-import type { ViewportLayoutMode } from '#game/viewportLayout.ts'
-import type { BoardEffectBatch } from '#game/boardEffects.ts'
-import type { ClearingFlash } from '#game/clearingFlash.ts'
 import { ClearingFlashMark } from '#react/ClearingFlashMark.tsx'
 import {
   BoardEffectsLayer,
@@ -41,13 +37,17 @@ import { ForestPawnLayer } from '#react/ForestPawnLayer.tsx'
 import {
   ClearingPieceLayer,
   computeRulerByClearing,
-  type BoardClearingPieces,
   type ClearingHitCenter,
 } from '#react/PieceStack.tsx'
 import { clearingMarkersGoAbove } from '#game/clearingIndicators.ts'
 
-export type ClearingSelectedHandler = (clearingId: number) => void
-export type ForestSelectedHandler = (forestIndex: number) => void
+export type {
+  ClearingSelectedHandler,
+  ForestSelectedHandler,
+  GameMapProps,
+} from '#game/gameMapProps.ts'
+/** @deprecated Prefer `GameMapProps`. */
+export type BoardMapProps = GameMapProps
 
 const MAP_BORDER_WIDTH_PIXELS = 4
 /** Gap between the clearing ring and its suit marker. */

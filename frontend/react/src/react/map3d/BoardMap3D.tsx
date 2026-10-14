@@ -24,7 +24,7 @@ import type {
 import { getHudSnapshot, subscribeHud } from '#game/hudStore.ts'
 import { timeOfDayForPhase } from '#game/map3d/daylight.ts'
 import { factionColorForSeat } from '#game/theme.ts'
-import type { BoardMapProps } from '#react/BoardMap.tsx'
+import type { GameMapProps } from '#game/gameMapProps.ts'
 import { LABEL_FAR_HEIGHT, type MapPiece } from '#game/map3d/pieceMeshes.ts'
 import {
   BoardEffectsLayer,
@@ -146,7 +146,7 @@ function piecePosition(
   return { left: point.x, top: point.y }
 }
 
-export type BoardMap3DProps = BoardMapProps & {
+export type BoardMap3DProps = GameMapProps & {
   /**
    * The part of the view, in pixels, the playable woodland must fit: the
    * map fills the whole screen, the HUD covers its sides. Default: all of it.
@@ -157,7 +157,7 @@ export type BoardMap3DProps = BoardMapProps & {
   focusOffsetX?: number
 }
 
-/** The Autumn map as a 3D scene: same props and same hooks as `BoardMap`. */
+/** The Autumn map as a 3D scene. */
 export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
   const layout: BoardLayout = props.layout ?? FALL_BOARD_LAYOUT
   const viewWidth: number = props.viewWidth ?? GAME_LOGICAL_WIDTH
