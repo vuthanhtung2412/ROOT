@@ -314,7 +314,9 @@ function PieceOptionButton(props: {
       shape={removalPickShapeForPieceKind(props.piece.kind)}
       selected={props.piece.selected}
       disabled={props.piece.locked === true}
-      factionId={props.piece.factionId}
+      {...(props.piece.factionId !== undefined
+        ? { factionId: props.piece.factionId }
+        : {})}
       fallbackText={props.piece.type ?? props.piece.kind}
       onPick={props.onPick}
     />
