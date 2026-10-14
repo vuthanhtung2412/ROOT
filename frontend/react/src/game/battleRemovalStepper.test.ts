@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { makeActionSpec } from '#test/factories.ts'
 import {
+  buildBattleRemovalPickModel,
   buildBattleRemovalStepperChoices,
+  canSelectBattleRemovalPiece,
   collapsePieceIdsRemovalSpecs,
   formatBattleRemovalComboLabel,
+  isBattleRemovalPickComplete,
+  resolveBattleRemovalPickPieceIds,
 } from '#game/battleRemovalStepper.ts'
 
 describe('formatBattleRemovalComboLabel', () => {
@@ -76,5 +80,54 @@ describe('collapsePieceIdsRemovalSpecs', () => {
     expect(collapsed.filter((spec) => spec.type === 'resolveEvent')).toHaveLength(
       1,
     )
+  })
+})
+
+describe('buildBattleRemovalPickModel', () => {
+  it('forces pieces shared by every combo and tiles the rest', () => {
+    const piecesById = new Map([
+      ['w1', { id: 'w1', kind: 'warrior' }],
+      ['b1', { id: 'b1', kind: 'building', type: 'sawmill' }],
+      ['b2', { id: 'b2', kind: 'building', type: 'workshop' }],
+    ])
+    const model = buildBattleRemovalPickModel(
+      [
+        ['w1', 'b1'],
+        ['w1', 'b2'],
+      ],
+      piecesById,
+    )
+    expect(model).not.toBeNull()
+    expect(model?.forcedPieceIds).toEqual(['w1'])
+    expect(model?.hitsToChoose).toBe(1)
+    expect(model?.tiles.map((tile) => tile.pieceId).sort()).toEqual([
+      'b1',
+      'b2',
+    ])
+  })
+
+  it('toggles only along legal combos', () => {
+    const piecesById = new Map([
+      ['w1', { id: 'w1', kind: 'warrior' }],
+      ['b1', { id: 'b1', kind: 'building', type: 'sawmill' }],
+      ['t1', { id: 't1', kind: 'token', type: 'wood' }],
+    ])
+    const model = buildBattleRemovalPickModel(
+      [
+        ['w1', 'b1'],
+        ['w1', 't1'],
+      ],
+      piecesById,
+    )
+    expect(model).not.toBeNull()
+    if (model === null) {
+      throw new Error('expected model')
+    }
+    expect(canSelectBattleRemovalPiece(model, [], 'b1')).toBe(true)
+    expect(isBattleRemovalPickComplete(model, ['b1'])).toBe(true)
+    expect(resolveBattleRemovalPickPieceIds(model, ['b1'])).toEqual([
+      'w1',
+      'b1',
+    ])
   })
 })

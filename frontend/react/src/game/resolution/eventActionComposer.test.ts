@@ -198,44 +198,44 @@ describe('eventActionComposer battle', () => {
     })
   })
 
-  it('pieceIds removal uses battle stepper choices', () => {
+  it('pieceIds removal uses click-to-pick tiles then confirm', () => {
     const events = createEventComposerHooks()
     const composer = new ActionComposer()
     composer.setHooks(events.hooks)
 
-    const mid = events.beginBattleRemoval([
-      {
-        label: '1 x sawmill',
-        value: '0',
-        pieceIds: ['b1'],
-      },
-      {
-        label: '1 x wood',
-        value: '1',
-        pieceIds: ['t1'],
-      },
-    ])
+    const mid = events.beginBattleRemoval({
+      forcedPieceIds: ['w1'],
+      hitsToChoose: 1,
+      legalCombos: [
+        ['w1', 'b1'],
+        ['w1', 't1'],
+      ],
+      tiles: [
+        { pieceId: 'b1', kind: 'building', type: 'sawmill' },
+        { pieceId: 't1', kind: 'token', type: 'wood' },
+      ],
+    })
     expect(mid.kind).toBe('incomplete')
     expect(mid.kind === 'incomplete' ? mid.prompt.message : null).toBe(
-      'Remove hits — choose 1 piece',
+      'Battle — remove 1 piece',
     )
-    expect(events.getOptionPresentation()).toBe('stepper')
-    expect(composer.chooseColumn('1')).toEqual({
+    expect(events.getOptionPresentation()).toBe('buttons')
+    expect(composer.chooseColumn('t1').kind).toBe('incomplete')
+    expect(composer.confirm()).toEqual({
       kind: 'ready',
-      action: { type: 'resolveEvent', pieceIds: ['t1'] },
+      action: { type: 'resolveEvent', pieceIds: ['w1', 't1'] },
     })
   })
 
   it('single removal combo auto-submits', () => {
     const events = createEventComposerHooks()
     expect(
-      events.beginBattleRemoval([
-        {
-          label: '2 x warriors',
-          value: '0',
-          pieceIds: ['w1', 'w2'],
-        },
-      ]),
+      events.beginBattleRemoval({
+        forcedPieceIds: ['w1', 'w2'],
+        hitsToChoose: 0,
+        legalCombos: [['w1', 'w2']],
+        tiles: [],
+      }),
     ).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', pieceIds: ['w1', 'w2'] },

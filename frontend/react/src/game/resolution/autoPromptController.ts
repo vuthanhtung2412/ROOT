@@ -4,12 +4,12 @@ import {
   type ActionComposer,
   type ComposerOutcome,
 } from '#game/resolution/ActionComposer.ts'
-import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
 import {
-  buildBattleRemovalStepperChoices,
+  buildBattleRemovalPickModel,
   buildPiecesByIdFromClearings,
   collectPieceIdsCombosFromSpecs,
   isPieceIdsRemovalSpec,
+  type BattleRemovalPickModel,
 } from '#game/battleRemovalStepper.ts'
 import {
   battleAmbushRole,
@@ -31,9 +31,7 @@ export type EventComposerAutoPromptHooks = {
     cardIds: readonly string[],
     role: 'ambush' | 'foil',
   ) => ComposerOutcome
-  beginBattleRemoval: (
-    choices: BattleRemovalStepperChoice[],
-  ) => ComposerOutcome
+  beginBattleRemoval: (model: BattleRemovalPickModel) => ComposerOutcome
 }
 
 export type AutoPromptControllerDeps = {
@@ -181,11 +179,20 @@ export class AutoPromptController {
     }
     this.battleRemovalKey = key
     const combos = collectPieceIdsCombosFromSpecs(removalSpecs)
-    const piecesById = buildPiecesByIdFromClearings(snapshot.state.clearings)
-    const choices = buildBattleRemovalStepperChoices(combos, piecesById)
+    const factionByOwner = new Map(
+      snapshot.state.players.map((player) => [player.seat, player.faction]),
+    )
+    const piecesById = buildPiecesByIdFromClearings(
+      snapshot.state.clearings,
+      factionByOwner,
+    )
+    const model = buildBattleRemovalPickModel(combos, piecesById)
+    if (model === null) {
+      return
+    }
     this.deps.applyComposerOutcome(
       this.deps.composer.adopt(
-        this.deps.eventComposer.beginBattleRemoval(choices),
+        this.deps.eventComposer.beginBattleRemoval(model),
       ),
     )
   }

@@ -41,7 +41,7 @@ import {
 } from '#react/CardHand.tsx'
 import { mergeComposerHooks } from '#game/resolution/mergeComposerHooks.ts'
 import {
-  buildBattleRemovalStepperChoices,
+  buildBattleRemovalPickModel,
   buildPiecesByIdFromClearings,
   collapsePieceIdsRemovalSpecs,
   collectPieceIdsCombosFromSpecs,
@@ -546,10 +546,19 @@ export class ReactGameController {
         isPieceIdsRemovalSpec(action),
       )
       const combos = collectPieceIdsCombosFromSpecs(removalSpecs)
-      const piecesById = buildPiecesByIdFromClearings(snapshot.state.clearings)
-      const choices = buildBattleRemovalStepperChoices(combos, piecesById)
+      const factionByOwner = new Map(
+        snapshot.state.players.map((player) => [player.seat, player.faction]),
+      )
+      const piecesById = buildPiecesByIdFromClearings(
+        snapshot.state.clearings,
+        factionByOwner,
+      )
+      const model = buildBattleRemovalPickModel(combos, piecesById)
+      if (model === null) {
+        return
+      }
       this.applyComposerOutcome(
-        this.composer.adopt(this.eventComposer.beginBattleRemoval(choices)),
+        this.composer.adopt(this.eventComposer.beginBattleRemoval(model)),
       )
       return
     }

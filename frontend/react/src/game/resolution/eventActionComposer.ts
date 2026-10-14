@@ -13,9 +13,24 @@ import {
   type ComposerOutcome,
   type VagabondItemChoiceView,
 } from '#game/resolution/ActionComposer.ts'
-import type { BattleRemovalStepperChoice } from '#game/battleRemovalStepper.ts'
+import {
+  canSelectBattleRemovalPiece,
+  isBattleRemovalPickComplete,
+  resolveBattleRemovalPickPieceIds,
+  type BattleRemovalPickModel,
+  type BattleRemovalPickTile,
+} from '#game/battleRemovalStepper.ts'
+import {
+  factionTextureKey,
+  imagePathForAssetKey,
+  pieceTokenTextureKey,
+  warriorTokenTextureKey,
+} from '#assets/gameAssets.ts'
 import { countedNounText } from '#ui/BattleOverlay.ts'
-import type { TurnBannerOption } from '#ui/TurnBanner.ts'
+import type {
+  TurnBannerOption,
+  TurnBannerOptionPiece,
+} from '#ui/TurnBanner.ts'
 
 export {
   battleAmbushRole,
@@ -94,7 +109,11 @@ type EventDraft =
   | { type: 'pickLeader'; leaders: string[] }
   | { type: 'pickCharacter'; characters: string[] }
   | { type: 'pickForest'; forests: number[] }
-  | { type: 'pickRemoval'; choices: BattleRemovalStepperChoice[] }
+  | {
+      type: 'pickRemoval'
+      model: BattleRemovalPickModel
+      selectedPieceIds: string[]
+    }
   | {
       type: 'pickItemDamage'
       purpose: ItemPickPurpose
@@ -102,6 +121,31 @@ type EventDraft =
       count: number
       selectedIndexes: number[]
     }
+
+function battleRemovalTileImagePath(tile: BattleRemovalPickTile): string | null {
+  if (tile.kind === 'warrior' && tile.factionId !== undefined) {
+    const warriorKey = warriorTokenTextureKey(tile.factionId)
+    if (warriorKey !== null) {
+      return imagePathForAssetKey(warriorKey)
+    }
+    return imagePathForAssetKey(factionTextureKey(tile.factionId))
+  }
+  const tokenKey = pieceTokenTextureKey(tile.kind, tile.type)
+  if (tokenKey !== null) {
+    return imagePathForAssetKey(tokenKey)
+  }
+  if (tile.factionId !== undefined) {
+    return imagePathForAssetKey(factionTextureKey(tile.factionId))
+  }
+  return null
+}
+
+function formatBattleRemovalPieceLabel(tile: BattleRemovalPickTile): string {
+  if (tile.type !== undefined && tile.type.length > 0) {
+    return tile.type
+  }
+  return tile.kind
+}
 
 /**
  * Pending resolveEvent composers (Field Hospitals + battle + setup picks).
@@ -112,9 +156,7 @@ export function createEventComposerHooks(): {
   getPromptOptions: () => TurnBannerOption[]
   getOptionPresentation: () => 'stepper' | 'buttons' | undefined
   getOverlayKind: () => 'fieldHospital' | 'battle' | null
-  beginBattleRemoval: (
-    choices: BattleRemovalStepperChoice[],
-  ) => ComposerOutcome
+  beginBattleRemoval: (model: BattleRemovalPickModel) => ComposerOutcome
   beginFieldHospital: (cardIds: readonly string[]) => ComposerOutcome
   beginAmbush: (
     cardIds: readonly string[],
@@ -170,45 +212,79 @@ export function createEventComposerHooks(): {
     }
   }
 
-  const beginBattleRemoval = (
-    choices: BattleRemovalStepperChoice[],
+  const battleRemovalPrompt = (
+    model: BattleRemovalPickModel,
+    selectedPieceIds: string[],
   ): ComposerOutcome => {
-    if (choices.length === 0) {
-      clear()
-      return { kind: 'idle' }
+    overlayKind = 'battle'
+    draft = { type: 'pickRemoval', model, selectedPieceIds }
+    optionPresentation = 'buttons'
+    promptOptions = model.tiles.map((tile) => {
+      const isSelected = selectedPieceIds.includes(tile.pieceId)
+      const canSelect =
+        isSelected ||
+        canSelectBattleRemovalPiece(model, selectedPieceIds, tile.pieceId)
+      const pieceOption: TurnBannerOptionPiece = {
+        kind: tile.kind,
+        selected: isSelected,
+        imagePath: battleRemovalTileImagePath(tile),
+        locked: !canSelect && !isSelected,
+      }
+      if (tile.type !== undefined) {
+        pieceOption.type = tile.type
+      }
+      return {
+        label: formatBattleRemovalPieceLabel(tile),
+        value: tile.pieceId,
+        piece: pieceOption,
+      }
+    })
+    const complete = isBattleRemovalPickComplete(model, selectedPieceIds)
+    const remaining = model.hitsToChoose - selectedPieceIds.length
+    return {
+      kind: 'incomplete',
+      prompt: {
+        message: complete
+          ? 'Battle — ready'
+          : `Battle — remove ${countedNounText(remaining, REMOVED_PIECE_NOUN)}`,
+        highlightClearings: [],
+        enabledCardIds: null,
+        canConfirm: complete,
+        canCancel: true,
+      },
     }
-    // Single legal combo (typical warrior-only): submit without prompt.
-    if (choices.length === 1) {
-      const only = choices[0]
-      if (only === undefined) {
+  }
+
+  const beginBattleRemoval = (
+    model: BattleRemovalPickModel,
+  ): ComposerOutcome => {
+    // No choice left: every hit is forced (or a single legal combo with no tiles).
+    if (model.hitsToChoose <= 0 || model.tiles.length === 0) {
+      const onlyCombo = model.legalCombos[0]
+      if (onlyCombo === undefined) {
         clear()
         return { kind: 'idle' }
       }
       clear()
       return {
         kind: 'ready',
-        action: { type: 'resolveEvent', pieceIds: only.pieceIds },
+        action: { type: 'resolveEvent', pieceIds: [...onlyCombo] },
       }
     }
-    overlayKind = 'battle'
-    draft = { type: 'pickRemoval', choices }
-    optionPresentation = 'stepper'
-    promptOptions = choices.map((choice) => ({
-      label: choice.label,
-      value: choice.value,
-    }))
-    // Every legal removal takes the same number of pieces.
-    const removedPieceCount: number = choices[0]?.pieceIds.length ?? 0
-    return {
-      kind: 'incomplete',
-      prompt: {
-        message: `Remove hits — choose ${countedNounText(removedPieceCount, REMOVED_PIECE_NOUN)}`,
-        highlightClearings: [],
-        enabledCardIds: null,
-        canConfirm: false,
-        canCancel: true,
-      },
+    // Single legal combo: submit without a pick UI.
+    if (model.legalCombos.length === 1) {
+      const onlyCombo = model.legalCombos[0]
+      if (onlyCombo === undefined) {
+        clear()
+        return { kind: 'idle' }
+      }
+      clear()
+      return {
+        kind: 'ready',
+        action: { type: 'resolveEvent', pieceIds: [...onlyCombo] },
+      }
     }
+    return battleRemovalPrompt(model, [])
   }
 
   const beginFieldHospital = (
@@ -609,20 +685,41 @@ export function createEventComposerHooks(): {
         return { kind: 'ready', action: { type: 'resolveEvent', order } }
       }
       if (draft.type === 'pickRemoval') {
-        const choice = draft.choices.find((entry) => entry.value === value)
-        if (choice === undefined) {
-          return null
+        if (draft.selectedPieceIds.includes(value)) {
+          return battleRemovalPrompt(
+            draft.model,
+            draft.selectedPieceIds.filter((pieceId) => pieceId !== value),
+          )
         }
-        clear()
-        return {
-          kind: 'ready',
-          action: { type: 'resolveEvent', pieceIds: choice.pieceIds },
+        if (
+          !canSelectBattleRemovalPiece(
+            draft.model,
+            draft.selectedPieceIds,
+            value,
+          )
+        ) {
+          return battleRemovalPrompt(draft.model, draft.selectedPieceIds)
         }
+        return battleRemovalPrompt(draft.model, [
+          ...draft.selectedPieceIds,
+          value,
+        ])
       }
       return null
     },
 
     confirm: (): ComposerOutcome | null => {
+      if (draft.type === 'pickRemoval') {
+        const pieceIds = resolveBattleRemovalPickPieceIds(
+          draft.model,
+          draft.selectedPieceIds,
+        )
+        if (pieceIds === null) {
+          return null
+        }
+        clear()
+        return { kind: 'ready', action: { type: 'resolveEvent', pieceIds } }
+      }
       if (
         draft.type !== 'pickItemDamage' ||
         draft.selectedIndexes.length !== draft.count
