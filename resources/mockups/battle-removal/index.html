@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Battle removal mockup</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IM+Fell+English&display=swap"
+    />
+    <style>
+      :root {
+        --color-ink: #2c2118;
+        --color-ink-soft: #4a3a2c;
+        --color-ink-deep: #1a1408;
+        --color-parchment: #f0e6d3;
+        --color-parchment-shadow: #cbb892;
+        --color-forest-deep: #24362e;
+        --color-rust: #b55238;
+        --color-gold: #c9a04a;
+        --color-wood: #5b3d26;
+        --color-confirm: #7da453;
+        --color-paper-bright: #fff8e6;
+        --color-cream: #f6e7bd;
+        --color-marquise: #c45c26;
+        --font-display: 'IM Fell English', 'Palatino Linotype', Palatino, Georgia, serif;
+        --root-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        --cursor-pointer: url('../../../frontend/react/public/assets/cursors/sword-pointer.png') 6 6, pointer;
+        --cursor-default: url('../../../frontend/react/public/assets/cursors/sword-default.png') 1 1, default;
+        --cursor-not-allowed: url('../../../frontend/react/public/assets/cursors/shield-not-allowed.png') 16 14, not-allowed;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: var(--color-forest-deep);
+        color: var(--color-ink);
+        cursor: var(--cursor-default);
+        font-family: Georgia, serif;
+      }
+
+      .map {
+        position: fixed;
+        inset: 0;
+        background: url('../../../frontend/react/public/assets/map/autumn-map.webp') center / cover;
+      }
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        background: color-mix(in srgb, var(--color-forest-deep) 72%, transparent);
+      }
+
+      /* Same as the `root-paper` utility in style.css. */
+      .paper {
+        position: relative;
+        isolation: isolate;
+        border: 0;
+        background: transparent;
+      }
+      .paper::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border: 3px solid var(--paper-edge, var(--color-ink-deep));
+        border-radius: var(--paper-radius, 0);
+        background-color: var(--paper-color, var(--color-parchment));
+        background-image: var(--root-paper-grain);
+        background-blend-mode: multiply;
+        filter: var(--paper-filter, url(#root-torn-edge))
+          drop-shadow(1px 2px 0 color-mix(in srgb, #1a1408 40%, transparent));
+        pointer-events: none;
+      }
+      .paper-fine { --paper-filter: url(#root-torn-edge-fine); }
+      .medallion {
+        --paper-color: var(--color-wood);
+        --paper-filter: url(#root-torn-edge-fine);
+        --paper-radius: 9999px;
+        color: var(--color-parchment);
+      }
+      .press {
+        cursor: var(--cursor-pointer);
+        transition: filter 80ms ease-out, transform 80ms ease-out;
+      }
+      .press:hover:not(:disabled) { filter: brightness(1.07); }
+      .press:active:not(:disabled) { transform: translateY(1px); }
+      .press:disabled { cursor: var(--cursor-not-allowed); opacity: 0.45; }
+
+      /* Turn banner, like TurnBanner.tsx. */
+      .banner {
+        position: fixed;
+        top: 12px;
+        left: 50%;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) 44px;
+        align-items: center;
+        gap: 12px;
+        width: min(640px, calc(100vw - 24px));
+        transform: translateX(-50%);
+      }
+      .tile-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        padding: 0;
+        color: var(--color-parchment);
+        font: bold 22px system-ui, sans-serif;
+      }
+      .tile-cancel { --paper-color: var(--color-rust); }
+      .tile-confirm { --paper-color: var(--color-confirm); }
+      .banner-center {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        justify-content: center;
+      }
+      .head-tile {
+        z-index: 1;
+        display: flex;
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+        margin-right: -8px;
+        padding: 4px;
+        transform: rotate(-4deg);
+      }
+      .head-tile img { width: 100%; height: 100%; object-fit: contain; }
+      .strip {
+        margin: 0;
+        padding: 6px 24px;
+        font-family: var(--font-display);
+        font-size: 21px;
+        line-height: 1.15;
+        text-align: center;
+      }
+      .strip-count { color: var(--color-rust); }
+
+      /* Picker in the middle of the screen, like BattleOverlay.tsx. */
+      .stage {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        z-index: 1;
+        display: flex;
+        width: max-content;
+        max-width: calc(100vw - 24px);
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        transform: translate(-50%, -50%);
+      }
+      .pieces {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        /* Gap holds the torn divider dead-center between columns. */
+        gap: 18px 36px;
+        max-width: min(96vw, 52rem);
+        padding: 18px 20px 14px;
+        --paper-color: var(--color-cream);
+      }
+      .piece {
+        position: relative;
+        display: flex;
+        min-width: 64px;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      /* Torn-paper divider: same filter and thickness as the sheet edge. */
+      .piece:not(:first-child)::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: calc(-18px - 1.5px);
+        width: 3px;
+        background-color: var(--color-ink-deep);
+        filter: url(#root-torn-edge-fine)
+          drop-shadow(1px 0 0 color-mix(in srgb, #1a1408 35%, transparent));
+        pointer-events: none;
+      }
+      .piece-icon {
+        display: block;
+        width: 64px;
+        height: 64px;
+        border: 1.5px solid #ffffff;
+        border-radius: 10px;
+        object-fit: cover;
+        transition:
+          filter 120ms ease-out,
+          opacity 120ms ease-out,
+          box-shadow 120ms ease-out;
+        user-select: none;
+      }
+      .piece-icon.token { border-radius: 9999px; }
+      /* Partial pick: rust ring. Fully spent: washed-out token (item supply). */
+      .piece.some-removed .piece-icon {
+        box-shadow: 0 0 0 3px var(--color-rust);
+      }
+      .piece.all-removed .piece-icon {
+        box-shadow: 0 0 0 3px var(--color-rust);
+        filter: grayscale(1);
+        opacity: 0.25;
+      }
+      .stepper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .removed-count {
+        margin: 0;
+        min-width: 34px;
+        padding: 1px 6px;
+        color: var(--color-ink-soft);
+        font: bold 13px system-ui, sans-serif;
+        text-align: center;
+        --paper-color: var(--color-paper-bright);
+      }
+      .piece.some-removed .removed-count,
+      .piece.all-removed .removed-count {
+        color: var(--color-parchment);
+        --paper-color: var(--color-rust);
+      }
+      .step {
+        display: flex;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+        font: bold 15px system-ui, sans-serif;
+      }
+      .step[data-change="-1"] { --paper-color: var(--color-wood); }
+      .step[data-change="1"] { --paper-color: var(--color-marquise); }
+      .piece.some-removed .step[data-change="1"],
+      .piece.all-removed .step[data-change="1"] {
+        --paper-color: var(--color-rust);
+      }
+      /* Confirm lights gold once every hit is placed. */
+      .tile-confirm:not(:disabled) {
+        --paper-color: var(--color-gold);
+        color: var(--color-ink-deep);
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <filter id="root-torn-edge" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4" />
+        <feDisplacementMap in="SourceGraphic" scale="8" />
+      </filter>
+      <filter id="root-torn-edge-fine" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="9" />
+        <feDisplacementMap in="SourceGraphic" scale="4" />
+      </filter>
+    </svg>
+
+    <div class="map" aria-hidden="true"></div>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <header class="banner">
+      <button class="paper paper-fine press tile-button tile-cancel" type="button" aria-label="X">✕</button>
+      <div class="banner-center">
+        <span class="paper paper-fine head-tile">
+          <img src="../../../frontend/react/public/assets/factions/marquise.png" alt="marquise" />
+        </span>
+        <p class="paper strip">
+          Battle — remove <span class="strip-count" id="remaining">3 pieces</span>
+        </p>
+      </div>
+      <button class="paper paper-fine press tile-button tile-confirm" id="confirm" type="button" aria-label="OK">✓</button>
+    </header>
+
+    <main class="stage" aria-label="Choose the pieces to remove">
+      <div class="paper pieces" id="pieces"></div>
+    </main>
+
+    <script>
+      const TOKEN_DIRECTORY = '../../../frontend/react/public/assets/tokens/marquise'
+      const HITS_TO_TAKE = 3
+      const PIECE_STACKS = [
+        { id: 'wood', name: 'Wood', kind: 'token', image: `${TOKEN_DIRECTORY}/wood.png`, inClearing: 2 },
+        { id: 'sawmill', name: 'Sawmill', kind: 'building', image: `${TOKEN_DIRECTORY}/sawmill.png`, inClearing: 1 },
+        { id: 'workshop', name: 'Workshop', kind: 'building', image: `${TOKEN_DIRECTORY}/workshop.png`, inClearing: 1 },
+        { id: 'recruiter', name: 'Recruiter', kind: 'building', image: `${TOKEN_DIRECTORY}/recruiter.png`, inClearing: 1 },
+      ]
+      const removedById = new Map(PIECE_STACKS.map((stack) => [stack.id, 0]))
+      const piecesElement = document.querySelector('#pieces')
+      const remainingElement = document.querySelector('#remaining')
+      const confirmButton = document.querySelector('#confirm')
+
+      function totalRemoved() {
+        return [...removedById.values()].reduce((total, count) => total + count, 0)
+      }
+
+      function countedPieces(count) {
+        return count === 1 ? '1 piece' : `${count} pieces`
+      }
+
+      function render() {
+        const removedTotal = totalRemoved()
+        const remaining = HITS_TO_TAKE - removedTotal
+        remainingElement.textContent = remaining === 0 ? 'ready' : countedPieces(remaining)
+        confirmButton.disabled = remaining !== 0
+        piecesElement.innerHTML = PIECE_STACKS.map((stack) => {
+          const removed = removedById.get(stack.id)
+          const stateClassName =
+            removed === stack.inClearing ? 'all-removed' : removed > 0 ? 'some-removed' : ''
+          return `
+            <div class="piece ${stateClassName}">
+              <img class="piece-icon ${stack.kind}" src="${stack.image}" alt="${stack.name}" draggable="false" />
+              <div class="stepper">
+                <button class="paper medallion press step" type="button" data-id="${stack.id}" data-change="-1"
+                  aria-label="Keep one more ${stack.name}" ${removed === 0 ? 'disabled' : ''}>−</button>
+                <p class="paper paper-fine removed-count" aria-label="${removed} of ${stack.inClearing} ${stack.name} removed">${removed}/${stack.inClearing}</p>
+                <button class="paper medallion press step" type="button" data-id="${stack.id}" data-change="1"
+                  aria-label="Remove one more ${stack.name}"
+                  ${removed === stack.inClearing || remaining === 0 ? 'disabled' : ''}>+</button>
+              </div>
+            </div>`
+        }).join('')
+      }
+
+      piecesElement.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-change]')
+        if (button === null || button.disabled) return
+        const id = button.dataset.id
+        removedById.set(id, removedById.get(id) + Number(button.dataset.change))
+        render()
+      })
+
+      render()
+    </script>
+  </body>
+</html>
