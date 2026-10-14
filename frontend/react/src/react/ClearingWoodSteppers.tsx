@@ -4,22 +4,16 @@ import {
   useSyncExternalStore,
   type JSX,
 } from 'react'
-import { LuMinus, LuPlus } from 'react-icons/lu'
 import {
   getHudCallbacks,
   getHudSnapshot,
   subscribeHud,
 } from '#game/hudStore.ts'
+import { Stepper } from '#react/Stepper.tsx'
 import type { TurnBannerClearingStepper } from '#ui/TurnBanner.ts'
 
 const STEPPER_ROW_CLASS_NAME =
-  'clearing-wood-stepper pointer-events-auto fixed z-40 flex -translate-x-1/2 flex-row items-center gap-1'
-const MINUS_BUTTON_CLASS_NAME =
-  'root-paper root-medallion root-paper-press m-0 flex size-8 items-center justify-center p-0 text-lg text-parchment [--root-paper-color:var(--color-parchment-deep)] disabled:opacity-40 md:size-9'
-const PLUS_BUTTON_CLASS_NAME =
-  'root-paper root-medallion root-paper-press m-0 flex size-8 items-center justify-center p-0 text-lg text-parchment [--root-paper-color:var(--color-rust)] disabled:opacity-40 md:size-9'
-const COUNT_LABEL_CLASS_NAME =
-  'root-paper root-paper-fine min-w-12 px-2 py-1 text-center font-display text-base font-bold text-ink md:min-w-14 md:text-lg'
+  'clearing-wood-stepper pointer-events-auto fixed z-40 -translate-x-1/2'
 /** Sit just under the clearing ring. */
 const BELOW_CLEARING_GAP_PIXELS = 6
 const HALF = 0.5
@@ -83,7 +77,6 @@ function ClearingWoodStepper(props: {
     return null
   }
   const { clearingId, selected, maximum } = props.stepper
-  const canDecrease = selected > 0
   const canIncrease =
     selected < maximum && props.totalSelected < props.woodCost
   const callbacks = getHudCallbacks()
@@ -91,34 +84,18 @@ function ClearingWoodStepper(props: {
     <div
       className={STEPPER_ROW_CLASS_NAME}
       style={{ left: anchor.x, top: anchor.y }}
-      role="group"
-      aria-label={`Wood at clearing ${String(clearingId)}: ${String(selected)} of ${String(maximum)}`}
     >
-      <button
-        type="button"
-        className={MINUS_BUTTON_CLASS_NAME}
-        aria-label={`Less wood from clearing ${String(clearingId)}`}
-        disabled={!canDecrease}
-        onClick={() => {
-          callbacks.onClearingStepper(clearingId, selected - 1)
+      <Stepper
+        value={selected}
+        max={maximum}
+        canIncrease={canIncrease}
+        aria-label={`Wood at clearing ${String(clearingId)}: ${String(selected)} of ${String(maximum)}`}
+        decreaseAriaLabel={`Less wood from clearing ${String(clearingId)}`}
+        increaseAriaLabel={`More wood from clearing ${String(clearingId)}`}
+        onChange={(next) => {
+          callbacks.onClearingStepper(clearingId, next)
         }}
-      >
-        <LuMinus aria-hidden="true" />
-      </button>
-      <span className={COUNT_LABEL_CLASS_NAME}>
-        {String(selected)}/{String(maximum)}
-      </span>
-      <button
-        type="button"
-        className={PLUS_BUTTON_CLASS_NAME}
-        aria-label={`More wood from clearing ${String(clearingId)}`}
-        disabled={!canIncrease}
-        onClick={() => {
-          callbacks.onClearingStepper(clearingId, selected + 1)
-        }}
-      >
-        <LuPlus aria-hidden="true" />
-      </button>
+      />
     </div>
   )
 }
