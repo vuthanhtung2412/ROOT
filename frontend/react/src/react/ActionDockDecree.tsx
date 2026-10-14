@@ -5,10 +5,11 @@ import { suitTextureKey } from '#assets/gameAssets.ts'
 import { SuitIcon } from '#react/SuitIcon.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 import { actionIconFor } from '#ui/actionIcons.ts'
-import type {
-  DecreeCardMark,
-  DecreeColumnState,
-  DecreeColumnView,
+import {
+  nextResolvableDecreeSpec,
+  type DecreeCardMark,
+  type DecreeColumnState,
+  type DecreeColumnView,
 } from '#ui/decreeColumns.ts'
 
 /** The four columns side by side, as on the Eyrie faction board. */
@@ -102,10 +103,8 @@ function DecreeColumn(props: {
     (card) => card.isResolved,
   ).length
   const label: string = `${props.view.column} ${String(resolvedCount)}/${String(props.view.cards.length)}`
-  // The medallion resolves the column's next card; a suit picks a given one.
-  const nextSpec: ActionSpec | null =
-    props.view.cards.find((card) => !card.isResolved && card.spec !== null)
-      ?.spec ?? null
+  // Medallion: non-bird first. Suit mark still picks a given card.
+  const nextSpec: ActionSpec | null = nextResolvableDecreeSpec(props.view.cards)
   const headClassName: string = `${HEAD_CLASS_NAME} ${HEAD_STATE_CLASS_NAMES[props.view.state]}`
   return (
     <div className={COLUMN_CLASS_NAME}>

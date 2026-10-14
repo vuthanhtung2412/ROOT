@@ -148,6 +148,85 @@ describe('eyrieActionComposer', () => {
     })
   })
 
+  it('decree recruit with one clearing auto-submits', () => {
+    const { hooks } = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+    expect(
+      composer.begin(
+        makeActionSpec({
+          type: 'decree',
+          params: {
+            column: ['recruit'],
+            cardIds: ['vizier'],
+            clearings: [3],
+          },
+        }),
+      ),
+    ).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'decree',
+        column: 'recruit',
+        cardId: 'vizier',
+        clearing: 3,
+      },
+    })
+  })
+
+  it('decree battle with one target auto-submits', () => {
+    const { hooks } = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+    expect(
+      composer.begin(
+        makeActionSpec({
+          type: 'decree',
+          params: {
+            column: ['battle'],
+            cardIds: ['vizier'],
+            targets: [{ clearing: 4, defender: 0 }],
+          },
+        }),
+      ),
+    ).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'decree',
+        column: 'battle',
+        cardId: 'vizier',
+        clearing: 4,
+        defender: 0,
+      },
+    })
+  })
+
+  it('decree move with one march auto-submits', () => {
+    const { hooks } = createEyrieComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(hooks)
+    expect(
+      composer.begin(
+        makeActionSpec({
+          type: 'decree',
+          params: {
+            column: ['move'],
+            cardIds: ['vizier'],
+            moves: [{ from: 1, to: 2, count: 1 }],
+          },
+        }),
+      ),
+    ).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'decree',
+        column: 'move',
+        cardId: 'vizier',
+        moves: [{ from: 1, to: 2, count: 1 }],
+      },
+    })
+  })
+
   it('decree battle picks clearing then defender', () => {
     const { hooks } = createEyrieComposerHooks()
     const composer = new ActionComposer()

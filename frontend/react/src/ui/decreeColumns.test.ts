@@ -5,6 +5,8 @@ import {
   decreeColumnViews,
   decreeTally,
   isDecreeStep,
+  nextResolvableDecreeSpec,
+  type DecreeCardMark,
 } from '#ui/decreeColumns.ts'
 
 const EYRIE_SEAT = 1
@@ -125,5 +127,54 @@ describe('decreeTally', () => {
     const columns = decreeColumnViews(makeEyrieDecreeState(), EYRIE_SEAT, [])
 
     expect(decreeTally(columns ?? [])).toBe('2/4')
+  })
+})
+
+describe('nextResolvableDecreeSpec', () => {
+  const birdSpec = makeActionSpec({
+    type: 'decree',
+    params: { column: ['recruit'], cardIds: ['bird'] },
+  })
+  const foxSpec = makeActionSpec({
+    type: 'decree',
+    params: { column: ['recruit'], cardIds: ['fox'] },
+  })
+
+  it('prefers a non-bird card over a bird', () => {
+    const cards: readonly DecreeCardMark[] = [
+      {
+        cardId: 'bird',
+        suit: 'bird',
+        isResolved: false,
+        spec: birdSpec,
+      },
+      {
+        cardId: 'fox',
+        suit: 'fox',
+        isResolved: false,
+        spec: foxSpec,
+      },
+    ]
+
+    expect(nextResolvableDecreeSpec(cards)).toBe(foxSpec)
+  })
+
+  it('falls back to a bird when no non-bird remains', () => {
+    const cards: readonly DecreeCardMark[] = [
+      {
+        cardId: 'bird',
+        suit: 'bird',
+        isResolved: false,
+        spec: birdSpec,
+      },
+      {
+        cardId: 'fox',
+        suit: 'fox',
+        isResolved: true,
+        spec: null,
+      },
+    ]
+
+    expect(nextResolvableDecreeSpec(cards)).toBe(birdSpec)
   })
 })

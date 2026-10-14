@@ -162,3 +162,25 @@ export function decreeTally(columns: readonly DecreeColumnView[]): string {
   const resolved: number = cards.filter((card) => card.isResolved).length
   return `${String(resolved)}/${String(cards.length)}`
 }
+
+const BIRD_SUIT = 'bird'
+
+/**
+ * Next Decree card the column medallion resolves. Non-bird suits first so
+ * the player need not pick a suit mark; bird stays available via its mark.
+ */
+export function nextResolvableDecreeSpec(
+  cards: readonly DecreeCardMark[],
+): ActionSpec | null {
+  const resolvable: readonly DecreeCardMark[] = cards.filter(
+    (card) => !card.isResolved && card.spec !== null,
+  )
+  const nonBird: DecreeCardMark | undefined = resolvable.find(
+    (card) => card.suit !== BIRD_SUIT,
+  )
+  if (nonBird?.spec !== undefined && nonBird.spec !== null) {
+    return nonBird.spec
+  }
+  const first: DecreeCardMark | undefined = resolvable[0]
+  return first?.spec ?? null
+}

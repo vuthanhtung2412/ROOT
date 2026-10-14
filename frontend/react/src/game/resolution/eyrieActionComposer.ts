@@ -22,6 +22,12 @@ import {
   type EyrieDraft,
   uniqueNumbers,
 } from '#game/eyrieActionComposerModels.ts'
+import {
+  soleDecreeBattleAction,
+  soleDecreeClearingAction,
+  soleDecreeMoveAction,
+  soleNewRoostAction,
+} from '#game/resolution/eyrieDecreeSoleOption.ts'
 
 /** Each is null when no Add to Decree is being staged. */
 export type DecreeStaging = {
@@ -83,6 +89,11 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
       if (spec.type === 'newRoost') {
         const params = readChoiceParams(spec)
         const clearings = params.clearings ?? []
+        const sole = soleNewRoostAction(clearings)
+        if (sole !== null) {
+          draft = { type: 'idle' }
+          return { kind: 'ready', action: sole }
+        }
         draft = { type: 'newRoost', clearings }
         return {
           kind: 'incomplete',
@@ -108,6 +119,11 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
         const moves = params.moves ?? []
 
         if (column === 'recruit' || column === 'build') {
+          const sole = soleDecreeClearingAction({ column, cardId, clearings })
+          if (sole !== null) {
+            draft = { type: 'idle' }
+            return { kind: 'ready', action: sole }
+          }
           draft = {
             type: 'decree',
             column,
@@ -132,6 +148,11 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
         }
 
         if (column === 'battle') {
+          const sole = soleDecreeBattleAction({ column, cardId, targets })
+          if (sole !== null) {
+            draft = { type: 'idle' }
+            return { kind: 'ready', action: sole }
+          }
           draft = {
             type: 'decree',
             column,
@@ -158,6 +179,11 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
         }
 
         if (column === 'move') {
+          const sole = soleDecreeMoveAction({ column, cardId, moves })
+          if (sole !== null) {
+            draft = { type: 'idle' }
+            return { kind: 'ready', action: sole }
+          }
           draft = {
             type: 'decree',
             column,
@@ -356,15 +382,29 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
         if (fromMoves.length === 0) {
           return null
         }
+        const destinations = uniqueNumbers(fromMoves.map((move) => move.to))
+        // One destination and one warrior count: finish the move.
+        if (destinations.length === 1 && fromMoves.length === 1) {
+          const match = fromMoves[0]
+          if (match !== undefined) {
+            const action: ClientAction = {
+              type: 'decree',
+              column: draft.column,
+              cardId: draft.cardId,
+              moves: [match],
+            }
+            draft = { type: 'idle' }
+            promptOptions = []
+            return { kind: 'ready', action }
+          }
+        }
         draft = { ...draft, from: clearingId, to: null, picking: 'moveTo' }
         promptOptions = []
         return {
           kind: 'incomplete',
           prompt: {
             message: 'Decree move — pick destination',
-            highlightClearings: uniqueNumbers(
-              fromMoves.map((move) => move.to),
-            ),
+            highlightClearings: destinations,
             enabledCardIds: null,
             canConfirm: false,
             canCancel: true,
@@ -383,6 +423,20 @@ export function createEyrieComposerHooks(options?: SeatLabelOptions): {
         )
         if (candidates.length === 0) {
           return null
+        }
+        if (candidates.length === 1) {
+          const match = candidates[0]
+          if (match !== undefined) {
+            const action: ClientAction = {
+              type: 'decree',
+              column: draft.column,
+              cardId: draft.cardId,
+              moves: [match],
+            }
+            draft = { type: 'idle' }
+            promptOptions = []
+            return { kind: 'ready', action }
+          }
         }
         const counts = uniqueNumbers(candidates.map((move) => move.count)).sort(
           (left, right) => left - right,
