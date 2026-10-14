@@ -1,7 +1,6 @@
 import type { JSX } from 'react'
 import {
   allianceBaseTextureKey,
-  GAME_ASSET_KEYS,
   factionTextureKey,
   imagePathForAssetKey,
   pieceTokenTextureKey,
@@ -12,16 +11,10 @@ import {
   suitScopedPieceTextureKey,
 } from '#assets/riverfolkExpansionAssets.ts'
 import { fallClearingSuit } from '#game/boardLayout.ts'
-import {
-  clearingHasRuin,
-  clearingOpenSlotCount,
-} from '#game/clearingIndicators.ts'
 import { clearingRuler } from '#game/clearingRuler.ts'
 import { factionColorForSeat, PIECE_DRAW } from '#game/theme.ts'
 import {
   BUILDING_PIECE_KIND,
-  groupPiecesIntoStacks,
-  stackOffsets,
   type PieceStackViewModel,
   type PieceViewModel,
 } from '#ui/PieceView.ts'
@@ -157,25 +150,10 @@ export function pieceViewModelsForClearing(
   })
 }
 
-/** Open building slots: a count just inside the clearing ring. */
-const OPEN_SLOTS_CLASS_NAME =
-  'pointer-events-none absolute z-2 -translate-x-1/2 bg-[#1a2438cc] px-1 py-0.5 font-mono text-[11px] font-bold text-parchment'
-const OPEN_SLOTS_BELOW_CLASS_NAME = `${OPEN_SLOTS_CLASS_NAME} -translate-y-full`
-const OPEN_SLOTS_ABOVE_CLASS_NAME = OPEN_SLOTS_CLASS_NAME
-const OPEN_SLOTS_RING_INSET_PIXELS = 2
-
 export type ClearingHitCenter = {
   centerX: number
   centerY: number
   radius: number
-  /** Bottom clearings: suit and open-slot markers go above, clear of the hand. */
-  markersAbove?: boolean
-}
-
-export type ClearingPieceLayerProps = {
-  clearings: readonly BoardClearingPieces[]
-  factions: readonly string[]
-  hitCenters: ReadonlyMap<number, ClearingHitCenter>
 }
 
 export function computeRulerByClearing(
@@ -193,83 +171,4 @@ export function computeRulerByClearing(
     rulers.set(clearingId, clearingRuler(clearing, factions))
   }
   return rulers
-}
-
-export function ClearingPieceLayer(
-  props: ClearingPieceLayerProps,
-): JSX.Element {
-  const nodes: JSX.Element[] = []
-  const ruinPath = imagePathForAssetKey(GAME_ASSET_KEYS.markerRuin)
-
-  for (const [clearingId, center] of props.hitCenters) {
-    const clearing = props.clearings[clearingId]
-    if (clearing === undefined) {
-      continue
-    }
-
-    if (clearingHasRuin(clearing) && ruinPath !== null) {
-      const ruinSize = center.radius * 0.5
-      nodes.push(
-        <img
-          key={`ruin-${String(clearingId)}`}
-          className="pointer-events-none absolute z-2 -translate-x-1/2 -translate-y-1/2 object-fill select-none"
-          src={ruinPath}
-          alt=""
-          draggable={false}
-          style={{
-            left: center.centerX - center.radius * 0.55,
-            top: center.centerY - center.radius * 0.55,
-            width: ruinSize,
-            height: ruinSize,
-          }}
-        />,
-      )
-    }
-
-    const openSlots = clearingOpenSlotCount(clearingId, clearing)
-    if (openSlots > 0) {
-      nodes.push(
-        <span
-          key={`slots-${String(clearingId)}`}
-          className={
-            center.markersAbove === true
-              ? OPEN_SLOTS_ABOVE_CLASS_NAME
-              : OPEN_SLOTS_BELOW_CLASS_NAME
-          }
-          style={{
-            left: center.centerX,
-            top:
-              center.markersAbove === true
-                ? center.centerY - center.radius + OPEN_SLOTS_RING_INSET_PIXELS
-                : center.centerY + center.radius - OPEN_SLOTS_RING_INSET_PIXELS,
-          }}
-        >
-          {String(openSlots)}
-        </span>,
-      )
-    }
-
-    const stacks = groupPiecesIntoStacks(
-      pieceViewModelsForClearing(clearing, props.factions),
-    )
-    const offsets = stackOffsets(stacks.length)
-    for (let index = 0; index < stacks.length; index += 1) {
-      const stack = stacks[index]
-      const offset = offsets[index]
-      if (stack === undefined || offset === undefined) {
-        continue
-      }
-      nodes.push(
-        <PieceStack
-          key={`${String(clearingId)}-${stack.kind}-${stack.type ?? ''}-${String(stack.owner)}`}
-          stack={stack}
-          left={center.centerX + offset.x}
-          top={center.centerY + offset.y}
-          clearingId={clearingId}
-        />,
-      )
-    }
-  }
-
-  return <>{nodes}</>
 }

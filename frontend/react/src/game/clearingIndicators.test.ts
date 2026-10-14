@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import {
   clearingHasRuin,
-  clearingMarkersGoAbove,
   clearingOpenSlotCount,
   FALL_CLEARING_SLOT_COUNTS,
   RUIN_MARKER_TEXTURE_KEY,
@@ -57,17 +56,5 @@ describe('clearingOpenSlotCount', () => {
 describe('RUIN_MARKER_TEXTURE_KEY', () => {
   it('matches gameAssets markerRuin key', () => {
     expect(RUIN_MARKER_TEXTURE_KEY).toBe(GAME_ASSET_KEYS.markerRuin)
-  })
-})
-
-describe('clearingMarkersGoAbove', () => {
-  const map = { top: 100, height: 400 }
-
-  it('keeps markers below for a clearing in the upper part of the map', () => {
-    expect(clearingMarkersGoAbove(250, map)).toBe(false)
-  })
-
-  it('moves markers above for a clearing in the bottom band', () => {
-    expect(clearingMarkersGoAbove(450, map)).toBe(true)
   })
 })
