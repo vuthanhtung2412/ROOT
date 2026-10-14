@@ -69,12 +69,29 @@ Required credit for the ruin:
 |------|------|-----------|---------|
 | `campfire.glb` | Campfire in the middle of every clearing (logs in a ring of stones; flames and sparks are drawn by `src/game/map3d/campfires.ts`) | "Campfire" by J-Toastie — https://poly.pizza/m/bAjGJYCozp — unmodified | **CC-BY 3.0**: credit required (line below) |
 
+| `rock-small-{a,b,c}.glb` | Small rocks (about 1–2 long), ~70 triangles | "Stone Pack" by ashkan.fancy — https://sketchfab.com/3d-models/stone-pack-f3e0a67b9ca243b09119177649f21e17 — decimated, flat shaded, the stone texture baked into one colour per face, moss on faces that look up; no texture | **CC-BY-4.0**: credit required (line below) |
+| `rock-large-{a,b,c}.glb` | Large rocks (about 4–7 long), ~260 triangles | same | same |
+| `cliff-{a,b}.glb` | Cliff walls of overlapping slab stacks, about 14 wide, 8 tall, 6 deep, ~850–1,050 triangles | same, stones scaled and joined | same |
+| `mountain-{a,b}.glb` | Mountains: spires on a broad core, slabs round the foot, about 15–18 wide, 14–15 tall, ~1,500–1,750 triangles | same, stones scaled and joined | same |
+
+The rocks, cliffs and mountains stand on the ground (y = 0), centred on their
+origin, sized in world units of the map (the map is 100 wide). Made in Blender
+from `resources/reference/models/props/stone_pack.zip` (each stone there is
+2,500–6,000 triangles with 4K textures).
+
 Required credit for the campfire:
 
 > "Campfire" (https://poly.pizza/m/bAjGJYCozp) by J-Toastie, licensed under
 > CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
 
-Kept in `resources/reference/models/props/`; copy it to `props/` on a fresh
+Required credit for the rocks, cliffs and mountains:
+
+> This work is based on "Stone Pack"
+> (https://sketchfab.com/3d-models/stone-pack-f3e0a67b9ca243b09119177649f21e17)
+> by ashkan.fancy (https://sketchfab.com/ashkan.fancy) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+Kept in `resources/reference/models/props/`; copy them to `props/` on a fresh
 checkout.
 
 ## Git
