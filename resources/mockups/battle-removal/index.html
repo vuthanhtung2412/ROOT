@@ -170,7 +170,8 @@
         transition: transform 75ms ease-out, border-color 75ms ease-out, box-shadow 75ms ease-out;
       }
       .piece-option.token { border-radius: 9999px; }
-      .piece-option.building { border-radius: 10px; }
+      /* Same soft corner as map buildings (`rounded` ≈ 4px), not 10px. */
+      .piece-option.building { border-radius: 0.25rem; }
       .piece-option img {
         display: block;
         width: 100%;
@@ -180,7 +181,7 @@
         user-select: none;
       }
       .piece-option.token img { border-radius: 9999px; }
-      .piece-option.building img { border-radius: 10px; }
+      .piece-option.building img { border-radius: 0.25rem; }
       .piece-option.selected {
         border-color: var(--color-gold);
         box-shadow: var(--shadow-gold-ring);

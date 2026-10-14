@@ -16,6 +16,8 @@ export type TurnBannerOptionPiece = {
   selected: boolean
   /** Pre-resolved so warriors can use faction meeple art. */
   imagePath: string | null
+  /** Owning faction — tile background colour in RemovalPickOption. */
+  factionId?: string
   /** When true, tile is shown but cannot be toggled (forced removals). */
   locked?: boolean
 }

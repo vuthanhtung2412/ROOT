@@ -276,6 +276,8 @@ function SuitOptionButton(props: {
   )
 }
 
+const VAGABOND_FACTION_ID = 'vagabond'
+
 /** Vagabond item as faction-board artwork: dim = exhausted, gold = selected. */
 function ItemOptionButton(props: {
   label: string
@@ -292,6 +294,7 @@ function ItemOptionButton(props: {
       selected={props.item.selected}
       exhausted={props.item.exhausted}
       damaged={props.item.damaged}
+      factionId={VAGABOND_FACTION_ID}
       fallbackText={props.item.type}
       onPick={props.onPick}
     />
@@ -311,6 +314,7 @@ function PieceOptionButton(props: {
       shape={removalPickShapeForPieceKind(props.piece.kind)}
       selected={props.piece.selected}
       disabled={props.piece.locked === true}
+      factionId={props.piece.factionId}
       fallbackText={props.piece.type ?? props.piece.kind}
       onPick={props.onPick}
     />
