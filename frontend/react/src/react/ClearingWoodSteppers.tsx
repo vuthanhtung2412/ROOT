@@ -86,6 +86,7 @@ function ClearingWoodStepper(props: {
       style={{ left: anchor.x, top: anchor.y }}
     >
       <Stepper
+        variant="minimal"
         value={selected}
         max={maximum}
         canIncrease={canIncrease}
