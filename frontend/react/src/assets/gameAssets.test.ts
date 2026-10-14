@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
-  AUTUMN_MAP_ASSET,
   CARD_CATALOG,
   CORE_IMAGE_ASSETS,
   CRAFTED_ITEM_TEXTURE_TYPES,
@@ -11,7 +10,6 @@ import {
   itemTextureKey,
   nativeCompileTimePreloadImagePaths,
   preloadCoreGameAssets,
-  queueAutumnMapImage,
   queueMissingCardImages,
   warriorTokenTextureKey,
   type ImageAssetLoader,
@@ -70,21 +68,10 @@ describe('menu vs warm image splits', () => {
         'faction-riverfolk',
       ]),
     )
-    expect(MENU_BOOT_IMAGE_ASSETS.map((asset) => asset.key)).not.toContain(
-      'game-wallpaper',
-    )
-    expect(MENU_BOOT_IMAGE_ASSETS.map((asset) => asset.key)).not.toContain(
-      AUTUMN_MAP_ASSET.key,
-    )
   })
 
-  it('warm set covers remaining core art plus the autumn map', () => {
-    expect(WARM_GAME_IMAGE_ASSETS.map((asset) => asset.key)).toContain(
-      AUTUMN_MAP_ASSET.key,
-    )
-    expect(WARM_GAME_IMAGE_ASSETS.map((asset) => asset.key)).toContain(
-      'game-wallpaper',
-    )
+  it('warm set covers remaining core art', () => {
+    expect(WARM_GAME_IMAGE_ASSETS.length).toBeGreaterThan(0)
     for (const asset of MENU_BOOT_IMAGE_ASSETS) {
       expect(WARM_GAME_IMAGE_ASSETS.map((entry) => entry.key)).not.toContain(
         asset.key,
@@ -95,7 +82,6 @@ describe('menu vs warm image splits', () => {
   it('native compile-time preload lists menu boot then warm art', () => {
     const paths = nativeCompileTimePreloadImagePaths()
     expect(paths[0]).toBe(MENU_BOOT_IMAGE_ASSETS[0]?.path)
-    expect(paths).toContain(AUTUMN_MAP_ASSET.path)
     expect(paths).toHaveLength(
       MENU_BOOT_IMAGE_ASSETS.length + WARM_GAME_IMAGE_ASSETS.length,
     )
@@ -103,7 +89,7 @@ describe('menu vs warm image splits', () => {
 })
 
 describe('preloadCoreGameAssets', () => {
-  it('loads tokens only, not autumn map or card faces', () => {
+  it('loads tokens only, not card faces', () => {
     const loader = makeLoaderMock()
     preloadCoreGameAssets(loader)
 
@@ -119,34 +105,9 @@ describe('preloadCoreGameAssets', () => {
       'menu-wallpaper',
       'assets/branding/therootdatabase-hero.webp',
     )
-    expect(loader.image).toHaveBeenCalledWith(
-      'game-wallpaper',
-      'assets/branding/ks-pooneac-root.jpg',
-    )
-    expect(loader.image).not.toHaveBeenCalledWith(
-      AUTUMN_MAP_ASSET.key,
-      AUTUMN_MAP_ASSET.path,
-    )
     for (const asset of cardImageAssets()) {
       expect(loader.image).not.toHaveBeenCalledWith(asset.key, asset.path)
     }
-  })
-})
-
-describe('queueAutumnMapImage', () => {
-  it('queues map when texture missing', () => {
-    const loader = makeLoaderMock()
-    expect(queueAutumnMapImage(loader, () => false)).toBe(true)
-    expect(loader.image).toHaveBeenCalledWith(
-      AUTUMN_MAP_ASSET.key,
-      AUTUMN_MAP_ASSET.path,
-    )
-  })
-
-  it('skips when texture already exists', () => {
-    const loader = makeLoaderMock()
-    expect(queueAutumnMapImage(loader, () => true)).toBe(false)
-    expect(loader.image).not.toHaveBeenCalled()
   })
 })
 

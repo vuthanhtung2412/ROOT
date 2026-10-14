@@ -14,10 +14,8 @@ export type ImageAssetLoader = {
 /** Texture keys and public asset paths for GP2 preload. */
 
 export const GAME_ASSET_KEYS = {
-  autumnMap: 'autumn-map',
   rootBanner: 'root-banner',
   menuWallpaper: 'menu-wallpaper',
-  gameWallpaper: 'game-wallpaper',
   factionMarquise: 'faction-marquise',
   factionEyrie: 'faction-eyrie',
   factionAlliance: 'faction-alliance',
@@ -233,11 +231,6 @@ export function cardTextureKey(defId: string): string {
   return `card:${defId}`
 }
 
-export const AUTUMN_MAP_ASSET: GameImageAsset = {
-  key: GAME_ASSET_KEYS.autumnMap,
-  path: 'assets/map/autumn-map.webp',
-}
-
 /**
  * Menu shell only — banner, wallpaper, faction heads for the lobby picker.
  * Keeps first paint under a thin download; game art warms after the menu.
@@ -253,7 +246,7 @@ export const MENU_BOOT_IMAGE_ASSET_KEYS: ReadonlySet<string> = new Set([
   RIVERFOLK_EXPANSION_ASSET_KEYS.factionRiverfolk,
 ])
 
-/** All in-game images except card faces and the autumn map. */
+/** All in-game images except card faces. */
 export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.rootBanner,
@@ -262,10 +255,6 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.menuWallpaper,
     path: 'assets/branding/therootdatabase-hero.webp',
-  },
-  {
-    key: GAME_ASSET_KEYS.gameWallpaper,
-    path: 'assets/branding/ks-pooneac-root.jpg',
   },
   {
     key: GAME_ASSET_KEYS.factionMarquise,
@@ -437,15 +426,13 @@ export const MENU_BOOT_IMAGE_ASSETS: readonly GameImageAsset[] =
   )
 
 /**
- * Images warmed after the menu (boards, tokens, game wallpaper, autumn map).
+ * Images warmed after the menu (boards, tokens).
  * Menu assets are skipped — the boot pass already fetched them.
  */
-export const WARM_GAME_IMAGE_ASSETS: readonly GameImageAsset[] = [
-  ...CORE_IMAGE_ASSETS.filter(
+export const WARM_GAME_IMAGE_ASSETS: readonly GameImageAsset[] =
+  CORE_IMAGE_ASSETS.filter(
     (asset) => !MENU_BOOT_IMAGE_ASSET_KEYS.has(asset.key),
-  ),
-  AUTUMN_MAP_ASSET,
-]
+  )
 
 /**
  * Native iOS build: paths to `<link rel="preload">` at compile time.
@@ -525,7 +512,7 @@ export function queueMissingCardImages(
   }
 }
 
-/** Boot: faction/token icons only (map + cards load later). */
+/** Boot: faction/token icons only (cards load later). */
 export function preloadCoreGameAssets(loader: ImageAssetLoader): void {
   for (const asset of CORE_IMAGE_ASSETS) {
     loader.image(asset.key, asset.path)
@@ -542,25 +529,6 @@ export function imagePathForAssetKey(key: string): string | null {
     return asset.path
   }
   return `/${asset.path}`
-}
-
-export function autumnMapPublicPath(): string {
-  if (AUTUMN_MAP_ASSET.path.startsWith('/')) {
-    return AUTUMN_MAP_ASSET.path
-  }
-  return `/${AUTUMN_MAP_ASSET.path}`
-}
-
-
-export function queueAutumnMapImage(
-  loader: ImageAssetLoader,
-  textureExists: (key: string) => boolean,
-): boolean {
-  if (textureExists(AUTUMN_MAP_ASSET.key)) {
-    return false
-  }
-  loader.image(AUTUMN_MAP_ASSET.key, AUTUMN_MAP_ASSET.path)
-  return true
 }
 
 export function lookupCardCatalog(defId: string): CardCatalogEntry | null {

@@ -16,10 +16,7 @@ describe('cacheControlForStaticPath', () => {
     ).toBe('public, max-age=31536000, immutable')
   })
 
-  it('short-caches map and card images', () => {
-    expect(
-      cacheControlForStaticPath('assets/map/autumn-map.webp'),
-    ).toBe('public, max-age=86400')
+  it('short-caches card images', () => {
     expect(
       cacheControlForStaticPath('assets/cards/ambush-bird.png'),
     ).toBe('public, max-age=86400')

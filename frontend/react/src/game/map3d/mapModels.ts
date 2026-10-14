@@ -158,10 +158,7 @@ async function fetchPieceModel(source: PieceModelSource): Promise<PieceModel> {
   }
 }
 
-/**
- * Kept for the page's lifetime: switching to the flat map and back must not
- * download and read every file again.
- */
+/** Kept for the page's lifetime so remounts do not parse every GLB again. */
 let mapModelsLoading: Promise<MapModels> | null = null
 /** By file: several pieces share one (the three suits of a base). */
 const pieceModelLoadingByName: Map<string, Promise<PieceModel>> = new Map<
