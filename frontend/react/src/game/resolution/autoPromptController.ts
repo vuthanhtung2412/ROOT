@@ -245,8 +245,17 @@ export class AutoPromptController {
       // Leave endPhaseKey unset so flash-end can retry.
       return
     }
+    const actorActions = snapshot.legalActions.filter(
+      (spec: ActionSpec) => spec.actor === actorSeat,
+    )
     const sole = soleEndPhaseAction(snapshot.legalActions, actorSeat)
     if (sole === null) {
+      // Empty list: submitAction cleared actions while endPhase is in
+      // flight. Keep endPhaseKey so a re-paint of the same sole-endPhase
+      // step cannot send a second endPhase (which would skip craft).
+      if (actorActions.length === 0) {
+        return
+      }
       this.endPhaseKey = null
       return
     }

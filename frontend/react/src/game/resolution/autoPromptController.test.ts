@@ -124,3 +124,129 @@ describe('AutoPromptController ambush', () => {
     ])
   })
 })
+
+const EYRIE_SEAT = 1
+
+function soleEndPhaseSnapshot(): GameSessionSnapshot {
+  return {
+    state: makeGameState({
+      turn: 26,
+      currentSeat: EYRIE_SEAT,
+      phase: 'birdsong',
+      step: 'newRoost',
+      pending: [],
+    }),
+    legalActions: [
+      makeActionSpec({ type: 'endPhase', actor: EYRIE_SEAT }),
+    ],
+    historyLength: 0,
+    log: [],
+    error: null,
+    loading: false,
+  }
+}
+
+describe('AutoPromptController sole endPhase', () => {
+  it('does not send a second endPhase after legalActions are cleared in flight', () => {
+    const submitEndPhaseCalls = vi.fn()
+    const composer = new ActionComposer()
+    const controller = new AutoPromptController({
+      applyComposerOutcome: () => undefined,
+      composer,
+      eventComposer: {
+        beginFieldHospital: () => ({ kind: 'idle' }),
+        beginAmbush: () => ({ kind: 'idle' }),
+        beginBattleRemoval: () => ({ kind: 'idle' }),
+      },
+      submitEndPhase: () => {
+        submitEndPhaseCalls()
+        // GameSession.submitAction clears legal actions before the POST returns.
+        controller.runAfterHudPaint(
+          {
+            ...soleEndPhaseSnapshot(),
+            legalActions: [],
+            loading: true,
+          },
+          EYRIE_SEAT,
+          true,
+        )
+      },
+      isBattleResultFlashActive: () => false,
+      isBoardReady: () => true,
+    })
+
+    const soleEnd = soleEndPhaseSnapshot()
+    controller.runAfterHudPaint(soleEnd, EYRIE_SEAT, true)
+    // Re-paint of the same sole-endPhase step (2nd listener / reentrancy).
+    controller.runAfterHudPaint(soleEnd, EYRIE_SEAT, true)
+
+    expect(submitEndPhaseCalls).toHaveBeenCalledTimes(1)
+  })
+
+  it('clears the endPhase lock when the actor has a real choice', () => {
+    const submitEndPhaseCalls = vi.fn()
+    const composer = new ActionComposer()
+    const controller = new AutoPromptController({
+      applyComposerOutcome: () => undefined,
+      composer,
+      eventComposer: {
+        beginFieldHospital: () => ({ kind: 'idle' }),
+        beginAmbush: () => ({ kind: 'idle' }),
+        beginBattleRemoval: () => ({ kind: 'idle' }),
+      },
+      submitEndPhase: submitEndPhaseCalls,
+      isBattleResultFlashActive: () => false,
+      isBoardReady: () => true,
+    })
+
+    controller.runAfterHudPaint(soleEndPhaseSnapshot(), EYRIE_SEAT, true)
+    expect(submitEndPhaseCalls).toHaveBeenCalledTimes(1)
+
+    // Craft step with a craftable card: not a sole endPhase.
+    controller.runAfterHudPaint(
+      {
+        state: makeGameState({
+          turn: 26,
+          currentSeat: EYRIE_SEAT,
+          phase: 'daylight',
+          step: 'craft',
+          pending: [],
+        }),
+        legalActions: [
+          makeActionSpec({ type: 'craft', actor: EYRIE_SEAT }),
+          makeActionSpec({ type: 'endPhase', actor: EYRIE_SEAT }),
+        ],
+        historyLength: 1,
+        log: [],
+        error: null,
+        loading: false,
+      },
+      EYRIE_SEAT,
+      true,
+    )
+    expect(submitEndPhaseCalls).toHaveBeenCalledTimes(1)
+
+    // Later sole endPhase on a new step may auto-send again.
+    controller.runAfterHudPaint(
+      {
+        state: makeGameState({
+          turn: 26,
+          currentSeat: EYRIE_SEAT,
+          phase: 'evening',
+          step: 'discard',
+          pending: [],
+        }),
+        legalActions: [
+          makeActionSpec({ type: 'endPhase', actor: EYRIE_SEAT }),
+        ],
+        historyLength: 2,
+        log: [],
+        error: null,
+        loading: false,
+      },
+      EYRIE_SEAT,
+      true,
+    )
+    expect(submitEndPhaseCalls).toHaveBeenCalledTimes(2)
+  })
+})
