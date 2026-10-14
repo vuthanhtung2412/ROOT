@@ -69,10 +69,10 @@ Required credit for the ruin:
 |------|------|-----------|---------|
 | `campfire.glb` | Campfire in the middle of every clearing (logs in a ring of stones; flames and sparks are drawn by `src/game/map3d/campfires.ts`) | "Campfire" by J-Toastie — https://poly.pizza/m/bAjGJYCozp — unmodified | **CC-BY 3.0**: credit required (line below) |
 
-| `rock-small-{a,b,c}.glb` | Small rocks (about 1–2 long), ~70 triangles | "Stone Pack" by ashkan.fancy — https://sketchfab.com/3d-models/stone-pack-f3e0a67b9ca243b09119177649f21e17 — decimated, flat shaded, the stone texture baked into one colour per face, moss on faces that look up; no texture | **CC-BY-4.0**: credit required (line below) |
-| `rock-large-{a,b,c}.glb` | Large rocks (about 4–7 long), ~260 triangles | same | same |
-| `cliff-{a,b}.glb` | Cliff walls of overlapping slab stacks, about 14 wide, 8 tall, 6 deep, ~850–1,050 triangles | same, stones scaled and joined | same |
-| `mountain-{a,b}.glb` | Mountains: spires on a broad core, slabs round the foot, about 15–18 wide, 14–15 tall, ~1,500–1,750 triangles | same, stones scaled and joined | same |
+| `rock-small-{a,b,c}.glb` | Small rocks (about 1–2 long), ~180 triangles | "Stone Pack" by ashkan.fancy — https://sketchfab.com/3d-models/stone-pack-f3e0a67b9ca243b09119177649f21e17 — decimated, smooth shaded with edges sharper than 40° kept hard, the pack's base colour / normal / occlusion-roughness textures downscaled to 1K JPEG, moss as a vertex colour tint on what looks up | **CC-BY-4.0**: credit required (line below) |
+| `rock-large-{a,b,c}.glb` | Large rocks (about 4–7 long), ~600 triangles | same | same |
+| `cliff-{a,b}.glb` | Cliff walls of overlapping slab stacks, about 14 wide, 8 tall, 6 deep, ~1,750–2,200 triangles | same, stones scaled and joined | same |
+| `mountain-{a,b}.glb` | Mountains: spires on a broad core, slabs round the foot, about 15–18 wide, 14–15 tall, ~3,200–3,700 triangles | same, stones scaled and joined | same |
 
 The rocks, cliffs and mountains stand on the ground (y = 0), centred on their
 origin, sized in world units of the map (the map is 100 wide). Made in Blender
