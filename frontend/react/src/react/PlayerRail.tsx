@@ -25,7 +25,7 @@ const PUBLIC_HAND_LABEL = 'hand'
  * colour), head art, badges pinned on the corners.
  */
 const SEAT_TILE_CLASS_NAME =
-  'root-paper relative box-border size-16 shrink-0 [--root-paper-color:currentColor] md:size-20'
+  'root-paper relative box-border size-18 shrink-0 [--root-paper-color:currentColor] md:size-24'
 /** Seat whose turn it is: a little bigger, under the sun badge. */
 const SEAT_TILE_ACTIVE_CLASS_NAME = 'scale-110'
 const SEAT_PORTRAIT_BUTTON_CLASS_NAME =
@@ -44,7 +44,7 @@ const SEAT_HAND_COUNT_CLASS_NAME =
   'player-rail__hand-count pointer-events-auto absolute -top-2.5 -right-2 flex h-7 w-5 rotate-6 items-center justify-center rounded-xs border-2 border-ink-deep bg-rust font-mono text-xs font-bold text-white text-shadow-outline md:h-8 md:w-6 md:text-sm'
 /** Bottom left: victory points. */
 const SEAT_VICTORY_POINTS_CLASS_NAME =
-  'pointer-events-none absolute -bottom-3 -left-3 flex size-8 items-center justify-center md:-bottom-3 md:-left-3 md:size-10'
+  'pointer-events-none absolute -bottom-3 -left-3 flex size-9 items-center justify-center md:-bottom-3.5 md:-left-3.5 md:size-11'
 /** Laurel wreath around the score: gold leaves with an ink outline. */
 const SEAT_VICTORY_WREATH_CLASS_NAME =
   'absolute inset-0 size-full text-gold [filter:drop-shadow(1px_0_0_var(--color-ink-deep))_drop-shadow(-1px_0_0_var(--color-ink-deep))_drop-shadow(0_1px_0_var(--color-ink-deep))_drop-shadow(0_-1px_0_var(--color-ink-deep))]'
@@ -97,7 +97,7 @@ export function PlayerRail(): JSX.Element | null {
   }
   const callbacks = getHudCallbacks()
   return (
-    <div className="fixed top-16 right-2 left-2 z-100 box-border flex w-auto flex-row flex-wrap items-start justify-center gap-5 px-0 pt-1 md:top-10 md:right-auto md:bottom-3 md:left-0 md:w-auto md:flex-col md:flex-nowrap md:items-center md:justify-start md:gap-8 md:overflow-x-hidden md:overflow-y-auto md:px-4 md:pt-4">
+    <div className="fixed top-16 right-2 left-2 z-100 box-border flex w-auto flex-row flex-wrap items-start justify-center gap-5 px-0 pt-1 md:top-10 md:right-auto md:bottom-3 md:left-0 md:w-auto md:flex-col md:flex-nowrap md:items-center md:justify-start md:gap-8 md:overflow-x-hidden md:overflow-y-auto md:pt-4 md:pr-4 md:pl-8">
       {rail.state.players.map((player) => {
         const isActive = player.seat === rail.activeSeat
         const factionColor: string = factionColorCss(player.faction)

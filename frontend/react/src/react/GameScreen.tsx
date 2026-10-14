@@ -45,7 +45,7 @@ const BoardMap3D = lazy(async () => {
  * Share of the screen width kept free of clearings in landscape: the player
  * rail hugs the left edge.
  */
-const MAP_3D_LEFT_HUD_WIDTH_RATIO = 0.07
+const MAP_3D_LEFT_HUD_WIDTH_RATIO = 0.1
 /**
  * A thin margin only: the map never moves when the action tray folds or
  * unfolds. An open tray lies over the bottom right clearing; fold it to see.
