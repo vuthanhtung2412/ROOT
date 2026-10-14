@@ -8,6 +8,7 @@ import {
   formatBattleRemovalComboLabel,
   isBattleRemovalPickComplete,
   resolveBattleRemovalPickPieceIds,
+  shouldAutoSubmitBattleRemoval,
 } from '#game/battleRemovalStepper.ts'
 
 describe('formatBattleRemovalComboLabel', () => {
@@ -104,6 +105,27 @@ describe('buildBattleRemovalPickModel', () => {
       'b1',
       'b2',
     ])
+    expect(model?.fungibleOnly).toBe(false)
+    expect(model !== null && shouldAutoSubmitBattleRemoval(model)).toBe(false)
+  })
+
+  it('marks warrior-only combos as fungible auto-submit', () => {
+    const piecesById = new Map([
+      ['w1', { id: 'w1', kind: 'warrior' }],
+      ['w2', { id: 'w2', kind: 'warrior' }],
+      ['w3', { id: 'w3', kind: 'warrior' }],
+      ['w4', { id: 'w4', kind: 'warrior' }],
+    ])
+    const model = buildBattleRemovalPickModel(
+      [
+        ['w1', 'w2', 'w3'],
+        ['w1', 'w2', 'w4'],
+        ['w2', 'w3', 'w4'],
+      ],
+      piecesById,
+    )
+    expect(model?.fungibleOnly).toBe(true)
+    expect(model !== null && shouldAutoSubmitBattleRemoval(model)).toBe(true)
   })
 
   it('toggles only along legal combos', () => {

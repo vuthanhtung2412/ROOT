@@ -206,6 +206,7 @@ describe('eventActionComposer battle', () => {
     const mid = events.beginBattleRemoval({
       forcedPieceIds: ['w1'],
       hitsToChoose: 1,
+      fungibleOnly: false,
       legalCombos: [
         ['w1', 'b1'],
         ['w1', 't1'],
@@ -233,12 +234,39 @@ describe('eventActionComposer battle', () => {
       events.beginBattleRemoval({
         forcedPieceIds: ['w1', 'w2'],
         hitsToChoose: 0,
+        fungibleOnly: true,
         legalCombos: [['w1', 'w2']],
         tiles: [],
       }),
     ).toEqual({
       kind: 'ready',
       action: { type: 'resolveEvent', pieceIds: ['w1', 'w2'] },
+    })
+  })
+
+  it('fungible warrior-only combos auto-submit without a pick UI', () => {
+    const events = createEventComposerHooks()
+    expect(
+      events.beginBattleRemoval({
+        forcedPieceIds: [],
+        hitsToChoose: 3,
+        fungibleOnly: true,
+        legalCombos: [
+          ['w1', 'w2', 'w3'],
+          ['w1', 'w2', 'w4'],
+          ['w1', 'w3', 'w4'],
+          ['w2', 'w3', 'w4'],
+        ],
+        tiles: [
+          { pieceId: 'w1', kind: 'warrior' },
+          { pieceId: 'w2', kind: 'warrior' },
+          { pieceId: 'w3', kind: 'warrior' },
+          { pieceId: 'w4', kind: 'warrior' },
+        ],
+      }),
+    ).toEqual({
+      kind: 'ready',
+      action: { type: 'resolveEvent', pieceIds: ['w1', 'w2', 'w3'] },
     })
   })
 })

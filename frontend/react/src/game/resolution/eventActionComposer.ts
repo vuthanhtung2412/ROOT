@@ -17,6 +17,7 @@ import {
   canSelectBattleRemovalPiece,
   isBattleRemovalPickComplete,
   resolveBattleRemovalPickPieceIds,
+  shouldAutoSubmitBattleRemoval,
   type BattleRemovalPickModel,
   type BattleRemovalPickTile,
 } from '#game/battleRemovalStepper.ts'
@@ -233,6 +234,9 @@ export function createEventComposerHooks(): {
       if (tile.type !== undefined) {
         pieceOption.type = tile.type
       }
+      if (tile.factionId !== undefined) {
+        pieceOption.factionId = tile.factionId
+      }
       return {
         label: formatBattleRemovalPieceLabel(tile),
         value: tile.pieceId,
@@ -258,21 +262,8 @@ export function createEventComposerHooks(): {
   const beginBattleRemoval = (
     model: BattleRemovalPickModel,
   ): ComposerOutcome => {
-    // No choice left: every hit is forced (or a single legal combo with no tiles).
-    if (model.hitsToChoose <= 0 || model.tiles.length === 0) {
-      const onlyCombo = model.legalCombos[0]
-      if (onlyCombo === undefined) {
-        clear()
-        return { kind: 'idle' }
-      }
-      clear()
-      return {
-        kind: 'ready',
-        action: { type: 'resolveEvent', pieceIds: [...onlyCombo] },
-      }
-    }
-    // Single legal combo: submit without a pick UI.
-    if (model.legalCombos.length === 1) {
+    // Warriors-only (and other fungible) hits: any legal combo is the same.
+    if (shouldAutoSubmitBattleRemoval(model)) {
       const onlyCombo = model.legalCombos[0]
       if (onlyCombo === undefined) {
         clear()

@@ -33,6 +33,24 @@ export type BattleRemovalPickModel = {
   legalCombos: string[][]
   tiles: BattleRemovalPickTile[]
   hitsToChoose: number
+  /**
+   * True when every legal combo is the same multiset of piece kinds/types
+   * (e.g. only warriors). No real choice — UI should auto-submit.
+   */
+  fungibleOnly: boolean
+}
+
+/** Auto-submit when there is nothing meaningful to pick. */
+export function shouldAutoSubmitBattleRemoval(
+  model: BattleRemovalPickModel,
+): boolean {
+  if (model.fungibleOnly) {
+    return true
+  }
+  if (model.hitsToChoose <= 0 || model.tiles.length === 0) {
+    return true
+  }
+  return model.legalCombos.length <= 1
 }
 
 export function isPieceIdsRemovalSpec(spec: ActionSpec): boolean {
@@ -266,11 +284,15 @@ export function buildBattleRemovalPickModel(
       return [tile]
     })
   const hitsToChoose = firstCombo.length - forcedPieceIds.length
+  const comboLabels = new Set(
+    combos.map((combo) => formatBattleRemovalComboLabel(combo, piecesById)),
+  )
   return {
     forcedPieceIds,
     legalCombos: combos.map((combo) => [...combo]),
     tiles,
     hitsToChoose,
+    fungibleOnly: comboLabels.size <= 1,
   }
 }
 
