@@ -19,6 +19,10 @@ import {
 import { createIconTexture } from '#game/map3d/iconTexture.ts'
 import type { PieceModel, PieceModels } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
+import {
+  createMeepleStackModel,
+  type MeepleStackModel,
+} from '#game/map3d/meepleStackModel.ts'
 import { isSameMapPiece } from '#game/map3d/sameMapPiece.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 import {
@@ -29,7 +33,8 @@ import {
 /**
  * Everything standing in the clearings. A piece is shown two ways at once:
  * - its 2D token icon (with the stack size on a badge), laid over the map;
- * - its 3D model: a structure for a building, a wooden meeple for a warrior.
+ * - its 3D model: a structure for a building, or one wooden meeple per
+ *   warrior in the stack, packed tight on the ground.
  * Zoomed out, only the icons show, large, like on the flat map. Zooming in,
  * the models rise and the icons shrink to small labels above them.
  * An empty building slot is a drawing on the ground, at every zoom.
@@ -277,12 +282,8 @@ export function createPieceLayer(): PieceLayer {
     return matte
   }
 
-  /** The 3D model of a piece, feet on the ground, sized for a clearing. */
-  const createModel = (
-    piece: MapPiece,
-    pieceModel: PieceModel,
-  ): { model: Object3D; scale: number; top: number } => {
-    const figure: Object3D = pieceModel.model.clone()
+  /** Paint and shadow every mesh of a cloned figure. */
+  const finishFigure = (figure: Object3D): void => {
     for (const part of meshesOf(figure)) {
       part.castShadow = true
       part.receiveShadow = true
@@ -290,16 +291,27 @@ export function createPieceLayer(): PieceLayer {
         ? part.material.map(matteMaterial)
         : matteMaterial(part.material)
     }
+  }
+
+  /** The 3D model of a piece, feet on the ground, sized for a clearing. */
+  const createModel = (
+    piece: MapPiece,
+    pieceModel: PieceModel,
+  ): { model: Object3D; scale: number; top: number } => {
     if (pieceModel.kind === 'meeple') {
-      const height: number = new Box3()
-        .setFromObject(figure)
-        .getSize(new Vector3()).y
+      const stack: MeepleStackModel = createMeepleStackModel(
+        piece.count,
+        pieceModel.model,
+        finishFigure,
+      )
       return {
-        model: figure,
+        model: stack.model,
         scale: MODEL_WORLD_SCALE,
-        top: height * MODEL_WORLD_SCALE,
+        top: stack.height * MODEL_WORLD_SCALE,
       }
     }
+    const figure: Object3D = pieceModel.model.clone()
+    finishFigure(figure)
     // A structure comes at any origin: centre it on its plot.
     // Scale lives on a wrapper group so the foot offset stays in model units.
     const bounds: Box3 = new Box3().setFromObject(figure)
