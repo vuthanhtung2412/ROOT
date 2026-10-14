@@ -64,7 +64,10 @@ export function createSeededRandom(seed: number): () => number {
   }
 }
 
-function distanceToRiver(point: MapGroundPoint, terrain: MapTerrain): number {
+export function distanceToRiver(
+  point: MapGroundPoint,
+  terrain: MapTerrain,
+): number {
   let nearest: number = Number.POSITIVE_INFINITY
   for (let index = 1; index < terrain.river.length; index += 1) {
     const start: MapGroundPoint | undefined = terrain.river[index - 1]

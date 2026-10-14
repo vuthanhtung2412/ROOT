@@ -29,6 +29,11 @@ import type {
   MapGroundPoint,
   MapViewFrame,
 } from '#game/map3d/mapWorldSpace.ts'
+import { createMountainMeshes } from '#game/map3d/mountainMeshes.ts'
+import {
+  placeMountains,
+  type MountainPlacement,
+} from '#game/map3d/mountainPlacement.ts'
 import {
   createPieceLayer,
   type MapPiece,
@@ -38,11 +43,11 @@ import { createRiverFlow, type RiverFlow } from '#game/map3d/riverFlow.ts'
 import { createGround } from '#game/map3d/sceneGround.ts'
 import { disposeObjectTree } from '#game/map3d/sceneObjects.ts'
 import { createTreeMeshes } from '#game/map3d/treeMeshes.ts'
+import { placeTrees } from '#game/map3d/treePlacement.ts'
 import {
   createTreeSightlines,
   type TreeSightlines,
 } from '#game/map3d/treeSightlines.ts'
-import { placeTrees } from '#game/map3d/treePlacement.ts'
 
 export type MapSceneInput = {
   canvas: HTMLCanvasElement
@@ -91,6 +96,7 @@ export type MapScene = {
 }
 
 const TREE_SEED = 1894
+const MOUNTAIN_SEED = 41
 /** The Vagabond takes its torch out when the campfires are lit. */
 const TORCH_TIME_OF_DAY: TimeOfDay = 'evening'
 const MAXIMUM_PIXEL_RATIO = 2
@@ -138,11 +144,17 @@ export function createMapScene(input: MapSceneInput): MapScene {
     timeOfDay: input.timeOfDay,
   })
   const treeSightlines: TreeSightlines = createTreeSightlines()
+  const mountainPlacements: MountainPlacement[] = placeMountains(
+    input.terrain,
+    MOUNTAIN_SEED,
+    input.models.mountains.length,
+  )
   scene.add(
     campfires.group,
     ...daylight.lights,
     createGround(input.terrain),
     riverFlow.mesh,
+    createMountainMeshes(mountainPlacements, input.models.mountains),
     createTreeMeshes(
       placeTrees(input.terrain, TREE_SEED),
       input.models.trees,
