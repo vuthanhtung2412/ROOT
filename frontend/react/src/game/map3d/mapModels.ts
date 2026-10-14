@@ -6,7 +6,8 @@ import { mergePartsByMaterial } from '#game/map3d/mergeModelParts.ts'
  * 3D models of the map (see `public/assets/models/SOURCES.md` for where each
  * comes from and its licence): trees from Kenney's Nature Kit, buildings
  * exported from the project's Blender file, meeples extruded from the
- * warrior token art, the campfire from Poly Pizza.
+ * warrior token art, the campfire from Poly Pizza, the mountains built in
+ * Blender from the Stone Pack.
  */
 const MODEL_ROOT = '/assets/models'
 const MODEL_FILE_EXTENSION = '.glb'
@@ -27,6 +28,10 @@ const AUTUMN_MODEL_NAMES: readonly string[] = [
   'nature/tree_oak_fall',
 ]
 const CAMPFIRE_MODEL_NAME = 'props/campfire'
+const MOUNTAIN_MODEL_NAMES: readonly string[] = [
+  'props/mountain-a',
+  'props/mountain-b',
+]
 
 /**
  * A meeple stands as modelled; a structure is centred on a building plot.
@@ -99,6 +104,8 @@ export type MapModels = {
   trees: TreeModels
   /** Logs in a ring of stones: the fire of every clearing. */
   campfire: Group
+  /** Stone spires on a broad core: the range along the woodland's edge. */
+  mountains: readonly Group[]
 }
 
 /** Model per token texture key; a piece without one is only its icon. */
@@ -122,14 +129,20 @@ function loadModels(
 
 async function fetchMapModels(): Promise<MapModels> {
   const loader: GLTFLoader = new GLTFLoader()
-  const [pine, leafy, autumn, campfire]: [Group[], Group[], Group[], Group] =
-    await Promise.all([
-      loadModels(loader, PINE_MODEL_NAMES),
-      loadModels(loader, LEAFY_MODEL_NAMES),
-      loadModels(loader, AUTUMN_MODEL_NAMES),
-      loadModel(loader, CAMPFIRE_MODEL_NAME),
-    ])
-  return { trees: { pine, leafy, autumn }, campfire }
+  const [pine, leafy, autumn, campfire, mountains]: [
+    Group[],
+    Group[],
+    Group[],
+    Group,
+    Group[],
+  ] = await Promise.all([
+    loadModels(loader, PINE_MODEL_NAMES),
+    loadModels(loader, LEAFY_MODEL_NAMES),
+    loadModels(loader, AUTUMN_MODEL_NAMES),
+    loadModel(loader, CAMPFIRE_MODEL_NAME),
+    loadModels(loader, MOUNTAIN_MODEL_NAMES),
+  ])
+  return { trees: { pine, leafy, autumn }, campfire, mountains }
 }
 
 /**
