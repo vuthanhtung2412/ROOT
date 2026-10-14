@@ -4,7 +4,7 @@ import {
   type ClientAction,
 } from '#game/resolution/ActionComposer.ts'
 import { clearingRuler } from '#game/clearingRuler.ts'
-import { fallAdjacentClearings } from '@root/lib/fall-metadata'
+import { fallMoveNeighborClearings } from '@root/lib/fall-metadata'
 import {
   applyMarchMovesToClearings,
   type ClearingPiecesSnapshot,
@@ -18,11 +18,27 @@ export type MarchBoardSnapshot = {
   clearings: ClearingPiecesSnapshot[]
   factions: readonly string[]
   seat: number
+  /** Rule: Boat Builders / Riverboats — rivers count as paths for this seat. */
+  treatsRiversAsPaths: boolean
 }
 
 export type MarchBoardSource = {
   warriorCountsForCurrentSeat: () => Map<number, number>
   boardForMarch?: () => MarchBoardSnapshot | null
+}
+
+/** Persistent crafted card: rivers count as paths. */
+const BOAT_BUILDERS_CARD_DEF_ID = 'ROOT-57'
+
+/** Rule: Boat Builders; 11.2.7.II Riverboats */
+export function marchTreatsRiversAsPaths(input: {
+  playAreaDefIds: readonly string[]
+  riverboatsThisTurn: boolean
+}): boolean {
+  if (input.riverboatsThisTurn) {
+    return true
+  }
+  return input.playAreaDefIds.includes(BOAT_BUILDERS_CARD_DEF_ID)
 }
 
 function unique(values: number[]): number[] {
@@ -51,13 +67,14 @@ export function warriorCountsAfterMove(
 /** Adjacent march legs from warrior counts only (no rule check). */
 export function legalMarchLegsFromCounts(
   counts: ReadonlyMap<number, number>,
+  treatsRiversAsPaths: boolean = false,
 ): MarchMove[] {
   const moves: MarchMove[] = []
   for (const [from, available] of counts) {
     if (available < 1) {
       continue
     }
-    for (const to of fallAdjacentClearings(from)) {
+    for (const to of fallMoveNeighborClearings(from, treatsRiversAsPaths)) {
       for (let count = 1; count <= available; count += 1) {
         moves.push({ from, to, count })
       }
@@ -94,8 +111,11 @@ function secondLegMoves(input: {
     input.initialCounts,
     input.firstMove,
   )
-  const adjacencyLegs = legalMarchLegsFromCounts(afterFirstCounts)
   const board = input.boardSnapshot
+  const adjacencyLegs = legalMarchLegsFromCounts(
+    afterFirstCounts,
+    board?.treatsRiversAsPaths === true,
+  )
   if (board === null) {
     return adjacencyLegs
   }

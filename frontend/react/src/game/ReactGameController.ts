@@ -54,6 +54,7 @@ import {
   createMarquiseCardComposerHooks,
 } from '#game/resolution/marquiseActionComposer.ts'
 import { createMarchWorkflowHooks } from '#game/resolution/marchWorkflowHooks.ts'
+import { marchTreatsRiversAsPaths } from '#game/resolution/workflows/march.ts'
 import { createVagabondComposerHooks } from '#game/resolution/vagabondActionComposer.ts'
 import { createDominanceComposerHooks } from '#game/resolution/dominanceActionComposer.ts'
 import { createAllianceComposerHooks } from '#game/resolution/allianceActionComposer.ts'
@@ -810,15 +811,31 @@ export class ReactGameController {
     clearings: GameState['clearings']
     factions: readonly string[]
     seat: number
+    treatsRiversAsPaths: boolean
   } | null {
     const state = this.latestSnapshot?.state
     if (state === null || state === undefined) {
       return null
     }
+    const actor = state.players.find(
+      (player: GameState['players'][number]): boolean =>
+        player.seat === state.currentSeat,
+    )
+    const scratch: unknown = state.turnScratch
+    const riverboatsThisTurn: boolean =
+      typeof scratch === 'object' &&
+      scratch !== null &&
+      Reflect.get(scratch, 'riverboats') === true
     return {
       clearings: state.clearings,
       factions: state.factions,
       seat: state.currentSeat,
+      treatsRiversAsPaths: marchTreatsRiversAsPaths({
+        playAreaDefIds: (actor?.playArea ?? []).map(
+          (card: { defId: string }): string => card.defId,
+        ),
+        riverboatsThisTurn,
+      }),
     }
   }
 

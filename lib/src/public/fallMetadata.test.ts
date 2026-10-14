@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import {
   FALL_FORESTS,
+  fallAdjacentClearings,
   fallForestDisplayId,
   fallForestLayout,
   fallForestLayouts,
+  fallMoveNeighborClearings,
+  fallRiverAdjacentClearings,
 } from '#public/fallMetadata.js'
+
+describe('fallMoveNeighborClearings', () => {
+  it('Rule: Boat Builders — rivers join path neighbors when treated as paths', () => {
+    expect(fallAdjacentClearings(3)).not.toContain(6)
+    expect(fallRiverAdjacentClearings(3)).toEqual([6])
+    expect(fallMoveNeighborClearings(3, false)).not.toContain(6)
+    expect(fallMoveNeighborClearings(3, true)).toContain(6)
+  })
+})
 
 describe('fallForestLayout', () => {
   it('builds 11 forests from bordering clearings', () => {

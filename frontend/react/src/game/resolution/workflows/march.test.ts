@@ -197,6 +197,7 @@ describe('march workflow', () => {
         clearings,
         factions: ['marquise', 'eyrie'],
         seat: 0,
+        treatsRiversAsPaths: false,
       }),
     })
     const outcomes: ComposerOutcome[] = []
@@ -232,6 +233,89 @@ describe('march workflow', () => {
     const ignored = lastIncomplete(outcomes)
     expect(ignored.prompt.message).toContain('Confirm, or pick 2nd origin')
     expect(ignored.prompt.highlightClearings).not.toContain(6)
+  })
+
+  it('Rule: Boat Builders — 2nd march leg may use river (C11→C6 then C3→C6)', async () => {
+    type TestPiece = { id: string; kind: string; owner: number; type?: string }
+    const clearings = Array.from(
+      { length: 12 },
+      (): { pieces: TestPiece[] } => ({ pieces: [] }),
+    )
+    clearings[3] = { pieces: [{ id: 'm3', kind: 'warrior', owner: 0 }] }
+    clearings[6] = {
+      pieces: [
+        { id: 'e1', kind: 'warrior', owner: 1 },
+        { id: 'roost', kind: 'building', owner: 1, type: 'roost' },
+      ],
+    }
+    clearings[11] = {
+      pieces: [
+        { id: 'm11a', kind: 'warrior', owner: 0 },
+        { id: 'm11b', kind: 'warrior', owner: 0 },
+        { id: 'm11c', kind: 'warrior', owner: 0 },
+      ],
+    }
+    const march = createMarchWorkflowHooks({
+      warriorCountsForCurrentSeat: () =>
+        new Map([
+          [3, 1],
+          [11, 3],
+        ]),
+      boardForMarch: () => ({
+        clearings,
+        factions: ['marquise', 'eyrie'],
+        seat: 0,
+        treatsRiversAsPaths: true,
+      }),
+    })
+    const outcomes: ComposerOutcome[] = []
+    march.setOnOutcome((outcome) => {
+      outcomes.push(outcome)
+    })
+    const composer = new ActionComposer()
+    composer.setHooks(march.hooks)
+
+    composer.begin(
+      makeActionSpec({
+        type: 'march',
+        params: {
+          moves: [
+            { from: 11, to: 6, count: 2 },
+            { from: 3, to: 6, count: 1 },
+          ],
+        },
+      }),
+    )
+    composer.chooseClearing(11)
+    await flushMicrotasks()
+    composer.chooseClearing(6)
+    await flushMicrotasks()
+    composer.chooseColumn('2')
+    await flushMicrotasks()
+
+    const afterFirst = lastIncomplete(outcomes)
+    expect(afterFirst.prompt.highlightClearings).toContain(3)
+
+    composer.chooseClearing(3)
+    await flushMicrotasks()
+    const afterOrigin = lastIncomplete(outcomes)
+    expect(afterOrigin.prompt.highlightClearings).toContain(6)
+
+    composer.chooseClearing(6)
+    await flushMicrotasks()
+    composer.chooseColumn('1')
+    await flushMicrotasks()
+
+    expect(outcomes.at(-1)).toEqual({
+      kind: 'ready',
+      action: {
+        type: 'march',
+        moves: [
+          { from: 11, to: 6, count: 2 },
+          { from: 3, to: 6, count: 1 },
+        ],
+      },
+    })
   })
 
   it('cancel after 1st move clears march even if card hooks merge first', async () => {

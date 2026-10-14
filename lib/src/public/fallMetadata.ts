@@ -104,9 +104,12 @@ export const FALL_LAYOUT_CLEARINGS: Readonly<
   11: { x: 0.313, y: 0.545, r: 0.0715 },
 }
 
-export function fallAdjacentClearings(clearingId: number): number[] {
+function neighborsFromEdges(
+  clearingId: number,
+  edges: ReadonlyArray<readonly [number, number]>,
+): number[] {
   const neighbors: number[] = []
-  for (const [left, right] of FALL_PATHS) {
+  for (const [left, right] of edges) {
     if (left === clearingId) {
       neighbors.push(right)
     } else if (right === clearingId) {
@@ -114,6 +117,33 @@ export function fallAdjacentClearings(clearingId: number): number[] {
     }
   }
   return neighbors
+}
+
+export function fallAdjacentClearings(clearingId: number): number[] {
+  return neighborsFromEdges(clearingId, FALL_PATHS)
+}
+
+/** Clearings joined by a river (not a path). Rule: Board > Rivers */
+export function fallRiverAdjacentClearings(clearingId: number): number[] {
+  return neighborsFromEdges(clearingId, FALL_RIVERS)
+}
+
+/**
+ * Clearings one move away by path, and by river when rivers count as paths.
+ * Rule: Boat Builders; 11.2.2 Swimmers; 11.2.7.II Riverboats
+ */
+export function fallMoveNeighborClearings(
+  clearingId: number,
+  treatsRiversAsPaths: boolean,
+): number[] {
+  const byPath = fallAdjacentClearings(clearingId)
+  if (!treatsRiversAsPaths) {
+    return byPath
+  }
+  const byRiver = fallRiverAdjacentClearings(clearingId).filter(
+    (candidate: number): boolean => !byPath.includes(candidate),
+  )
+  return [...byPath, ...byRiver]
 }
 
 /**
