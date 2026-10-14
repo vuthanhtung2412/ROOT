@@ -13,16 +13,6 @@ export type BattleOverlayViewModel = {
   outcomeMessage: string | null
 }
 
-export const BATTLE_STAGE_LABELS: Record<string, string> = {
-  ambush: 'Ambush?',
-  foil: 'Foil ambush?',
-  roll: 'Rolling…',
-  effectsOrder: 'Choose effects order',
-  effects: 'Battle card effect?',
-  removeDefender: 'Remove defender pieces',
-  removeAttacker: 'Remove attacker pieces',
-}
-
 export type BattleRole = 'attacker' | 'defender'
 
 /** The side removing its pieces right now; null outside the removal stages. */
@@ -62,28 +52,4 @@ export function countedNounText(count: number, noun: string): string {
 export function battleRemovalText(removal: BattleRemoval): string {
   const verb: string = BATTLE_REMOVAL_VERBS[removal.unit]
   return `${verb} ${countedNounText(removal.count, removal.unit)}`
-}
-
-export type BattleStrapInput = {
-  stage: string
-  attackerFaction: string
-  defenderFaction: string
-  hits: { attacker: number; defender: number }
-  removal: BattleRemoval | null
-}
-
-/**
- * One line under the battle: who removes how many pieces, otherwise what the
- * stage is waiting for.
- */
-export function battleStrapText(battle: BattleStrapInput): string {
-  const removingRole: BattleRole | null = battleRoleRemovingPieces(battle.stage)
-  if (removingRole === null || battle.removal === null) {
-    return BATTLE_STAGE_LABELS[battle.stage] ?? battle.stage
-  }
-  const faction: string =
-    removingRole === 'defender'
-      ? battle.defenderFaction
-      : battle.attackerFaction
-  return `${faction} — ${battleRemovalText(battle.removal)}`
 }

@@ -10,7 +10,6 @@ import {
 } from '#game/hudStore.ts'
 import { factionColorCss } from '#game/theme.ts'
 import {
-  battleStrapText,
   type BattleOverlayViewModel,
   type BattleRole,
 } from '#ui/BattleOverlay.ts'
@@ -58,9 +57,6 @@ const CLASH_MARK_CLASS_NAME =
 const HITS_ROW_CLASS_NAME = 'flex h-8 flex-row items-center gap-2 md:h-9'
 const HIT_CLASS_NAME =
   'root-paper root-medallion flex size-8 items-center justify-center text-lg text-parchment [--root-paper-color:var(--color-rust)] md:size-9 md:text-xl'
-const STRAP_CLASS_NAME =
-  'battle-overlay__prompt battle-overlay__headline root-paper m-0 -rotate-1 px-6 py-1.5 text-center font-display text-lg font-bold text-ink first-letter:uppercase md:text-2xl'
-const STRAP_FLASH_CLASS_NAME = '[--root-paper-color:var(--color-gold)]'
 /** Faction colour softened toward parchment so the head art stays readable. */
 const PORTRAIT_TINT_PERCENT = 55
 
@@ -85,8 +81,6 @@ export function BattleOverlay(): JSX.Element | null {
     return null
   }
   const isOutcomeFlash = viewModel.outcomeMessage !== null
-  // Result flash: dice and hit marks tell the outcome; no strap copy.
-  const strapText: string = isOutcomeFlash ? '' : battleStrapText(viewModel)
   const callbacks = getHudCallbacks()
   // Rule: 8.2.2 Guerrilla War — defending Alliance uses the higher die.
   const defenderUsesHigherDie =
@@ -140,17 +134,6 @@ export function BattleOverlay(): JSX.Element | null {
               }}
             />
           </div>
-          {strapText.length > 0 ? (
-            <p
-              className={
-                isOutcomeFlash
-                  ? `${STRAP_CLASS_NAME} ${STRAP_FLASH_CLASS_NAME}`
-                  : STRAP_CLASS_NAME
-              }
-            >
-              {strapText}
-            </p>
-          ) : null}
         </div>
       </div>
     </>
