@@ -192,8 +192,6 @@ export type HudCallbacks = {
  * Shared React HUD snapshot. Surfaces migrate here one-by-one;
  * Game controller writes; React HUD reads via useSyncExternalStore.
  */
-export type MapViewMode = 'flat' | '3d'
-
 export type HudState = {
   factionBoard: FactionBoardViewModel | null
   craftedCards: CraftedCardsModalContent | null
@@ -220,8 +218,6 @@ export type HudState = {
   shell: HudShell
   bootLoading: BootLoadingHudState
   menu: MenuHudState | null
-  /** The flat painted map, or the 3D scene. Kept for the page's lifetime. */
-  mapViewMode: MapViewMode
   /** The action dock folded down to its phase tab, off the map. */
   actionTrayCollapsed: boolean
 }
@@ -252,7 +248,6 @@ const INITIAL_HUD_STATE: HudState = {
   shell: 'boot',
   bootLoading: { progress: 0 },
   menu: null,
-  mapViewMode: '3d',
   actionTrayCollapsed: false,
 }
 
@@ -334,10 +329,9 @@ export function patchHud(partial: Partial<HudState>): void {
 }
 
 export function resetHud(): void {
-  // How the player likes to look at the game outlives one game.
+  // How the player likes the action tray outlives one game.
   hudState = {
     ...CLEARED_GAME_HUD_STATE,
-    mapViewMode: hudState.mapViewMode,
     actionTrayCollapsed: hudState.actionTrayCollapsed,
   }
   hudCallbacks = NOOP_CALLBACKS
