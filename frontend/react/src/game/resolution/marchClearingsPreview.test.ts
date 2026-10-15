@@ -74,6 +74,34 @@ describe('applyMarchMovesToClearings', () => {
     expect(after[1]?.pieces).toHaveLength(0)
   })
 
+  it('keeps ruins in every clearing while previewing a march', () => {
+    const before = makeClearings(
+      new Map([
+        [0, ['w1']],
+        [1, []],
+        [2, []],
+      ]),
+      3,
+    )
+    const ruinItems: string[] = ['bag', 'boots']
+    const clearingsWithRuins: ClearingPiecesSnapshot[] = before.map(
+      (clearing: ClearingPiecesSnapshot): ClearingPiecesSnapshot => ({
+        ...clearing,
+        ruin: { items: ruinItems },
+      }),
+    )
+
+    const after = applyMarchMovesToClearings(clearingsWithRuins, 0, [
+      { from: 0, to: 1, count: 1 },
+    ])
+
+    expect(after.map((clearing) => clearing.ruin?.items)).toEqual([
+      ruinItems,
+      ruinItems,
+      ruinItems,
+    ])
+  })
+
   it('copies used only for crafting buildings', () => {
     const before: ClearingPiecesSnapshot[] = [
       {

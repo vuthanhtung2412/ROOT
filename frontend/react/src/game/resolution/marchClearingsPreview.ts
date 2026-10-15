@@ -15,6 +15,8 @@ export type ClearingPieceSnapshot = {
 
 export type ClearingPiecesSnapshot = {
   pieces: ClearingPieceSnapshot[]
+  /** Unexplored ruin stays on the board while warriors march. */
+  ruin?: { items: string[] }
 }
 
 const CRAFTING_BUILDING_TYPES = new Set(['workshop', 'roost'])
@@ -31,6 +33,9 @@ function copyClearings(
   clearings: readonly ClearingPiecesSnapshot[],
 ): ClearingPiecesSnapshot[] {
   return clearings.map((clearing) => ({
+    ...(clearing.ruin === undefined
+      ? {}
+      : { ruin: { items: [...clearing.ruin.items] } }),
     pieces: clearing.pieces.map((piece) => {
       const copy: ClearingPieceSnapshot = {
         id: piece.id,
@@ -78,10 +83,10 @@ function applyOneMarchMove(
 
   return clearings.map((clearing, clearingId) => {
     if (clearingId === move.from) {
-      return { pieces: remaining }
+      return { ...clearing, pieces: remaining }
     }
     if (clearingId === move.to) {
-      return { pieces: [...clearing.pieces, ...moved] }
+      return { ...clearing, pieces: [...clearing.pieces, ...moved] }
     }
     return clearing
   })
