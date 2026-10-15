@@ -14,10 +14,8 @@ import {
   type AiPlayerApi,
 } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
-import {
-  MENU_BOOT_IMAGE_ASSETS,
-  WARM_GAME_IMAGE_ASSETS,
-} from '#assets/gameAssets.ts'
+import { gameImageAssetsForFactions } from '#assets/factionImageAssets.ts'
+import { MENU_BOOT_IMAGE_ASSETS } from '#assets/gameAssets.ts'
 import {
   getAiPlayerSnapshot,
   setAiModels,
@@ -96,9 +94,12 @@ async function prefetchMenuBootAssets(
   )
 }
 
-async function prefetchWarmGameAssets(): Promise<void> {
+/** Boards / tokens of the factions in play, plus shared game art. */
+async function prefetchGameAssetsForFactions(
+  factionIds: readonly string[],
+): Promise<void> {
   await prefetchImagePaths(
-    WARM_GAME_IMAGE_ASSETS.map((asset) => asset.path),
+    gameImageAssetsForFactions(factionIds).map((asset) => asset.path),
     null,
   )
 }
@@ -134,8 +135,6 @@ export function App(): JSX.Element {
   const resumeHotseatGameRef = useRef<() => Promise<void>>(() =>
     Promise.resolve(),
   )
-  /** Boards / tokens / map warming after the menu; enterGame waits on it. */
-  const warmGameAssetsPromiseRef = useRef<Promise<void> | null>(null)
 
   if (controllerRef.current === null) {
     controllerRef.current = new ReactGameController()
@@ -219,11 +218,10 @@ export function App(): JSX.Element {
   const enterGame = useCallback((): void => {
     void (async (): Promise<void> => {
       clearLobbyWait()
-      const warmGameAssets = warmGameAssetsPromiseRef.current
-      if (warmGameAssets !== null) {
-        await warmGameAssets
-      }
       const session = ensureSession()
+      await prefetchGameAssetsForFactions(
+        session.getSnapshot().state?.factions ?? [],
+      )
       void controller.start(session, () => {
         clearHotseatGameOpen()
         showMenu()
@@ -545,8 +543,6 @@ export function App(): JSX.Element {
       }
       clearBootLoading()
       showMenu()
-      // Boards / map / tokens: fetch while the player is on the menu.
-      warmGameAssetsPromiseRef.current = prefetchWarmGameAssets()
       // Reload in an online game: take the stored seat back.
       await resumeOnlineGameRef.current()
       // Reload in a hotseat / QA game (dev code edit): go straight back in.
