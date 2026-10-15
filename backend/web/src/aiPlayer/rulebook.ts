@@ -22,6 +22,8 @@ const QUERY_WORD_SEPARATOR = /[^a-z0-9]+/
 const MINIMUM_QUERY_WORD_LENGTH = 3
 /** A word in the heading says more than the same word in the body. */
 const TITLE_MATCH_WEIGHT = 5
+/** Back matter (index, credits, key references) only adds noise to lookups. */
+const BACK_MATTER_TITLE = 'Index'
 
 /** A whole faction chapter fits; keeps one lookup readable for the model. */
 export const SECTION_NUMBER_RESULT_LIMIT = 60
@@ -32,7 +34,7 @@ export function parseRulebook(markdown: string): RuleSection[] {
   let current: RuleSection | null = null
   let bodyLines: string[] = []
   const closeCurrent = (): void => {
-    if (current !== null) {
+    if (current !== null && current.title !== BACK_MATTER_TITLE) {
       sections.push({ ...current, text: bodyLines.join('\n').trim() })
     }
   }

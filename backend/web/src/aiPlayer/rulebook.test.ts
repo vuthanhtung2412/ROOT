@@ -31,6 +31,10 @@ The Eyrie must follow the Decree or fall into turmoil.
 ## Appendix G. Glossary
 
 Ambush: a card played by the defender.
+
+## Index
+
+Ambush cards, 2.1.2. Credits: the defender of ambush lore.
 `
 
 function createRulebookSections(): RuleSection[] {
@@ -55,6 +59,12 @@ describe('parseRulebook', () => {
       title: 'Appendix G. Glossary',
       text: 'Ambush: a card played by the defender.',
     })
+  })
+
+  it('drops the index and credits back matter', () => {
+    const sections = createRulebookSections()
+
+    expect(sectionTitles(sections)).not.toContain('Index')
   })
 })
 

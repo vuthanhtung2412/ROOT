@@ -79,8 +79,13 @@ describe('anthropic provider', () => {
     expect(body?.tools).toMatchObject([
       { name: 'show' },
       { name: 'actions' },
-      { name: 'log' },
       { name: 'rules' },
+      {
+        name: 'act',
+        input_schema: { type: 'object', required: ['action'] },
+      },
+      { name: 'actionChoices' },
+      { name: 'log' },
       { name: 'card' },
       { name: 'clearing' },
       { name: 'score' },
@@ -88,10 +93,6 @@ describe('anthropic provider', () => {
       { name: 'sympathy' },
       { name: 'decree' },
       { name: 'preview' },
-      {
-        name: 'act',
-        input_schema: { type: 'object', required: ['action'] },
-      },
     ])
     expect(body).not.toHaveProperty('tool_choice')
     expect(options?.signal).toBe(abortController.signal)

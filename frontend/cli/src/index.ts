@@ -6,6 +6,7 @@ import { cmdActions } from '#commands/actions.js'
 import { cmdAiRestart } from '#commands/aiRestart.js'
 import { cmdAiStream } from '#commands/aiStream.js'
 import { cmdAuto } from '#commands/auto.js'
+import { cmdExplain } from '#commands/explain.js'
 import { cmdJoin } from '#commands/join.js'
 import { cmdLoad } from '#commands/load.js'
 import { cmdLog } from '#commands/log.js'
@@ -44,6 +45,8 @@ commands:
   load <snapshot.json>
   show
   actions
+  explain
+    (legal action types in plain words: kind, rules, JSON Schema; no values)
   act '<json>'
   log
   rules <rule number | keywords>
@@ -106,6 +109,9 @@ async function main(): Promise<void> {
         break
       case 'actions':
         await cmdActions()
+        break
+      case 'explain':
+        await cmdExplain()
         break
       case 'act':
         if (!rest[0]) throw new Error('action json required')

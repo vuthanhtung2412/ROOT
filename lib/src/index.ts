@@ -37,7 +37,8 @@ export {
   type DecreeColumn,
 } from '#state/boards.js'
 
-export { describeActionShape } from '#actions/actionShape.js'
+export { actionJsonSchema, describeActionShape } from '#actions/actionShape.js'
+export { ACTION_GUIDE, type ActionGuideEntry } from '#actions/actionGuide.js'
 export type { LogEntry } from '#log/types.js'
 
 export type {

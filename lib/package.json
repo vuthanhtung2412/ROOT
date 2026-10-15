@@ -45,5 +45,8 @@
       "types": "./src/public/fallMetadata.ts",
       "default": "./src/public/fallMetadata.ts"
     }
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
   }
 }

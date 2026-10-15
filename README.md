@@ -48,6 +48,7 @@ Single game slot at `/game/...` (no game id):
 | GET | `/game/snapshot` | Full `GameSnapshot` (lossless JSON) |
 | PUT | `/game/snapshot?replace=1` | Load `GameSnapshot` into slot |
 | GET | `/game/actions` | Legal action specs |
+| GET | `/game/actions/explained` | Legal action types in plain words: kind, Law of Root rules, JSON Schema (no legal values) |
 | POST | `/game/actions` | Apply an `Action` |
 | GET | `/game/log` | Event log |
 | POST | `/game/undo` | Undo last action |
@@ -120,7 +121,7 @@ Server env (`backend/web`):
 A model whose provider has no key is not offered.
 
 - **Add one**: host's online lobby → *Add an AI player* (faction + model), or `POST /game/ai-players` `{ "faction": "eyrie", "model": "anthropic:claude-opus-5-5" }`. The model is fixed once the game starts (`PATCH /game/ai-players/{seat}` works in the lobby only).
-- **How it plays**: one session (one context window) per AI turn, dropped when the turn ends; a decision outside its turn (ambush, setup choice) gets a short session of its own. It waits 2 s after each action. Its tools are the `root-cli` commands: `show`, `actions`, `log`, `rules`, `act`, plus `card`, `clearing`, `score`, `preview` and one per faction (`decree`, `workshops`, `sympathy`).
+- **How it plays**: one session (one context window) per AI turn, dropped when the turn ends; a decision outside its turn (ambush, setup choice) gets a short session of its own. It waits 2 s after each action. Core tools: `show`, `actions` (kind, rules, JSON Schema per action type; `root-cli explain`), `rules`, `act`. Helpers: `actionChoices` (values on offer, for pending decisions; `root-cli actions`), `log`, `card`, `clearing`, `score`, `preview` and one per faction (`decree`, `workshops`, `sympathy`).
 - **Stuck** (provider error, refusal, tool-call limit): the seat shows a warning badge and the game waits. Restart its session:
 
 ```bash
@@ -143,6 +144,7 @@ pnpm --filter @root/cli start -- ai-stream --full   # long texts whole
 ```bash
 pnpm --filter @root/cli start -- --player-id bob show
 pnpm --filter @root/cli start -- --player-id bob actions
+pnpm --filter @root/cli start -- --player-id bob explain              # kind, rules, JSON Schema per action type
 pnpm --filter @root/cli start -- --player-id bob act '{"type":"endPhase"}'
 pnpm --filter @root/cli start -- rules 4.3          # or: rules ambush defender
 pnpm --filter @root/cli start -- --player-id bob card                 # hand: cost, text, craftable now

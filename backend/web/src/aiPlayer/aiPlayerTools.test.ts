@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Game } from '@root/lib'
 import {
   ACT_TOOL_NAME,
+  ACTION_CHOICES_TOOL_NAME,
   ACTIONS_TOOL_NAME,
   AI_PLAYER_TOOL_DEFINITIONS,
   LOG_TOOL_NAME,
@@ -15,6 +16,7 @@ import {
 import { listDescribedLegalActions } from '#aiPlayer/aiPlayerActionReport.js'
 import type { RuleSection } from '#aiPlayer/rulebook.js'
 import {
+  createPlayingTwoPlayerGame,
   createStartedTwoPlayerGame,
   FIRST_TEST_PLAYER_ID,
   KEEP_CORNER_ACTION,
@@ -23,6 +25,7 @@ import {
 import { listPlayerLegalActions } from '#view/playerView.js'
 
 const RULEBOOK_FIXTURE: RuleSection[] = [
+  { sectionNumber: '4.2', title: 'Move.', text: 'Move from a clearing you rule.' },
   { sectionNumber: '4.3', title: 'Battle', text: 'Roll two dice.' },
 ]
 
@@ -39,12 +42,12 @@ function createToolContext(
 }
 
 describe('AI player tools', () => {
-  it('offers the root-cli command names with an object input schema', () => {
+  it('offers the core tools first, then the helpers, each with an object input schema', () => {
     expect(
       AI_PLAYER_TOOL_DEFINITIONS.map(
         (definition: AiPlayerToolDefinition): string => definition.name,
       ),
-    ).toEqual(['show', 'actions', 'log', 'rules', 'card', 'clearing', 'score', 'workshops', 'sympathy', 'decree', 'preview', 'act'])
+    ).toEqual(['show', 'actions', 'rules', 'act', 'actionChoices', 'log', 'card', 'clearing', 'score', 'workshops', 'sympathy', 'decree', 'preview'])
     for (const definition of AI_PLAYER_TOOL_DEFINITIONS) {
       expect(definition.inputJsonSchema.type).toBe('object')
     }
@@ -68,8 +71,26 @@ describe('AI player tools', () => {
     expect(result.content).toContain('paths (clearing-clearing):')
   })
 
-  it('actions: only the actions of the own seat', () => {
+  it('actionChoices: only the actions of the own seat', () => {
     const game = createStartedTwoPlayerGame()
+
+    const waiting = runAiPlayerTool(
+      createToolContext(game, SECOND_TEST_PLAYER_ID),
+      { name: ACTION_CHOICES_TOOL_NAME, input: {} },
+    )
+    const acting = runAiPlayerTool(
+      createToolContext(game, FIRST_TEST_PLAYER_ID),
+      { name: ACTION_CHOICES_TOOL_NAME, input: {} },
+    )
+
+    expect(JSON.parse(waiting.content)).toEqual([])
+    expect(JSON.parse(acting.content)).toMatchObject([
+      { type: 'resolveEvent', actor: 0 },
+    ])
+  })
+
+  it('actions: the own action types with kind, rules and schema, no values', () => {
+    const game = createPlayingTwoPlayerGame()
 
     const waiting = runAiPlayerTool(
       createToolContext(game, SECOND_TEST_PLAYER_ID),
@@ -81,9 +102,14 @@ describe('AI player tools', () => {
     )
 
     expect(JSON.parse(waiting.content)).toEqual([])
-    expect(JSON.parse(acting.content)).toMatchObject([
-      { type: 'resolveEvent', actor: 0 },
-    ])
+    expect(JSON.parse(acting.content)).toContainEqual({
+      type: 'march',
+      actor: 0,
+      kind: 'March',
+      rules: [{ section: '4.2', title: 'Move' }],
+      schema: expect.objectContaining({ required: ['type', 'moves'] }),
+    })
+    expect(acting.content).not.toContain('"params"')
   })
 
   it('log: no join id of any seat, newest lines only', () => {

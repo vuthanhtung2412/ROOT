@@ -85,8 +85,15 @@ describe('openai provider', () => {
     expect(body?.tools).toMatchObject([
       { type: 'function', name: 'show' },
       { type: 'function', name: 'actions' },
-      { type: 'function', name: 'log' },
       { type: 'function', name: 'rules' },
+      {
+        type: 'function',
+        name: 'act',
+        strict: false,
+        parameters: { type: 'object', required: ['action'] },
+      },
+      { type: 'function', name: 'actionChoices' },
+      { type: 'function', name: 'log' },
       { type: 'function', name: 'card' },
       { type: 'function', name: 'clearing' },
       { type: 'function', name: 'score' },
@@ -94,12 +101,6 @@ describe('openai provider', () => {
       { type: 'function', name: 'sympathy' },
       { type: 'function', name: 'decree' },
       { type: 'function', name: 'preview' },
-      {
-        type: 'function',
-        name: 'act',
-        strict: false,
-        parameters: { type: 'object', required: ['action'] },
-      },
     ])
     expect(options?.signal).toBe(abortController.signal)
   })

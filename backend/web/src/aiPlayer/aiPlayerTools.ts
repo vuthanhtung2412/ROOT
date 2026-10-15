@@ -21,6 +21,7 @@ import { formatRuleLookup } from '#aiPlayer/rulebook.js'
 import { logGameEvent } from '#debug/logGame.js'
 import { isAction } from '#typeGuards.js'
 import { mayPlayerSendAction } from '#view/actionSeatGuard.js'
+import { explainLegalActions } from '#view/explainLegalActions.js'
 import { formatPlayerGameView, formatPlayerLog } from '#view/playerView.js'
 
 export type {
@@ -53,7 +54,10 @@ export function isJsonValue(value: unknown): value is JsonValue {
   return typeof value === 'object' && Object.values(value).every(isJsonValue)
 }
 
-/** What a model is told about one tool. Same names as `root-cli` commands. */
+/**
+ * What a model is told about one tool. Mostly the `root-cli` command names;
+ * core tools first (show, actions, rules, act), helpers after.
+ */
 export type AiPlayerToolDefinition = {
   name: string
   description: string
@@ -71,7 +75,10 @@ type AiPlayerTool = {
 }
 
 export const SHOW_TOOL_NAME = 'show'
+/** Core: the action types of the seat with rules and schema (`root-cli explain`). */
 export const ACTIONS_TOOL_NAME = 'actions'
+/** Helper: the legal actions with their values on offer (`root-cli actions`). */
+export const ACTION_CHOICES_TOOL_NAME = 'actionChoices'
 export const LOG_TOOL_NAME = 'log'
 export const RULES_TOOL_NAME = 'rules'
 export const ACT_TOOL_NAME = 'act'
@@ -125,7 +132,7 @@ function runCard(
   }
   if (lookup.unknownCardIds.length > 0) {
     return fail(
-      `No face-up card with id ${lookup.unknownCardIds.join(', ')}. Card ids are in "${SHOW_TOOL_NAME}" and "${ACTIONS_TOOL_NAME}".`,
+      `No face-up card with id ${lookup.unknownCardIds.join(', ')}. Card ids are in "${SHOW_TOOL_NAME}" and "${ACTION_CHOICES_TOOL_NAME}".`,
     )
   }
   return succeed(formatJson(lookup.cards))
@@ -303,7 +310,45 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
     definition: {
       name: ACTIONS_TOOL_NAME,
       description:
-        'The actions your seat may take right now. Each has a "type", "params" and a "shape"; every param lists the values you may choose from, and "shape" is the exact action to pass to "act" (a param named "cardIds" often fills a field named "cardId"). An empty list means you are waiting for another player.',
+        'The action types your seat may take right now: "type", "kind" (its name), "rules" (Law of Root sections to read with "rules") and "schema" (JSON Schema of the action to pass to "act"). It lists no values: choose them from the board and your hand. An empty list means you are waiting for another player.',
+      inputJsonSchema: z.toJSONSchema(EmptyInputSchema),
+    },
+    run: (context) =>
+      succeed(
+        formatJson(
+          explainLegalActions(context.game, context.playerId, context.rulebook),
+        ),
+      ),
+  },
+  {
+    definition: {
+      name: RULES_TOOL_NAME,
+      description:
+        'Look up the Law of Root, the official rules: a section number from "actions" or keywords. Use it before an action whose rules you are unsure about.',
+      inputJsonSchema: z.toJSONSchema(RulesInputSchema),
+    },
+    run: (context, input) => {
+      const parsed = RulesInputSchema.safeParse(input)
+      if (!parsed.success) {
+        return fail('Bad input: pass {"query": "<rule number or keywords>"}.')
+      }
+      return succeed(formatRuleLookup(context.rulebook, parsed.data.query))
+    },
+  },
+  {
+    definition: {
+      name: ACT_TOOL_NAME,
+      description:
+        'Take one action as your seat, built from its schema in "actions". The result holds what the action caused ("log"), the phase, and "legalActions": what you may do next, so there is no need to call "actions" after it. A rule error is returned without changing the game, so you can correct the action and try again.',
+      inputJsonSchema: z.toJSONSchema(ActInputSchema),
+    },
+    run: runAct,
+  },
+  {
+    definition: {
+      name: ACTION_CHOICES_TOOL_NAME,
+      description:
+        'Helper. The legal actions with the values on offer. Each has a "type", "params" and a "shape"; every param lists the values you may choose from, and "shape" is the exact action to pass to "act" (a param named "cardIds" often fills a field named "cardId"). Use it to answer a pending decision ("resolveEvent") or when "act" keeps rejecting an action.',
       inputJsonSchema: z.toJSONSchema(EmptyInputSchema),
     },
     run: (context) =>
@@ -330,21 +375,6 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
           parsed.data.limit ?? DEFAULT_LOG_ENTRY_LIMIT,
         ),
       )
-    },
-  },
-  {
-    definition: {
-      name: RULES_TOOL_NAME,
-      description:
-        'Look up the Law of Root, the official rules. Use it before an action whose rules you are unsure about.',
-      inputJsonSchema: z.toJSONSchema(RulesInputSchema),
-    },
-    run: (context, input) => {
-      const parsed = RulesInputSchema.safeParse(input)
-      if (!parsed.success) {
-        return fail('Bad input: pass {"query": "<rule number or keywords>"}.')
-      }
-      return succeed(formatRuleLookup(context.rulebook, parsed.data.query))
     },
   },
   {
@@ -432,15 +462,6 @@ const AI_PLAYER_TOOLS: readonly AiPlayerTool[] = [
       inputJsonSchema: z.toJSONSchema(ActInputSchema),
     },
     run: runPreview,
-  },
-  {
-    definition: {
-      name: ACT_TOOL_NAME,
-      description:
-        'Take one action as your seat. It must come from the current legal actions. The result holds what the action caused ("log"), the phase, and "legalActions": what you may do next, so there is no need to call "actions" after it. A rule error is returned without changing the game, so you can correct the action and try again.',
-      inputJsonSchema: z.toJSONSchema(ActInputSchema),
-    },
-    run: runAct,
   },
 ]
 
