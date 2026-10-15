@@ -79,7 +79,7 @@ export function publishGameChange(): void {
  * Seat-scoped calls see and do only what the caller's seat may. Always in
  * online mode; in hotseat only when the caller asks for the player view.
  */
-function isSeatScoped(view: string | undefined): boolean {
+export function isSeatScoped(view: string | undefined): boolean {
   return store.mode === 'online' || view === PLAYER_VIEW
 }
 

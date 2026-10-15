@@ -5,6 +5,7 @@ import { LIB_NAME, LIB_VERSION } from '@root/lib'
 import { corsMiddleware } from '#middleware/cors.js'
 import { onError } from '#middleware/errors.js'
 import { aiPlayerRoutes } from '#routes/aiPlayer.js'
+import { explainedActionRoutes } from '#routes/explainedActions.js'
 import { gameRoutes } from '#routes/game.js'
 import { lobbyPlayerRoutes } from '#routes/lobbyPlayer.js'
 import { mapRoutes } from '#routes/map.js'
@@ -69,6 +70,7 @@ app.openapi(healthRoute, (context) => {
 })
 
 app.route('/game', gameRoutes)
+app.route('/game', explainedActionRoutes)
 app.route('/game', aiPlayerRoutes)
 app.route('/game', lobbyPlayerRoutes)
 app.route('/game', rulesRoutes)

@@ -90,6 +90,33 @@ export const LegalActionsResponseSchema = z
   })
   .openapi('LegalActionsResponse')
 
+export const ExplainedRuleSchema = z
+  .object({
+    section: z.string(),
+    title: z.string(),
+  })
+  .openapi('ExplainedRule')
+
+export const ExplainedActionSchema = z
+  .object({
+    type: z.string(),
+    actor: z.number().int().min(0).max(3),
+    kind: z.string().openapi({ description: 'Plain name, e.g. "March".' }),
+    rules: z.array(ExplainedRuleSchema).openapi({
+      description: 'Law of Root rules that cover this action, most specific first.',
+    }),
+    schema: JsonObjectSchema.nullable().openapi({
+      description: 'JSON Schema of the action to send to POST /game/actions.',
+    }),
+  })
+  .openapi('ExplainedAction')
+
+export const ExplainedActionsResponseSchema = z
+  .object({
+    actions: z.array(ExplainedActionSchema),
+  })
+  .openapi('ExplainedActionsResponse')
+
 export const LogResponseSchema = z
   .object({
     log: z.array(LogEntrySchema),
