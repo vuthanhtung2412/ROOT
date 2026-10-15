@@ -129,3 +129,21 @@ export function assertActionShape(action: Action): void {
     action,
   })
 }
+
+/**
+ * The JSON Schema of an action of `type`, for a client that builds the action
+ * itself. Null for a type the game does not know.
+ *
+ * Kept short for a model to read: no `$schema` dialect, and no
+ * `additionalProperties` (input schemas leave it out; extra fields are ignored).
+ */
+export function actionJsonSchema(
+  type: string,
+): z.core.JSONSchema.JSONSchema | null {
+  if (!isActionType(type)) {
+    return null
+  }
+  const { $schema: _dialect, ...schema }: z.core.JSONSchema.JSONSchema =
+    z.toJSONSchema(actionSchema(type), { io: 'input' })
+  return schema
+}

@@ -22,13 +22,22 @@ const TEXT = z.string()
 const NUMBER = z.number()
 const FLAG = z.boolean()
 
+const FEWEST_WARRIORS_MOVED = 1
+/** Marquise and Lizard Cult: no faction has more warriors than this. */
+const MOST_WARRIORS_OF_ANY_FACTION = 25
+/** Warriors moved at once: a whole number, never zero. */
+const WARRIOR_COUNT = z
+  .int()
+  .min(FEWEST_WARRIORS_MOVED)
+  .max(MOST_WARRIORS_OF_ANY_FACTION)
+
 /** Null counts as the field left out, as JSON clients often send it. */
 function optional(value: z.ZodType): ActionFieldSchema {
   return value.nullish()
 }
 
 const MARCH_MOVES = z.array(
-  z.object({ from: NUMBER, to: NUMBER, count: NUMBER }),
+  z.object({ from: NUMBER, to: NUMBER, count: WARRIOR_COUNT }),
 )
 const DECREE_CARDS = z.array(z.object({ cardId: TEXT, column: TEXT }))
 const VAGABOND_ITEMS = z.array(
@@ -46,7 +55,11 @@ const CLEARING_AND_SUPPORTERS = {
   supporterIds: z.array(TEXT),
 } as const
 const CARD_AND_CLEARING = { cardId: TEXT, clearing: NUMBER } as const
-const MOVE_OF_WARRIORS = { from: NUMBER, to: NUMBER, count: NUMBER } as const
+const MOVE_OF_WARRIORS = {
+  from: NUMBER,
+  to: NUMBER,
+  count: WARRIOR_COUNT,
+} as const
 const SERVICE_COSTS = {
   handCard: NUMBER,
   riverboats: NUMBER,
@@ -97,7 +110,7 @@ export const ACTION_FIELD_SCHEMAS: ActionFieldSchemaTable = {
     op: TEXT,
     from: optional(NUMBER),
     to: optional(NUMBER),
-    count: optional(NUMBER),
+    count: optional(WARRIOR_COUNT),
     clearing: optional(NUMBER),
     defender: optional(NUMBER),
   },
