@@ -1,4 +1,5 @@
 import {
+  Group,
   PCFSoftShadowMap,
   PointLight,
   Scene,
@@ -23,7 +24,11 @@ import {
   type GroundMarkers,
 } from '#game/map3d/groundMarkers.ts'
 import { createMapCameraRig, type MapCameraRig } from '#game/map3d/mapCamera.ts'
-import type { MapModels, PieceModels } from '#game/map3d/mapModels.ts'
+import type {
+  MapModels,
+  MountainModels,
+  PieceModels,
+} from '#game/map3d/mapModels.ts'
 import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type {
   MapGroundPoint,
@@ -80,6 +85,8 @@ export type MapScene = {
   setPieces: (pieces: readonly MapPiece[]) => void
   /** The 3D models of the pieces arrived, after the woodland was up. */
   setPieceModels: (pieceModels: PieceModels) => void
+  /** The mountain models arrived, after the woodland was up. */
+  setMountainModels: (mountainModels: MountainModels) => void
   /** The pieces with these keys were just built: play them going up. */
   playBuild: (pieceKeys: readonly string[]) => void
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
@@ -144,17 +151,14 @@ export function createMapScene(input: MapSceneInput): MapScene {
     timeOfDay: input.timeOfDay,
   })
   const treeSightlines: TreeSightlines = createTreeSightlines()
-  const mountainPlacements: MountainPlacement[] = placeMountains(
-    input.terrain,
-    MOUNTAIN_SEED,
-    input.models.mountains.length,
-  )
+  /** Empty until the mountain models are loaded. */
+  const mountainLayer: Group = new Group()
   scene.add(
     campfires.group,
     ...daylight.lights,
     createGround(input.terrain),
     riverFlow.mesh,
-    createMountainMeshes(mountainPlacements, input.models.mountains),
+    mountainLayer,
     createTreeMeshes(
       placeTrees(input.terrain, TREE_SEED),
       input.models.trees,
@@ -287,6 +291,18 @@ export function createMapScene(input: MapSceneInput): MapScene {
     },
     setPieceModels: (pieceModels: PieceModels): void => {
       pieceLayer.setPieceModels(pieceModels)
+      shadowsAreStale = true
+      warmUpShaders()
+    },
+    setMountainModels: (mountainModels: MountainModels): void => {
+      const mountainPlacements: MountainPlacement[] = placeMountains(
+        input.terrain,
+        MOUNTAIN_SEED,
+        mountainModels.length,
+      )
+      disposeObjectTree(mountainLayer)
+      mountainLayer.clear()
+      mountainLayer.add(createMountainMeshes(mountainPlacements, mountainModels))
       shadowsAreStale = true
       warmUpShaders()
     },
