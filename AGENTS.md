@@ -9,7 +9,6 @@
 - Stay close to the commit plan in PLAN.md and if something need tweak stop and ask user.
 - All unit tests should use fixture factory or mock of any kind.
 - No abbreviation in the code, please use explicit naming so that it is easy to review. explicitness > verbosity
-- When the user corrects a recurring mistake, or says remember / self-improve / update agents or skills: follow `.cursor/skills/self-improve/SKILL.md` and persist the lesson (skill and/or this file), minimal text only. 
 
 - Function should have less than 5 params. If they are to big create a broader scope interface
 
