@@ -48,6 +48,7 @@ Single game slot at `/game/...` (no game id):
 | GET | `/game/snapshot` | Full `GameSnapshot` (lossless JSON) |
 | PUT | `/game/snapshot?replace=1` | Load `GameSnapshot` into slot |
 | GET | `/game/actions` | Legal action specs |
+| GET | `/game/actions/explained` | Legal action types in plain words: kind, Law of Root rules, JSON Schema (no legal values) |
 | POST | `/game/actions` | Apply an `Action` |
 | GET | `/game/log` | Event log |
 | POST | `/game/undo` | Undo last action |
@@ -143,6 +144,7 @@ pnpm --filter @root/cli start -- ai-stream --full   # long texts whole
 ```bash
 pnpm --filter @root/cli start -- --player-id bob show
 pnpm --filter @root/cli start -- --player-id bob actions
+pnpm --filter @root/cli start -- --player-id bob explain              # kind, rules, JSON Schema per action type
 pnpm --filter @root/cli start -- --player-id bob act '{"type":"endPhase"}'
 pnpm --filter @root/cli start -- rules 4.3          # or: rules ambush defender
 pnpm --filter @root/cli start -- --player-id bob card                 # hand: cost, text, craftable now
