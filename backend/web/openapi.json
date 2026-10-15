@@ -338,6 +338,77 @@
           "state"
         ]
       },
+      "ExplainedActionsResponse": {
+        "type": "object",
+        "properties": {
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExplainedAction"
+            }
+          }
+        },
+        "required": [
+          "actions"
+        ]
+      },
+      "ExplainedAction": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "kind": {
+            "type": "string",
+            "description": "Plain name, e.g. \"March\"."
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExplainedRule"
+            },
+            "description": "Law of Root rules that cover this action, most specific first."
+          },
+          "schema": {
+            "$ref": "#/components/schemas/JsonObject"
+          }
+        },
+        "required": [
+          "type",
+          "actor",
+          "kind",
+          "rules",
+          "schema"
+        ]
+      },
+      "ExplainedRule": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "section",
+          "title"
+        ]
+      },
+      "JsonObject": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": {
+          "nullable": true
+        },
+        "description": "JSON Schema of the action to send to POST /game/actions."
+      },
       "AiModelsResponse": {
         "type": "object",
         "properties": {
@@ -476,12 +547,6 @@
           "content",
           "isError"
         ]
-      },
-      "JsonObject": {
-        "type": "object",
-        "additionalProperties": {
-          "nullable": true
-        }
       },
       "FallMapResponse": {
         "type": "object",
@@ -1443,6 +1508,72 @@
               "text/plain": {
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/actions/explained": {
+      "get": {
+        "tags": [
+          "game"
+        ],
+        "summary": "List legal actions in plain words",
+        "description": "Each legal action type with its plain name, the Law of Root rules that cover it and its JSON Schema. No legal values: build the action from the rules and the board.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "player"
+              ],
+              "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped."
+            },
+            "required": false,
+            "description": "player = seat-scoped call: other hands hidden, only the seat of the X-Player-Id caller may act. Online games are always seat-scoped.",
+            "name": "view",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Explained legal actions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainedActionsResponse"
                 }
               }
             }

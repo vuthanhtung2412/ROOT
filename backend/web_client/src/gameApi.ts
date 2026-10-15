@@ -10,6 +10,10 @@ type ErrorBody = components['schemas']['ErrorBody']
 export type FactionId = components['schemas']['FactionId']
 export type ApiAction = components['schemas']['Action']
 export type ActionSpec = components['schemas']['ActionSpec']
+/** A legal action type in plain words: kind, Law of Root rules, JSON Schema. */
+export type ExplainedAction = components['schemas']['ExplainedAction']
+export type ExplainedActionsResponse =
+  components['schemas']['ExplainedActionsResponse']
 export type GameSnapshot = components['schemas']['GameSnapshot']
 export type FallLayout = components['schemas']['FallLayoutResponse']
 /** A seat played by an LLM: seat, `<provider>:<modelId>`, live status. */
@@ -132,6 +136,8 @@ export type GameApi = {
   getSnapshot: () => Promise<GameSnapshot>
   loadSnapshot: (snapshot: unknown, replace?: boolean) => Promise<{ state: GameState }>
   legalActions: () => Promise<LegalActionsResponse>
+  /** Legal action types with kind, rules and JSON Schema; no legal values. */
+  explainedActions: () => Promise<ExplainedActionsResponse>
   submitAction: (action: unknown) => Promise<ActionResult>
   gameLog: () => Promise<{ log: unknown[] }>
   formattedGameLog: () => Promise<string>
@@ -415,6 +421,14 @@ export function createGameApi(
     async legalActions(): Promise<LegalActionsResponse> {
       return requireData(
         await client.GET('/game/actions', { params: { query: viewQuery } }),
+      )
+    },
+
+    async explainedActions(): Promise<ExplainedActionsResponse> {
+      return requireData(
+        await client.GET('/game/actions/explained', {
+          params: { query: viewQuery },
+        }),
       )
     },
 
