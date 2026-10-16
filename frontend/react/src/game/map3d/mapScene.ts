@@ -17,6 +17,7 @@ import {
   type DaylightRig,
   type TimeOfDay,
 } from '#game/map3d/daylight.ts'
+import { createEdgeMist } from '#game/map3d/edgeMist.ts'
 import {
   createGroundMarkers,
   type ClearingRingStyle,
@@ -157,6 +158,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     campfires.group,
     ...daylight.lights,
     createGround(input.terrain),
+    createEdgeMist(input.terrain, daylight.backdrop),
     riverFlow.mesh,
     mountainLayer,
     createTreeMeshes(
