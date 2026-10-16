@@ -23,8 +23,13 @@ export function usePieceModels(
     [pieces],
   )
   const [pieceModels, setPieceModels] = useState<PieceModels | null>(null)
+  // Downloaded once the woodland is up, so they do not hold it back.
+  const sceneIsUp: boolean = scene !== null
 
   useEffect(() => {
+    if (!sceneIsUp) {
+      return undefined
+    }
     let cancelled = false
     void loadPieceModels(textureKeys.split(TEXTURE_KEY_SEPARATOR)).then(
       (loaded: PieceModels): void => {
@@ -36,7 +41,7 @@ export function usePieceModels(
     return (): void => {
       cancelled = true
     }
-  }, [textureKeys])
+  }, [sceneIsUp, textureKeys])
 
   useEffect(() => {
     if (pieceModels !== null) {

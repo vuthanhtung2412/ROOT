@@ -8,7 +8,12 @@ import {
 import type { CampfireSite } from '#game/map3d/campfires.ts'
 import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import type { ForestGround } from '#game/map3d/groundMarkers.ts'
-import { loadMapModels, type MapModels } from '#game/map3d/mapModels.ts'
+import {
+  loadMapModels,
+  loadMountainModels,
+  type MapModels,
+  type MountainModels,
+} from '#game/map3d/mapModels.ts'
 import { createMapScene, type MapScene } from '#game/map3d/mapScene.ts'
 import {
   createMapTerrain,
@@ -152,6 +157,22 @@ export function useMapScene(
     }
     // A new frame only rebuilds the scene through `terrain`.
   }, [canvasReference, forestGrounds, models, terrain])
+
+  // The game is played without the mountains: they join once downloaded.
+  useEffect(() => {
+    if (scene === null) {
+      return undefined
+    }
+    let cancelled = false
+    void loadMountainModels().then((loaded: MountainModels): void => {
+      if (!cancelled) {
+        scene.setMountainModels(loaded)
+      }
+    })
+    return (): void => {
+      cancelled = true
+    }
+  }, [scene])
 
   useEffect(() => {
     scene?.resize(frame)
