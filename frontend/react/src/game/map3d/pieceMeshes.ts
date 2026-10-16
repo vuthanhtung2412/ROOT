@@ -1,22 +1,27 @@
 import {
   Box3,
-  CanvasTexture,
   Group,
   MathUtils,
   MeshStandardMaterial,
   Object3D,
   Sprite,
   SpriteMaterial,
-  SRGBColorSpace,
   Vector3,
+  type Intersection,
   type Material,
+  type Raycaster,
 } from 'three'
 import {
   createBuildAnimations,
   type BuildAnimations,
   type BuildSite,
 } from '#game/map3d/buildAnimation.ts'
-import { createIconTexture } from '#game/map3d/iconTexture.ts'
+import {
+  colorToCss,
+  createBadgeTexture,
+  createIconTexture,
+} from '#game/map3d/iconTexture.ts'
+import { isLabelShown } from '#game/map3d/labelVisibility.ts'
 import type { PieceModel, PieceModels } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import {
@@ -36,7 +41,8 @@ import {
  * - its 3D model: a structure for a building, or one wooden meeple per
  *   warrior in the stack, packed tight on the ground.
  * Zoomed out, only the icons show, large, like on the flat map. Zooming in,
- * the models rise and the icons shrink to small labels above them.
+ * the models rise and the icons shrink to small labels above them; zoomed
+ * in all the way, an icon shows only while the pointer is over its piece.
  * An empty building slot is a drawing on the ground, at every zoom.
  */
 export type MapPieceShape = 'slot' | 'piece'
@@ -68,6 +74,8 @@ export type PieceLayer = {
   setTorchesShown: (shown: boolean) => void
   /** 0 = zoomed all the way out, 1 = all the way in. Call once per frame. */
   setZoom: (zoom: number) => void
+  /** The pointer's ray, or null off the map: zoomed in, it shows an icon. */
+  hoverAt: (raycaster: Raycaster | null) => void
   /** The pieces with these keys were just built: play them going up. */
   playBuild: (pieceKeys: readonly string[]) => void
   /** Call once per frame. */
@@ -79,6 +87,7 @@ export type PieceLayer = {
 
 /** A piece on the map and the parts that change with the zoom. */
 type PieceView = {
+  pieceKey: string
   ground: MapGroundPoint
   label: Group
   model: Object3D | null
@@ -129,56 +138,6 @@ const BADGE_RENDER_ORDER = 10
 const BADGE_RELATIVE_SIZE = 0.5
 const BADGE_SPRITE_CENTER = -0.3
 
-const BADGE_TEXTURE_SIZE_PIXELS = 96
-const BADGE_BORDER_WIDTH_PIXELS = 7
-const BADGE_BORDER_COLOR = '#f0e6d3'
-const BADGE_TEXT_COLOR = '#ffffff'
-const BADGE_FONT = 'bold 58px Georgia, serif'
-const BADGE_TEXT_BASELINE_NUDGE_PIXELS = 4
-const HALF = 0.5
-const FULL_TURN_RADIANS = Math.PI * 2
-const HEX_RADIX = 16
-const HEX_COLOR_DIGIT_COUNT = 6
-
-function colorToCss(color: number): string {
-  return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
-}
-
-function createBadgeTexture(count: number, color: number): CanvasTexture {
-  const canvas: HTMLCanvasElement = document.createElement('canvas')
-  canvas.width = BADGE_TEXTURE_SIZE_PIXELS
-  canvas.height = BADGE_TEXTURE_SIZE_PIXELS
-  const context: CanvasRenderingContext2D | null = canvas.getContext('2d')
-  if (context !== null) {
-    const center: number = BADGE_TEXTURE_SIZE_PIXELS * HALF
-    context.beginPath()
-    context.arc(
-      center,
-      center,
-      center - BADGE_BORDER_WIDTH_PIXELS,
-      0,
-      FULL_TURN_RADIANS,
-    )
-    context.fillStyle = colorToCss(color)
-    context.fill()
-    context.lineWidth = BADGE_BORDER_WIDTH_PIXELS
-    context.strokeStyle = BADGE_BORDER_COLOR
-    context.stroke()
-    context.font = BADGE_FONT
-    context.textAlign = 'center'
-    context.textBaseline = 'middle'
-    context.fillStyle = BADGE_TEXT_COLOR
-    context.fillText(
-      String(count),
-      center,
-      center + BADGE_TEXT_BASELINE_NUDGE_PIXELS,
-    )
-  }
-  const texture: CanvasTexture = new CanvasTexture(canvas)
-  texture.colorSpace = SRGBColorSpace
-  return texture
-}
-
 export function createPieceLayer(): PieceLayer {
   const group: Group = new Group()
   /** Empty until they are loaded: a piece is only its icon until then. */
@@ -205,6 +164,7 @@ export function createPieceLayer(): PieceLayer {
   /** How much of their full size the models show at the current zoom. */
   let currentGrowth = 0
   let torchesShown = false
+  let hoveredPieceKey: string | null = null
 
   const iconMaterial = (piece: MapPiece): SpriteMaterial => {
     const roundedCorners: boolean = piece.isBuilding === true
@@ -348,6 +308,10 @@ export function createPieceLayer(): PieceLayer {
     currentGrowth = growth
     for (const view of views) {
       view.label.scale.setScalar(labelSize(view))
+      view.label.visible = isLabelShown({
+        zoom: currentZoom,
+        isHovered: view.pieceKey === hoveredPieceKey,
+      })
       if (view.model === null) {
         view.label.position.y = LABEL_FAR_HEIGHT
         continue
@@ -360,6 +324,23 @@ export function createPieceLayer(): PieceLayer {
         growth,
       )
     }
+  }
+
+  /** The nearest piece the ray hits: its model, or its icon if it has none. */
+  const pieceKeyAt = (raycaster: Raycaster): string | null => {
+    let nearestKey: string | null = null
+    let nearestDistance: number = Infinity
+    for (const view of views) {
+      const hits: Intersection[] = raycaster.intersectObject(
+        view.model ?? view.label,
+      )
+      const distance: number = hits[0]?.distance ?? Infinity
+      if (distance < nearestDistance) {
+        nearestDistance = distance
+        nearestKey = view.pieceKey
+      }
+    }
+    return nearestKey
   }
 
   /** The torch a pawn holds is a part of its model: show or hide them all. */
@@ -407,6 +388,7 @@ export function createPieceLayer(): PieceLayer {
         piece,
         holder,
         view: {
+          pieceKey: piece.key,
           ground: piece.ground,
           label,
           model: null,
@@ -422,6 +404,7 @@ export function createPieceLayer(): PieceLayer {
       piece,
       holder,
       view: {
+        pieceKey: piece.key,
         ground: piece.ground,
         label,
         model: created.model,
@@ -476,6 +459,15 @@ export function createPieceLayer(): PieceLayer {
         return
       }
       currentZoom = zoom
+      applyZoom()
+    },
+    hoverAt: (raycaster: Raycaster | null): void => {
+      const pieceKey: string | null =
+        raycaster === null ? null : pieceKeyAt(raycaster)
+      if (pieceKey === hoveredPieceKey) {
+        return
+      }
+      hoveredPieceKey = pieceKey
       applyZoom()
     },
     playBuild: buildAnimations.play,

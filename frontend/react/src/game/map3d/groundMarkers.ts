@@ -2,11 +2,14 @@ import {
   CanvasTexture,
   Group,
   MathUtils,
+  Plane,
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
   Texture,
   TextureLoader,
+  Vector3,
+  type Raycaster,
 } from 'three'
 import {
   createClearingMarks,
@@ -20,6 +23,7 @@ import {
 import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import { createForestMarks, type ForestMarks } from '#game/map3d/forestMarks.ts'
 import type { ForestGround } from '#game/map3d/forestOutline.ts'
+import { isLabelShown } from '#game/map3d/labelVisibility.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
 
 export type { ClearingRingStyle } from '#game/map3d/clearingMarks.ts'
@@ -50,7 +54,12 @@ export type GroundMarkers = {
   update: (elapsedSeconds: number) => void
   /** 0 = zoomed all the way out, 1 = all the way in: sizes the suit badges. */
   setZoom: (zoom: number) => void
+  /** The pointer's ray, or null off the map: zoomed in, it shows a suit. */
+  hoverAt: (raycaster: Raycaster | null) => void
 }
+
+/** The ground the clearings lie on. */
+const GROUND_PLANE: Plane = new Plane(new Vector3(0, 1, 0), 0)
 
 /** Under the full sun no mark glows; at dawn and after dark they all do. */
 const GLOW_LEVEL_BY_TIME_OF_DAY: Readonly<Record<TimeOfDay, number>> = {
@@ -139,7 +148,7 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
   const group: Group = new Group()
   const textureLoader: TextureLoader = new TextureLoader()
   const suitChipTexture: CanvasTexture = createSuitChipTexture()
-  const suitBadges: Group[] = []
+  const suitBadges: Map<number, Group> = new Map<number, Group>()
   for (const clearing of clearings) {
     const suitTexturePath: string | undefined = input.suitTexturePaths.get(
       clearing.clearingId,
@@ -152,7 +161,7 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
         chip: suitChipTexture,
       })
       badge.scale.setScalar(SUIT_BADGE_FAR_SIZE)
-      suitBadges.push(badge)
+      suitBadges.set(clearing.clearingId, badge)
       group.add(badge)
     }
   }
@@ -165,6 +174,39 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
   let glowLevel: number = GLOW_LEVEL_BY_TIME_OF_DAY[input.timeOfDay]
   let targetGlowLevel: number = glowLevel
   let previousElapsedSeconds = 0
+  let currentZoom = 0
+  let hoveredClearingId: number | null = null
+  const groundHit: Vector3 = new Vector3()
+
+  const applyZoom = (): void => {
+    const size: number = MathUtils.lerp(
+      SUIT_BADGE_FAR_SIZE,
+      SUIT_BADGE_NEAR_SIZE,
+      currentZoom,
+    )
+    for (const [clearingId, badge] of suitBadges) {
+      badge.scale.setScalar(size)
+      badge.visible = isLabelShown({
+        zoom: currentZoom,
+        isHovered: clearingId === hoveredClearingId,
+      })
+    }
+  }
+
+  /** The clearing whose ground the ray reaches, if any. */
+  const clearingIdAt = (raycaster: Raycaster): number | null => {
+    if (raycaster.ray.intersectPlane(GROUND_PLANE, groundHit) === null) {
+      return null
+    }
+    const hovered: ClearingGround | undefined = clearings.find(
+      (clearing: ClearingGround): boolean =>
+        Math.hypot(
+          groundHit.x - clearing.center.x,
+          groundHit.z - clearing.center.z,
+        ) <= clearing.radius,
+    )
+    return hovered?.clearingId ?? null
+  }
 
   return {
     group,
@@ -190,14 +232,20 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
       clearingFlashMark.update(elapsedSeconds)
     },
     setZoom: (zoom: number): void => {
-      const size: number = MathUtils.lerp(
-        SUIT_BADGE_FAR_SIZE,
-        SUIT_BADGE_NEAR_SIZE,
-        zoom,
-      )
-      for (const badge of suitBadges) {
-        badge.scale.setScalar(size)
+      if (zoom === currentZoom) {
+        return
       }
+      currentZoom = zoom
+      applyZoom()
+    },
+    hoverAt: (raycaster: Raycaster | null): void => {
+      const clearingId: number | null =
+        raycaster === null ? null : clearingIdAt(raycaster)
+      if (clearingId === hoveredClearingId) {
+        return
+      }
+      hoveredClearingId = clearingId
+      applyZoom()
     },
   }
 }

@@ -106,3 +106,51 @@ export function createIconTexture(request: IconTextureRequest): CanvasTexture {
   image.src = request.imagePath
   return texture
 }
+
+const BADGE_TEXTURE_SIZE_PIXELS = 96
+const BADGE_BORDER_WIDTH_PIXELS = 7
+const BADGE_BORDER_COLOR = '#f0e6d3'
+const BADGE_TEXT_COLOR = '#ffffff'
+const BADGE_FONT = 'bold 58px Georgia, serif'
+const BADGE_TEXT_BASELINE_NUDGE_PIXELS = 4
+const HALF = 0.5
+const HEX_RADIX = 16
+const HEX_COLOR_DIGIT_COUNT = 6
+
+export function colorToCss(color: number): string {
+  return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
+}
+
+/** The stack size of a piece, on a round chip in its faction colour. */
+export function createBadgeTexture(count: number, color: number): CanvasTexture {
+  const canvas: HTMLCanvasElement = createCanvas(BADGE_TEXTURE_SIZE_PIXELS)
+  const context: CanvasRenderingContext2D | null = canvas.getContext('2d')
+  if (context !== null) {
+    const center: number = BADGE_TEXTURE_SIZE_PIXELS * HALF
+    context.beginPath()
+    context.arc(
+      center,
+      center,
+      center - BADGE_BORDER_WIDTH_PIXELS,
+      0,
+      FULL_TURN_RADIANS,
+    )
+    context.fillStyle = colorToCss(color)
+    context.fill()
+    context.lineWidth = BADGE_BORDER_WIDTH_PIXELS
+    context.strokeStyle = BADGE_BORDER_COLOR
+    context.stroke()
+    context.font = BADGE_FONT
+    context.textAlign = 'center'
+    context.textBaseline = 'middle'
+    context.fillStyle = BADGE_TEXT_COLOR
+    context.fillText(
+      String(count),
+      center,
+      center + BADGE_TEXT_BASELINE_NUDGE_PIXELS,
+    )
+  }
+  const texture: CanvasTexture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  return texture
+}
