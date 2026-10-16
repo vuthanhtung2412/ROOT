@@ -6,6 +6,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
+  Vector2,
   type Color,
 } from 'three'
 import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
@@ -43,6 +44,35 @@ const OPAQUE_ALPHA = 255
 const RGBA_CHANNEL_COUNT = 4
 const WHITE_CHANNEL = 255
 const ALPHA_CHANNEL_OFFSET = 3
+const PROGRAM_CACHE_KEY = 'edge-mist'
+
+const VERTEX_DECLARATIONS = `
+varying vec3 mistWorldPosition;
+`
+const VERTEX_WORLD_POSITION = `
+mistWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
+`
+const FRAGMENT_DECLARATIONS = `
+uniform vec2 mistSpan;
+varying vec3 mistWorldPosition;
+`
+/**
+ * The mist only hides what lies past the woodland: where the camera looks
+ * through it down onto the playable area (zoomed in by an edge, the camera
+ * hangs over the margin), it clears.
+ */
+const FRAGMENT_CLEAR_OVER_WOODLAND = `
+vec3 mistFromCamera = mistWorldPosition - cameraPosition;
+if (mistFromCamera.y < 0.0) {
+  vec2 groundBehind =
+    cameraPosition.xz + mistFromCamera.xz * (cameraPosition.y / -mistFromCamera.y);
+  vec2 groundBehindUv = vec2(
+    groundBehind.x / mistSpan.x + 0.5,
+    0.5 - groundBehind.y / mistSpan.y
+  );
+  diffuseColor.a *= texture2D(map, groundBehindUv).a;
+}
+`
 
 type MistSpan = {
   width: number
@@ -128,6 +158,30 @@ export function createEdgeMist(terrain: MapTerrain, skyColor: Color): Group {
   })
   // Shared, not copied: the sky's colour fades with the time of day.
   material.color = skyColor
+  // three.js hands the shader over to be edited in place.
+  material.onBeforeCompile = (shader): void => {
+    Object.assign(shader.uniforms, {
+      mistSpan: { value: new Vector2(span.width, span.depth) },
+    })
+    Object.assign(shader, {
+      vertexShader: shader.vertexShader
+        .replace('#include <common>', `#include <common>${VERTEX_DECLARATIONS}`)
+        .replace(
+          '#include <project_vertex>',
+          `#include <project_vertex>${VERTEX_WORLD_POSITION}`,
+        ),
+      fragmentShader: shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>${FRAGMENT_DECLARATIONS}`,
+        )
+        .replace(
+          '#include <map_fragment>',
+          `#include <map_fragment>${FRAGMENT_CLEAR_OVER_WOODLAND}`,
+        ),
+    })
+  }
+  material.customProgramCacheKey = (): string => PROGRAM_CACHE_KEY
   const geometry: PlaneGeometry = new PlaneGeometry(span.width, span.depth)
   const mist: Group = new Group()
   for (const height of MIST_LAYER_HEIGHTS) {
