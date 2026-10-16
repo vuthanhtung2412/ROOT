@@ -1,18 +1,18 @@
 import { Capacitor } from '@capacitor/core'
 
 /**
- * Browser: empty = same-origin (Vite proxy / served from @root/web).
+ * Browser: `ROOT_WEB_API` (GitHub Pages build), else empty = same-origin
+ * (Vite proxy / served from @root/web).
  * Native Capacitor: prod API from `.env` `ROOT_PROD_API` (mise `_.file`).
  */
 export function resolveDefaultApiBaseUrl(): string {
-  if (!Capacitor.isNativePlatform()) {
+  const configuredApiUrl: string | undefined = Capacitor.isNativePlatform()
+    ? import.meta.env.ROOT_PROD_API
+    : import.meta.env.ROOT_WEB_API
+  if (typeof configuredApiUrl !== 'string' || configuredApiUrl.length === 0) {
     return ''
   }
-  const prodApiUrl = import.meta.env.ROOT_PROD_API
-  if (typeof prodApiUrl !== 'string' || prodApiUrl.length === 0) {
-    return ''
-  }
-  return stripTrailingSlash(prodApiUrl)
+  return stripTrailingSlash(configuredApiUrl)
 }
 
 function stripTrailingSlash(url: string): string {

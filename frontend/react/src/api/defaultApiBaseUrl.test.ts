@@ -24,6 +24,16 @@ describe('resolveDefaultApiBaseUrl', () => {
     expect(resolveDefaultApiBaseUrl()).toBe('')
   })
 
+  it('returns web API URL in browser when env set', async () => {
+    isNativePlatform.mockReturnValue(false)
+    vi.stubEnv('ROOT_WEB_API', 'https://api.example.com/')
+    vi.resetModules()
+    const { resolveDefaultApiBaseUrl } = await import(
+      '#api/defaultApiBaseUrl.ts'
+    )
+    expect(resolveDefaultApiBaseUrl()).toBe('https://api.example.com')
+  })
+
   it('returns prod API URL on native when env set', async () => {
     isNativePlatform.mockReturnValue(true)
     vi.stubEnv('ROOT_PROD_API', 'https://funnel.example.ts.net:8443/')

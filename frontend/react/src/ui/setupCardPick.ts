@@ -1,5 +1,6 @@
 import { lookupEyrieLeader } from '#assets/eyrieLeaderCatalog.ts'
 import { imagePathForAssetKey } from '#assets/gameAssets.ts'
+import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 import {
   CHOOSE_CHARACTER_PROMPT,
   VAGABOND_CHARACTER_CATALOG,
@@ -24,7 +25,7 @@ export function setupCardPickTitle(kind: SetupCardPickKind): string {
 }
 
 function rootRelativePath(imagePath: string): string {
-  return imagePath.startsWith('/') ? imagePath : `/${imagePath}`
+  return publicAssetUrl(imagePath)
 }
 
 function leaderOption(leaderId: string): SetupCardPickOption {

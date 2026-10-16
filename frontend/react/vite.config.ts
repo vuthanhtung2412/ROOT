@@ -21,6 +21,9 @@ const HTTP_STATUS_NOT_FOUND = 404
 /** Set by `build:ios` so only the native Capacitor build injects image preloads. */
 const NATIVE_ASSET_PRELOAD_ENV_KEY = 'ROOT_NATIVE_ASSET_PRELOAD'
 const NATIVE_ASSET_PRELOAD_ENABLED_VALUE = '1'
+/** Public path the build is served under, e.g. `/ROOT/` on GitHub Pages. */
+const WEB_BASE_PATH_ENV_KEY = 'ROOT_WEB_BASE_PATH'
+const DEFAULT_WEB_BASE_PATH = '/'
 
 /**
  * Dev server only: serves a repository snapshot JSON file so
@@ -99,6 +102,7 @@ function nativeAssetPreloadPlugin(): Plugin {
 export default defineConfig({
   /** Expose `ROOT_*` from env / `.env` (via mise) to `import.meta.env`. */
   envPrefix: ['VITE_', 'ROOT_'],
+  base: process.env[WEB_BASE_PATH_ENV_KEY] ?? DEFAULT_WEB_BASE_PATH,
   plugins: [
     react(),
     tailwindcss(),

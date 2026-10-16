@@ -19,6 +19,7 @@ import {
   SHARED_GAME_IMAGE_ASSETS,
 } from '#assets/factionImageAssets.ts'
 import { MENU_BOOT_IMAGE_ASSETS } from '#assets/gameAssets.ts'
+import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 import { retryAssetFetch } from '#assets/retryAssetFetch.ts'
 import {
   getAiPlayerSnapshot,
@@ -74,7 +75,7 @@ function loadImage(source: string): Promise<void> {
 
 /** Never rejects: an image still missing after the retries is skipped. */
 async function prefetchImage(path: string): Promise<void> {
-  const source: string = path.startsWith('/') ? path : `/${path}`
+  const source: string = publicAssetUrl(path)
   await retryAssetFetch((): Promise<void> => loadImage(source)).catch(
     (): void => undefined,
   )

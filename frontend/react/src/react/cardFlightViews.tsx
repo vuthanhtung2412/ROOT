@@ -4,6 +4,7 @@ import {
   GiFlatHammer,
   GiPolarStar,
 } from 'react-icons/gi'
+import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 import type { CardFlight, CardFlightReason } from '#game/cardFlights.ts'
 
 /** Several cards of one update start one after the other. */
@@ -92,7 +93,7 @@ const CARD_BACK_CLASS_NAME = `${CARD_FACE_CLASS_NAME} rotate-y-180`
  * Back of the shared deck (Exiles & Partisans). The base game back sits
  * beside it as `card-back-base.png`.
  */
-const CARD_BACK_IMAGE_PATH = '/assets/cards/card-back.png'
+const CARD_BACK_IMAGE_PATH: string = publicAssetUrl('assets/cards/card-back.png')
 const ANVIL_CLASS_NAME = `card-flight__anvil ${FLIGHT_BASE_CLASS_NAME} root-paper root-medallion flex size-36 items-end justify-center pb-4 text-8xl text-parchment`
 /** The anvil itself, squashed from its foot by each blow. */
 const ANVIL_ICON_CLASS_NAME = 'block origin-bottom'

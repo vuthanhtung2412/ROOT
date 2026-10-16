@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   readonly ROOT_PROD_API?: string
   readonly ROOT_DEV_API?: string
+  /** Browser API base for a static build served apart from @root/web (GitHub Pages). */
+  readonly ROOT_WEB_API?: string
   /** Snapshot file "QA: Continue loaded game" loads (repository-relative). */
   readonly ROOT_QA_SNAPSHOT_PATH?: string
 }

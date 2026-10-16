@@ -5,6 +5,7 @@ import {
   RIVERFOLK_EXPANSION_ASSET_KEYS,
   RIVERFOLK_EXPANSION_IMAGE_ASSETS,
 } from '#assets/riverfolkExpansionAssets.ts'
+import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 
 /** Minimal loader surface for preload helpers. */
 export type ImageAssetLoader = {
@@ -473,10 +474,7 @@ export function cardImagePublicPath(defId: string): string | null {
   if (asset === null) {
     return null
   }
-  if (asset.path.startsWith('/')) {
-    return asset.path
-  }
-  return `/${asset.path}`
+  return publicAssetUrl(asset.path)
 }
 
 /**
@@ -525,10 +523,7 @@ export function imagePathForAssetKey(key: string): string | null {
   if (asset === undefined) {
     return null
   }
-  if (asset.path.startsWith('/')) {
-    return asset.path
-  }
-  return `/${asset.path}`
+  return publicAssetUrl(asset.path)
 }
 
 export function lookupCardCatalog(defId: string): CardCatalogEntry | null {

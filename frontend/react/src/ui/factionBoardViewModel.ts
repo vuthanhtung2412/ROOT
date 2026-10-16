@@ -10,6 +10,7 @@ import {
   type EyrieRoostTrackColumn,
 } from '#assets/eyrieBoardCatalog.ts'
 import { GAME_ASSET_KEYS, lookupCardCatalog } from '#assets/gameAssets.ts'
+import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 import {
   MARQUISE_ABILITIES,
   MARQUISE_BUILDING_TRACK,
@@ -153,7 +154,7 @@ export type VagabondQuestView = {
   imagePath: string
 }
 
-const QUEST_IMAGE_PUBLIC_DIRECTORY = '/assets/quests'
+const QUEST_IMAGE_PUBLIC_DIRECTORY: string = publicAssetUrl('assets/quests')
 
 export type VagabondBoardViewModel = {
   kind: 'vagabond'

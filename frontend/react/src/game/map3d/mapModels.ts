@@ -1,5 +1,6 @@
 import type { Group } from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
+import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 import { retryAssetFetch } from '#assets/retryAssetFetch.ts'
 import { mergePartsByMaterial } from '#game/map3d/mergeModelParts.ts'
 
@@ -9,7 +10,7 @@ import { mergePartsByMaterial } from '#game/map3d/mergeModelParts.ts'
  * exported from the project's Blender file, meeples extruded from the
  * warrior token art, the campfire from Poly Pizza.
  */
-const MODEL_ROOT = '/assets/models'
+const MODEL_ROOT: string = publicAssetUrl('assets/models')
 const MODEL_FILE_EXTENSION = '.glb'
 
 const PINE_MODEL_NAMES: readonly string[] = [
