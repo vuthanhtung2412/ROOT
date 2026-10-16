@@ -148,7 +148,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     campfires.group,
     ...daylight.lights,
     createGround(input.terrain),
-    createEdgeMist(input.terrain, daylight.backdrop),
+    createEdgeMist(input.terrain, daylight.mistColors),
     skyClouds.group,
     riverFlow.mesh,
     createTreeMeshes(

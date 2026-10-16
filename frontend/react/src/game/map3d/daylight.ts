@@ -10,7 +10,8 @@ import {
 
 /**
  * Light of the woodland, by the phase of the turn:
- * - birdsong: dawn — a low orange sun in the east, peach sky, warm mist;
+ * - birdsong: dawn — a low orange sun in the east, peach sky, mist
+ *   from gold by the woodland through coral and violet to indigo far out;
  * - daylight: a high warm sun, clear air, a thin warm haze;
  * - evening: blue moonlight from the west, night-blue sky (the clearings
  *   are lit by their campfires).
@@ -25,6 +26,8 @@ export type DaylightRig = {
   /** To set as the scene's fog and background. */
   fog: Fog
   backdrop: Color
+  /** Colours of the edge mist, from by the woodland out to its far edge. */
+  mistColors: readonly Color[]
   /** The light from the sky: what lights the clouds. */
   skyLight: HemisphereLight
   /** Keep the camera's own light on the camera; call once per frame. */
@@ -34,6 +37,14 @@ export type DaylightRig = {
   update: (deltaSeconds: number) => void
   /** The sun is still on its way to its place: the shadows turn with it. */
   isSunMoving: () => boolean
+}
+
+/** The edge mist's colours, from by the woodland out to its far edge. */
+type MistColorStops = readonly [number, number, number, number]
+
+/** The same colour all across the edge mist. */
+function evenMist(color: number): MistColorStops {
+  return [color, color, color, color]
 }
 
 type LightingPreset = {
@@ -47,6 +58,7 @@ type LightingPreset = {
   fogColor: number
   fogNear: number
   fogFar: number
+  mistColors: MistColorStops
   /** Strength of the light that shines from the camera onto what it shows. */
   cameraLightIntensity: number
 }
@@ -59,9 +71,11 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     skyColor: 0xffc994,
     groundColor: 0x5c4634,
     skyIntensity: 1.35,
-    fogColor: 0xc08a5c,
+    fogColor: 0xe8c4c6,
     fogNear: 140,
     fogFar: 520,
+    // Gold, coral, violet, indigo: a sunrise sky.
+    mistColors: [0xf6c87a, 0xf08a7a, 0x9a6cc8, 0x2c2a6e],
     cameraLightIntensity: 0,
   },
   daylight: {
@@ -74,6 +88,7 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     fogColor: 0xdde3dc,
     fogNear: 320,
     fogFar: 520,
+    mistColors: evenMist(0xdde3dc),
     cameraLightIntensity: 0,
   },
   evening: {
@@ -86,6 +101,7 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     fogColor: 0x101a38,
     fogNear: 190,
     fogFar: 520,
+    mistColors: evenMist(0x101a38),
     cameraLightIntensity: 0.35,
   },
 }
@@ -143,6 +159,9 @@ export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
   )
   const fog: Fog = new Fog(initial.fogColor, initial.fogNear, initial.fogFar)
   const backdrop: Color = new Color(initial.fogColor)
+  const mistColors: readonly Color[] = initial.mistColors.map(
+    (color: number): Color => new Color(color),
+  )
 
   let target: LightingPreset = initial
   const targetColor: Color = new Color()
@@ -152,6 +171,7 @@ export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
     lights: [sky, sun, cameraLight],
     fog,
     backdrop,
+    mistColors,
     skyLight: sky,
     followCamera: (cameraPosition: Vector3, lookedAt: Vector3): void => {
       cameraLight.position.copy(cameraPosition)
@@ -181,6 +201,9 @@ export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
       fog.near = MathUtils.lerp(fog.near, target.fogNear, step)
       fog.far = MathUtils.lerp(fog.far, target.fogFar, step)
       backdrop.copy(fog.color)
+      target.mistColors.forEach((stop: number, index: number): void => {
+        mistColors[index]?.lerp(targetColor.set(stop), step)
+      })
       cameraLight.intensity = MathUtils.lerp(
         cameraLight.intensity,
         target.cameraLightIntensity,
