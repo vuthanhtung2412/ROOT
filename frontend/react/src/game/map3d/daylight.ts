@@ -10,7 +10,8 @@ import {
 
 /**
  * Light of the woodland, by the phase of the turn:
- * - birdsong: dawn — a low orange sun in the east, peach sky, mist
+ * - birdsong: dawn — a low coral sun in the east, violet sky and
+ *   indigo shadows, mist
  *   from gold by the woodland through coral and violet to indigo far out;
  * - daylight: a high warm sun, clear air, a thin warm haze;
  * - evening: blue moonlight from the west, night-blue sky (the clearings
@@ -65,13 +66,13 @@ type LightingPreset = {
 
 const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
   birdsong: {
-    sunColor: 0xff9450,
+    sunColor: 0xff8a78,
     sunIntensity: 2,
     sunPosition: { x: 95, y: 42, z: 30 },
-    skyColor: 0xffc994,
-    groundColor: 0x5c4634,
+    skyColor: 0xb59ae0,
+    groundColor: 0x2e2a5c,
     skyIntensity: 1.35,
-    fogColor: 0xe8c4c6,
+    fogColor: 0xd89aa8,
     fogNear: 140,
     fogFar: 520,
     // Gold, coral, violet, indigo: a sunrise sky.
