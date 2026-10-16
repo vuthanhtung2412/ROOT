@@ -1,0 +1,230 @@
+import {
+  CanvasTexture,
+  ClampToEdgeWrapping,
+  Group,
+  MathUtils,
+  Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  Vector2,
+  type Color,
+} from 'three'
+import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
+import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
+
+/**
+ * Mist around the woodland: clear over the playable area, it thickens across
+ * the margin into the colour of the sky, so the camera never sees where the
+ * ground and its trees stop. Stacked in layers, it swallows the tops of the
+ * trees at the edge too.
+ */
+
+/** Heights of the layers of mist: from the ground up past the tree tops. */
+export const MIST_LAYER_HEIGHTS: readonly number[] = [0.4, 3, 6, 10, 15, 21, 28]
+/**
+ * Share of the margin, out from the playable area, that stays clear of mist,
+ * and from where on the mist hides everything.
+ */
+const MIST_CLEAR_MARGIN_SHARE = 0.15
+const MIST_OPAQUE_MARGIN_SHARE = 0.85
+/** The mist runs this many times the ground's size, so no edge of it shows. */
+const MIST_SPAN_RATIO = 4
+/**
+ * Opacity of each layer: thin alone, the stacked layers still hide the edge of
+ * the ground.
+ */
+const MIST_LAYER_OPACITY = 0.6
+/** Over the river's flow (1), under the marks of the playable area. */
+export const MIST_RENDER_ORDER = 2
+const MIST_MASK_SIZE_PIXELS = 256
+const QUARTER_TURN_RADIANS = Math.PI / 2
+const HALF = 0.5
+const DOUBLE = 2
+const FULL_CHANNEL = 255
+const RGBA_CHANNEL_COUNT = 4
+const ALPHA_CHANNEL_OFFSET = 3
+const PROGRAM_CACHE_KEY = 'edge-mist'
+
+const VERTEX_DECLARATIONS = `
+varying vec3 mistWorldPosition;
+`
+const VERTEX_WORLD_POSITION = `
+mistWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
+`
+/**
+ * Where each colour of the mist is at its fullest, in margins out from the
+ * playable area; past the last one the mist keeps the last colour.
+ */
+const MIST_COLOR_REACHES: readonly number[] = [0.15, 0.5, 1, 2]
+const MIST_COLOR_STOP_COUNT: number = MIST_COLOR_REACHES.length
+/** The mask's red channel holds the reach, up to this many margins. */
+const MIST_MASK_FULL_REACH = 2
+const FRAGMENT_DECLARATIONS = `
+uniform vec2 mistSpan;
+uniform vec3 mistColors[${MIST_COLOR_STOP_COUNT}];
+uniform float mistColorReaches[${MIST_COLOR_STOP_COUNT}];
+varying vec3 mistWorldPosition;
+`
+/** The mask's red channel says how far out the mist is: blend its colours. */
+const FRAGMENT_MIST_COLOR = `
+vec3 mistColor = mistColors[0];
+for (int stop = 1; stop < ${MIST_COLOR_STOP_COUNT}; stop++) {
+  mistColor = mix(
+    mistColor,
+    mistColors[stop],
+    smoothstep(mistColorReaches[stop - 1], mistColorReaches[stop], sampledDiffuseColor.r)
+  );
+}
+diffuseColor.rgb = mistColor;
+`
+/**
+ * The mist only hides what lies past the woodland: where the camera looks
+ * through it down onto the playable area (zoomed in by an edge, the camera
+ * hangs over the margin), it clears.
+ */
+const FRAGMENT_CLEAR_OVER_WOODLAND = `
+vec3 mistFromCamera = mistWorldPosition - cameraPosition;
+if (mistFromCamera.y < 0.0) {
+  vec2 groundBehind =
+    cameraPosition.xz + mistFromCamera.xz * (cameraPosition.y / -mistFromCamera.y);
+  vec2 groundBehindUv = vec2(
+    groundBehind.x / mistSpan.x + 0.5,
+    0.5 - groundBehind.y / mistSpan.y
+  );
+  diffuseColor.a *= texture2D(map, groundBehindUv).a;
+}
+`
+
+type MistSpan = {
+  width: number
+  depth: number
+}
+
+/**
+ * How far out of the playable area a point of the ground is, in margins
+ * (0 = inside it, 1 = at the edge of the ground).
+ */
+export function marginReach(
+  terrain: MapTerrain,
+  ground: MapGroundPoint,
+): number {
+  const outsideX: number = Math.max(
+    Math.abs(ground.x) - terrain.worldSize.width * HALF,
+    0,
+  )
+  const outsideZ: number = Math.max(
+    Math.abs(ground.z) - terrain.worldSize.depth * HALF,
+    0,
+  )
+  return Math.hypot(outsideX / terrain.marginX, outsideZ / terrain.marginZ)
+}
+
+/** How thick the mist is at that reach (0 = clear, 1 = opaque). */
+function mistThickness(reach: number): number {
+  return MathUtils.smoothstep(
+    reach,
+    MIST_CLEAR_MARGIN_SHARE,
+    MIST_OPAQUE_MARGIN_SHARE,
+  )
+}
+
+/**
+ * Across the whole span: the reach (up to the full reach) in red, the mist's
+ * thickness in alpha.
+ */
+function createMistMask(terrain: MapTerrain, span: MistSpan): CanvasTexture {
+  const canvas: HTMLCanvasElement = document.createElement('canvas')
+  canvas.width = MIST_MASK_SIZE_PIXELS
+  canvas.height = MIST_MASK_SIZE_PIXELS
+  const context: CanvasRenderingContext2D | null = canvas.getContext('2d')
+  if (context !== null) {
+    const image: ImageData = context.createImageData(
+      MIST_MASK_SIZE_PIXELS,
+      MIST_MASK_SIZE_PIXELS,
+    )
+    for (let row = 0; row < MIST_MASK_SIZE_PIXELS; row += 1) {
+      for (let column = 0; column < MIST_MASK_SIZE_PIXELS; column += 1) {
+        const reach: number = marginReach(terrain, {
+          x: ((column + HALF) / MIST_MASK_SIZE_PIXELS - HALF) * span.width,
+          z: ((row + HALF) / MIST_MASK_SIZE_PIXELS - HALF) * span.depth,
+        })
+        const pixel: number =
+          (row * MIST_MASK_SIZE_PIXELS + column) * RGBA_CHANNEL_COUNT
+        image.data[pixel] = Math.round(
+          Math.min(reach / MIST_MASK_FULL_REACH, 1) * FULL_CHANNEL,
+        )
+        image.data[pixel + ALPHA_CHANNEL_OFFSET] = Math.round(
+          mistThickness(reach) * FULL_CHANNEL,
+        )
+      }
+    }
+    context.putImageData(image, 0, 0)
+  }
+  const mask: CanvasTexture = new CanvasTexture(canvas)
+  mask.wrapS = ClampToEdgeWrapping
+  mask.wrapT = ClampToEdgeWrapping
+  return mask
+}
+
+/** The mist's colours follow the sky as the day turns. */
+export function createEdgeMist(
+  terrain: MapTerrain,
+  /** From by the woodland out to the far edge; one per colour reach. */
+  mistColors: readonly Color[],
+): Group {
+  const span: MistSpan = {
+    width:
+      (terrain.worldSize.width + terrain.marginX * DOUBLE) * MIST_SPAN_RATIO,
+    depth:
+      (terrain.worldSize.depth + terrain.marginZ * DOUBLE) * MIST_SPAN_RATIO,
+  }
+  const material: MeshBasicMaterial = new MeshBasicMaterial({
+    map: createMistMask(terrain, span),
+    transparent: true,
+    opacity: MIST_LAYER_OPACITY,
+    depthWrite: false,
+    fog: false,
+    toneMapped: false,
+  })
+  // three.js hands the shader over to be edited in place.
+  material.onBeforeCompile = (shader): void => {
+    Object.assign(shader.uniforms, {
+      mistSpan: { value: new Vector2(span.width, span.depth) },
+      // Shared, not copied: the colours fade with the time of day.
+      mistColors: { value: mistColors },
+      mistColorReaches: {
+        value: MIST_COLOR_REACHES.map(
+          (reach: number): number => reach / MIST_MASK_FULL_REACH,
+        ),
+      },
+    })
+    Object.assign(shader, {
+      vertexShader: shader.vertexShader
+        .replace('#include <common>', `#include <common>${VERTEX_DECLARATIONS}`)
+        .replace(
+          '#include <project_vertex>',
+          `#include <project_vertex>${VERTEX_WORLD_POSITION}`,
+        ),
+      fragmentShader: shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>${FRAGMENT_DECLARATIONS}`,
+        )
+        .replace(
+          '#include <map_fragment>',
+          `#include <map_fragment>${FRAGMENT_CLEAR_OVER_WOODLAND}${FRAGMENT_MIST_COLOR}`,
+        ),
+    })
+  }
+  material.customProgramCacheKey = (): string => PROGRAM_CACHE_KEY
+  const geometry: PlaneGeometry = new PlaneGeometry(span.width, span.depth)
+  const mist: Group = new Group()
+  for (const height of MIST_LAYER_HEIGHTS) {
+    const layer: Mesh = new Mesh(geometry, material)
+    layer.rotation.x = -QUARTER_TURN_RADIANS
+    layer.position.y = height
+    layer.renderOrder = MIST_RENDER_ORDER
+    mist.add(layer)
+  }
+  return mist
+}
