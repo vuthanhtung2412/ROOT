@@ -7,8 +7,7 @@ import { mergePartsByMaterial } from '#game/map3d/mergeModelParts.ts'
  * 3D models of the map (see `public/assets/models/SOURCES.md` for where each
  * comes from and its licence): trees from Kenney's Nature Kit, buildings
  * exported from the project's Blender file, meeples extruded from the
- * warrior token art, the campfire from Poly Pizza, the mountains built in
- * Blender from the Stone Pack.
+ * warrior token art, the campfire from Poly Pizza.
  */
 const MODEL_ROOT = '/assets/models'
 const MODEL_FILE_EXTENSION = '.glb'
@@ -29,10 +28,6 @@ const AUTUMN_MODEL_NAMES: readonly string[] = [
   'nature/tree_oak_fall',
 ]
 const CAMPFIRE_MODEL_NAME = 'props/campfire'
-const MOUNTAIN_MODEL_NAMES: readonly string[] = [
-  'props/mountain-a',
-  'props/mountain-b',
-]
 
 /**
  * A meeple stands as modelled; a structure is centred on a building plot.
@@ -107,16 +102,12 @@ export type MapModels = {
   campfire: Group
 }
 
-/** Stone spires on a broad core: the range along the woodland's edge. */
-export type MountainModels = readonly Group[]
-
 /** Model per token texture key; a piece without one is only its icon. */
 export type PieceModels = ReadonlyMap<string, PieceModel>
 
 async function loadModel(loader: GLTFLoader, name: string): Promise<Group> {
-  const model: GLTF = await retryAssetFetch(
-    (): Promise<GLTF> =>
-      loader.loadAsync(`${MODEL_ROOT}/${name}${MODEL_FILE_EXTENSION}`),
+  const model: GLTF = await retryAssetFetch((): Promise<GLTF> =>
+    loader.loadAsync(`${MODEL_ROOT}/${name}${MODEL_FILE_EXTENSION}`),
   )
   return model.scene
 }
@@ -157,7 +148,6 @@ async function fetchPieceModel(source: PieceModelSource): Promise<PieceModel> {
 
 /** Kept for the page's lifetime so remounts do not parse every GLB again. */
 let mapModelsLoading: Promise<MapModels> | null = null
-let mountainModelsLoading: Promise<MountainModels> | null = null
 /** By file: several pieces share one (the three suits of a base). */
 const pieceModelLoadingByName: Map<string, Promise<PieceModel>> = new Map<
   string,
@@ -183,22 +173,6 @@ export function loadMapModels(): Promise<MapModels> {
     throw error
   })
   return mapModelsLoading
-}
-
-/**
- * The mountains only frame the woodland: the game is played without them,
- * so they come after it, like the pieces.
- */
-export function loadMountainModels(): Promise<MountainModels> {
-  mountainModelsLoading ??= loadModels(
-    new GLTFLoader(),
-    MOUNTAIN_MODEL_NAMES,
-  ).catch((error: Error): never => {
-    // A failed download is tried again the next time the map opens.
-    mountainModelsLoading = null
-    throw error
-  })
-  return mountainModelsLoading
 }
 
 /**

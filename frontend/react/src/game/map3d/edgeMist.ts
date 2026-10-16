@@ -16,10 +16,10 @@ import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
  * Mist around the woodland: clear over the playable area, it thickens across
  * the margin into the colour of the sky, so the camera never sees where the
  * ground and its trees stop. Stacked in layers, it swallows the tops of the
- * trees and mountains at the edge too.
+ * trees at the edge too.
  */
 
-/** Heights of the layers of mist: from the ground up past the mountain tops. */
+/** Heights of the layers of mist: from the ground up past the tree tops. */
 export const MIST_LAYER_HEIGHTS: readonly number[] = [0.4, 3, 6, 10, 15, 21, 28]
 /**
  * Share of the margin, out from the playable area, that stays clear of mist,

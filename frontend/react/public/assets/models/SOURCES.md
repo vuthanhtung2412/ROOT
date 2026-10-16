@@ -72,9 +72,8 @@ Required credit for the ruin:
 | `rock-small-{a,b,c}.glb` | Small rocks (about 1–2 long), ~180 triangles | "Stone Pack" by ashkan.fancy — https://sketchfab.com/3d-models/stone-pack-f3e0a67b9ca243b09119177649f21e17 — decimated, smooth shaded with edges sharper than 40° kept hard, the pack's base colour / normal / occlusion-roughness textures downscaled to 1K JPEG, moss as a vertex colour tint on what looks up | **CC-BY-4.0**: credit required (line below) |
 | `rock-large-{a,b,c}.glb` | Large rocks (about 4–7 long), ~600 triangles | same | same |
 | `cliff-{a,b}.glb` | Cliff walls of overlapping slab stacks, about 14 wide, 8 tall, 6 deep, ~1,750–2,200 triangles | same, stones scaled and joined | same |
-| `mountain-{a,b}.glb` | Mountains: spires on a broad core, slabs round the foot, about 15–18 wide, 14–15 tall, ~3,200–3,700 triangles | same, stones scaled and joined | same |
 
-The rocks, cliffs and mountains stand on the ground (y = 0), centred on their
+The rocks and cliffs stand on the ground (y = 0), centred on their
 origin, sized in world units of the map (the map is 100 wide). Made in Blender
 from `resources/reference/models/props/stone_pack.zip` (each stone there is
 2,500–6,000 triangles with 4K textures).
@@ -84,7 +83,7 @@ Required credit for the campfire:
 > "Campfire" (https://poly.pizza/m/bAjGJYCozp) by J-Toastie, licensed under
 > CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
 
-Required credit for the rocks, cliffs and mountains:
+Required credit for the rocks and cliffs:
 
 > This work is based on "Stone Pack"
 > (https://sketchfab.com/3d-models/stone-pack-f3e0a67b9ca243b09119177649f21e17)

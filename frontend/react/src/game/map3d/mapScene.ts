@@ -1,5 +1,4 @@
 import {
-  Group,
   PCFSoftShadowMap,
   PointLight,
   Scene,
@@ -25,21 +24,12 @@ import {
   type GroundMarkers,
 } from '#game/map3d/groundMarkers.ts'
 import { createMapCameraRig, type MapCameraRig } from '#game/map3d/mapCamera.ts'
-import type {
-  MapModels,
-  MountainModels,
-  PieceModels,
-} from '#game/map3d/mapModels.ts'
+import type { MapModels, PieceModels } from '#game/map3d/mapModels.ts'
 import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type {
   MapGroundPoint,
   MapViewFrame,
 } from '#game/map3d/mapWorldSpace.ts'
-import { createMountainMeshes } from '#game/map3d/mountainMeshes.ts'
-import {
-  placeMountains,
-  type MountainPlacement,
-} from '#game/map3d/mountainPlacement.ts'
 import {
   createPieceLayer,
   type MapPiece,
@@ -87,8 +77,6 @@ export type MapScene = {
   setPieces: (pieces: readonly MapPiece[]) => void
   /** The 3D models of the pieces arrived, after the woodland was up. */
   setPieceModels: (pieceModels: PieceModels) => void
-  /** The mountain models arrived, after the woodland was up. */
-  setMountainModels: (mountainModels: MountainModels) => void
   /** The pieces with these keys were just built: play them going up. */
   playBuild: (pieceKeys: readonly string[]) => void
   setClearingRings: (styles: ReadonlyMap<number, ClearingRingStyle>) => void
@@ -105,7 +93,6 @@ export type MapScene = {
 }
 
 const TREE_SEED = 1894
-const MOUNTAIN_SEED = 41
 /** The Vagabond takes its torch out when the campfires are lit. */
 const TORCH_TIME_OF_DAY: TimeOfDay = 'evening'
 const MAXIMUM_PIXEL_RATIO = 2
@@ -157,8 +144,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
     skyLight: daylight.skyLight,
     backdrop: daylight.backdrop,
   })
-  /** Empty until the mountain models are loaded. */
-  const mountainLayer: Group = new Group()
   scene.add(
     campfires.group,
     ...daylight.lights,
@@ -166,7 +151,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
     createEdgeMist(input.terrain, daylight.backdrop),
     skyClouds.group,
     riverFlow.mesh,
-    mountainLayer,
     createTreeMeshes(
       placeTrees(input.terrain, TREE_SEED),
       input.models.trees,
@@ -300,18 +284,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
     },
     setPieceModels: (pieceModels: PieceModels): void => {
       pieceLayer.setPieceModels(pieceModels)
-      shadowsAreStale = true
-      warmUpShaders()
-    },
-    setMountainModels: (mountainModels: MountainModels): void => {
-      const mountainPlacements: MountainPlacement[] = placeMountains(
-        input.terrain,
-        MOUNTAIN_SEED,
-        mountainModels.length,
-      )
-      disposeObjectTree(mountainLayer)
-      mountainLayer.clear()
-      mountainLayer.add(createMountainMeshes(mountainPlacements, mountainModels))
       shadowsAreStale = true
       warmUpShaders()
     },
