@@ -14,7 +14,10 @@ import {
   type AiPlayerApi,
 } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
-import { gameImageAssetsForFactions } from '#assets/factionImageAssets.ts'
+import {
+  factionImageAssetsFor,
+  SHARED_GAME_IMAGE_ASSETS,
+} from '#assets/factionImageAssets.ts'
 import { MENU_BOOT_IMAGE_ASSETS } from '#assets/gameAssets.ts'
 import {
   getAiPlayerSnapshot,
@@ -94,12 +97,20 @@ async function prefetchMenuBootAssets(
   )
 }
 
-/** Boards / tokens of the factions in play, plus shared game art. */
-async function prefetchGameAssetsForFactions(
+/** Suits / items / ruins: every game uses them, so fetch on the menu. */
+async function prefetchSharedGameAssets(): Promise<void> {
+  await prefetchImagePaths(
+    SHARED_GAME_IMAGE_ASSETS.map((asset) => asset.path),
+    null,
+  )
+}
+
+/** Boards / tokens of the factions in play. */
+async function prefetchFactionAssets(
   factionIds: readonly string[],
 ): Promise<void> {
   await prefetchImagePaths(
-    gameImageAssetsForFactions(factionIds).map((asset) => asset.path),
+    factionImageAssetsFor(factionIds).map((asset) => asset.path),
     null,
   )
 }
@@ -135,6 +146,8 @@ export function App(): JSX.Element {
   const resumeHotseatGameRef = useRef<() => Promise<void>>(() =>
     Promise.resolve(),
   )
+  /** Shared game art warming on the menu; enterGame waits on it. */
+  const sharedGameAssetsPromiseRef = useRef<Promise<void> | null>(null)
 
   if (controllerRef.current === null) {
     controllerRef.current = new ReactGameController()
@@ -219,9 +232,10 @@ export function App(): JSX.Element {
     void (async (): Promise<void> => {
       clearLobbyWait()
       const session = ensureSession()
-      await prefetchGameAssetsForFactions(
-        session.getSnapshot().state?.factions ?? [],
-      )
+      await Promise.all([
+        sharedGameAssetsPromiseRef.current ?? prefetchSharedGameAssets(),
+        prefetchFactionAssets(session.getSnapshot().state?.factions ?? []),
+      ])
       void controller.start(session, () => {
         clearHotseatGameOpen()
         showMenu()
@@ -543,6 +557,8 @@ export function App(): JSX.Element {
       }
       clearBootLoading()
       showMenu()
+      // Suits / items / ruins: fetch while the player is on the menu.
+      sharedGameAssetsPromiseRef.current = prefetchSharedGameAssets()
       // Reload in an online game: take the stored seat back.
       await resumeOnlineGameRef.current()
       // Reload in a hotseat / QA game (dev code edit): go straight back in.

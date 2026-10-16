@@ -65,11 +65,18 @@ const ALL_FACTION_OWNED_IMAGE_ASSET_KEYS: ReadonlySet<string> = new Set(
   Object.values(FACTION_OWNED_IMAGE_ASSET_KEYS).flat(),
 )
 
+/** Game art every game uses (suits, items, ruins): fetched on the menu. */
+export const SHARED_GAME_IMAGE_ASSETS: readonly GameImageAsset[] =
+  WARM_GAME_IMAGE_ASSETS.filter(
+    (asset: GameImageAsset): boolean =>
+      !ALL_FACTION_OWNED_IMAGE_ASSET_KEYS.has(asset.key),
+  )
+
 /**
- * Game art to fetch before entering a game: the shared art (suits, items,
- * ruins) plus the art of the factions in play — not the whole box.
+ * Boards and tokens of the factions in play, fetched once the game knows
+ * them — not the whole box.
  */
-export function gameImageAssetsForFactions(
+export function factionImageAssetsFor(
   factionIds: readonly string[],
 ): readonly GameImageAsset[] {
   const activeFactionKeys: ReadonlySet<string> = new Set(
@@ -78,9 +85,7 @@ export function gameImageAssetsForFactions(
         FACTION_OWNED_IMAGE_ASSET_KEYS[factionId] ?? [],
     ),
   )
-  return WARM_GAME_IMAGE_ASSETS.filter(
-    (asset: GameImageAsset): boolean =>
-      !ALL_FACTION_OWNED_IMAGE_ASSET_KEYS.has(asset.key) ||
-      activeFactionKeys.has(asset.key),
+  return WARM_GAME_IMAGE_ASSETS.filter((asset: GameImageAsset): boolean =>
+    activeFactionKeys.has(asset.key),
   )
 }
