@@ -9,6 +9,7 @@
 - Stay close to the commit plan in PLAN.md and if something need tweak stop and ask user.
 - All unit tests should use fixture factory or mock of any kind.
 - No abbreviation in the code, please use explicit naming so that it is easy to review. explicitness > verbosity
+- Art SoT = `resources/reference/` (`.glb` in Git LFS). Game files in `frontend/react/public/assets/` are relative symlinks to it (`git add -f` for `.glb`), never copies; export/edit art in `resources/reference/`.
 
 - Function should have less than 5 params. If they are to big create a broader scope interface
 
