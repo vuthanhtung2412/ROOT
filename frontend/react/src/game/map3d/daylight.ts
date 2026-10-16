@@ -25,6 +25,8 @@ export type DaylightRig = {
   /** To set as the scene's fog and background. */
   fog: Fog
   backdrop: Color
+  /** The light from the sky: what lights the clouds. */
+  skyLight: HemisphereLight
   /** Keep the camera's own light on the camera; call once per frame. */
   followCamera: (cameraPosition: Vector3, lookedAt: Vector3) => void
   setTimeOfDay: (timeOfDay: TimeOfDay) => void
@@ -150,6 +152,7 @@ export function createDaylightRig(initialTimeOfDay: TimeOfDay): DaylightRig {
     lights: [sky, sun, cameraLight],
     fog,
     backdrop,
+    skyLight: sky,
     followCamera: (cameraPosition: Vector3, lookedAt: Vector3): void => {
       cameraLight.position.copy(cameraPosition)
       cameraLight.target.position.copy(lookedAt)

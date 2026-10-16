@@ -46,6 +46,7 @@ import {
   type PieceLayer,
 } from '#game/map3d/pieceMeshes.ts'
 import { createRiverFlow, type RiverFlow } from '#game/map3d/riverFlow.ts'
+import { createSkyClouds, type SkyClouds } from '#game/map3d/skyClouds.ts'
 import { createGround } from '#game/map3d/sceneGround.ts'
 import { disposeObjectTree } from '#game/map3d/sceneObjects.ts'
 import { createTreeMeshes } from '#game/map3d/treeMeshes.ts'
@@ -152,6 +153,10 @@ export function createMapScene(input: MapSceneInput): MapScene {
     timeOfDay: input.timeOfDay,
   })
   const treeSightlines: TreeSightlines = createTreeSightlines()
+  const skyClouds: SkyClouds = createSkyClouds(input.terrain, {
+    skyLight: daylight.skyLight,
+    backdrop: daylight.backdrop,
+  })
   /** Empty until the mountain models are loaded. */
   const mountainLayer: Group = new Group()
   scene.add(
@@ -159,6 +164,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     ...daylight.lights,
     createGround(input.terrain),
     createEdgeMist(input.terrain, daylight.backdrop),
+    skyClouds.group,
     riverFlow.mesh,
     mountainLayer,
     createTreeMeshes(
@@ -270,9 +276,10 @@ export function createMapScene(input: MapSceneInput): MapScene {
     daylight.update(deltaSeconds)
     riverFlow.update(deltaSeconds)
     campfires.update(deltaSeconds)
-    groundMarkers.update(
-      (nowMilliseconds - startMilliseconds) / MILLISECONDS_PER_SECOND,
-    )
+    const elapsedSeconds: number =
+      (nowMilliseconds - startMilliseconds) / MILLISECONDS_PER_SECOND
+    groundMarkers.update(elapsedSeconds)
+    skyClouds.update(elapsedSeconds)
     renderer.render(scene, cameraRig.camera)
     animationFrame = requestAnimationFrame(renderFrame)
   }
