@@ -1,28 +1,37 @@
 import {
   Box3,
-  CanvasTexture,
   Group,
   MathUtils,
   MeshStandardMaterial,
   Object3D,
-  Sprite,
-  SpriteMaterial,
-  SRGBColorSpace,
   Vector3,
   type Material,
+  type Raycaster,
 } from 'three'
 import {
   createBuildAnimations,
   type BuildAnimations,
   type BuildSite,
 } from '#game/map3d/buildAnimation.ts'
-import { createIconTexture } from '#game/map3d/iconTexture.ts'
+import {
+  createLabelPops,
+  zoomedLabelScale,
+  type LabelPops,
+} from '#game/map3d/labelPop.ts'
+import {
+  nearestHoverTargetKey,
+  type HoverTarget,
+} from '#game/map3d/mapHover.ts'
 import type { PieceModel, PieceModels } from '#game/map3d/mapModels.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import {
   createMeepleStackModel,
   type MeepleStackModel,
 } from '#game/map3d/meepleStackModel.ts'
+import {
+  createPieceLabels,
+  type PieceLabels,
+} from '#game/map3d/pieceLabels.ts'
 import { isSameMapPiece } from '#game/map3d/sameMapPiece.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 import {
@@ -36,7 +45,8 @@ import {
  * - its 3D model: a structure for a building, or one wooden meeple per
  *   warrior in the stack, packed tight on the ground.
  * Zoomed out, only the icons show, large, like on the flat map. Zooming in,
- * the models rise and the icons shrink to small labels above them.
+ * the models rise and the icons shrink away; an icon pops back up over its
+ * piece while the pointer is on it.
  * An empty building slot is a drawing on the ground, at every zoom.
  */
 export type MapPieceShape = 'slot' | 'piece'
@@ -68,6 +78,8 @@ export type PieceLayer = {
   setTorchesShown: (shown: boolean) => void
   /** 0 = zoomed all the way out, 1 = all the way in. Call once per frame. */
   setZoom: (zoom: number) => void
+  /** The pointer's ray, or null off the map: zoomed in, it shows an icon. */
+  hoverAt: (raycaster: Raycaster | null) => void
   /** The pieces with these keys were just built: play them going up. */
   playBuild: (pieceKeys: readonly string[]) => void
   /** Call once per frame. */
@@ -79,6 +91,7 @@ export type PieceLayer = {
 
 /** A piece on the map and the parts that change with the zoom. */
 type PieceView = {
+  pieceKey: string
   ground: MapGroundPoint
   label: Group
   model: Object3D | null
@@ -107,11 +120,11 @@ const TORCH_PART_NAME_SUFFIX = '_torch'
 const DECAL_ALPHA_CUTOFF = 0.5
 
 /**
- * Icon size (world units). Shrinks with the whole zoom range: big when the
- * map is a flat overview, tiny when the camera is among the 3D pieces.
+ * Icon size (world units): big when the map is a flat overview, gone once
+ * the 3D pieces stand at full size, and this big when the pointer pops it.
  */
 const LABEL_FAR_SIZE = 2.3
-const LABEL_NEAR_SIZE = 0.36
+const LABEL_HOVER_SIZE = 0.5
 /** A piece without a 3D model still shrinks, but stays a bit more readable. */
 const LABEL_NEAR_SIZE_WITHOUT_MODEL = 0.55
 /** The icon of a piece hovers this high over its ground, zoomed out. */
@@ -122,62 +135,6 @@ const LABEL_CLEARANCE = 0.6
 const MODEL_RISE_START_ZOOM = 0.12
 const MODEL_RISE_END_ZOOM = 0.5
 const MODEL_HIDDEN_BELOW_GROWTH = 0.02
-/** Icons draw over the woodland, badges over the icons. */
-const LABEL_RENDER_ORDER = 9
-const BADGE_RENDER_ORDER = 10
-/** Badge, relative to its icon: half its size, on its top right corner. */
-const BADGE_RELATIVE_SIZE = 0.5
-const BADGE_SPRITE_CENTER = -0.3
-
-const BADGE_TEXTURE_SIZE_PIXELS = 96
-const BADGE_BORDER_WIDTH_PIXELS = 7
-const BADGE_BORDER_COLOR = '#f0e6d3'
-const BADGE_TEXT_COLOR = '#ffffff'
-const BADGE_FONT = 'bold 58px Georgia, serif'
-const BADGE_TEXT_BASELINE_NUDGE_PIXELS = 4
-const HALF = 0.5
-const FULL_TURN_RADIANS = Math.PI * 2
-const HEX_RADIX = 16
-const HEX_COLOR_DIGIT_COUNT = 6
-
-function colorToCss(color: number): string {
-  return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
-}
-
-function createBadgeTexture(count: number, color: number): CanvasTexture {
-  const canvas: HTMLCanvasElement = document.createElement('canvas')
-  canvas.width = BADGE_TEXTURE_SIZE_PIXELS
-  canvas.height = BADGE_TEXTURE_SIZE_PIXELS
-  const context: CanvasRenderingContext2D | null = canvas.getContext('2d')
-  if (context !== null) {
-    const center: number = BADGE_TEXTURE_SIZE_PIXELS * HALF
-    context.beginPath()
-    context.arc(
-      center,
-      center,
-      center - BADGE_BORDER_WIDTH_PIXELS,
-      0,
-      FULL_TURN_RADIANS,
-    )
-    context.fillStyle = colorToCss(color)
-    context.fill()
-    context.lineWidth = BADGE_BORDER_WIDTH_PIXELS
-    context.strokeStyle = BADGE_BORDER_COLOR
-    context.stroke()
-    context.font = BADGE_FONT
-    context.textAlign = 'center'
-    context.textBaseline = 'middle'
-    context.fillStyle = BADGE_TEXT_COLOR
-    context.fillText(
-      String(count),
-      center,
-      center + BADGE_TEXT_BASELINE_NUDGE_PIXELS,
-    )
-  }
-  const texture: CanvasTexture = new CanvasTexture(canvas)
-  texture.colorSpace = SRGBColorSpace
-  return texture
-}
 
 export function createPieceLayer(): PieceLayer {
   const group: Group = new Group()
@@ -189,74 +146,16 @@ export function createPieceLayer(): PieceLayer {
   // The pieces are rebuilt on every board update; the dust outlives them.
   const layer: Group = new Group()
   layer.add(group, buildAnimations.group)
-  const iconMaterials: Map<string, SpriteMaterial> = new Map<
-    string,
-    SpriteMaterial
-  >()
-  const badgeMaterials: Map<string, SpriteMaterial> = new Map<
-    string,
-    SpriteMaterial
-  >()
   const matteMaterials: Map<Material, Material> = new Map<Material, Material>()
   const slotDrawings: SlotDrawings = createSlotDrawings()
+  const pieceLabels: PieceLabels = createPieceLabels()
   let views: PieceView[] = []
   let viewsByKey: Map<string, PieceView> = new Map<string, PieceView>()
   let currentZoom = 0
   /** How much of their full size the models show at the current zoom. */
   let currentGrowth = 0
   let torchesShown = false
-
-  const iconMaterial = (piece: MapPiece): SpriteMaterial => {
-    const roundedCorners: boolean = piece.isBuilding === true
-    const materialKey: string = `${piece.texturePath ?? colorToCss(piece.color)}:${String(roundedCorners)}`
-    const cached: SpriteMaterial | undefined = iconMaterials.get(materialKey)
-    if (cached !== undefined) {
-      return cached
-    }
-    const material: SpriteMaterial = new SpriteMaterial({
-      color: piece.texturePath === null ? piece.color : 0xffffff,
-      depthTest: false,
-    })
-    if (piece.texturePath !== null) {
-      material.map = createIconTexture({
-        imagePath: piece.texturePath,
-        roundedCorners,
-      })
-    }
-    iconMaterials.set(materialKey, material)
-    return material
-  }
-
-  const badgeMaterial = (piece: MapPiece): SpriteMaterial => {
-    const materialKey: string = `${String(piece.count)}:${String(piece.color)}`
-    const cached: SpriteMaterial | undefined = badgeMaterials.get(materialKey)
-    if (cached !== undefined) {
-      return cached
-    }
-    const material: SpriteMaterial = new SpriteMaterial({
-      map: createBadgeTexture(piece.count, piece.color),
-      depthTest: false,
-    })
-    badgeMaterials.set(materialKey, material)
-    return material
-  }
-
-  /** The 2D token icon, with the stack size pinned on its corner. */
-  const createLabel = (piece: MapPiece): Group => {
-    const label: Group = new Group()
-    const icon: Sprite = new Sprite(iconMaterial(piece))
-    icon.renderOrder = LABEL_RENDER_ORDER
-    label.add(icon)
-    if (piece.count > 1) {
-      const badge: Sprite = new Sprite(badgeMaterial(piece))
-      badge.scale.setScalar(BADGE_RELATIVE_SIZE)
-      // Anchored off-centre, so it sits on the icon's corner on screen.
-      badge.center.set(BADGE_SPRITE_CENTER, BADGE_SPRITE_CENTER)
-      badge.renderOrder = BADGE_RENDER_ORDER
-      label.add(badge)
-    }
-    return label
-  }
+  const labelPops: LabelPops<string> = createLabelPops<string>()
 
   /**
    * Downloaded models often come fully metallic, which renders near black
@@ -329,15 +228,32 @@ export function createPieceLayer(): PieceLayer {
   }
 
   /**
-   * Icons track the full zoom (0..1), not only the model-rise window, so
-   * they keep getting smaller the closer the camera gets.
+   * An icon shrinks away as its model rises, and pops back up while the
+   * pointer is over the piece. A piece without a model keeps a small icon.
    */
-  const labelSize = (view: PieceView): number =>
-    MathUtils.lerp(
-      LABEL_FAR_SIZE,
-      view.model === null ? LABEL_NEAR_SIZE_WITHOUT_MODEL : LABEL_NEAR_SIZE,
-      MathUtils.smoothstep(currentZoom, 0, 1),
+  const labelSize = (view: PieceView): number => {
+    const zoomedScale: number = zoomedLabelScale(currentZoom)
+    const zoomedSize: number =
+      view.model === null
+        ? MathUtils.lerp(
+            LABEL_NEAR_SIZE_WITHOUT_MODEL,
+            LABEL_FAR_SIZE,
+            zoomedScale,
+          )
+        : LABEL_FAR_SIZE * zoomedScale
+    return Math.max(
+      zoomedSize,
+      LABEL_HOVER_SIZE * labelPops.scaleOf(view.pieceKey),
     )
+  }
+
+  const applyLabelSizes = (): void => {
+    for (const view of views) {
+      const size: number = labelSize(view)
+      view.label.scale.setScalar(size)
+      view.label.visible = size > 0
+    }
+  }
 
   const applyZoom = (): void => {
     const growth: number = MathUtils.smoothstep(
@@ -346,8 +262,8 @@ export function createPieceLayer(): PieceLayer {
       MODEL_RISE_END_ZOOM,
     )
     currentGrowth = growth
+    applyLabelSizes()
     for (const view of views) {
-      view.label.scale.setScalar(labelSize(view))
       if (view.model === null) {
         view.label.position.y = LABEL_FAR_HEIGHT
         continue
@@ -361,6 +277,18 @@ export function createPieceLayer(): PieceLayer {
       )
     }
   }
+
+  /** The nearest piece the ray hits: its model, or its icon if it has none. */
+  const pieceKeyAt = (raycaster: Raycaster): string | null =>
+    nearestHoverTargetKey(
+      raycaster,
+      views.map(
+        (view: PieceView): HoverTarget => ({
+          key: view.pieceKey,
+          object: view.model ?? view.label,
+        }),
+      ),
+    )
 
   /** The torch a pawn holds is a part of its model: show or hide them all. */
   const applyTorches = (): void => {
@@ -397,7 +325,7 @@ export function createPieceLayer(): PieceLayer {
       holder.add(slot)
       return { piece, holder, view: null }
     }
-    const label: Group = createLabel(piece)
+    const label: Group = pieceLabels.createLabel(piece)
     holder.add(label)
     const pieceModel: PieceModel | undefined = pieceModels.get(
       piece.textureKey,
@@ -407,6 +335,7 @@ export function createPieceLayer(): PieceLayer {
         piece,
         holder,
         view: {
+          pieceKey: piece.key,
           ground: piece.ground,
           label,
           model: null,
@@ -422,6 +351,7 @@ export function createPieceLayer(): PieceLayer {
       piece,
       holder,
       view: {
+        pieceKey: piece.key,
         ground: piece.ground,
         label,
         model: created.model,
@@ -478,8 +408,13 @@ export function createPieceLayer(): PieceLayer {
       currentZoom = zoom
       applyZoom()
     },
+    hoverAt: (raycaster: Raycaster | null): void => {
+      labelPops.setHovered(raycaster === null ? null : pieceKeyAt(raycaster))
+    },
     playBuild: buildAnimations.play,
     update: (deltaSeconds: number): void => {
+      labelPops.update(deltaSeconds)
+      applyLabelSizes()
       buildAnimations.update(deltaSeconds, buildSiteOf)
     },
     isBuildPlaying: buildAnimations.isPlaying,
@@ -487,13 +422,7 @@ export function createPieceLayer(): PieceLayer {
       group.clear()
       buildAnimations.dispose()
       slotDrawings.dispose()
-      for (const material of [
-        ...iconMaterials.values(),
-        ...badgeMaterials.values(),
-      ]) {
-        material.map?.dispose()
-        material.dispose()
-      }
+      pieceLabels.dispose()
     },
   }
 }

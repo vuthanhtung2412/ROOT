@@ -2,11 +2,14 @@ import {
   CanvasTexture,
   Group,
   MathUtils,
+  Plane,
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
   Texture,
   TextureLoader,
+  Vector3,
+  type Raycaster,
 } from 'three'
 import {
   createClearingMarks,
@@ -20,7 +23,13 @@ import {
 import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import { createForestMarks, type ForestMarks } from '#game/map3d/forestMarks.ts'
 import type { ForestGround } from '#game/map3d/forestOutline.ts'
+import {
+  createLabelPops,
+  zoomedLabelScale,
+  type LabelPops,
+} from '#game/map3d/labelPop.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
+import { groundDistance } from '#game/map3d/mapWorldSpace.ts'
 
 export type { ClearingRingStyle } from '#game/map3d/clearingMarks.ts'
 export type { ForestGround } from '#game/map3d/forestOutline.ts'
@@ -50,7 +59,12 @@ export type GroundMarkers = {
   update: (elapsedSeconds: number) => void
   /** 0 = zoomed all the way out, 1 = all the way in: sizes the suit badges. */
   setZoom: (zoom: number) => void
+  /** The pointer's ray, or null off the map: zoomed in, it shows a suit. */
+  hoverAt: (raycaster: Raycaster | null) => void
 }
+
+/** The ground the clearings lie on. */
+const GROUND_PLANE: Plane = new Plane(new Vector3(0, 1, 0), 0)
 
 /** Under the full sun no mark glows; at dawn and after dark they all do. */
 const GLOW_LEVEL_BY_TIME_OF_DAY: Readonly<Record<TimeOfDay, number>> = {
@@ -66,9 +80,9 @@ const MAXIMUM_FRAME_SECONDS = 0.1
 const HALF = 0.5
 const FULL_TURN_RADIANS = Math.PI * 2
 
-/** Suit badge size (world units) zoomed out and zoomed in. */
+/** Suit badge size (world units) zoomed out, and popped up by the pointer. */
 const SUIT_BADGE_FAR_SIZE = 2.1
-const SUIT_BADGE_NEAR_SIZE = 0.55
+const SUIT_BADGE_HOVER_SIZE = 0.7
 const SUIT_BADGE_HEIGHT = 0.9
 /** The suit icon, relative to the chip it sits on. */
 const SUIT_ICON_RELATIVE_SIZE = 0.7
@@ -139,7 +153,7 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
   const group: Group = new Group()
   const textureLoader: TextureLoader = new TextureLoader()
   const suitChipTexture: CanvasTexture = createSuitChipTexture()
-  const suitBadges: Group[] = []
+  const suitBadges: Map<number, Group> = new Map<number, Group>()
   for (const clearing of clearings) {
     const suitTexturePath: string | undefined = input.suitTexturePaths.get(
       clearing.clearingId,
@@ -152,7 +166,7 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
         chip: suitChipTexture,
       })
       badge.scale.setScalar(SUIT_BADGE_FAR_SIZE)
-      suitBadges.push(badge)
+      suitBadges.set(clearing.clearingId, badge)
       group.add(badge)
     }
   }
@@ -165,6 +179,35 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
   let glowLevel: number = GLOW_LEVEL_BY_TIME_OF_DAY[input.timeOfDay]
   let targetGlowLevel: number = glowLevel
   let previousElapsedSeconds = 0
+  let currentZoom = 0
+  const suitPops: LabelPops<number> = createLabelPops<number>()
+  const groundHit: Vector3 = new Vector3()
+
+  /** A badge shrinks away with the zoom, and pops up under the pointer. */
+  const applyBadgeSizes = (): void => {
+    const zoomedSize: number =
+      SUIT_BADGE_FAR_SIZE * zoomedLabelScale(currentZoom)
+    for (const [clearingId, badge] of suitBadges) {
+      const size: number = Math.max(
+        zoomedSize,
+        SUIT_BADGE_HOVER_SIZE * suitPops.scaleOf(clearingId),
+      )
+      badge.scale.setScalar(size)
+      badge.visible = size > 0
+    }
+  }
+
+  /** The clearing whose ground the ray reaches, if any. */
+  const clearingIdAt = (raycaster: Raycaster): number | null => {
+    if (raycaster.ray.intersectPlane(GROUND_PLANE, groundHit) === null) {
+      return null
+    }
+    const hovered: ClearingGround | undefined = clearings.find(
+      (clearing: ClearingGround): boolean =>
+        groundDistance(groundHit, clearing.center) <= clearing.radius,
+    )
+    return hovered?.clearingId ?? null
+  }
 
   return {
     group,
@@ -188,16 +231,14 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
       clearingMarks.update({ elapsedSeconds, glowLevel })
       forestMarks.update(elapsedSeconds)
       clearingFlashMark.update(elapsedSeconds)
+      suitPops.update(deltaSeconds)
+      applyBadgeSizes()
     },
     setZoom: (zoom: number): void => {
-      const size: number = MathUtils.lerp(
-        SUIT_BADGE_FAR_SIZE,
-        SUIT_BADGE_NEAR_SIZE,
-        zoom,
-      )
-      for (const badge of suitBadges) {
-        badge.scale.setScalar(size)
-      }
+      currentZoom = zoom
+    },
+    hoverAt: (raycaster: Raycaster | null): void => {
+      suitPops.setHovered(raycaster === null ? null : clearingIdAt(raycaster))
     },
   }
 }

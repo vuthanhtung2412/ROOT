@@ -2,6 +2,7 @@ import {
   PCFSoftShadowMap,
   PointLight,
   Scene,
+  type Raycaster,
   Vector3,
   WebGLRenderer,
   type Object3D,
@@ -24,6 +25,7 @@ import {
   type GroundMarkers,
 } from '#game/map3d/groundMarkers.ts'
 import { createMapCameraRig, type MapCameraRig } from '#game/map3d/mapCamera.ts'
+import { createMapHover, type MapHover } from '#game/map3d/mapHover.ts'
 import type { MapModels, PieceModels } from '#game/map3d/mapModels.ts'
 import type { MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type {
@@ -196,6 +198,14 @@ export function createMapScene(input: MapSceneInput): MapScene {
     })
   }
   cameraRig.controls.addEventListener('change', notifyViewChanged)
+  const mapHover: MapHover = createMapHover({
+    element: input.controlElement,
+    camera: cameraRig.camera,
+    onHover: (raycaster: Raycaster | null): void => {
+      pieceLayer.hoverAt(raycaster)
+      groundMarkers.hoverAt(raycaster)
+    },
+  })
 
   const resize = (nextFrame: MapViewFrame): void => {
     frame = nextFrame
@@ -254,6 +264,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
       shadowZoom = zoom
     }
     pieceLayer.setZoom(zoom)
+    mapHover.refresh()
     pieceLayer.update(deltaSeconds)
     groundMarkers.setZoom(cameraRig.zoom())
     daylight.followCamera(cameraRig.camera.position, cameraRig.controls.target)
@@ -314,6 +325,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     dispose: (): void => {
       cancelAnimationFrame(animationFrame)
       cameraRig.controls.removeEventListener('change', notifyViewChanged)
+      mapHover.dispose()
       cameraRig.controls.removeEventListener('start', noteCameraMoved)
       cameraRig.controls.removeEventListener('change', noteCameraMoved)
       cameraRig.dispose()
