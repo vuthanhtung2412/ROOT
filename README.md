@@ -109,6 +109,10 @@ pnpm gen:api-client
 
 The API allows localhost, LAN and Capacitor origins. Add more with `ROOT_CORS_ORIGINS` (comma list, server env), e.g. `ROOT_CORS_ORIGINS=https://vuthanhtung2412.github.io`.
 
+### GitHub Pages
+
+`pnpm remote:pages` = `pnpm remote` plus `scripts/sync-pages.sh` (set `ROOT_CORS_ORIGINS=https://<owner>.github.io` in `.env`): once the Funnel URL answers, it builds the **checked-out commit** with `ROOT_WEB_API` = that URL and `ROOT_WEB_BASE_PATH=/<repo>/`, pushes `frontend/react/dist` to the `gh-pages` branch (one commit, no history) and points Pages at it. The site at `https://<owner>.github.io/<repo>/` always matches your local checkout, so `git checkout <old-commit> && pnpm remote:pages` deploys that version. Needs `gh auth login`.
+
 ### AI players
 
 A seat can be played by an LLM. API keys stay on the server: clients only see model ids.

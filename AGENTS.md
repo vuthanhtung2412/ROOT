@@ -1,4 +1,5 @@
 - Prefer language for anything is typescript
+  - Exception: scripts that only glue CLIs together (`gh`, `git`, `tailscale`, `curl`, process start/stop) → bash in `scripts/`
 - If there is a script to do certain thing use it (boostrap ts project, generate client) instead of modifying code
 - Rules **SoT** = `./resources/rules/Law_of_Root.pdf` (markdown twin: `./resources/rules/Law_of_Root.md`).
   - Clockwork / electric-bot **SoT** = `./resources/rules/Law_of_Rootbotics.pdf` (markdown twin: `./resources/rules/Law_of_Rootbotics.md`). Errata: `./resources/rules/Electric_Eyrie_Errata.pdf`.

@@ -60,4 +60,8 @@ echo "  ${url}"
 echo "============================================================"
 echo ""
 echo "(Ctrl+C stops everything)"
+
+# pnpm remote:pages — build this checkout against this URL, publish it to GitHub Pages.
+[ "${ROOT_PAGES_SYNC:-}" = "1" ] && bash scripts/sync-pages.sh "$url" &
+
 wait "$WEB_PID"
