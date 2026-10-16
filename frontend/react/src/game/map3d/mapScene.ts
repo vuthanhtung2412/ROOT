@@ -285,6 +285,8 @@ export function createMapScene(input: MapSceneInput): MapScene {
     resize,
     setPieces: (pieces: readonly MapPiece[]): void => {
       pieceLayer.setPieces(pieces)
+      // Pieces moved under a still pointer: what it is over may have changed.
+      mapHover.refresh()
       shadowsAreStale = true
       // Only a Vagabond in a forest stands among the trees that would hide it.
       treeSightlines.setTargets(
@@ -295,6 +297,8 @@ export function createMapScene(input: MapSceneInput): MapScene {
     },
     setPieceModels: (pieceModels: PieceModels): void => {
       pieceLayer.setPieceModels(pieceModels)
+      // A piece may now have a model to point at.
+      mapHover.refresh()
       shadowsAreStale = true
       warmUpShaders()
     },

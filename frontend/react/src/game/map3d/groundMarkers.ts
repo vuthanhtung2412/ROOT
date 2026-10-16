@@ -23,7 +23,11 @@ import {
 import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import { createForestMarks, type ForestMarks } from '#game/map3d/forestMarks.ts'
 import type { ForestGround } from '#game/map3d/forestOutline.ts'
-import { isLabelShown } from '#game/map3d/labelVisibility.ts'
+import {
+  createLabelPops,
+  zoomedLabelScale,
+  type LabelPops,
+} from '#game/map3d/labelPop.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
 
 export type { ClearingRingStyle } from '#game/map3d/clearingMarks.ts'
@@ -75,9 +79,9 @@ const MAXIMUM_FRAME_SECONDS = 0.1
 const HALF = 0.5
 const FULL_TURN_RADIANS = Math.PI * 2
 
-/** Suit badge size (world units) zoomed out and zoomed in. */
+/** Suit badge size (world units) zoomed out, and popped up by the pointer. */
 const SUIT_BADGE_FAR_SIZE = 2.1
-const SUIT_BADGE_NEAR_SIZE = 0.55
+const SUIT_BADGE_HOVER_SIZE = 0.7
 const SUIT_BADGE_HEIGHT = 0.9
 /** The suit icon, relative to the chip it sits on. */
 const SUIT_ICON_RELATIVE_SIZE = 0.7
@@ -175,21 +179,20 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
   let targetGlowLevel: number = glowLevel
   let previousElapsedSeconds = 0
   let currentZoom = 0
-  let hoveredClearingId: number | null = null
+  const suitPops: LabelPops<number> = createLabelPops<number>()
   const groundHit: Vector3 = new Vector3()
 
-  const applyZoom = (): void => {
-    const size: number = MathUtils.lerp(
-      SUIT_BADGE_FAR_SIZE,
-      SUIT_BADGE_NEAR_SIZE,
-      currentZoom,
-    )
+  /** A badge shrinks away with the zoom, and pops up under the pointer. */
+  const applyBadgeSizes = (): void => {
+    const zoomedSize: number =
+      SUIT_BADGE_FAR_SIZE * zoomedLabelScale(currentZoom)
     for (const [clearingId, badge] of suitBadges) {
+      const size: number = Math.max(
+        zoomedSize,
+        SUIT_BADGE_HOVER_SIZE * suitPops.scaleOf(clearingId),
+      )
       badge.scale.setScalar(size)
-      badge.visible = isLabelShown({
-        zoom: currentZoom,
-        isHovered: clearingId === hoveredClearingId,
-      })
+      badge.visible = size > 0
     }
   }
 
@@ -230,22 +233,22 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
       clearingMarks.update({ elapsedSeconds, glowLevel })
       forestMarks.update(elapsedSeconds)
       clearingFlashMark.update(elapsedSeconds)
+      // One more frame once the pops end, so they land on their last size.
+      const popsWereAnimating: boolean = suitPops.isAnimating()
+      suitPops.update(deltaSeconds)
+      if (popsWereAnimating) {
+        applyBadgeSizes()
+      }
     },
     setZoom: (zoom: number): void => {
       if (zoom === currentZoom) {
         return
       }
       currentZoom = zoom
-      applyZoom()
+      applyBadgeSizes()
     },
     hoverAt: (raycaster: Raycaster | null): void => {
-      const clearingId: number | null =
-        raycaster === null ? null : clearingIdAt(raycaster)
-      if (clearingId === hoveredClearingId) {
-        return
-      }
-      hoveredClearingId = clearingId
-      applyZoom()
+      suitPops.setHovered(raycaster === null ? null : clearingIdAt(raycaster))
     },
   }
 }

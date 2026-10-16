@@ -1,4 +1,10 @@
-import { Raycaster, Vector2, type Camera } from 'three'
+import {
+  Raycaster,
+  Vector2,
+  type Camera,
+  type Intersection,
+  type Object3D,
+} from 'three'
 
 /**
  * Follows the mouse over the map and casts its ray into the scene, for the
@@ -18,7 +24,38 @@ export type MapHover = {
   dispose: () => void
 }
 
+/** Something the pointer can be over, under its key. */
+export type HoverTarget = {
+  key: string
+  object: Object3D
+}
+
 const TOUCH_POINTER_TYPE = 'touch'
+
+/** The ray hits a hidden part too (a pawn's unlit torch): it is not there. */
+function isShown(part: Object3D | null): boolean {
+  return part === null || (part.visible && isShown(part.parent))
+}
+
+/** The key of the nearest target the ray hits, or null if it hits none. */
+export function nearestHoverTargetKey(
+  raycaster: Raycaster,
+  targets: readonly HoverTarget[],
+): string | null {
+  let nearestKey: string | null = null
+  let nearestDistance: number = Infinity
+  for (const target of targets) {
+    const hits: Intersection[] = raycaster.intersectObject(target.object)
+    const distance: number =
+      hits.find((hit: Intersection): boolean => isShown(hit.object))
+        ?.distance ?? Infinity
+    if (distance < nearestDistance) {
+      nearestDistance = distance
+      nearestKey = target.key
+    }
+  }
+  return nearestKey
+}
 
 export function createMapHover(input: MapHoverInput): MapHover {
   const raycaster: Raycaster = new Raycaster()
