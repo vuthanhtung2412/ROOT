@@ -7,6 +7,12 @@ import {
   createRiverfolkBoard,
   type RiverfolkBoard,
 } from '#state/riverfolkBoard.js'
+import {
+  createElectricEyrieBoard,
+  createMechanicalMarquiseBoard,
+  type ElectricEyrieBoard,
+  type MechanicalMarquiseBoard,
+} from '#state/botBoards.js'
 
 /** Face-up quests drawn at Vagabond setup. Rule: Vagabond > Setup 3. */
 export const FACE_UP_QUEST_COUNT = 3
@@ -157,6 +163,8 @@ export type FactionBoard =
   | VagabondBoard
   | LizardBoard
   | RiverfolkBoard
+  | MechanicalMarquiseBoard
+  | ElectricEyrieBoard
 
 export function createFactionBoard(faction: FactionId): FactionBoard {
   switch (faction) {
@@ -204,6 +212,8 @@ export function createFactionBoard(faction: FactionId): FactionBoard {
           vagabond: 0,
           lizard: 0,
           riverfolk: 0,
+          mechanicalMarquise: 0,
+          electricEyrie: 0,
         },
         forest: null,
       }
@@ -211,5 +221,9 @@ export function createFactionBoard(faction: FactionId): FactionBoard {
       return createLizardBoard()
     case 'riverfolk':
       return createRiverfolkBoard()
+    case 'mechanicalMarquise':
+      return createMechanicalMarquiseBoard()
+    case 'electricEyrie':
+      return createElectricEyrieBoard()
   }
 }

@@ -1,4 +1,5 @@
 /** Faction + piece colors for vector board tokens. */
+import { artFactionOf } from '@root/lib/bot-factions'
 
 export const FACTION_COLORS = {
   marquise: 0xc45c26,
@@ -16,7 +17,10 @@ export function factionColorForSeat(
   seat: number,
   factions: readonly string[],
 ): number {
-  const factionId = factions[seat]
+  const seatFaction = factions[seat]
+  // A bot wears the colour of the faction it replaces.
+  const factionId =
+    seatFaction === undefined ? undefined : artFactionOf(seatFaction)
   if (factionId === 'marquise') {
     return FACTION_COLORS.marquise
   }

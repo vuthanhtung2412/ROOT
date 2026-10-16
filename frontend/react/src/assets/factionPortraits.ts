@@ -8,6 +8,8 @@ const FACTION_PORTRAIT_PATHS: Readonly<Record<string, string>> = {
   vagabond: '/assets/portraits/vagabond.webp',
   lizard: '/assets/portraits/lizard.webp',
   riverfolk: '/assets/portraits/riverfolk.webp',
+  mechanicalMarquise: '/assets/portraits/mechanicalMarquise.webp',
+  electricEyrie: '/assets/portraits/electricEyrie.webp',
 }
 
 /** Public path of a faction's portrait; null when the faction has none. */

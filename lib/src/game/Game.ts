@@ -14,6 +14,12 @@ import {
   type MarquiseForecast,
 } from '#factions/marquise/workshopForecast.js'
 import { factionFor } from '#factions/index.js'
+import { botEventAnswer } from '#factions/bots/botAnswers.js'
+import {
+  botPlayerIdFor,
+  isBotFaction,
+  isBotSeat,
+} from '#factions/bots/botFactions.js'
 import { beginFactionSetup } from '#game/factionSetup.js'
 import {
   markHiddenInformation,
@@ -59,6 +65,11 @@ const PHASES: Phase[] = ['birdsong', 'daylight', 'evening']
 const MAX_PLAYERS = 4
 /** The lobby creator joins first: seat 0 hosts and cannot be expelled. */
 const LOBBY_HOST_SEAT = 0
+/**
+ * Automatic steps run in a row before a player is asked again. Bots take
+ * their whole turn (one task per step), two bots in a row included.
+ */
+const MAX_AUTOMATIC_STEPS = 1000
 
 type UndoCheckpoint = {
   wasPlaying: boolean
@@ -120,13 +131,15 @@ export class Game {
       seed: args.seed,
       factions,
     })
-    return new Game({
+    const game = new Game({
       state:
         factions.length === 0 ? { ...initialState, openLobby: true } : initialState,
       history: [],
       log: [],
       rng: new SeededRng({ seed: args.seed, cursor: 0 }),
     })
+    game.log.push(...game.seatWaitingBots())
+    return game
   }
 
   static replay(
@@ -308,6 +321,10 @@ export class Game {
       effectForAction(action) !== undefined &&
       this.state.status === 'playing'
     ) {
+      logs.push(...this.runAutoActions())
+    }
+
+    if (this.botHasWork()) {
       logs.push(...this.runAutoActions())
     }
 
@@ -590,7 +607,25 @@ export class Game {
     if (pickedFaction !== undefined && pickedFaction !== faction) {
       throw new RuleError('WRONG_FACTION', { faction: pickedFaction })
     }
-    return this.seatPlayer(playerId, faction)
+    return [...this.seatPlayer(playerId, faction), ...this.seatWaitingBots()]
+  }
+
+  /**
+   * Rule: Rootbotics 2.6 — a bot needs no human: the next preset seats that
+   * are bots take their place on their own.
+   */
+  private seatWaitingBots(): LogEntry[] {
+    const { state } = this
+    const logs: LogEntry[] = []
+    if (state.openLobby === true || state.status !== 'waiting') return logs
+    for (
+      let faction = state.factions[state.players.length];
+      faction !== undefined && isBotFaction(faction);
+      faction = state.factions[state.players.length]
+    ) {
+      logs.push(...this.seatPlayer(botPlayerIdFor(faction), faction))
+    }
+    return logs
   }
 
   /**
@@ -795,20 +830,56 @@ export class Game {
   private runAutoActions(): LogEntry[] {
     const logs: LogEntry[] = []
     let guard = 0
-    while (guard++ < 50) {
-      // A pending choice (e.g. buying services at the start of Birdsong) comes first.
-      if (this.state.pending.length > 0) break
+    while (guard++ < MAX_AUTOMATIC_STEPS && this.state.status === 'playing') {
+      // A pending choice (e.g. buying services at the start of Birdsong) comes
+      // first; a bot answers its own at once.
+      if (this.state.pending.length > 0) {
+        const botAnswerLogs: LogEntry[] | null = this.answerForBot()
+        if (botAnswerLogs === null) break
+        logs.push(...botAnswerLogs)
+        continue
+      }
       const faction = factionFor(factionOf(this.state, this.state.currentSeat))
       const autos = faction
         .autoActions(this.state, this.state.phase, this.state.step)
         .filter((action) => !this.isAutoBlocked(action))
       if (autos.length === 0) break
       for (const action of autos) {
+        if (action.type === 'endPhase') {
+          // A bot ends its own steps (Rootbotics 2.6).
+          logs.push(...this.advanceOrHoldAtEndOfBirdsong())
+          continue
+        }
         faction.validate(this.state, action, this.makeCtx())
         logs.push(...faction.apply(this.state, action, this.makeCtx()))
+        if (this.state.status === 'playing') logs.push(...this.checkWin())
       }
     }
     return logs
+  }
+
+  /** Rule: Rootbotics 2.6 — the pending event waits on a bot: it answers. Null when not. */
+  private answerForBot(): LogEntry[] | null {
+    const head = this.state.pending[0]
+    if (head === undefined) return null
+    const specs: ActionSpec[] = this.pendingLegalActions()
+    const actor: Seat | undefined = specs[0]?.actor
+    if (actor === undefined || !isBotSeat(this.state, actor)) return null
+    const ctx = this.makeCtx()
+    const answer = botEventAnswer(head, specs, ctx.rng)
+    if (answer === null || !RESOLVERS[head.type].matchesAction(this.state, head, answer, ctx)) {
+      throw new RuleError('BOT_CANNOT_ANSWER', { event: head })
+    }
+    return RESOLVERS[head.type].apply(this.state, { event: head, action: answer, actor }, ctx)
+  }
+
+  /** A bot has to act now: answer a pending event, or take its turn. */
+  private botHasWork(): boolean {
+    const { state } = this
+    if (state.status !== 'playing') return false
+    if (state.pending.length === 0) return isBotSeat(state, state.currentSeat)
+    const actor: Seat | undefined = this.pendingLegalActions()[0]?.actor
+    return actor !== undefined && isBotSeat(state, actor)
   }
 
   private isAutoBlocked(action: { type: string }): boolean {

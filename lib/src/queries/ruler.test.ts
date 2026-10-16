@@ -60,6 +60,21 @@ describe('ruler', () => {
     expect(ruler(state, 4, hooks)).toBe(1)
   })
 
+  it('Rule: Rootbotics 5.2.1 Lords of the Forest — Electric Eyrie wins ties', () => {
+    const state = withPieces(
+      minimalState({
+        factions: ['marquise', 'electricEyrie'],
+        players: [player(0, 'marquise'), player(1, 'electricEyrie')],
+      }),
+      4,
+      [
+        { id: 'w0', kind: 'warrior', owner: 0 },
+        { id: 'w1', kind: 'warrior', owner: 1 },
+      ],
+    )
+    expect(ruler(state, 4, hooks)).toBe(1)
+  })
+
   it('Rule: Board > Rule — hooks.ruleWeight can boost token rule strength', () => {
     const pieces: Piece[] = [
       { id: 's0', kind: 'token', owner: 0, type: 'sympathy' },

@@ -3,7 +3,10 @@
  * Eyrie wins ties (Lords of the Forest). Tokens/pawns do not count.
  */
 
+import { artFactionOf } from '@root/lib/bot-factions'
+
 const GARDEN_PIECE_TYPE = 'garden'
+const EYRIE_FACTION = 'eyrie'
 
 export type ClearingPiecesForRule = {
   pieces: ReadonlyArray<{
@@ -65,7 +68,10 @@ export function clearingRuler(
   if (tied.length === 1) {
     return tied[0]!
   }
-  const eyrieTied = tied.filter((seat) => factions[seat] === 'eyrie')
+  // Eyrie Dynasties and Electric Eyrie alike (Rootbotics 5.2.1).
+  const eyrieTied = tied.filter(
+    (seat) => artFactionOf(factions[seat] ?? '') === EYRIE_FACTION,
+  )
   if (eyrieTied.length > 0) {
     return eyrieTied.sort((left, right) => left - right)[0]!
   }

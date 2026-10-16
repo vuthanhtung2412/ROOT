@@ -29,6 +29,8 @@ export type BattleEvent = {
   alliedHitsTaken?: number
   /** Rule: 9.2.9.IId — items damaged as hits this battle. */
   itemHitsTaken?: number
+  /** Rule: Rootbotics 5.5.1.III — extra hits the attacker deals. */
+  attackerExtraHits?: number
 }
 
 export type FieldHospitalEvent = {

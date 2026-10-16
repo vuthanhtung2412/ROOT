@@ -4,7 +4,7 @@ import {
   defaultFactionsForPlayerCount,
   factionDisplayName,
   isMenuFactionId,
-  MENU_FACTION_IDS,
+  HOTSEAT_FACTION_IDS,
   MENU_PLAYER_COUNTS,
   validatePartyFactions,
   type MenuFactionId,
@@ -112,7 +112,7 @@ export function MenuHotseatSetup(props: {
                       )
                     }}
                   >
-                    {MENU_FACTION_IDS.map(
+                    {HOTSEAT_FACTION_IDS.map(
                       (optionId: MenuFactionId): JSX.Element => (
                         <option key={optionId} value={optionId}>
                           {factionDisplayName(optionId)}

@@ -3,6 +3,7 @@ import type {
   GameState,
   FrontendApiClient,
 } from '#api/client.ts'
+import { isBotFaction } from '@root/lib/bot-factions'
 import { ApiError } from '#api/client.ts'
 import { setAiPlayers } from '#game/aiPlayerStore.ts'
 import {
@@ -608,6 +609,8 @@ export class GameSession {
         replace: true,
       })
       for (const faction of factions) {
+        // A bot seat takes its place by itself (Rootbotics 2.6).
+        if (isBotFaction(faction)) continue
         await this.api.join(faction)
       }
       await this.api.start()

@@ -5,6 +5,10 @@ export type FactionId =
   | 'vagabond'
   | 'lizard'
   | 'riverfolk'
+  /** Rule: Rootbotics 4 — bot replacing the Marquise de Cat. */
+  | 'mechanicalMarquise'
+  /** Rule: Rootbotics 5 — bot replacing the Eyrie Dynasties. */
+  | 'electricEyrie'
 
 export type Seat = 0 | 1 | 2 | 3
 

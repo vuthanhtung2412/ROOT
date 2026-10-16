@@ -5,6 +5,7 @@ import type { Event } from '#events/types.js'
 import type { ClearingId, Suit } from '#map/types.js'
 import type { FactionId, ItemType, Piece, Seat } from '#pieces/types.js'
 import type { DecreeColumn, FactionBoard } from '#state/boards.js'
+import type { BotPlan } from '#state/botTurn.js'
 
 export type Phase = 'birdsong' | 'daylight' | 'evening'
 
@@ -91,6 +92,12 @@ export type TurnScratch = {
   riverboats: boolean
   /** Mercenaries bought this turn. Rule: 11.2.7.III. */
   mercenaries: boolean
+  /** Bot — tasks left in the current step (Rootbotics 4–5). Null: not planned yet. */
+  botPlan?: BotPlan | null
+  /** Mechanical Marquise — placed a building this turn (Expand 4.5.5). */
+  botBuiltThisTurn?: boolean
+  /** Mechanical Marquise — Expands taken this turn (house-rule cap). */
+  botExpandCount?: number
 }
 
 export type GameState = {

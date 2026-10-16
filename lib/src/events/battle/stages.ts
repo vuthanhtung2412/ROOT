@@ -186,6 +186,7 @@ function applyCommanderBonus(state: GameState, event: BattleEvent): void {
 function finalizeHitsAndRemoval(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   applyDefenseless(state, event)
   applyCommanderBonus(state, event)
+  event.hits.attacker += event.attackerExtraHits ?? 0
   ctx.emit({ s: 'battle.hits', ev: event, side: 'attacker' })
   ctx.emit({ s: 'battle.hits', ev: event, side: 'defender' })
 

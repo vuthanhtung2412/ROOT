@@ -41,6 +41,10 @@
       "types": "./src/map/fallSlots.ts",
       "default": "./src/map/fallSlots.ts"
     },
+    "./bot-factions": {
+      "types": "./src/public/botFactionIds.ts",
+      "default": "./src/public/botFactionIds.ts"
+    },
     "./fall-metadata": {
       "types": "./src/public/fallMetadata.ts",
       "default": "./src/public/fallMetadata.ts"

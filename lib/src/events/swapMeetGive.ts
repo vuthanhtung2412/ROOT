@@ -7,6 +7,7 @@ import type { Seat } from '#pieces/types.js'
 import { playerOf } from '#queries/seat.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
+import { giveCard } from '#factions/bots/manualDexterity.js'
 
 export type SwapMeetGiveApply = {
   event: SwapMeetGiveEvent
@@ -45,7 +46,7 @@ export const swapMeetGiveResolver: SwapMeetGiveResolver = {
     )
   },
 
-  apply(state, { event, action, actor }, _ctx) {
+  apply(state, { event, action, actor }, ctx) {
     if (actor !== event.seat) throw new RuleError('WRONG_ACTOR', { actor })
     if (action.cardId === undefined) throw new RuleError('MISSING_SWAP_MEET_CARD')
 
@@ -63,7 +64,9 @@ export const swapMeetGiveResolver: SwapMeetGiveResolver = {
     if (pendingIndex >= 0) state.pending.splice(pendingIndex, 1)
 
     const given: Card = giver.hand.splice(cardIndex, 1)[0]!
-    playerOf(state, event.target).hand.push(given)
-    return [{ t: 'event', event }]
+    return [
+      ...giveCard(state, { card: given, receiver: event.target }, ctx),
+      { t: 'event', event },
+    ]
   },
 }

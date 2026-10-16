@@ -55,6 +55,11 @@ import {
 import type { VagabondCharacter } from '#state/boards.js'
 import type { GameState, Phase, Step } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
+import { isBotSeat } from '#factions/bots/botFactions.js'
+import {
+  drawInsteadOfTakingFromBot,
+  giveCard,
+} from '#factions/bots/manualDexterity.js'
 
 function shuffleWithRng<T>(items: T[], rng: Ctx['rng']): T[] {
   const shuffled = [...items]
@@ -443,7 +448,7 @@ export class Vagabond extends Faction {
         if (index < 0) throw new RuleError('CARD_NOT_IN_HAND')
         const [card] = hand.splice(index, 1)
         if (card === undefined) throw new RuleError('CARD_NOT_IN_HAND')
-        playerOf(state, action.target).hand.push(card)
+        logs.push(...giveCard(state, { card, receiver: action.target }, ctx))
         improveRelationship(state, { seat, target: action.target }, ctx, logs)
         if (action.takeItem !== undefined) {
           const target = playerOf(state, action.target)
@@ -502,6 +507,10 @@ export class Vagabond extends Faction {
       }
       case 'steal': {
         if (exhaustItem(board, 'torch') === null) throw new RuleError('NO_TORCH')
+        if (isBotSeat(state, action.target)) {
+          drawInsteadOfTakingFromBot(state, seat, ctx)
+          return [{ t: 'action', actor: seat, action }]
+        }
         const targetHand = playerOf(state, action.target).hand
         if (targetHand.length === 0) throw new RuleError('EMPTY_HAND')
         const index = randomIndex(ctx.rng, targetHand.length)

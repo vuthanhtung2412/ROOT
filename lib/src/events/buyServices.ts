@@ -11,6 +11,7 @@ import type { Seat } from '#pieces/types.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
 import type { BuyServicesEvent } from '#events/types.js'
+import { isBotSeat } from '#factions/bots/botFactions.js'
 
 export type BuyServicesApply = {
   event: BuyServicesEvent
@@ -40,6 +41,8 @@ function closeEvent(state: GameState, event: BuyServicesEvent): void {
  */
 export function offerRiverfolkServices(state: GameState): void {
   const buyer = state.currentSeat
+  // Bots have no hand to pay with (Rootbotics 2.8.1): they never buy.
+  if (isBotSeat(state, buyer)) return
   if (purchasableServices(state, buyer).length === 0) return
   state.pending.push({ type: 'buyServices', buyer, bought: 0 })
 }

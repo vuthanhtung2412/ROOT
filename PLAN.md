@@ -1,3 +1,59 @@
+## Bots: Mechanical Marquise 2.0 and Electric Eyrie
+
+### Goal
+- Play against the two Rootbotics bots (`resources/rules/Law_of_Rootbotics.md` ch. 1–5, Electric Eyrie errata board).
+- A bot seat needs no human: it is seated by the engine, takes its whole turn on its own and answers its own prompts (battle hits, outrage…).
+- Humans see the bot's pieces with the cat / bird art, its order card, Buildings tracks / Decree and Roosts track.
+
+### Approach
+1. New faction ids `mechanicalMarquise` and `electricEyrie`, own boards (`kind` = faction id) and own `Faction` classes. `baseFactionOf()` maps a bot to the art faction (`marquise` / `eyrie`). Lords of the Forest (5.2.1) and the keep (4.2.1) reuse the human rules.
+2. Priority markers (2.1): Fall clearing id + 1 = printed clearing number = priority. Player target priority (2.2): setup order A…F.
+3. Engine drives bots: a bot's steps are all automatic (`autoActions`), one unit of work per auto action (one battle, one move…), so a battle opened by a bot waits for the human's answers and the turn resumes after. A bot ends its steps with an automatic `endPhase`. Pending prompts whose actor is a bot are answered by a bot policy (decline ambush, no effects, removal per 1.2.1).
+4. Bots join by themselves: at create and after each join, bot seats are seated with player id `bot-<faction>`.
+5. Rule changes (ch. 1–2): bot crafts without pieces for 1 VP, never persistent cards (1.1); takes hits tokens → buildings, random building type (1.2.1); no hand: a card given to a bot is discarded for +1 VP, a card taken from a bot is drawn instead (2.8.1); no ambush against bots (2.8.2); bots draw no starting hand, dominance out with ≤ 2 humans (3.4); bots never buy Riverfolk services.
+6. Backend: faction enum, AI-player faction tables, OpenAPI + client regen (`pnpm gen:api-client`).
+7. React: bots in the hotseat menu (local party skips joining bot seats), art and colours via `baseFactionOf`, a bot board panel (order card, tracks / Decree columns / Roosts, crafted items) in Tailwind.
+
+### Risks
+- Expand (4.5.5) loops while no building is placed; with no open slot anywhere it never ends. House rule: at most `MAXIMUM_EXPAND_COUNT` expands per turn (documented in code).
+- "Adjacent clearings with the most enemy pieces" (4.7.4) read as one destination per origin, like 4.5.4.
+- Mechanical Marquise track VP: +0 … +5 on every track, read from the bot board art (Root Database).
+- Decree columns left → right read fox, mouse, rabbit, bird from the errata board.
+- Traits / difficulty (3.3) not in scope: default difficulty, no traits.
+
+### Test plan
+- lib unit tests (fixture factory) per rule bullet: setup, order card craft, Marquise battle/recruit/build/move/expand/escalated/score, Eyrie recruit/move/battle/build/turmoil/new roost/score, hits removal, poor manual dexterity, hates surprises.
+- lib: seeded random games with each bot vs humans run to 30 VP / turn cap with no error.
+- backend: create game with bot factions, bot seats auto-joined, bot turn resolved after human endPhase.
+- React: menu party with a bot, bot board view model tests.
+- Manual: hotseat Marquise (human) vs Electric Eyrie (bot) and Eyrie (human) vs Mechanical Marquise (bot) in the browser through chrome-devtools.
+
+### Commit plan
+- [x] `docs(plan): Rootbotics Marquise and Eyrie bots`
+  - `PLAN.md`
+- [x] `feat(lib): bot faction ids, boards and target priority`
+  - `lib/src/pieces/types.ts`, `lib/src/state/boards.ts`, `lib/src/state/botBoards.ts` (new)
+  - `lib/src/factions/bots/botFactions.ts` (new), `lib/src/factions/bots/priority.ts` (new) + tests
+  - exhaustive switches over faction / board kind
+- [x] `feat(lib): bot setup and auto-seated bots`
+  - `lib/src/factions/bots/mechanicalMarquise/setup.ts`, `lib/src/factions/bots/electricEyrie/setup.ts` (new) + tests
+  - `lib/src/game/factionSetup.ts`, `lib/src/game/setup.ts`, `lib/src/game/Game.ts`
+- [x] `feat(lib): bots answer prompts, take hits and keep no hand`
+  - `lib/src/factions/bots/botAnswers.ts` (new) + test, `lib/src/events/battle/*`, `lib/src/rules/remove.ts`, `lib/src/factions/Vagabond.ts`, `lib/src/events/buyServices.ts`, `lib/src/game/Game.ts`
+- [x] `feat(lib): Mechanical Marquise turn`
+  - `lib/src/factions/bots/MechanicalMarquise.ts`, `lib/src/factions/bots/mechanicalMarquise/*.ts` (new) + tests, `lib/src/factions/index.ts`
+- [x] `feat(lib): Electric Eyrie turn`
+  - `lib/src/factions/bots/ElectricEyrie.ts`, `lib/src/factions/bots/electricEyrie/*.ts` (new) + tests, `lib/src/factions/index.ts`
+- [x] `test(lib): seeded games with bots play out`
+  - `lib/src/factions/bots/botGames.test.ts` (new)
+- [x] `feat(api): bot factions`
+  - `backend/web/src/schemas/common.ts`, `backend/web/src/typeGuards.ts`, `backend/web/src/aiPlayer/*`, `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts` (generated)
+- [x] `feat(react): bots in the hotseat menu with cat and bird art`
+  - `frontend/react/src/game/menuPartySetup.ts`, `GameSession.ts`, `theme.ts`, `assets/*`, `react/ActionTray.tsx`, `react/PieceStack.tsx`
+- [x] `feat(react): bot faction board`
+  - `frontend/react/src/ui/botBoardViewModel.ts` (new) + test, `frontend/react/src/react/BotFactionBoard.tsx` (new), `FactionBoardModal.tsx`
+
+
 ## Follow-up: deprecate `GET /game/actions`
 
 ### Goal

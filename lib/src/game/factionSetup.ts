@@ -1,4 +1,6 @@
 import { placeEyrieRoostSetup } from '#factions/Eyrie.js'
+import { placeElectricEyrieSetup } from '#factions/bots/electricEyrie/setup.js'
+import { placeMechanicalMarquiseSetup } from '#factions/bots/mechanicalMarquise/setup.js'
 import { factionFor } from '#factions/index.js'
 import type { Ctx } from '#game/ctx.js'
 import type { FactionId } from '#pieces/types.js'
@@ -35,6 +37,13 @@ export function beginFactionSetup(state: GameState, ctx: Ctx): void {
     state.pending.push({ type: 'chooseKeep', seat: marquise.seat })
     return
   }
+  // Rule: Rootbotics 4.3 — the Mechanical Marquise takes setup slot A.
+  const mechanicalMarquise = state.players.find(
+    (player: PlayerState): boolean => player.faction === 'mechanicalMarquise',
+  )
+  if (mechanicalMarquise !== undefined) {
+    placeMechanicalMarquiseSetup(state, mechanicalMarquise.seat, ctx.rng)
+  }
   setUpFactionsAfterMarquise(state, ctx)
 }
 
@@ -45,8 +54,11 @@ export function setUpFactionsAfterMarquise(state: GameState, ctx: Ctx): void {
   )
   for (const player of seats) {
     if (player.faction === 'marquise') continue
+    if (player.faction === 'mechanicalMarquise') continue
     if (player.faction === 'eyrie') {
       placeEyrieRoostSetup(state, player.seat)
+    } else if (player.faction === 'electricEyrie') {
+      placeElectricEyrieSetup(state, player.seat, ctx.rng)
     } else {
       factionFor(player.faction).setup(state, player.seat, ctx)
     }

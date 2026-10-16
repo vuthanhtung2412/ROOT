@@ -43,6 +43,14 @@ const ACTION_NAMES: Readonly<Record<string, string>> = {
   leagueMove: 'League: moves',
   leagueBattle: 'League: battles',
   eyrieEmigre: 'Eyrie Émigré: moves',
+  // Rootbotics bots (they act on their own).
+  revealOrder: 'reveals the order',
+  botCraft: 'crafts',
+  botRecruit: 'recruits',
+  botBuild: 'builds',
+  botMove: 'moves',
+  botBattle: 'battles',
+  botTurmoil: 'falls into turmoil',
 }
 
 /** Fields that hold a seat: shown as the faction sitting there. */

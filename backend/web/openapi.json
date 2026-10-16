@@ -111,8 +111,11 @@
           "alliance",
           "vagabond",
           "lizard",
-          "riverfolk"
-        ]
+          "riverfolk",
+          "mechanicalMarquise",
+          "electricEyrie"
+        ],
+        "description": "mechanicalMarquise and electricEyrie are Rootbotics bots: seated and played by the engine."
       },
       "ActionResult": {
         "type": "object",

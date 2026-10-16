@@ -1,3 +1,4 @@
+import { artFactionOf, isBotFaction } from '@root/lib/bot-factions'
 import {
   GAME_ASSET_KEYS,
   WARM_GAME_IMAGE_ASSETS,
@@ -52,6 +53,9 @@ const FACTION_OWNED_IMAGE_ASSET_KEYS: Readonly<
     RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcast,
     RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcastHated,
   ],
+  // A bot also uses the tokens of the faction it replaces (see below).
+  mechanicalMarquise: [GAME_ASSET_KEYS.characterBoardMechanicalMarquise],
+  electricEyrie: [GAME_ASSET_KEYS.characterBoardElectricEyrie],
   riverfolk: [
     RIVERFOLK_EXPANSION_ASSET_KEYS.characterBoardRiverfolk,
     RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkWarrior,
@@ -80,10 +84,12 @@ export function factionImageAssetsFor(
   factionIds: readonly string[],
 ): readonly GameImageAsset[] {
   const activeFactionKeys: ReadonlySet<string> = new Set(
-    factionIds.flatMap(
-      (factionId: string): readonly string[] =>
-        FACTION_OWNED_IMAGE_ASSET_KEYS[factionId] ?? [],
-    ),
+    factionIds.flatMap((factionId: string): readonly string[] => [
+      ...(FACTION_OWNED_IMAGE_ASSET_KEYS[factionId] ?? []),
+      ...(isBotFaction(factionId)
+        ? (FACTION_OWNED_IMAGE_ASSET_KEYS[artFactionOf(factionId)] ?? [])
+        : []),
+    ]),
   )
   return WARM_GAME_IMAGE_ASSETS.filter((asset: GameImageAsset): boolean =>
     activeFactionKeys.has(asset.key),

@@ -26,6 +26,7 @@ import {
   type VagabondBoard,
 } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
+import { hasCardToTake } from '#factions/bots/manualDexterity.js'
 
 /** Craft cost any crafting piece pays, whatever its suit. */
 const WILD_COST_SUIT = 'wild'
@@ -365,7 +366,7 @@ export function pushDaylightActions(
   if (character === 'thief' && hasExhaustible(board, 'torch')) {
     for (const player of state.players) {
       if (player.seat === seat) continue
-      if (player.hand.length === 0) continue
+      if (!hasCardToTake(state, player.seat)) continue
       const hasPieces = state.clearings[clearing]!.pieces.some(
         (piece) => piece.owner === player.seat,
       )

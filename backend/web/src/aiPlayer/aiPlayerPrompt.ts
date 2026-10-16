@@ -29,6 +29,9 @@ const FACTION_RULE_CHAPTERS: Readonly<Record<FactionId, string>> = {
   vagabond: '9',
   lizard: '10',
   riverfolk: '11',
+  // Bots play their own turns and never get an AI player; chapters of the Law of Rootbotics.
+  mechanicalMarquise: 'Rootbotics 4',
+  electricEyrie: 'Rootbotics 5',
 }
 
 /** The tool only one faction can use, as its line in the tool list. */

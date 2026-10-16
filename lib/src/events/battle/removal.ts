@@ -23,6 +23,7 @@ import {
   mercenaryRemovalFor,
 } from '#events/battle/mercenaryRemoval.js'
 import type { RemovalSelection, RemovalStage } from '#events/battle/types.js'
+import { isBotSeat } from '#factions/bots/botFactions.js'
 
 function victimPieces(state: GameState, clearing: ClearingId, victim: Seat): Piece[] {
   // Rule: Vagabond pawn cannot be removed — hits damage items instead.
@@ -76,6 +77,38 @@ interface RemovalComboBuild {
   startIndex: number
   current: string[]
   prefix: string[]
+}
+
+/**
+ * Rule: Rootbotics 1.2.1 — a bot removes all its tokens before any building;
+ * which buildings go is then picked at random among the combos.
+ */
+function botNonWarriorRemoval(
+  pieces: readonly Piece[],
+  removal: { warriorIds: string[]; otherChooseCount: number },
+): RemovalComboBuild {
+  const tokenIds: string[] = pieces
+    .filter((piece: Piece): boolean => piece.kind === 'token')
+    .map((piece: Piece): string => piece.id)
+  const buildingIds: string[] = pieces
+    .filter((piece: Piece): boolean => piece.kind === 'building')
+    .map((piece: Piece): string => piece.id)
+  if (removal.otherChooseCount <= tokenIds.length) {
+    return {
+      ids: tokenIds,
+      chooseCount: removal.otherChooseCount,
+      startIndex: 0,
+      current: [],
+      prefix: removal.warriorIds,
+    }
+  }
+  return {
+    ids: buildingIds,
+    chooseCount: removal.otherChooseCount - tokenIds.length,
+    startIndex: 0,
+    current: [],
+    prefix: [...removal.warriorIds, ...tokenIds],
+  }
 }
 
 /** Exact-size removal combos only (Rule: 1.4 + Battle 4.3.4). */
@@ -180,6 +213,10 @@ export function legalRemovalSpecs(
   const otherChooseCount: number = exactRemoveCount - warriorIds.length
   if (otherChooseCount > otherIds.length) {
     return []
+  }
+  if (isBotSeat(state, victim)) {
+    addCombos(botNonWarriorRemoval(pieces, { warriorIds, otherChooseCount }))
+    return specs
   }
   addCombos({
     ids: otherIds,

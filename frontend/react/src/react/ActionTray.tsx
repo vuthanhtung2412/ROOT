@@ -1,6 +1,7 @@
 import { useRef, useState, useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
 import { LuUndo2 } from 'react-icons/lu'
+import { artFactionOf } from '@root/lib/bot-factions'
 import type { ActionSpec } from '#api/client.ts'
 import {
   getCardPileSnapshot,
@@ -329,7 +330,9 @@ export function ActionTray(): JSX.Element | null {
     (player) => player.seat === tray.actorSeat,
   )?.faction
   const frameColorClassName: string =
-    (faction !== undefined ? FACTION_FRAME_CLASS_NAMES[faction] : undefined) ??
+    (faction !== undefined
+      ? FACTION_FRAME_CLASS_NAMES[artFactionOf(faction)]
+      : undefined) ??
     NEUTRAL_FRAME_CLASS_NAME
   return (
     <div className={DOCK_POSITION_CLASS_NAME}>

@@ -44,6 +44,10 @@ import {
   lostSoulSuitCounts,
   type ExpansionBoardViewModel,
 } from '#ui/expansionBoardViewModel.ts'
+import {
+  buildBotBoardViewModel,
+  type BotBoardViewModel,
+} from '#ui/botBoardViewModel.ts'
 import { questDefOf, type QuestCard } from '@root/lib/quests'
 
 export type CraftedItemView = {
@@ -192,6 +196,13 @@ export type FactionBoardViewModel =
   | AllianceBoardViewModel
   | VagabondBoardViewModel
   | ExpansionBoardViewModel
+  | BotBoardViewModel
+
+/** Boards drawn over their printed art (every faction but the bots). */
+export type ArtFactionBoardViewModel = Exclude<
+  FactionBoardViewModel,
+  BotBoardViewModel
+>
 
 type MarquiseBoardData = {
   kind: 'marquise'
@@ -586,6 +597,9 @@ export function buildFactionBoardViewModelFromPlayer(
   player: PlayerForBoard,
   presentFactions: readonly string[] = VAGABOND_RELATIONSHIP_MARKER_FACTIONS,
 ): FactionBoardViewModel | null {
+  const botView: BotBoardViewModel | null = buildBotBoardViewModel(player)
+  if (botView !== null) return botView
+
   if (player.faction === 'marquise' && isMarquiseBoardData(player.board)) {
     const board = player.board
     return {

@@ -6,8 +6,20 @@ export const JsonObjectSchema = z
   .openapi('JsonObject')
 
 export const FactionIdSchema = z
-  .enum(['marquise', 'eyrie', 'alliance', 'vagabond', 'lizard', 'riverfolk'])
-  .openapi('FactionId')
+  .enum([
+    'marquise',
+    'eyrie',
+    'alliance',
+    'vagabond',
+    'lizard',
+    'riverfolk',
+    'mechanicalMarquise',
+    'electricEyrie',
+  ])
+  .openapi('FactionId', {
+    description:
+      'mechanicalMarquise and electricEyrie are Rootbotics bots: seated and played by the engine.',
+  })
 
 export const ErrorBodySchema = z
   .object({

@@ -32,6 +32,21 @@ export type {
 } from '#factions/marquise/workshopForecast.js'
 export { dividendVictoryPoints } from '#factions/riverfolk/rules.js'
 export {
+  BOT_FACTION_IDS,
+  BOT_PLAYER_ID_PREFIX,
+  baseFactionOf,
+  isBotFaction,
+  type BotFactionId,
+  type HumanFactionId,
+} from '#factions/bots/botFactions.js'
+export { clearingPriority } from '#factions/bots/priority.js'
+export {
+  ELECTRIC_EYRIE_DECREE_COLUMNS,
+  ELECTRIC_EYRIE_ROOST_VICTORY_POINTS,
+  type ElectricEyrieBoard,
+  type MechanicalMarquiseBoard,
+} from '#state/botBoards.js'
+export {
   DECREE_COLUMNS,
   EYRIE_ROOST_VP,
   type DecreeColumn,

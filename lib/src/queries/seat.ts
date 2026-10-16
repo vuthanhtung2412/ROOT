@@ -14,6 +14,8 @@ export function playerOf(state: GameState, seat: Seat): PlayerState {
   return player
 }
 
+/** Lords of the Forest: Eyrie Dynasties (7.2.1) and Electric Eyrie (Rootbotics 5.2.1). */
 export function isEyrieSeat(state: GameState, seat: Seat): boolean {
-  return factionOf(state, seat) === 'eyrie'
+  const faction = factionOf(state, seat)
+  return faction === 'eyrie' || faction === 'electricEyrie'
 }

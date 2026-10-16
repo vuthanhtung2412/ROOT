@@ -132,5 +132,27 @@ export const ACTION_GUIDE: Readonly<Record<Action['type'], ActionGuideEntry>> = 
     ruleSections: ['11.5.6'],
   },
   setServiceCosts: { kind: 'Set Costs', ruleSections: ['11.6.2'] },
-  resolveEvent: { kind: 'Answer Pending Event', ruleSections: [INTERRUPTS] },
+  // Bots act on their own (Law of Rootbotics 4–5); players never send these.
+  // The kind names the Rootbotics rule, the sections the Law of Root base.
+  botStep: { kind: 'Bot Step (Rootbotics 2.7)', ruleSections: [TURN_STRUCTURE] },
+  revealOrder: {
+    kind: 'Reveal Order Card (Rootbotics 4.4.1, 5.4.1)',
+    ruleSections: [TURN_STRUCTURE],
+  },
+  botCraft: { kind: 'Craft Order (Rootbotics 1.1)', ruleSections: [CRAFT] },
+  botRecruit: {
+    kind: 'Recruit (Rootbotics 4.5.2, 5.5.1.I)',
+    ruleSections: [TURN_STRUCTURE],
+  },
+  botBuild: {
+    kind: 'Build (Rootbotics 4.5.3, 5.5.1.IV)',
+    ruleSections: [TURN_STRUCTURE],
+  },
+  botMove: { kind: 'Move (Rootbotics 4.5.4, 5.5.1.II)', ruleSections: [MOVE] },
+  botBattle: {
+    kind: 'Battle (Rootbotics 4.5.1, 5.5.1.III)',
+    ruleSections: [BATTLE],
+  },
+  botTurmoil: { kind: 'Turmoil (Rootbotics 5.7)', ruleSections: ['7.7'] },
+  resolveEvent:{ kind: 'Answer Pending Event', ruleSections: [INTERRUPTS] },
 }

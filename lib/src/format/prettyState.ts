@@ -9,6 +9,11 @@ import { fallForestDisplayId } from '#public/fallMetadata.js'
 import type { LogEntry } from '#log/types.js'
 import type { Seat } from '#pieces/types.js'
 import { DECREE_COLUMNS } from '#state/boards.js'
+import {
+  ELECTRIC_EYRIE_DECREE_COLUMNS,
+  type ElectricEyrieBoard,
+  type MechanicalMarquiseBoard,
+} from '#state/botBoards.js'
 import type { GameState, PlayerState } from '#state/types.js'
 
 /** Stable suit order for decree tallies. */
@@ -175,7 +180,29 @@ function boardLines(
       `    tracks: tea=${board.tracks.tea.length} coin=${board.tracks.coin.length} bag=${board.tracks.bag.length}`,
     ]
   }
+  if (board.kind === 'mechanicalMarquise' || board.kind === 'electricEyrie') {
+    return botBoardLines(board)
+  }
   return [`    board: ${JSON.stringify(board)}`]
+}
+
+/** Rule: Rootbotics 4–5 — order card, then tracks or Decree by suit. */
+function botBoardLines(board: MechanicalMarquiseBoard | ElectricEyrieBoard): string[] {
+  const order = board.orderCard === null ? '(none)' : formatDecreeColumn([board.orderCard])
+  if (board.kind === 'mechanicalMarquise') {
+    const tracks = board.tracks
+    return [
+      `    bot: warriors=${board.supply.warriors} order=${order}`,
+      `    tracks: sawmill=${tracks.sawmill.placed} workshop=${tracks.workshop.placed} recruiter=${tracks.recruiter.placed}`,
+    ]
+  }
+  return [
+    `    bot: warriors=${board.supply.warriors} order=${order} roostTrack=${board.roostTrack.placed}`,
+    '    decree:',
+    ...ELECTRIC_EYRIE_DECREE_COLUMNS.map(
+      (column: CardSuit): string => `      ${column}: ${formatDecreeColumn(board.decree[column])}`,
+    ),
+  ]
 }
 
 function playerBlock(
@@ -226,6 +253,22 @@ export function describeAction(action: Action, state: GameState): string {
       return `END PHASE (${state.phase}/${state.step})`
     case 'birdsongWood':
       return 'BIRDSONG place wood at sawmills'
+    case 'botStep':
+      return `BOT STEP (${state.phase}/${state.step})`
+    case 'revealOrder':
+      return `BOT REVEAL ORDER ${findCard(action.cardId)}`
+    case 'botCraft':
+      return `BOT CRAFT ${findCard(action.cardId)}`
+    case 'botRecruit':
+      return `BOT RECRUIT ${action.count}w C${action.clearing}`
+    case 'botBuild':
+      return `BOT BUILD ${action.building} C${action.clearing}`
+    case 'botMove':
+      return `BOT MOVE ${action.count}w C${action.from}→C${action.to}`
+    case 'botBattle':
+      return `BOT BATTLE s${action.defender} C${action.clearing}`
+    case 'botTurmoil':
+      return 'BOT TURMOIL'
     case 'eveningDraw':
       return 'EVENING draw cards'
     case 'march':

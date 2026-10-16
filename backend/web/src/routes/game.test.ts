@@ -377,6 +377,32 @@ describe('game routes', () => {
     })
   })
 
+  it('seats a bot by itself and plays its turn without a request', async () => {
+    await app.request(
+      '/game',
+      jsonRequest('POST', { factions: ['mechanicalMarquise', 'eyrie'] }),
+    )
+    await app.request('/game/join', jsonRequest('POST', { playerId: 'human' }))
+    expect(store.game?.state.players.map((seated) => seated.playerId)).toEqual([
+      'bot-mechanicalMarquise',
+      'human',
+    ])
+
+    await app.request('/game/start', { method: 'POST' })
+    const leaderResponse = await app.request(
+      '/game/actions',
+      jsonRequest('POST', { type: 'resolveEvent', leader: 'builder' }),
+    )
+
+    expect(leaderResponse.status).toBe(200)
+    expect(store.game?.state.currentSeat).toBe(1)
+    expect(
+      store.game?.log.some(
+        (entry) => entry.t === 'action' && entry.action.type === 'revealOrder',
+      ),
+    ).toBe(true)
+  })
+
   it('defaults to hotseat mode and reports it on GET', async () => {
     const createResponse = await app.request(
       '/game',

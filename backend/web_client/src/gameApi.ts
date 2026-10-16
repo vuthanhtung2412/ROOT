@@ -237,7 +237,9 @@ function isFactionId(value: string): value is FactionId {
     value === 'alliance' ||
     value === 'vagabond' ||
     value === 'lizard' ||
-    value === 'riverfolk'
+    value === 'riverfolk' ||
+    value === 'mechanicalMarquise' ||
+    value === 'electricEyrie'
   )
 }
 

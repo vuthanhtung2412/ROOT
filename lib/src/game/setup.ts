@@ -9,13 +9,17 @@ import {
   RUIN_ITEMS,
   STARTING_HAND,
 } from '#state/constants.js'
-import type { GameState } from '#state/types.js'
+import type { GameState, PlayerState } from '#state/types.js'
 import { createTurnScratch } from '#state/turnScratch.js'
+import { isHumanPlayer } from '#factions/bots/botFactions.js'
 
 const CLEARING_COUNT = 12
+const TWO_PLAYERS = 2
+/** Rule: Rootbotics 3.4 — "playing with one or two humans". */
+const MAXIMUM_HUMANS_WITHOUT_DOMINANCE = 2
 const RUIN_CLEARINGS: ClearingId[] = [5, 9, 10, 11]
 
-function shuffleWithRng<T>(items: T[], rng: Rng): T[] {
+export function shuffleWithRng<T>(items: T[], rng: Rng): T[] {
   const shuffled = [...items]
   for (let index = shuffled.length - 1; index > 0; index--) {
     const swapIndex = randomIndex(rng, index + 1)
@@ -75,8 +79,14 @@ export function runSharedSetup(state: GameState, rng: Rng): void {
   }
 
   let deckCards: Card[] = [...EP_DECK]
-  if (state.players.length === 2) {
+  const humans: PlayerState[] = state.players.filter(isHumanPlayer)
+  const hasBots: boolean = humans.length < state.players.length
+  if (
+    state.players.length === TWO_PLAYERS ||
+    (hasBots && humans.length <= MAXIMUM_HUMANS_WITHOUT_DOMINANCE)
+  ) {
     // Rule: Setup 3 — 2p removes all dominance before shuffle.
+    // Rule: Rootbotics 3.4 — with bots, one or two humans remove them too.
     deckCards = deckCards.filter(
       (card: Card): boolean => defOf(card).type !== 'dominance',
     )
@@ -92,7 +102,8 @@ export function runSharedSetup(state: GameState, rng: Rng): void {
   }
   state.dominanceAvailable = []
 
-  for (const player of state.players) {
+  // Rule: Rootbotics 3.4 — bots draw no cards.
+  for (const player of humans) {
     player.hand = Deck.draw(state.deck, STARTING_HAND, {
       shuffle: (cards: Card[]): Card[] => shuffleWithRng(cards, rng),
       onDominance: (card: Card): void => {

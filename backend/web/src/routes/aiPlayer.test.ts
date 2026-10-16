@@ -114,6 +114,19 @@ describe('AI player routes', () => {
     })
   })
 
+  it('rejects an AI player for a bot faction: the bot plays itself', async () => {
+    await createLobby({ factions: [] })
+
+    const response = await app.request(
+      '/game/ai-players',
+      jsonRequest('POST', { faction: 'electricEyrie' }),
+    )
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({ code: 'BOT_FACTION' })
+    expect(store.aiPlayers).toEqual([])
+  })
+
   it('rejects a model the server does not offer', async () => {
     await createLobby({ factions: ['marquise', 'eyrie'] })
 
