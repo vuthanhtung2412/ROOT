@@ -1,5 +1,6 @@
 import type { Group } from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
+import { retryAssetFetch } from '#assets/retryAssetFetch.ts'
 import { mergePartsByMaterial } from '#game/map3d/mergeModelParts.ts'
 
 /**
@@ -113,8 +114,9 @@ export type MountainModels = readonly Group[]
 export type PieceModels = ReadonlyMap<string, PieceModel>
 
 async function loadModel(loader: GLTFLoader, name: string): Promise<Group> {
-  const model: GLTF = await loader.loadAsync(
-    `${MODEL_ROOT}/${name}${MODEL_FILE_EXTENSION}`,
+  const model: GLTF = await retryAssetFetch(
+    (): Promise<GLTF> =>
+      loader.loadAsync(`${MODEL_ROOT}/${name}${MODEL_FILE_EXTENSION}`),
   )
   return model.scene
 }

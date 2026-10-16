@@ -19,6 +19,7 @@ import {
   SHARED_GAME_IMAGE_ASSETS,
 } from '#assets/factionImageAssets.ts'
 import { MENU_BOOT_IMAGE_ASSETS } from '#assets/gameAssets.ts'
+import { retryAssetFetch } from '#assets/retryAssetFetch.ts'
 import {
   getAiPlayerSnapshot,
   setAiModels,
@@ -58,17 +59,25 @@ import { useViewportLayoutMode } from '#react/useViewportLayoutMode.ts'
 const LOBBY_STATUS_POLL_MS = 2500
 const EXPELLED_FROM_LOBBY_MESSAGE = 'The host removed you from the lobby'
 
-function prefetchImage(path: string): Promise<void> {
-  return new Promise((resolve) => {
+function loadImage(source: string): Promise<void> {
+  return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => {
       resolve()
     }
     image.onerror = () => {
-      resolve()
+      reject(new Error(`Failed to load image ${source}`))
     }
-    image.src = path.startsWith('/') ? path : `/${path}`
+    image.src = source
   })
+}
+
+/** Never rejects: an image still missing after the retries is skipped. */
+async function prefetchImage(path: string): Promise<void> {
+  const source: string = path.startsWith('/') ? path : `/${path}`
+  await retryAssetFetch((): Promise<void> => loadImage(source)).catch(
+    (): void => undefined,
+  )
 }
 
 async function prefetchImagePaths(
