@@ -1,6 +1,19 @@
 import { cors } from 'hono/cors'
 import type { MiddlewareHandler } from 'hono'
 import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
+import type { Environment } from '#aiPlayer/modelIdentifier.js'
+
+/** Comma list of extra origins, e.g. `https://vuthanhtung2412.github.io`. */
+export const EXTRA_CORS_ORIGINS_ENVIRONMENT_KEY = 'ROOT_CORS_ORIGINS'
+const ORIGIN_LIST_SEPARATOR = ','
+
+function listExtraCorsOrigins(environment: Environment): string[] {
+  const configured = environment[EXTRA_CORS_ORIGINS_ENVIRONMENT_KEY] ?? ''
+  return configured
+    .split(ORIGIN_LIST_SEPARATOR)
+    .map((entry: string): string => entry.trim())
+    .filter((entry: string): boolean => entry !== '')
+}
 
 /** Capacitor WKWebView / Android WebView origins (no port). */
 const CAPACITOR_APP_ORIGINS: ReadonlySet<string> = new Set([
@@ -15,9 +28,15 @@ const LAN_HTTP_ORIGIN_PATTERN =
 
 /**
  * Whether a browser/WebView Origin may call the REST API.
- * React Vite (localhost + LAN) + Capacitor native shells.
+ * React Vite (localhost + LAN) + Capacitor native shells + `ROOT_CORS_ORIGINS`.
  */
-export function isAllowedCorsOrigin(origin: string): boolean {
+export function isAllowedCorsOrigin(
+  origin: string,
+  environment: Environment = process.env,
+): boolean {
+  if (listExtraCorsOrigins(environment).includes(origin)) {
+    return true
+  }
   if (CAPACITOR_APP_ORIGINS.has(origin)) {
     return true
   }

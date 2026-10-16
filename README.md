@@ -105,6 +105,10 @@ pnpm --filter @root/web gen:openapi
 pnpm gen:api-client
 ```
 
+### CORS
+
+The API allows localhost, LAN and Capacitor origins. Add more with `ROOT_CORS_ORIGINS` (comma list, server env), e.g. `ROOT_CORS_ORIGINS=https://vuthanhtung2412.github.io`.
+
 ### AI players
 
 A seat can be played by an LLM. API keys stay on the server: clients only see model ids.

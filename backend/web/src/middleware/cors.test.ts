@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { isAllowedCorsOrigin } from '#middleware/cors.js'
+import {
+  EXTRA_CORS_ORIGINS_ENVIRONMENT_KEY,
+  isAllowedCorsOrigin,
+} from '#middleware/cors.js'
 import { app } from '#openapi.js'
+import type { Environment } from '#aiPlayer/modelIdentifier.js'
+
+const GITHUB_PAGES_ORIGIN: string = 'https://vuthanhtung2412.github.io'
 
 describe('isAllowedCorsOrigin', () => {
+  it('allows origins listed in the environment', () => {
+    const environment: Environment = {
+      [EXTRA_CORS_ORIGINS_ENVIRONMENT_KEY]: ` ${GITHUB_PAGES_ORIGIN} , https://other.example`,
+    }
+    expect(isAllowedCorsOrigin(GITHUB_PAGES_ORIGIN, environment)).toBe(true)
+    expect(isAllowedCorsOrigin('https://other.example', environment)).toBe(true)
+    expect(isAllowedCorsOrigin(GITHUB_PAGES_ORIGIN, {})).toBe(false)
+  })
+
   it('allows Capacitor and Ionic WebView origins', () => {
     expect(isAllowedCorsOrigin('capacitor://localhost')).toBe(true)
     expect(isAllowedCorsOrigin('ionic://localhost')).toBe(true)
