@@ -41,10 +41,14 @@ export function factionColorForSeat(
 const HEX_RADIX = 16
 const HEX_COLOR_DIGIT_COUNT = 6
 
+/** 0xRRGGBB as a CSS colour, e.g. `#4a8c3f`. */
+export function colorToCss(color: number): string {
+  return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
+}
+
 /** CSS colour of a faction, e.g. for the menu rows where no seat exists yet. */
 export function factionColorCss(factionId: string): string {
-  const color: number = factionColorForSeat(0, [factionId])
-  return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
+  return colorToCss(factionColorForSeat(0, [factionId]))
 }
 
 export const PIECE_DRAW = {

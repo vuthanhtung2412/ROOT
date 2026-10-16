@@ -206,7 +206,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
       groundMarkers.hoverAt(raycaster)
     },
   })
-  viewListeners.add(mapHover.refresh)
 
   const resize = (nextFrame: MapViewFrame): void => {
     frame = nextFrame
@@ -265,6 +264,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
       shadowZoom = zoom
     }
     pieceLayer.setZoom(zoom)
+    mapHover.refresh()
     pieceLayer.update(deltaSeconds)
     groundMarkers.setZoom(cameraRig.zoom())
     daylight.followCamera(cameraRig.camera.position, cameraRig.controls.target)
@@ -285,8 +285,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
     resize,
     setPieces: (pieces: readonly MapPiece[]): void => {
       pieceLayer.setPieces(pieces)
-      // Pieces moved under a still pointer: what it is over may have changed.
-      mapHover.refresh()
       shadowsAreStale = true
       // Only a Vagabond in a forest stands among the trees that would hide it.
       treeSightlines.setTargets(
@@ -297,8 +295,6 @@ export function createMapScene(input: MapSceneInput): MapScene {
     },
     setPieceModels: (pieceModels: PieceModels): void => {
       pieceLayer.setPieceModels(pieceModels)
-      // A piece may now have a model to point at.
-      mapHover.refresh()
       shadowsAreStale = true
       warmUpShaders()
     },

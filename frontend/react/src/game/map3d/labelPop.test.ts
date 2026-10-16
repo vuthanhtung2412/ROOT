@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   createLabelPops,
-  easeOutBack,
   LABELS_GONE_FROM_ZOOM,
   zoomedLabelScale,
   type LabelPops,
@@ -14,7 +13,6 @@ const PIECE_KEY = 'piece-a'
 const OTHER_PIECE_KEY = 'piece-b'
 const LONG_ENOUGH_SECONDS = 1
 const ONE_FRAME_SECONDS = 0.016
-const MID_POP_PROGRESS = 0.7
 const HALF_POP_SECONDS = 0.11
 
 describe('zoomedLabelScale', () => {
@@ -26,14 +24,6 @@ describe('zoomedLabelScale', () => {
   })
 })
 
-describe('easeOutBack', () => {
-  it('starts at 0, overshoots, ends at 1', () => {
-    expect(easeOutBack(0)).toBeCloseTo(0)
-    expect(easeOutBack(MID_POP_PROGRESS)).toBeGreaterThan(1)
-    expect(easeOutBack(1)).toBeCloseTo(1)
-  })
-})
-
 describe('createLabelPops', () => {
   it('pops the hovered label up, then shrinks it away', () => {
     const pops: LabelPops<string> = createLabelPops<string>()
@@ -41,10 +31,8 @@ describe('createLabelPops', () => {
     pops.setHovered(PIECE_KEY)
     pops.update(ONE_FRAME_SECONDS)
     expect(pops.scaleOf(PIECE_KEY)).toBeGreaterThan(0)
-    expect(pops.isAnimating()).toBe(true)
     pops.update(LONG_ENOUGH_SECONDS)
     expect(pops.scaleOf(PIECE_KEY)).toBeCloseTo(1)
-    expect(pops.isAnimating()).toBe(false)
 
     pops.setHovered(OTHER_PIECE_KEY)
     pops.update(LONG_ENOUGH_SECONDS)

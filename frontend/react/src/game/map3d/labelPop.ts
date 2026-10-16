@@ -19,7 +19,7 @@ export function zoomedLabelScale(zoom: number): number {
 }
 
 /** 0 → 1, past 1 for a moment before it settles back on it. */
-export function easeOutBack(progress: number): number {
+function easeOutBack(progress: number): number {
   const shifted: number = progress - 1
   return (
     1 +
@@ -43,8 +43,6 @@ export type LabelPops<Key> = {
   update: (deltaSeconds: number) => void
   /** 0 = not popped up; about 1 when it is, a little more mid-pop. */
   scaleOf: (key: Key) => number
-  /** A label is still popping up or shrinking away. */
-  isAnimating: () => boolean
 }
 
 function scaleOfPop(pop: PopState): number {
@@ -94,9 +92,5 @@ export function createLabelPops<Key>(): LabelPops<Key> {
       const pop: PopState | undefined = pops.get(key)
       return pop === undefined ? 0 : scaleOfPop(pop)
     },
-    isAnimating: (): boolean =>
-      [...pops.values()].some(
-        (pop: PopState): boolean => !pop.rising || pop.progress < 1,
-      ),
   }
 }

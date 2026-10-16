@@ -19,7 +19,7 @@ export type MapHoverInput = {
 }
 
 export type MapHover = {
-  /** The camera moved under a still pointer: cast its ray again. */
+  /** Call once per frame: casts the ray of where the pointer is now. */
   refresh: () => void
   dispose: () => void
 }
@@ -81,11 +81,9 @@ export function createMapHover(input: MapHoverInput): MapHover {
       ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
       1 - ((event.clientY - bounds.top) / bounds.height) * 2,
     )
-    refresh()
   }
   const onPointerLeave = (): void => {
     pointer = null
-    refresh()
   }
   input.element.addEventListener('pointermove', onPointerMove)
   input.element.addEventListener('pointerleave', onPointerLeave)

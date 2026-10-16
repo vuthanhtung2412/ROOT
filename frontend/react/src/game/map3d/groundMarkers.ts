@@ -29,6 +29,7 @@ import {
   type LabelPops,
 } from '#game/map3d/labelPop.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
+import { groundDistance } from '#game/map3d/mapWorldSpace.ts'
 
 export type { ClearingRingStyle } from '#game/map3d/clearingMarks.ts'
 export type { ForestGround } from '#game/map3d/forestOutline.ts'
@@ -203,10 +204,7 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
     }
     const hovered: ClearingGround | undefined = clearings.find(
       (clearing: ClearingGround): boolean =>
-        Math.hypot(
-          groundHit.x - clearing.center.x,
-          groundHit.z - clearing.center.z,
-        ) <= clearing.radius,
+        groundDistance(groundHit, clearing.center) <= clearing.radius,
     )
     return hovered?.clearingId ?? null
   }
@@ -233,19 +231,11 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
       clearingMarks.update({ elapsedSeconds, glowLevel })
       forestMarks.update(elapsedSeconds)
       clearingFlashMark.update(elapsedSeconds)
-      // One more frame once the pops end, so they land on their last size.
-      const popsWereAnimating: boolean = suitPops.isAnimating()
       suitPops.update(deltaSeconds)
-      if (popsWereAnimating) {
-        applyBadgeSizes()
-      }
+      applyBadgeSizes()
     },
     setZoom: (zoom: number): void => {
-      if (zoom === currentZoom) {
-        return
-      }
       currentZoom = zoom
-      applyBadgeSizes()
     },
     hoverAt: (raycaster: Raycaster | null): void => {
       suitPops.setHovered(raycaster === null ? null : clearingIdAt(raycaster))

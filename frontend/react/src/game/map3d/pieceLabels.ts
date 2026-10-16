@@ -1,9 +1,9 @@
 import { Group, Sprite, SpriteMaterial } from 'three'
 import {
-  colorToCss,
   createBadgeTexture,
   createIconTexture,
 } from '#game/map3d/iconTexture.ts'
+import { colorToCss } from '#game/theme.ts'
 
 /** What the 2D label of a piece is drawn from. */
 export type PieceLabelRequest = {

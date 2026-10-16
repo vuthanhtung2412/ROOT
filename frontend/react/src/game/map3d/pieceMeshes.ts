@@ -413,12 +413,8 @@ export function createPieceLayer(): PieceLayer {
     },
     playBuild: buildAnimations.play,
     update: (deltaSeconds: number): void => {
-      // One more frame once the pops end, so they land on their last size.
-      const popsWereAnimating: boolean = labelPops.isAnimating()
       labelPops.update(deltaSeconds)
-      if (popsWereAnimating) {
-        applyLabelSizes()
-      }
+      applyLabelSizes()
       buildAnimations.update(deltaSeconds, buildSiteOf)
     },
     isBuildPlaying: buildAnimations.isPlaying,

@@ -1,4 +1,5 @@
 import { CanvasTexture, SRGBColorSpace } from 'three'
+import { colorToCss } from '#game/theme.ts'
 
 /**
  * The 2D icon of a piece, with a white border along its outline: round for a
@@ -114,12 +115,6 @@ const BADGE_TEXT_COLOR = '#ffffff'
 const BADGE_FONT = 'bold 58px Georgia, serif'
 const BADGE_TEXT_BASELINE_NUDGE_PIXELS = 4
 const HALF = 0.5
-const HEX_RADIX = 16
-const HEX_COLOR_DIGIT_COUNT = 6
-
-export function colorToCss(color: number): string {
-  return `#${color.toString(HEX_RADIX).padStart(HEX_COLOR_DIGIT_COUNT, '0')}`
-}
 
 /** The stack size of a piece, on a round chip in its faction colour. */
 export function createBadgeTexture(count: number, color: number): CanvasTexture {
