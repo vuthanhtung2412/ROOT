@@ -28,6 +28,11 @@ const MIST_CLEAR_MARGIN_SHARE = 0.15
 const MIST_OPAQUE_MARGIN_SHARE = 0.85
 /** The mist runs this many times the ground's size, so no edge of it shows. */
 const MIST_SPAN_RATIO = 4
+/**
+ * Opacity of each layer: thin alone, the stacked layers still hide the edge of
+ * the ground.
+ */
+const MIST_LAYER_OPACITY = 0.6
 /** Over the river's flow (1), under the marks of the playable area. */
 export const MIST_RENDER_ORDER = 2
 const MIST_MASK_SIZE_PIXELS = 256
@@ -116,6 +121,7 @@ export function createEdgeMist(terrain: MapTerrain, skyColor: Color): Group {
   const material: MeshBasicMaterial = new MeshBasicMaterial({
     map: createMistMask(terrain, span),
     transparent: true,
+    opacity: MIST_LAYER_OPACITY,
     depthWrite: false,
     fog: false,
     toneMapped: false,

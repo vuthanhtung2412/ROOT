@@ -11,7 +11,7 @@ import {
 /**
  * Light of the woodland, by the phase of the turn:
  * - birdsong: dawn — a low orange sun in the east, peach sky, warm mist;
- * - daylight: a high warm sun, clear air;
+ * - daylight: a high warm sun, clear air, a thin warm haze;
  * - evening: blue moonlight from the west, night-blue sky (the clearings
  *   are lit by their campfires).
  *   In the evening a soft light also shines from the camera.
@@ -71,8 +71,8 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     skyColor: 0xfff6e2,
     groundColor: 0x3d5644,
     skyIntensity: 1.5,
-    fogColor: 0x2a4034,
-    fogNear: 230,
+    fogColor: 0xdde3dc,
+    fogNear: 320,
     fogFar: 520,
     cameraLightIntensity: 0,
   },
