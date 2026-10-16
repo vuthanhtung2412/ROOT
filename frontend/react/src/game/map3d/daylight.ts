@@ -13,7 +13,8 @@ import {
  * - birdsong: dawn — a low coral sun in the east, violet sky and
  *   indigo shadows, mist
  *   from gold by the woodland through coral and violet to indigo far out;
- * - daylight: a high warm sun, clear air, a thin warm haze;
+ * - daylight: a golden sun from the side, blue sky light and slate shadows,
+ *   mist from yellow gold by the woodland through warm grey to slate blue;
  * - evening: blue moonlight from the west, night-blue sky (the clearings
  *   are lit by their campfires).
  *   In the evening a soft light also shines from the camera.
@@ -80,16 +81,18 @@ const LIGHTING_PRESETS: Readonly<Record<TimeOfDay, LightingPreset>> = {
     cameraLightIntensity: 0,
   },
   daylight: {
-    sunColor: 0xfff0d2,
-    sunIntensity: 2.3,
-    sunPosition: { x: -35, y: 105, z: 40 },
-    skyColor: 0xfff6e2,
-    groundColor: 0x3d5644,
-    skyIntensity: 1.5,
-    fogColor: 0xdde3dc,
+    sunColor: 0xffd88a,
+    sunIntensity: 2.5,
+    // Lower than noon: golden side light, as on clouds late in the day.
+    sunPosition: { x: -60, y: 75, z: 40 },
+    skyColor: 0xc8d0e8,
+    groundColor: 0x4a4c62,
+    skyIntensity: 1.3,
+    fogColor: 0xd8d0c4,
     fogNear: 320,
     fogFar: 520,
-    mistColors: evenMist(0xdde3dc),
+    // Yellow gold, warm grey, slate blue: sunlit clouds in a blue sky.
+    mistColors: [0xfad890, 0xe4d4b4, 0xaeb2c8, 0x737c9e],
     cameraLightIntensity: 0,
   },
   evening: {
