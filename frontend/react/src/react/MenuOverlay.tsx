@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type JSX } from 'react'
+import { useState, useSyncExternalStore, type JSX } from 'react'
 import type { AddAiPlayerInput } from '#api/client.ts'
 import { GAME_ASSET_KEYS, imagePathForAssetKey } from '#assets/gameAssets.ts'
 import {
@@ -9,7 +9,7 @@ import {
   type MenuHudState,
   type MenuLobbyHudState,
 } from '#game/hudStore.ts'
-import type { SoloFactionId } from '#game/menuPartySetup.ts'
+import type { MenuFactionId } from '#game/menuPartySetup.ts'
 import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import { MenuHotseatSetup } from '#react/MenuHotseatSetup.tsx'
 import { MenuSoloSetup } from '#react/MenuSoloSetup.tsx'
@@ -19,9 +19,12 @@ import { PRIMARY_BUTTON_CLASS_NAME } from '#react/MenuParts.tsx'
 /** Single-screen "Start game" and QA shortcuts only exist in dev builds. */
 const IS_DEVELOPMENT_BUILD: boolean = import.meta.env.DEV === true
 
-/** Start screen and lobby: paper pieces laid straight on the dimmed wallpaper, no sheet. */
+/**
+ * Start screen and lobby: paper pieces laid straight on the dimmed wallpaper, no sheet.
+ * `max-h-full`, not `dvh`: under the app root zoom the overlay is the real screen height.
+ */
 const MENU_STAGE_CLASS_NAME =
-  'relative z-1 box-border flex max-h-dvh w-full flex-col items-center gap-5 overflow-y-auto px-5 py-8'
+  'relative z-1 box-border flex max-h-full w-full flex-col items-center gap-5 overflow-y-auto px-5 py-8'
 const MENU_DIM_CLASS_NAME = 'absolute inset-0 bg-ink-deep/50'
 /** Status line on a paper strip, like the lobby title. */
 const STATUS_CLASS_NAME =
@@ -29,6 +32,7 @@ const STATUS_CLASS_NAME =
 
 const CREATE_GAME_LABEL = 'Create game'
 const JOIN_GAME_LABEL = 'Join game'
+const SOLO_RUN_LABEL = 'Solo run'
 
 const DEFAULT_MENU: MenuHudState = {
   statusText: '',
@@ -50,6 +54,7 @@ export function MenuOverlay(): JSX.Element | null {
     () => getHudSnapshot().menu,
     () => getHudSnapshot().menu,
   )
+  const [isSoloRunOpen, setIsSoloRunOpen] = useState<boolean>(false)
 
   if (shell !== 'menu' || menu === null) {
     return null
@@ -57,10 +62,11 @@ export function MenuOverlay(): JSX.Element | null {
   const callbacks = getMenuCallbacks()
   const wallpaperPath = imagePathForAssetKey(GAME_ASSET_KEYS.menuWallpaper)
   const bannerPath = imagePathForAssetKey(GAME_ASSET_KEYS.rootBanner)
-  const isInLobby: boolean = menu.lobby !== null
+  /** Online lobby and solo run fill the stage: no banner above them. */
+  const isLobbyScreen: boolean = menu.lobby !== null || isSoloRunOpen
 
   return (
-    <div className="fixed inset-0 z-450 flex items-center justify-center overflow-hidden bg-forest-deep">
+    <div className="menu-overlay fixed inset-0 z-450 flex items-center justify-center overflow-hidden bg-forest-deep">
       {wallpaperPath !== null ? (
         <img
           className="pointer-events-none absolute inset-0 size-full object-cover select-none contrast-104 saturate-92"
@@ -73,7 +79,7 @@ export function MenuOverlay(): JSX.Element | null {
       )}
       <div className={MENU_DIM_CLASS_NAME} />
       <div className={MENU_STAGE_CLASS_NAME}>
-        {isInLobby ? null : bannerPath !== null ? (
+        {isLobbyScreen ? null : bannerPath !== null ? (
           <img
             className="block h-auto w-[min(42vw,380px)] select-none drop-shadow-banner"
             src={bannerPath}
@@ -106,6 +112,16 @@ export function MenuOverlay(): JSX.Element | null {
               callbacks.onLeaveOnline()
             }}
           />
+        ) : isSoloRunOpen ? (
+          <MenuSoloSetup
+            disabled={menu.playPending}
+            onStartSolo={(factions: MenuFactionId[], botSettings: BotSettingsByFaction): void => {
+              callbacks.onStartSolo(factions, botSettings)
+            }}
+            onBack={(): void => {
+              setIsSoloRunOpen(false)
+            }}
+          />
         ) : (
           <>
             {/* The one start button: a lobby waits → join it; else create one. */}
@@ -119,12 +135,16 @@ export function MenuOverlay(): JSX.Element | null {
             >
               {menu.lobbyOnServer ? JOIN_GAME_LABEL : CREATE_GAME_LABEL}
             </button>
-            <MenuSoloSetup
+            <button
+              type="button"
+              className={`menu-solo-run ${PRIMARY_BUTTON_CLASS_NAME}`}
               disabled={menu.playPending}
-              onStartSolo={(faction: SoloFactionId, botSettings: BotSettingsByFaction): void => {
-                callbacks.onStartSolo(faction, botSettings)
+              onClick={(): void => {
+                setIsSoloRunOpen(true)
               }}
-            />
+            >
+              {SOLO_RUN_LABEL}
+            </button>
             {IS_DEVELOPMENT_BUILD ? (
               <MenuHotseatSetup
                 disabled={menu.playPending}

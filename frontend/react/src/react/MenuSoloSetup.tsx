@@ -1,12 +1,5 @@
-import { useState, type JSX } from 'react'
-import {
-  factionDisplayName,
-  isSoloFactionId,
-  MENU_BOT_FACTION_IDS,
-  SOLO_FACTION_IDS,
-  type SoloFactionId,
-} from '#game/menuPartySetup.ts'
-import { factionColorCss } from '#game/theme.ts'
+import { useRef, useState, type JSX } from 'react'
+import type { BotFactionId } from '@root/lib/bot-factions'
 import type { BotDifficulty, BotSettingsByFaction, BotTrait } from '@root/lib/bot-settings'
 import {
   defaultBotSettingsChoices,
@@ -15,100 +8,200 @@ import {
   withBotTraitToggled,
   type BotSettingsChoices,
 } from '#game/botSettingsMenu.ts'
-import { MenuBotSettings } from '#react/MenuBotSettings.tsx'
+import type { MenuFactionId } from '#game/menuPartySetup.ts'
 import {
-  FactionBadge,
-  PAPER_SHEET_CLASS_NAME,
-  SEAT_ROW_CLASS_NAME,
-  SECONDARY_BUTTON_CLASS_NAME,
-  SECTION_TITLE_CLASS_NAME,
+  canAddSoloBot,
+  canRemoveSoloBot,
+  defaultSoloTable,
+  soloPartyFactions,
+  soloTrackChoices,
+  withSoloBotRemoved,
+  withSoloFactionPicked,
+  withSoloSlotSelected,
+  type SoloSlot,
+  type SoloTable,
+} from '#game/soloTableSetup.ts'
+import { MenuBotSettingsModal } from '#react/MenuBotSettingsModal.tsx'
+import { LobbyFactionDock } from '#react/MenuLobbyFactionDock.tsx'
+import {
+  CANCEL_BUTTON_CLASS_NAME,
+  LOBBY_FOOTER_CLASS_NAME,
+  LOBBY_TITLE_CLASS_NAME,
+  PRIMARY_BUTTON_CLASS_NAME,
 } from '#react/MenuParts.tsx'
+import { SoloAddBotTile, SoloBotTile, SoloPlayerTile } from '#react/MenuSoloSeats.tsx'
+import { useFitHeightZoom } from '#react/useFitHeightZoom.ts'
 
-const DEFAULT_SOLO_FACTION: SoloFactionId = 'alliance'
+/** Player | VS | Bots side by side at every width: stacking would not fit the height. */
+const TABLE_CLASS_NAME =
+  'grid w-full grid-cols-[1fr_auto_1fr] items-center justify-items-center gap-2 md:gap-12'
+const SIDE_CLASS_NAME = 'flex flex-col items-center gap-3'
+const SIDE_HEADING_CLASS_NAME =
+  'root-paper root-paper-fine m-0 px-5 py-0.5 font-display text-2xl tracking-display text-ink [--root-paper-color:var(--color-parchment)] md:text-3xl'
+const VERSUS_CLASS_NAME =
+  'root-paper root-medallion flex size-12 items-center justify-center font-display text-2xl text-ink [--root-paper-color:var(--color-gold)] md:size-20 md:text-4xl'
+const BOT_LIST_CLASS_NAME = 'm-0 flex list-none flex-col items-center gap-5 p-0'
+/** Six factions, then the two bots: one row from `md`. */
+const TRACK_COLUMNS_CLASS_NAME = 'grid-cols-4 md:grid-cols-8'
+const TRACK_SEAT_INDEX = 0
+/** The whole menu screen: the solo run shrinks to fit its height. */
+const MENU_FRAME_SELECTOR = '.menu-overlay'
 
-/** Solo: pick a faction and play it against both bots, no server needed. */
+function isSameSlot(first: SoloSlot, second: SoloSlot): boolean {
+  if (first.kind === 'bot' && second.kind === 'bot') return first.botIndex === second.botIndex
+  return first.kind === second.kind
+}
+
+function trackTabLabel(table: SoloTable): string {
+  const slot: SoloSlot = table.selectedSlot
+  if (slot.kind === 'player') return 'You · pick your faction'
+  if (slot.kind === 'bot') return `Bot ${String(slot.botIndex + 1)} · swap the bot`
+  return `Bot ${String(table.bots.length + 1)} · pick a bot`
+}
+
+/**
+ * Solo run: the player against the bots, laid out like the online lobby.
+ * Selecting a tile points the shared faction track at that seat.
+ */
 export function MenuSoloSetup(props: {
   disabled: boolean
-  onStartSolo: (faction: SoloFactionId, botSettings: BotSettingsByFaction) => void
+  onStartSolo: (factions: MenuFactionId[], botSettings: BotSettingsByFaction) => void
+  onBack: () => void
 }): JSX.Element {
-  const [faction, setFaction] = useState<SoloFactionId>(DEFAULT_SOLO_FACTION)
+  const [table, setTable] = useState<SoloTable>(defaultSoloTable)
   const [botSettings, setBotSettings] = useState<BotSettingsChoices>(defaultBotSettingsChoices)
+  const [settingsOpenBot, setSettingsOpenBot] = useState<BotFactionId | null>(null)
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const zoom: number = useFitHeightZoom({
+    contentRef: sectionRef,
+    frameSelector: MENU_FRAME_SELECTOR,
+  })
+  const botCount: number = table.bots.length
+
+  function selectSlot(slot: SoloSlot): void {
+    setTable(withSoloSlotSelected(table, slot))
+  }
+
+  function botSettingsModal(faction: BotFactionId): JSX.Element {
+    return (
+      <MenuBotSettingsModal
+        faction={faction}
+        settings={botSettings[faction]}
+        onDifficultyChange={(difficulty: BotDifficulty): void => {
+          setBotSettings(withBotDifficulty(botSettings, { faction, difficulty }))
+        }}
+        onTraitToggle={(trait: BotTrait): void => {
+          setBotSettings(withBotTraitToggled(botSettings, { faction, trait }))
+        }}
+        onClose={(): void => {
+          setSettingsOpenBot(null)
+        }}
+      />
+    )
+  }
 
   return (
-    <section
-      className={`menu-solo m-0 flex flex-col items-center gap-3 ${PAPER_SHEET_CLASS_NAME}`}
-      aria-label="Solo game against the bots"
-    >
-      <fieldset
-        className="m-0 flex w-full flex-col gap-2 border-0 p-0"
-        disabled={props.disabled}
+    <>
+      <section
+        ref={sectionRef}
+        className="menu-solo m-0 flex w-full flex-shrink-0 flex-col items-center gap-4"
+        style={{ zoom }}
+        aria-label="Solo run against the bots"
       >
-        <legend className={`mb-1 ${SECTION_TITLE_CLASS_NAME}`}>
-          Solo vs bots
-        </legend>
-        <label
-          className={`${SEAT_ROW_CLASS_NAME} gap-3`}
-          style={{ borderLeftColor: factionColorCss(faction) }}
-        >
-          <FactionBadge factionId={faction} />
-          <span className="min-w-12 font-body text-sm text-ink-soft">You</span>
-          <select
-            className="menu-solo-faction w-full min-w-0 flex-1 border-2 border-ink bg-parchment px-2 py-1.5 font-body text-base text-ink"
-            value={faction}
-            aria-label="Your faction"
-            onChange={(event): void => {
-              const nextValue: string = event.target.value
-              if (isSoloFactionId(nextValue)) {
-                setFaction(nextValue)
-              }
-            }}
-          >
-            {SOLO_FACTION_IDS.map(
-              (optionId: SoloFactionId): JSX.Element => (
-                <option key={optionId} value={optionId}>
-                  {factionDisplayName(optionId)}
-                </option>
-              ),
-            )}
-          </select>
-        </label>
-        <ul className="m-0 flex list-none flex-col gap-2 p-0">
-          {MENU_BOT_FACTION_IDS.map(
-            (botId): JSX.Element => (
-              <li
-                key={botId}
-                className={`${SEAT_ROW_CLASS_NAME} flex-wrap gap-3`}
-                style={{ borderLeftColor: factionColorCss(botId) }}
-              >
-                <FactionBadge factionId={botId} />
-                <span className="font-body text-base text-ink">
-                  {factionDisplayName(botId)}
-                </span>
-                <MenuBotSettings
-                  faction={botId}
-                  settings={botSettings[botId]}
-                  onDifficultyChange={(difficulty: BotDifficulty): void => {
-                    setBotSettings(withBotDifficulty(botSettings, { faction: botId, difficulty }))
+        <h2 className={LOBBY_TITLE_CLASS_NAME}>
+          Solo run · {botCount} {botCount === 1 ? 'bot' : 'bots'}
+        </h2>
+        <div className={TABLE_CLASS_NAME}>
+          <div className={SIDE_CLASS_NAME}>
+            <h3 className={SIDE_HEADING_CLASS_NAME}>Player</h3>
+            <SoloPlayerTile
+              faction={table.playerFaction}
+              isSelected={table.selectedSlot.kind === 'player'}
+              disabled={props.disabled}
+              onSelect={(): void => {
+                selectSlot({ kind: 'player' })
+              }}
+            />
+          </div>
+          <span className={VERSUS_CLASS_NAME} aria-hidden="true">
+            VS
+          </span>
+          <div className={SIDE_CLASS_NAME}>
+            <h3 className={SIDE_HEADING_CLASS_NAME}>Bots</h3>
+            <ul className={BOT_LIST_CLASS_NAME}>
+              {table.bots.map((faction: BotFactionId, botIndex: number): JSX.Element => (
+                <SoloBotTile
+                  key={faction}
+                  faction={faction}
+                  botIndex={botIndex}
+                  settings={botSettings[faction]}
+                  isSelected={isSameSlot(table.selectedSlot, { kind: 'bot', botIndex })}
+                  disabled={props.disabled}
+                  onSelect={(): void => {
+                    selectSlot({ kind: 'bot', botIndex })
                   }}
-                  onTraitToggle={(trait: BotTrait): void => {
-                    setBotSettings(withBotTraitToggled(botSettings, { faction: botId, trait }))
+                  onRemove={
+                    canRemoveSoloBot(table)
+                      ? (): void => {
+                          setTable(withSoloBotRemoved(table, botIndex))
+                          setSettingsOpenBot(null)
+                        }
+                      : null
+                  }
+                  isSettingsOpen={settingsOpenBot === faction}
+                  onToggleSettings={(): void => {
+                    setSettingsOpenBot(settingsOpenBot === faction ? null : faction)
                   }}
                 />
-              </li>
-            ),
-          )}
-        </ul>
-      </fieldset>
-      <button
-        type="button"
-        className={`menu-start-solo ${SECONDARY_BUTTON_CLASS_NAME}`}
-        disabled={props.disabled}
-        onClick={(): void => {
-          props.onStartSolo(faction, partyBotSettings(MENU_BOT_FACTION_IDS, botSettings))
-        }}
-      >
-        Play solo
-      </button>
-    </section>
+              ))}
+              {canAddSoloBot(table) ? (
+                <SoloAddBotTile
+                  isSelected={table.selectedSlot.kind === 'newBot'}
+                  disabled={props.disabled}
+                  onSelect={(): void => {
+                    selectSlot({ kind: 'newBot' })
+                  }}
+                />
+              ) : null}
+            </ul>
+          </div>
+        </div>
+        <LobbyFactionDock
+          choices={soloTrackChoices(table)}
+          mode="own"
+          seatIndex={TRACK_SEAT_INDEX}
+          isSeated={true}
+          disabled={props.disabled}
+          modelPicker={null}
+          tabLabel={trackTabLabel(table)}
+          columnsClassName={TRACK_COLUMNS_CLASS_NAME}
+          onPick={(faction: string): void => {
+            setTable(withSoloFactionPicked(table, faction))
+          }}
+        />
+        <div className={LOBBY_FOOTER_CLASS_NAME}>
+          <button
+            type="button"
+            className={`menu-solo-back ${CANCEL_BUTTON_CLASS_NAME}`}
+            disabled={props.disabled}
+            onClick={props.onBack}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className={`menu-start-solo ${PRIMARY_BUTTON_CLASS_NAME}`}
+            disabled={props.disabled}
+            onClick={(): void => {
+              const factions: MenuFactionId[] = soloPartyFactions(table)
+              props.onStartSolo(factions, partyBotSettings(factions, botSettings))
+            }}
+          >
+            Play solo
+          </button>
+        </div>
+      </section>
+      {settingsOpenBot !== null ? botSettingsModal(settingsOpenBot) : null}
+    </>
   )
 }

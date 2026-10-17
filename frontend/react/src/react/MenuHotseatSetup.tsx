@@ -133,20 +133,22 @@ export function MenuHotseatSetup(props: {
                   </select>
                 </label>
                 {isBotFaction(factionId) ? (
-                  <MenuBotSettings
-                    faction={factionId}
-                    settings={botSettings[factionId]}
-                    onDifficultyChange={(difficulty: BotDifficulty): void => {
-                      setBotSettings(
-                        withBotDifficulty(botSettings, { faction: factionId, difficulty }),
-                      )
-                    }}
-                    onTraitToggle={(trait: BotTrait): void => {
-                      setBotSettings(
-                        withBotTraitToggled(botSettings, { faction: factionId, trait }),
-                      )
-                    }}
-                  />
+                  <div className="w-full pl-12">
+                    <MenuBotSettings
+                      faction={factionId}
+                      settings={botSettings[factionId]}
+                      onDifficultyChange={(difficulty: BotDifficulty): void => {
+                        setBotSettings(
+                          withBotDifficulty(botSettings, { faction: factionId, difficulty }),
+                        )
+                      }}
+                      onTraitToggle={(trait: BotTrait): void => {
+                        setBotSettings(
+                          withBotTraitToggled(botSettings, { faction: factionId, trait }),
+                        )
+                      }}
+                    />
+                  </div>
                 ) : null}
               </li>
             ),

@@ -29,7 +29,7 @@ export function MenuBotSettings(props: {
 }): JSX.Element {
   const { faction, settings } = props
   return (
-    <div className="menu-bot-settings flex w-full flex-col gap-1.5 pl-12">
+    <div className="menu-bot-settings flex w-full flex-col gap-1.5">
       <label className="flex flex-row items-center gap-2 font-body text-sm text-ink-soft">
         Difficulty
         <select

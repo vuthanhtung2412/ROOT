@@ -191,26 +191,30 @@ async function playRound(page) {
 
 /**
  * Rootbotics 3.3 in the solo menu: each bot's difficulty, then every trait
- * card of both bots (hover shows the card text).
+ * card of both bots (the modal shows every card text).
  * @param {import('playwright').Page} page
  */
 async function pickBotSettings(page) {
   await caption(page, `Bots: ${botDifficulty ?? 'default'} difficulty${isEveryTraitOn ? ', every trait card' : ''}`)
   const solo = page.locator('.menu-solo')
-  if (botDifficulty !== null) {
-    for (const select of await solo.locator('.menu-bot-difficulty').all()) {
-      await select.selectOption(botDifficulty)
+  // ⚙ on each bot tile opens a modal with its difficulty and trait cards.
+  for (const settingsButton of await solo.locator('.menu-solo-bot-settings').all()) {
+    await settingsButton.click()
+    await page.waitForTimeout(SETTLE_MS / 2)
+    const modal = page.locator('.menu-bot-settings-modal')
+    if (botDifficulty !== null) {
+      await modal.locator(`.menu-bot-difficulty-${botDifficulty}`).click()
       await page.waitForTimeout(SETTLE_MS / 2)
     }
-  }
-  if (isEveryTraitOn) {
-    for (const trait of await solo.locator('.menu-bot-trait').all()) {
-      await trait.hover()
-      await trait.click()
-      await page.waitForTimeout(250)
+    if (isEveryTraitOn) {
+      for (const trait of await modal.locator('.menu-bot-trait').all()) {
+        await trait.click()
+        await page.waitForTimeout(250)
+      }
     }
+    await page.waitForTimeout(LOOK_MS)
+    await modal.locator('.menu-bot-settings-done').click()
   }
-  await page.waitForTimeout(LOOK_MS)
 }
 
 /** @param {import('playwright').Page} page @param {RegExp} railName */
@@ -260,10 +264,12 @@ async function main() {
   })
 
   await page.goto(reactUiUrl, { waitUntil: 'load' })
-  await page.locator('.menu-start-solo').waitFor({ timeout: 30_000 })
-  await caption(page, 'Solo vs bots — no game server running')
+  await page.locator('.menu-solo-run').waitFor({ timeout: 30_000 })
+  await caption(page, 'Solo run vs bots — no game server running')
   await page.waitForTimeout(LOOK_MS)
-  await page.getByLabel('Your faction').selectOption('alliance')
+  await page.locator('.menu-solo-run').click()
+  await page.locator('.menu-start-solo').waitFor({ timeout: 15_000 })
+  await page.locator('.menu-solo .menu-faction-choice[data-faction="alliance"]').click()
   await page.waitForTimeout(SETTLE_MS)
   if (showsBotSettings) await pickBotSettings(page)
   await page.locator('.menu-start-solo').click()
@@ -305,7 +311,8 @@ async function main() {
   await caption(page, 'End game: back to the menu')
   await clickButton(page, 'End game')
   await clickButton(page, 'Yes, end the game')
-  await page.locator('.menu-start-solo').waitFor({ timeout: 15_000 })
+  // Back on the menu: the solo run screen stays open if it was.
+  await page.locator('.menu-solo-run, .menu-start-solo').first().waitFor({ timeout: 15_000 })
   await page.waitForTimeout(LOOK_MS)
 
   await context.close()

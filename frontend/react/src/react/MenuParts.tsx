@@ -8,6 +8,15 @@ export const PRIMARY_BUTTON_CLASS_NAME =
 /** Dev start, QA shortcut, Add AI: a small paper tile. */
 export const SECONDARY_BUTTON_CLASS_NAME =
   'root-paper root-paper-fine root-paper-press m-0 min-h-11 px-5 py-2 font-display text-lg tracking-display text-ink [--root-paper-color:var(--color-parchment-deep)]'
+/** Lobby title on a paper strip, like the prompt of a turn. */
+export const LOBBY_TITLE_CLASS_NAME =
+  'root-paper m-0 px-7 py-1.5 text-center font-display text-xl tracking-display text-ink md:text-[26px]'
+/** Close / Leave / Back: rust, as the cancel tile of a turn. */
+export const CANCEL_BUTTON_CLASS_NAME =
+  'root-paper root-paper-fine root-paper-press m-0 min-h-12 px-5 py-2 font-display text-lg text-paper-bright [--root-paper-color:var(--color-rust-deep)]'
+/** Lobby footer: leave on the left, start on the right. */
+export const LOBBY_FOOTER_CLASS_NAME =
+  'flex flex-row flex-wrap items-center justify-center gap-5'
 /** A form laid on its own torn sheet. */
 export const PAPER_SHEET_CLASS_NAME = 'root-paper w-full max-w-md px-5 py-4'
 

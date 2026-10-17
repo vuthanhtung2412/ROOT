@@ -122,6 +122,33 @@
   - `frontend/react/src/react/MenuBotSettings.tsx` (new), `MenuSoloSetup.tsx`, `MenuHotseatSetup.tsx`, `game/*`, `api/localGameApi.ts`, `ui/botBoardViewModel.ts`, `react/BotFactionBoard.tsx` + tests
 
 
+## Solo run lobby: player vs bots
+
+### Goal
+- Start menu button "Solo run" opens a lobby-style screen: player tile, "VS", bot tiles, a shared faction track, Back / Play solo.
+- One or more bots (today: up to both Rootbotics bots); ＋ tile adds a bot, × removes one (at least one stays).
+- Any faction for the player; a bot and the faction it replaces never sit together (Rootbotics 3.2): Marquise / Eyrie are open when their bot is not seated.
+- ⚙ on a bot tile opens its difficulty and trait cards (`MenuBotSettings`).
+
+### Approach
+1. `game/soloTableSetup.ts` (new, pure): `SoloTable` (player faction, seated bots, selected slot: player / bot / new bot) + transitions (select slot, pick faction, remove bot, can add bot) + `soloTrackChoices` (the track as `MenuFactionChoice[]`: picked / blocked / free for the selected slot) + party factions.
+2. `menuPartySetup.ts`: drop `SOLO_FACTION_IDS` / `soloPartyFactions`; `onStartSolo` takes the party factions (`hudStore`, `App.tsx`, `soloGame.ts`).
+3. React: `MenuSoloSetup.tsx` rewritten as the lobby screen; solo seat tiles in `MenuSoloSeats.tsx` (new) follow the lobby seat look; lobby title / cancel / footer classes move to `MenuParts.tsx`; the track is `LobbyFactionDock` with a tab label and column override. `MenuOverlay.tsx`: "Solo run" button toggles the screen.
+
+### Risks
+- 2-seat solo (one human, one bot): lib already seats it (`setup.test.ts`), dominance cards out.
+
+### Test plan
+- `soloTableSetup.test.ts`: default table, clash blocking both ways, add / replace / remove bot, minimum one bot, party factions valid by `validatePartyFactions`.
+- Manual: chrome-devtools, solo run with Marquise vs Electric Eyrie only; QA solo demo script still records.
+
+### Commit plan
+- [x] `feat(react): solo run lobby`
+  - `frontend/react/src/game/soloTableSetup.ts` (new) + test, `game/menuPartySetup.ts` + test, `game/hudStore.ts`, `game/soloGame.ts`, `App.tsx`, `react/MenuSoloSetup.tsx`, `react/MenuSoloSeats.tsx` (new), `react/MenuLobbyFactionDock.tsx`, `react/MenuLobbyPanel.tsx`, `react/MenuParts.tsx`, `react/MenuOverlay.tsx`, `react/MenuBotSettings.tsx`, `react/MenuHotseatSetup.tsx`
+- [x] `dx(skills): solo demo through the solo run lobby`
+  - `.agents/skills/QA/record-solo-vs-bots.mjs`
+
+
 ## Follow-up: deprecate `GET /game/actions`
 
 ### Goal

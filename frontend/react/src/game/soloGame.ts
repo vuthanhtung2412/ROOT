@@ -1,10 +1,10 @@
 /**
- * Solo mode: one player against both Rootbotics bots, played in the browser
+ * Solo mode: one player against the Rootbotics bots, played in the browser
  * on the in-memory game (no server).
  */
 import { createLocalGame, type LocalGame } from '#api/localGameApi.ts'
 import type { GameSession } from '#game/GameSession.ts'
-import { soloPartyFactions, type SoloFactionId } from '#game/menuPartySetup.ts'
+import type { MenuFactionId } from '#game/menuPartySetup.ts'
 import type { PlayerIdentityStorage } from '#game/playerIdentity.ts'
 import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 
@@ -32,16 +32,13 @@ function bindSessionToLocalGame(session: GameSession, game: LocalGame): void {
   session.rebindApi(game.api, LOCAL_API_BASE_URL, game.connectSocket)
 }
 
-/** New solo game: the player's faction, then both bots seat themselves. */
+/** New solo game: the player's faction first, then the bots seat themselves. */
 export async function startSoloGame(
   session: GameSession,
-  solo: { faction: SoloFactionId; botSettings: BotSettingsByFaction },
+  solo: { factions: MenuFactionId[]; botSettings: BotSettingsByFaction },
 ): Promise<boolean> {
   bindSessionToLocalGame(session, soloLocalGame())
-  const started: boolean = await session.startLocalParty(
-    soloPartyFactions(solo.faction),
-    solo.botSettings,
-  )
+  const started: boolean = await session.startLocalParty(solo.factions, solo.botSettings)
   if (started) {
     defaultStorage()?.setItem(SOLO_GAME_OPEN_STORAGE_KEY, OPEN_VALUE)
   }

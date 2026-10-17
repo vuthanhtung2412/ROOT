@@ -35,7 +35,7 @@ import {
 } from '#game/hotseatResume.ts'
 import { getHudSnapshot, setMenuCallbacks, subscribeHud } from '#game/hudStore.ts'
 import { buildMenuLobby } from '#game/menuLobby.ts'
-import type { SoloFactionId } from '#game/menuPartySetup.ts'
+import type { MenuFactionId } from '#game/menuPartySetup.ts'
 import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import {
   fetchQaSnapshot,
@@ -149,7 +149,7 @@ export function App(): JSX.Element {
     (factions: string[], botSettings: BotSettingsByFaction) => void
   >(() => undefined)
   const handleStartSoloRef = useRef<
-    (faction: SoloFactionId, botSettings: BotSettingsByFaction) => void
+    (factions: MenuFactionId[], botSettings: BotSettingsByFaction) => void
   >(
     () => undefined,
   )
@@ -228,8 +228,8 @@ export function App(): JSX.Element {
       onStartParty: (factions, botSettings) => {
         handleStartPartyRef.current(factions, botSettings)
       },
-      onStartSolo: (faction, botSettings) => {
-        handleStartSoloRef.current(faction, botSettings)
+      onStartSolo: (factions, botSettings) => {
+        handleStartSoloRef.current(factions, botSettings)
       },
       onQaContinue: () => {
         handleQaContinueRef.current()
@@ -501,9 +501,9 @@ export function App(): JSX.Element {
     [clearLobbyWait, ensureSession, enterGame, rebindSessionApi],
   )
 
-  /** Solo: the faction against both bots, on the in-browser game. */
+  /** Solo: the player's faction against the bots, on the in-browser game. */
   const handleStartSolo = useCallback(
-    async (faction: SoloFactionId, botSettings: BotSettingsByFaction): Promise<void> => {
+    async (factions: MenuFactionId[], botSettings: BotSettingsByFaction): Promise<void> => {
       if (playPendingRef.current) {
         return
       }
@@ -512,7 +512,7 @@ export function App(): JSX.Element {
       clearLobbyWait()
       syncMenuStatus('Starting…', '#9a9a9a')
       const session = ensureSession()
-      const started: boolean = await startSoloGame(session, { faction, botSettings })
+      const started: boolean = await startSoloGame(session, { factions, botSettings })
       playPendingRef.current = false
       syncMenuPlayPending(false)
       if (!started) {
@@ -571,8 +571,8 @@ export function App(): JSX.Element {
   handlePlayOnlineRef.current = () => {
     void handlePlayOnline()
   }
-  handleStartSoloRef.current = (faction: SoloFactionId, botSettings: BotSettingsByFaction) => {
-    void handleStartSolo(faction, botSettings)
+  handleStartSoloRef.current = (factions: MenuFactionId[], botSettings: BotSettingsByFaction) => {
+    void handleStartSolo(factions, botSettings)
   }
   handlePickFactionRef.current = (faction: string) => {
     void handlePickFaction(faction)

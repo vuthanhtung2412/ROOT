@@ -21,6 +21,9 @@ import {
   type LobbyOpenSeatKind,
 } from '#react/MenuLobbySeats.tsx'
 import {
+  CANCEL_BUTTON_CLASS_NAME,
+  LOBBY_FOOTER_CLASS_NAME,
+  LOBBY_TITLE_CLASS_NAME,
   PAPER_SHEET_CLASS_NAME,
   PRIMARY_BUTTON_CLASS_NAME,
 } from '#react/MenuParts.tsx'
@@ -28,16 +31,9 @@ import {
 /** The lobby creator joins first, so the host always holds seat 0. */
 const HOST_SEAT_INDEX = 0
 const NO_SEAT_INDEX = -1
-/** Title on a paper strip, like the prompt of a turn. */
-const TITLE_CLASS_NAME =
-  'root-paper m-0 px-7 py-1.5 text-center font-display text-xl tracking-display text-ink md:text-[26px]'
 const SEAT_ROW_CLASS_NAME =
   'm-0 grid list-none grid-cols-2 gap-x-7 gap-y-4 p-0 md:flex md:flex-row md:items-start md:gap-11'
-const FOOTER_CLASS_NAME =
-  'flex flex-row flex-wrap items-center justify-center gap-5'
-/** Close / Leave: rust, as the cancel tile of a turn. */
-const LEAVE_BUTTON_CLASS_NAME =
-  'menu-leave-lobby root-paper root-paper-fine root-paper-press m-0 min-h-12 px-5 py-2 font-display text-lg text-paper-bright [--root-paper-color:var(--color-rust-deep)]'
+const LEAVE_BUTTON_CLASS_NAME = `menu-leave-lobby ${CANCEL_BUTTON_CLASS_NAME}`
 const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME}`
 
 /** Seats nobody took yet, numbered after the taken ones. */
@@ -119,7 +115,7 @@ export function OnlineLobbyPanel(props: {
       className="m-0 flex w-full flex-col items-center gap-6"
       aria-label="Online lobby"
     >
-      <h2 className={TITLE_CLASS_NAME}>
+      <h2 className={LOBBY_TITLE_CLASS_NAME}>
         Online lobby · {takenSeatCount} of {tableSeatCount} seats
       </h2>
       <ol className={SEAT_ROW_CLASS_NAME}>
@@ -201,7 +197,7 @@ export function OnlineLobbyPanel(props: {
           />
         </div>
       ) : null}
-      <div className={FOOTER_CLASS_NAME}>
+      <div className={LOBBY_FOOTER_CLASS_NAME}>
         <button
           type="button"
           className={LEAVE_BUTTON_CLASS_NAME}

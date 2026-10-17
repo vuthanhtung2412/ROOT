@@ -6,7 +6,7 @@ import type {
   CraftedCardsModalContent,
 } from '#ui/cardGalleryTypes.ts'
 import type { DecreeCardOption } from '#game/eyrieActionComposerModels.ts'
-import type { SoloFactionId } from '#game/menuPartySetup.ts'
+import type { MenuFactionId } from '#game/menuPartySetup.ts'
 import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import type { DecreePanelView } from '#ui/decreePanel.ts'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
@@ -139,8 +139,8 @@ export type MenuHudState = {
 export type MenuCallbacks = {
   /** Local hotseat: create lobby with chosen factions, join all, start. */
   onStartParty: (factions: string[], botSettings: BotSettingsByFaction) => void
-  /** Solo: this faction against both bots, in the browser (no server). */
-  onStartSolo: (faction: SoloFactionId, botSettings: BotSettingsByFaction) => void
+  /** Solo: the player's faction, then the bots, in the browser (no server). */
+  onStartSolo: (factions: MenuFactionId[], botSettings: BotSettingsByFaction) => void
   onQaContinue: () => void
   /** The one start button: join the waiting lobby, or create one. */
   onPlayOnline: () => void
