@@ -35,11 +35,17 @@ import {
 } from '#game/hotseatResume.ts'
 import { getHudSnapshot, setMenuCallbacks, subscribeHud } from '#game/hudStore.ts'
 import { buildMenuLobby } from '#game/menuLobby.ts'
+import type { SoloFactionId } from '#game/menuPartySetup.ts'
 import {
   fetchQaSnapshot,
   readQaSnapshotPath,
 } from '#game/qaSnapshotAutoload.ts'
 import { ReactGameController } from '#game/ReactGameController.ts'
+import {
+  clearSoloGameOpen,
+  resumeSoloGame,
+  startSoloGame,
+} from '#game/soloGame.ts'
 import {
   clearBootLoading,
   syncBootLoading,
@@ -139,6 +145,9 @@ export function App(): JSX.Element {
   const playPendingRef = useRef(false)
   const lobbyUnsubscribeRef = useRef<(() => void) | null>(null)
   const handleStartPartyRef = useRef<(factions: string[]) => void>(() => undefined)
+  const handleStartSoloRef = useRef<(faction: SoloFactionId) => void>(
+    () => undefined,
+  )
   const handleQaContinueRef = useRef<() => void>(() => undefined)
   const handlePlayOnlineRef = useRef<() => void>(() => undefined)
   const handlePickFactionRef = useRef<(faction: string) => void>(
@@ -214,6 +223,9 @@ export function App(): JSX.Element {
       onStartParty: (factions) => {
         handleStartPartyRef.current(factions)
       },
+      onStartSolo: (faction) => {
+        handleStartSoloRef.current(faction)
+      },
       onQaContinue: () => {
         handleQaContinueRef.current()
       },
@@ -248,10 +260,20 @@ export function App(): JSX.Element {
       ])
       void controller.start(session, () => {
         clearHotseatGameOpen()
+        clearSoloGameOpen()
+        // A solo game ran on the in-browser api: the menu talks to the server.
+        const serverBaseUrl: string = resolveDefaultApiBaseUrl()
+        session.rebindApi(
+          createFrontendApi({
+            baseUrl: serverBaseUrl,
+            playerId: readRequestPlayerId,
+          }),
+          serverBaseUrl,
+        )
         showMenu()
       })
     })()
-  }, [clearLobbyWait, controller, ensureSession, showMenu])
+  }, [clearLobbyWait, controller, ensureSession, readRequestPlayerId, showMenu])
 
   const rebindSessionApi = useCallback(
     (baseUrl: string): void => {
@@ -474,6 +496,29 @@ export function App(): JSX.Element {
     [clearLobbyWait, ensureSession, enterGame, rebindSessionApi],
   )
 
+  /** Solo: the faction against both bots, on the in-browser game. */
+  const handleStartSolo = useCallback(
+    async (faction: SoloFactionId): Promise<void> => {
+      if (playPendingRef.current) {
+        return
+      }
+      playPendingRef.current = true
+      syncMenuPlayPending(true)
+      clearLobbyWait()
+      syncMenuStatus('Starting…', '#9a9a9a')
+      const session = ensureSession()
+      const started: boolean = await startSoloGame(session, faction)
+      playPendingRef.current = false
+      syncMenuPlayPending(false)
+      if (!started) {
+        syncMenuStatus(session.getSnapshot().error ?? 'Start failed', '#c44')
+        return
+      }
+      enterGame()
+    },
+    [clearLobbyWait, ensureSession, enterGame],
+  )
+
   const handleQaContinue = useCallback(async (): Promise<void> => {
     const session = ensureSession()
     rebindSessionApi(apiBaseUrlInput)
@@ -521,6 +566,9 @@ export function App(): JSX.Element {
   handlePlayOnlineRef.current = () => {
     void handlePlayOnline()
   }
+  handleStartSoloRef.current = (faction: SoloFactionId) => {
+    void handleStartSolo(faction)
+  }
   handlePickFactionRef.current = (faction: string) => {
     void handlePickFaction(faction)
   }
@@ -543,6 +591,11 @@ export function App(): JSX.Element {
     }
   }
   resumeHotseatGameRef.current = async (): Promise<void> => {
+    // Reload in a solo game: the saved in-browser game, no server.
+    if (await resumeSoloGame(ensureSession())) {
+      enterGame()
+      return
+    }
     if (!isHotseatGameOpen()) {
       return
     }

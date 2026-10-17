@@ -54,6 +54,34 @@
   - `frontend/react/src/ui/botBoardViewModel.ts` (new) + test, `frontend/react/src/react/BotFactionBoard.tsx` (new), `FactionBoardModal.tsx`
 
 
+## Solo mode: one player against both bots, no backend
+
+### Goal
+- Menu "Solo vs bots": the player picks a faction and plays it against Mechanical Marquise and Electric Eyrie.
+- Runs in the browser only: no API server, no WebSocket. Works in production builds.
+- A page reload in the same tab goes back into the solo game.
+
+### Approach
+1. `frontend/react/src/api/localGameApi.ts` (new): the `GameApi` surface over an in-memory `lib` `Game` (create / join / start / getGame / legalActions / submitAction / gameLog / undo / undoTurnAction / delete / snapshot load), plus a `connectSocket` that pushes after each change. Errors come out as `ApiError` like the server's. Every change saves the snapshot to `localStorage`.
+2. `GameSession.rebindApi` takes the socket factory too, so the session runs on the local api unchanged (hotseat flow: `startLocalParty`, follow the actor).
+3. Menu: `MenuSoloSetup.tsx` (faction pick among the factions no bot replaces + start). `App.tsx` binds the session to the local api, starts the party, enters the game; back on the menu the session goes back to the server api.
+
+### Risks
+- Bot turns run inside `apply`: the whole bot turn lands in one push (no step-by-step animation beyond the log effects).
+- Bundle grows by `lib` (already partly imported).
+
+### Test plan
+- `localGameApi.test.ts`: create + join + start a solo party, submit an action, illegal action → `ApiError`, delete → `NO_GAME`, push after change, snapshot restored from storage.
+- `menuPartySetup.test.ts`: solo factions.
+- Manual: chrome-devtools, backend stopped, solo game played for several turns; demo video.
+
+### Commit plan
+- [x] `feat(react): in-browser game api`
+  - `frontend/react/src/api/localGameApi.ts` (new) + test, `frontend/react/vite.config.ts` (`#` imports resolved per package so `lib` bundles)
+- [x] `feat(react): solo mode against both bots`
+  - `frontend/react/src/game/menuPartySetup.ts` + test, `frontend/react/src/react/MenuSoloSetup.tsx` (new), `MenuOverlay.tsx`, `game/hudStore.ts`, `game/GameSession.ts`, `game/soloGame.ts` (new), `App.tsx`
+
+
 ## Follow-up: deprecate `GET /game/actions`
 
 ### Goal

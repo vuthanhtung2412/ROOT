@@ -14,6 +14,7 @@ import {
   subscribeHud,
   type GameDrawerHudState,
 } from '#game/hudStore.ts'
+import { factionDisplayName, isMenuFactionId } from '#game/menuPartySetup.ts'
 import { GameLogButton } from '#react/GameLog.tsx'
 import { ItemSupplyButton } from '#react/ItemSupply.tsx'
 import {
@@ -210,7 +211,11 @@ export function WinnerOverlay(): JSX.Element | null {
     >
       <div className={`absolute ${VEIL_CLASS_NAME}`} />
       <p className="root-panel relative z-1 m-0 px-5 py-3 text-center font-display text-4xl text-ink">
-        {`${winner.winnerFaction} wins`}
+        {`${
+          isMenuFactionId(winner.winnerFaction)
+            ? factionDisplayName(winner.winnerFaction)
+            : winner.winnerFaction
+        } wins`}
       </p>
       <button
         type="button"

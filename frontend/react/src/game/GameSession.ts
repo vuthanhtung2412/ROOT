@@ -79,7 +79,7 @@ export class GameSession {
   private api: FrontendApiClient
   private apiBaseUrl: string
   private readonly identityStorage: PlayerIdentityStorage | null | undefined
-  private readonly connectSocket: (
+  private connectSocket: (
     options: ConnectGameSocketOptions,
   ) => GameSocketConnection
   private readonly resolveSocketUrl: (
@@ -131,11 +131,21 @@ export class GameSession {
     return player?.seat ?? null
   }
 
-  /** Rebuild API client when menu sets a host IP. */
-  rebindApi(api: FrontendApiClient, apiBaseUrl: string): void {
+  /**
+   * Rebuild API client when menu sets a host IP, or switch to the in-browser
+   * game (solo) with its own push source.
+   */
+  rebindApi(
+    api: FrontendApiClient,
+    apiBaseUrl: string,
+    connectSocket: (
+      options: ConnectGameSocketOptions,
+    ) => GameSocketConnection = connectGameSocket,
+  ): void {
     this.disconnectSocket()
     this.api = api
     this.apiBaseUrl = apiBaseUrl
+    this.connectSocket = connectSocket
   }
 
   subscribe(listener: GameSessionListener): () => void {

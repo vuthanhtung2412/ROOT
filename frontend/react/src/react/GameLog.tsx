@@ -74,19 +74,27 @@ function LogPart(props: { part: GameLogPart }): JSX.Element {
   return <span>{`${part.text} `}</span>
 }
 
+/** Lower-to-upper case step inside a faction id: `electricEyrie`. */
+const FACTION_ID_WORD_BOUNDARY = /([a-z])([A-Z])/g
+
+/** Faction id as words (`electricEyrie` → `electric Eyrie`), capitalised by CSS. */
+function factionLogName(faction: string): string {
+  return faction.replace(FACTION_ID_WORD_BOUNDARY, '$1 $2')
+}
+
 function LogLine(props: { line: GameLogLine }): JSX.Element {
   const { line } = props
   const factionColor: string = factionColorCss(line.faction)
   if (line.kind === 'turn') {
     return (
       <li className={TURN_HEADING_CLASS_NAME} style={{ borderColor: factionColor }}>
-        {`${line.faction} turn`}
+        {`${factionLogName(line.faction)} turn`}
       </li>
     )
   }
   return (
     <li className={ACTION_LINE_CLASS_NAME} style={{ borderColor: factionColor }}>
-      <span className="capitalize">{`${line.faction}: `}</span>
+      <span className="capitalize">{`${factionLogName(line.faction)}: `}</span>
       {line.parts.map(
         (part: GameLogPart, partIndex: number): JSX.Element => (
           <LogPart key={partIndex} part={part} />

@@ -78,13 +78,28 @@ export function paintGameSceneHud(
     localControlsActor,
   )
   syncStatusMessage(
-    localControlsActor
-      ? snapshot.error
-      : (snapshot.error ?? 'Waiting for other player…'),
+    hudStatusMessage(snapshot.error, snapshot.state, localControlsActor),
   )
 }
 
 const PLAYING_STATUS = 'playing'
+const FINISHED_STATUS = 'finished'
+const WAITING_FOR_OTHER_PLAYER_MESSAGE = 'Waiting for other player…'
+
+/** Error first; otherwise wait for the seat that acts, but not once the game is over. */
+export function hudStatusMessage(
+  error: string | null,
+  state: GameState,
+  localControlsActor: boolean,
+): string | null {
+  if (error !== null) {
+    return error
+  }
+  if (localControlsActor || state.status === FINISHED_STATUS) {
+    return null
+  }
+  return WAITING_FOR_OTHER_PLAYER_MESSAGE
+}
 
 /**
  * Undo is for the player whose turn it is, and only for actions of that turn

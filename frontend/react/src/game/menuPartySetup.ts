@@ -23,6 +23,25 @@ export const HOTSEAT_FACTION_IDS = [
 
 export type MenuFactionId = (typeof HOTSEAT_FACTION_IDS)[number]
 
+/** Solo: the factions no bot replaces, each played against both bots. */
+export const SOLO_FACTION_IDS = [
+  'alliance',
+  'vagabond',
+  'lizard',
+  'riverfolk',
+] as const
+
+export type SoloFactionId = (typeof SOLO_FACTION_IDS)[number]
+
+export function isSoloFactionId(value: string): value is SoloFactionId {
+  return SOLO_FACTION_IDS.some((factionId) => factionId === value)
+}
+
+/** Solo seats: the player first, then Mechanical Marquise and Electric Eyrie. */
+export function soloPartyFactions(faction: SoloFactionId): MenuFactionId[] {
+  return [faction, ...MENU_BOT_FACTION_IDS]
+}
+
 export type MenuPlayerCount = 2 | 3 | 4
 
 export const MENU_PLAYER_COUNTS: readonly MenuPlayerCount[] = [2, 3, 4]

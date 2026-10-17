@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   assignFactionAtSeat,
   defaultFactionsForPlayerCount,
+  isSoloFactionId,
+  SOLO_FACTION_IDS,
+  soloPartyFactions,
   validatePartyFactions,
 } from '#game/menuPartySetup.ts'
 
@@ -49,6 +52,16 @@ describe('menuPartySetup', () => {
     expect(
       assignFactionAtSeat(['marquise', 'eyrie'], 1, 'mechanicalMarquise'),
     ).toEqual(['eyrie', 'mechanicalMarquise'])
+  })
+
+  it('solo seats the player, then both bots, and is a valid party', () => {
+    for (const faction of SOLO_FACTION_IDS) {
+      const factions = soloPartyFactions(faction)
+      expect(factions).toEqual([faction, 'mechanicalMarquise', 'electricEyrie'])
+      expect(validatePartyFactions(factions).ok).toBe(true)
+    }
+    expect(isSoloFactionId('marquise')).toBe(false)
+    expect(isSoloFactionId('riverfolk')).toBe(true)
   })
 
   it('assignFactionAtSeat swaps when target taken', () => {

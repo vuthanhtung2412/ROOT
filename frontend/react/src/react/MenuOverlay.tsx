@@ -9,7 +9,9 @@ import {
   type MenuHudState,
   type MenuLobbyHudState,
 } from '#game/hudStore.ts'
+import type { SoloFactionId } from '#game/menuPartySetup.ts'
 import { MenuHotseatSetup } from '#react/MenuHotseatSetup.tsx'
+import { MenuSoloSetup } from '#react/MenuSoloSetup.tsx'
 import { OnlineLobbyPanel } from '#react/MenuLobbyPanel.tsx'
 import { PRIMARY_BUTTON_CLASS_NAME } from '#react/MenuParts.tsx'
 
@@ -116,6 +118,12 @@ export function MenuOverlay(): JSX.Element | null {
             >
               {menu.lobbyOnServer ? JOIN_GAME_LABEL : CREATE_GAME_LABEL}
             </button>
+            <MenuSoloSetup
+              disabled={menu.playPending}
+              onStartSolo={(faction: SoloFactionId): void => {
+                callbacks.onStartSolo(faction)
+              }}
+            />
             {IS_DEVELOPMENT_BUILD ? (
               <MenuHotseatSetup
                 disabled={menu.playPending}

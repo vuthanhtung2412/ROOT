@@ -283,5 +283,26 @@ describe('vagabondActionComposer multi-target', () => {
       kind: 'ready',
       action: { type: 'steal', target: 1 },
     })
+    // A draft left behind would keep the action dock hidden after the steal.
+    expect(vagabond.getDraft()).toEqual({ type: 'idle' })
+  })
+
+  it('repair of the only damaged item is ready immediately and leaves no draft', () => {
+    const vagabond = createVagabondComposerHooks()
+    const composer = new ActionComposer()
+    composer.setHooks(vagabond.hooks)
+
+    expect(
+      composer.begin(
+        makeActionSpec({
+          type: 'repair',
+          params: { clearings: [2] },
+        }),
+      ),
+    ).toEqual({
+      kind: 'ready',
+      action: { type: 'repair', itemIndex: 2 },
+    })
+    expect(vagabond.getDraft()).toEqual({ type: 'idle' })
   })
 })
