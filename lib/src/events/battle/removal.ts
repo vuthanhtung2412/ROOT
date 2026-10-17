@@ -24,6 +24,7 @@ import {
 } from '#events/battle/mercenaryRemoval.js'
 import type { RemovalSelection, RemovalStage } from '#events/battle/types.js'
 import { isBotSeat } from '#factions/bots/botFactions.js'
+import { botHasTrait } from '#factions/bots/botSettings.js'
 
 function victimPieces(state: GameState, clearing: ClearingId, victim: Seat): Piece[] {
   // Rule: Vagabond pawn cannot be removed — hits damage items instead.
@@ -42,12 +43,17 @@ function victimIsVagabond(state: GameState, victim: Seat): boolean {
  */
 export function isValidRemoval(state: GameState, selection: RemovalSelection): boolean {
   const { clearing, victim, pieceIds, maxHits } = selection
-  if (pieceIds.length === 0) return false
   const ids: Set<string> = new Set(pieceIds)
   if (ids.size !== pieceIds.length) return false
 
   const onBoard: Piece[] = victimPieces(state, clearing, victim)
-  const exactRemoveCount: number = Math.min(maxHits, onBoard.length)
+  const exactRemoveCount: number = exactRemovalCount(state, {
+    victim,
+    pieces: onBoard,
+    maxHits,
+  })
+  // Only a Fortified bot can take hits that remove nothing.
+  if (pieceIds.length === 0 && (exactRemoveCount > 0 || onBoard.length === 0)) return false
   if (pieceIds.length !== exactRemoveCount) return false
 
   const byId: Map<string, Piece> = new Map(
@@ -69,6 +75,26 @@ export function isValidRemoval(state: GameState, selection: RemovalSelection): b
     return false
   }
   return true
+}
+
+/** Trait Fortified — "Opponents require two hits to destroy each of your buildings." */
+const FORTIFIED_HITS_PER_BUILDING = 2
+
+/**
+ * Pieces the hits remove: one per hit (Rule: 1.4), except that a Fortified
+ * bot's building takes two hits and a lone hit on buildings has no effect.
+ */
+function exactRemovalCount(
+  state: GameState,
+  removal: { victim: Seat; pieces: readonly Piece[]; maxHits: number },
+): number {
+  const { victim, pieces, maxHits } = removal
+  if (!botHasTrait(state, victim, 'fortified')) return Math.min(maxHits, pieces.length)
+  const oneHitPieces = pieces.filter((piece: Piece): boolean => piece.kind !== 'building').length
+  if (maxHits <= oneHitPieces) return maxHits
+  const buildingCount = pieces.length - oneHitPieces
+  const buildingsDestroyed = Math.floor((maxHits - oneHitPieces) / FORTIFIED_HITS_PER_BUILDING)
+  return oneHitPieces + Math.min(buildingCount, buildingsDestroyed)
 }
 
 interface RemovalComboBuild {
@@ -171,7 +197,11 @@ export function legalRemovalSpecs(
   const otherIds: string[] = pieces
     .filter((piece: Piece): boolean => piece.kind !== 'warrior')
     .map((piece: Piece): string => piece.id)
-  const exactRemoveCount: number = Math.min(maxHits, pieces.length)
+  const exactRemoveCount: number = exactRemovalCount(state, { victim, pieces, maxHits })
+  if (exactRemoveCount === 0) {
+    // Fortified: the hits left on buildings remove nothing.
+    return [{ type: 'resolveEvent', actor: victim, params: { pieceIds: [] } }]
+  }
 
   function addCombos(build: RemovalComboBuild): void {
     if (build.current.length === build.chooseCount) {

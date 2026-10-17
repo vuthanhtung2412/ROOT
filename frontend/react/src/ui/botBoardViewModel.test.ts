@@ -35,6 +35,28 @@ describe('buildBotBoardViewModel', () => {
     })
   })
 
+  it('lists the difficulty and trait cards with their text (Rootbotics 3.3)', () => {
+    const board = {
+      kind: 'mechanicalMarquise',
+      supply: { warriors: 12 },
+      tracks: {},
+      orderCard: null,
+    }
+    const player = { seat: BOT_SEAT, faction: 'mechanicalMarquise', vp: 0, board }
+
+    expect(buildBotBoardViewModel(player)?.settings).toEqual({
+      difficulty: { name: 'Default', text: 'The rules on the faction board.' },
+      traits: [],
+    })
+    const settings = buildBotBoardViewModel(player, {
+      mechanicalMarquise: { difficulty: 'easy', traits: ['ironWill'] },
+    })?.settings
+    expect(settings?.difficulty.name).toBe('Easy')
+    expect(settings?.traits).toEqual([
+      { name: 'Iron Will', text: 'In Escalated Daylight recruit twice as many warriors.' },
+    ])
+  })
+
   it('shows the Electric Eyrie Decree by suit, viziers in the bird column', () => {
     const view = buildBotBoardViewModel({
       seat: BOT_SEAT,

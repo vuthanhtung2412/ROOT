@@ -31,6 +31,8 @@ export type BattleEvent = {
   itemHitsTaken?: number
   /** Rule: Rootbotics 5.5.1.III — extra hits the attacker deals. */
   attackerExtraHits?: number
+  /** Trait Hospitals — the defender's warriors when the battle opened. */
+  defenderWarriorsAtStart?: number
 }
 
 export type FieldHospitalEvent = {

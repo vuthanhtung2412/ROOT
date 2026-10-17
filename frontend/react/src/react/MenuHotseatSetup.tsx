@@ -12,6 +12,16 @@ import {
   type PartySetupValidation,
 } from '#game/menuPartySetup.ts'
 import { factionColorCss } from '#game/theme.ts'
+import { isBotFaction } from '@root/lib/bot-factions'
+import type { BotDifficulty, BotSettingsByFaction, BotTrait } from '@root/lib/bot-settings'
+import {
+  defaultBotSettingsChoices,
+  partyBotSettings,
+  withBotDifficulty,
+  withBotTraitToggled,
+  type BotSettingsChoices,
+} from '#game/botSettingsMenu.ts'
+import { MenuBotSettings } from '#react/MenuBotSettings.tsx'
 import {
   FactionBadge,
   PAPER_SHEET_CLASS_NAME,
@@ -35,9 +45,10 @@ const DEFAULT_PLAYER_COUNT: MenuPlayerCount = 2
 export function MenuHotseatSetup(props: {
   disabled: boolean
   showQaContinue: boolean
-  onStartParty: (factions: string[]) => void
+  onStartParty: (factions: string[], botSettings: BotSettingsByFaction) => void
   onQaContinue: () => void
 }): JSX.Element {
+  const [botSettings, setBotSettings] = useState<BotSettingsChoices>(defaultBotSettingsChoices)
   const [playerCount, setPlayerCount] =
     useState<MenuPlayerCount>(DEFAULT_PLAYER_COUNT)
   const [seatFactions, setSeatFactions] = useState<MenuFactionId[]>(() =>
@@ -90,7 +101,7 @@ export function MenuHotseatSetup(props: {
             (factionId: MenuFactionId, seatIndex: number): JSX.Element => (
               <li
                 key={`seat-${String(seatIndex)}`}
-                className={`menu-seat ${SEAT_ROW_CLASS_NAME} gap-3`}
+                className={`menu-seat ${SEAT_ROW_CLASS_NAME} flex-wrap gap-3`}
                 style={{ borderLeftColor: factionColorCss(factionId) }}
               >
                 <FactionBadge factionId={factionId} />
@@ -121,6 +132,22 @@ export function MenuHotseatSetup(props: {
                     )}
                   </select>
                 </label>
+                {isBotFaction(factionId) ? (
+                  <MenuBotSettings
+                    faction={factionId}
+                    settings={botSettings[factionId]}
+                    onDifficultyChange={(difficulty: BotDifficulty): void => {
+                      setBotSettings(
+                        withBotDifficulty(botSettings, { faction: factionId, difficulty }),
+                      )
+                    }}
+                    onTraitToggle={(trait: BotTrait): void => {
+                      setBotSettings(
+                        withBotTraitToggled(botSettings, { faction: factionId, trait }),
+                      )
+                    }}
+                  />
+                ) : null}
               </li>
             ),
           )}
@@ -135,7 +162,10 @@ export function MenuHotseatSetup(props: {
           if (!validation.ok) {
             return
           }
-          props.onStartParty(validation.factions)
+          props.onStartParty(
+            validation.factions,
+            partyBotSettings(validation.factions, botSettings),
+          )
         }}
       >
         Start game

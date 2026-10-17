@@ -36,6 +36,7 @@ import {
 import { getHudSnapshot, setMenuCallbacks, subscribeHud } from '#game/hudStore.ts'
 import { buildMenuLobby } from '#game/menuLobby.ts'
 import type { SoloFactionId } from '#game/menuPartySetup.ts'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import {
   fetchQaSnapshot,
   readQaSnapshotPath,
@@ -144,8 +145,12 @@ export function App(): JSX.Element {
   )
   const playPendingRef = useRef(false)
   const lobbyUnsubscribeRef = useRef<(() => void) | null>(null)
-  const handleStartPartyRef = useRef<(factions: string[]) => void>(() => undefined)
-  const handleStartSoloRef = useRef<(faction: SoloFactionId) => void>(
+  const handleStartPartyRef = useRef<
+    (factions: string[], botSettings: BotSettingsByFaction) => void
+  >(() => undefined)
+  const handleStartSoloRef = useRef<
+    (faction: SoloFactionId, botSettings: BotSettingsByFaction) => void
+  >(
     () => undefined,
   )
   const handleQaContinueRef = useRef<() => void>(() => undefined)
@@ -220,11 +225,11 @@ export function App(): JSX.Element {
   const showMenu = useCallback((): void => {
     showMenuShell(import.meta.env.DEV === true)
     setMenuCallbacks({
-      onStartParty: (factions) => {
-        handleStartPartyRef.current(factions)
+      onStartParty: (factions, botSettings) => {
+        handleStartPartyRef.current(factions, botSettings)
       },
-      onStartSolo: (faction) => {
-        handleStartSoloRef.current(faction)
+      onStartSolo: (faction, botSettings) => {
+        handleStartSoloRef.current(faction, botSettings)
       },
       onQaContinue: () => {
         handleQaContinueRef.current()
@@ -450,7 +455,7 @@ export function App(): JSX.Element {
   }, [clearLobbyWait, ensureSession, watchOnlineLobby])
 
   const handleStartParty = useCallback(
-    async (factions: string[]): Promise<void> => {
+    async (factions: string[], botSettings: BotSettingsByFaction): Promise<void> => {
       if (playPendingRef.current) {
         return
       }
@@ -465,7 +470,7 @@ export function App(): JSX.Element {
       const session = ensureSession()
       let started: boolean
       try {
-        started = await session.startLocalParty(factions)
+        started = await session.startLocalParty(factions, botSettings)
       } catch (error: unknown) {
         const message: string =
           error instanceof Error ? error.message : 'Start failed'
@@ -498,7 +503,7 @@ export function App(): JSX.Element {
 
   /** Solo: the faction against both bots, on the in-browser game. */
   const handleStartSolo = useCallback(
-    async (faction: SoloFactionId): Promise<void> => {
+    async (faction: SoloFactionId, botSettings: BotSettingsByFaction): Promise<void> => {
       if (playPendingRef.current) {
         return
       }
@@ -507,7 +512,7 @@ export function App(): JSX.Element {
       clearLobbyWait()
       syncMenuStatus('Starting…', '#9a9a9a')
       const session = ensureSession()
-      const started: boolean = await startSoloGame(session, faction)
+      const started: boolean = await startSoloGame(session, { faction, botSettings })
       playPendingRef.current = false
       syncMenuPlayPending(false)
       if (!started) {
@@ -557,8 +562,8 @@ export function App(): JSX.Element {
     enterGame()
   }, [apiBaseUrlInput, ensureSession, enterGame, rebindSessionApi])
 
-  handleStartPartyRef.current = (factions: string[]) => {
-    void handleStartParty(factions)
+  handleStartPartyRef.current = (factions: string[], botSettings: BotSettingsByFaction) => {
+    void handleStartParty(factions, botSettings)
   }
   handleQaContinueRef.current = () => {
     void handleQaContinue()
@@ -566,8 +571,8 @@ export function App(): JSX.Element {
   handlePlayOnlineRef.current = () => {
     void handlePlayOnline()
   }
-  handleStartSoloRef.current = (faction: SoloFactionId) => {
-    void handleStartSolo(faction)
+  handleStartSoloRef.current = (faction: SoloFactionId, botSettings: BotSettingsByFaction) => {
+    void handleStartSolo(faction, botSettings)
   }
   handlePickFactionRef.current = (faction: string) => {
     void handlePickFaction(faction)

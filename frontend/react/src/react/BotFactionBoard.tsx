@@ -14,9 +14,11 @@ import { SuitIcon } from '#react/SuitIcon.tsx'
 import type {
   BotBoardViewModel,
   BotCardView,
+  BotSettingsView,
   ElectricEyrieBoardViewModel,
   MechanicalMarquiseBoardViewModel,
 } from '#ui/botBoardViewModel.ts'
+import type { BotCardText } from '@root/lib/bot-settings'
 
 /**
  * Same stage as the other faction boards: the art centred near the top of
@@ -56,6 +58,8 @@ const CRAFTED_STRIP_CLASS_NAME =
   'absolute flex flex-row items-center justify-center gap-1'
 const CRAFTED_ICON_CLASS_NAME = 'h-[80%] w-auto select-none'
 const EMPTY_TEXT = '—'
+const SETTING_CARD_CLASS_NAME =
+  'flex w-full flex-col gap-0.5 border border-ink/40 bg-parchment px-1.5 py-1 font-body'
 const PERCENT = 100
 
 const BUILDING_TOKEN_KEYS: Readonly<Record<string, string>> = {
@@ -217,6 +221,34 @@ function EyrieDecree(props: { view: ElectricEyrieBoardViewModel }): JSX.Element 
   )
 }
 
+/** A difficulty or trait card: its name, then its text. */
+function SettingCard(props: { card: BotCardText }): JSX.Element {
+  return (
+    <div className={SETTING_CARD_CLASS_NAME}>
+      <span className="font-display text-sm text-ink">{props.card.name}</span>
+      <span className="text-[11px] leading-snug text-ink-soft">{props.card.text}</span>
+    </div>
+  )
+}
+
+/** Rootbotics 3.3 — the difficulty card and the face-up trait cards. */
+function BotSettingsSection(props: { settings: BotSettingsView }): JSX.Element {
+  const { settings } = props
+  return (
+    <section className="bot-board-settings flex flex-col gap-1.5" aria-label="Difficulty and traits">
+      <h3 className={PANEL_HEADING_CLASS_NAME}>Difficulty</h3>
+      <SettingCard card={settings.difficulty} />
+      <h3 className={PANEL_HEADING_CLASS_NAME}>Traits</h3>
+      {settings.traits.length === 0 ? (
+        <span className={PANEL_FOOTNOTE_CLASS_NAME}>{EMPTY_TEXT}</span>
+      ) : null}
+      {settings.traits.map((trait: BotCardText) => (
+        <SettingCard key={trait.name} card={trait} />
+      ))}
+    </section>
+  )
+}
+
 /** Card panel beside the art: the bot's supply, order card and (Eyrie) Decree. */
 function BotSidePanel(props: { view: BotBoardViewModel }): JSX.Element {
   const { view } = props
@@ -235,6 +267,7 @@ function BotSidePanel(props: { view: BotBoardViewModel }): JSX.Element {
           )}
         </section>
         {view.kind === 'electricEyrie' ? <EyrieDecree view={view} /> : null}
+        <BotSettingsSection settings={view.settings} />
       </div>
     </aside>
   )

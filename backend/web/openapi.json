@@ -100,6 +100,9 @@
           },
           "mode": {
             "$ref": "#/components/schemas/LobbyMode"
+          },
+          "botSettings": {
+            "$ref": "#/components/schemas/BotSettingsByFaction"
           }
         }
       },
@@ -116,6 +119,54 @@
           "electricEyrie"
         ],
         "description": "mechanicalMarquise and electricEyrie are Rootbotics bots: seated and played by the engine."
+      },
+      "BotSettingsByFaction": {
+        "type": "object",
+        "properties": {
+          "mechanicalMarquise": {
+            "$ref": "#/components/schemas/BotSettings"
+          },
+          "electricEyrie": {
+            "$ref": "#/components/schemas/BotSettings"
+          }
+        },
+        "description": "Difficulty and traits per bot faction; a bot left out plays default with no trait."
+      },
+      "BotSettings": {
+        "type": "object",
+        "properties": {
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "default",
+              "challenging",
+              "nightmare"
+            ]
+          },
+          "traits": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "blitz",
+                "fortified",
+                "hospitals",
+                "ironWill",
+                "overwhelming",
+                "focused",
+                "nobility",
+                "relentless",
+                "swoop",
+                "warTax"
+              ]
+            }
+          }
+        },
+        "required": [
+          "difficulty",
+          "traits"
+        ]
       },
       "ActionResult": {
         "type": "object",

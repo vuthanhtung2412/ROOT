@@ -27,6 +27,7 @@ import {
   type HiddenInformationMark,
 } from '#game/hiddenInformation.js'
 import { createInitialState, runSharedSetup } from '#game/setup.js'
+import type { BotSettingsByFaction } from '#public/botSettings.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -70,6 +71,15 @@ const LOBBY_HOST_SEAT = 0
  * their whole turn (one task per step), two bots in a row included.
  */
 const MAX_AUTOMATIC_STEPS = 1000
+
+/** What a new game starts from: seats in advance (empty = open lobby) and bot settings. */
+export type GameCreation = {
+  seed: number
+  factions?: GameState['factions']
+  id?: string
+  /** Rule: Rootbotics 3.3 — difficulty and traits per bot. */
+  botSettings?: BotSettingsByFaction
+}
 
 type UndoCheckpoint = {
   wasPlaying: boolean
@@ -121,7 +131,7 @@ export class Game {
    * `factions` decides the seats in advance; an empty list opens the lobby:
    * each player then picks an untaken faction when joining.
    */
-  static create(args: { seed: number; factions?: GameState['factions']; id?: string }): Game {
+  static create(args: GameCreation): Game {
     const factions = args.factions ?? [...DEFAULT_FACTIONS]
     for (const faction of factions) {
       factionFor(faction)
@@ -130,6 +140,7 @@ export class Game {
       id: args.id ?? `game-${args.seed}`,
       seed: args.seed,
       factions,
+      ...(args.botSettings === undefined ? {} : { botSettings: args.botSettings }),
     })
     const game = new Game({
       state:
@@ -435,11 +446,16 @@ export class Game {
     const seed = this.state.seed
     const actions = this.history.slice(0, -1)
     // An open lobby is rebuilt open: its joins carry the faction picks.
-    const restored = Game.replay(
+    const restored = Game.create({
       seed,
-      actions,
-      this.state.openLobby === true ? [] : this.state.factions,
-    )
+      factions: this.state.openLobby === true ? [] : this.state.factions,
+      ...(this.state.botSettings === undefined
+        ? {}
+        : { botSettings: this.state.botSettings }),
+    })
+    for (const action of actions) {
+      restored.apply(action)
+    }
     this.state = restored.state
     this.history = restored.history
     this.choiceHistory = restored.choiceHistory

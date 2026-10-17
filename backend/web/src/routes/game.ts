@@ -56,6 +56,7 @@ import { redactStateForViewer } from '#view/redactStateForViewer.js'
 import { broadcastCurrentGame } from '#ws/GameHub.js'
 import {
   isAction,
+  hasOnlyOwnTraits,
   isFactionIdArray,
   isGameSnapshot,
 } from '#typeGuards.js'
@@ -193,7 +194,15 @@ gameRoutes.openapi(createGameRoute, async (context) => {
         : (() => {
             throw new HttpError(400, 'BAD_FACTIONS', body.factions)
           })()
-  store.game = Game.create({ seed, factions })
+  const botSettings = body.botSettings
+  if (botSettings !== undefined && !hasOnlyOwnTraits(botSettings)) {
+    throw new HttpError(400, 'BAD_BOT_SETTINGS', botSettings)
+  }
+  store.game = Game.create({
+    seed,
+    factions,
+    ...(botSettings === undefined ? {} : { botSettings }),
+  })
   store.mode = body.mode ?? DEFAULT_LOBBY_MODE
   store.aiPlayers = []
   logGameEvent('CREATE', store.game.state)

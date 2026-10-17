@@ -873,12 +873,23 @@ export interface components {
       /** @description Faction of each seat. Empty list = open lobby: every player picks an untaken faction when joining. */
       factions?: components["schemas"]["FactionId"][];
       mode?: components["schemas"]["LobbyMode"];
+      botSettings?: components["schemas"]["BotSettingsByFaction"];
     };
     /**
      * @description mechanicalMarquise and electricEyrie are Rootbotics bots: seated and played by the engine.
      * @enum {string}
      */
     FactionId: "marquise" | "eyrie" | "alliance" | "vagabond" | "lizard" | "riverfolk" | "mechanicalMarquise" | "electricEyrie";
+    /** @description Difficulty and traits per bot faction; a bot left out plays default with no trait. */
+    BotSettingsByFaction: {
+      mechanicalMarquise?: components["schemas"]["BotSettings"];
+      electricEyrie?: components["schemas"]["BotSettings"];
+    };
+    BotSettings: {
+      /** @enum {string} */
+      difficulty: "easy" | "default" | "challenging" | "nightmare";
+      traits: ("blitz" | "fortified" | "hospitals" | "ironWill" | "overwhelming" | "focused" | "nobility" | "relentless" | "swoop" | "warTax")[];
+    };
     ActionResult: {
       state: components["schemas"]["GameState"];
       log: components["schemas"]["LogEntry"][];

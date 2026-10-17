@@ -74,6 +74,8 @@ export type GameState = {
   }
   /** Created with no faction set: players pick an untaken faction on joining. */
   openLobby?: boolean
+  /** Rootbotics 3.3 — difficulty and traits per bot; absent = default, none. */
+  botSettings?: BotSettingsByFaction
   /** Items left in the supply on the map, by item type. */
   itemSupply?: Record<string, number>
   /** Latest actions the player whose turn it is may take back; absent = none. */
@@ -97,10 +99,14 @@ export type LobbyMode = components['schemas']['LobbyMode']
 /** Request header carrying the caller's join id (online mode seat check). */
 export const PLAYER_ID_HEADER = 'X-Player-Id'
 
+/** Rootbotics 3.3 — difficulty and traits per bot faction. */
+export type BotSettingsByFaction = components['schemas']['BotSettingsByFaction']
+
 export type CreateGameInput = {
   factions?: string[]
   replace?: boolean
   mode?: LobbyMode
+  botSettings?: BotSettingsByFaction
 }
 
 export type CreateGameApiOptions = {
@@ -343,6 +349,9 @@ export function createGameApi(
             ? {}
             : { factions: parseFactionIds(input.factions) }),
           ...(input.mode === undefined ? {} : { mode: input.mode }),
+          ...(input.botSettings === undefined
+            ? {}
+            : { botSettings: input.botSettings }),
         },
       })
       const data = requireData(result)

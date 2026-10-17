@@ -82,6 +82,46 @@
   - `frontend/react/src/game/menuPartySetup.ts` + test, `frontend/react/src/react/MenuSoloSetup.tsx` (new), `MenuOverlay.tsx`, `game/hudStore.ts`, `game/GameSession.ts`, `game/soloGame.ts` (new), `App.tsx`
 
 
+## Bot difficulty and traits (Rootbotics 3.3)
+
+### Goal
+- Each bot seat gets a difficulty (easy / default / challenging / nightmare) and any of its five traits, chosen in the menu (solo and hotseat) and shown on the bot board.
+- Card text SoT: `resources/rules/Rootbotics_difficulty_and_traits.md` (scans in `resources/rules/rootbotics-cards/`).
+
+### Approach
+1. `lib`: `GameState.botSettings?: Partial<Record<BotFactionId, BotSettings>>` (`{ difficulty, traits }`), set by `Game.create({ …, botSettings })`, kept by undo. Absent = default difficulty, no trait (old snapshots unchanged). Ids, names and card text in `lib/src/public/botSettings.ts` (no runtime imports, shared with React).
+2. Mechanical Marquise: Easy recruits 2; Challenging/Nightmare +2 warriors in the highest-priority ruled ordered clearing after recruiting; Nightmare +1 VP at end of Evening. Traits: Blitz (task after the move step), Fortified (battle removal: a building costs 2 hits, a lone hit on buildings does nothing), Hospitals (battle end as defender, ≥ 2 warriors lost → 2 warriors at the keep), Iron Will (Escalated recruit ×2), Overwhelming (+1 VP per 2 unplaced Recruit warriors, Expand at most once).
+3. Electric Eyrie: Easy one vizier; Challenging/Nightmare a bird Ambush from the draw pile into the bird column; Nightmare +1 VP at end of Evening. Traits: Focused (extra hit on a tie for the longest column), Nobility (turmoil also when a Decree recruit cannot place all its warriors; turmoil scores +1 per bird card instead of losing), Relentless (after the Decree, remove defenseless enemy buildings/tokens where it has warriors), Swoop (end of Daylight, 2 warriors in the highest-priority clearing with no Eyrie piece), War Tax (each building/token it removes costs the owner 1 VP).
+4. API: `botSettings` on `POST /game`; client regen (`pnpm gen:api-client`).
+5. React: difficulty select + trait toggles per bot in the solo and hotseat menus; difficulty and traits listed on the bot board.
+
+### Risks (readings of the card text)
+- Easy Marquise in Escalated Daylight: half the warriors too (one per clearing, two if it rules one).
+- "Matching the order card" on a bird order: every clearing matches.
+- Blitz destination: the adjacent clearing with the most enemy pieces, like 4.5.4; it runs once after each move step (normal and Escalated).
+- Fortified only changes battle hits.
+- Nobility "unable to place a warrior": a Decree recruit placing fewer warriors than its column's cards (no clearing or empty supply). Turmoil then ends Daylight.
+- War Tax: the owner's VP does not go below 0.
+
+### Test plan
+- lib unit tests per card (fixture factory): each difficulty, each trait, settings kept by undo and snapshot.
+- lib seeded games: every trait on, nightmare, both bots, play out with no error.
+- React: menu settings model tests; bot board view model shows settings.
+- Manual: solo game with nightmare + all traits, hotseat with settings via backend; demo video.
+
+### Commit plan
+- [x] `feat(lib): bot difficulty and trait settings`
+  - `resources/rules/Rootbotics_difficulty_and_traits.md`, `resources/rules/rootbotics-cards/*`, `lib/src/public/botSettings.ts` (new), `lib/src/state/types.ts`, `lib/src/game/Game.ts`, `lib/src/game/setup.ts`, `lib/src/factions/bots/botSettings.ts` (new) + test
+- [x] `feat(lib): Mechanical Marquise difficulty and traits`
+  - `lib/src/factions/bots/mechanicalMarquise/*`, `MechanicalMarquise.ts`, `lib/src/events/battle/removal.ts`, `lib/src/events/battle/stages.ts` + tests
+- [x] `feat(lib): Electric Eyrie difficulty and traits`
+  - `lib/src/factions/bots/electricEyrie/*`, `ElectricEyrie.ts`, `lib/src/rules/remove.ts` + tests, `botGames.test.ts`
+- [x] `feat(api): bot settings on create game`
+  - `backend/web/src/schemas/*`, `backend/web/src/routes/game.ts`, `backend/web/openapi.json`, `backend/web_client/src/*`
+- [x] `feat(react): pick bot difficulty and traits`
+  - `frontend/react/src/react/MenuBotSettings.tsx` (new), `MenuSoloSetup.tsx`, `MenuHotseatSetup.tsx`, `game/*`, `api/localGameApi.ts`, `ui/botBoardViewModel.ts`, `react/BotFactionBoard.tsx` + tests
+
+
 ## Follow-up: deprecate `GET /game/actions`
 
 ### Goal

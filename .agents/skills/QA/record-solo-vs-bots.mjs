@@ -25,6 +25,10 @@ const artifactsDirectory = path.join(rootDirectory, 'tmp/artifacts/solo-vs-bots'
 const VIDEO_NAME = 'qa-solo-vs-bots'
 
 const reactUiUrl = process.env.ROOT_REACT_URL ?? 'http://localhost:5199'
+/** Rootbotics 3.3 demo: `BOT_DIFFICULTY=nightmare ALL_TRAITS=1` picks them in the menu. */
+const botDifficulty = process.env.BOT_DIFFICULTY ?? null
+const isEveryTraitOn = process.env.ALL_TRAITS === '1'
+const showsBotSettings = botDifficulty !== null || isEveryTraitOn
 const isHeaded = process.env.HEADED === '1'
 const VIEWPORT = { width: 1440, height: 900 }
 const LOOK_MS = 1800
@@ -124,12 +128,17 @@ async function spreadSympathy(page) {
   await page.waitForTimeout(SETTLE_MS)
   const supporterHeading = page.getByRole('heading', { name: /supporter/i })
   if ((await supporterHeading.count()) > 0) {
-    await supporterHeading
-      .locator('xpath=..')
-      .getByRole('button')
-      .first()
-      .click()
-    await page.waitForTimeout(SETTLE_MS)
+    // Pick supporters until the composer offers OK (cards of other suits do nothing).
+    const supporters = await supporterHeading.locator('xpath=..').getByRole('button').all()
+    for (const supporter of supporters) {
+      if (await hasButton(page, 'OK')) break
+      await supporter.click()
+      await page.waitForTimeout(SETTLE_MS / 2)
+    }
+    if (!(await hasButton(page, 'OK'))) {
+      await clickButton(page, 'X')
+      return false
+    }
     await clickButton(page, 'OK')
   }
   return true
@@ -163,7 +172,8 @@ async function playRound(page) {
       await clickButton(page, 'Dismiss battle result')
       continue
     }
-    if (!spread && (await hasButton(page, 'spread sympathy'))) {
+    // The difficulty / traits demo keeps the human passive: the bots are the subject.
+    if (!spread && !showsBotSettings && (await hasButton(page, 'spread sympathy'))) {
       spread = true
       if (await spreadSympathy(page)) continue
     }
@@ -179,10 +189,40 @@ async function playRound(page) {
   }
 }
 
+/**
+ * Rootbotics 3.3 in the solo menu: each bot's difficulty, then every trait
+ * card of both bots (hover shows the card text).
+ * @param {import('playwright').Page} page
+ */
+async function pickBotSettings(page) {
+  await caption(page, `Bots: ${botDifficulty ?? 'default'} difficulty${isEveryTraitOn ? ', every trait card' : ''}`)
+  const solo = page.locator('.menu-solo')
+  if (botDifficulty !== null) {
+    for (const select of await solo.locator('.menu-bot-difficulty').all()) {
+      await select.selectOption(botDifficulty)
+      await page.waitForTimeout(SETTLE_MS / 2)
+    }
+  }
+  if (isEveryTraitOn) {
+    for (const trait of await solo.locator('.menu-bot-trait').all()) {
+      await trait.hover()
+      await trait.click()
+      await page.waitForTimeout(250)
+    }
+  }
+  await page.waitForTimeout(LOOK_MS)
+}
+
 /** @param {import('playwright').Page} page @param {RegExp} railName */
 async function showBoard(page, railName) {
   await page.getByRole('button', { name: railName }).first().click()
   await page.waitForTimeout(LOOK_MS * 1.5)
+  // Difficulty and trait cards sit at the bottom of the side panel.
+  const settings = page.locator('.bot-board-settings')
+  if (showsBotSettings && (await settings.count()) > 0) {
+    await settings.scrollIntoViewIfNeeded()
+    await page.waitForTimeout(LOOK_MS * 1.5)
+  }
   await page.locator('.faction-board-modal__close').click()
   await page.waitForTimeout(SETTLE_MS)
 }
@@ -198,7 +238,10 @@ async function convertWebmToMp4(webmPath, mp4Path) {
 
 async function main() {
   await mkdir(artifactsDirectory, { recursive: true })
-  const videoName = await pickUnusedVideoName(artifactsDirectory, VIDEO_NAME)
+  const videoName = await pickUnusedVideoName(
+    artifactsDirectory,
+    showsBotSettings ? `${VIDEO_NAME}-difficulty-traits` : VIDEO_NAME,
+  )
   const temporaryVideoDirectory = path.join(artifactsDirectory, `${videoName}-pw`)
   await mkdir(temporaryVideoDirectory, { recursive: true })
 
@@ -222,6 +265,7 @@ async function main() {
   await page.waitForTimeout(LOOK_MS)
   await page.getByLabel('Your faction').selectOption('alliance')
   await page.waitForTimeout(SETTLE_MS)
+  if (showsBotSettings) await pickBotSettings(page)
   await page.locator('.menu-start-solo').click()
   await page.getByRole('button', { name: 'Clearing 0' }).waitFor({ timeout: 30_000 })
   await caption(page, 'Woodland Alliance vs Mechanical Marquise + Electric Eyrie')

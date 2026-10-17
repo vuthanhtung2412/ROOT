@@ -1,4 +1,5 @@
 import { electricEyrieBoardOf } from '#factions/bots/botBoards.js'
+import { difficultyBirdColumn } from '#factions/bots/electricEyrie/cards.js'
 import { makeViziers } from '#factions/eyrie/viziers.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -68,8 +69,12 @@ export function placeElectricEyrieSetup(
     count: STARTING_WARRIORS,
   })
   const board = electricEyrieBoardOf(state, seat)
-  // Rule: Rootbotics 5.3.3 — both Loyal Viziers in the rightmost (bird) column.
-  board.decree = { ...emptyElectricEyrieDecree(), bird: makeViziers() }
+  // Rule: Rootbotics 5.3.3 — both Loyal Viziers in the rightmost (bird) column
+  // (Easy: one; Challenging / Nightmare: and a bird Ambush).
+  board.decree = {
+    ...emptyElectricEyrieDecree(),
+    bird: difficultyBirdColumn(state, seat, makeViziers()),
+  }
   // Rule: Rootbotics 5.3.4 — the track holds every roost but the leftmost space.
   board.roostTrack.placed = ELECTRIC_EYRIE_TRACK_ROOSTS
 }

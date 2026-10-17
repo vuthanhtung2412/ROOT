@@ -403,6 +403,27 @@ describe('game routes', () => {
     ).toBe(true)
   })
 
+  it('creates a game with bot difficulty and traits; a trait of the other bot is refused', async () => {
+    const botSettings = {
+      mechanicalMarquise: { difficulty: 'nightmare', traits: ['blitz', 'fortified'] },
+    }
+    const created = await app.request(
+      '/game',
+      jsonRequest('POST', { factions: ['mechanicalMarquise', 'eyrie'], botSettings }),
+    )
+    expect(created.status).toBe(201)
+    expect(store.game?.state.botSettings).toEqual(botSettings)
+
+    const refused = await app.request(
+      '/game?replace=1',
+      jsonRequest('POST', {
+        factions: ['mechanicalMarquise', 'eyrie'],
+        botSettings: { mechanicalMarquise: { difficulty: 'easy', traits: ['warTax'] } },
+      }),
+    )
+    expect(refused.status).toBe(400)
+  })
+
   it('defaults to hotseat mode and reports it on GET', async () => {
     const createResponse = await app.request(
       '/game',

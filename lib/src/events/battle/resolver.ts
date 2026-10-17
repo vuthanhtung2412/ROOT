@@ -10,6 +10,8 @@ import {
 import type { BattleEvent } from '#events/types.js'
 import { legalRemovalSpecs } from '#events/battle/removal.js'
 import { isBotSeat } from '#factions/bots/botFactions.js'
+import { botHasTrait } from '#factions/bots/botSettings.js'
+import { warriors } from '#queries/pieces.js'
 import {
   ambushCards,
   applyBattleStage,
@@ -247,6 +249,9 @@ export function openBattle(state: GameState, open: OpenBattle, ctx: Ctx): LogEnt
   }
   if (open.attackerExtraHits !== undefined) {
     event.attackerExtraHits = open.attackerExtraHits
+  }
+  if (botHasTrait(state, defender, 'hospitals')) {
+    event.defenderWarriorsAtStart = warriors(state, clearing, defender)
   }
   state.pending.push(event)
   ctx.emit({ s: 'battle.start', ev: event })

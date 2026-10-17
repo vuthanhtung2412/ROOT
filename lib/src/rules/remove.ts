@@ -20,6 +20,7 @@ import {
   returnGardenToTrack,
 } from '#factions/lizard/rules.js'
 import { applyTradeDisruption } from '#factions/riverfolk/rules.js'
+import { warTax } from '#factions/bots/electricEyrie/warTax.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { warriorSupplyOf } from '#queries/supply.js'
@@ -317,6 +318,9 @@ export function removePieces(
       }
     }
   }
+
+  // Trait War Tax (Electric Eyrie) — owners of what it destroys lose points.
+  logs.push(...warTax(state, { remover: actor, removed }, ctx))
 
   const replaced: boolean = options?.replaced === true
   for (const [victim, count] of victims) {

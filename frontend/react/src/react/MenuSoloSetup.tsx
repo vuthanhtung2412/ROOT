@@ -7,6 +7,15 @@ import {
   type SoloFactionId,
 } from '#game/menuPartySetup.ts'
 import { factionColorCss } from '#game/theme.ts'
+import type { BotDifficulty, BotSettingsByFaction, BotTrait } from '@root/lib/bot-settings'
+import {
+  defaultBotSettingsChoices,
+  partyBotSettings,
+  withBotDifficulty,
+  withBotTraitToggled,
+  type BotSettingsChoices,
+} from '#game/botSettingsMenu.ts'
+import { MenuBotSettings } from '#react/MenuBotSettings.tsx'
 import {
   FactionBadge,
   PAPER_SHEET_CLASS_NAME,
@@ -20,9 +29,10 @@ const DEFAULT_SOLO_FACTION: SoloFactionId = 'alliance'
 /** Solo: pick a faction and play it against both bots, no server needed. */
 export function MenuSoloSetup(props: {
   disabled: boolean
-  onStartSolo: (faction: SoloFactionId) => void
+  onStartSolo: (faction: SoloFactionId, botSettings: BotSettingsByFaction) => void
 }): JSX.Element {
   const [faction, setFaction] = useState<SoloFactionId>(DEFAULT_SOLO_FACTION)
+  const [botSettings, setBotSettings] = useState<BotSettingsChoices>(defaultBotSettingsChoices)
 
   return (
     <section
@@ -67,13 +77,23 @@ export function MenuSoloSetup(props: {
             (botId): JSX.Element => (
               <li
                 key={botId}
-                className={`${SEAT_ROW_CLASS_NAME} gap-3`}
+                className={`${SEAT_ROW_CLASS_NAME} flex-wrap gap-3`}
                 style={{ borderLeftColor: factionColorCss(botId) }}
               >
                 <FactionBadge factionId={botId} />
                 <span className="font-body text-base text-ink">
                   {factionDisplayName(botId)}
                 </span>
+                <MenuBotSettings
+                  faction={botId}
+                  settings={botSettings[botId]}
+                  onDifficultyChange={(difficulty: BotDifficulty): void => {
+                    setBotSettings(withBotDifficulty(botSettings, { faction: botId, difficulty }))
+                  }}
+                  onTraitToggle={(trait: BotTrait): void => {
+                    setBotSettings(withBotTraitToggled(botSettings, { faction: botId, trait }))
+                  }}
+                />
               </li>
             ),
           )}
@@ -84,7 +104,7 @@ export function MenuSoloSetup(props: {
         className={`menu-start-solo ${SECONDARY_BUTTON_CLASS_NAME}`}
         disabled={props.disabled}
         onClick={(): void => {
-          props.onStartSolo(faction)
+          props.onStartSolo(faction, partyBotSettings(MENU_BOT_FACTION_IDS, botSettings))
         }}
       >
         Play solo

@@ -49,6 +49,7 @@ import {
   type BotBoardViewModel,
 } from '#ui/botBoardViewModel.ts'
 import { questDefOf, type QuestCard } from '@root/lib/quests'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 
 export type CraftedItemView = {
   type: string
@@ -511,7 +512,7 @@ export function buildFactionBoardViewModel(
   if (player === undefined) {
     return null
   }
-  const view = buildFactionBoardViewModelFromPlayer(player, state.factions)
+  const view = buildFactionBoardViewModelFromPlayer(player, state.factions, state.botSettings)
   if (view === null) {
     return null
   }
@@ -596,8 +597,9 @@ export function completedQuestViewsFromBoard(board: unknown): VagabondQuestView[
 export function buildFactionBoardViewModelFromPlayer(
   player: PlayerForBoard,
   presentFactions: readonly string[] = VAGABOND_RELATIONSHIP_MARKER_FACTIONS,
+  botSettings?: BotSettingsByFaction,
 ): FactionBoardViewModel | null {
-  const botView: BotBoardViewModel | null = buildBotBoardViewModel(player)
+  const botView: BotBoardViewModel | null = buildBotBoardViewModel(player, botSettings)
   if (botView !== null) return botView
 
   if (player.faction === 'marquise' && isMarquiseBoardData(player.board)) {

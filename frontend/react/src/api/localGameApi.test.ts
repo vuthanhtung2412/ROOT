@@ -3,6 +3,7 @@ import { ApiError } from '#api/client.ts'
 import type { GameSocketPush } from '#api/gameSocket.ts'
 import { createLocalGame, type LocalGame } from '#api/localGameApi.ts'
 import type { PlayerIdentityStorage } from '#game/playerIdentity.ts'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 
 const SOLO_FACTIONS: string[] = ['alliance', 'mechanicalMarquise', 'electricEyrie']
 const HUMAN_PLAYER_ID = 'alliance'
@@ -41,6 +42,16 @@ describe('createLocalGame', () => {
       'bot-electricEyrie',
     ])
     expect((await localGame.api.legalActions()).actions.length).toBeGreaterThan(0)
+  })
+
+  it('creates the solo party with the bot difficulty and traits picked in the menu', async () => {
+    const localGame: LocalGame = createLocalGame(makeMemoryStorage())
+    const botSettings: BotSettingsByFaction = {
+      electricEyrie: { difficulty: 'nightmare', traits: ['swoop'] },
+    }
+    await localGame.api.createGame({ factions: SOLO_FACTIONS, replace: true, botSettings })
+
+    expect((await localGame.api.getGame()).state.botSettings).toEqual(botSettings)
   })
 
   it('rejects an illegal action with an ApiError', async () => {

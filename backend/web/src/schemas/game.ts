@@ -29,6 +29,36 @@ export const ActionResultSchema = z
 
 export const LobbyModeSchema = z.enum(LOBBY_MODES).openapi('LobbyMode')
 
+/** Rootbotics 3.3 — one bot's difficulty card and face-up trait cards. */
+export const BotSettingsSchema = z
+  .object({
+    difficulty: z.enum(['easy', 'default', 'challenging', 'nightmare']),
+    traits: z.array(
+      z.enum([
+        'blitz',
+        'fortified',
+        'hospitals',
+        'ironWill',
+        'overwhelming',
+        'focused',
+        'nobility',
+        'relentless',
+        'swoop',
+        'warTax',
+      ]),
+    ),
+  })
+  .openapi('BotSettings')
+
+export const BotSettingsByFactionSchema = z
+  .object({
+    mechanicalMarquise: BotSettingsSchema.optional(),
+    electricEyrie: BotSettingsSchema.optional(),
+  })
+  .openapi('BotSettingsByFaction', {
+    description: 'Difficulty and traits per bot faction; a bot left out plays default with no trait.',
+  })
+
 export const CreateGameBodySchema = z
   .object({
     factions: z.array(FactionIdSchema).optional().openapi({
@@ -36,6 +66,7 @@ export const CreateGameBodySchema = z
         'Faction of each seat. Empty list = open lobby: every player picks an untaken faction when joining.',
     }),
     mode: LobbyModeSchema.optional(),
+    botSettings: BotSettingsByFactionSchema.optional(),
   })
   .openapi('CreateGameBody')
 

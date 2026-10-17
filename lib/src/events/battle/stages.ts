@@ -9,6 +9,8 @@ import type { ClearingId, Suit } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { battleWarriorCount } from '#queries/mercenaries.js'
 import { warriors } from '#queries/pieces.js'
+import { keepClearingFor } from '#queries/place.js'
+import { placeBotWarriors } from '#factions/bots/botQueries.js'
 import { playerOf } from '#queries/seat.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
@@ -96,7 +98,31 @@ function finishBattle(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[
     board.relationships[faction] = 'hostile'
   }
   ctx.emit({ s: 'battle.end', ev: event })
-  return [{ t: 'event', event: { ...event, stage: 'removeAttacker' } }]
+  return [
+    { t: 'event', event: { ...event, stage: 'removeAttacker' } },
+    ...hospitalsRecruit(state, event),
+  ]
+}
+
+/** Trait Hospitals — warriors lost as Defender that trigger the keep recruit. */
+const HOSPITALS_WARRIORS_LOST = 2
+/** Trait Hospitals — warriors recruited in the clearing with the keep. */
+const HOSPITALS_RECRUITED_WARRIORS = 2
+
+/**
+ * Trait Hospitals — "After each battle as Defender in which you lost at least
+ * 2 warriors, immediately recruit 2 warriors in the clearing with the keep token."
+ */
+function hospitalsRecruit(state: GameState, event: BattleEvent): LogEntry[] {
+  if (event.defenderWarriorsAtStart === undefined) return []
+  const lost = event.defenderWarriorsAtStart - warriors(state, event.clearing, event.defender)
+  const keep: ClearingId | null = keepClearingFor(state, event.defender)
+  if (lost < HOSPITALS_WARRIORS_LOST || keep === null) return []
+  return placeBotWarriors(state, {
+    seat: event.defender,
+    clearing: keep,
+    count: HOSPITALS_RECRUITED_WARRIORS,
+  })
 }
 
 function advanceAfterAmbushRemoval(

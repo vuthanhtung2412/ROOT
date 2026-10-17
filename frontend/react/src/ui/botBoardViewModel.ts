@@ -1,3 +1,12 @@
+import type { BotFactionId } from '@root/lib/bot-factions'
+import {
+  BOT_DIFFICULTY_CARDS,
+  BOT_TRAIT_CARDS,
+  DEFAULT_BOT_DIFFICULTY,
+  type BotCardText,
+  type BotSettingsByFaction,
+  type BotTrait,
+} from '@root/lib/bot-settings'
 import { GAME_ASSET_KEYS, lookupCardCatalog } from '#assets/gameAssets.ts'
 
 /**
@@ -19,6 +28,12 @@ export type BotCardView = {
   suit: string
 }
 
+/** Rootbotics 3.3 — the difficulty card and face-up trait cards by the board. */
+export type BotSettingsView = {
+  difficulty: BotCardText
+  traits: BotCardText[]
+}
+
 type BotBoardBase = {
   seat: number
   factionName: string
@@ -28,6 +43,19 @@ type BotBoardBase = {
   craftedItems: string[]
   /** Scan of the printed bot board. */
   boardTextureKey: string
+  settings: BotSettingsView
+}
+
+/** Difficulty and trait cards of a bot, with their text (absent = default, none). */
+export function botSettingsView(
+  faction: BotFactionId,
+  settingsByFaction: BotSettingsByFaction | undefined,
+): BotSettingsView {
+  const settings = settingsByFaction?.[faction]
+  return {
+    difficulty: BOT_DIFFICULTY_CARDS[faction][settings?.difficulty ?? DEFAULT_BOT_DIFFICULTY],
+    traits: (settings?.traits ?? []).map((trait: BotTrait): BotCardText => BOT_TRAIT_CARDS[trait]),
+  }
 }
 
 export type MechanicalMarquiseBoardViewModel = BotBoardBase & {
@@ -100,7 +128,10 @@ function trackCount(tracks: unknown, building: string): number {
 }
 
 /** Bot board panel of a seat; null for a faction that is not a bot. */
-export function buildBotBoardViewModel(player: BotPlayer): BotBoardViewModel | null {
+export function buildBotBoardViewModel(
+  player: BotPlayer,
+  settingsByFaction?: BotSettingsByFaction,
+): BotBoardViewModel | null {
   const board = player.board
   if (!isRecord(board)) return null
   const base = {
@@ -116,6 +147,7 @@ export function buildBotBoardViewModel(player: BotPlayer): BotBoardViewModel | n
     return {
       ...base,
       kind,
+      settings: botSettingsView(kind, settingsByFaction),
       factionName: 'Mechanical Marquise 2.0',
       boardTextureKey: GAME_ASSET_KEYS.characterBoardMechanicalMarquise,
       tracks: BUILDING_TRACKS.map((building: string) => ({
@@ -130,6 +162,7 @@ export function buildBotBoardViewModel(player: BotPlayer): BotBoardViewModel | n
     return {
       ...base,
       kind,
+      settings: botSettingsView(kind, settingsByFaction),
       factionName: 'Electric Eyrie',
       boardTextureKey: GAME_ASSET_KEYS.characterBoardElectricEyrie,
       decree: DECREE_COLUMN_SUITS.map((suit: string) => ({

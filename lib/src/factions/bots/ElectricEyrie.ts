@@ -10,7 +10,10 @@ import {
   buildRoost,
   newRoost,
   scoreRoosts,
+  turmoil,
 } from '#factions/bots/electricEyrie/roosts.js'
+import { relentless, swoop } from '#factions/bots/electricEyrie/cards.js'
+import { scoreNightmareEvening } from '#factions/bots/botSettings.js'
 import { placeElectricEyrieSetup } from '#factions/bots/electricEyrie/setup.js'
 import { craftOrderCard, revealOrderCard } from '#factions/bots/orderCard.js'
 import type { Ctx } from '#game/ctx.js'
@@ -46,9 +49,9 @@ export class ElectricEyrie extends BotFaction {
       // Rule: Rootbotics 5.5 — resolve the Decree, then build.
       case 'daylight':
         return decreeTasks(state, seat)
-      // Rule: Rootbotics 5.6 — score the Roosts track.
+      // Rule: Rootbotics 5.6 — score the Roosts track; Nightmare's point last.
       case 'evening':
-        return [{ kind: 'scoreRoosts' }]
+        return [{ kind: 'scoreRoosts' }, { kind: 'nightmareScore' }]
     }
   }
 
@@ -74,6 +77,14 @@ export class ElectricEyrie extends BotFaction {
         return buildRoost(state, seat, ctx)
       case 'scoreRoosts':
         return taskDone(scoreRoosts(state, seat, ctx))
+      case 'relentless':
+        return relentless(state, seat, ctx)
+      case 'swoop':
+        return swoop(state, seat)
+      case 'turmoil':
+        return taskDone(turmoil(state, seat, ctx))
+      case 'nightmareScore':
+        return taskDone(scoreNightmareEvening(state, seat, ctx))
       default:
         return taskDone()
     }

@@ -6,6 +6,7 @@ import { createLocalGame, type LocalGame } from '#api/localGameApi.ts'
 import type { GameSession } from '#game/GameSession.ts'
 import { soloPartyFactions, type SoloFactionId } from '#game/menuPartySetup.ts'
 import type { PlayerIdentityStorage } from '#game/playerIdentity.ts'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 
 const SOLO_GAME_OPEN_STORAGE_KEY = 'root.react.soloGameOpen'
 const OPEN_VALUE = 'true'
@@ -34,11 +35,12 @@ function bindSessionToLocalGame(session: GameSession, game: LocalGame): void {
 /** New solo game: the player's faction, then both bots seat themselves. */
 export async function startSoloGame(
   session: GameSession,
-  faction: SoloFactionId,
+  solo: { faction: SoloFactionId; botSettings: BotSettingsByFaction },
 ): Promise<boolean> {
   bindSessionToLocalGame(session, soloLocalGame())
   const started: boolean = await session.startLocalParty(
-    soloPartyFactions(faction),
+    soloPartyFactions(solo.faction),
+    solo.botSettings,
   )
   if (started) {
     defaultStorage()?.setItem(SOLO_GAME_OPEN_STORAGE_KEY, OPEN_VALUE)

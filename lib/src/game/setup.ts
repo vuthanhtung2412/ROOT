@@ -10,6 +10,7 @@ import {
   STARTING_HAND,
 } from '#state/constants.js'
 import type { GameState, PlayerState } from '#state/types.js'
+import type { BotSettingsByFaction } from '#public/botSettings.js'
 import { createTurnScratch } from '#state/turnScratch.js'
 import { isHumanPlayer } from '#factions/bots/botFactions.js'
 
@@ -35,6 +36,7 @@ export type InitialStateOptions = {
   id: string
   seed: number
   factions: GameState['factions']
+  botSettings?: BotSettingsByFaction
 }
 
 export function createInitialState(
@@ -50,6 +52,7 @@ export function createInitialState(
     phase: 'birdsong',
     step: 'wood',
     factions: options.factions,
+    ...(options.botSettings === undefined ? {} : { botSettings: options.botSettings }),
     players: [],
     clearings: Array.from(
       { length: CLEARING_COUNT },

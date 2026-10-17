@@ -3,6 +3,12 @@ import type { Action, ActionSpec } from '#actions/types.js'
 import { isBotFaction } from '#factions/bots/botFactions.js'
 import { Game } from '#game/Game.js'
 import type { FactionId } from '#pieces/types.js'
+import {
+  BOT_DIFFICULTIES,
+  BOT_TRAITS,
+  type BotDifficulty,
+  type BotSettingsByFaction,
+} from '#public/botSettings.js'
 import { HAND_LIMIT } from '#state/constants.js'
 import { finishSetup } from '#test/fixtures.js'
 
@@ -52,8 +58,16 @@ function playPassively(game: Game): void {
   }
 }
 
-function startedGame(seed: number, factions: readonly FactionId[]): Game {
-  const game = Game.create({ seed, factions: [...factions] })
+function startedGame(
+  seed: number,
+  factions: readonly FactionId[],
+  botSettings?: BotSettingsByFaction,
+): Game {
+  const game = Game.create({
+    seed,
+    factions: [...factions],
+    ...(botSettings === undefined ? {} : { botSettings }),
+  })
   for (const faction of factions) {
     if (!isBotFaction(faction)) game.join(`human-${faction}`)
   }
@@ -75,6 +89,29 @@ describe('seeded games with bots (Rootbotics 4–5)', () => {
 
         const replayed = Game.replay(seed, game.history, [...factions])
         expect(replayed.state).toEqual(game.state)
+      })
+    }
+  }
+})
+
+const BOTS_WITH_A_HUMAN: readonly FactionId[] = ['mechanicalMarquise', 'electricEyrie', 'riverfolk']
+
+function everyTraitAt(difficulty: BotDifficulty): BotSettingsByFaction {
+  return {
+    mechanicalMarquise: { difficulty, traits: [...BOT_TRAITS.mechanicalMarquise] },
+    electricEyrie: { difficulty, traits: [...BOT_TRAITS.electricEyrie] },
+  }
+}
+
+describe('seeded games with bot difficulty and every trait (Rootbotics 3.3)', () => {
+  for (const difficulty of BOT_DIFFICULTIES) {
+    for (const seed of SEEDS) {
+      it(`${difficulty}, every trait (seed ${seed}) plays to a winner`, () => {
+        const game = startedGame(seed, BOTS_WITH_A_HUMAN, everyTraitAt(difficulty))
+        playPassively(game)
+
+        expect(game.state.status).toBe('finished')
+        expect(game.state.botSettings).toEqual(everyTraitAt(difficulty))
       })
     }
   }

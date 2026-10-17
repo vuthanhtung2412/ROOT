@@ -13,6 +13,7 @@ import {
   startBotBattle,
 } from '#factions/bots/botQueries.js'
 import { orderedClearings } from '#factions/bots/orderCard.js'
+import { botHasTrait } from '#factions/bots/botSettings.js'
 import {
   byFewest,
   byHighestPriority,
@@ -57,9 +58,17 @@ export function decreeTasks(state: GameState, seat: Seat): ElectricEyrieTask[] {
     ...columns.map((column: CardSuit): ElectricEyrieTask => ({ kind: 'decreeRecruit', column })),
     ...columns.map((column: CardSuit): ElectricEyrieTask => ({ kind: 'decreeMove', column })),
     ...columns.map((column: CardSuit): ElectricEyrieTask => ({ kind: 'decreeBattle', column })),
+    // Trait Relentless — after resolving the Decree.
+    ...(botHasTrait(state, seat, 'relentless') ? [RELENTLESS_TASK] : []),
     { kind: 'buildRoost' },
+    // Trait Swoop — at the end of Daylight.
+    ...(botHasTrait(state, seat, 'swoop') ? [SWOOP_TASK] : []),
   ]
 }
+
+const RELENTLESS_TASK: ElectricEyrieTask = { kind: 'relentless' }
+const SWOOP_TASK: ElectricEyrieTask = { kind: 'swoop' }
+const TURMOIL_TASK: ElectricEyrieTask = { kind: 'turmoil' }
 
 /**
  * Rule: Rootbotics 5.5.1.I — warriors equal to the column's cards in a
@@ -80,10 +89,16 @@ export function decreeRecruit(state: GameState, column: CardSuit): BotTaskResult
     ],
   )
   const clearing = candidates[0]
-  if (clearing === undefined) return taskDone()
-  return taskDone(
-    placeBotWarriors(state, { seat, clearing, count: columnLength(state, seat, column) }),
-  )
+  const requested = columnLength(state, seat, column)
+  const supplyBefore = electricEyrieBoardOf(state, seat).supply.warriors
+  const logs =
+    clearing === undefined ? [] : placeBotWarriors(state, { seat, clearing, count: requested })
+  const placed = supplyBefore - electricEyrieBoardOf(state, seat).supply.warriors
+  // Trait Nobility — unable to place a warrior: turmoil.
+  if (placed < requested && botHasTrait(state, seat, 'nobility')) {
+    return { logs, followUps: [TURMOIL_TASK] }
+  }
+  return taskDone(logs)
 }
 
 /** Warriors that keep the Eyrie ruling the clearing (ties rule, 5.2.1). */
@@ -149,11 +164,15 @@ function defenselessBuildingCount(state: GameState, clearing: ClearingId, seat: 
   ).length
 }
 
+/** Rule: 5.5.1.III — more cards than each other column (Focused: a tie for most counts). */
 function isLongestColumn(state: GameState, seat: Seat, column: CardSuit): boolean {
   const length = columnLength(state, seat, column)
-  return ELECTRIC_EYRIE_DECREE_COLUMNS.every(
-    (other: CardSuit): boolean => other === column || columnLength(state, seat, other) < length,
-  )
+  const tieCounts = botHasTrait(state, seat, 'focused')
+  return ELECTRIC_EYRIE_DECREE_COLUMNS.every((other: CardSuit): boolean => {
+    if (other === column) return true
+    const otherLength = columnLength(state, seat, other)
+    return tieCounts ? otherLength <= length : otherLength < length
+  })
 }
 
 /**

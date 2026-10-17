@@ -14,8 +14,12 @@ export type MechanicalMarquiseTask =
   | { kind: 'escalatedRecruit' }
   | { kind: 'escalatedBuild' }
   | { kind: 'escalatedMoves' }
+  /** Trait Blitz — after the move action. */
+  | { kind: 'blitz' }
   | { kind: 'score' }
   | { kind: 'discardOrder' }
+  /** Difficulty Nightmare — 1 VP at the end of Evening. */
+  | { kind: 'nightmareScore' }
 
 /** Rule: Rootbotics 5.4–5.6 — one unit of the Electric Eyrie turn. */
 export type ElectricEyrieTask =
@@ -28,6 +32,14 @@ export type ElectricEyrieTask =
   | { kind: 'decreeBattle'; column: CardSuit }
   | { kind: 'buildRoost' }
   | { kind: 'scoreRoosts' }
+  /** Trait Relentless — after resolving the Decree. */
+  | { kind: 'relentless' }
+  /** Trait Swoop — at the end of Daylight. */
+  | { kind: 'swoop' }
+  /** Trait Nobility — a Decree recruit could not place every warrior. */
+  | { kind: 'turmoil' }
+  /** Difficulty Nightmare — 1 VP at the end of Evening. */
+  | { kind: 'nightmareScore' }
 
 export type BotTask = MechanicalMarquiseTask | ElectricEyrieTask
 

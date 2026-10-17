@@ -1,5 +1,6 @@
 import { BotFaction, taskDone, type BotTaskResult } from '#factions/bots/BotFaction.js'
 import { mechanicalMarquiseBoardOf } from '#factions/bots/botBoards.js'
+import { scoreNightmareEvening } from '#factions/bots/botSettings.js'
 import { eveningVictoryPoints } from '#factions/bots/mechanicalMarquise/buildings.js'
 import { placeMechanicalMarquiseSetup } from '#factions/bots/mechanicalMarquise/setup.js'
 import {
@@ -51,9 +52,9 @@ export class MechanicalMarquise extends BotFaction {
         return [{ kind: 'revealOrder' }, { kind: 'craftOrder' }]
       case 'daylight':
         return daylightTasks(state, seat)
-      // Rule: Rootbotics 4.6 — score, then discard the order.
+      // Rule: Rootbotics 4.6 — score, then discard the order; Nightmare's point last.
       case 'evening':
-        return [{ kind: 'score' }, { kind: 'discardOrder' }]
+        return [{ kind: 'score' }, { kind: 'discardOrder' }, { kind: 'nightmareScore' }]
     }
   }
 
@@ -69,6 +70,8 @@ export class MechanicalMarquise extends BotFaction {
       case 'discardOrder':
         discardOrderCard(state, seat)
         return taskDone()
+      case 'nightmareScore':
+        return taskDone(scoreNightmareEvening(state, seat, ctx))
       case 'battle':
       case 'recruit':
       case 'build':
@@ -77,6 +80,7 @@ export class MechanicalMarquise extends BotFaction {
       case 'escalatedRecruit':
       case 'escalatedBuild':
       case 'escalatedMoves':
+      case 'blitz':
         return runMechanicalMarquiseDaylightTask(state, task, ctx)
       default:
         return taskDone()

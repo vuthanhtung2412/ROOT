@@ -3,6 +3,7 @@ import type { Card, CardSuit } from '#cards/types.js'
 import { taskDone, type BotTaskResult } from '#factions/bots/BotFaction.js'
 import { electricEyrieBoardOf } from '#factions/bots/botBoards.js'
 import { ruledClearings } from '#factions/bots/botQueries.js'
+import { botHasTrait } from '#factions/bots/botSettings.js'
 import { hasRoost } from '#factions/bots/electricEyrie/decree.js'
 import { orderSuitOf, orderedClearings } from '#factions/bots/orderCard.js'
 import { byHighestPriority, inTargetOrder } from '#factions/bots/priority.js'
@@ -86,23 +87,43 @@ export function newRoost(state: GameState, seat: Seat): BotTaskResult {
 }
 
 /**
- * Rule: Rootbotics 5.7 — Turmoil: lose a point per bird card (viziers too),
- * discard the Decree but the viziers, then go to Evening.
+ * Rule: Rootbotics 5.7.1 — lose a point per bird card (viziers too); with
+ * Nobility, score a point per bird card instead.
  */
-function turmoil(state: GameState, seat: Seat, ctx: Ctx): LogEntry[] {
+function humiliate(state: GameState, seat: Seat, ctx: Ctx): LogEntry[] {
   const board = electricEyrieBoardOf(state, seat)
   const player = playerOf(state, seat)
   const birdCards = ELECTRIC_EYRIE_DECREE_COLUMNS.flatMap(
     (column: CardSuit): Card[] => board.decree[column],
   ).filter((decreeCard: Card): boolean => defOf(decreeCard).suit === 'bird').length
+  if (botHasTrait(state, seat, 'nobility')) {
+    const scored = addVictoryPoints(state, seat, birdCards)
+    if (scored === 0) return []
+    ctx.emit({ s: 'vp', actor: seat, delta: scored })
+    return [{ t: 'vp', actor: seat, delta: scored, reason: 'turmoil nobility' }]
+  }
   // Rule: 7.7.1 — the score track has no space below zero.
   const victoryPointsAfter = Math.max(0, player.vp - birdCards)
   const delta = victoryPointsAfter - player.vp
   player.vp = victoryPointsAfter
-  const logs: LogEntry[] = [{ t: 'action', actor: seat, action: { type: 'botTurmoil' } }]
-  if (delta !== 0) {
-    logs.push({ t: 'vp', actor: seat, delta, reason: 'turmoil humiliate' })
-    ctx.emit({ s: 'vp', actor: seat, delta })
+  if (delta === 0) return []
+  ctx.emit({ s: 'vp', actor: seat, delta })
+  return [{ t: 'vp', actor: seat, delta, reason: 'turmoil humiliate' }]
+}
+
+/**
+ * Rule: Rootbotics 5.7 — Turmoil: humiliate, discard the Decree but the
+ * viziers, then go to Evening (the rest of Daylight is dropped).
+ */
+export function turmoil(state: GameState, seat: Seat, ctx: Ctx): LogEntry[] {
+  const board = electricEyrieBoardOf(state, seat)
+  const logs: LogEntry[] = [
+    { t: 'action', actor: seat, action: { type: 'botTurmoil' } },
+    ...humiliate(state, seat, ctx),
+  ]
+  const plan = state.turnScratch.botPlan
+  if (plan !== null && plan !== undefined) {
+    state.turnScratch.botPlan = { ...plan, tasks: [] }
   }
   const viziers: Card[] = []
   for (const column of ELECTRIC_EYRIE_DECREE_COLUMNS) {

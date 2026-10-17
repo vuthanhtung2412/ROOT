@@ -170,9 +170,11 @@ export function createLocalGame(
       const factions: FactionId[] | undefined =
         input.factions === undefined ? undefined : parseFactionIds(input.factions)
       const created: Game = runEngine(() =>
-        factions === undefined
-          ? Game.create({ seed })
-          : Game.create({ seed, factions }),
+        Game.create({
+          seed,
+          ...(factions === undefined ? {} : { factions }),
+          ...(input.botSettings === undefined ? {} : { botSettings: input.botSettings }),
+        }),
       )
       replaceGame(created)
       return { state: stateCopy(created), mode: LOCAL_LOBBY_MODE }

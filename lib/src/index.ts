@@ -41,6 +41,15 @@ export {
 } from '#factions/bots/botFactions.js'
 export { clearingPriority } from '#factions/bots/priority.js'
 export {
+  BOT_DIFFICULTIES,
+  BOT_TRAITS,
+  isBotTraitOf,
+  type BotDifficulty,
+  type BotSettings,
+  type BotSettingsByFaction,
+  type BotTrait,
+} from '#public/botSettings.js'
+export {
   ELECTRIC_EYRIE_DECREE_COLUMNS,
   ELECTRIC_EYRIE_ROOST_VICTORY_POINTS,
   type ElectricEyrieBoard,

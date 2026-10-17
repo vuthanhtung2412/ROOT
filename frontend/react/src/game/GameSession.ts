@@ -4,6 +4,7 @@ import type {
   FrontendApiClient,
 } from '#api/client.ts'
 import { isBotFaction } from '@root/lib/bot-factions'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import { ApiError } from '#api/client.ts'
 import { setAiPlayers } from '#game/aiPlayerStore.ts'
 import {
@@ -604,7 +605,10 @@ export class GameSession {
    * Local hotseat from menu: replace slot, join every seat, start.
    * Follows current actor like QA (one device, all roles).
    */
-  async startLocalParty(factions: readonly string[]): Promise<boolean> {
+  async startLocalParty(
+    factions: readonly string[],
+    botSettings: BotSettingsByFaction = {},
+  ): Promise<boolean> {
     this.setLoading(true)
     try {
       clearPlayerIdentity(
@@ -617,6 +621,7 @@ export class GameSession {
       await this.api.createGame({
         factions: [...factions],
         replace: true,
+        botSettings,
       })
       for (const faction of factions) {
         // A bot seat takes its place by itself (Rootbotics 2.6).

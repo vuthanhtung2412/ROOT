@@ -6,6 +6,7 @@ import type { ClearingId, Suit } from '#map/types.js'
 import type { FactionId, ItemType, Piece, Seat } from '#pieces/types.js'
 import type { DecreeColumn, FactionBoard } from '#state/boards.js'
 import type { BotPlan } from '#state/botTurn.js'
+import type { BotSettingsByFaction } from '#public/botSettings.js'
 
 export type Phase = 'birdsong' | 'daylight' | 'evening'
 
@@ -115,6 +116,8 @@ export type GameState = {
    * faction when joining, and `factions` grows seat by seat.
    */
   openLobby?: true
+  /** Rule: Rootbotics 3.3 — difficulty and traits per bot; absent = default, none. */
+  botSettings?: BotSettingsByFaction
   players: PlayerState[]
   clearings: ClearingState[]
   deck: DeckState

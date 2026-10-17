@@ -10,6 +10,7 @@ import {
   type MenuLobbyHudState,
 } from '#game/hudStore.ts'
 import type { SoloFactionId } from '#game/menuPartySetup.ts'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import { MenuHotseatSetup } from '#react/MenuHotseatSetup.tsx'
 import { MenuSoloSetup } from '#react/MenuSoloSetup.tsx'
 import { OnlineLobbyPanel } from '#react/MenuLobbyPanel.tsx'
@@ -120,16 +121,16 @@ export function MenuOverlay(): JSX.Element | null {
             </button>
             <MenuSoloSetup
               disabled={menu.playPending}
-              onStartSolo={(faction: SoloFactionId): void => {
-                callbacks.onStartSolo(faction)
+              onStartSolo={(faction: SoloFactionId, botSettings: BotSettingsByFaction): void => {
+                callbacks.onStartSolo(faction, botSettings)
               }}
             />
             {IS_DEVELOPMENT_BUILD ? (
               <MenuHotseatSetup
                 disabled={menu.playPending}
                 showQaContinue={menu.showQaContinue}
-                onStartParty={(factions: string[]): void => {
-                  callbacks.onStartParty(factions)
+                onStartParty={(factions: string[], botSettings: BotSettingsByFaction): void => {
+                  callbacks.onStartParty(factions, botSettings)
                 }}
                 onQaContinue={(): void => {
                   callbacks.onQaContinue()
