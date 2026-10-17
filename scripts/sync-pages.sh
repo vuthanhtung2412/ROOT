@@ -43,6 +43,9 @@ lfs_pointer_files="$(grep -rlI "$LFS_POINTER_SIGNATURE" "$REACT_DIST_DIRECTORY" 
   exit 1
 }
 
+# --no-history re-creates the branch as an orphan; a cached clone from a
+# previous run already has it checked out, so drop the cache first.
+pnpm exec gh-pages-clean
 pnpm exec gh-pages --dist "$REACT_DIST_DIRECTORY" --branch "$PAGES_BRANCH" \
   --nojekyll --no-history --message "deploy ${commit} (api ${API_URL})"
 echo "[pages] pushed ${commit} to ${PAGES_BRANCH}"
