@@ -9,7 +9,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'ambush',
     cost: [],
     description: "At start of battle, defender may play to deal two immediate hits, then discard. Cancel if attacker plays matching ambush.",
-    image: "card-ambushbird.png",
+    image: "card-ambushbird.webp",
     copies: 2,
   },
   {
@@ -19,7 +19,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'ambush',
     cost: [],
     description: "At start of battle, defender may play to deal two immediate hits, then discard. Cancel if attacker plays matching ambush.",
-    image: "card-ambushbunny.png",
+    image: "card-ambushbunny.webp",
     copies: 1,
   },
   {
@@ -29,7 +29,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'ambush',
     cost: [],
     description: "At start of battle, defender may play to deal two immediate hits, then discard. Cancel if attacker plays matching ambush.",
-    image: "card-ambushfox.png",
+    image: "card-ambushfox.webp",
     copies: 1,
   },
   {
@@ -39,7 +39,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'ambush',
     cost: [],
     description: "At start of battle, defender may play to deal two immediate hits, then discard. Cancel if attacker plays matching ambush.",
-    image: "card-ambushmouse.png",
+    image: "card-ambushmouse.webp",
     copies: 1,
   },
   {
@@ -49,7 +49,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'dominance',
     cost: [],
     description: "If you have at least 10 points, play during Daylight and remove your score marker. You win if you rule two opposite corners at the start of your Birdsong. In games of four or more, as Vagabond, you may form a coalition.",
-    image: "card-dominancebird.png",
+    image: "card-dominancebird.webp",
     copies: 1,
   },
   {
@@ -59,7 +59,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'dominance',
     cost: [],
     description: "If you have at least 10 points, play during Daylight and remove your score marker. You win if you rule three rabbit clearings at the start of your Birdsong. In games of four or more, as Vagabond, you may form a coalition.",
-    image: "card-dominancebunny.png",
+    image: "card-dominancebunny.webp",
     copies: 1,
   },
   {
@@ -69,7 +69,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'dominance',
     cost: [],
     description: "If you have at least 10 points, play during Daylight and remove your score marker. You win if you rule three fox clearings at the start of your Birdsong. In games of four or more, as Vagabond, you may form a coalition.",
-    image: "card-dominancefox.png",
+    image: "card-dominancefox.webp",
     copies: 1,
   },
   {
@@ -79,7 +79,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'dominance',
     cost: [],
     description: "If you have at least 10 points, play during Daylight and remove your score marker. You win if you rule three mouse clearings at the start of your Birdsong. In games of four or more, as Vagabond, you may form a coalition.",
-    image: "card-dominancemouse.png",
+    image: "card-dominancemouse.webp",
     copies: 1,
   },
   {
@@ -91,7 +91,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'hammer',
     vp: 2,
     description: "Craft hammer item, score +2 VP, then discard.",
-    image: "card-anvil.png",
+    image: "card-anvil.webp",
     copies: 1,
   },
   {
@@ -103,7 +103,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'sword',
     vp: 2,
     description: "Craft sword item, score +2 VP, then discard.",
-    image: "card-armstrader.png",
+    image: "card-armstrader.webp",
     copies: 1,
   },
   {
@@ -115,7 +115,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'boot',
     vp: 1,
     description: "Craft boot item, score +1 VP, then discard.",
-    image: "card-avisittofriends.png",
+    image: "card-avisittofriends.webp",
     copies: 1,
   },
   {
@@ -127,7 +127,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'coin',
     vp: 3,
     description: "Craft coins item, score +3 VP, then discard.",
-    image: "card-bakesale.png",
+    image: "card-bakesale.webp",
     copies: 1,
   },
   {
@@ -139,7 +139,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'bag',
     vp: 1,
     description: "Craft bag item, score +1 VP, then discard.",
-    image: "card-birdybindle.png",
+    image: "card-birdybindle.webp",
     copies: 1,
   },
   {
@@ -151,7 +151,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'crossbow',
     vp: 1,
     description: "Craft crossbow item, score +1 VP, then discard.",
-    image: "card-crossbowbird.png",
+    image: "card-crossbowbird.webp",
     copies: 1,
   },
   {
@@ -163,7 +163,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'crossbow',
     vp: 1,
     description: "Craft crossbow item, score +1 VP, then discard.",
-    image: "card-crossbowmouse.png",
+    image: "card-crossbowmouse.webp",
     copies: 1,
   },
   {
@@ -175,7 +175,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'sword',
     vp: 2,
     description: "Craft sword item, score +2 VP, then discard.",
-    image: "card-foxfolksteel.png",
+    image: "card-foxfolksteel.webp",
     copies: 1,
   },
   {
@@ -187,7 +187,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'bag',
     vp: 1,
     description: "Craft bag item, score +1 VP, then discard.",
-    image: "card-gentlyusedknapsack.png",
+    image: "card-gentlyusedknapsack.webp",
     copies: 1,
   },
   {
@@ -199,7 +199,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'coin',
     vp: 3,
     description: "Craft coins item, score +3 VP, then discard.",
-    image: "card-investments.png",
+    image: "card-investments.webp",
     copies: 1,
   },
   {
@@ -211,7 +211,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'bag',
     vp: 1,
     description: "Craft bag item, score +1 VP, then discard.",
-    image: "card-mouseinasack.png",
+    image: "card-mouseinasack.webp",
     copies: 1,
   },
   {
@@ -223,7 +223,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'coin',
     vp: 3,
     description: "Craft coins item, score +3 VP, then discard.",
-    image: "card-protectionracket.png",
+    image: "card-protectionracket.webp",
     copies: 1,
   },
   {
@@ -235,7 +235,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'tea',
     vp: 2,
     description: "Craft tea item, score +2 VP, then discard.",
-    image: "card-rootteabunny.png",
+    image: "card-rootteabunny.webp",
     copies: 1,
   },
   {
@@ -247,7 +247,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'tea',
     vp: 2,
     description: "Craft tea item, score +2 VP, then discard.",
-    image: "card-rootteafox.png",
+    image: "card-rootteafox.webp",
     copies: 1,
   },
   {
@@ -259,7 +259,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'tea',
     vp: 2,
     description: "Craft tea item, score +2 VP, then discard.",
-    image: "card-rootteamouse.png",
+    image: "card-rootteamouse.webp",
     copies: 1,
   },
   {
@@ -271,7 +271,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'bag',
     vp: 1,
     description: "Craft bag item, score +1 VP, then discard.",
-    image: "card-smugglerstrail.png",
+    image: "card-smugglerstrail.webp",
     copies: 1,
   },
   {
@@ -283,7 +283,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'sword',
     vp: 2,
     description: "Craft sword item, score +2 VP, then discard.",
-    image: "card-sword.png",
+    image: "card-sword.webp",
     copies: 1,
   },
   {
@@ -295,7 +295,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'boot',
     vp: 1,
     description: "Craft boot item, score +1 VP, then discard.",
-    image: "card-travelgearfox.png",
+    image: "card-travelgearfox.webp",
     copies: 1,
   },
   {
@@ -307,7 +307,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'boot',
     vp: 1,
     description: "Craft boot item, score +1 VP, then discard.",
-    image: "card-travelgearmouse.png",
+    image: "card-travelgearmouse.webp",
     copies: 1,
   },
   {
@@ -319,7 +319,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     item: 'boot',
     vp: 1,
     description: "Craft boot item, score +1 VP, then discard.",
-    image: "card-woodlandrunners.png",
+    image: "card-woodlandrunners.webp",
     copies: 1,
   },
   {
@@ -329,7 +329,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'partisan',
     cost: ["fox"],
     description: "In battle in fox clearings, may deal one extra hit, then discard all your cards except foxes.",
-    image: "card-foxpartisans.png",
+    image: "card-foxpartisans.webp",
     copies: 1,
   },
   {
@@ -339,7 +339,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'partisan',
     cost: ["mouse"],
     description: "In battle in mouse clearings, may deal one extra hit, then discard all your cards except mice.",
-    image: "card-mousepartisans.png",
+    image: "card-mousepartisans.webp",
     copies: 1,
   },
   {
@@ -349,7 +349,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'partisan',
     cost: ["rabbit"],
     description: "In battle in rabbit clearings, may deal one extra hit, then discard all your cards except rabbits.",
-    image: "card-rabbitpartisans.png",
+    image: "card-rabbitpartisans.webp",
     copies: 1,
   },
   {
@@ -359,7 +359,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["wild","wild"],
     description: "You treat rivers as paths.",
-    image: "card-boatbuilders.png",
+    image: "card-boatbuilders.webp",
     copies: 1,
   },
   {
@@ -369,7 +369,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["rabbit"],
     description: "At start of Evening, may draw a card and choose another player to score one point.",
-    image: "card-charmoffensive.png",
+    image: "card-charmoffensive.webp",
     copies: 1,
   },
   {
@@ -379,7 +379,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["rabbit","rabbit"],
     description: "Warriors removed, not replaced, from the map to their supply are placed here. At start of Birdsong, score one point per five warriors here, then remove all warriors here.",
-    image: "card-coffinmakers.png",
+    image: "card-coffinmakers.webp",
     copies: 1,
   },
   {
@@ -389,7 +389,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["wild","wild"],
     description: "While moving, you ignore rule.",
-    image: "card-corvidplanners.png",
+    image: "card-corvidplanners.webp",
     copies: 1,
   },
   {
@@ -399,7 +399,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["fox","fox"],
     description: "At end of Birdsong, you must take a move, then you must battle in the destination clearing. Discard this if you did not take both actions.",
-    image: "card-eyrieemigre.png",
+    image: "card-eyrieemigre.webp",
     copies: 1,
   },
   {
@@ -409,7 +409,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["fox"],
     description: "In Birdsong, may discard this card to force an enemy to move half their faction warriors (round up) from a clearing you choose to a clearing you choose, ignoring rule.",
-    image: "card-falseorders.png",
+    image: "card-falseorders.webp",
     copies: 2,
   },
   {
@@ -419,7 +419,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["fox","fox"],
     description: "In Evening, if you would draw cards, you may instead take one ambush card from the discard pile.",
-    image: "card-informants.png",
+    image: "card-informants.webp",
     copies: 2,
   },
   {
@@ -429,7 +429,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["mouse"],
     description: "Once in Daylight, may exhaust an item in your Crafted Items box to take a move or initiate a battle.",
-    image: "card-leagueofadventrousmice.png",
+    image: "card-leagueofadventrousmice.webp",
     copies: 2,
   },
   {
@@ -439,7 +439,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["mouse","mouse"],
     description: "Whenever you craft an item, score one extra point.",
-    image: "card-masterengravers.png",
+    image: "card-masterengravers.webp",
     copies: 1,
   },
   {
@@ -449,7 +449,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["mouse","mouse"],
     description: "Whenever another player crafts an item, draw a card.",
-    image: "card-murinebroker.png",
+    image: "card-murinebroker.webp",
     copies: 1,
   },
   {
@@ -459,7 +459,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["wild","wild","wild"],
     description: "Once in Daylight, you may spend a card to replace an enemy warrior in a matching clearing with a warrior of your faction.",
-    image: "card-propagandabureau.png",
+    image: "card-propagandabureau.webp",
     copies: 1,
   },
   {
@@ -469,7 +469,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["wild"],
     description: "At the start of Birdsong, may discard this card to discard an enemy's crafted card.",
-    image: "card-saboteurs.png",
+    image: "card-saboteurs.webp",
     copies: 3,
   },
   {
@@ -479,7 +479,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["fox","rabbit","mouse"],
     description: "Your tokens now count toward rule, and each of your tokens counts twice.",
-    image: "card-soupkitchens.png",
+    image: "card-soupkitchens.webp",
     copies: 1,
   },
   {
@@ -489,7 +489,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["rabbit"],
     description: "Once in Birdsong, may take a random card from another player and then give them a card.",
-    image: "card-swapmeet.png",
+    image: "card-swapmeet.webp",
     copies: 2,
   },
   {
@@ -499,7 +499,7 @@ export const EP_CARD_DEFS: CardDef[] = [
     type: 'persistent',
     cost: ["rabbit"],
     description: "You treat clearings with your crafting pieces as adjacent. You may ignore paths when moving between them.",
-    image: "card-tunnels.png",
+    image: "card-tunnels.webp",
     copies: 2,
   },
 ]

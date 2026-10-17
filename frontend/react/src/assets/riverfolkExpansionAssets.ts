@@ -25,11 +25,11 @@ export type ExpansionImageAsset = {
 export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = [
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.factionLizard,
-    path: 'assets/factions/lizard.png',
+    path: 'assets/factions/lizard.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.factionRiverfolk,
-    path: 'assets/factions/riverfolk.png',
+    path: 'assets/factions/riverfolk.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.characterBoardLizard,
@@ -41,43 +41,43 @@ export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = 
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardWarrior,
-    path: 'assets/tokens/lizard/warrior.png',
+    path: 'assets/tokens/lizard/warrior.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenFox,
-    path: 'assets/tokens/lizard/garden-fox.png',
+    path: 'assets/tokens/lizard/garden-fox.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenMouse,
-    path: 'assets/tokens/lizard/garden-mouse.png',
+    path: 'assets/tokens/lizard/garden-mouse.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenRabbit,
-    path: 'assets/tokens/lizard/garden-rabbit.png',
+    path: 'assets/tokens/lizard/garden-rabbit.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcast,
-    path: 'assets/tokens/lizard/outcast.png',
+    path: 'assets/tokens/lizard/outcast.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcastHated,
-    path: 'assets/tokens/lizard/outcast-hated.png',
+    path: 'assets/tokens/lizard/outcast-hated.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkWarrior,
-    path: 'assets/tokens/riverfolk/warrior.png',
+    path: 'assets/tokens/riverfolk/warrior.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkTradePostFox,
-    path: 'assets/tokens/riverfolk/trade-post-fox.png',
+    path: 'assets/tokens/riverfolk/trade-post-fox.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkTradePostMouse,
-    path: 'assets/tokens/riverfolk/trade-post-mouse.png',
+    path: 'assets/tokens/riverfolk/trade-post-mouse.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkTradePostRabbit,
-    path: 'assets/tokens/riverfolk/trade-post-rabbit.png',
+    path: 'assets/tokens/riverfolk/trade-post-rabbit.webp',
   },
 ]
 

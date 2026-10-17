@@ -10,7 +10,7 @@ function pieceFixture(overrides: Partial<MapPiece> = {}): MapPiece {
     key: 'clearing-1-warrior-0',
     shape: 'piece',
     textureKey: 'token-marquise-warrior',
-    texturePath: '/assets/tokens/marquise/warrior.png',
+    texturePath: '/assets/tokens/marquise/warrior.webp',
     color: MARQUISE_COLOR,
     count: WARRIOR_COUNT,
     ground: { x: 1, z: 2 },

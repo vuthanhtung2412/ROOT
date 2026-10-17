@@ -259,19 +259,19 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   },
   {
     key: GAME_ASSET_KEYS.factionMarquise,
-    path: 'assets/factions/marquise.png',
+    path: 'assets/factions/marquise.webp',
   },
   {
     key: GAME_ASSET_KEYS.factionEyrie,
-    path: 'assets/factions/eyrie.png',
+    path: 'assets/factions/eyrie.webp',
   },
   {
     key: GAME_ASSET_KEYS.factionAlliance,
-    path: 'assets/factions/alliance.png',
+    path: 'assets/factions/alliance.webp',
   },
   {
     key: GAME_ASSET_KEYS.factionVagabond,
-    path: 'assets/factions/vagabond.png',
+    path: 'assets/factions/vagabond.webp',
   },
   {
     key: GAME_ASSET_KEYS.characterBoardMarquise,
@@ -303,119 +303,119 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   },
   {
     key: GAME_ASSET_KEYS.suitFox,
-    path: 'assets/suits/fox.png',
+    path: 'assets/suits/fox.webp',
   },
   {
     key: GAME_ASSET_KEYS.suitMouse,
-    path: 'assets/suits/mouse.png',
+    path: 'assets/suits/mouse.webp',
   },
   {
     key: GAME_ASSET_KEYS.suitRabbit,
-    path: 'assets/suits/rabbit.png',
+    path: 'assets/suits/rabbit.webp',
   },
   {
     key: GAME_ASSET_KEYS.suitBird,
-    path: 'assets/suits/bird.png',
+    path: 'assets/suits/bird.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseSawmill,
-    path: 'assets/tokens/marquise/sawmill.png',
+    path: 'assets/tokens/marquise/sawmill.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseWorkshop,
-    path: 'assets/tokens/marquise/workshop.png',
+    path: 'assets/tokens/marquise/workshop.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseRecruiter,
-    path: 'assets/tokens/marquise/recruiter.png',
+    path: 'assets/tokens/marquise/recruiter.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseWood,
-    path: 'assets/tokens/marquise/wood.png',
+    path: 'assets/tokens/marquise/wood.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseKeep,
-    path: 'assets/tokens/marquise/keep.png',
+    path: 'assets/tokens/marquise/keep.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenMarquiseWarrior,
-    path: 'assets/tokens/marquise/warrior.png',
+    path: 'assets/tokens/marquise/warrior.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenEyrieRoost,
-    path: 'assets/tokens/eyrie/roost.png',
+    path: 'assets/tokens/eyrie/roost.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenEyrieWarrior,
-    path: 'assets/tokens/eyrie/warrior.png',
+    path: 'assets/tokens/eyrie/warrior.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenAllianceSympathy,
-    path: 'assets/tokens/alliance/sympathy.png',
+    path: 'assets/tokens/alliance/sympathy.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenAllianceBaseFox,
-    path: 'assets/tokens/alliance/base-fox.png',
+    path: 'assets/tokens/alliance/base-fox.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenAllianceBaseMouse,
-    path: 'assets/tokens/alliance/base-mouse.png',
+    path: 'assets/tokens/alliance/base-mouse.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenAllianceBaseRabbit,
-    path: 'assets/tokens/alliance/base-rabbit.png',
+    path: 'assets/tokens/alliance/base-rabbit.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenAllianceWarrior,
-    path: 'assets/tokens/alliance/warrior.png',
+    path: 'assets/tokens/alliance/warrior.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenVagabondPawn,
-    path: 'assets/tokens/vagabond/pawn.png',
+    path: 'assets/tokens/vagabond/pawn.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenVagabondPawnTinker,
-    path: 'assets/tokens/vagabond/pawn-tinker.png',
+    path: 'assets/tokens/vagabond/pawn-tinker.webp',
   },
   {
     key: GAME_ASSET_KEYS.tokenVagabondPawnRanger,
-    path: 'assets/tokens/vagabond/pawn-ranger.png',
+    path: 'assets/tokens/vagabond/pawn-ranger.webp',
   },
   {
     key: GAME_ASSET_KEYS.markerRuin,
-    path: 'assets/markers/ruin.png',
+    path: 'assets/markers/ruin.webp',
   },
   {
     key: GAME_ASSET_KEYS.itemBoot,
-    path: 'assets/items/boot.png',
+    path: 'assets/items/boot.webp',
   },
   {
     key: GAME_ASSET_KEYS.itemBag,
-    path: 'assets/items/bag.png',
+    path: 'assets/items/bag.webp',
   },
   {
     key: GAME_ASSET_KEYS.itemCrossbow,
-    path: 'assets/items/crossbow.png',
+    path: 'assets/items/crossbow.webp',
   },
   {
     key: GAME_ASSET_KEYS.itemHammer,
-    path: 'assets/items/hammer.png',
+    path: 'assets/items/hammer.webp',
   },
   {
     key: GAME_ASSET_KEYS.itemSword,
-    path: 'assets/items/sword.png',
+    path: 'assets/items/sword.webp',
   },
   {
     key: GAME_ASSET_KEYS.itemTea,
-    path: 'assets/items/tea.png',
+    path: 'assets/items/tea.webp',
   },
   {
     key: GAME_ASSET_KEYS.itemCoin,
-    path: 'assets/items/coin.png',
+    path: 'assets/items/coin.webp',
   },
   {
     key: GAME_ASSET_KEYS.itemTorch,
-    path: 'assets/items/torch.png',
+    path: 'assets/items/torch.webp',
   },
   ...RIVERFOLK_EXPANSION_IMAGE_ASSETS,
 ]

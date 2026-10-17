@@ -439,7 +439,7 @@ describe('questViewsFromState', () => {
         name: 'Fundraising',
         suit: 'fox',
         items: ['coin', 'tea'],
-        imagePath: '/assets/quests/quest-fundraising.png',
+        imagePath: '/assets/quests/quest-fundraising.webp',
       },
     ])
   })

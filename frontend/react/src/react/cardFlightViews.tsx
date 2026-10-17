@@ -91,9 +91,9 @@ export const CARD_FACE_CLASS_NAME =
 const CARD_BACK_CLASS_NAME = `${CARD_FACE_CLASS_NAME} rotate-y-180`
 /**
  * Back of the shared deck (Exiles & Partisans). The base game back sits
- * beside it as `card-back-base.png`.
+ * beside it as `card-back-base.webp`.
  */
-const CARD_BACK_IMAGE_PATH: string = publicAssetUrl('assets/cards/card-back.png')
+const CARD_BACK_IMAGE_PATH: string = publicAssetUrl('assets/cards/card-back.webp')
 const ANVIL_CLASS_NAME = `card-flight__anvil ${FLIGHT_BASE_CLASS_NAME} root-paper root-medallion flex size-36 items-end justify-center pb-4 text-8xl text-parchment`
 /** The anvil itself, squashed from its foot by each blow. */
 const ANVIL_ICON_CLASS_NAME = 'block origin-bottom'

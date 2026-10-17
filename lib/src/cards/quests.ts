@@ -21,23 +21,23 @@ export type QuestDef = {
  */
 export const QUEST_DEFS: readonly QuestDef[] = [
   // Fox (peaceful: no sword/crossbow)
-  { defId: 'QUEST-F-FUNDS', name: 'Fundraising', suit: 'fox', items: ['coin', 'tea'], image: 'quest-fundraising.png' },
-  { defId: 'QUEST-F-SHED', name: 'Repair a Shed', suit: 'fox', items: ['hammer', 'torch'], image: 'quest-repairashed.png' },
-  { defId: 'QUEST-F-LOGS', name: 'Logistics', suit: 'fox', items: ['bag', 'boot'], image: 'quest-logisticshelpfox.png' },
-  { defId: 'QUEST-F-SPEECH', name: 'Give a Speech', suit: 'fox', items: ['tea', 'torch'], image: 'quest-giveaspeechfox.png' },
-  { defId: 'QUEST-F-ERRAND', name: 'Errand', suit: 'fox', items: ['boot', 'tea'], image: 'quest-errandfox.png' },
+  { defId: 'QUEST-F-FUNDS', name: 'Fundraising', suit: 'fox', items: ['coin', 'tea'], image: 'quest-fundraising.webp' },
+  { defId: 'QUEST-F-SHED', name: 'Repair a Shed', suit: 'fox', items: ['hammer', 'torch'], image: 'quest-repairashed.webp' },
+  { defId: 'QUEST-F-LOGS', name: 'Logistics', suit: 'fox', items: ['bag', 'boot'], image: 'quest-logisticshelpfox.webp' },
+  { defId: 'QUEST-F-SPEECH', name: 'Give a Speech', suit: 'fox', items: ['tea', 'torch'], image: 'quest-giveaspeechfox.webp' },
+  { defId: 'QUEST-F-ERRAND', name: 'Errand', suit: 'fox', items: ['boot', 'tea'], image: 'quest-errandfox.webp' },
   // Mouse
-  { defId: 'QUEST-M-BANDITS', name: 'Expel Bandits', suit: 'mouse', items: ['sword', 'sword'], image: 'quest-expelbanditsmouse.png' },
-  { defId: 'QUEST-M-BEAR', name: 'Fend Off a Bear', suit: 'mouse', items: ['crossbow', 'torch'], image: 'quest-fendoffabearmouse.png' },
-  { defId: 'QUEST-M-GUARD', name: 'Guard Duty', suit: 'mouse', items: ['sword', 'torch'], image: 'quest-guarddutymouse.png' },
-  { defId: 'QUEST-M-LOGS', name: 'Logistics', suit: 'mouse', items: ['bag', 'boot'], image: 'quest-logisticshelpmouse.png' },
-  { defId: 'QUEST-M-ESCORT', name: 'Escort', suit: 'mouse', items: ['boot', 'boot'], image: 'quest-escort.png' },
+  { defId: 'QUEST-M-BANDITS', name: 'Expel Bandits', suit: 'mouse', items: ['sword', 'sword'], image: 'quest-expelbanditsmouse.webp' },
+  { defId: 'QUEST-M-BEAR', name: 'Fend Off a Bear', suit: 'mouse', items: ['crossbow', 'torch'], image: 'quest-fendoffabearmouse.webp' },
+  { defId: 'QUEST-M-GUARD', name: 'Guard Duty', suit: 'mouse', items: ['sword', 'torch'], image: 'quest-guarddutymouse.webp' },
+  { defId: 'QUEST-M-LOGS', name: 'Logistics', suit: 'mouse', items: ['bag', 'boot'], image: 'quest-logisticshelpmouse.webp' },
+  { defId: 'QUEST-M-ESCORT', name: 'Escort', suit: 'mouse', items: ['boot', 'boot'], image: 'quest-escort.webp' },
   // Rabbit
-  { defId: 'QUEST-R-BANDITS', name: 'Expel Bandits', suit: 'rabbit', items: ['sword', 'sword'], image: 'quest-expelbanditsbunny.png' },
-  { defId: 'QUEST-R-BEAR', name: 'Fend Off a Bear', suit: 'rabbit', items: ['crossbow', 'torch'], image: 'quest-fendoffabearbunny.png' },
-  { defId: 'QUEST-R-GUARD', name: 'Guard Duty', suit: 'rabbit', items: ['sword', 'torch'], image: 'quest-guarddutybunny.png' },
-  { defId: 'QUEST-R-SPEECH', name: 'Give a Speech', suit: 'rabbit', items: ['tea', 'torch'], image: 'quest-giveaspeechbunny.png' },
-  { defId: 'QUEST-R-ERRAND', name: 'Errand', suit: 'rabbit', items: ['boot', 'tea'], image: 'quest-errandbunny.png' },
+  { defId: 'QUEST-R-BANDITS', name: 'Expel Bandits', suit: 'rabbit', items: ['sword', 'sword'], image: 'quest-expelbanditsbunny.webp' },
+  { defId: 'QUEST-R-BEAR', name: 'Fend Off a Bear', suit: 'rabbit', items: ['crossbow', 'torch'], image: 'quest-fendoffabearbunny.webp' },
+  { defId: 'QUEST-R-GUARD', name: 'Guard Duty', suit: 'rabbit', items: ['sword', 'torch'], image: 'quest-guarddutybunny.webp' },
+  { defId: 'QUEST-R-SPEECH', name: 'Give a Speech', suit: 'rabbit', items: ['tea', 'torch'], image: 'quest-giveaspeechbunny.webp' },
+  { defId: 'QUEST-R-ERRAND', name: 'Errand', suit: 'rabbit', items: ['boot', 'tea'], image: 'quest-errandbunny.webp' },
 ] as const
 
 /** One physical quest card. `id` = `${defId}#1`. */
