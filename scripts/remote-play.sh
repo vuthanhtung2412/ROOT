@@ -4,8 +4,8 @@ set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 PORT="${ROOT_WEB_PORT:-3000}"
-# Funnel HTTPS listen (443 often taken by Docker). Allowed: 443, 8443, 10000.
-HTTPS_PORT="${FUNNEL_HTTPS_PORT:-8443}"
+# Funnel HTTPS listen. Allowed: 443, 8443, 10000. Set FUNNEL_HTTPS_PORT in `.env` if 443 is taken (e.g. Docker).
+HTTPS_PORT="${FUNNEL_HTTPS_PORT:-443}"
 WEB_PID=""
 
 cleanup() {

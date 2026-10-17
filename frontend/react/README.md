@@ -41,7 +41,7 @@ Runs in a process-compose TUI (`process-compose.serve.yaml`): `web` + `ai-stream
 
 ```bash
 pnpm remote   # Funnel URL — leave API base empty
-# FUNNEL_HTTPS_PORT=10000 pnpm remote   # if 8443 busy (443/8443/10000 only)
+# FUNNEL_HTTPS_PORT=8443 pnpm remote   # if 443 busy (443/8443/10000 only; or set it in `.env`)
 pnpm remote:cloudflare   # Cloudflare quick tunnel — random URL each run, no account
 ```
 
