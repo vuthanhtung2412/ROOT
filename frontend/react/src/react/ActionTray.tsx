@@ -84,7 +84,7 @@ const DOCK_POSITION_CLASS_NAME =
 /** Frame in the colour of the faction taking the turn. */
 const DOCK_FRAME_CLASS_NAME =
   'action-dock root-paper flex flex-row items-stretch gap-2.5 p-2.5'
-const FACTION_FRAME_CLASS_NAMES: Readonly<Record<string, string>> = {
+export const FACTION_FRAME_CLASS_NAMES: Readonly<Record<string, string>> = {
   marquise: '[--root-paper-color:var(--color-marquise)]',
   eyrie: '[--root-paper-color:var(--color-eyrie)]',
   alliance: '[--root-paper-color:var(--color-alliance)]',

@@ -105,6 +105,7 @@ export class Game {
   private choiceHistory: boolean[]
   private rng: SeededRng
   private signalBus: SignalBus
+  private pacesBots: boolean = false
 
   private constructor(args: {
     state: GameState
@@ -843,33 +844,58 @@ export class Game {
     return logs
   }
 
+  /**
+   * Paced bots: the bot work waits for `stepBot`, one step per call, so a
+   * player can watch each bot action land. Not saved: a reloaded game plays
+   * its bots at once until paced again.
+   */
+  setBotPacing(isPaced: boolean): void {
+    this.pacesBots = isPaced
+  }
+
+  /** Paced bots: take one bot step (one task, answer or phase end), then the automatic work after it. */
+  stepBot(): ActionResult {
+    if (!this.botHasWork()) throw new RuleError('NO_BOT_WORK')
+    const stepLogs: LogEntry[] | null = this.runAutomaticStep()
+    if (stepLogs === null) throw new RuleError('BOT_STUCK')
+    const logs: LogEntry[] = [...stepLogs]
+    if (this.state.status === 'playing') logs.push(...this.runAutoActions())
+    this.log.push(...logs)
+    return { state: this.state, log: logs }
+  }
+
   private runAutoActions(): LogEntry[] {
     const logs: LogEntry[] = []
     let guard = 0
     while (guard++ < MAX_AUTOMATIC_STEPS && this.state.status === 'playing') {
-      // A pending choice (e.g. buying services at the start of Birdsong) comes
-      // first; a bot answers its own at once.
-      if (this.state.pending.length > 0) {
-        const botAnswerLogs: LogEntry[] | null = this.answerForBot()
-        if (botAnswerLogs === null) break
-        logs.push(...botAnswerLogs)
+      if (this.pacesBots && this.botHasWork()) break
+      const stepLogs: LogEntry[] | null = this.runAutomaticStep()
+      if (stepLogs === null) break
+      logs.push(...stepLogs)
+    }
+    return logs
+  }
+
+  /** One automatic step: a bot's answer, or the auto actions of the step. Null when there is none. */
+  private runAutomaticStep(): LogEntry[] | null {
+    // A pending choice (e.g. buying services at the start of Birdsong) comes
+    // first; a bot answers its own at once.
+    if (this.state.pending.length > 0) return this.answerForBot()
+    const faction = factionFor(factionOf(this.state, this.state.currentSeat))
+    const autos = faction
+      .autoActions(this.state, this.state.phase, this.state.step)
+      .filter((action) => !this.isAutoBlocked(action))
+    if (autos.length === 0) return null
+    const logs: LogEntry[] = []
+    for (const action of autos) {
+      if (action.type === 'endPhase') {
+        // A bot ends its own steps (Rootbotics 2.6).
+        logs.push(...this.advanceOrHoldAtEndOfBirdsong())
         continue
       }
-      const faction = factionFor(factionOf(this.state, this.state.currentSeat))
-      const autos = faction
-        .autoActions(this.state, this.state.phase, this.state.step)
-        .filter((action) => !this.isAutoBlocked(action))
-      if (autos.length === 0) break
-      for (const action of autos) {
-        if (action.type === 'endPhase') {
-          // A bot ends its own steps (Rootbotics 2.6).
-          logs.push(...this.advanceOrHoldAtEndOfBirdsong())
-          continue
-        }
-        faction.validate(this.state, action, this.makeCtx())
-        logs.push(...faction.apply(this.state, action, this.makeCtx()))
-        if (this.state.status === 'playing') logs.push(...this.checkWin())
-      }
+      faction.validate(this.state, action, this.makeCtx())
+      logs.push(...faction.apply(this.state, action, this.makeCtx()))
+      if (this.state.status === 'playing') logs.push(...this.checkWin())
     }
     return logs
   }
@@ -890,7 +916,7 @@ export class Game {
   }
 
   /** A bot has to act now: answer a pending event, or take its turn. */
-  private botHasWork(): boolean {
+  botHasWork(): boolean {
     const { state } = this
     if (state.status !== 'playing') return false
     if (state.pending.length === 0) return isBotSeat(state, state.currentSeat)

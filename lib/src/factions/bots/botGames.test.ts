@@ -116,3 +116,59 @@ describe('seeded games with bot difficulty and every trait (Rootbotics 3.3)', ()
     }
   }
 })
+
+/** Paced bots: every bot step taken one by one before the human acts again. */
+function playPassivelyWithPacedBots(game: Game): void {
+  game.setBotPacing(true)
+  for (let step = 0; step < MAXIMUM_HUMAN_ACTIONS && game.state.status === 'playing'; step += 1) {
+    while (game.botHasWork()) game.stepBot()
+    if (game.state.status !== 'playing') return
+    const action = game
+      .legalActions()
+      .map(passiveAnswer)
+      .find((candidate: Action | null): candidate is Action => candidate !== null)
+    if (action === undefined) throw new Error(`no passive answer in ${game.state.phase}/${game.state.step}`)
+    game.apply(action)
+  }
+}
+
+describe('paced bots (one bot step at a time)', () => {
+  for (const factions of TABLES) {
+    it(`${factions.join(' vs ')} ends like the game with bots played at once`, () => {
+      const atOnce = startedGame(SEEDS[0]!, factions)
+      playPassively(atOnce)
+      const paced = startedGame(SEEDS[0]!, factions)
+      playPassivelyWithPacedBots(paced)
+
+      expect(paced.state).toEqual(atOnce.state)
+      expect(paced.log).toEqual(atOnce.log)
+    })
+  }
+
+  it('waits for stepBot after a human action that hands the turn to a bot', () => {
+    const game = startedGame(SEEDS[0]!, TABLES[0]!)
+    game.setBotPacing(true)
+    while (!game.botHasWork()) {
+      const action = game
+        .legalActions()
+        .map(passiveAnswer)
+        .find((candidate: Action | null): candidate is Action => candidate !== null)
+      if (action === undefined) throw new Error('no passive answer')
+      game.apply(action)
+    }
+    const botSeat = game.state.currentSeat
+    const logLength = game.log.length
+    game.stepBot()
+
+    expect(game.log.length).toBeGreaterThanOrEqual(logLength)
+    expect(game.state.players[botSeat]?.faction).toBe('electricEyrie')
+  })
+
+  it('refuses a bot step when no bot has work', () => {
+    const game = startedGame(SEEDS[0]!, TABLES[0]!)
+    game.setBotPacing(true)
+
+    expect(game.botHasWork()).toBe(false)
+    expect(() => game.stepBot()).toThrow('NO_BOT_WORK')
+  })
+})

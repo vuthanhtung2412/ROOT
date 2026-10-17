@@ -32,6 +32,7 @@ import type {
   GameSocketConnection,
   GameSocketHandlers,
 } from '#api/gameSocket.ts'
+import { waitBotStepDelay } from '#game/botPace.ts'
 import type { PlayerIdentityStorage } from '#game/playerIdentity.ts'
 
 /** Saved solo game: survives a page reload. */
@@ -44,6 +45,26 @@ const HTTP_STATUS_NOT_IMPLEMENTED = 501
 const SEED_RANGE = 1_000_000_000
 
 type LocalGameView = Awaited<ReturnType<GameApi['getGame']>>
+type EngineLogEntry = Game['log'][number]
+
+/** Bot turns played one step at a time, with a pause after each action the player sees. */
+export type BotPlayback = {
+  waitAfterBotAction: () => Promise<void>
+}
+
+/** Phase ends: the turn banner already tells the step. */
+const SILENT_ACTION_TYPES: ReadonlySet<string> = new Set<string>(['endPhase'])
+
+/** An action the game log shows: the player gets a pause to read it. */
+function isWatchedLogEntry(entry: EngineLogEntry): boolean {
+  return entry.t === 'action' && !SILENT_ACTION_TYPES.has(entry.action.type)
+}
+
+function isBotAnswerPending(engine: Game): boolean {
+  return engine.state.pending.length > 0 && engine.botHasWork()
+}
+
+const PACED_BOT_PLAYBACK: BotPlayback = { waitAfterBotAction: waitBotStepDelay }
 
 export type LocalGame = {
   api: GameApi
@@ -112,8 +133,11 @@ function stateCopy(game: Game): GameState {
 
 export function createLocalGame(
   storage: PlayerIdentityStorage | null = defaultStorage(),
+  botPlayback: BotPlayback = PACED_BOT_PLAYBACK,
 ): LocalGame {
   let game: Game | null = null
+  /** Bumped by each new playback: an older one stops at its next step. */
+  let botPlaybackNumber = 0
   const socketHandlers: Set<GameSocketHandlers> = new Set()
 
   const requireGame = (): Game => {
@@ -150,16 +174,48 @@ export function createLocalGame(
     })
   }
 
+  /** Bot steps one by one, each action pushed on its own, then a pause. */
+  const playBotSteps = async (engine: Game, playbackNumber: number): Promise<void> => {
+    // The push of the change that handed over to the bot goes out first.
+    await Promise.resolve()
+    let hasUnshownAction = false
+    while (game === engine && playbackNumber === botPlaybackNumber && engine.botHasWork()) {
+      const stepLog: EngineLogEntry[] = runEngine(() => engine.stepBot()).log
+      hasUnshownAction ||= stepLog.some(isWatchedLogEntry)
+      // A prompt a bot answers itself (a battle between bots) is never shown:
+      // the UI would answer it too. The step shows once it is answered.
+      if (hasUnshownAction && !isBotAnswerPending(engine)) {
+        hasUnshownAction = false
+        publishChange()
+        await botPlayback.waitAfterBotAction()
+      }
+    }
+    if (game === engine && playbackNumber === botPlaybackNumber) publishChange()
+  }
+
+  const startBotPlayback = (): void => {
+    const engine: Game | null = game
+    if (engine === null) return
+    botPlaybackNumber += 1
+    if (!engine.botHasWork()) return
+    playBotSteps(engine, botPlaybackNumber).catch((error: unknown): void => {
+      console.error('bot step failed', error)
+    })
+  }
+
   const applyAction = (action: Action): ActionResult => {
     const engine: Game = requireGame()
     const result = runEngine(() => engine.apply(action))
     publishChange()
+    startBotPlayback()
     return { state: stateCopy(engine), log: [...result.log] }
   }
 
   const replaceGame = (nextGame: Game): void => {
+    nextGame.setBotPacing(true)
     game = nextGame
     publishChange()
+    startBotPlayback()
   }
 
   const api: GameApi = {
@@ -251,12 +307,14 @@ export function createLocalGame(
       const engine: Game = requireGame()
       runEngine(() => engine.undo())
       publishChange()
+      startBotPlayback()
       return { state: stateCopy(engine) }
     },
     async undoTurnAction(): Promise<{ state: GameState }> {
       const engine: Game = requireGame()
       runEngine(() => engine.undoTurnAction())
       publishChange()
+      startBotPlayback()
       return { state: stateCopy(engine) }
     },
     async fallLayout(): Promise<FallLayout> {
@@ -291,6 +349,8 @@ export function createLocalGame(
         return false
       }
       game = Game.fromJSON(snapshot)
+      game.setBotPacing(true)
+      startBotPlayback()
       return true
     },
   }

@@ -111,3 +111,58 @@ describe('createLocalGame', () => {
     expect(createLocalGame(makeMemoryStorage()).restoreSavedGame()).toBe(false)
   })
 })
+
+/** Settles the playback: its steps run between macrotasks. */
+async function settleBotPlayback(): Promise<void> {
+  for (let tick = 0; tick < PLAYBACK_SETTLE_TICKS; tick += 1) {
+    await new Promise<void>((resolve: () => void): void => {
+      setTimeout(resolve, 0)
+    })
+  }
+}
+
+const PLAYBACK_SETTLE_TICKS = 50
+const HUMAN_SEAT = 0
+const MAXIMUM_HUMAN_PHASE_ENDS = 20
+
+describe('createLocalGame bot playback', () => {
+  it('pushes each bot action on its own and pauses after it', async () => {
+    let pauseCount = 0
+    const localGame: LocalGame = createLocalGame(makeMemoryStorage(), {
+      waitAfterBotAction: async (): Promise<void> => {
+        pauseCount += 1
+      },
+    })
+    const botSeatsPushed: number[] = []
+    let botPromptsPushed = 0
+    localGame.connectSocket({
+      url: 'local',
+      handlers: {
+        onPush: (payload: GameSocketPush): void => {
+          const seat: number | undefined = payload.state?.currentSeat
+          if (seat !== undefined && seat !== HUMAN_SEAT) botSeatsPushed.push(seat)
+          const isPromptPending: boolean = (payload.state?.pending.length ?? 0) > 0
+          if (isPromptPending && payload.legalActions.every((spec) => spec.actor !== HUMAN_SEAT)) {
+            botPromptsPushed += 1
+          }
+        },
+      },
+    })
+    await startSoloParty(localGame)
+    await settleBotPlayback()
+
+    for (let phaseEnd = 0; phaseEnd < MAXIMUM_HUMAN_PHASE_ENDS; phaseEnd += 1) {
+      const game = await localGame.api.getGame()
+      if (game.state.turn > 1 && game.state.currentSeat === HUMAN_SEAT) break
+      if (game.state.currentSeat === HUMAN_SEAT) {
+        await localGame.api.submitAction({ type: 'endPhase' })
+      }
+      await settleBotPlayback()
+    }
+
+    expect(pauseCount).toBeGreaterThan(0)
+    expect(new Set(botSeatsPushed)).toEqual(new Set([1, 2]))
+    expect(botPromptsPushed).toBe(0)
+    expect((await localGame.api.getGame()).state.currentSeat).toBe(HUMAN_SEAT)
+  })
+})

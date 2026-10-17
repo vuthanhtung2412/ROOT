@@ -41,7 +41,7 @@ const CARD_NAME_CLASS_NAME = 'game-log__card font-semibold italic'
 const CLEARING_REFERENCE_CLASS_NAME =
   'clearing-highlight root-button root-button--quiet mx-0.5 inline-block cursor-root-pointer px-1.5 py-0 font-mono text-sm leading-tight'
 
-function cardNameOf(cardId: string): string | null {
+export function cardNameOf(cardId: string): string | null {
   if (cardId.startsWith(VIZIER_CARD_ID_PREFIX)) return VIZIER_CARD_NAME
   const definitionId: string = cardId.split(CARD_ID_SEPARATOR)[0] ?? cardId
   return lookupCardCatalog(definitionId)?.name ?? null
@@ -63,7 +63,7 @@ export function ClearingHighlight(props: { clearingId: number }): JSX.Element {
   )
 }
 
-function LogPart(props: { part: GameLogPart }): JSX.Element {
+export function LogPart(props: { part: GameLogPart }): JSX.Element {
   const { part } = props
   if (part.kind === 'clearing') {
     return <ClearingHighlight clearingId={part.clearingId} />
@@ -78,7 +78,7 @@ function LogPart(props: { part: GameLogPart }): JSX.Element {
 const FACTION_ID_WORD_BOUNDARY = /([a-z])([A-Z])/g
 
 /** Faction id as words (`electricEyrie` → `electric Eyrie`), capitalised by CSS. */
-function factionLogName(faction: string): string {
+export function factionLogName(faction: string): string {
   return faction.replace(FACTION_ID_WORD_BOUNDARY, '$1 $2')
 }
 

@@ -64,6 +64,11 @@ export async function resumeSoloGame(session: GameSession): Promise<boolean> {
   )
 }
 
+/** A solo game is on screen: its bots play at the pace the player picks. */
+export function isSoloGameOpen(): boolean {
+  return defaultStorage()?.getItem(SOLO_GAME_OPEN_STORAGE_KEY) === OPEN_VALUE
+}
+
 /** Back on the menu: a reload stays there. */
 export function clearSoloGameOpen(): void {
   defaultStorage()?.removeItem(SOLO_GAME_OPEN_STORAGE_KEY)

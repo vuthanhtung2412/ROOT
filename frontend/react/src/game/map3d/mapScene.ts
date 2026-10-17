@@ -85,6 +85,8 @@ export type MapScene = {
   setHighlightedForests: (forestIndexes: ReadonlySet<number>) => void
   /** Game log: point at a clearing for a moment. */
   flashClearing: (clearingId: number) => void
+  /** Rootbotics priority beside each suit (clearing id → priority); empty = none. */
+  setClearingPriorities: (priorities: ReadonlyMap<number, number>) => void
   /** Fade the light to that of a phase of the turn. */
   setTimeOfDay: (timeOfDay: TimeOfDay) => void
   /** Where a point above the ground shows up in the view. */
@@ -302,6 +304,7 @@ export function createMapScene(input: MapSceneInput): MapScene {
     setClearingRings: groundMarkers.setClearingRings,
     setHighlightedForests: groundMarkers.setHighlightedForests,
     flashClearing: groundMarkers.flashClearing,
+    setClearingPriorities: groundMarkers.setClearingPriorities,
     setTimeOfDay: (timeOfDay: TimeOfDay): void => {
       daylight.setTimeOfDay(timeOfDay)
       campfires.setTimeOfDay(timeOfDay)
