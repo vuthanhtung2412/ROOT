@@ -29,6 +29,13 @@ tailscale status >/dev/null || {
   exit 1
 }
 
+# pnpm remote:pages — let the GitHub Pages origin call this API (no `.env` edit needed).
+if [ "${ROOT_PAGES_SYNC:-}" = "1" ]; then
+  pages_origin="https://$(gh repo view --json owner --jq '.owner.login | ascii_downcase').github.io"
+  export ROOT_CORS_ORIGINS="${ROOT_CORS_ORIGINS:+${ROOT_CORS_ORIGINS},}${pages_origin}"
+  echo "→ CORS allows ${pages_origin}"
+fi
+
 echo "→ pnpm --filter @root/web serve:react :${PORT}"
 pnpm --filter @root/web serve:react &
 WEB_PID=$!

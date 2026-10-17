@@ -111,7 +111,7 @@ The API allows localhost, LAN and Capacitor origins. Add more with `ROOT_CORS_OR
 
 ### GitHub Pages
 
-`pnpm remote:pages` = `pnpm remote` plus `scripts/sync-pages.sh` (set `ROOT_CORS_ORIGINS=https://<owner>.github.io` in `.env`): once the Funnel URL answers, it builds the **checked-out commit** with `ROOT_WEB_API` = that URL and `ROOT_WEB_BASE_PATH=/<repo>/`, pushes `frontend/react/dist` to the `gh-pages` branch (one commit, no history) and points Pages at it. The site at `https://<owner>.github.io/<repo>/` always matches your local checkout, so `git checkout <old-commit> && pnpm remote:pages` deploys that version. Needs `gh auth login`.
+`pnpm remote:pages` = `pnpm remote` plus `scripts/sync-pages.sh` (adds `https://<owner>.github.io` to `ROOT_CORS_ORIGINS` itself): once the Funnel URL answers, it runs `git lfs pull`, builds the **checked-out commit** with `ROOT_WEB_API` = that URL and `ROOT_WEB_BASE_PATH=/<repo>/`, pushes `frontend/react/dist` to the `gh-pages` branch (one commit, no history; refuses if any LFS pointer slipped in) and points Pages at it. The site at `https://<owner>.github.io/<repo>/` always matches your local checkout, so `git checkout <old-commit> && pnpm remote:pages` deploys that version. Needs `gh auth login`.
 
 ### AI players
 

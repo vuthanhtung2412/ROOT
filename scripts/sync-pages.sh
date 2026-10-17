@@ -13,6 +13,7 @@ PAGES_BRANCH="gh-pages"
 REACT_DIST_DIRECTORY="frontend/react/dist"
 BACKEND_POLL_ATTEMPTS=180
 BACKEND_POLL_INTERVAL_SECONDS=2
+LFS_POINTER_SIGNATURE="version https://git-lfs.github.com/spec"
 
 echo "[pages] waiting for backend at ${API_URL}"
 backend_up=""
@@ -29,8 +30,18 @@ repository_name="$(gh repo view --json name --jq .name)"
 commit="$(git rev-parse --short HEAD)"
 [ -z "$(git status --porcelain)" ] || commit="${commit}-dirty"
 
+# Art (.glb) lives in Git LFS; without a pull the build ships pointer files.
+git lfs pull
+
 echo "[pages] building ${commit} for /${repository_name}/"
 ROOT_WEB_BASE_PATH="/${repository_name}/" ROOT_WEB_API="$API_URL" pnpm build:react
+
+lfs_pointer_files="$(grep -rlI "$LFS_POINTER_SIGNATURE" "$REACT_DIST_DIRECTORY" || true)"
+[ -z "$lfs_pointer_files" ] || {
+  echo "[pages] Git LFS pointers in build (run git lfs pull):" >&2
+  echo "$lfs_pointer_files" >&2
+  exit 1
+}
 
 pnpm exec gh-pages --dist "$REACT_DIST_DIRECTORY" --branch "$PAGES_BRANCH" \
   --nojekyll --no-history --message "deploy ${commit} (api ${API_URL})"
