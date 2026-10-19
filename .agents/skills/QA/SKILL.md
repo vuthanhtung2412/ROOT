@@ -22,7 +22,7 @@ Cite fixes `// Rule: Section > Subsection`. Name tests after rule lines.
 
 Measured costs per read, so pick the cheap path:
 
-- Rules: `pnpm --silent --filter @root/cli start -- rules <8.4.2 | keywords>` (~300 tokens). Never Read `Law_of_Root.md` whole (~40k tokens) or `root-base-rules.md` (~10k); if the CLI misses, `grep -n` the heading, then Read with offset/limit.
+- Rules: `pnpm --silent --filter @root/cli start -- rules <8.4.2 | keywords>` (~300 tokens). Never Read `Law_of_Root.md` whole (~40k tokens) or `root-base-rules.md` (~10k); if the CLI misses, use the `markdown-search` skill (grep outline → `mdq` section).
 - Game state: CLI `explain` / `log` / `actions` before `show` or raw `GET /game`.
 - Browser: `node .agents/skills/QA/qa-ui.ts` (below), ~85% fewer tokens than Chrome DevTools MCP on the same flow. Use the MCP only for what qa-ui lacks: console, network, CSS, performance.
 - Screenshots go to files (`qa-ui.ts shot`). Read an image only when the check is visual (layout, art); state checks go through the API.
