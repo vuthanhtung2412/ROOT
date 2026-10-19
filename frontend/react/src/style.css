@@ -48,6 +48,8 @@
   --font-display: 'IM Fell English', 'Palatino Linotype', Palatino, Georgia,
     'Times New Roman', serif;
   --font-body: Georgia, 'Times New Roman', serif;
+  /* Comic lettering: the lobby VS! brawl cloud. */
+  --font-comic: 'Bangers', Impact, sans-serif;
   --font-mono: 'Courier New', Courier, monospace;
   --shadow-stamp: 2px 2px 0 color-mix(in srgb, #2c2118 40%, transparent);
   --shadow-stamp-lg: 2px 3px 0 color-mix(in srgb, #2c2118 28%, transparent);
