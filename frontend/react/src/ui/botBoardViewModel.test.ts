@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildBotBoardViewModel, isBotBoardViewModel } from '#ui/botBoardViewModel.ts'
+import {
+  buildBotBoardViewModel,
+  isBotBoardViewModel,
+  readActiveBotDecreeColumn,
+} from '#ui/botBoardViewModel.ts'
 
 const BOT_SEAT = 1
 const FOX_ANVIL = { id: 'ROOT-204#1', defId: 'ROOT-204' }
@@ -79,10 +83,43 @@ describe('buildBotBoardViewModel', () => {
         { suit: 'fox', cards: [{ cardId: FOX_ANVIL.id, suit: 'fox' }] },
         { suit: 'mouse', cards: [] },
         { suit: 'rabbit', cards: [] },
-        { suit: 'bird', cards: [{ cardId: VIZIER.id, name: 'Loyal Vizier', suit: 'bird' }] },
+        {
+          suit: 'bird',
+          cards: [{ cardId: VIZIER.id, name: 'Loyal Vizier', suit: 'bird', isLoyalVizier: true }],
+        },
       ],
     })
     expect(view !== null && isBotBoardViewModel(view)).toBe(true)
+  })
+
+  it('gives Decree cards their face art, the Loyal Vizier its own card', () => {
+    const view = buildBotBoardViewModel({
+      seat: BOT_SEAT,
+      faction: 'electricEyrie',
+      vp: 0,
+      board: {
+        kind: 'electricEyrie',
+        supply: { warriors: 14 },
+        decree: { fox: [FOX_ANVIL], mouse: [], rabbit: [], bird: [VIZIER] },
+        roostTrack: { placed: 5 },
+        orderCard: null,
+      },
+    })
+    const decree = view?.kind === 'electricEyrie' ? view.decree : []
+
+    expect(decree[0]?.cards[0]?.imagePath).toMatch(/assets\/cards\/.+\.webp$/)
+    expect(decree[3]?.cards[0]?.imagePath).toMatch(/assets\/eyrie-leaders\/eyrie-loyal-vizier\.webp$/)
+  })
+
+  it('lights the Decree column of the next bot task (Rootbotics 5.5.1)', () => {
+    const recruitMouse = { kind: 'decreeRecruit', column: 'mouse' }
+    const turnScratch = { botPlan: { phase: 'daylight', step: 'decree', tasks: [recruitMouse] } }
+
+    expect(readActiveBotDecreeColumn(turnScratch)).toEqual({ suit: 'mouse', action: 'Recruit' })
+    expect(
+      readActiveBotDecreeColumn({ botPlan: { tasks: [{ kind: 'buildRoost' }] } }),
+    ).toBeNull()
+    expect(readActiveBotDecreeColumn({ botPlan: null })).toBeNull()
   })
 
   it('is null for a human faction board', () => {

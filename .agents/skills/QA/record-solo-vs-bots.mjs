@@ -221,7 +221,7 @@ async function pickBotSettings(page) {
 async function showBoard(page, railName) {
   await page.getByRole('button', { name: railName }).first().click()
   await page.waitForTimeout(LOOK_MS * 1.5)
-  // Difficulty and trait cards sit at the bottom of the side panel.
+  // Difficulty and trait chips sit in the strip under the board.
   const settings = page.locator('.bot-board-settings')
   if (showsBotSettings && (await settings.count()) > 0) {
     await settings.scrollIntoViewIfNeeded()

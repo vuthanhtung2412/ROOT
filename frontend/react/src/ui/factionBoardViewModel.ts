@@ -46,6 +46,7 @@ import {
 } from '#ui/expansionBoardViewModel.ts'
 import {
   buildBotBoardViewModel,
+  readActiveBotDecreeColumn,
   type BotBoardViewModel,
 } from '#ui/botBoardViewModel.ts'
 import { questDefOf, type QuestCard } from '@root/lib/quests'
@@ -520,6 +521,13 @@ export function buildFactionBoardViewModel(
     return {
       ...view,
       activeDecreeColumn: readActiveDecreeColumn(state.turnScratch),
+    }
+  }
+  // The turn scratch belongs to the seat taking its turn.
+  if (view.kind === 'electricEyrie' && state.currentSeat === seat) {
+    return {
+      ...view,
+      activeDecreeColumn: readActiveBotDecreeColumn(state.turnScratch),
     }
   }
   if (view.kind === 'vagabond') {

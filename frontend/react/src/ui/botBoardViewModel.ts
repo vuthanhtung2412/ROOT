@@ -7,7 +7,12 @@ import {
   type BotSettingsByFaction,
   type BotTrait,
 } from '@root/lib/bot-settings'
-import { GAME_ASSET_KEYS, lookupCardCatalog } from '#assets/gameAssets.ts'
+import {
+  cardImagePublicPath,
+  GAME_ASSET_KEYS,
+  imagePathForAssetKey,
+  lookupCardCatalog,
+} from '#assets/gameAssets.ts'
 
 /**
  * Rootbotics bot boards (Mechanical Marquise 2.0, Electric Eyrie): the
@@ -26,6 +31,9 @@ export type BotCardView = {
   cardId: string
   name: string
   suit: string
+  /** Card face; null when the card has no art. */
+  imagePath: string | null
+  isLoyalVizier: boolean
 }
 
 /** Rootbotics 3.3 — the difficulty card and face-up trait cards by the board. */
@@ -63,10 +71,17 @@ export type MechanicalMarquiseBoardViewModel = BotBoardBase & {
   tracks: Array<{ building: string; onTrack: number }>
 }
 
+/** Rule: Rootbotics 5.5.1 — the Decree column the bot resolves next, and how. */
+export type ActiveDecreeColumn = {
+  suit: string
+  action: string
+}
+
 export type ElectricEyrieBoardViewModel = BotBoardBase & {
   kind: 'electricEyrie'
   decree: Array<{ suit: string; cards: BotCardView[] }>
   roostsOnTrack: number
+  activeDecreeColumn: ActiveDecreeColumn | null
 }
 
 export type BotBoardViewModel =
@@ -96,10 +111,22 @@ function cardView(value: unknown): BotCardView | null {
   const defId = Reflect.get(value, 'defId')
   if (typeof cardId !== 'string' || typeof defId !== 'string') return null
   if (defId === VIZIER_DEFINITION_ID) {
-    return { cardId, name: VIZIER_CARD_NAME, suit: BIRD_SUIT }
+    return {
+      cardId,
+      name: VIZIER_CARD_NAME,
+      suit: BIRD_SUIT,
+      imagePath: imagePathForAssetKey(GAME_ASSET_KEYS.cardLoyalVizier),
+      isLoyalVizier: true,
+    }
   }
   const entry = lookupCardCatalog(defId)
-  return { cardId, name: entry?.name ?? defId, suit: entry?.suit ?? UNKNOWN_SUIT }
+  return {
+    cardId,
+    name: entry?.name ?? defId,
+    suit: entry?.suit ?? UNKNOWN_SUIT,
+    imagePath: cardImagePublicPath(defId),
+    isLoyalVizier: false,
+  }
 }
 
 function cardViews(value: unknown): BotCardView[] {
@@ -170,9 +197,32 @@ export function buildBotBoardViewModel(
         cards: isRecord(decree) ? cardViews(Reflect.get(decree, suit)) : [],
       })),
       roostsOnTrack: isRecord(roostTrack) ? numberField(roostTrack, 'placed') : 0,
+      activeDecreeColumn: null,
     }
   }
   return null
+}
+
+/** Decree tasks of the Electric Eyrie plan, by the action shown on the board. */
+const DECREE_TASK_ACTIONS: Readonly<Record<string, string>> = {
+  decreeRecruit: 'Recruit',
+  decreeMove: 'Move',
+  decreeBattle: 'Battle',
+}
+
+/** The Decree column of the bot's next task (turn scratch `botPlan`); null outside the Decree. */
+export function readActiveBotDecreeColumn(turnScratch: unknown): ActiveDecreeColumn | null {
+  if (!isRecord(turnScratch)) return null
+  const plan = Reflect.get(turnScratch, 'botPlan')
+  if (!isRecord(plan)) return null
+  const tasks = Reflect.get(plan, 'tasks')
+  const nextTask: unknown = Array.isArray(tasks) ? tasks[0] : null
+  if (!isRecord(nextTask)) return null
+  const kind = Reflect.get(nextTask, 'kind')
+  const column = Reflect.get(nextTask, 'column')
+  const action: string | undefined = typeof kind === 'string' ? DECREE_TASK_ACTIONS[kind] : undefined
+  if (action === undefined || typeof column !== 'string') return null
+  return { suit: column, action }
 }
 
 export function isBotBoardViewModel(view: { kind: string }): view is BotBoardViewModel {

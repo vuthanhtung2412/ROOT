@@ -10,57 +10,41 @@ import {
   imagePathForAssetKey,
   itemTextureKey,
 } from '#assets/gameAssets.ts'
-import { SuitIcon } from '#react/SuitIcon.tsx'
+import { BotBoardStrip } from '#react/BotBoardStrip.tsx'
+import { BotDecreeOverlay } from '#react/BotDecreeOverlay.tsx'
 import type {
   BotBoardViewModel,
-  BotCardView,
-  BotSettingsView,
   ElectricEyrieBoardViewModel,
   MechanicalMarquiseBoardViewModel,
 } from '#ui/botBoardViewModel.ts'
-import type { BotCardText } from '@root/lib/bot-settings'
 
 /**
- * Same stage as the other faction boards: the art centred near the top of
- * the screen, a card panel beside it. Keeps the `faction-board-modal__bot`
- * hook for QA scripts.
+ * The art centred near the top of the screen, the bot strip under it. Keeps
+ * the `faction-board-modal__bot` hook for QA scripts.
  */
 const STAGE_CLASS_NAME =
-  'faction-board-modal__bot pointer-events-none absolute top-[2vh] left-1/2 z-1 flex -translate-x-1/2 flex-row items-stretch gap-3'
+  'faction-board-modal__bot pointer-events-none absolute top-[2vh] left-1/2 z-1 flex -translate-x-1/2 flex-col items-stretch gap-2'
 const BOARD_MAX_WIDTH_VIEWPORT_PERCENT = 96
 const BOARD_MAX_HEIGHT_VIEWPORT_PERCENT = 94
-/** Side panel, its gap to the art and the stage inset, as on the other boards. */
-const SIDE_PANEL_WIDTH_PIXELS = 220
-const RESERVED_SIDE_PIXELS = 256
+/** The strip under the art and its gap. */
+const RESERVED_STRIP_PIXELS = 60
 const ASPECT_RATIOS: Readonly<Record<BotBoardViewModel['kind'], number>> = {
   mechanicalMarquise: MECHANICAL_MARQUISE_BOARD_LAYOUT.aspectRatio,
   electricEyrie: ELECTRIC_EYRIE_BOARD_LAYOUT.aspectRatio,
 }
 
-/** As wide as the screen allows beside the panel while the whole board fits its height. */
+/** As wide as the screen allows while the whole board and the strip fit its height. */
 function boardWidth(kind: BotBoardViewModel['kind']): string {
-  return `min(calc(${String(BOARD_MAX_WIDTH_VIEWPORT_PERCENT)}vw - ${String(RESERVED_SIDE_PIXELS)}px), calc(${String(BOARD_MAX_HEIGHT_VIEWPORT_PERCENT)}vh * ${String(ASPECT_RATIOS[kind])}))`
+  return `min(${String(BOARD_MAX_WIDTH_VIEWPORT_PERCENT)}vw, calc((${String(BOARD_MAX_HEIGHT_VIEWPORT_PERCENT)}vh - ${String(RESERVED_STRIP_PIXELS)}px) * ${String(ASPECT_RATIOS[kind])}))`
 }
-/** Dark card panel of the Vagabond quests and Cult revealed cards. */
-const SIDE_PANEL_CLASS_NAME =
-  'pointer-events-auto absolute inset-0 flex flex-col gap-2 overflow-y-auto rounded border border-[rgb(230_220_190/0.35)] bg-[rgb(20_24_18/0.72)] p-2 font-body text-[#f3ecd8]'
-const PANEL_HEADING_CLASS_NAME = 'm-0 text-[12px] font-normal tracking-heading uppercase opacity-90'
-const PANEL_FOOTNOTE_CLASS_NAME = 'text-[11px] opacity-80'
-const CARD_CHIP_CLASS_NAME =
-  'inline-flex items-center gap-1 border border-ink/40 bg-parchment px-1.5 py-0.5 font-body text-xs text-ink'
-const SUIT_ICON_CLASS_NAME = 'size-4'
-const COLUMN_CLASS_NAME =
-  'flex flex-col items-center gap-1 border border-[rgb(230_220_190/0.25)] bg-black/20 p-1.5'
 const BOARD_IMAGE_CLASS_NAME = 'absolute inset-0 block size-full select-none'
 const BOARD_PIECE_CLASS_NAME =
   'pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 select-none drop-shadow-[0_2px_2px_rgb(0_0_0/0.6)]'
 const CRAFTED_STRIP_CLASS_NAME =
   'absolute flex flex-row items-center justify-center gap-1'
 const CRAFTED_ICON_CLASS_NAME = 'h-[80%] w-auto select-none'
-const EMPTY_TEXT = '—'
-const SETTING_CARD_CLASS_NAME =
-  'flex w-full flex-col gap-0.5 border border-ink/40 bg-parchment px-1.5 py-1 font-body'
 const PERCENT = 100
+const EMPTY_BOX: BoardBox = { left: 0, top: 0, width: 0, height: 0 }
 
 const BUILDING_TOKEN_KEYS: Readonly<Record<string, string>> = {
   sawmill: GAME_ASSET_KEYS.tokenMarquiseSawmill,
@@ -189,98 +173,28 @@ function EyrieBoardArt(props: { view: ElectricEyrieBoardViewModel }): JSX.Elemen
           ),
         ),
         <CraftedItemsStrip key="crafted" items={props.view.craftedItems} box={layout.craftedItems} />,
+        <BotDecreeOverlay
+          key="decree"
+          columns={props.view.decree.map((column) => ({
+            suit: column.suit,
+            cards: column.cards,
+            frameStyle: boxStyle(layout.decreeFrames[column.suit] ?? EMPTY_BOX),
+          }))}
+          activeColumn={props.view.activeDecreeColumn}
+        />,
       ]}
     </BoardArt>
   )
 }
 
-function CardChip(props: { card: BotCardView }): JSX.Element {
-  return (
-    <span className={CARD_CHIP_CLASS_NAME} title={props.card.cardId}>
-      <SuitIcon suit={props.card.suit} className={SUIT_ICON_CLASS_NAME} alt={props.card.suit} />
-      {props.card.name}
-    </span>
-  )
-}
-
-/** The Decree beside the printed board: its columns, left to right, top to bottom. */
-function EyrieDecree(props: { view: ElectricEyrieBoardViewModel }): JSX.Element {
-  return (
-    <section className="flex flex-col gap-1.5" aria-label="The Decree">
-      <h3 className={PANEL_HEADING_CLASS_NAME}>The Decree</h3>
-      {props.view.decree.map((column) => (
-        <div key={column.suit} className={COLUMN_CLASS_NAME}>
-          <SuitIcon suit={column.suit} className="size-6" alt={column.suit} />
-          {column.cards.length === 0 ? <span>{EMPTY_TEXT}</span> : null}
-          {column.cards.map((card) => (
-            <CardChip key={card.cardId} card={card} />
-          ))}
-        </div>
-      ))}
-    </section>
-  )
-}
-
-/** A difficulty or trait card: its name, then its text. */
-function SettingCard(props: { card: BotCardText }): JSX.Element {
-  return (
-    <div className={SETTING_CARD_CLASS_NAME}>
-      <span className="font-display text-sm text-ink">{props.card.name}</span>
-      <span className="text-[11px] leading-snug text-ink-soft">{props.card.text}</span>
-    </div>
-  )
-}
-
-/** Rootbotics 3.3 — the difficulty card and the face-up trait cards. */
-function BotSettingsSection(props: { settings: BotSettingsView }): JSX.Element {
-  const { settings } = props
-  return (
-    <section className="bot-board-settings flex flex-col gap-1.5" aria-label="Difficulty and traits">
-      <h3 className={PANEL_HEADING_CLASS_NAME}>Difficulty</h3>
-      <SettingCard card={settings.difficulty} />
-      <h3 className={PANEL_HEADING_CLASS_NAME}>Traits</h3>
-      {settings.traits.length === 0 ? (
-        <span className={PANEL_FOOTNOTE_CLASS_NAME}>{EMPTY_TEXT}</span>
-      ) : null}
-      {settings.traits.map((trait: BotCardText) => (
-        <SettingCard key={trait.name} card={trait} />
-      ))}
-    </section>
-  )
-}
-
-/** Card panel beside the art: the bot's supply, order card and (Eyrie) Decree. */
-function BotSidePanel(props: { view: BotBoardViewModel }): JSX.Element {
-  const { view } = props
-  return (
-    <aside className="relative flex-none" style={{ width: SIDE_PANEL_WIDTH_PIXELS }}>
-      <div className={SIDE_PANEL_CLASS_NAME}>
-        <div className={PANEL_FOOTNOTE_CLASS_NAME}>
-          {view.victoryPoints} VP · {view.warriors} warriors in supply
-        </div>
-        <section className="flex flex-col items-start gap-1.5" aria-label="Order card">
-          <h3 className={PANEL_HEADING_CLASS_NAME}>Order card</h3>
-          {view.orderCard === null ? (
-            <span className={PANEL_FOOTNOTE_CLASS_NAME}>{EMPTY_TEXT}</span>
-          ) : (
-            <CardChip card={view.orderCard} />
-          )}
-        </section>
-        {view.kind === 'electricEyrie' ? <EyrieDecree view={view} /> : null}
-        <BotSettingsSection settings={view.settings} />
-      </div>
-    </aside>
-  )
-}
-
-/** Rootbotics bot board: the printed board with its pieces, order card and Decree. */
+/** Rootbotics bot board: the printed board with its pieces and Decree, the bot strip under it. */
 export function BotFactionBoard(props: { view: BotBoardViewModel }): JSX.Element {
   const { view } = props
   return (
     <section className={STAGE_CLASS_NAME} aria-label={`${view.factionName} board`}>
       {view.kind === 'mechanicalMarquise' ? <MarquiseBoardArt view={view} /> : null}
       {view.kind === 'electricEyrie' ? <EyrieBoardArt view={view} /> : null}
-      <BotSidePanel view={view} />
+      <BotBoardStrip view={view} />
     </section>
   )
 }

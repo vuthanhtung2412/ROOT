@@ -49,6 +49,16 @@ const EYRIE_ROOST_SPACE_X_PIXELS: readonly number[] = [
   1004.4, 1147.2, 1291.7, 1432.4, 1580, 1722, 1868.2,
 ]
 const EYRIE_ROOST_ROW_Y_PIXELS = 628.1
+/** Decree column frames along the top band, left to right, in scan pixels. */
+const EYRIE_DECREE_FRAME_LEFT_PIXELS: Readonly<Record<string, number>> = {
+  fox: 94,
+  mouse: 616,
+  rabbit: 1148,
+  bird: 1678,
+}
+const EYRIE_DECREE_FRAME_TOP_PIXELS = 43
+const EYRIE_DECREE_FRAME_WIDTH_PIXELS = 240
+const EYRIE_DECREE_FRAME_HEIGHT_PIXELS = 85
 
 export const MECHANICAL_MARQUISE_BOARD_LAYOUT: BotBoardLayout & {
   trackSpaces: Readonly<Record<string, readonly BoardSpot[]>>
@@ -78,6 +88,8 @@ export const MECHANICAL_MARQUISE_BOARD_LAYOUT: BotBoardLayout & {
 
 export const ELECTRIC_EYRIE_BOARD_LAYOUT: BotBoardLayout & {
   roostSpaces: readonly BoardSpot[]
+  /** Printed Decree frame of each column, by suit. */
+  decreeFrames: Readonly<Record<string, BoardBox>>
 } = {
   aspectRatio: ELECTRIC_EYRIE_WIDTH / ELECTRIC_EYRIE_HEIGHT,
   spaceSize: EYRIE_ROOST_SPACE_PIXELS / ELECTRIC_EYRIE_WIDTH,
@@ -92,5 +104,18 @@ export const ELECTRIC_EYRIE_BOARD_LAYOUT: BotBoardLayout & {
       x: spaceX / ELECTRIC_EYRIE_WIDTH,
       y: EYRIE_ROOST_ROW_Y_PIXELS / ELECTRIC_EYRIE_HEIGHT,
     }),
+  ),
+  decreeFrames: Object.fromEntries(
+    Object.entries(EYRIE_DECREE_FRAME_LEFT_PIXELS).map(
+      ([suit, frameLeft]: [string, number]): [string, BoardBox] => [
+        suit,
+        {
+          left: frameLeft / ELECTRIC_EYRIE_WIDTH,
+          top: EYRIE_DECREE_FRAME_TOP_PIXELS / ELECTRIC_EYRIE_HEIGHT,
+          width: EYRIE_DECREE_FRAME_WIDTH_PIXELS / ELECTRIC_EYRIE_WIDTH,
+          height: EYRIE_DECREE_FRAME_HEIGHT_PIXELS / ELECTRIC_EYRIE_HEIGHT,
+        },
+      ],
+    ),
   ),
 }
