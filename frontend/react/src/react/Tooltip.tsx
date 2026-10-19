@@ -15,7 +15,14 @@ const HALF = 0.5
 const DEFAULT_WRAPPER_CLASS_NAME = 'inline-flex'
 
 const TOOLTIP_CLASS_NAME =
-  'root-paper root-paper-fine pointer-events-none fixed z-460 m-0 px-2.5 py-0.5 font-display text-sm whitespace-nowrap text-ink capitalize [--root-paper-color:var(--color-paper-bright)] md:text-base'
+  'root-paper root-paper-fine pointer-events-none fixed z-460 m-0 px-2.5 py-0.5 font-display text-sm whitespace-nowrap text-ink [--root-paper-color:var(--color-paper-bright)] md:text-base'
+/** Names read as titles; sentences keep their own case. */
+export type TooltipLabelCase = 'title' | 'sentence'
+const LABEL_CASE_CLASS_NAMES: Readonly<Record<TooltipLabelCase, string>> = {
+  title: 'capitalize',
+  sentence: '',
+}
+const DEFAULT_LABEL_CASE: TooltipLabelCase = 'title'
 
 type TooltipAnchor = {
   centerX: number
@@ -69,6 +76,7 @@ export function Tooltip(props: {
   /** Layout of the wrapper around the control (default: inline). */
   className?: string
   children: ReactNode
+  labelCase?: TooltipLabelCase
 }): JSX.Element {
   const [anchor, setAnchor] = useState<TooltipAnchor | null>(null)
   const [position, setPosition] = useState<TooltipPosition | null>(null)
@@ -108,7 +116,7 @@ export function Tooltip(props: {
             <span
               ref={tooltipRef}
               role="tooltip"
-              className={TOOLTIP_CLASS_NAME}
+              className={`${TOOLTIP_CLASS_NAME} ${LABEL_CASE_CLASS_NAMES[props.labelCase ?? DEFAULT_LABEL_CASE]}`}
               style={{
                 left: position?.left ?? 0,
                 top: position?.top ?? 0,

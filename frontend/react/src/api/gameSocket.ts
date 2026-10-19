@@ -7,6 +7,8 @@ export type GameSocketPush = {
   log: unknown[]
   /** Seats played by an LLM. Absent on pushes of an older server. */
   aiPlayers?: AiPlayer[]
+  /** Online games: seconds the server waits after each bot action. */
+  botStepDelaySeconds?: number
 }
 
 export type GameSocketHandlers = {

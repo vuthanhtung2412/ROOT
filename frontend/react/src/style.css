@@ -24,6 +24,8 @@
   --color-cream: #f6e7bd;
   /* Cream aged toward wood: lobby faction dock, empty lobby seat. */
   --color-cream-deep: #dfc99a;
+  /* Cream deep well toward wood: co-op empty seat slot, reads as unused. */
+  --color-cream-shadow: color-mix(in srgb, var(--color-cream-deep) 55%, var(--color-wood));
   /* Light gold paper: what is yours in the lobby (seat name strip, picked faction). */
   --color-gold-light: #fbe9a8;
   /* Rust dark enough to carry parchment text (Close / Leave lobby). */

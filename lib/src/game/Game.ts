@@ -27,7 +27,12 @@ import {
   type HiddenInformationMark,
 } from '#game/hiddenInformation.js'
 import { createInitialState, runSharedSetup } from '#game/setup.js'
-import type { BotSettingsByFaction } from '#public/botSettings.js'
+import {
+  checkCooperativeWin,
+  WINNING_VICTORY_POINTS,
+} from '#rules/cooperativeVictory.js'
+import type { BotSettings, BotSettingsByFaction } from '#public/botSettings.js'
+import type { BotFactionId } from '#public/botFactionIds.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -79,6 +84,8 @@ export type GameCreation = {
   id?: string
   /** Rule: Rootbotics 3.3 — difficulty and traits per bot. */
   botSettings?: BotSettingsByFaction
+  /** Rule: Rootbotics 3.5.1 — humans against the bots as one team. */
+  cooperative?: boolean
 }
 
 type UndoCheckpoint = {
@@ -142,6 +149,7 @@ export class Game {
       seed: args.seed,
       factions,
       ...(args.botSettings === undefined ? {} : { botSettings: args.botSettings }),
+      ...(args.cooperative === true ? { cooperative: true } : {}),
     })
     const game = new Game({
       state:
@@ -196,6 +204,22 @@ export class Game {
       rng: this.rng.toJSON(),
       choiceHistory: [...this.choiceHistory],
     }
+  }
+
+  /** Lobby only: switch between free-for-all and the humans-vs-bots team game. */
+  setCooperative(isCooperative: boolean): void {
+    if (this.state.status !== 'waiting') throw new RuleError('NOT_WAITING')
+    if (isCooperative) {
+      this.state.cooperative = true
+    } else {
+      delete this.state.cooperative
+    }
+  }
+
+  /** Lobby only: one bot's difficulty and traits (Rootbotics 3.3). */
+  setBotSettings(faction: BotFactionId, settings: BotSettings): void {
+    if (this.state.status !== 'waiting') throw new RuleError('NOT_WAITING')
+    this.state.botSettings = { ...this.state.botSettings, [faction]: settings }
   }
 
   join(playerId: string): ActionResult {
@@ -453,6 +477,7 @@ export class Game {
       ...(this.state.botSettings === undefined
         ? {}
         : { botSettings: this.state.botSettings }),
+      ...(this.state.cooperative === true ? { cooperative: true } : {}),
     })
     for (const action of actions) {
       restored.apply(action)
@@ -1006,7 +1031,10 @@ export class Game {
 
   private checkWin(): LogEntry[] {
     const { state } = this
-    const contenders = state.players.filter((player) => player.vp >= 30)
+    if (state.cooperative === true) return checkCooperativeWin(state)
+    const contenders = state.players.filter(
+      (player) => player.vp >= WINNING_VICTORY_POINTS,
+    )
     if (contenders.length === 0) return []
 
     let winner: Seat

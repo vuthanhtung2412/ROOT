@@ -6,6 +6,8 @@ import { factionPortraitPath } from '#assets/factionPortraits.ts'
 import {
   BOT_STEP_DELAY_SECONDS_CHOICES,
   botStepDelaySeconds,
+  isBotPaceLocked,
+  isBotPaceShown,
   nextBotStepDelaySeconds,
   setBotStepDelaySeconds,
   subscribeBotPace,
@@ -53,7 +55,7 @@ const HEAD_NAME_CLASS_NAME =
   'flex flex-row items-center gap-1.5 font-display text-base leading-tight capitalize md:text-lg'
 const HEAD_STEP_CLASS_NAME = 'font-body text-xs capitalize opacity-85 md:text-sm'
 const PACE_BUTTON_CLASS_NAME =
-  'bot-turn-banner__pace root-paper root-paper-fine root-paper-press m-0 flex h-9 w-14 shrink-0 flex-row items-center justify-center p-0 text-lg text-ink [--root-paper-color:var(--color-paper-bright)]'
+  'bot-turn-banner__pace root-paper root-paper-fine root-paper-press m-0 flex h-9 w-14 shrink-0 flex-row items-center justify-center p-0 text-lg text-ink [--root-paper-color:var(--color-paper-bright)] disabled:cursor-root-not-allowed disabled:opacity-70'
 const PACE_CHEVRON_CLASS_NAME = '-mx-1 shrink-0'
 const PORTRAIT_CLASS_NAME = 'size-6 rounded-sm object-cover md:size-7'
 
@@ -162,6 +164,7 @@ function OrderCard(props: { card: BotOrderCardView | null }): JSX.Element {
 }
 
 const PACE_LABEL = 'Bot pace, click for faster'
+const LOCKED_PACE_LABEL = 'Bot pace, set by the host'
 
 /** One button: › / ›› / ››› for 5 / 2 / 1 s after each bot action. */
 function PaceButton(): JSX.Element {
@@ -170,14 +173,18 @@ function PaceButton(): JSX.Element {
     botStepDelaySeconds,
     botStepDelaySeconds,
   )
+  const isLocked: boolean = useSyncExternalStore(subscribeBotPace, isBotPaceLocked, isBotPaceLocked)
   const chevronCount: number = BOT_STEP_DELAY_SECONDS_CHOICES.indexOf(delaySeconds) + 1
-  const label = `${PACE_LABEL} (${String(delaySeconds)} s per action)`
+  const label = isLocked
+    ? `${LOCKED_PACE_LABEL} (${String(delaySeconds)} s per action)`
+    : `${PACE_LABEL} (${String(delaySeconds)} s per action)`
   return (
     <button
       type="button"
       className={PACE_BUTTON_CLASS_NAME}
       aria-label={label}
       title={label}
+      disabled={isLocked}
       onClick={(): void => {
         setBotStepDelaySeconds(nextBotStepDelaySeconds(delaySeconds))
       }}
@@ -191,6 +198,11 @@ function PaceButton(): JSX.Element {
 
 function BotTurnHead(props: { view: BotTurnBannerViewModel }): JSX.Element {
   const { view } = props
+  const isPaceShown: boolean = useSyncExternalStore(
+    subscribeBotPace,
+    (): boolean => isBotPaceShown(isSoloGameOpen()),
+    (): boolean => isBotPaceShown(isSoloGameOpen()),
+  )
   const portraitPath: string | null = factionPortraitPath(view.faction)
   const colorClassName: string =
     FACTION_FRAME_CLASS_NAMES[artFactionOf(view.faction)] ?? NEUTRAL_HEAD_CLASS_NAME
@@ -208,7 +220,7 @@ function BotTurnHead(props: { view: BotTurnBannerViewModel }): JSX.Element {
         </span>
         <span className={HEAD_STEP_CLASS_NAME}>{`${view.phase} · ${view.step}`}</span>
       </div>
-      {isSoloGameOpen() ? <PaceButton /> : null}
+      {isPaceShown ? <PaceButton /> : null}
     </header>
   )
 }

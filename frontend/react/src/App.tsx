@@ -12,6 +12,7 @@ import {
   createFrontendApi,
   type AddAiPlayerInput,
   type AiPlayerApi,
+  type PlayMode,
 } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import {
@@ -33,8 +34,13 @@ import {
   markHotseatGameOpen,
   reloadHotseatSlot,
 } from '#game/hotseatResume.ts'
-import { getHudSnapshot, setMenuCallbacks, subscribeHud } from '#game/hudStore.ts'
-import { buildMenuLobby } from '#game/menuLobby.ts'
+import {
+  getHudSnapshot,
+  setMenuCallbacks,
+  subscribeHud,
+  type LobbyTableChange,
+} from '#game/hudStore.ts'
+import { buildMenuLobby, PLAY_MODE_LABELS } from '#game/menuLobby.ts'
 import type { MenuFactionId } from '#game/menuPartySetup.ts'
 import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import {
@@ -162,6 +168,9 @@ export function App(): JSX.Element {
     () => undefined,
   )
   const handleExpelPlayerRef = useRef<(seat: number) => void>(() => undefined)
+  const handleChangeLobbyTableRef = useRef<(change: LobbyTableChange) => void>(
+    () => undefined,
+  )
   const handleStartOnlineRef = useRef<() => void>(() => undefined)
   const handleLeaveOnlineRef = useRef<() => void>(() => undefined)
   const resumeOnlineGameRef = useRef<() => Promise<void>>(() =>
@@ -246,6 +255,9 @@ export function App(): JSX.Element {
       onExpelPlayer: (seat) => {
         handleExpelPlayerRef.current(seat)
       },
+      onChangeLobbyTable: (change) => {
+        handleChangeLobbyTableRef.current(change)
+      },
       onStartOnline: () => {
         handleStartOnlineRef.current()
       },
@@ -299,6 +311,7 @@ export function App(): JSX.Element {
     clearLobbyWait()
     const session = ensureSession()
     let wasSeatedInLobby: boolean = false
+    let shownPlayMode: PlayMode | null = null
     const showLobby = (snapshot: GameSessionSnapshot): void => {
       const state = snapshot.state
       if (state === null) {
@@ -318,14 +331,17 @@ export function App(): JSX.Element {
           return
         }
         wasSeatedInLobby = isSeated
-        syncMenuLobby(
-          buildMenuLobby(
-            state,
-            session.getLocalSeat(),
-            session.isOnlineHost(),
-            getAiPlayerSnapshot().aiPlayers,
-          ),
+        const lobby = buildMenuLobby(
+          state,
+          session.getLocalSeat(),
+          session.isOnlineHost(),
+          getAiPlayerSnapshot().aiPlayers,
         )
+        if (shownPlayMode !== null && lobby.playMode !== shownPlayMode && !lobby.isHost) {
+          syncMenuStatus(`The host switched to ${PLAY_MODE_LABELS[lobby.playMode]}`, '#9a9a9a')
+        }
+        shownPlayMode = lobby.playMode
+        syncMenuLobby(lobby)
         return
       }
       if (state.status === 'setup' || state.status === 'playing') {
@@ -582,6 +598,16 @@ export function App(): JSX.Element {
   }
   handleExpelPlayerRef.current = (seat: number) => {
     void handleExpelPlayer(seat)
+  }
+  handleChangeLobbyTableRef.current = (change: LobbyTableChange) => {
+    void (async (): Promise<void> => {
+      const session = ensureSession()
+      const changed: boolean = await session.changeLobbyTable(change)
+      syncMenuStatus(
+        changed ? '' : (session.getSnapshot().error ?? 'Could not change the table'),
+        changed ? '#9a9a9a' : '#c44',
+      )
+    })()
   }
   handleLeaveOnlineRef.current = () => {
     void handleLeaveOnline()

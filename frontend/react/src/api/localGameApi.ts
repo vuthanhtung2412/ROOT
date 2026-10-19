@@ -32,7 +32,11 @@ import type {
   GameSocketConnection,
   GameSocketHandlers,
 } from '#api/gameSocket.ts'
-import { waitBotStepDelay } from '#game/botPace.ts'
+import {
+  botStepDelaySeconds,
+  setBotStepDelaySeconds,
+  waitBotStepDelay,
+} from '#game/botPace.ts'
 import type { PlayerIdentityStorage } from '#game/playerIdentity.ts'
 
 /** Saved solo game: survives a page reload. */
@@ -245,6 +249,15 @@ export function createLocalGame(
     async expelPlayer(): Promise<void> {
       throw unsupported('Expelling a player')
     },
+    async setPlayMode(): Promise<void> {
+      throw unsupported('Co-op vs bots')
+    },
+    async addBot(): Promise<void> {
+      throw unsupported('Seating a bot in a lobby')
+    },
+    async setBotSettings(): Promise<void> {
+      throw unsupported('Tuning a bot in a lobby')
+    },
     async start(): Promise<ActionResult> {
       return applyAction({ type: 'start' })
     },
@@ -255,7 +268,11 @@ export function createLocalGame(
         historyLength: engine.history.length,
         mode: LOCAL_LOBBY_MODE,
         aiPlayers: [],
+        botStepDelaySeconds: botStepDelaySeconds(),
       }
+    },
+    async setBotPace(seconds: number): Promise<void> {
+      setBotStepDelaySeconds(seconds)
     },
     async gameView(): Promise<string> {
       const engine: Game = requireGame()

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Co-op bot settings</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.sheet{background:#efe3c4;color:#2b2118;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.card{all:unset;cursor:pointer;position:relative;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:10px 14px;border-radius:6px;background:#e4d6b0;opacity:.85}
+.card b{font:600 18px Fraunces,serif}
+.card span{font:13px/1.35 'Alegreya Sans',sans-serif;color:#4a3b2a}
+.card[aria-pressed="true"]{background:#f4dc95;opacity:1;box-shadow:0 0 0 4px #c99a2e}
+.tick{position:absolute;top:-12px;right:-12px;width:30px;height:30px;border-radius:50%;background:#7fbf6a;display:flex;align-items:center;justify-content:center}
+.sec{font:600 15px Fraunces,serif;letter-spacing:.06em;text-transform:uppercase;margin:0;color:#5b4a36}
+.callout{position:absolute;font:500 14px 'Alegreya Sans',sans-serif;color:#2b2118;background:#ffd970;border-radius:6px;padding:8px 12px;max-width:220px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+</style>
+<style>.seat-medal{all:unset;box-sizing:border-box;cursor:pointer;width:40px;height:40px;border-radius:50%;border:2px solid #2b2118;background:#c9d4dd;color:#2b2118;display:flex;align-items:center;justify-content:center;font:600 17px "JetBrains Mono",monospace}.seat-medal .cross{display:none}.seat-medal:hover,.seat-medal:focus-visible{background:#a5482c}.seat-medal:hover .number,.seat-medal:focus-visible .number{display:none}.seat-medal:hover .cross,.seat-medal:focus-visible .cross{display:flex}</style>
+</helmet>
+<div style="width:1280px;height:800px;box-sizing:border-box;background:#1b261b;font-family:'Alegreya Sans',sans-serif;position:relative;display:flex;align-items:center;justify-content:center;padding:32px">
+  <div class="sheet" role="dialog" aria-label="Mechanical Marquise settings" style="position:relative;width:1060px;padding:24px 30px;display:flex;flex-direction:column;gap:16px">
+    <button aria-label="Close" style="all:unset;cursor:pointer;position:absolute;top:14px;right:14px;width:44px;height:44px;border-radius:50%;background:#a5482c;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbf3df" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+    <div style="display:flex;gap:16px;align-items:center">
+      <div style="width:72px;height:72px;border-radius:8px;background:#e9a866;transform:rotate(-2deg);display:flex;align-items:center;justify-content:center;font:800 24px Fraunces,serif;color:rgba(43,33,24,.55)">MM</div>
+      <div>
+        <h2 style="margin:0;font:600 28px Fraunces,serif">Mechanical Marquise</h2>
+        <p style="margin:0;font-style:italic;color:#5b4a36">Seat 3</p>
+      </div>
+    </div>
+
+    <h3 class="sec">Difficulty</h3>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+      <button class="card" aria-pressed="false"><b>Easy</b><span>Recruit two warriors during the recruit action.</span></button>
+      <button class="card" aria-pressed="false"><b>Default</b><span>The rules on the faction board.</span></button>
+      <button class="card" aria-pressed="true"><b>Challenging</b><span>After recruiting, place two warriors in the highest priority clearing you rule matching the order card.</span>
+        <i class="tick" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1b261b" stroke-width="3"><path d="M5 12l5 5L20 7"></path></svg></i></button>
+      <button class="card" aria-pressed="false"><b>Nightmare</b><span>As Challenging. At the end of evening, score 1 VP.</span></button>
+    </div>
+
+    <h3 class="sec">Traits · 1 picked</h3>
+    <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px">
+      <button class="card" aria-pressed="true"><b>Blitz</b><span>After your move, move all but one warrior from your top clearing with no enemies, and battle there.</span>
+        <i class="tick" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1b261b" stroke-width="3"><path d="M5 12l5 5L20 7"></path></svg></i></button>
+      <button class="card" aria-pressed="false"><b>Fortified</b><span>Opponents need two hits to destroy each of your buildings.</span></button>
+      <button class="card" aria-pressed="false"><b>Hospitals</b><span>After losing 2+ warriors as defender, recruit 2 at the keep.</span></button>
+      <button class="card" aria-pressed="false"><b>Iron Will</b><span>In Escalated Daylight recruit twice as many warriors.</span></button>
+      <button class="card" aria-pressed="false"><b>Overwhelming</b><span>Score 1 VP per two warriors you can't place when recruiting.</span></button>
+    </div>
+
+    <div style="display:flex;justify-content:center;padding-top:4px">
+      <button style="all:unset;cursor:pointer;min-height:48px;padding:0 34px;border-radius:6px;background:#c99a2e;color:#2b2118;font:600 19px Fraunces,serif;display:flex;align-items:center">Done</button>
+    </div>
+  </div>
+
+  <div class="callout" style="top:16px;left:16px;max-width:260px">The existing Solo run bot settings modal, reused. Host only; guests open it read-only. Card text shortened here, full text in the app.</div>
+</div>
+</x-dc>
+</body>
+</html>

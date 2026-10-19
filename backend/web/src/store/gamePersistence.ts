@@ -10,11 +10,14 @@ import path from 'node:path'
 import { Game } from '@root/lib'
 import { logGameEvent } from '#debug/logGame.js'
 import {
+  BOT_STEP_DELAY_SECONDS_CHOICES,
   DEFAULT_AI_PLAYER_STATUS,
+  DEFAULT_BOT_STEP_DELAY_SECONDS,
   DEFAULT_LOBBY_MODE,
   LOBBY_MODES,
   store,
   type AiPlayerSeat,
+  type BotStepDelaySeconds,
   type LobbyMode,
 } from '#store/GameStore.js'
 import { isGameSnapshot } from '#typeGuards.js'
@@ -26,6 +29,10 @@ let persistenceFilePath: string | null = null
 
 function isLobbyMode(value: unknown): value is LobbyMode {
   return LOBBY_MODES.some((mode) => mode === value)
+}
+
+function isBotStepDelaySeconds(value: unknown): value is BotStepDelaySeconds {
+  return BOT_STEP_DELAY_SECONDS_CHOICES.some((seconds: BotStepDelaySeconds): boolean => seconds === value)
 }
 
 /** What is saved of an AI seat: who and which model, not its live status. */
@@ -84,6 +91,10 @@ function restoreStoredGame(filePath: string): void {
     store.game = Game.fromJSON(snapshot)
     store.mode = isLobbyMode(mode) ? mode : DEFAULT_LOBBY_MODE
     store.aiPlayers = restoreAiPlayerSeats(aiPlayers)
+    const botStepDelaySeconds: unknown = Reflect.get(stored, 'botStepDelaySeconds')
+    store.botStepDelaySeconds = isBotStepDelaySeconds(botStepDelaySeconds)
+      ? botStepDelaySeconds
+      : DEFAULT_BOT_STEP_DELAY_SECONDS
     console.log(
       `Restored existing ${store.mode} game from ${filePath} ` +
         `(${store.aiPlayers.length} AI seats)`,
@@ -126,6 +137,7 @@ export function persistCurrentGame(): void {
       temporaryPath,
       JSON.stringify({
         mode: store.mode,
+        botStepDelaySeconds: store.botStepDelaySeconds,
         aiPlayers: store.aiPlayers.map(
           (seat: AiPlayerSeat): StoredAiPlayerSeat => ({
             playerId: seat.playerId,

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Co-op in game</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.paper{background:#efe3c4;color:#2b2118;border-radius:8px;box-shadow:0 2px 0 #b9a77b,0 8px 24px rgba(0,0,0,.35)}
+.row{display:grid;grid-template-columns:120px minmax(0,1fr) 56px;gap:10px;align-items:center;font-size:14px}
+.row b{font:600 14px Fraunces,serif}
+.track{position:relative;height:14px;border-radius:7px;background:#d8c79c;overflow:hidden}
+.track span{position:absolute;left:0;top:0;bottom:0;border-radius:7px}
+.vp{font:600 14px 'JetBrains Mono',monospace;text-align:right}
+.speed{display:flex;gap:2px;background:#2f3a44;border-radius:6px;padding:3px}
+.speed button{all:unset;cursor:pointer;min-height:36px;padding:0 12px;border-radius:4px;font:600 14px 'Alegreya Sans',sans-serif;color:#dfe6ec;display:flex;align-items:center}
+.speed button[aria-pressed="true"]{background:#c9d4dd;color:#1d252c}
+.toast{background:#26313a;color:#e6ecf1;border-radius:8px;padding:10px 12px;font-size:14px;border-left:0;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.callout{position:absolute;font:500 14px 'Alegreya Sans',sans-serif;color:#2b2118;background:#ffd970;border-radius:6px;padding:8px 12px;max-width:220px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.end{border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
+.end h4{margin:0;font:800 22px Fraunces,serif}
+.end p{margin:0;font-size:13px}
+</style>
+<style>.seat-medal{all:unset;box-sizing:border-box;cursor:pointer;width:40px;height:40px;border-radius:50%;border:2px solid #2b2118;background:#c9d4dd;color:#2b2118;display:flex;align-items:center;justify-content:center;font:600 17px "JetBrains Mono",monospace}.seat-medal .cross{display:none}.seat-medal:hover,.seat-medal:focus-visible{background:#a5482c}.seat-medal:hover .number,.seat-medal:focus-visible .number{display:none}.seat-medal:hover .cross,.seat-medal:focus-visible .cross{display:flex}</style>
+</helmet>
+<div style="width:1280px;height:800px;box-sizing:border-box;background:#1b261b;font-family:'Alegreya Sans',sans-serif;position:relative;padding:24px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px">
+
+  <div style="position:relative;border-radius:12px;background:radial-gradient(ellipse at 40% 45%,#6f8a4f,#3c5236 70%);overflow:hidden">
+    <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:600 22px Fraunces,serif;color:rgba(239,227,196,.45)">[ map ]</span>
+
+
+    <div style="position:absolute;right:16px;bottom:16px;width:330px;display:flex;flex-direction:column;gap:8px">
+      <div class="toast" style="opacity:.6">Electric Eyrie · Birdsong — adds card to Decree (fox)</div>
+      <div class="toast">Electric Eyrie · Daylight — battles in Clearing 7, removes 2 Vagabond items</div>
+      <div class="paper" style="padding:10px 12px;display:flex;align-items:center;gap:10px;background:#dfe6ec">
+        <span style="font:600 14px 'Alegreya Sans',sans-serif;color:#1d252c">Bot pace</span>
+        <button aria-label="Bot pace, click for faster" style="all:unset;cursor:pointer;min-width:56px;height:36px;border-radius:6px;background:#fbf3df;color:#2b2118;font:600 16px 'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 #b9a77b">2s</button>
+      </div>
+    </div>
+  </div>
+
+  <aside style="display:flex;flex-direction:column;gap:14px">
+    <div class="paper" style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:#dfe6ec">
+      <span style="font:700 12px 'Alegreya Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#3a4652">Guest sees</span>
+      <div style="display:flex;align-items:center;gap:8px;color:#1d252c;font-size:14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d252c" stroke-width="2" role="img" aria-label="Locked"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+        Bot pace: <b>2s</b>
+      </div>
+    </div>
+
+    <div class="end" style="background:#f4dc95;color:#2b2118">
+      <span style="font:700 12px 'Alegreya Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase">End · win</span>
+      <h4>The Woodland holds</h4>
+      <p style="font-family:'JetBrains Mono',monospace">WA 33 · VB 30 — MM 21 · EE 28</p>
+    </div>
+
+    <div class="end" style="background:#2f3a44;color:#e6ecf1">
+      <span style="font:700 12px 'Alegreya Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#c9d4dd">End · loss</span>
+      <h4>The Clockwork wins</h4>
+      <p style="font-family:'JetBrains Mono',monospace">EE 30 · MM 19 — WA 31 · VB 24</p>
+    </div>
+  </aside>
+
+  <div class="callout" style="top:500px;left:500px;max-width:250px">Existing pace button (5s → 2s → 1s), now in online co-op too. Host clicks it any time mid-game; guests see it locked.</div>
+</div>
+</x-dc>
+</body>
+</html>

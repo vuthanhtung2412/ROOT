@@ -7,6 +7,9 @@ import { isBotFaction } from '@root/lib/bot-factions'
 import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import { ApiError } from '#api/client.ts'
 import { setAiPlayers } from '#game/aiPlayerStore.ts'
+import type { LobbyTableChange } from '#game/hudStore.ts'
+import { setOnlineBotPace } from '#game/botPace.ts'
+import { isBotStepDelaySeconds } from '@root/web-client/game-api'
 import {
   connectGameSocket,
   resolveWebSocketUrl,
@@ -159,6 +162,7 @@ export class GameSession {
 
   applySocketPush(payload: GameSocketPush): void {
     setAiPlayers(payload.aiPlayers ?? [])
+    this.syncOnlineBotPace(payload.state, payload.botStepDelaySeconds)
     if (payload.state === null) {
       this.disconnectSocket()
       clearPlayerIdentity(
@@ -504,6 +508,42 @@ export class GameSession {
   }
 
   /**
+   * Online co-op game: the server paces the bots; the host may change the
+   * pace, guests see it. Anything else: the pace stays this browser's own.
+   */
+  private syncOnlineBotPace(state: GameState | null, delaySeconds: number | undefined): void {
+    if (state?.cooperative !== true || state.status === 'waiting' || delaySeconds === undefined) {
+      setOnlineBotPace(null)
+      return
+    }
+    setOnlineBotPace({
+      delaySeconds,
+      canChange: this.isOnlineHost(),
+      requestDelaySeconds: (seconds: number): void => {
+        if (!isBotStepDelaySeconds(seconds)) return
+        this.api.setBotPace(seconds).catch((error: unknown): void => {
+          this.setError(errorMessage(error))
+        })
+      },
+    })
+  }
+
+  /** Open lobby, host only: play mode, bots and their settings; the push redraws. */
+  async changeLobbyTable(change: LobbyTableChange): Promise<boolean> {
+    try {
+      if (change.kind === 'setPlayMode') await this.api.setPlayMode(change.playMode)
+      if (change.kind === 'addBot') await this.api.addBot(change.faction)
+      if (change.kind === 'setBotSettings') {
+        await this.api.setBotSettings(change.faction, change.settings)
+      }
+      return true
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+      return false
+    }
+  }
+
+  /**
    * Leave the lobby screen. A browser that only watches a lobby others sit
    * in walks away; the host (or the last one in an empty lobby) closes it.
    */
@@ -660,6 +700,7 @@ export class GameSession {
         return
       }
       setAiPlayers(game.aiPlayers)
+      this.syncOnlineBotPace(game.state, game.botStepDelaySeconds)
       this.publish({
         state: game.state,
         legalActions: legal.actions,

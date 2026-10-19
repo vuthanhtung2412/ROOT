@@ -12,6 +12,7 @@ import { syncStatusMessage } from '#react/StatusMessage.tsx'
 import { syncTurnBannerTurn } from '#react/TurnBanner.tsx'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import { buildTurnBannerViewModel } from '#ui/TurnBanner.ts'
+import { buildGameOverView } from '#ui/gameOverViewModel.ts'
 
 export type GameSceneHudPaintDeps = {
   getSession: () => GameSession | null
@@ -117,13 +118,5 @@ export function canUndoTurnAction(
 }
 
 function syncWinner(state: GameState): void {
-  if (state.status !== 'finished' || state.winner === undefined) {
-    syncWinnerOverlay(null)
-    return
-  }
-  const winnerSeat = state.winner
-  const winnerPlayer = state.players.find(
-    (player) => player.seat === winnerSeat,
-  )
-  syncWinnerOverlay(winnerPlayer?.faction ?? `seat ${String(winnerSeat)}`)
+  syncWinnerOverlay(buildGameOverView(state))
 }

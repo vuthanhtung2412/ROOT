@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Co-op empty slot options</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2b2118;--ink-soft:#5b4a36;--parchment:#efe3c4;--parchment-deep:#d8c79c;--cream-deep:#e6d6ae;--gold:#c99a2e;--gold-light:#f4dc95;--steel:#8fa1b1}
+body{margin:0;background:radial-gradient(ellipse at 50% 20%,#4a3a28,#1c1610 75%);font-family:'Alegreya Sans',sans-serif;color:var(--parchment);padding:28px 32px 60px}
+h1{font:600 28px Fraunces,serif;margin:0 0 6px}
+.lead{margin:0 0 26px;color:#d9c9a3}
+.option{margin:0 0 34px;padding:18px 22px 26px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid rgba(239,227,196,.15)}
+.option h2{font:600 22px Fraunces,serif;margin:0 0 4px;color:var(--gold-light)}
+.option p{margin:0 0 18px;color:#d9c9a3;max-width:900px}
+.pick{font:700 12px 'Alegreya Sans';letter-spacing:.08em;text-transform:uppercase;background:var(--gold);color:var(--ink);padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:middle}
+.table{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;justify-items:center;gap:40px}
+.grid{display:grid;grid-template-columns:repeat(2,auto);gap:20px 32px;margin:0;padding:0;list-style:none}
+.seat{display:flex;flex-direction:column;align-items:center}
+.tile{position:relative;box-sizing:border-box;width:128px;height:128px;padding:6px;border-radius:5px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--ink),0 6px 14px rgba(0,0,0,.45)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.medal{position:absolute;top:-13px;left:-13px;width:34px;height:34px;border-radius:50%;background:var(--parchment-deep);border:2px solid var(--ink);color:var(--ink);font:600 15px 'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center}
+.medal.gold{background:var(--gold)}
+.label{position:relative;z-index:1;margin-top:-8px;box-sizing:border-box;min-width:128px;padding:4px 12px;text-align:center;background:var(--parchment);color:var(--ink);border-radius:3px;box-shadow:0 0 0 1.5px var(--ink)}
+.label b{display:block;font:600 16px Fraunces,serif;line-height:1.2}
+.label i{display:block;font:italic 400 13px 'Alegreya Sans';color:var(--ink-soft)}
+.label.gold{background:var(--gold-light)}
+.label.open{background:var(--parchment-deep)}
+.vs{width:64px;height:64px;border-radius:50%;background:var(--gold);color:var(--ink);box-shadow:0 0 0 2px var(--ink);display:flex;align-items:center;justify-content:center;font:600 26px Fraunces,serif}
+.r1{transform:rotate(-2deg)}.r2{transform:rotate(1deg)}.r3{transform:rotate(-1deg)}.r4{transform:rotate(2deg)}
+.qmark{font:600 72px Fraunces,serif;color:var(--ink)}
+.plus{font:400 64px Fraunces,serif;color:var(--ink)}
+/* A: theme icon + flavour text */
+.a-tile{background:var(--cream-deep)}
+.a-tile svg{width:58px;height:58px;stroke:var(--ink);opacity:.35}
+.a-label{background:var(--parchment-deep)}
+/* B: faint silhouette of the side */
+.b-tile{background:var(--cream-deep)}
+.b-tile img{filter:grayscale(1) contrast(.6) brightness(1.15);opacity:.22}
+.b-label{background:var(--parchment-deep)}
+/* C: stitched card slot pressed into the table */
+.c-tile{background:#5a4630;box-shadow:inset 0 3px 10px rgba(0,0,0,.6),0 0 0 2px var(--ink)}
+.c-tile::after{content:"";position:absolute;inset:9px;border:2px dashed rgba(239,227,196,.45);border-radius:3px}
+.c-label{background:#7a6448;color:#efe3c4;box-shadow:0 0 0 1.5px var(--ink)}
+.c-label b{color:#efe3c4}.c-label i{color:#d9c9a3}
+/* D: C slot + A icon glowing faintly, slow breathing */
+.d-tile{background:#5a4630;box-shadow:inset 0 3px 10px rgba(0,0,0,.6),0 0 0 2px var(--ink)}
+.d-tile::after{content:"";position:absolute;inset:9px;border:2px dashed rgba(239,227,196,.4);border-radius:3px}
+.d-tile svg{width:54px;height:54px;stroke:var(--gold-light);opacity:.5;animation:breathe 3.6s ease-in-out infinite}
+.d-tile.bot svg{stroke:#c9d4dd}
+.d-label{background:#7a6448;box-shadow:0 0 0 1.5px var(--ink)}
+.d-label b{color:#efe3c4}.d-label i{color:#d9c9a3}
+@keyframes breathe{0%,100%{opacity:.3;transform:scale(.95)}50%{opacity:.65;transform:scale(1.03)}}
+@media (prefers-reduced-motion:reduce){.d-tile svg{animation:none}}
+</style>
+</head>
+<body>
+<h1>Co-op lobby · empty slot options</h1>
+<p class="lead">Each row: Woodland 2x2 (you + open seat + 2 empty) vs Clockwork 2x2 (one bot + "Add a bot" + 2 empty). Only the empty slots change between options.</p>
+
+<template id="leaf"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></template>
+<template id="cog"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></template>
+
+<div id="options"></div>
+
+<script>
+const PORTRAITS = '../../../frontend/react/public/assets/portraits/'
+const OPTIONS = [
+  {
+    key: 'a', title: 'A · Side icon + flavour text', pick: true,
+    blurb: 'Cream tile like an open seat, faint leaf (Woodland) or cog (Clockwork). Strip text tells the story of the side. Cheapest: react-icons LuLeaf / LuCog.',
+    human: { icon: 'leaf', title: 'Empty clearing', note: 'room for a friend' },
+    bot: { icon: 'cog', title: 'Idle gear', note: 'no bot wound up' },
+  },
+  {
+    key: 'b', title: 'B · Ghost silhouette',
+    blurb: 'Faint greyscale head of the side (a Woodland critter / a Clockwork bot). Feels like someone could sit here. Risk: reads as "this faction is taken".',
+    human: { ghost: 'marquise.webp', title: 'Empty seat', note: 'waiting for a critter' },
+    bot: { ghost: 'mechanicalMarquise.webp', title: 'Empty slot', note: 'bench is quiet' },
+  },
+  {
+    key: 'c', title: 'C · Card slot cut into the table',
+    blurb: 'Dark recessed slot with stitched border, no icon. Looks like part of the board, not a seat. Calm, clearly "not clickable".',
+    human: { title: 'Empty', note: '—' },
+    bot: { title: 'Empty', note: '—' },
+  },
+  {
+    key: 'd', title: 'D · Slot + breathing icon',
+    blurb: 'C\'s recessed slot with A\'s icon slowly breathing (gold leaf / steel cog). Most alive; can steal attention from the real open seat. Respects reduced motion.',
+    human: { icon: 'leaf', title: 'Empty clearing', note: 'room for a friend' },
+    bot: { icon: 'cog', title: 'Idle gear', note: 'no bot wound up', bot: true },
+  },
+]
+
+function iconSvg(name) { return document.getElementById(name).innerHTML }
+
+function seatHtml({ tileClass, tileInner, labelClass, title, note, medal }) {
+  return `<li class="seat"><div class="tile ${tileClass}">${tileInner}${medal ?? ''}</div>
+    <div class="label ${labelClass}"><b>${title}</b><i>${note}</i></div></li>`
+}
+
+function emptyHtml(option, side, tilt) {
+  const spec = option[side]
+  const inner = spec.icon ? iconSvg(spec.icon) : spec.ghost ? `<img src="${PORTRAITS}${spec.ghost}" alt="">` : ''
+  return seatHtml({
+    tileClass: `${option.key}-tile ${tilt} ${spec.bot ? 'bot' : ''}`,
+    tileInner: inner,
+    labelClass: `${option.key}-label`,
+    title: spec.title, note: spec.note,
+  })
+}
+
+function rowHtml(option) {
+  const humans = [
+    seatHtml({ tileClass: 'r1', tileInner: `<img src="${PORTRAITS}alliance.webp" alt="">`, labelClass: 'gold', title: 'Woodland Alliance', note: 'you · host', medal: '<span class="medal gold">1</span>' }),
+    seatHtml({ tileClass: 'r2', tileInner: '<span class="qmark">?</span>', labelClass: 'open', title: 'Open seat', note: 'waiting…', medal: '<span class="medal">2</span>' }).replace('class="tile r2"', 'class="tile r2" style="background:var(--cream-deep)"'),
+    emptyHtml(option, 'human', 'r3'),
+    emptyHtml(option, 'human', 'r4'),
+  ].join('')
+  const bots = [
+    seatHtml({ tileClass: 'r2', tileInner: `<img src="${PORTRAITS}electricEyrie.webp" alt="">`, labelClass: '', title: 'Electric Eyrie', note: 'Default · no trait', medal: '<span class="medal">3</span>' }),
+    seatHtml({ tileClass: 'r3', tileInner: '<span class="plus">+</span>', labelClass: 'open', title: 'Add a bot', note: 'open seat' }).replace('class="tile r3"', 'class="tile r3" style="background:var(--cream-deep)"'),
+    emptyHtml(option, 'bot', 'r1'),
+    emptyHtml(option, 'bot', 'r4'),
+  ].join('')
+  return `<section class="option"><h2>${option.title}${option.pick ? '<span class="pick">my pick</span>' : ''}</h2><p>${option.blurb}</p>
+    <div class="table"><ol class="grid">${humans}</ol><span class="vs">VS</span><ul class="grid">${bots}</ul></div></section>`
+}
+
+document.getElementById('options').innerHTML = OPTIONS.map(rowHtml).join('')
+</script>
+</body>
+</html>

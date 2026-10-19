@@ -14,6 +14,9 @@ export type Step = string
 
 export type GameStatus = 'waiting' | 'setup' | 'playing' | 'finished'
 
+/** Rule: Rootbotics 3.5.1 — the humans (the Woodland) against the bots (the Clockwork). */
+export type Team = 'humans' | 'bots'
+
 export type ClearingState = {
   pieces: Piece[]
   ruin?: { items: ItemType[] }
@@ -118,6 +121,8 @@ export type GameState = {
   openLobby?: true
   /** Rule: Rootbotics 3.3 — difficulty and traits per bot; absent = default, none. */
   botSettings?: BotSettingsByFaction
+  /** Rule: Rootbotics 3.5.1 — humans play as one team against the bots. Absent = free-for-all. */
+  cooperative?: boolean
   players: PlayerState[]
   clearings: ClearingState[]
   deck: DeckState
@@ -132,6 +137,8 @@ export type GameState = {
   winner?: Seat
   /** Vagabond seats in coalition with `winner`. Rule: Vagabond 9.2.8. */
   coWinners?: Seat[]
+  /** Cooperative game: the team that won; `winner` + `coWinners` are its seats. */
+  winningTeam?: Team
   turnScratch: TurnScratch
   /**
    * Latest actions the player whose turn it is may take back. Starts again

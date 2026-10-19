@@ -721,7 +721,7 @@ export interface paths {
   "/game/players/{seat}": {
     /**
      * Expel a player from the open lobby
-     * @description Frees the seat of a human or AI player; later seats move down one. Host only in online mode. The host seat (0) cannot be expelled.
+     * @description Frees the seat of a human, AI player or bot; later seats move down one. Host only in online mode. The host seat (0) cannot be expelled.
      */
     delete: {
       parameters: {
@@ -732,6 +732,160 @@ export interface paths {
       };
       responses: {
         /** @description Player expelled */
+        204: {
+          content: never;
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/play-mode": {
+    /**
+     * Switch the open lobby between free-for-all and co-op vs bots
+     * @description Co-op (Rootbotics 3.5.1): AI players leave the table; bots are seated with `POST /game/bots`. Free-for-all: the bots leave the table, their settings stay. Host only in online mode.
+     */
+    put: {
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["SetPlayModeBody"];
+        };
+      };
+      responses: {
+        /** @description Play mode set */
+        204: {
+          content: never;
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/bots": {
+    /**
+     * Seat a Rootbotics bot in the co-op lobby
+     * @description The bot takes the next seat and plays its own turns. Never next to the faction it replaces (Rootbotics 3.2). Host only in online mode.
+     */
+    post: {
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["AddBotBody"];
+        };
+      };
+      responses: {
+        /** @description Bot seated */
+        204: {
+          content: never;
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/bots/{faction}": {
+    /**
+     * Set the difficulty and traits of a bot (lobby only)
+     * @description Rootbotics 3.3. Host only in online mode.
+     */
+    put: {
+      parameters: {
+        path: {
+          /** @description Bot whose settings change. */
+          faction: components["schemas"]["BotFactionId"];
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["SetBotSettingsBody"];
+        };
+      };
+      responses: {
+        /** @description Settings set */
+        204: {
+          content: never;
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/bot-pace": {
+    /**
+     * Set how long the server waits after each bot action
+     * @description Online games play bots one action at a time; this is the pause between two. Any time, lobby or game. Host only in online mode.
+     */
+    put: {
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["SetBotPaceBody"];
+        };
+      };
+      responses: {
+        /** @description Pace set */
         204: {
           content: never;
         };
@@ -906,6 +1060,7 @@ export interface components {
       historyLength: number;
       mode: components["schemas"]["LobbyMode"];
       aiPlayers: components["schemas"]["AiPlayer"][];
+      botStepDelaySeconds: components["schemas"]["BotStepDelaySeconds"];
     };
     AiPlayer: {
       seat: number;
@@ -915,6 +1070,8 @@ export interface components {
     };
     /** @enum {string} */
     AiPlayerStatus: "idle" | "thinking" | "stuck";
+    /** @description Online games: seconds the server waits after each bot action. */
+    BotStepDelaySeconds: 5 | 2 | 1;
     GameSnapshot: {
       state: components["schemas"]["GameState"];
       history: components["schemas"]["Action"][];
@@ -999,6 +1156,26 @@ export interface components {
     };
     /** @enum {string} */
     AiPlayerActivityKind: "message" | "reasoning" | "reply" | "toolCall" | "toolResult" | "failure";
+    SetPlayModeBody: {
+      playMode: components["schemas"]["PlayMode"];
+    };
+    /**
+     * @description freeForAll: every player for themselves. cooperative: the humans against the bots (Rootbotics 3.5.1); `state.cooperative` is true.
+     * @enum {string}
+     */
+    PlayMode: "freeForAll" | "cooperative";
+    AddBotBody: {
+      faction: components["schemas"]["BotFactionId"];
+      settings?: components["schemas"]["BotSettings"];
+    };
+    /** @enum {string} */
+    BotFactionId: "mechanicalMarquise" | "electricEyrie";
+    SetBotSettingsBody: {
+      settings: components["schemas"]["BotSettings"];
+    };
+    SetBotPaceBody: {
+      botStepDelaySeconds: components["schemas"]["BotStepDelaySeconds"];
+    };
     PlayerToolResult: {
       content: string;
       isError: boolean;

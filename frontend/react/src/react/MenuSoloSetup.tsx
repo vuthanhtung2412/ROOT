@@ -40,7 +40,8 @@ const SIDE_HEADING_CLASS_NAME =
   'root-paper root-paper-fine m-0 px-5 py-0.5 font-display text-2xl tracking-display text-ink [--root-paper-color:var(--color-parchment)] md:text-3xl'
 const VERSUS_CLASS_NAME =
   'root-paper root-medallion flex size-12 items-center justify-center font-display text-2xl text-ink [--root-paper-color:var(--color-gold)] md:size-20 md:text-4xl'
-const BOT_LIST_CLASS_NAME = 'm-0 flex list-none flex-col items-center gap-5 p-0'
+/** Bots in a 2x2 grid, like the co-op table. */
+const BOT_LIST_CLASS_NAME = 'm-0 grid list-none grid-cols-2 items-start justify-items-center gap-5 p-0'
 /** Six factions, then the two bots: one row from `md`. */
 const TRACK_COLUMNS_CLASS_NAME = 'grid-cols-4 md:grid-cols-8'
 const TRACK_SEAT_INDEX = 0

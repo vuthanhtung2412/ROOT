@@ -107,3 +107,45 @@ describe('buildMenuLobby — preset lobby', () => {
     ])
   })
 })
+
+describe('buildMenuLobby — co-op vs bots (Rootbotics 3.5.1)', () => {
+  function cooperativeState(pickedFactions: readonly string[]): GameState {
+    return { ...openLobbyState(pickedFactions), cooperative: true }
+  }
+
+  it('reads the play mode from the state', () => {
+    expect(buildMenuLobby(openLobbyState(['alliance']), 0, true).playMode).toBe('freeForAll')
+    expect(buildMenuLobby(cooperativeState(['alliance']), 0, true).playMode).toBe('cooperative')
+  })
+
+  it('locks the faction a seated bot plays, and a bot whose faction a human holds', () => {
+    const lobby = buildMenuLobby(cooperativeState(['marquise', 'electricEyrie']), 0, true)
+
+    expect(choiceOf(lobby.factionChoices, 'eyrie')?.takenBy).toBe('other')
+    expect(choiceOf(lobby.factionChoices, 'marquise')?.takenBy).toBe('you')
+    expect(choiceOf(lobby.botChoices, 'electricEyrie')?.takenBy).toBe('other')
+    expect(choiceOf(lobby.botChoices, 'mechanicalMarquise')?.takenBy).toBe('other')
+  })
+
+  it('needs two humans, then a bot, before the host may start', () => {
+    const oneHuman = buildMenuLobby(cooperativeState(['alliance', 'electricEyrie']), 0, true)
+    const noBot = buildMenuLobby(cooperativeState(['alliance', 'vagabond']), 0, true)
+    const ready = buildMenuLobby(
+      cooperativeState(['alliance', 'vagabond', 'electricEyrie']),
+      0,
+      true,
+    )
+
+    expect(oneHuman.startBlockedReason).toBe('Needs 2 human players')
+    expect(oneHuman.canStart).toBe(false)
+    expect(noBot.startBlockedReason).toBe('Needs a bot')
+    expect(ready.startBlockedReason).toBeNull()
+    expect(ready.canStart).toBe(true)
+  })
+
+  it('free-for-all says why it cannot start yet', () => {
+    expect(buildMenuLobby(openLobbyState(['alliance']), 0, true).startBlockedReason).toBe(
+      'Needs at least two players',
+    )
+  })
+})

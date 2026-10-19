@@ -36,13 +36,57 @@ function readStoredDelaySeconds(): number {
   }
 }
 
+/**
+ * Online co-op: the server paces the bots at the host's pace. The host may
+ * ask for another; guests see it locked.
+ */
+export type OnlineBotPace = {
+  delaySeconds: number
+  canChange: boolean
+  requestDelaySeconds: (seconds: number) => void
+}
+
+let onlineBotPace: OnlineBotPace | null = null
+
+/** Online co-op game on screen: the pace the server pushed. Null: solo / none. */
+export function setOnlineBotPace(pace: OnlineBotPace | null): void {
+  const isSame: boolean =
+    pace !== null &&
+    onlineBotPace !== null &&
+    pace.delaySeconds === onlineBotPace.delaySeconds &&
+    pace.canChange === onlineBotPace.canChange
+  onlineBotPace = pace
+  if (isSame) return
+  for (const listener of listeners) listener()
+}
+
+export function getOnlineBotPace(): OnlineBotPace | null {
+  return onlineBotPace
+}
+
+/** The pace button shows at all: a solo game, or an online co-op game. */
+export function isBotPaceShown(isSoloGame: boolean): boolean {
+  return isSoloGame || onlineBotPace !== null
+}
+
+/** Online guests see the host's pace but cannot change it. */
+export function isBotPaceLocked(): boolean {
+  return onlineBotPace !== null && !onlineBotPace.canChange
+}
+
 export function botStepDelaySeconds(): number {
+  if (onlineBotPace !== null) return onlineBotPace.delaySeconds
   storedDelaySeconds ??= readStoredDelaySeconds()
   return storedDelaySeconds
 }
 
 export function setBotStepDelaySeconds(seconds: number): void {
   if (!isDelayChoice(seconds)) return
+  if (onlineBotPace !== null) {
+    // The server holds the pace: its push brings the new one back.
+    if (onlineBotPace.canChange) onlineBotPace.requestDelaySeconds(seconds)
+    return
+  }
   storedDelaySeconds = seconds
   try {
     paceStorage()?.setItem(BOT_STEP_DELAY_STORAGE_KEY, String(seconds))

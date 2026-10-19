@@ -6,6 +6,7 @@ import {
   canBotMove,
   defendersInOrder,
   enemyPieceCount,
+  isEnemyOfBot,
   moveBotWarriors,
   pieceCountOf,
   placeBotWarriors,
@@ -157,7 +158,7 @@ function defenselessBuildingCount(state: GameState, clearing: ClearingId, seat: 
   return pieces.filter(
     (piece: Piece): boolean =>
       piece.kind === 'building' &&
-      piece.owner !== seat &&
+      isEnemyOfBot(state, seat, piece.owner) &&
       !pieces.some(
         (other: Piece): boolean => other.kind === 'warrior' && other.owner === piece.owner,
       ),

@@ -210,3 +210,60 @@
   - `backend/web_client/src/schema.d.ts` (generated)
   - `backend/web_client/src/gameApi.ts`
   - `README.md` (endpoint table)
+
+
+## Online lobby: Co-op vs bots (Rootbotics 3.5.1)
+
+### Goal
+- Online lobby gets a host-only switch: **Free-for-all** (today, unchanged) | **Co-op vs bots**.
+- Co-op: humans (the Woodland) vs Mechanical Marquise and/or Electric Eyrie (the Clockwork).
+- Victory (3.5.1 only, no 3.5.2 variants): humans win when **every** human reaches 30 VP before any bot does; any bot at 30 → bots win. Dominance cards out. Bots never target bot pieces / each other in battle; humans still treat each other as enemies.
+- Start gate: at least **2 human players** and at least 1 bot. No AI (LLM) players in co-op.
+- Host only: mode, add / remove bot, bot difficulty + traits. Bot pace is changed **in game** by the host; guests see it read-only.
+- Mockups: `resources/mockups/coop-lobby/index.html` (boards 1–8).
+
+### Approach
+1. `lib`: `GameState.cooperative?: boolean`. `checkWin()` branch: any bot ≥ 30 → bots win; all humans ≥ 30 → humans win. Team result on state (`winningTeam: 'humans' | 'bots'`). `enemyPieceCount` and bot battle target picks skip bot seats when `cooperative`.
+2. API: lobby `playMode: 'freeForAll' | 'cooperative'` in `GameStore`; host-only routes to set mode and to add / remove a bot seat (bot faction + `BotSettings`). Co-op rejects AI players (switch to co-op drops AI seats). Start rejects < 2 humans or 0 bots. Seats stay ≤ 4, bots ≤ 2. Bot faction and its human twin never sit together (Marquise ↔ Mechanical Marquise, Eyrie ↔ Electric Eyrie). OpenAPI + `pnpm gen:api-client`.
+3. API: online bot pace. Store `botStepDelaySeconds` per game (choices from `BOT_STEP_DELAY_SECONDS_CHOICES`: 5 / 2 / 1 s); host-only route to set it; the server waits that long between bot auto actions and pushes each step over WS.
+4. React, lobby:
+   - `SeatNumberMedallion` (new): seat number; with `onRemove` it turns into ✕ on hover / focus (touch: first tap shows ✕, second removes). Replaces the separate expel ✕ (`MenuLobbySeats`) and bot ✕ (`MenuSoloSeats`).
+   - Mode switch under the lobby title (host: buttons, guest: locked + toast on change).
+   - Co-op layout: Woodland | VS | Clockwork, reusing Solo run tiles. One open human seat trails the humans; the next appears as players join.
+   - Faction dock: locks factions held by a human (name) or a bot. ＋ bot tile → dock becomes the bot picker. ⚙ → existing `MenuBotSettingsModal` (read-only for guests).
+   - Start disabled with one short reason line ("Needs 2 human players").
+5. React, game: `BotTurnBanner` pace button shown in online co-op; host changes it (calls the API), guests see a locked pace. End screen: "The Woodland holds" / "The Clockwork wins" with scores.
+
+### Risks
+- Tie: a bot and the last human reach 30 in the same action. Reading: same tie rule as base game (current turn player's team wins). Ask if wrong.
+- Server-side pacing changes how online bot turns run today (resolved in one go). Needs a way to run one bot auto action at a time from the server.
+- Mockup pace labels say Step / Normal / Fast; the build reuses the existing 5 / 2 / 1 s pace button.
+- `finishGameWithWinner` takes one seat; team win needs a new game-over shape on state and in the UI.
+
+### Test plan
+- `lib` (fixture factory): co-op win when all humans ≥ 30; loss when any bot hits 30 first; one human at 30 → game goes on; bots skip bot pieces as targets; dominance cards out; free-for-all unchanged.
+- API route tests: host-only mode / bot / pace routes (guest → 403), co-op rejects AI players, start gate (1 human → 400), twin faction clash → 400, switch drops AI seats.
+- React unit tests: co-op lobby view model (seat list, open seat trailing, locks, start reason), `SeatNumberMedallion` hover / focus / tap.
+- Manual (chrome-devtools, two browsers): host + guest, co-op with both bots, start, host changes pace mid-game, guest sees it locked, play to an end screen.
+
+### Commit plan
+- [x] `docs(plan): co-op vs bots lobby with mockups`
+  - `PLAN.md`, `resources/mockups/coop-lobby/*.html` (new)
+- [x] `feat(lib): cooperative victory against bots`
+  - `lib/src/state/types.ts`, `lib/src/game/Game.ts`, `lib/src/game/setup.ts` + tests
+- [x] `feat(lib): bots spare bot pieces in co-op`
+  - `lib/src/factions/bots/botQueries.ts`, `lib/src/factions/bots/mechanicalMarquise/turn.ts`, `lib/src/factions/bots/electricEyrie/decree.ts` + tests
+- [x] `feat(api): lobby play mode and bot seats`
+  - `backend/web/src/store/GameStore.ts`, `backend/web/src/schemas/game.ts`, `backend/web/src/routes/game.ts`, `backend/web/src/routes/lobbyPlayer.ts`, `backend/web/src/routes/aiPlayer.ts` + tests, `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts` (generated), `backend/web_client/src/gameApi.ts`
+- [x] `feat(api): host sets bot pace in online games`
+  - `backend/web/src/store/GameStore.ts`, `backend/web/src/schemas/game.ts`, `backend/web/src/routes/game.ts`, `backend/web/src/ws/GameHub.ts` + tests, `backend/web/openapi.json`, `backend/web_client/src/*` (generated)
+- [x] `refactor(react): seat number medallion with hover remove`
+  - `frontend/react/src/react/SeatNumberMedallion.tsx` (new), `react/MenuLobbySeats.tsx`, `react/MenuSoloSeats.tsx`
+- [x] `feat(react): co-op switch and seats in the online lobby`
+  - `frontend/react/src/game/menuLobby.ts` + test, `game/hudStore.ts`, `game/GameSession.ts`, `api/client.ts`, `react/MenuLobbyPanel.tsx`, `react/MenuCoopLobby.tsx` (new), `react/MenuOverlay.tsx`
+- [x] `feat(react): pick and tune bots in the co-op lobby`
+  - `frontend/react/src/react/MenuCoopLobby.tsx`, `react/MenuLobbyFactionDock.tsx`, `react/MenuBotSettingsModal.tsx`
+- [x] `feat(react): host bot pace in online co-op games`
+  - `frontend/react/src/game/botPace.ts` + test, `react/BotTurnBanner.tsx`, `game/GameSession.ts`
+- [x] `feat(react): co-op end screen`
+  - game-over view + its view model test

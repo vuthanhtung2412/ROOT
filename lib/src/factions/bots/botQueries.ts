@@ -1,4 +1,5 @@
 import { openBattle } from '#events/battle.js'
+import { isBotSeat } from '#factions/bots/botFactions.js'
 import type { Tiebreaker } from '#factions/bots/priority.js'
 import { inTargetOrder } from '#factions/bots/priority.js'
 import type { Ctx } from '#game/ctx.js'
@@ -25,14 +26,22 @@ export type BotPlacement = {
   count: number
 }
 
-/** Rule: Rootbotics 2.6 — every other player is an enemy of a bot. */
+/**
+ * Rule: Rootbotics 2.6 — every other player is an enemy of a bot.
+ * Rule: Rootbotics 3.5.1 — in a cooperative game the bots are one team: only humans are.
+ */
+export function isEnemyOfBot(state: GameState, botSeat: Seat, other: Seat): boolean {
+  if (other === botSeat) return false
+  return state.cooperative !== true || !isBotSeat(state, other)
+}
+
 export function enemyPieceCount(
   state: GameState,
   clearing: ClearingId,
   seat: Seat,
 ): number {
   return piecesIn(state, clearing).filter(
-    (piece: Piece): boolean => piece.owner !== seat,
+    (piece: Piece): boolean => isEnemyOfBot(state, seat, piece.owner),
   ).length
 }
 
@@ -77,8 +86,10 @@ export function defendersInOrder(
 ): Seat[] {
   const candidates: Seat[] = state.players
     .map((player): Seat => player.seat)
-    .filter((defender: Seat): boolean =>
-      canBattle(state, battle.seat, battle.clearing, defender),
+    .filter(
+      (defender: Seat): boolean =>
+        isEnemyOfBot(state, battle.seat, defender) &&
+        canBattle(state, battle.seat, battle.clearing, defender),
     )
   return inTargetOrder(candidates, tiebreakers)
 }

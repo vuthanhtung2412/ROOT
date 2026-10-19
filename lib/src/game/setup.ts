@@ -37,6 +37,7 @@ export type InitialStateOptions = {
   seed: number
   factions: GameState['factions']
   botSettings?: BotSettingsByFaction
+  cooperative?: boolean
 }
 
 export function createInitialState(
@@ -53,6 +54,7 @@ export function createInitialState(
     step: 'wood',
     factions: options.factions,
     ...(options.botSettings === undefined ? {} : { botSettings: options.botSettings }),
+    ...(options.cooperative === true ? { cooperative: true } : {}),
     players: [],
     clearings: Array.from(
       { length: CLEARING_COUNT },
@@ -86,10 +88,12 @@ export function runSharedSetup(state: GameState, rng: Rng): void {
   const hasBots: boolean = humans.length < state.players.length
   if (
     state.players.length === TWO_PLAYERS ||
-    (hasBots && humans.length <= MAXIMUM_HUMANS_WITHOUT_DOMINANCE)
+    (hasBots && humans.length <= MAXIMUM_HUMANS_WITHOUT_DOMINANCE) ||
+    state.cooperative === true
   ) {
     // Rule: Setup 3 — 2p removes all dominance before shuffle.
     // Rule: Rootbotics 3.4 — with bots, one or two humans remove them too.
+    // Rule: Rootbotics 3.5.1 — the cooperative game plays without them.
     deckCards = deckCards.filter(
       (card: Card): boolean => defOf(card).type !== 'dominance',
     )

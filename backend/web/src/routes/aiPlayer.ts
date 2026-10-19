@@ -128,6 +128,10 @@ aiPlayerRoutes.openapi(addAiPlayerRoute, async (context) => {
   const game = requireGame()
   requireLobby(game)
   requireHostInOnlineGame(game, context.req.header(PLAYER_ID_HEADER))
+  if (game.state.cooperative === true) {
+    // Rule: Rootbotics 3.5.1 — co-op is humans against the bots: no LLM seat.
+    throw new HttpError(400, 'COOPERATIVE_GAME', 'co-op games have no AI players')
+  }
   const body = context.req.valid('json') ?? {}
   const model = requireOfferedModel(body.model)
   if (body.faction !== undefined && isBotFaction(body.faction)) {

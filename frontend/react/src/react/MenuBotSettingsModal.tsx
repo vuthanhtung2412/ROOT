@@ -46,6 +46,8 @@ const CARD_TEXT_CLASS_NAME = 'font-body text-[13px] leading-snug text-ink-soft m
 const CARD_CHECK_CLASS_NAME =
   'root-paper root-medallion absolute -top-3 -right-3 flex size-8 items-center justify-center text-base text-ink-deep [--root-paper-color:var(--color-confirm)]'
 const FOOTER_CLASS_NAME = 'flex flex-row justify-center pt-1'
+/** Groups the cards so a guest's view disables them all; no box of its own. */
+const CARDS_FIELDSET_CLASS_NAME = 'contents'
 
 function cardClassName(isPicked: boolean): string {
   return `${CARD_CLASS_NAME} ${isPicked ? CARD_PICKED_CLASS_NAME : CARD_UNPICKED_CLASS_NAME}`
@@ -87,6 +89,8 @@ export type MenuBotSettingsModalProps = {
   onDifficultyChange: (difficulty: BotDifficulty) => void
   onTraitToggle: (trait: BotTrait) => void
   onClose: () => void
+  /** Online guests: the host's choice, shown but not changed. */
+  isReadOnly?: boolean
 }
 
 /** Rootbotics 3.3 — one bot's difficulty card and trait cards, every card text shown. */
@@ -128,12 +132,17 @@ export function MenuBotSettingsModal(props: MenuBotSettingsModalProps): JSX.Elem
           ) : null}
           <div>
             <h3 className={TITLE_CLASS_NAME}>{name}</h3>
-            <p className={SUBTITLE_CLASS_NAME}>Pick a difficulty and any trait cards</p>
+            <p className={SUBTITLE_CLASS_NAME}>
+              {props.isReadOnly === true
+                ? 'Set by the host'
+                : 'Pick a difficulty and any trait cards'}
+            </p>
           </div>
         </header>
         <button type="button" className={CLOSE_CLASS_NAME} aria-label="Close" onClick={onClose}>
           <LuX aria-hidden="true" />
         </button>
+        <fieldset className={CARDS_FIELDSET_CLASS_NAME} disabled={props.isReadOnly === true}>
         <section className={SECTION_CLASS_NAME} aria-label="Difficulty">
           <h4 className={SECTION_TITLE_CLASS_NAME}>Difficulty</h4>
           <div className={DIFFICULTY_GRID_CLASS_NAME}>
@@ -170,6 +179,7 @@ export function MenuBotSettingsModal(props: MenuBotSettingsModalProps): JSX.Elem
             ))}
           </div>
         </section>
+        </fieldset>
         <div className={FOOTER_CLASS_NAME}>
           <button
             type="button"

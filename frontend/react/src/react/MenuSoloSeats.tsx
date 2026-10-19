@@ -1,32 +1,42 @@
 import type { JSX } from 'react'
-import { LuPlus, LuSettings2, LuX } from 'react-icons/lu'
+import { LuPlus, LuSettings2 } from 'react-icons/lu'
 import type { BotFactionId } from '@root/lib/bot-factions'
 import { BOT_DIFFICULTY_CARDS, type BotSettings } from '@root/lib/bot-settings'
 import { factionPortraitPath } from '#assets/factionPortraits.ts'
 import { factionDisplayName, type MenuFactionId } from '#game/menuPartySetup.ts'
 import { factionTintCss } from '#react/MenuLobbySeats.tsx'
+import { SeatNumberMedallion } from '#react/SeatNumberMedallion.tsx'
 
 /** Portrait tile like a lobby seat; the faction tint is the paper colour. */
 const PLAYER_TILE_CLASS_NAME =
   'root-paper relative box-border flex size-28 -rotate-2 items-center justify-center p-1.5 [--root-paper-color:currentColor] md:size-44 md:p-2'
-/** Bots stack in a column: smaller tiles. */
 const BOT_TILE_CLASS_NAME =
-  'root-paper relative box-border flex size-28 items-center justify-center p-1.5 [--root-paper-color:currentColor]'
+  'root-paper relative box-border flex items-center justify-center p-1.5 [--root-paper-color:currentColor]'
 const ADD_BOT_TILE_CLASS_NAME =
-  'root-paper relative box-border flex size-28 items-center justify-center p-1.5 [--root-paper-color:var(--color-cream-deep)]'
+  'root-paper relative box-border flex items-center justify-center p-1.5 [--root-paper-color:var(--color-cream-deep)]'
+/** Solo run: bots stack in a column, smaller tiles. Co-op: as big as a lobby seat. */
+export type BotTileSize = 'compact' | 'lobbySeat'
+const BOT_TILE_SIZE_CLASS_NAMES: Readonly<Record<BotTileSize, string>> = {
+  compact: 'size-28',
+  lobbySeat: 'size-32 md:size-50 md:p-2',
+}
+const DEFAULT_BOT_TILE_SIZE: BotTileSize = 'compact'
 const BOT_TILT_CLASS_NAMES: readonly string[] = ['rotate-1', '-rotate-1', 'rotate-2']
 /** The seat the faction track is acting for. */
 const TILE_SELECTED_CLASS_NAME = 'scale-105 shadow-gold-ring-wide'
 const TILE_BUTTON_CLASS_NAME =
   'm-0 box-border flex size-full cursor-root-pointer flex-col items-center justify-center gap-1 border-0 bg-transparent p-0 font-display text-lg text-ink disabled:cursor-root-not-allowed'
 const PORTRAIT_CLASS_NAME = 'block size-full object-cover select-none'
-/** Corner medallions: settings top right, remove top left. */
+/** Top right medallion: settings. Top left: the seat number (✕ to remove a bot). */
 const MEDALLION_CLASS_NAME =
   'root-paper root-medallion root-paper-press absolute -top-4 m-0 flex size-10 items-center justify-center p-0 text-xl md:size-11'
 const SETTINGS_MEDALLION_CLASS_NAME = `menu-solo-bot-settings -right-4 text-ink ${MEDALLION_CLASS_NAME}`
 const SETTINGS_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-parchment-deep)]'
 const SETTINGS_OPEN_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-gold)]'
-const REMOVE_MEDALLION_CLASS_NAME = `menu-solo-bot-remove -left-4 text-paper-bright [--root-paper-color:var(--color-rust)] ${MEDALLION_CLASS_NAME}`
+/** Bare hook class name of the bot remove action (QA scripts select on it). */
+const REMOVE_HOOK_CLASS_NAME = 'menu-solo-bot-remove'
+/** The player sits first; bots follow in table order. */
+const PLAYER_SEAT_NUMBER = 1
 /** Name strip tucked under the tile. */
 const LABEL_CLASS_NAME =
   'root-paper root-paper-fine relative z-1 -mt-2 box-border min-w-28 px-2 py-1 text-center md:min-w-40 md:px-3'
@@ -95,6 +105,7 @@ export function SoloPlayerTile(props: {
         >
           <Portrait faction={props.faction} />
         </button>
+        <SeatNumberMedallion seatNumber={PLAYER_SEAT_NUMBER} isLocal={true} onRemove={null} />
       </div>
       <SeatLabel title={name} note="you" paperClassName={PLAYER_LABEL_PAPER_CLASS_NAME} />
     </div>
@@ -104,6 +115,8 @@ export function SoloPlayerTile(props: {
 export type SoloBotTileProps = {
   faction: BotFactionId
   botIndex: number
+  /** Seat number on the medallion; solo run: right after the player. */
+  seatNumber?: number
   settings: BotSettings
   isSelected: boolean
   disabled: boolean
@@ -112,6 +125,7 @@ export type SoloBotTileProps = {
   onRemove: (() => void) | null
   isSettingsOpen: boolean
   onToggleSettings: () => void
+  tileSize?: BotTileSize
 }
 
 /** A seated bot: ⚙ opens its difficulty and traits modal, × takes it off the table. */
@@ -120,7 +134,7 @@ export function SoloBotTile(props: SoloBotTileProps): JSX.Element {
   return (
     <li className={`menu-solo-bot ${SEAT_COLUMN_CLASS_NAME}`} data-faction={props.faction}>
       <div
-        className={`${BOT_TILE_CLASS_NAME} ${botTiltClassName(props.botIndex)} ${selectedClassName(props.isSelected)}`}
+        className={`${BOT_TILE_CLASS_NAME} ${BOT_TILE_SIZE_CLASS_NAMES[props.tileSize ?? DEFAULT_BOT_TILE_SIZE]} ${botTiltClassName(props.botIndex)} ${selectedClassName(props.isSelected)}`}
         style={{ color: factionTintCss(props.faction) }}
       >
         <button
@@ -144,18 +158,14 @@ export function SoloBotTile(props: SoloBotTileProps): JSX.Element {
         >
           <LuSettings2 aria-hidden="true" />
         </button>
-        {props.onRemove !== null ? (
-          <button
-            type="button"
-            className={REMOVE_MEDALLION_CLASS_NAME}
-            aria-label={`Remove ${name}`}
-            title="Remove this bot"
-            disabled={props.disabled}
-            onClick={props.onRemove}
-          >
-            <LuX aria-hidden="true" />
-          </button>
-        ) : null}
+        <SeatNumberMedallion
+          seatNumber={props.seatNumber ?? PLAYER_SEAT_NUMBER + props.botIndex + 1}
+          isLocal={false}
+          onRemove={props.onRemove}
+          removeLabel={`Remove ${name}`}
+          hookClassName={REMOVE_HOOK_CLASS_NAME}
+          disabled={props.disabled}
+        />
       </div>
       <SeatLabel
         title={name}
@@ -171,10 +181,13 @@ export function SoloAddBotTile(props: {
   isSelected: boolean
   disabled: boolean
   onSelect: () => void
+  tileSize?: BotTileSize
 }): JSX.Element {
   return (
     <li className={SEAT_COLUMN_CLASS_NAME}>
-      <div className={`${ADD_BOT_TILE_CLASS_NAME} ${selectedClassName(props.isSelected)}`}>
+      <div
+        className={`${ADD_BOT_TILE_CLASS_NAME} ${BOT_TILE_SIZE_CLASS_NAMES[props.tileSize ?? DEFAULT_BOT_TILE_SIZE]} ${selectedClassName(props.isSelected)}`}
+      >
         <button
           type="button"
           className={`menu-solo-add-bot ${TILE_BUTTON_CLASS_NAME}`}

@@ -6,6 +6,7 @@ import {
   getMenuCallbacks,
   patchHud,
   subscribeHud,
+  type LobbyTableChange,
   type MenuHudState,
   type MenuLobbyHudState,
 } from '#game/hudStore.ts'
@@ -104,6 +105,9 @@ export function MenuOverlay(): JSX.Element | null {
             }}
             onExpelPlayer={(seat: number): void => {
               callbacks.onExpelPlayer(seat)
+            }}
+            onChangeLobbyTable={(change: LobbyTableChange): void => {
+              callbacks.onChangeLobbyTable(change)
             }}
             onStart={(): void => {
               callbacks.onStartOnline()

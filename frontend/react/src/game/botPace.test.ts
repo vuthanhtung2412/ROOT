@@ -2,8 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   botStepDelaySeconds,
   DEFAULT_BOT_STEP_DELAY_SECONDS,
+  isBotPaceLocked,
+  isBotPaceShown,
   nextBotStepDelaySeconds,
   setBotStepDelaySeconds,
+  setOnlineBotPace,
   subscribeBotPace,
   waitBotStepDelay,
 } from '#game/botPace.ts'
@@ -58,5 +61,49 @@ describe('bot pace', () => {
     await vi.advanceTimersByTimeAsync(FAST_PACE_MILLISECONDS)
 
     expect(waited).toBe(true)
+  })
+})
+
+describe('online co-op bot pace', () => {
+  afterEach(() => {
+    setOnlineBotPace(null)
+    setBotStepDelaySeconds(DEFAULT_BOT_STEP_DELAY_SECONDS)
+  })
+
+  it('follows the pace the server pushed and shows the button', () => {
+    setOnlineBotPace({
+      delaySeconds: MEDIUM_PACE_SECONDS,
+      canChange: true,
+      requestDelaySeconds: vi.fn(),
+    })
+
+    expect(botStepDelaySeconds()).toBe(MEDIUM_PACE_SECONDS)
+    expect(isBotPaceShown(false)).toBe(true)
+    expect(isBotPaceLocked()).toBe(false)
+  })
+
+  it('the host asks the server instead of changing the pace here', () => {
+    const requestDelaySeconds = vi.fn()
+    setOnlineBotPace({ delaySeconds: SLOW_PACE_SECONDS, canChange: true, requestDelaySeconds })
+
+    setBotStepDelaySeconds(FAST_PACE_SECONDS)
+
+    expect(requestDelaySeconds).toHaveBeenCalledWith(FAST_PACE_SECONDS)
+    expect(botStepDelaySeconds()).toBe(SLOW_PACE_SECONDS)
+  })
+
+  it('a guest sees the pace locked and cannot ask for another', () => {
+    const requestDelaySeconds = vi.fn()
+    setOnlineBotPace({ delaySeconds: SLOW_PACE_SECONDS, canChange: false, requestDelaySeconds })
+
+    setBotStepDelaySeconds(FAST_PACE_SECONDS)
+
+    expect(isBotPaceLocked()).toBe(true)
+    expect(requestDelaySeconds).not.toHaveBeenCalled()
+  })
+
+  it('no online game: the button shows only in a solo game', () => {
+    expect(isBotPaceShown(false)).toBe(false)
+    expect(isBotPaceShown(true)).toBe(true)
   })
 })

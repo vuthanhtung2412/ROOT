@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Co-op edge cases</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.panel{background:#efe3c4;color:#2b2118;border-radius:10px;padding:20px 24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.panel h3{margin:0;font:600 21px Fraunces,serif}
+.panel p{margin:0;font-size:15px;line-height:1.4;color:#3d3022}
+.kicker{font:700 12px 'Alegreya Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#7a5a12}
+.seg{display:flex;padding:4px;gap:4px;background:#2b2118;border-radius:999px;align-self:flex-start}
+.seg button{all:unset;min-height:40px;padding:0 18px;border-radius:999px;font:600 15px Fraunces,serif;color:#efe3c4;display:flex;align-items:center;gap:8px}
+.seg button[aria-pressed="true"]{background:#c99a2e;color:#2b2118}
+.fac{width:58px;height:58px;border-radius:6px;display:flex;align-items:center;justify-content:center;font:800 16px Fraunces,serif;color:rgba(43,33,24,.6);position:relative}
+.toast{display:flex;gap:10px;align-items:center;background:#2b2118;color:#efe3c4;border-radius:8px;padding:10px 14px;font-size:15px}
+.btn{all:unset;cursor:pointer;min-height:44px;padding:0 18px;border-radius:6px;font:600 16px Fraunces,serif;display:inline-flex;align-items:center}
+</style>
+<style>.seat-medal{all:unset;box-sizing:border-box;cursor:pointer;width:40px;height:40px;border-radius:50%;border:2px solid #2b2118;background:#c9d4dd;color:#2b2118;display:flex;align-items:center;justify-content:center;font:600 17px "JetBrains Mono",monospace}.seat-medal .cross{display:none}.seat-medal:hover,.seat-medal:focus-visible{background:#a5482c}.seat-medal:hover .number,.seat-medal:focus-visible .number{display:none}.seat-medal:hover .cross,.seat-medal:focus-visible .cross{display:flex}</style>
+</helmet>
+<div style="width:1280px;height:800px;box-sizing:border-box;background:#1b261b;font-family:'Alegreya Sans',sans-serif;padding:36px 48px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:28px">
+
+  <section class="panel">
+    <span class="kicker">A · Switch with a full table</span>
+    <h3>4 humans seated, host taps Co-op</h3>
+    <div class="seg"><button aria-pressed="false">Free-for-all</button><button aria-pressed="true">Co-op vs bots</button></div>
+    <p>No dialog, nobody kicked. Mode flips; the Clockwork side shows an empty slot: <i>“Table full — free a seat to add a bot.”</i> Checklist turns amber on <b>At least 1 bot</b>; Start stays disabled until the host expels a player (existing ✕ medallion).</p>
+    <p style="font-size:14px;color:#6b5a43">AI (LLM) seats leave the table on switch — co-op has none. Seats stay 4: humans + bots ≤ 4, bots ≤ 2.</p>
+  </section>
+
+  <section class="panel">
+    <span class="kicker">B · Faction clash with a bot</span>
+    <h3>Bots own their pieces</h3>
+    <div style="display:flex;gap:10px;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="fac" style="background:#e9a866;opacity:.35">CAT
+          <svg style="position:absolute;inset:0;margin:auto" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2b2118" stroke-width="2.5" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+        </div>
+        <span style="font-size:12px">Marquise</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="fac" style="background:#8fb0d9;opacity:.35">EYR
+          <svg style="position:absolute;inset:0;margin:auto" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2b2118" stroke-width="2.5" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+        </div>
+        <span style="font-size:12px">Eyrie</span>
+      </div>
+      <div class="fac" style="background:#9cc596">WA</div>
+      <div class="fac" style="background:#bdbdbd">VB</div>
+      <div class="fac" style="background:#c7a3d6">LC</div>
+      <div class="fac" style="background:#7fc3c0">RF</div>
+    </div>
+    <p>With Mechanical Marquise + Electric Eyrie seated, the human dock locks Marquise and Eyrie with the caption <i>“Played by the Mechanical Marquise.”</i> Reverse too: if a human already holds Marquise, the bot tile is dimmed and can't be added.</p>
+  </section>
+
+  <section class="panel">
+    <span class="kicker">C · Guest view</span>
+    <h3>Mode and bot options are host-only</h3>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="seg" style="opacity:.7" aria-disabled="true"><button aria-pressed="false">Free-for-all</button><button aria-pressed="true">Co-op vs bots</button></div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2118" stroke-width="2" role="img" aria-label="Locked: host only"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+    </div>
+    <div class="toast">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffd970" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v1"></path></svg>
+      Host switched to <b>Co-op vs bots</b>
+    </div>
+    <p>Guests see bot difficulty and traits as read-only chips; bot tiles open the settings modal in view mode.</p>
+  </section>
+
+  <section class="panel">
+    <span class="kicker">D · Switch back to Free-for-all</span>
+    <h3>Bots are put away, not forgotten</h3>
+    <div class="toast">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9d4dd" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"></path></svg>
+      Bots set aside
+      <button class="btn" style="background:#c99a2e;color:#2b2118;min-height:36px;margin-left:auto">Undo</button>
+    </div>
+    <p>Free-for-all has no clockwork seats, so bot seats empty out. Their difficulty and traits stay remembered in the lobby for a quick toggle back. Locked factions unlock.</p>
+  </section>
+</div>
+</x-dc>
+</body>
+</html>

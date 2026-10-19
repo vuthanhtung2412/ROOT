@@ -42,10 +42,12 @@ export function isFactionIdArray(value: unknown): value is FactionId[] {
 /** Rootbotics 3.3.2 — each bot gets only its own trait cards. */
 export function hasOnlyOwnTraits(settings: BotSettingsByFaction): boolean {
   return BOT_FACTION_IDS.every((faction: BotFactionId): boolean =>
-    (settings[faction]?.traits ?? []).every((trait: BotTrait): boolean =>
-      isBotTraitOf(faction, trait),
-    ),
+    hasOnlyTraitsOf(faction, settings[faction]?.traits ?? []),
   )
+}
+
+export function hasOnlyTraitsOf(faction: BotFactionId, traits: readonly BotTrait[]): boolean {
+  return traits.every((trait: BotTrait): boolean => isBotTraitOf(faction, trait))
 }
 
 /** Zod ActionSchema is loose; narrow to engine Action after request validation. */

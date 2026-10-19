@@ -1,6 +1,6 @@
 import type { Card } from '#cards/types.js'
 import { taskDone, type BotTaskResult } from '#factions/bots/BotFaction.js'
-import { placeBotWarriors } from '#factions/bots/botQueries.js'
+import { isEnemyOfBot, placeBotWarriors } from '#factions/bots/botQueries.js'
 import { botDifficultyOf, isChallengingOrHarder } from '#factions/bots/botSettings.js'
 import { byHighestPriority, inTargetOrder } from '#factions/bots/priority.js'
 import type { Ctx } from '#game/ctx.js'
@@ -50,7 +50,7 @@ export function relentless(state: GameState, seat: Seat, ctx: Ctx): BotTaskResul
     const pieceIds = piecesIn(state, clearing)
       .filter(
         (piece: Piece): boolean =>
-          piece.owner !== seat &&
+          isEnemyOfBot(state, seat, piece.owner) &&
           (piece.kind === 'building' || piece.kind === 'token') &&
           isDefenseless(state, clearing, piece),
       )

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lobby free-for-all</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.paper{background:#efe3c4;color:#2b2118;border-radius:6px;box-shadow:0 2px 0 #b9a77b,0 8px 24px rgba(0,0,0,.35)}
+.seg{display:flex;padding:4px;gap:4px;background:#2b2118;border-radius:999px}
+.seg button{all:unset;cursor:pointer;min-height:44px;padding:0 22px;border-radius:999px;font:600 17px Fraunces,serif;color:#efe3c4;display:flex;align-items:center;gap:10px}
+.seg button[aria-pressed="true"]{background:#c99a2e;color:#2b2118}
+.tile{width:170px;height:170px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:800 54px Fraunces,serif;color:rgba(43,33,24,.55);position:relative;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.medal{position:absolute;top:-14px;left:-14px;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 18px 'JetBrains Mono',monospace;background:#d8c79c;color:#2b2118;border:2px solid #2b2118}
+.label{margin-top:-8px;position:relative;padding:6px 16px;min-width:150px;text-align:center;border-radius:4px;background:#efe3c4}
+.label b{display:block;font:600 19px Fraunces,serif}
+.label i{display:block;font:italic 400 14px 'Alegreya Sans',sans-serif;color:#5b4a36}
+.btn{all:unset;cursor:pointer;min-height:48px;padding:0 28px;border-radius:6px;font:600 19px Fraunces,serif;display:flex;align-items:center}
+.callout{position:absolute;font:500 14px 'Alegreya Sans',sans-serif;color:#2b2118;background:#ffd970;border-radius:6px;padding:8px 12px;max-width:230px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+</style>
+<style>.seat-medal{all:unset;box-sizing:border-box;cursor:pointer;width:40px;height:40px;border-radius:50%;border:2px solid #2b2118;background:#c9d4dd;color:#2b2118;display:flex;align-items:center;justify-content:center;font:600 17px "JetBrains Mono",monospace}.seat-medal .cross{display:none}.seat-medal:hover,.seat-medal:focus-visible{background:#a5482c}.seat-medal:hover .number,.seat-medal:focus-visible .number{display:none}.seat-medal:hover .cross,.seat-medal:focus-visible .cross{display:flex}</style>
+</helmet>
+<div style="width:1280px;height:800px;box-sizing:border-box;background:radial-gradient(ellipse at 50% 30%,#3c5236,#1b261b 70%);font-family:'Alegreya Sans',sans-serif;position:relative;display:flex;flex-direction:column;align-items:center;padding:44px 64px;gap:26px">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+    <h2 class="paper" style="margin:0;padding:8px 26px;font:600 26px Fraunces,serif">Online lobby · 3 of 4 seats</h2>
+    <div class="seg" role="group" aria-label="Game mode">
+      <button aria-pressed="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"></path></svg>
+        Free-for-all
+      </button>
+      <button aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        Co-op vs bots
+      </button>
+    </div>
+  </div>
+
+  <ol style="margin:12px 0 0;padding:0;list-style:none;display:flex;gap:44px;align-items:flex-start">
+    <li style="display:flex;flex-direction:column;align-items:center">
+      <div class="tile" style="background:#e9a866;transform:rotate(-2deg);box-shadow:0 0 0 4px #c99a2e">CAT<span class="medal" style="background:#c99a2e">1</span></div>
+      <div class="label" style="background:#f4dc95"><b>Marquise de Cat</b><i>you · host</i></div>
+    </li>
+    <li style="display:flex;flex-direction:column;align-items:center">
+      <div class="tile" style="background:#8fb0d9;transform:rotate(1deg)">EYR<span class="medal">2</span></div>
+      <div class="label"><b>Eyrie Dynasties</b><i>Ana · joined</i></div>
+    </li>
+    <li style="display:flex;flex-direction:column;align-items:center">
+      <div class="tile" style="background:#9cc596;transform:rotate(-1deg)">WA<span class="medal">3</span></div>
+      <div class="label"><b>Woodland Alliance</b><i>AI · Sonnet</i></div>
+    </li>
+    <li style="display:flex;flex-direction:column;align-items:center">
+      <div class="tile" style="background:#e4d6b0;border:3px dashed #8c7a57;transform:rotate(2deg);font-size:64px">+<span class="medal">4</span></div>
+      <div class="label" style="background:#d8c79c"><b>Open seat</b><i>waiting…</i></div>
+    </li>
+  </ol>
+
+  <div class="paper" style="padding:14px 22px;display:flex;gap:14px;align-items:center">
+    <span style="font:600 16px Fraunces,serif">Seat 1 · your faction</span>
+    <span style="width:54px;height:54px;border-radius:6px;background:#e9a866;box-shadow:0 0 0 3px #c99a2e"></span>
+    <span style="width:54px;height:54px;border-radius:6px;background:#8fb0d9;opacity:.35"></span>
+    <span style="width:54px;height:54px;border-radius:6px;background:#9cc596;opacity:.35"></span>
+    <span style="width:54px;height:54px;border-radius:6px;background:#bdbdbd"></span>
+    <span style="width:54px;height:54px;border-radius:6px;background:#c7a3d6"></span>
+    <span style="width:54px;height:54px;border-radius:6px;background:#7fc3c0"></span>
+  </div>
+
+  <div style="display:flex;gap:18px;margin-top:auto">
+    <button class="btn" style="background:#a5482c;color:#fbf3df">Close lobby</button>
+    <button class="btn" style="background:#c99a2e;color:#2b2118">Start game</button>
+  </div>
+
+  <div class="callout" style="top:96px;left:870px">Host-only switch, under the title. Guests see the same pill, locked (board 4).</div>
+  <div class="callout" style="top:250px;left:40px;max-width:180px">Free-for-all = today's lobby, unchanged. AI (LLM) seats work as now.</div>
+</div>
+</x-dc>
+</body>
+</html>

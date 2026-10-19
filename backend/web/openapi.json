@@ -232,13 +232,17 @@
             "items": {
               "$ref": "#/components/schemas/AiPlayer"
             }
+          },
+          "botStepDelaySeconds": {
+            "$ref": "#/components/schemas/BotStepDelaySeconds"
           }
         },
         "required": [
           "state",
           "historyLength",
           "mode",
-          "aiPlayers"
+          "aiPlayers",
+          "botStepDelaySeconds"
         ]
       },
       "AiPlayer": {
@@ -270,6 +274,29 @@
           "thinking",
           "stuck"
         ]
+      },
+      "BotStepDelaySeconds": {
+        "anyOf": [
+          {
+            "type": "number",
+            "enum": [
+              5
+            ]
+          },
+          {
+            "type": "number",
+            "enum": [
+              2
+            ]
+          },
+          {
+            "type": "number",
+            "enum": [
+              1
+            ]
+          }
+        ],
+        "description": "Online games: seconds the server waits after each bot action."
       },
       "GameSnapshot": {
         "type": "object",
@@ -585,6 +612,75 @@
           "toolCall",
           "toolResult",
           "failure"
+        ]
+      },
+      "SetPlayModeBody": {
+        "type": "object",
+        "properties": {
+          "playMode": {
+            "$ref": "#/components/schemas/PlayMode"
+          }
+        },
+        "required": [
+          "playMode"
+        ]
+      },
+      "PlayMode": {
+        "type": "string",
+        "enum": [
+          "freeForAll",
+          "cooperative"
+        ],
+        "description": "freeForAll: every player for themselves. cooperative: the humans against the bots (Rootbotics 3.5.1); `state.cooperative` is true."
+      },
+      "AddBotBody": {
+        "type": "object",
+        "properties": {
+          "faction": {
+            "$ref": "#/components/schemas/BotFactionId"
+          },
+          "settings": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotSettings"
+              },
+              {
+                "description": "Left out: the settings the lobby remembers for this bot, else default with no trait."
+              }
+            ]
+          }
+        },
+        "required": [
+          "faction"
+        ]
+      },
+      "BotFactionId": {
+        "type": "string",
+        "enum": [
+          "mechanicalMarquise",
+          "electricEyrie"
+        ]
+      },
+      "SetBotSettingsBody": {
+        "type": "object",
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/BotSettings"
+          }
+        },
+        "required": [
+          "settings"
+        ]
+      },
+      "SetBotPaceBody": {
+        "type": "object",
+        "properties": {
+          "botStepDelaySeconds": {
+            "$ref": "#/components/schemas/BotStepDelaySeconds"
+          }
+        },
+        "required": [
+          "botStepDelaySeconds"
         ]
       },
       "PlayerToolResult": {
@@ -1913,7 +2009,7 @@
           "game"
         ],
         "summary": "Expel a player from the open lobby",
-        "description": "Frees the seat of a human or AI player; later seats move down one. Host only in online mode. The host seat (0) cannot be expelled.",
+        "description": "Frees the seat of a human, AI player or bot; later seats move down one. Host only in online mode. The host seat (0) cannot be expelled.",
         "parameters": [
           {
             "schema": {
@@ -1932,6 +2028,240 @@
         "responses": {
           "204": {
             "description": "Player expelled"
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/play-mode": {
+      "put": {
+        "tags": [
+          "game"
+        ],
+        "summary": "Switch the open lobby between free-for-all and co-op vs bots",
+        "description": "Co-op (Rootbotics 3.5.1): AI players leave the table; bots are seated with `POST /game/bots`. Free-for-all: the bots leave the table, their settings stay. Host only in online mode.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPlayModeBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Play mode set"
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/bots": {
+      "post": {
+        "tags": [
+          "game"
+        ],
+        "summary": "Seat a Rootbotics bot in the co-op lobby",
+        "description": "The bot takes the next seat and plays its own turns. Never next to the faction it replaces (Rootbotics 3.2). Host only in online mode.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBotBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Bot seated"
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/bots/{faction}": {
+      "put": {
+        "tags": [
+          "game"
+        ],
+        "summary": "Set the difficulty and traits of a bot (lobby only)",
+        "description": "Rootbotics 3.3. Host only in online mode.",
+        "parameters": [
+          {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/BotFactionId"
+                },
+                {
+                  "description": "Bot whose settings change."
+                }
+              ]
+            },
+            "required": true,
+            "description": "Bot whose settings change.",
+            "name": "faction",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBotSettingsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Settings set"
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/bot-pace": {
+      "put": {
+        "tags": [
+          "game"
+        ],
+        "summary": "Set how long the server waits after each bot action",
+        "description": "Online games play bots one action at a time; this is the pause between two. Any time, lobby or game. Host only in online mode.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBotPaceBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Pace set"
           },
           "400": {
             "description": "Rule or request error",
