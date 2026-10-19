@@ -25,6 +25,7 @@ import {
 } from '#react/MenuLobbySeats.tsx'
 import { SoloAddBotTile, SoloBotTile } from '#react/MenuSoloSeats.tsx'
 import { useFitHeightZoom } from '#react/useFitHeightZoom.ts'
+import { VersusMedallion } from '#react/VersusMedallion.tsx'
 
 /** The lobby creator joins first, so the host always holds seat 0. */
 const HOST_SEAT_INDEX = 0
@@ -41,8 +42,6 @@ const SWITCH_LOCKED_CLASS_NAME = 'opacity-70'
 const TABLE_CLASS_NAME =
   'grid w-full grid-cols-[1fr_auto_1fr] items-start justify-items-center gap-2 py-8 md:gap-12 md:py-16'
 const SIDE_CLASS_NAME = 'flex flex-col items-center gap-3'
-const VERSUS_CLASS_NAME =
-  'root-paper root-medallion flex size-12 self-center items-center justify-center font-display text-2xl text-ink [--root-paper-color:var(--color-gold)] md:size-20 md:text-4xl'
 const SEAT_GRID_CLASS_NAME = 'm-0 grid list-none grid-cols-2 items-start justify-items-center gap-x-8 gap-y-5 p-0'
 const TABLE_FULL_NOTE_CLASS_NAME = 'm-0 max-w-44 text-center font-body text-sm text-ink-soft italic'
 /** The whole menu screen: the co-op lobby shrinks to fit its height. */
@@ -205,9 +204,7 @@ export function MenuCoopLobby(props: {
               {emptySlots({ side: 'human', usedSlotCount: humans.length + (hasOpenSeat ? 1 : 0) })}
             </ol>
           </div>
-          <span className={VERSUS_CLASS_NAME} aria-hidden="true">
-            VS
-          </span>
+          <VersusMedallion />
           <div className={SIDE_CLASS_NAME}>
             <ul className={SEAT_GRID_CLASS_NAME}>
               {bots.map(

@@ -31,6 +31,7 @@ import {
 } from '#react/MenuParts.tsx'
 import { SoloAddBotTile, SoloBotTile, SoloPlayerTile } from '#react/MenuSoloSeats.tsx'
 import { useFitHeightZoom } from '#react/useFitHeightZoom.ts'
+import { VersusMedallion } from '#react/VersusMedallion.tsx'
 
 /** Player | VS | Bots side by side at every width: stacking would not fit the height. */
 const TABLE_CLASS_NAME =
@@ -38,8 +39,6 @@ const TABLE_CLASS_NAME =
 const SIDE_CLASS_NAME = 'flex flex-col items-center gap-3'
 const SIDE_HEADING_CLASS_NAME =
   'root-paper root-paper-fine m-0 px-5 py-0.5 font-display text-2xl tracking-display text-ink [--root-paper-color:var(--color-parchment)] md:text-3xl'
-const VERSUS_CLASS_NAME =
-  'root-paper root-medallion flex size-12 items-center justify-center font-display text-2xl text-ink [--root-paper-color:var(--color-gold)] md:size-20 md:text-4xl'
 /** Bots in a 2x2 grid, like the co-op table. */
 const BOT_LIST_CLASS_NAME = 'm-0 grid list-none grid-cols-2 items-start justify-items-center gap-5 p-0'
 /** Six factions, then the two bots: one row from `md`. */
@@ -124,9 +123,7 @@ export function MenuSoloSetup(props: {
               }}
             />
           </div>
-          <span className={VERSUS_CLASS_NAME} aria-hidden="true">
-            VS
-          </span>
+          <VersusMedallion />
           <div className={SIDE_CLASS_NAME}>
             <h3 className={SIDE_HEADING_CLASS_NAME}>Bots</h3>
             <ul className={BOT_LIST_CLASS_NAME}>
