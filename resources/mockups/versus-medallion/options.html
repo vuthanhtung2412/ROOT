@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VS medallion</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2c2118;--parchment:#f0e6d3;--parchment-deep:#e4d4b8;--gold:#c9a04a;--gold-light:#fbe9a8;--forest-deep:#24362e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--forest-deep);color:var(--parchment);font-family:Georgia,'Times New Roman',serif;padding:28px 16px 64px}
+main{max-width:1180px;margin:0 auto}
+h1{font:400 34px 'IM Fell English',serif;margin:0 0 6px}
+h2{font:400 28px 'IM Fell English',serif;margin:40px 0 4px;color:var(--gold-light)}
+.lead{margin:0 0 22px;color:#d9c9a3;max-width:860px;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px}
+figure{margin:0;padding:12px 12px 16px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(240,230,211,.15)}
+figure img{display:block;width:100%;height:auto;border-radius:6px}
+figcaption{margin-top:10px;color:#d9c9a3;line-height:1.4}
+figcaption b{display:block;font:400 22px 'IM Fell English',serif;color:var(--gold-light);margin-bottom:2px}
+.tag{font:700 11px Georgia,serif;letter-spacing:.08em;text-transform:uppercase;background:var(--parchment-deep);color:var(--ink);padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle}
+.tag.pick{background:var(--gold)}
+code{font-size:.9em}
+</style>
+</head>
+<body>
+<main>
+<h1>VS medallion</h1>
+<p class="lead">The chosen design, photographed in the real solo run lobby with the app's own paper kit (<code>root-paper</code>, <code>root-medallion</code>, <code>root-paper-fine</code>, the <code>@theme</code> colours). The rejected rounds (wooden, epic, cartoon, brawl cloud, Root item art) are in git history.</p>
+
+<h2>Fists in one cloud · Bangers</h2>
+<p class="lead">One merged parchment cloud with a single torn ink outline and the paper grain, a rust "VS!", a Marquise paw fist punching in from the players' side and a steel robot fist from the bots' side.</p>
+<div class="grid">
+  <figure>
+    <img src="K1_merged.jpg" alt="One merged parchment cloud with a rust VS!, an orange paw fist on the left and a steel robot fist on the right">
+    <figcaption><b>K1. Merged cloud <span class="tag pick">chosen</span></b>The full design, about 220px wide.</figcaption>
+  </figure>
+  <figure>
+    <img src="K6_compactFists.jpg" alt="Small merged cloud with small fists for narrow screens">
+    <figcaption><b>K6. Compact <span class="tag pick">shipped size</span></b>The same cloud at about 150–170px, which is what the lobby renders so it fits the phone layout and the co-op row.</figcaption>
+  </figure>
+</div>
+</main>
+</body>
+</html>
