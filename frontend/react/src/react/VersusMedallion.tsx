@@ -11,7 +11,9 @@ const VIEW_BOX_HEIGHT = 110
 const CLOUD_CENTER_X = VIEW_BOX_WIDTH / 2
 const CLOUD_CENTER_Y = 56
 /** Centred on the row even when the sides align to the top. */
-const MEDALLION_CLASS_NAME = 'block h-auto w-24 shrink-0 self-center drop-shadow-stamp md:w-42'
+const MEDALLION_CLASS_NAME = 'block h-auto shrink-0 self-center drop-shadow-stamp'
+/** Default width; tables with more room pass a bigger one. */
+const MEDALLION_DEFAULT_SIZE_CLASS_NAME = 'w-24 md:w-42'
 
 type Puff = { centerX: number; centerY: number; radius: number }
 
@@ -142,10 +144,11 @@ function VersusLetters(props: { offsetY: number; fillClassName: string }): JSX.E
   )
 }
 
-export function VersusMedallion(): JSX.Element {
+export function VersusMedallion(props: { sizeClassName?: string }): JSX.Element {
+  const sizeClassName: string = props.sizeClassName ?? MEDALLION_DEFAULT_SIZE_CLASS_NAME
   return (
     <svg
-      className={MEDALLION_CLASS_NAME}
+      className={`${MEDALLION_CLASS_NAME} ${sizeClassName}`}
       viewBox={`0 0 ${String(VIEW_BOX_WIDTH)} ${String(VIEW_BOX_HEIGHT)}`}
       aria-hidden="true"
     >

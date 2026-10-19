@@ -29,6 +29,8 @@ import { VersusMedallion } from '#react/VersusMedallion.tsx'
 
 /** The lobby creator joins first, so the host always holds seat 0. */
 const HOST_SEAT_INDEX = 0
+/** Co-op VS cloud is a step bigger than the solo one. */
+const COOP_MEDALLION_SIZE_CLASS_NAME = 'w-28 md:w-52'
 const NO_SEAT_INDEX = -1
 const PLAY_MODES: readonly PlayMode[] = ['freeForAll', 'cooperative']
 /** Pill under the lobby title: one paper tab per mode, the active one gold. */
@@ -204,7 +206,7 @@ export function MenuCoopLobby(props: {
               {emptySlots({ side: 'human', usedSlotCount: humans.length + (hasOpenSeat ? 1 : 0) })}
             </ol>
           </div>
-          <VersusMedallion />
+          <VersusMedallion sizeClassName={COOP_MEDALLION_SIZE_CLASS_NAME} />
           <div className={SIDE_CLASS_NAME}>
             <ul className={SEAT_GRID_CLASS_NAME}>
               {bots.map(
