@@ -103,7 +103,7 @@ describe('preloadCoreGameAssets', () => {
     )
     expect(loader.image).toHaveBeenCalledWith(
       'menu-wallpaper',
-      'assets/branding/therootdatabase-hero.webp',
+      'assets/branding/ulrick-wery-riverside.webp',
     )
     for (const asset of cardImageAssets()) {
       expect(loader.image).not.toHaveBeenCalledWith(asset.key, asset.path)

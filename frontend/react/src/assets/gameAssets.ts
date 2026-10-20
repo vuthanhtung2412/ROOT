@@ -262,7 +262,7 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   },
   {
     key: GAME_ASSET_KEYS.menuWallpaper,
-    path: 'assets/branding/therootdatabase-hero.webp',
+    path: 'assets/branding/ulrick-wery-riverside.webp',
   },
   {
     key: GAME_ASSET_KEYS.factionMarquise,

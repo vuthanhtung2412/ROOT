@@ -26,7 +26,18 @@ const IS_DEVELOPMENT_BUILD: boolean = import.meta.env.DEV === true
  */
 const MENU_STAGE_CLASS_NAME =
   'relative z-1 box-border flex max-h-full w-full flex-col items-center gap-5 overflow-y-auto px-5 py-8'
+/** Start screen: banner top left, play modes bottom left. */
+const HOME_STAGE_CLASS_NAME =
+  'relative z-1 box-border flex size-full flex-col items-start gap-4 overflow-y-auto px-14 pt-10 pb-14 max-sm:px-4 max-sm:pt-7 max-sm:pb-10'
 const MENU_DIM_CLASS_NAME = 'absolute inset-0 bg-ink-deep/50'
+/** Start screen: dark on the left behind the buttons, clear art on the right. */
+const HOME_SHADE_CLASS_NAME =
+  'absolute inset-0 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--color-ink-deep)_82%,transparent)_0%,color-mix(in_srgb,var(--color-ink-deep)_55%,transparent)_28%,color-mix(in_srgb,var(--color-ink-deep)_12%,transparent)_55%,transparent_75%)]'
+/** Riverside art is mirrored so its dark bushes sit behind the left column. */
+const WALLPAPER_CLASS_NAME =
+  'pointer-events-none absolute inset-0 size-full -scale-x-100 object-cover select-none max-sm:object-[35%_center] contrast-104 saturate-92'
+/** Play mode buttons share one width so the column reads as a list; warm cream stands off the parchment panel. */
+const HOME_BUTTON_CLASS_NAME = 'min-w-65 [--root-paper-color:var(--color-parchment-deep)]!'
 /** Status line on a paper strip, like the lobby title. */
 const STATUS_CLASS_NAME =
   'root-paper root-paper-fine m-0 max-w-[70vw] px-5 py-1.5 text-center font-body text-[15px] italic'
@@ -70,7 +81,7 @@ export function MenuOverlay(): JSX.Element | null {
     <div className="menu-overlay fixed inset-0 z-450 flex items-center justify-center overflow-hidden bg-forest-deep">
       {wallpaperPath !== null ? (
         <img
-          className="pointer-events-none absolute inset-0 size-full object-cover select-none contrast-104 saturate-92"
+          className={WALLPAPER_CLASS_NAME}
           src={wallpaperPath}
           alt=""
           draggable={false}
@@ -78,17 +89,17 @@ export function MenuOverlay(): JSX.Element | null {
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,color-mix(in_srgb,var(--color-moss)_55%,transparent),transparent_60%),var(--color-forest-deep)]" />
       )}
-      <div className={MENU_DIM_CLASS_NAME} />
-      <div className={MENU_STAGE_CLASS_NAME}>
+      <div className={isLobbyScreen ? MENU_DIM_CLASS_NAME : HOME_SHADE_CLASS_NAME} />
+      <div className={isLobbyScreen ? MENU_STAGE_CLASS_NAME : HOME_STAGE_CLASS_NAME}>
         {isLobbyScreen ? null : bannerPath !== null ? (
           <img
-            className="block h-auto w-[min(42vw,380px)] select-none drop-shadow-banner"
+            className="mb-auto block h-auto w-[min(80vw,420px)] select-none drop-shadow-banner"
             src={bannerPath}
             alt="ROOT"
             draggable={false}
           />
         ) : (
-          <h1 className="m-0 font-display text-[56px] tracking-heading text-ink">
+          <h1 className="m-0 mb-auto font-display text-[56px] tracking-heading text-ink">
             ROOT
           </h1>
         )}
@@ -131,7 +142,7 @@ export function MenuOverlay(): JSX.Element | null {
             {/* The one start button: a lobby waits → join it; else create one. */}
             <button
               type="button"
-              className={`menu-play-online ${PRIMARY_BUTTON_CLASS_NAME}`}
+              className={`menu-play-online ${PRIMARY_BUTTON_CLASS_NAME} ${HOME_BUTTON_CLASS_NAME}`}
               disabled={menu.playPending}
               onClick={(): void => {
                 callbacks.onPlayOnline()
@@ -141,7 +152,7 @@ export function MenuOverlay(): JSX.Element | null {
             </button>
             <button
               type="button"
-              className={`menu-solo-run ${PRIMARY_BUTTON_CLASS_NAME}`}
+              className={`menu-solo-run ${PRIMARY_BUTTON_CLASS_NAME} ${HOME_BUTTON_CLASS_NAME}`}
               disabled={menu.playPending}
               onClick={(): void => {
                 setIsSoloRunOpen(true)
