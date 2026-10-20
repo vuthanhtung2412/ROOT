@@ -123,13 +123,27 @@
     background-blend-mode: multiply;
     filter: var(--root-paper-filter, url(#root-torn-edge))
       drop-shadow(1px 2px 0 color-mix(in srgb, #1a1408 40%, transparent));
+    mask: var(--root-paper-nick-mask, var(--root-paper-nick-cuts));
+    mask-composite: var(--root-paper-nick-cuts-composite);
+    mask-clip: no-clip;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--root-paper-nick-lining, var(--root-paper-nick-ink));
     pointer-events: none;
   }
 }
 
-/* Smaller tear for small pieces (tiles, buttons, medallions). */
+/* Smaller tear for small pieces (tiles, buttons, medallions); too small for nicks. */
 @utility root-paper-fine {
   --root-paper-filter: url(#root-torn-edge-fine);
+  --root-paper-nick-mask: none;
+  --root-paper-nick-lining: none;
 }
 
 /* Round wooden token holding an icon or a digit. Use with `root-paper`. */
@@ -139,6 +153,8 @@
   --root-paper-texture: var(--root-paper-grain);
   --root-paper-filter: url(#root-torn-edge-fine);
   --root-paper-radius: 9999px;
+  --root-paper-nick-mask: none;
+  --root-paper-nick-lining: none;
 }
 
 /* Press feedback for paper pieces that are buttons. */
@@ -279,6 +295,27 @@
 /* Paper grain shared by panels/buttons (SVG noise). */
 :root {
   --root-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /*
+   * Worn nicks in `root-paper`: three small V cuts (two on top, one at the bottom).
+   * Cut shapes reach 20px past the edge so the torn bumps are cut too.
+   */
+  --root-paper-nick-cuts:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 0H9V20L5.5 27L2 20Z'/%3E%3C/svg%3E")
+      left 30% top -20px / 11px 29px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='32'%3E%3Cpath d='M2 0H11V20L6.5 30L2 20Z'/%3E%3C/svg%3E")
+      left 78% top -20px / 13px 32px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 29H9V9L5.5 2L2 9Z'/%3E%3C/svg%3E")
+      left 60% bottom -20px / 11px 29px no-repeat,
+    linear-gradient(#000 0 0) -20px -20px / calc(100% + 40px) calc(100% + 40px) no-repeat;
+  --root-paper-nick-cuts-composite: exclude, exclude, exclude, add;
+  /* Ink lining each nick, same images and positions as the cuts. */
+  --root-paper-nick-ink:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 19L5.5 27L9 19' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+      left 30% top -20px / 11px 29px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='32'%3E%3Cpath d='M2 19L6.5 30L11 19' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+      left 78% top -20px / 13px 32px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 10L5.5 2L9 10' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+      left 60% bottom -20px / 11px 29px no-repeat;
   /* Narrow (< md) map insets — values feed GameScreen host */
   --root-portrait-map-top-inset: 128px;
   --root-portrait-map-bottom-inset: 200px;
