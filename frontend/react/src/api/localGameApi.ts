@@ -76,6 +76,8 @@ export type LocalGame = {
   connectSocket: (options: ConnectGameSocketOptions) => GameSocketConnection
   /** Put the saved game back in memory (page reload). False when none. */
   restoreSavedGame: () => boolean
+  /** A game is saved: the menu offers to continue it. */
+  hasSavedGame: () => boolean
 }
 
 function defaultStorage(): PlayerIdentityStorage | null {
@@ -369,6 +371,9 @@ export function createLocalGame(
       game.setBotPacing(true)
       startBotPlayback()
       return true
+    },
+    hasSavedGame(): boolean {
+      return (storage?.getItem(SAVED_GAME_STORAGE_KEY) ?? null) !== null
     },
   }
 }

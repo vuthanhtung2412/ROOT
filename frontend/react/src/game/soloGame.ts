@@ -49,9 +49,14 @@ export async function startSoloGame(solo: {
   return started
 }
 
+/** An unfinished solo run is saved: the menu offers "Continue solo run". */
+export function hasSavedSoloGame(): boolean {
+  return soloLocalGame().hasSavedGame()
+}
+
 /**
- * Page load with a solo game saved (reload, or the browser closed and opened
- * again): the game back on the session. A finished game is dropped.
+ * "Continue solo run" (after a reload, or the browser closed and opened
+ * again): the saved game back on the session. A finished game is dropped.
  */
 export async function resumeSoloGame(): Promise<boolean> {
   if (!soloLocalGame().restoreSavedGame()) {

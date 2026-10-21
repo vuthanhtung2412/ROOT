@@ -110,6 +110,20 @@ describe('createLocalGame', () => {
   it('restores nothing when no game was saved', () => {
     expect(createLocalGame(makeMemoryStorage()).restoreSavedGame()).toBe(false)
   })
+
+  it('keeps the saved game for the next visit until the game is ended', async () => {
+    const storage: PlayerIdentityStorage = makeMemoryStorage()
+    const firstVisit: LocalGame = createLocalGame(storage)
+    await startSoloParty(firstVisit)
+    const nextVisit: LocalGame = createLocalGame(storage)
+
+    const savedBeforeEnd: boolean = nextVisit.hasSavedGame()
+    nextVisit.restoreSavedGame()
+    await nextVisit.api.deleteGame()
+
+    expect(savedBeforeEnd).toBe(true)
+    expect(createLocalGame(storage).hasSavedGame()).toBe(false)
+  })
 })
 
 /** Settles the playback: its steps run between macrotasks. */

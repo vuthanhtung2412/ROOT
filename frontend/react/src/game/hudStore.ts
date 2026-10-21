@@ -152,6 +152,8 @@ export type MenuHudState = {
   showQaContinue: boolean
   /** A live online game is on the server: the start button reads "Join game". */
   lobbyOnServer: boolean
+  /** An unfinished solo run is saved: "Continue solo run" shows. */
+  soloRunSaved: boolean
   /** Non-null while this browser waits in an online lobby. */
   lobby: MenuLobbyHudState | null
 }
@@ -162,6 +164,8 @@ export type MenuCallbacks = {
   /** Solo: the player's faction, then the bots, in the browser (no server). */
   onStartSolo: (factions: MenuFactionId[], botSettings: BotSettingsByFaction) => void
   onQaContinue: () => void
+  /** Back into the saved solo run. */
+  onContinueSolo: () => void
   /** The one start button: join the waiting lobby, or create one. */
   onPlayOnline: () => void
   /** Open lobby: take a seat with this faction, or change the pick. */
@@ -317,6 +321,7 @@ const NOOP_MENU_CALLBACKS: MenuCallbacks = {
   onStartParty: () => undefined,
   onStartSolo: () => undefined,
   onQaContinue: () => undefined,
+  onContinueSolo: () => undefined,
   onPlayOnline: () => undefined,
   onPickFaction: () => undefined,
   onAddAiPlayer: () => undefined,

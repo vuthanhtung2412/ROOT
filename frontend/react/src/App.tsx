@@ -50,6 +50,7 @@ import {
 import { ReactGameController } from '#game/ReactGameController.ts'
 import {
   clearSoloGameOpen,
+  hasSavedSoloGame,
   resumeSoloGame,
   soloGameSession,
   startSoloGame,
@@ -64,6 +65,7 @@ import {
   syncMenuLobby,
   syncMenuLobbyOnServer,
   syncMenuPlayPending,
+  syncMenuSoloRunSaved,
   syncMenuStatus,
 } from '#react/MenuOverlay.tsx'
 import { ReactHud } from '#react/ReactHud.tsx'
@@ -161,6 +163,7 @@ export function App(): JSX.Element {
     () => undefined,
   )
   const handleQaContinueRef = useRef<() => void>(() => undefined)
+  const handleContinueSoloRef = useRef<() => void>(() => undefined)
   const handlePlayOnlineRef = useRef<() => void>(() => undefined)
   const handlePickFactionRef = useRef<(faction: string) => void>(
     () => undefined,
@@ -233,7 +236,10 @@ export function App(): JSX.Element {
 
   /** Menu shell with live buttons (leaving a game resets HUD callbacks). */
   const showMenu = useCallback((): void => {
-    showMenuShell(import.meta.env.DEV === true)
+    showMenuShell({
+      showQaContinue: import.meta.env.DEV === true,
+      soloRunSaved: hasSavedSoloGame(),
+    })
     setMenuCallbacks({
       onStartParty: (factions, botSettings) => {
         handleStartPartyRef.current(factions, botSettings)
@@ -243,6 +249,9 @@ export function App(): JSX.Element {
       },
       onQaContinue: () => {
         handleQaContinueRef.current()
+      },
+      onContinueSolo: () => {
+        handleContinueSoloRef.current()
       },
       onPlayOnline: () => {
         handlePlayOnlineRef.current()
@@ -614,18 +623,33 @@ export function App(): JSX.Element {
     }
   }
   resumeHotseatGameRef.current = async (): Promise<void> => {
-    // This tab was in a hotseat game: back into it, not the saved solo run.
-    if (isHotseatGameOpen()) {
-      if (await reloadHotseatSlot(ensureSession())) {
-        enterGame()
+    if (!isHotseatGameOpen()) {
+      return
+    }
+    if (await reloadHotseatSlot(ensureSession())) {
+      enterGame()
+      return
+    }
+    clearHotseatGameOpen()
+  }
+  // A saved solo run waits on the menu until the player picks it.
+  handleContinueSoloRef.current = () => {
+    void (async (): Promise<void> => {
+      if (playPendingRef.current) {
         return
       }
-      clearHotseatGameOpen()
-    }
-    // A solo run left unfinished (reload or browser closed): continue it.
-    if (await resumeSoloGame()) {
+      playPendingRef.current = true
+      syncMenuPlayPending(true)
+      const resumed: boolean = await resumeSoloGame()
+      playPendingRef.current = false
+      syncMenuPlayPending(false)
+      if (!resumed) {
+        syncMenuSoloRunSaved(false)
+        syncMenuStatus('The solo run is over', '#c44')
+        return
+      }
       enterGame(soloGameSession())
-    }
+    })()
   }
 
   useEffect(() => {

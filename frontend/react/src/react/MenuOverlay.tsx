@@ -45,6 +45,7 @@ const STATUS_CLASS_NAME =
 const CREATE_GAME_LABEL = 'Create game'
 const JOIN_GAME_LABEL = 'Join game'
 const SOLO_RUN_LABEL = 'Solo run'
+const CONTINUE_SOLO_RUN_LABEL = 'Continue solo run'
 
 const DEFAULT_MENU: MenuHudState = {
   statusText: '',
@@ -52,6 +53,7 @@ const DEFAULT_MENU: MenuHudState = {
   playPending: false,
   showQaContinue: IS_DEVELOPMENT_BUILD,
   lobbyOnServer: false,
+  soloRunSaved: false,
   lobby: null,
 }
 
@@ -150,6 +152,18 @@ export function MenuOverlay(): JSX.Element | null {
             >
               {menu.lobbyOnServer ? JOIN_GAME_LABEL : CREATE_GAME_LABEL}
             </button>
+            {menu.soloRunSaved ? (
+              <button
+                type="button"
+                className={`menu-continue-solo-run ${PRIMARY_BUTTON_CLASS_NAME} ${HOME_BUTTON_CLASS_NAME}`}
+                disabled={menu.playPending}
+                onClick={(): void => {
+                  callbacks.onContinueSolo()
+                }}
+              >
+                {CONTINUE_SOLO_RUN_LABEL}
+              </button>
+            ) : null}
             <button
               type="button"
               className={`menu-solo-run ${PRIMARY_BUTTON_CLASS_NAME} ${HOME_BUTTON_CLASS_NAME}`}
@@ -188,13 +202,27 @@ export function MenuOverlay(): JSX.Element | null {
   )
 }
 
-export function showMenuShell(showQaContinue: boolean): void {
+export function showMenuShell(menu: Pick<MenuHudState, 'showQaContinue' | 'soloRunSaved'>): void {
   patchHud({
     shell: 'menu',
     bootLoading: null,
     menu: {
       ...DEFAULT_MENU,
-      showQaContinue,
+      ...menu,
+    },
+  })
+}
+
+/** The saved solo run is gone (finished, or it failed to load). */
+export function syncMenuSoloRunSaved(soloRunSaved: boolean): void {
+  const current = getHudSnapshot().menu
+  if (current === null || current.soloRunSaved === soloRunSaved) {
+    return
+  }
+  patchHud({
+    menu: {
+      ...current,
+      soloRunSaved,
     },
   })
 }
