@@ -123,7 +123,11 @@
     background-blend-mode: multiply;
     filter: var(--root-paper-filter, url(#root-torn-edge))
       drop-shadow(1px 2px 0 color-mix(in srgb, #1a1408 40%, transparent));
-    mask: var(--root-paper-nick-mask, var(--root-paper-nick-cuts));
+    mask: var(
+      --root-paper-nick-mask,
+      var(--root-paper-chip-cut, var(--root-paper-chip-cut-top-right)),
+      var(--root-paper-nick-cuts)
+    );
     mask-composite: var(--root-paper-nick-cuts-composite);
     mask-clip: no-clip;
     pointer-events: none;
@@ -134,9 +138,39 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: var(--root-paper-nick-lining, var(--root-paper-nick-ink));
+    background: var(
+      --root-paper-nick-lining,
+      var(--root-paper-chip-ink, var(--root-paper-chip-ink-top-right)),
+      var(--root-paper-nick-ink)
+    );
     pointer-events: none;
   }
+}
+
+/* Torn chip corner on `root-paper` (top-right by default): pick another corner or none. */
+@utility root-paper-chip-top-left {
+  --root-paper-chip-cut: var(--root-paper-chip-cut-top-left);
+  --root-paper-chip-ink: var(--root-paper-chip-ink-top-left);
+}
+
+@utility root-paper-chip-top-right {
+  --root-paper-chip-cut: var(--root-paper-chip-cut-top-right);
+  --root-paper-chip-ink: var(--root-paper-chip-ink-top-right);
+}
+
+@utility root-paper-chip-bottom-right {
+  --root-paper-chip-cut: var(--root-paper-chip-cut-bottom-right);
+  --root-paper-chip-ink: var(--root-paper-chip-ink-bottom-right);
+}
+
+@utility root-paper-chip-bottom-left {
+  --root-paper-chip-cut: var(--root-paper-chip-cut-bottom-left);
+  --root-paper-chip-ink: var(--root-paper-chip-ink-bottom-left);
+}
+
+@utility root-paper-chip-none {
+  --root-paper-chip-cut: var(--root-paper-chip-empty);
+  --root-paper-chip-ink: var(--root-paper-chip-empty);
 }
 
 /* Smaller tear for small pieces (tiles, buttons, medallions); too small for nicks. */
@@ -294,7 +328,7 @@
 
 /* Paper grain shared by panels/buttons (SVG noise). */
 :root {
-  --root-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --root-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.38 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   /*
    * Worn nicks in `root-paper`: three small V cuts (two on top, one at the bottom).
    * Cut shapes reach 20px past the edge so the torn bumps are cut too.
@@ -307,7 +341,31 @@
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 29H9V9L5.5 2L2 9Z'/%3E%3C/svg%3E")
       left 60% bottom -20px / 11px 29px no-repeat,
     linear-gradient(#000 0 0) -20px -20px / calc(100% + 40px) calc(100% + 40px) no-repeat;
-  --root-paper-nick-cuts-composite: exclude, exclude, exclude, add;
+  /* First layer is the corner chip (see `root-paper-chip-*`). */
+  --root-paper-nick-cuts-composite: exclude, exclude, exclude, exclude, add;
+  /*
+   * Torn chip: drawn for the top-right corner (box corner at 19,20 in the image),
+   * mirrored for the others. Reaches 20px past both edges like the nicks.
+   */
+  --root-paper-chip-cut-top-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5H39V0H2Z'/%3E%3C/svg%3E")
+    right -20px top -20px / 39px 37px no-repeat;
+  --root-paper-chip-cut-top-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(-1 0 0 1 39 0)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5H39V0H2Z'/%3E%3C/svg%3E")
+    left -20px top -20px / 39px 37px no-repeat;
+  --root-paper-chip-cut-bottom-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(1 0 0 -1 0 37)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5H39V0H2Z'/%3E%3C/svg%3E")
+    right -20px bottom -20px / 39px 37px no-repeat;
+  --root-paper-chip-cut-bottom-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(-1 0 0 -1 39 37)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5H39V0H2Z'/%3E%3C/svg%3E")
+    left -20px bottom -20px / 39px 37px no-repeat;
+  /* Ink lining the chip, same images and positions as the cuts. */
+  --root-paper-chip-ink-top-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+    right -20px top -20px / 39px 37px no-repeat;
+  --root-paper-chip-ink-top-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(-1 0 0 1 39 0)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+    left -20px top -20px / 39px 37px no-repeat;
+  --root-paper-chip-ink-bottom-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(1 0 0 -1 0 37)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+    right -20px bottom -20px / 39px 37px no-repeat;
+  --root-paper-chip-ink-bottom-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(-1 0 0 -1 39 37)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+    left -20px bottom -20px / 39px 37px no-repeat;
+  /* Transparent layer: keeps the mask layer count when there is no chip. */
+  --root-paper-chip-empty: linear-gradient(transparent 0 0) no-repeat;
   /* Ink lining each nick, same images and positions as the cuts. */
   --root-paper-nick-ink:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 19L5.5 27L9 19' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
