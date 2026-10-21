@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Corner chip</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2c2118;--ink-deep:#1a1408;--parchment:#f0e6d3;--parchment-deep:#e4d4b8;--gold-light:#fbe9a8;--forest-deep:#24362e;
+  /* texture B: app grain, alpha 0.38 */
+  --grain-strong:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.38 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--forest-deep);color:var(--parchment);font-family:Georgia,'Times New Roman',serif;padding:28px 16px 64px}
+main{max-width:1180px;margin:0 auto}
+h1{font:400 34px 'IM Fell English',serif;margin:0 0 6px}
+h2{font:400 26px 'IM Fell English',serif;margin:34px 0 10px;color:var(--gold-light)}
+figcaption code{font-size:15px}
+.lead{margin:0 0 22px;color:#d9c9a3;max-width:860px;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:22px}
+figure{margin:0;padding:12px 12px 16px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(240,230,211,.15)}
+figcaption{margin-top:10px;color:#d9c9a3;line-height:1.4}
+figcaption b{display:block;font:400 22px 'IM Fell English',serif;color:var(--gold-light);margin-bottom:2px}
+.stage{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:20px;padding:30px 24px;border-radius:6px;overflow:hidden;
+  background:linear-gradient(90deg,rgba(26,20,8,.75),rgba(26,20,8,.15)),url(../../reference/wallpapers/ulrick-wery-riverside.webp) center/cover}
+
+/* === the app's root-paper, texture B === */
+.paper{position:relative;isolation:isolate;border:0;background:transparent;color:var(--ink);font:400 24px 'IM Fell English',serif;padding:10px 26px;min-width:250px;text-align:left}
+.paper::before{content:'';position:absolute;inset:0;z-index:-1;border:3px solid var(--ink-deep);
+  background-color:var(--paper-color,var(--parchment-deep));background-image:var(--grain-strong);background-blend-mode:multiply;
+  filter:url(#torn) drop-shadow(1px 2px 0 color-mix(in srgb,#1a1408 40%,transparent));
+  clip-path:var(--cut-clip,none)}
+.paper.panel{width:100%;max-width:300px;min-height:150px;padding:18px 22px;font:italic 16px/1.45 Georgia,serif;--paper-color:var(--parchment)}
+.paper.panel strong{display:block;font:400 22px 'IM Fell English',serif;font-style:normal;margin-bottom:4px}
+
+.cut-ink{position:absolute;inset:0;pointer-events:none;overflow:visible;filter:url(#torn-nip)}
+.cut-ink path{fill:none;stroke-linejoin:round;stroke-linecap:round}
+.cut-ink .ink{stroke:var(--ink-deep);stroke-width:2.5}
+.cut-ink .crack{stroke:var(--ink-deep);stroke-width:1.2}
+.cut-ink .fibre{stroke:#fbf5e6;stroke-width:3;opacity:.9}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="torn" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4"/><feDisplacementMap in="SourceGraphic" scale="8"/></filter>
+  <filter id="torn-nip" x="-30%" y="-30%" width="160%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.25" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="1.5"/></filter>
+</svg>
+<main>
+<h1>Corner chip, round 2</h1>
+<p class="lead">Texture B (grain alpha 0.38) on everything. The current three mid-edge nicks stay, same sizes and positions as the app. Part 1: chip shapes (top-right). Part 2: one class per corner picks where the chip goes; no class means no chip.</p>
+<h2>1 · Chip shape</h2>
+<div class="grid" id="shapes"></div>
+<h2>2 · Corner class</h2>
+<div class="grid" id="corners"></div>
+</main>
+<script>
+const OVERHANG = 20; // room for the torn displacement outside the box
+
+// Current app nicks: fraction of (width - nick width), nick width at edge, tip depth.
+const MID_NICKS = [
+  {edge:'top', x:.3, w:7, d:7},
+  {edge:'top', x:.78, w:9, d:10},
+  {edge:'bottom', x:.6, w:7, d:7},
+];
+
+// Chip outline drawn for the top-right corner, from the top edge to the right edge.
+// x is measured back from the corner, y down from it.
+const CHIP_BASE = [[26,0],[21,5],[16,3],[12,10],[6,9],[4,16],[0,22]];
+const CHIP_DOUBLE = [[40,0],[36,4],[31,3],[28,8],[24,6],[21,5],[16,3],[12,10],[6,9],[4,16],[0,22]];
+const CHIP_DIAGONAL = [[30,0],[27,3],[22,6],[19,11],[14,13],[11,18],[6,22],[3,27],[0,31]];
+const CHIP_SQUARE = [[24,0],[23,6],[18,9],[19,15],[13,17],[7,16],[3,19],[0,20]];
+const CRACK_STEPS = [[5,5],[-1,5],[6,4],[2,5]]; // in "towards the paper centre" units
+const CRACK_FROM_POINT = 3; // deepest notch of CHIP_BASE
+
+const scale=(points,factor)=>points.map(([x,y])=>[x*factor,y*factor]);
+
+const SHAPES = [
+  {title:'3. As before', note:'Round 1 chip, now next to the mid nicks.', chip:CHIP_BASE},
+  {title:'3a. Smaller', note:'Same tear at 65%. Quieter, reads as wear.', chip:scale(CHIP_BASE,.65)},
+  {title:'3b. Bigger', note:'Same tear at 145%. A real bite out of the corner.', chip:scale(CHIP_BASE,1.45)},
+  {title:'3c. Fibre rim', note:'A pale rim inside the ink, like the exposed core of torn paper.', chip:CHIP_BASE, fibre:true},
+  {title:'3d. Chip + crack', note:'A hairline ink crack runs on from the deepest point.', chip:CHIP_BASE, crack:true},
+  {title:'3e. Long diagonal tear', note:'Shallower but longer, follows the corner diagonal.', chip:CHIP_DIAGONAL},
+  {title:'3f. Double bite', note:'Two small bites side by side, the second one creeping along the top.', chip:CHIP_DOUBLE},
+  {title:'3g. Blocky chip', note:'Squarer, more stepped tear. Closer to the ink style of the map.', chip:CHIP_SQUARE},
+];
+
+// Corner class → where the chip goes. `inward` points from the corner towards the paper centre.
+const CORNERS = {
+  'paper-chip-top-left':     {inward:[1,1]},
+  'paper-chip-top-right':    {inward:[-1,1]},
+  'paper-chip-bottom-right': {inward:[-1,-1]},
+  'paper-chip-bottom-left':  {inward:[1,-1]},
+};
+const cornerOf=el=>Object.keys(CORNERS).find(name=>el.classList.contains(name));
+
+// Chip points in element px, ordered clockwise so they slot into the outline.
+function chipPoints(chip,corner,width,height){
+  const [ix,iy]=CORNERS[corner].inward;
+  const placed=chip.map(([x,y])=>[ix<0?width-x:x, iy<0?height-y:y]);
+  const startsOnTopOrBottom = corner==='paper-chip-top-right' || corner==='paper-chip-bottom-left';
+  return startsOnTopOrBottom ? placed : placed.reverse();
+}
+function nickPoints(nick,width,height){
+  const left=nick.x*(width-nick.w), right=left+nick.w, tip=[left+nick.w/2,nick.d];
+  const points=[[left,0],tip,[right,0]];
+  return nick.edge==='top' ? points : points.map(([x,y])=>[x,height-y]).reverse();
+}
+function cornerSegment(name,shape,corner,width,height){
+  const o=OVERHANG;
+  const outside={'paper-chip-top-left':[-o,-o],'paper-chip-top-right':[width+o,-o],'paper-chip-bottom-right':[width+o,height+o],'paper-chip-bottom-left':[-o,height+o]};
+  if(name!==corner) return [outside[name]];
+  const points=chipPoints(shape.chip,corner,width,height), first=points[0], last=points[points.length-1];
+  const entry={'paper-chip-top-left':[-o,first[1]],'paper-chip-top-right':[first[0],-o],'paper-chip-bottom-right':[width+o,first[1]],'paper-chip-bottom-left':[first[0],height+o]};
+  const exit={'paper-chip-top-left':[last[0],-o],'paper-chip-top-right':[width+o,last[1]],'paper-chip-bottom-right':[last[0],height+o],'paper-chip-bottom-left':[-o,last[1]]};
+  return [entry[name],...points,exit[name]];
+}
+function clipPolygon(shape,corner,width,height){
+  const o=OVERHANG, points=[];
+  const nickSegment=n=>{const p=nickPoints(n,width,height),first=p[0],last=p[p.length-1],edgeY=first[1]===0?-o:height+o;
+    return [[first[0],edgeY],...p,[last[0],edgeY]];};
+  points.push(...cornerSegment('paper-chip-top-left',shape,corner,width,height));
+  MID_NICKS.filter(n=>n.edge==='top').sort((a,b)=>a.x-b.x).forEach(n=>points.push(...nickSegment(n)));
+  points.push(...cornerSegment('paper-chip-top-right',shape,corner,width,height));
+  points.push(...cornerSegment('paper-chip-bottom-right',shape,corner,width,height));
+  MID_NICKS.filter(n=>n.edge==='bottom').sort((a,b)=>b.x-a.x).forEach(n=>points.push(...nickSegment(n)));
+  points.push(...cornerSegment('paper-chip-bottom-left',shape,corner,width,height));
+  return `polygon(${points.map(([x,y])=>`${x}px ${y}px`).join(',')})`;
+}
+const toPath=points=>`M${points.map(p=>p.join(' ')).join(' L')}`;
+
+function inkSvg(shape,corner,width,height){
+  const parts=MID_NICKS.map(n=>`<path class="ink" d="${toPath(nickPoints(n,width,height))}"/>`);
+  if(corner){
+    const chip=chipPoints(shape.chip,corner,width,height), [ix,iy]=CORNERS[corner].inward;
+    if(shape.fibre) parts.push(`<path class="fibre" d="${toPath(chip.map(([x,y])=>[x+2*ix,y+2*iy]))}"/>`);
+    parts.push(`<path class="ink" d="${toPath(chip)}"/>`);
+    if(shape.crack){
+      const [crackX,crackY]=shape.chip[CRACK_FROM_POINT];
+      const deepest=[ix<0?width-crackX:crackX, iy<0?height-crackY:crackY];
+      parts.push(`<path class="crack" d="M${deepest.join(' ')} ${CRACK_STEPS.map(([dx,dy])=>`l${dx*ix} ${dy*iy}`).join(' ')}"/>`);
+    }
+  }
+  return `<svg class="cut-ink" width="${width}" height="${height}">${parts.join('')}</svg>`;
+}
+function applyCuts(el,shape){
+  el.querySelector('.cut-ink')?.remove();
+  const {width,height}=el.getBoundingClientRect(), corner=cornerOf(el);
+  el.style.setProperty('--cut-clip',clipPolygon(shape,corner,width,height));
+  el.insertAdjacentHTML('beforeend',inkSvg(shape,corner,width,height));
+}
+
+const stage=(buttonClass,panelClass)=>`<div class="stage">
+    <button class="paper ${buttonClass}">Play vs bots</button>
+    <div class="paper panel ${panelClass}"><strong>Birdsong</strong>Craft with your crafting pieces, then place a warrior in each clearing you rule with a matching suit.</div>
+  </div>`;
+function addFigure(gridId,html,caption,shape){
+  const fig=document.createElement('figure');
+  fig.innerHTML=`${html}<figcaption>${caption}</figcaption>`;
+  document.getElementById(gridId).appendChild(fig);
+  requestAnimationFrame(()=>fig.querySelectorAll('.paper').forEach(el=>applyCuts(el,shape)));
+}
+
+SHAPES.forEach(shape=>addFigure('shapes',stage('paper-chip-top-right','paper-chip-top-right'),`<b>${shape.title}</b>${shape.note}`,shape));
+
+Object.keys(CORNERS).forEach(name=>addFigure('corners',stage(name,name),`<b><code>${name}</code></b>Chip 3 in this corner; mid nicks unchanged.`,SHAPES[0]));
+addFigure('corners',stage('','paper-chip-bottom-left'),'<b>Mixed / none</b>Button has no corner class (mid nicks only); panel uses <code>paper-chip-bottom-left</code>.',SHAPES[0]);
+</script>
+</body>
+</html>

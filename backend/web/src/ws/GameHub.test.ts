@@ -19,6 +19,7 @@ const samplePayload: GamePushPayload = {
   legalActions: [],
   log: [],
   aiPlayers: [],
+  botStepDelaySeconds: 2,
 }
 
 describe('GameHub', () => {

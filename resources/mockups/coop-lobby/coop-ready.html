@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lobby co-op ready</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.paper{background:#efe3c4;color:#2b2118;border-radius:6px;box-shadow:0 2px 0 #b9a77b,0 8px 24px rgba(0,0,0,.35)}
+.seg{display:flex;padding:4px;gap:4px;background:#2b2118;border-radius:999px}
+.seg button{all:unset;cursor:pointer;min-height:44px;padding:0 22px;border-radius:999px;font:600 17px Fraunces,serif;color:#efe3c4;display:flex;align-items:center;gap:10px}
+.seg button[aria-pressed="true"]{background:#c99a2e;color:#2b2118}
+.tile{width:140px;height:140px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:800 44px Fraunces,serif;color:rgba(43,33,24,.55);position:relative;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.medal{position:absolute;top:-12px;left:-12px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 16px 'JetBrains Mono',monospace;background:#d8c79c;color:#2b2118;border:2px solid #2b2118}
+.label{margin-top:-8px;position:relative;padding:5px 12px;min-width:130px;text-align:center;border-radius:4px;background:#efe3c4}
+.label b{display:block;font:600 17px Fraunces,serif}
+.label i{display:block;font:italic 400 13px 'Alegreya Sans',sans-serif;color:#5b4a36}
+.side{border-radius:10px;padding:16px 22px 20px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.side h3{margin:0;font:600 20px Fraunces,serif;letter-spacing:.04em;text-transform:uppercase}
+.chip{font:700 12px 'Alegreya Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#2b2118;color:#efe3c4}
+.btn{all:unset;cursor:pointer;min-height:48px;padding:0 28px;border-radius:6px;font:600 19px Fraunces,serif;display:flex;align-items:center}
+.speed{display:flex;gap:2px;background:#2f3a44;border-radius:6px;padding:3px}
+.speed button{all:unset;cursor:pointer;min-height:36px;padding:0 12px;border-radius:4px;font:600 14px 'Alegreya Sans',sans-serif;color:#dfe6ec;display:flex;align-items:center}
+.speed button[aria-pressed="true"]{background:#c9d4dd;color:#1d252c}
+.check{display:flex;gap:8px;align-items:center;font:500 15px 'Alegreya Sans',sans-serif;color:#efe3c4}
+.callout{position:absolute;font:500 14px 'Alegreya Sans',sans-serif;color:#2b2118;background:#ffd970;border-radius:6px;padding:8px 12px;max-width:220px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+</style>
+<style>.seat-medal{all:unset;box-sizing:border-box;cursor:pointer;width:40px;height:40px;border-radius:50%;border:2px solid #2b2118;background:#c9d4dd;color:#2b2118;display:flex;align-items:center;justify-content:center;font:600 17px "JetBrains Mono",monospace}.seat-medal .cross{display:none}.seat-medal:hover,.seat-medal:focus-visible{background:#a5482c}.seat-medal:hover .number,.seat-medal:focus-visible .number{display:none}.seat-medal:hover .cross,.seat-medal:focus-visible .cross{display:flex}</style>
+</helmet>
+<div style="width:1280px;height:800px;box-sizing:border-box;background:radial-gradient(ellipse at 50% 30%,#3c5236,#1b261b 70%);font-family:'Alegreya Sans',sans-serif;position:relative;display:flex;flex-direction:column;align-items:center;padding:30px 48px;gap:16px">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+    <h2 class="paper" style="margin:0;padding:8px 26px;font:600 26px Fraunces,serif">Online lobby · 4 of 4 seats</h2>
+    <div class="seg" role="group" aria-label="Game mode">
+      <button aria-pressed="false">Free-for-all</button>
+      <button aria-pressed="true">Co-op vs bots</button>
+    </div>
+  </div>
+
+  <div class="paper" style="padding:10px 18px;display:flex;gap:14px;align-items:center;max-width:900px;background:#f6ecd2">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7a5a12" stroke-width="2" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>
+    <p style="margin:0;font-size:16px">Every human to <b>30 VP</b> before any bot</p>
+  </div>
+
+  <div style="display:flex;align-items:stretch;gap:22px;margin-top:4px">
+    <section class="side" style="background:rgba(239,227,196,.12);border:2px solid #c99a2e" aria-label="Woodland team">
+      <h3 style="color:#f4dc95">Woodland · humans</h3>
+      <ol style="margin:6px 0 0;padding:0;list-style:none;display:flex;gap:30px">
+        <li style="display:flex;flex-direction:column;align-items:center">
+          <div class="tile" style="background:#9cc596;transform:rotate(-2deg);box-shadow:0 0 0 4px #c99a2e">WA<span class="medal" style="background:#c99a2e">1</span></div>
+          <div class="label" style="background:#f4dc95"><b>Woodland Alliance</b><i>you · host</i></div>
+        </li>
+        <li style="display:flex;flex-direction:column;align-items:center">
+          <div class="tile" style="background:#bdbdbd;transform:rotate(1deg)">VB<span class="medal">2</span></div>
+          <div class="label"><b>Vagabond</b><i>Ana · joined</i></div>
+        </li>
+      </ol>
+    </section>
+
+    <div style="align-self:center;width:64px;height:64px;border-radius:50%;background:#2b2118;color:#efe3c4;border:3px solid #c99a2e;display:flex;align-items:center;justify-content:center;font:800 22px Fraunces,serif">VS</div>
+
+    <section class="side" style="background:rgba(93,107,120,.35);border:2px solid #8fa1b1" aria-label="Clockwork bots">
+      <h3 style="color:#dfe6ec">Clockwork · bots</h3>
+      <ol style="margin:6px 0 0;padding:0;list-style:none;display:flex;gap:30px">
+        <li style="display:flex;flex-direction:column;align-items:center">
+          <div class="tile" style="background:#e9a866;transform:rotate(1deg);outline:3px solid #8fa1b1;outline-offset:-3px">MM<span style="position:absolute;top:-14px;left:-14px"><button class="seat-medal" aria-label="Remove Mechanical Marquise"><span class="number">3</span><svg class="cross" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbf3df" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></span></div>
+          <div class="label"><b>Mechanical Marquise</b><i><span class="chip">Challenging</span> · Blitz</i></div>
+        </li>
+        <li style="display:flex;flex-direction:column;align-items:center">
+          <div class="tile" style="background:#8fb0d9;transform:rotate(-1deg);outline:3px solid #8fa1b1;outline-offset:-3px">EE<span style="position:absolute;top:-14px;left:-14px"><button class="seat-medal" aria-label="Remove Electric Eyrie"><span class="number">4</span><svg class="cross" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbf3df" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></span></div>
+          <div class="label"><b>Electric Eyrie</b><i><span class="chip">Default</span> · no trait</i></div>
+        </li>
+      </ol>
+    </section>
+  </div>
+
+
+  <div style="display:flex;gap:18px;margin-top:auto">
+    <button class="btn" style="background:#a5482c;color:#fbf3df">Close lobby</button>
+    <button class="btn" style="background:#c99a2e;color:#2b2118">Start co-op game</button>
+  </div>
+
+  <div class="callout" style="top:300px;left:12px;max-width:150px">Same VS split as Solo run: humans left, bots right.</div>
+  <div class="callout" style="top:600px;right:20px;max-width:230px">Host only: bot difficulty and traits. Click a bot tile → existing Bot settings modal. Turn speed lives in game (board 5).</div>
+</div>
+</x-dc>
+</body>
+</html>

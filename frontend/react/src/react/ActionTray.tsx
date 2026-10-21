@@ -1,6 +1,7 @@
 import { useRef, useState, useSyncExternalStore, type JSX } from 'react'
 import type { IconType } from 'react-icons'
 import { LuUndo2 } from 'react-icons/lu'
+import { artFactionOf } from '@root/lib/bot-factions'
 import type { ActionSpec } from '#api/client.ts'
 import {
   getCardPileSnapshot,
@@ -83,7 +84,7 @@ const DOCK_POSITION_CLASS_NAME =
 /** Frame in the colour of the faction taking the turn. */
 const DOCK_FRAME_CLASS_NAME =
   'action-dock root-paper flex flex-row items-stretch gap-2.5 p-2.5'
-const FACTION_FRAME_CLASS_NAMES: Readonly<Record<string, string>> = {
+export const FACTION_FRAME_CLASS_NAMES: Readonly<Record<string, string>> = {
   marquise: '[--root-paper-color:var(--color-marquise)]',
   eyrie: '[--root-paper-color:var(--color-eyrie)]',
   alliance: '[--root-paper-color:var(--color-alliance)]',
@@ -329,7 +330,9 @@ export function ActionTray(): JSX.Element | null {
     (player) => player.seat === tray.actorSeat,
   )?.faction
   const frameColorClassName: string =
-    (faction !== undefined ? FACTION_FRAME_CLASS_NAMES[faction] : undefined) ??
+    (faction !== undefined
+      ? FACTION_FRAME_CLASS_NAMES[artFactionOf(faction)]
+      : undefined) ??
     NEUTRAL_FRAME_CLASS_NAME
   return (
     <div className={DOCK_POSITION_CLASS_NAME}>

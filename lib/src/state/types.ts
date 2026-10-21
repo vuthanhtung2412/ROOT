@@ -5,12 +5,17 @@ import type { Event } from '#events/types.js'
 import type { ClearingId, Suit } from '#map/types.js'
 import type { FactionId, ItemType, Piece, Seat } from '#pieces/types.js'
 import type { DecreeColumn, FactionBoard } from '#state/boards.js'
+import type { BotPlan } from '#state/botTurn.js'
+import type { BotSettingsByFaction } from '#public/botSettings.js'
 
 export type Phase = 'birdsong' | 'daylight' | 'evening'
 
 export type Step = string
 
 export type GameStatus = 'waiting' | 'setup' | 'playing' | 'finished'
+
+/** Rule: Rootbotics 3.5.1 — the humans (the Woodland) against the bots (the Clockwork). */
+export type Team = 'humans' | 'bots'
 
 export type ClearingState = {
   pieces: Piece[]
@@ -91,6 +96,12 @@ export type TurnScratch = {
   riverboats: boolean
   /** Mercenaries bought this turn. Rule: 11.2.7.III. */
   mercenaries: boolean
+  /** Bot — tasks left in the current step (Rootbotics 4–5). Null: not planned yet. */
+  botPlan?: BotPlan | null
+  /** Mechanical Marquise — placed a building this turn (Expand 4.5.5). */
+  botBuiltThisTurn?: boolean
+  /** Mechanical Marquise — Expands taken this turn (house-rule cap). */
+  botExpandCount?: number
 }
 
 export type GameState = {
@@ -108,6 +119,10 @@ export type GameState = {
    * faction when joining, and `factions` grows seat by seat.
    */
   openLobby?: true
+  /** Rule: Rootbotics 3.3 — difficulty and traits per bot; absent = default, none. */
+  botSettings?: BotSettingsByFaction
+  /** Rule: Rootbotics 3.5.1 — humans play as one team against the bots. Absent = free-for-all. */
+  cooperative?: boolean
   players: PlayerState[]
   clearings: ClearingState[]
   deck: DeckState
@@ -122,6 +137,8 @@ export type GameState = {
   winner?: Seat
   /** Vagabond seats in coalition with `winner`. Rule: Vagabond 9.2.8. */
   coWinners?: Seat[]
+  /** Cooperative game: the team that won; `winner` + `coWinners` are its seats. */
+  winningTeam?: Team
   turnScratch: TurnScratch
   /**
    * Latest actions the player whose turn it is may take back. Starts again

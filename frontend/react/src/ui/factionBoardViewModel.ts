@@ -44,7 +44,13 @@ import {
   lostSoulSuitCounts,
   type ExpansionBoardViewModel,
 } from '#ui/expansionBoardViewModel.ts'
+import {
+  buildBotBoardViewModel,
+  readActiveBotDecreeColumn,
+  type BotBoardViewModel,
+} from '#ui/botBoardViewModel.ts'
 import { questDefOf, type QuestCard } from '@root/lib/quests'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 
 export type CraftedItemView = {
   type: string
@@ -192,6 +198,13 @@ export type FactionBoardViewModel =
   | AllianceBoardViewModel
   | VagabondBoardViewModel
   | ExpansionBoardViewModel
+  | BotBoardViewModel
+
+/** Boards drawn over their printed art (every faction but the bots). */
+export type ArtFactionBoardViewModel = Exclude<
+  FactionBoardViewModel,
+  BotBoardViewModel
+>
 
 type MarquiseBoardData = {
   kind: 'marquise'
@@ -500,7 +513,7 @@ export function buildFactionBoardViewModel(
   if (player === undefined) {
     return null
   }
-  const view = buildFactionBoardViewModelFromPlayer(player, state.factions)
+  const view = buildFactionBoardViewModelFromPlayer(player, state.factions, state.botSettings)
   if (view === null) {
     return null
   }
@@ -508,6 +521,13 @@ export function buildFactionBoardViewModel(
     return {
       ...view,
       activeDecreeColumn: readActiveDecreeColumn(state.turnScratch),
+    }
+  }
+  // The turn scratch belongs to the seat taking its turn.
+  if (view.kind === 'electricEyrie' && state.currentSeat === seat) {
+    return {
+      ...view,
+      activeDecreeColumn: readActiveBotDecreeColumn(state.turnScratch),
     }
   }
   if (view.kind === 'vagabond') {
@@ -585,7 +605,11 @@ export function completedQuestViewsFromBoard(board: unknown): VagabondQuestView[
 export function buildFactionBoardViewModelFromPlayer(
   player: PlayerForBoard,
   presentFactions: readonly string[] = VAGABOND_RELATIONSHIP_MARKER_FACTIONS,
+  botSettings?: BotSettingsByFaction,
 ): FactionBoardViewModel | null {
+  const botView: BotBoardViewModel | null = buildBotBoardViewModel(player, botSettings)
+  if (botView !== null) return botView
+
   if (player.faction === 'marquise' && isMarquiseBoardData(player.board)) {
     const board = player.board
     return {

@@ -5,6 +5,7 @@ import { LIB_NAME, LIB_VERSION } from '@root/lib'
 import { corsMiddleware } from '#middleware/cors.js'
 import { onError } from '#middleware/errors.js'
 import { aiPlayerRoutes } from '#routes/aiPlayer.js'
+import { botPaceRoutes } from '#routes/botPace.js'
 import { explainedActionRoutes } from '#routes/explainedActions.js'
 import { gameRoutes } from '#routes/game.js'
 import { lobbyPlayerRoutes } from '#routes/lobbyPlayer.js'
@@ -73,6 +74,7 @@ app.route('/game', gameRoutes)
 app.route('/game', explainedActionRoutes)
 app.route('/game', aiPlayerRoutes)
 app.route('/game', lobbyPlayerRoutes)
+app.route('/game', botPaceRoutes)
 app.route('/game', rulesRoutes)
 app.route('/game', playerToolRoutes)
 app.route('/map', mapRoutes)

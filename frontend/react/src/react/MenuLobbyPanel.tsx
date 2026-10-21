@@ -6,11 +6,13 @@ import {
   type AiPlayerStoreState,
 } from '#game/aiPlayerStore.ts'
 import type {
+  LobbyTableChange,
   MenuFactionChoice,
   MenuLobbyHudState,
   MenuLobbySeat,
 } from '#game/hudStore.ts'
 import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
+import { LobbyPlayModeSwitch, MenuCoopLobby } from '#react/MenuCoopLobby.tsx'
 import {
   LobbyFactionDock,
   type LobbyDockMode,
@@ -21,24 +23,47 @@ import {
   type LobbyOpenSeatKind,
 } from '#react/MenuLobbySeats.tsx'
 import {
+  CANCEL_BUTTON_CLASS_NAME,
+  LOBBY_FOOTER_CLASS_NAME,
+  LOBBY_TITLE_CLASS_NAME,
   PAPER_SHEET_CLASS_NAME,
   PRIMARY_BUTTON_CLASS_NAME,
 } from '#react/MenuParts.tsx'
+import { Tooltip } from '#react/Tooltip.tsx'
 
 /** The lobby creator joins first, so the host always holds seat 0. */
 const HOST_SEAT_INDEX = 0
 const NO_SEAT_INDEX = -1
-/** Title on a paper strip, like the prompt of a turn. */
-const TITLE_CLASS_NAME =
-  'root-paper m-0 px-7 py-1.5 text-center font-display text-xl tracking-display text-ink md:text-[26px]'
 const SEAT_ROW_CLASS_NAME =
   'm-0 grid list-none grid-cols-2 gap-x-7 gap-y-4 p-0 md:flex md:flex-row md:items-start md:gap-11'
-const FOOTER_CLASS_NAME =
-  'flex flex-row flex-wrap items-center justify-center gap-5'
-/** Close / Leave: rust, as the cancel tile of a turn. */
-const LEAVE_BUTTON_CLASS_NAME =
-  'menu-leave-lobby root-paper root-paper-fine root-paper-press m-0 min-h-12 px-5 py-2 font-display text-lg text-paper-bright [--root-paper-color:var(--color-rust-deep)]'
+const LEAVE_BUTTON_CLASS_NAME = `menu-leave-lobby ${CANCEL_BUTTON_CLASS_NAME}`
 const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME}`
+const PANEL_CLASS_NAME = 'm-0 flex w-full flex-col items-center gap-6'
+
+/** Host start; while blocked, hovering it tells why. */
+function StartButton(props: {
+  label: string
+  blockedReason: string | null
+  disabled: boolean
+  onStart: () => void
+}): JSX.Element {
+  const button: JSX.Element = (
+    <button
+      type="button"
+      className={START_BUTTON_CLASS_NAME}
+      disabled={props.disabled}
+      onClick={props.onStart}
+    >
+      {props.label}
+    </button>
+  )
+  if (props.blockedReason === null) return button
+  return (
+    <Tooltip label={props.blockedReason} labelCase="sentence">
+      {button}
+    </Tooltip>
+  )
+}
 
 /** Seats nobody took yet, numbered after the taken ones. */
 function openSeatIndexes(lobby: MenuLobbyHudState): number[] {
@@ -58,6 +83,7 @@ export function OnlineLobbyPanel(props: {
   onPickFaction: (faction: string) => void
   onAddAiPlayer: (input: AddAiPlayerInput) => void
   onExpelPlayer: (seat: number) => void
+  onChangeLobbyTable: (change: LobbyTableChange) => void
   onStart: () => void
   onLeave: () => void
 }): JSX.Element {
@@ -71,6 +97,7 @@ export function OnlineLobbyPanel(props: {
   const [pickedModel, setPickedModel] = useState<string | null>(null)
 
   const isOpenLobby: boolean = lobby.factionChoices.length > 0
+  const isCooperative: boolean = lobby.playMode === 'cooperative'
   const localSeatIndex: number = lobby.seats.findIndex(
     (seat: MenuLobbySeat): boolean => seat.isLocalPlayer,
   )
@@ -114,14 +141,64 @@ export function OnlineLobbyPanel(props: {
     props.onPickFaction(faction)
   }
 
-  return (
-    <section
-      className="m-0 flex w-full flex-col items-center gap-6"
-      aria-label="Online lobby"
-    >
-      <h2 className={TITLE_CLASS_NAME}>
+  const header: JSX.Element = (
+    <>
+      <h2 className={LOBBY_TITLE_CLASS_NAME}>
         Online lobby · {takenSeatCount} of {tableSeatCount} seats
       </h2>
+      {isOpenLobby ? (
+        <LobbyPlayModeSwitch
+          playMode={lobby.playMode}
+          isHost={lobby.isHost}
+          disabled={props.playPending}
+          onChange={props.onChangeLobbyTable}
+        />
+      ) : null}
+    </>
+  )
+  const footer: JSX.Element = (
+    <div className="flex flex-col items-center gap-2">
+      <div className={LOBBY_FOOTER_CLASS_NAME}>
+        <button
+          type="button"
+          className={LEAVE_BUTTON_CLASS_NAME}
+          disabled={props.playPending}
+          title={
+            lobby.isHost ? 'Remove this lobby for everyone' : 'Go back to the menu'
+          }
+          onClick={props.onLeave}
+        >
+          {lobby.isHost ? 'Close lobby' : 'Leave lobby'}
+        </button>
+        {lobby.isHost ? (
+          <StartButton
+            label={isCooperative ? 'Start co-op game' : 'Start game'}
+            blockedReason={lobby.startBlockedReason}
+            disabled={props.playPending || !lobby.canStart}
+            onStart={props.onStart}
+          />
+        ) : null}
+      </div>
+    </div>
+  )
+
+  if (isCooperative) {
+    return (
+      <MenuCoopLobby
+        lobby={lobby}
+        playPending={props.playPending}
+        onPickFaction={props.onPickFaction}
+        onExpelPlayer={props.onExpelPlayer}
+        onChangeLobbyTable={props.onChangeLobbyTable}
+        header={header}
+        footer={footer}
+      />
+    )
+  }
+
+  return (
+    <section className={PANEL_CLASS_NAME} aria-label="Online lobby">
+      {header}
       <ol className={SEAT_ROW_CLASS_NAME}>
         {lobby.seats.map(
           (seat: MenuLobbySeat, seatIndex: number): JSX.Element => {
@@ -201,30 +278,7 @@ export function OnlineLobbyPanel(props: {
           />
         </div>
       ) : null}
-      <div className={FOOTER_CLASS_NAME}>
-        <button
-          type="button"
-          className={LEAVE_BUTTON_CLASS_NAME}
-          disabled={props.playPending}
-          title={
-            lobby.isHost ? 'Remove this lobby for everyone' : 'Go back to the menu'
-          }
-          onClick={props.onLeave}
-        >
-          {lobby.isHost ? 'Close lobby' : 'Leave lobby'}
-        </button>
-        {lobby.isHost ? (
-          <button
-            type="button"
-            className={START_BUTTON_CLASS_NAME}
-            disabled={props.playPending || !lobby.canStart}
-            title={lobby.canStart ? undefined : 'Needs at least two players'}
-            onClick={props.onStart}
-          >
-            Start game
-          </button>
-        ) : null}
-      </div>
+      {footer}
     </section>
   )
 }

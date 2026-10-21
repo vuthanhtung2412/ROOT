@@ -1,3 +1,4 @@
+import { artFactionOf } from '@root/lib/bot-factions'
 import cardCatalog from '#assets/cardCatalog.json'
 import {
   expansionFactionTextureKey,
@@ -25,9 +26,12 @@ export const GAME_ASSET_KEYS = {
   characterBoardEyrie: 'character-board-eyrie',
   characterBoardAlliance: 'character-board-alliance',
   characterBoardVagabond: 'character-board-vagabond',
+  characterBoardMechanicalMarquise: 'character-board-mechanical-marquise',
+  characterBoardElectricEyrie: 'character-board-electric-eyrie',
   characterCardVagabondThief: 'character-card-vagabond-thief',
   characterCardVagabondTinker: 'character-card-vagabond-tinker',
   characterCardVagabondRanger: 'character-card-vagabond-ranger',
+  cardLoyalVizier: 'card-loyal-vizier',
   suitFox: 'suit-fox',
   suitMouse: 'suit-mouse',
   suitRabbit: 'suit-rabbit',
@@ -162,7 +166,9 @@ export function pieceTokenTextureKey(
 }
 
 /** Faction icon texture key for rail / warrior stacks. */
-export function factionTextureKey(factionId: string): string {
+export function factionTextureKey(seatFactionId: string): string {
+  // A bot uses the art of the faction it replaces.
+  const factionId: string = artFactionOf(seatFactionId)
   const expansionKey = expansionFactionTextureKey(factionId)
   if (expansionKey !== null) {
     return expansionKey
@@ -180,7 +186,8 @@ export function factionTextureKey(factionId: string): string {
 }
 
 /** Warrior meeple token for a faction; null when no dedicated warrior art. */
-export function warriorTokenTextureKey(factionId: string): string | null {
+export function warriorTokenTextureKey(seatFactionId: string): string | null {
+  const factionId: string = artFactionOf(seatFactionId)
   if (factionId === 'marquise') {
     return GAME_ASSET_KEYS.tokenMarquiseWarrior
   }
@@ -255,7 +262,7 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   },
   {
     key: GAME_ASSET_KEYS.menuWallpaper,
-    path: 'assets/branding/therootdatabase-hero.webp',
+    path: 'assets/branding/ulrick-wery-riverside.webp',
   },
   {
     key: GAME_ASSET_KEYS.factionMarquise,
@@ -290,6 +297,14 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
     path: 'assets/character-boards/vagabond-front.webp',
   },
   {
+    key: GAME_ASSET_KEYS.characterBoardMechanicalMarquise,
+    path: 'assets/character-boards/mechanical-marquise-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterBoardElectricEyrie,
+    path: 'assets/character-boards/electric-eyrie-front.webp',
+  },
+  {
     key: GAME_ASSET_KEYS.characterCardVagabondThief,
     path: 'assets/character-boards/vagabond-thief-front.webp',
   },
@@ -300,6 +315,10 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.characterCardVagabondRanger,
     path: 'assets/character-boards/vagabond-ranger-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.cardLoyalVizier,
+    path: 'assets/eyrie-leaders/eyrie-loyal-vizier.webp',
   },
   {
     key: GAME_ASSET_KEYS.suitFox,

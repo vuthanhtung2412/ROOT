@@ -180,6 +180,8 @@ describe('buying Riverfolk services', () => {
           vagabond: 0,
           lizard: 0,
           riverfolk: 0,
+          mechanicalMarquise: 0,
+          electricEyrie: 0,
         },
         forest: null,
       },

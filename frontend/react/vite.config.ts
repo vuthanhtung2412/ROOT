@@ -62,6 +62,39 @@ function qaSnapshotPlugin(): Plugin {
   }
 }
 
+const REACT_SOURCE_ROOT = path.join(packageRoot, 'src')
+const LIBRARY_SOURCE_ROOT = path.join(repositoryRoot, 'lib', 'src')
+const SUBPATH_IMPORT_PREFIX = '#'
+const COMPILED_SCRIPT_EXTENSION = /\.js$/
+const TYPESCRIPT_EXTENSION = '.ts'
+
+/**
+ * `#x` subpath imports resolve inside the importing package: React's own
+ * `src/`, or `lib/src/` for the engine the solo mode runs in the browser
+ * (`lib` writes `#x/y.js` for `y.ts`, like its package.json `imports`).
+ */
+function subpathImportPlugin(): Plugin {
+  return {
+    name: 'root-subpath-imports',
+    enforce: 'pre',
+    resolveId(source: string, importer: string | undefined): string | null {
+      if (!source.startsWith(SUBPATH_IMPORT_PREFIX)) {
+        return null
+      }
+      const subpath: string = source.slice(SUBPATH_IMPORT_PREFIX.length)
+      const isLibraryImporter: boolean =
+        importer?.startsWith(`${LIBRARY_SOURCE_ROOT}${path.sep}`) === true
+      if (!isLibraryImporter) {
+        return path.join(REACT_SOURCE_ROOT, subpath)
+      }
+      return path.join(
+        LIBRARY_SOURCE_ROOT,
+        subpath.replace(COMPILED_SCRIPT_EXTENSION, TYPESCRIPT_EXTENSION),
+      )
+    },
+  }
+}
+
 function publicImageHref(assetPath: string): string {
   return assetPath.startsWith('/') ? assetPath : `/${assetPath}`
 }
@@ -104,19 +137,12 @@ export default defineConfig({
   envPrefix: ['VITE_', 'ROOT_'],
   base: process.env[WEB_BASE_PATH_ENV_KEY] ?? DEFAULT_WEB_BASE_PATH,
   plugins: [
+    subpathImportPlugin(),
     react(),
     tailwindcss(),
     qaSnapshotPlugin(),
     nativeAssetPreloadPlugin(),
   ],
-  resolve: {
-    alias: [
-      {
-        find: /^#(.+)$/,
-        replacement: path.join(packageRoot, 'src', '$1'),
-      },
-    ],
-  },
   server: {
     host: true,
     proxy: {

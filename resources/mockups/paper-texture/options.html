@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paper texture</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2c2118;--ink-deep:#1a1408;--parchment:#f0e6d3;--parchment-deep:#e4d4b8;--gold-light:#fbe9a8;--forest-deep:#24362e;
+  /* current app grain */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* same grain, double alpha */
+  --grain-strong:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.38 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* long horizontal paper fibres */
+  --fibres:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.016 0.4' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.22 0 0 0 0 0.12 0 0 0 -0.9 0.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  /* soft tea-stain mottling */
+  --mottle:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='3' seed='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.3 0 0 0 0 0.12 0 0 0 1.1 -0.38'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  /* darker edge, like aged paper */
+  --burn:radial-gradient(ellipse at 50% 45%,transparent 50%,rgba(122,78,28,.38) 100%);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--forest-deep);color:var(--parchment);font-family:Georgia,'Times New Roman',serif;padding:28px 16px 64px}
+main{max-width:1180px;margin:0 auto}
+h1{font:400 34px 'IM Fell English',serif;margin:0 0 6px}
+h2{font:400 26px 'IM Fell English',serif;margin:38px 0 6px;color:var(--gold-light)}
+.lead{margin:0 0 22px;color:#d9c9a3;max-width:860px;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:22px}
+figure{margin:0;padding:12px 12px 16px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(240,230,211,.15)}
+figcaption{margin-top:10px;color:#d9c9a3;line-height:1.4}
+figcaption b{display:block;font:400 22px 'IM Fell English',serif;color:var(--gold-light);margin-bottom:2px}
+.stage{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:18px;padding:30px 24px;border-radius:6px;overflow:hidden;
+  background:linear-gradient(90deg,rgba(26,20,8,.75),rgba(26,20,8,.15)),url(../../reference/wallpapers/ulrick-wery-riverside.webp) center/cover}
+
+/* === the app's root-paper === */
+.paper{position:relative;isolation:isolate;border:0;background:transparent;color:var(--ink);font:400 24px 'IM Fell English',serif;padding:10px 26px;min-width:250px;text-align:left}
+.paper::before{content:'';position:absolute;inset:0;z-index:-1;border:3px solid var(--ink-deep);
+  background-color:var(--paper-color,var(--parchment-deep));background-image:var(--texture,var(--grain));background-blend-mode:multiply;
+  filter:url(#torn-fine) drop-shadow(1px 2px 0 color-mix(in srgb,#1a1408 40%,transparent));
+  clip-path:var(--corner-clip,none)}
+.paper.panel{width:100%;max-width:300px;min-height:150px;padding:18px 22px;font:italic 16px/1.45 Georgia,serif;--paper-color:var(--parchment)}
+.paper.panel::before{filter:url(#torn) drop-shadow(1px 2px 0 color-mix(in srgb,#1a1408 40%,transparent))}
+.paper.panel strong{display:block;font:400 22px 'IM Fell English',serif;font-style:normal;margin-bottom:4px}
+
+/* texture options */
+.t-a{--texture:var(--grain)}
+.t-b{--texture:var(--grain-strong)}
+.t-c{--texture:var(--grain-strong),var(--fibres)}
+.t-d{--texture:var(--grain-strong),var(--mottle),var(--burn)}
+.t-e{--texture:var(--grain-strong),var(--fibres),var(--mottle),var(--burn)}
+
+/* corner ink overlay */
+.corner-ink{position:absolute;inset:0;pointer-events:none;overflow:visible;filter:url(#torn-nip)}
+.corner-ink .line{fill:none;stroke:var(--ink-deep);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.corner-ink .flap{fill:#cbb48c;stroke:var(--ink-deep);stroke-width:2.5;stroke-linejoin:round}
+.corner-ink .flap-shade{fill:rgba(26,20,8,.35)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="torn" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4"/><feDisplacementMap in="SourceGraphic" scale="8"/></filter>
+  <filter id="torn-fine" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="9"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter>
+  <filter id="torn-nip" x="-30%" y="-30%" width="160%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.25" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="1.5"/></filter>
+</svg>
+<main>
+<h1>Paper texture + corner nip</h1>
+<p class="lead">Part 1: how loud the parchment reads. All layers are SVG noise data URIs multiplied over the paper colour, same as today's <code>--root-paper-grain</code>, so no image assets. Part 2: one nip in the top-right corner (instead of the three scattered edge nicks), shown on texture E. Mix and match: pick one letter + one number.</p>
+
+<h2>1 · Texture</h2>
+<div class="grid" id="textures"></div>
+
+<h2>2 · Corner nip (on texture E)</h2>
+<div class="grid" id="corners"></div>
+</main>
+<script>
+const TEXTURES = [
+  {cls:'t-a', title:'A. Current', note:'Today\'s grain (alpha 0.18). Reads almost flat on the light parchment.'},
+  {cls:'t-b', title:'B. Stronger grain', note:'Same noise, alpha doubled to 0.38. Cheapest change: one number.'},
+  {cls:'t-c', title:'C. Grain + fibres', note:'B plus long horizontal fibres, like laid paper.'},
+  {cls:'t-d', title:'D. Grain + stains + burnt edge', note:'B plus soft tea-stain mottling and a darker rim. Feels aged.'},
+  {cls:'t-e', title:'E. Everything', note:'Grain, fibres, stains and rim together. Most "old map" look.'},
+];
+
+// Corner geometry, top-right corner of a W×H box. Points are paper-side outline of the cut.
+const OVERHANG = 20; // keep the torn bumps outside the box
+const CORNERS = [
+  {key:'1', title:'1. Diagonal V into corner', note:'A V cut aimed at the corner on its diagonal, inked like today\'s nicks.',
+    cut:W=>[[W-18,0],[W-15,15],[W,18]]},
+  {key:'2', title:'2. Edge V hugging corner', note:'Today\'s nick shape, one only, tucked 16px from the corner on the top edge.',
+    cut:W=>[[W-22,0],[W-16,16],[W-10,0]], edgeOnly:true},
+  {key:'3', title:'3. Torn chip', note:'A small jagged piece missing from the corner, ink traces the tear.',
+    cut:W=>[[W-26,0],[W-21,5],[W-16,3],[W-12,10],[W-6,9],[W-4,16],[W,22]]},
+  {key:'4', title:'4. Dog-ear fold', note:'Corner folded over: darker back of the paper with a soft shadow.',
+    cut:W=>[[W-24,0],[W,24]], flap:true},
+];
+
+function cornerClip(cut,width,height){
+  const o=OVERHANG, first=cut[0], last=cut[cut.length-1];
+  const points=[[-o,-o],[first[0],-o],...cut];
+  if(last[1]===0) points.push([last[0],-o],[width+o,-o]); else points.push([width+o,last[1]]);
+  points.push([width+o,height+o],[-o,height+o]);
+  return `polygon(${points.map(([x,y])=>`${x}px ${y}px`).join(',')})`;
+}
+function inkSvg(corner,width,height){
+  const cut=corner.cut(width), line=`M${cut.map(p=>p.join(' ')).join(' L')}`;
+  if(!corner.flap) return `<svg class="corner-ink" width="${width}" height="${height}"><path class="line" d="${line}"/></svg>`;
+  const [a,b]=cut, fold=[a[0],b[1]];
+  return `<svg class="corner-ink" width="${width}" height="${height}">
+    <path class="flap-shade" d="M${a[0]+2} ${a[1]+2} L${fold[0]+2} ${fold[1]+3} L${b[0]+2} ${b[1]+2}Z"/>
+    <path class="flap" d="M${a.join(' ')} L${fold.join(' ')} L${b.join(' ')}Z"/></svg>`;
+}
+function applyCorner(el,corner){
+  const {width,height}=el.getBoundingClientRect();
+  el.style.setProperty('--corner-clip',cornerClip(corner.cut(width),width,height));
+  el.insertAdjacentHTML('beforeend',inkSvg(corner,width,height));
+}
+
+const stageHtml=cls=>`<div class="stage">
+    <button class="paper ${cls}">Play vs bots</button>
+    <div class="paper panel ${cls}"><strong>Birdsong</strong>Craft with your crafting pieces, then place a warrior in each clearing you rule with a matching suit.</div>
+  </div>`;
+
+const textures=document.getElementById('textures');
+TEXTURES.forEach(t=>textures.insertAdjacentHTML('beforeend',`<figure>${stageHtml(t.cls)}<figcaption><b>${t.title}</b>${t.note}</figcaption></figure>`));
+
+const corners=document.getElementById('corners');
+CORNERS.forEach(c=>{
+  const fig=document.createElement('figure');
+  fig.innerHTML=`${stageHtml('t-e')}<figcaption><b>${c.title}</b>${c.note}</figcaption>`;
+  corners.appendChild(fig);
+  requestAnimationFrame(()=>fig.querySelectorAll('.paper').forEach(el=>applyCorner(el,c)));
+});
+</script>
+</body>
+</html>

@@ -8,6 +8,11 @@ import { RuleError } from '#rules/RuleError.js'
 import { randomIndex } from '#rules/Rng.js'
 import type { GameState } from '#state/types.js'
 import type { Seat } from '#pieces/types.js'
+import { isBotSeat } from '#factions/bots/botFactions.js'
+import {
+  drawInsteadOfTakingFromBot,
+  hasCardToTake,
+} from '#factions/bots/manualDexterity.js'
 
 const DEF_ID = 'ROOT-103'
 
@@ -22,7 +27,7 @@ function swapMeetOwner(state: GameState): Seat | null {
 function swapMeetOptions(state: GameState, owner: Seat): ActionOption[] {
   const options: ActionOption[] = []
   for (const other of state.players) {
-    if (other.seat === owner || other.hand.length < 1) continue
+    if (other.seat === owner || !hasCardToTake(state, other.seat)) continue
     options.push({ target: other.seat })
   }
   return options
@@ -48,12 +53,16 @@ export function tryApplySwapMeet(
 
   const target = playerOf(state, action.target)
   if (target.seat === owner) throw new RuleError('INVALID_SWAP_TARGET')
-  if (target.hand.length < 1) throw new RuleError('TARGET_HAND_EMPTY')
+  if (!hasCardToTake(state, target.seat)) throw new RuleError('TARGET_HAND_EMPTY')
 
-  const takeIdx =
-    target.hand.length === 1 ? 0 : randomIndex(ctx.rng, target.hand.length)
-  const taken: Card = target.hand.splice(takeIdx, 1)[0]!
-  playerOf(state, owner).hand.push(taken)
+  if (isBotSeat(state, target.seat)) {
+    drawInsteadOfTakingFromBot(state, owner, ctx)
+  } else {
+    const takeIdx =
+      target.hand.length === 1 ? 0 : randomIndex(ctx.rng, target.hand.length)
+    const taken: Card = target.hand.splice(takeIdx, 1)[0]!
+    playerOf(state, owner).hand.push(taken)
+  }
   state.pending.push({ type: 'swapMeetGive', seat: owner, target: target.seat })
   state.turnScratch.swapMeetUsed = true
   return true

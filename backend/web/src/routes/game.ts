@@ -2,6 +2,7 @@ import {
   FALL,
   FALL_LAYOUT,
   Game,
+  isBotFaction,
   type Action,
   type GameState,
   formatGameView,
@@ -11,7 +12,12 @@ import {
 } from '@root/lib'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
+import { botStepDriver } from '#bots/botStepRuntime.js'
 import { logGameEvent } from '#debug/logGame.js'
+import {
+  requireCooperativeStart,
+  requireNoTwinClash,
+} from '#lobby/cooperativeLobby.js'
 import {
   gameExists,
   HttpError,
@@ -44,7 +50,11 @@ import {
   UndoResponseSchema,
 } from '#schemas/game.js'
 import { persistCurrentGame } from '#store/gamePersistence.js'
-import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
+import {
+  DEFAULT_BOT_STEP_DELAY_SECONDS,
+  DEFAULT_LOBBY_MODE,
+  store,
+} from '#store/GameStore.js'
 import { listAiPlayerViews } from '#view/aiPlayerView.js'
 import { formatPlayerGameView, formatPlayerLog } from '#view/playerView.js'
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
@@ -56,6 +66,7 @@ import { redactStateForViewer } from '#view/redactStateForViewer.js'
 import { broadcastCurrentGame } from '#ws/GameHub.js'
 import {
   isAction,
+  hasOnlyOwnTraits,
   isFactionIdArray,
   isGameSnapshot,
 } from '#typeGuards.js'
@@ -73,6 +84,7 @@ export function publishGameChange(): void {
   persistCurrentGame()
   broadcastCurrentGame()
   aiPlayerDriver.handleGameChanged()
+  botStepDriver.handleGameChanged()
 }
 
 /**
@@ -193,9 +205,18 @@ gameRoutes.openapi(createGameRoute, async (context) => {
         : (() => {
             throw new HttpError(400, 'BAD_FACTIONS', body.factions)
           })()
-  store.game = Game.create({ seed, factions })
+  const botSettings = body.botSettings
+  if (botSettings !== undefined && !hasOnlyOwnTraits(botSettings)) {
+    throw new HttpError(400, 'BAD_BOT_SETTINGS', botSettings)
+  }
+  store.game = Game.create({
+    seed,
+    factions,
+    ...(botSettings === undefined ? {} : { botSettings }),
+  })
   store.mode = body.mode ?? DEFAULT_LOBBY_MODE
   store.aiPlayers = []
+  store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
   logGameEvent('CREATE', store.game.state)
   publishGameChange()
   return context.json({ state: store.game.state, mode: store.mode }, 201)
@@ -224,6 +245,13 @@ const joinRoute = createRoute({
 gameRoutes.openapi(joinRoute, async (context) => {
   const game = requireGame()
   const body = context.req.valid('json')
+  if (body.faction !== undefined) {
+    if (store.mode === 'online' && isBotFaction(body.faction)) {
+      // Online bots are seated by the host through `POST /game/bots`.
+      throw new HttpError(400, 'BOT_FACTION', { faction: body.faction })
+    }
+    requireNoTwinClash(game.state, { playerId: body.playerId, faction: body.faction })
+  }
   const joinAction: Action = {
     type: 'join',
     playerId: body.playerId,
@@ -256,6 +284,7 @@ gameRoutes.openapi(startRoute, (context) => {
   const game = requireGame()
   const playerId = context.req.header(PLAYER_ID_HEADER)
   requireSeatForAction(game, playerId, 'start')
+  requireCooperativeStart(game.state)
   const result = game.start()
   logGameEvent('START', result.state, { type: 'start' })
   publishGameChange()
@@ -292,6 +321,7 @@ gameRoutes.openapi(getGameRoute, (context) => {
       historyLength: game.history.length,
       mode: store.mode,
       aiPlayers: listAiPlayerViews(),
+      botStepDelaySeconds: store.botStepDelaySeconds,
     },
     200,
   )
@@ -389,6 +419,7 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   // Loaded snapshots are QA / dev slots: every seat is driven from one device.
   store.mode = DEFAULT_LOBBY_MODE
   store.aiPlayers = []
+  store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
   persistCurrentGame()
   aiPlayerDriver.handleGameChanged()
   logGameEvent('LOAD', store.game.state)
@@ -617,6 +648,7 @@ gameRoutes.openapi(deleteGameRoute, (context) => {
   store.game = null
   store.mode = DEFAULT_LOBBY_MODE
   store.aiPlayers = []
+  store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
   publishGameChange()
   return context.body(null, 204)
 })

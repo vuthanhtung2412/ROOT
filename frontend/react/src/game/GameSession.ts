@@ -3,8 +3,13 @@ import type {
   GameState,
   FrontendApiClient,
 } from '#api/client.ts'
+import { isBotFaction } from '@root/lib/bot-factions'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import { ApiError } from '#api/client.ts'
 import { setAiPlayers } from '#game/aiPlayerStore.ts'
+import type { LobbyTableChange } from '#game/hudStore.ts'
+import { setOnlineBotPace } from '#game/botPace.ts'
+import { isBotStepDelaySeconds } from '@root/web-client/game-api'
 import {
   connectGameSocket,
   resolveWebSocketUrl,
@@ -78,7 +83,7 @@ export class GameSession {
   private api: FrontendApiClient
   private apiBaseUrl: string
   private readonly identityStorage: PlayerIdentityStorage | null | undefined
-  private readonly connectSocket: (
+  private connectSocket: (
     options: ConnectGameSocketOptions,
   ) => GameSocketConnection
   private readonly resolveSocketUrl: (
@@ -130,11 +135,21 @@ export class GameSession {
     return player?.seat ?? null
   }
 
-  /** Rebuild API client when menu sets a host IP. */
-  rebindApi(api: FrontendApiClient, apiBaseUrl: string): void {
+  /**
+   * Rebuild API client when menu sets a host IP, or switch to the in-browser
+   * game (solo) with its own push source.
+   */
+  rebindApi(
+    api: FrontendApiClient,
+    apiBaseUrl: string,
+    connectSocket: (
+      options: ConnectGameSocketOptions,
+    ) => GameSocketConnection = connectGameSocket,
+  ): void {
     this.disconnectSocket()
     this.api = api
     this.apiBaseUrl = apiBaseUrl
+    this.connectSocket = connectSocket
   }
 
   subscribe(listener: GameSessionListener): () => void {
@@ -147,6 +162,7 @@ export class GameSession {
 
   applySocketPush(payload: GameSocketPush): void {
     setAiPlayers(payload.aiPlayers ?? [])
+    this.syncOnlineBotPace(payload.state, payload.botStepDelaySeconds)
     if (payload.state === null) {
       this.disconnectSocket()
       clearPlayerIdentity(
@@ -492,6 +508,42 @@ export class GameSession {
   }
 
   /**
+   * Online co-op game: the server paces the bots; the host may change the
+   * pace, guests see it. Anything else: the pace stays this browser's own.
+   */
+  private syncOnlineBotPace(state: GameState | null, delaySeconds: number | undefined): void {
+    if (state?.cooperative !== true || state.status === 'waiting' || delaySeconds === undefined) {
+      setOnlineBotPace(null)
+      return
+    }
+    setOnlineBotPace({
+      delaySeconds,
+      canChange: this.isOnlineHost(),
+      requestDelaySeconds: (seconds: number): void => {
+        if (!isBotStepDelaySeconds(seconds)) return
+        this.api.setBotPace(seconds).catch((error: unknown): void => {
+          this.setError(errorMessage(error))
+        })
+      },
+    })
+  }
+
+  /** Open lobby, host only: play mode, bots and their settings; the push redraws. */
+  async changeLobbyTable(change: LobbyTableChange): Promise<boolean> {
+    try {
+      if (change.kind === 'setPlayMode') await this.api.setPlayMode(change.playMode)
+      if (change.kind === 'addBot') await this.api.addBot(change.faction)
+      if (change.kind === 'setBotSettings') {
+        await this.api.setBotSettings(change.faction, change.settings)
+      }
+      return true
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+      return false
+    }
+  }
+
+  /**
    * Leave the lobby screen. A browser that only watches a lobby others sit
    * in walks away; the host (or the last one in an empty lobby) closes it.
    */
@@ -593,7 +645,10 @@ export class GameSession {
    * Local hotseat from menu: replace slot, join every seat, start.
    * Follows current actor like QA (one device, all roles).
    */
-  async startLocalParty(factions: readonly string[]): Promise<boolean> {
+  async startLocalParty(
+    factions: readonly string[],
+    botSettings: BotSettingsByFaction = {},
+  ): Promise<boolean> {
     this.setLoading(true)
     try {
       clearPlayerIdentity(
@@ -606,8 +661,11 @@ export class GameSession {
       await this.api.createGame({
         factions: [...factions],
         replace: true,
+        botSettings,
       })
       for (const faction of factions) {
+        // A bot seat takes its place by itself (Rootbotics 2.6).
+        if (isBotFaction(faction)) continue
         await this.api.join(faction)
       }
       await this.api.start()
@@ -642,6 +700,7 @@ export class GameSession {
         return
       }
       setAiPlayers(game.aiPlayers)
+      this.syncOnlineBotPace(game.state, game.botStepDelaySeconds)
       this.publish({
         state: game.state,
         legalActions: legal.actions,

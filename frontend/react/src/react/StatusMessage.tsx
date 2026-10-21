@@ -1,5 +1,6 @@
 import { useSyncExternalStore, type JSX } from 'react'
 import { getHudSnapshot, patchHud, subscribeHud } from '#game/hudStore.ts'
+import { useIsBotTakingTurn } from '#react/BotTurnBanner.tsx'
 
 export function StatusMessage(): JSX.Element | null {
   const status = useSyncExternalStore(
@@ -7,7 +8,9 @@ export function StatusMessage(): JSX.Element | null {
     () => getHudSnapshot().statusMessage,
     () => getHudSnapshot().statusMessage,
   )
-  if (status === null || status.text.length === 0) {
+  const isBotTakingTurn: boolean = useIsBotTakingTurn()
+  // The bot toast stack already says who plays.
+  if (status === null || status.text.length === 0 || isBotTakingTurn) {
     return null
   }
   return (

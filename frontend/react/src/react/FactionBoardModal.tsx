@@ -18,7 +18,9 @@ import { ExpansionBoardOverlays } from '#react/expansionBoardOverlays.tsx'
 import { FactionBoardOverlays } from '#react/factionBoardOverlays.tsx'
 import { QuestPilePanel } from '#react/QuestPilePanel.tsx'
 import { RevealedCardsPanel } from '#react/RevealedCardsPanel.tsx'
-import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
+import type { ArtFactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
+import { isBotBoardViewModel } from '#ui/botBoardViewModel.ts'
+import { BotFactionBoard } from '#react/BotFactionBoard.tsx'
 
 const BOARD_MAX_WIDTH_RATIO = 0.96
 const BOARD_MAX_HEIGHT_RATIO = 0.94
@@ -31,12 +33,12 @@ const ART_FALLBACK_MARQUISE_CLASS_NAME = 'bg-[rgb(184_90_26/0.95)]'
 const ART_FALLBACK_EYRIE_CLASS_NAME = 'bg-[rgb(26_42_74/0.95)]'
 
 /** Boards with a card panel beside the art: Vagabond quests, Cult revealed cards. */
-function hasSidePanel(view: FactionBoardViewModel): boolean {
+function hasSidePanel(view: ArtFactionBoardViewModel): boolean {
   return view.kind === 'vagabond' || view.kind === 'lizard'
 }
 
 function computeBoardPlacement(
-  view: FactionBoardViewModel,
+  view: ArtFactionBoardViewModel,
   viewWidth: number,
   viewHeight: number,
 ): BoardImagePlacement {
@@ -75,6 +77,21 @@ function useViewportSize(): { width: number; height: number } {
   return size
 }
 
+function CloseBoardButton(): JSX.Element {
+  return (
+    <button
+      type="button"
+      className="faction-board-modal__close absolute top-2.5 right-3 z-2 cursor-root-pointer bg-parchment px-2 py-1 font-display text-[16px] text-ink"
+      aria-label="Close"
+      onClick={() => {
+        hideFactionBoard()
+      }}
+    >
+      ✕
+    </button>
+  )
+}
+
 /** React faction/character board (art + layout overlays). */
 export function FactionBoardModal(): JSX.Element | null {
   const view = useSyncExternalStore(
@@ -86,6 +103,27 @@ export function FactionBoardModal(): JSX.Element | null {
 
   if (view === null) {
     return null
+  }
+
+  if (isBotBoardViewModel(view)) {
+    return (
+      <div
+        className="faction-board-modal pointer-events-auto fixed inset-0 z-360"
+        role="dialog"
+        aria-modal="true"
+      >
+        <button
+          type="button"
+          className="absolute inset-0 cursor-root-pointer bg-forest-deep/72"
+          aria-label="Close faction board"
+          onClick={() => {
+            hideFactionBoard()
+          }}
+        />
+        <CloseBoardButton />
+        <BotFactionBoard view={view} />
+      </div>
+    )
   }
 
   const layout = factionBoardLayoutForKind(view.kind)
@@ -113,16 +151,7 @@ export function FactionBoardModal(): JSX.Element | null {
           hideFactionBoard()
         }}
       />
-      <button
-        type="button"
-        className="faction-board-modal__close absolute top-2.5 right-3 z-2 cursor-root-pointer bg-parchment px-2 py-1 font-display text-[16px] text-ink"
-        aria-label="Close"
-        onClick={() => {
-          hideFactionBoard()
-        }}
-      >
-        ✕
-      </button>
+      <CloseBoardButton />
       <div
         className="pointer-events-none absolute z-1 flex flex-row items-stretch gap-3"
         style={{

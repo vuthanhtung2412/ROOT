@@ -285,7 +285,23 @@ export type Action =
   | { type: 'rest' }
   | LizardAction
   | RiverfolkAction
+  | BotAction
   | ResolveEventAction
+
+/**
+ * Rule: Rootbotics 4–5 — what a bot does on its own turn. The engine takes
+ * `botStep` by itself; the others only name the step in the log. No player
+ * can send them.
+ */
+export type BotAction =
+  | { type: 'botStep' }
+  | { type: 'revealOrder'; cardId: string }
+  | { type: 'botCraft'; cardId: string }
+  | { type: 'botRecruit'; clearing: ClearingId; count: number }
+  | { type: 'botBuild'; clearing: ClearingId; building: BuildingType }
+  | { type: 'botMove'; from: ClearingId; to: ClearingId; count: number }
+  | { type: 'botBattle'; clearing: ClearingId; defender: Seat }
+  | { type: 'botTurmoil' }
 
 /** Rule: 11.4–11.6 — Riverfolk Company turn actions. */
 export type RiverfolkAction =

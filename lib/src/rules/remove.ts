@@ -20,11 +20,13 @@ import {
   returnGardenToTrack,
 } from '#factions/lizard/rules.js'
 import { applyTradeDisruption } from '#factions/riverfolk/rules.js'
+import { warTax } from '#factions/bots/electricEyrie/warTax.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { warriorSupplyOf } from '#queries/supply.js'
 import { addVictoryPoints } from '#rules/dominance.js'
 import { EYRIE_TOTAL_ROOSTS } from '#state/boards.js'
+import { MECHANICAL_MARQUISE_TRACK_BUILDINGS } from '#state/botBoards.js'
 import type { GameState } from '#state/types.js'
 
 /** Rule: Vagabond — full removal clears enemies → damage 3 items instead of pawn. */
@@ -72,6 +74,25 @@ function returnPieceToOwner(state: GameState, piece: Piece): void {
     if (type === 'sawmill' || type === 'workshop' || type === 'recruiter') {
       board.tracks[type].placed = Math.min(5, board.tracks[type].placed + 1)
     }
+  }
+  if (piece.kind === 'building' && board.kind === 'mechanicalMarquise') {
+    const type = piece.type
+    if (type === 'sawmill' || type === 'workshop' || type === 'recruiter') {
+      board.tracks[type].placed = Math.min(
+        MECHANICAL_MARQUISE_TRACK_BUILDINGS + 1,
+        board.tracks[type].placed + 1,
+      )
+    }
+  }
+  if (
+    piece.kind === 'building' &&
+    piece.type === 'roost' &&
+    board.kind === 'electricEyrie'
+  ) {
+    board.roostTrack.placed = Math.min(
+      EYRIE_TOTAL_ROOSTS,
+      board.roostTrack.placed + 1,
+    )
   }
   if (piece.kind === 'building' && piece.type === 'roost' && board.kind === 'eyrie') {
     // Rule: Eyrie — destroyed roosts return to rightmost empty track space (up to all 7).
@@ -297,6 +318,9 @@ export function removePieces(
       }
     }
   }
+
+  // Trait War Tax (Electric Eyrie) — owners of what it destroys lose points.
+  logs.push(...warTax(state, { remover: actor, removed }, ctx))
 
   const replaced: boolean = options?.replaced === true
   for (const [victim, count] of victims) {

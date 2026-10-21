@@ -10,6 +10,7 @@ import {
 import type { BoardEffectBatch } from '#game/boardEffects.ts'
 import { FALL_BOARD_LAYOUT, type BoardLayout } from '#game/boardLayout.ts'
 import type { ClearingFlash } from '#game/clearingFlash.ts'
+import { botClearingPriorities } from '#game/clearingPriorities.ts'
 import { GAME_LOGICAL_HEIGHT, GAME_LOGICAL_WIDTH } from '#game/hiDpi.ts'
 import type {
   ClearingRingStyle,
@@ -221,6 +222,16 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
   useEffect(() => {
     scene?.setPieces(mapPieces)
   }, [scene, mapPieces])
+  // The factions array is rebuilt on each update: compare its contents.
+  const factionKey: string = (factions ?? []).join(',')
+  useEffect(() => {
+    scene?.setClearingPriorities(
+      botClearingPriorities(
+        factionKey.split(','),
+        clearingGrounds.map((clearing: ClearingGround): number => clearing.clearingId),
+      ),
+    )
+  }, [scene, factionKey, clearingGrounds])
   usePieceModels(scene, mapPieces)
 
   const [remembered, setRemembered] = useState<RememberedGrounds>(

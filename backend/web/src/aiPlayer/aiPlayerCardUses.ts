@@ -71,6 +71,10 @@ function usesByFaction(faction: FactionId, definition: CardDef): string[] {
     case 'riverfolk':
       // Rule: 11.2.3 Public Hand, 11.2.6 Hand Card service.
       return ['hand card service: another player may buy this card from you']
+    case 'mechanicalMarquise':
+    case 'electricEyrie':
+      // Rule: Rootbotics 2.8.1 Poor Manual Dexterity — bots hold no cards.
+      return []
   }
 }
 

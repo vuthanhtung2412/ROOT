@@ -1,3 +1,154 @@
+## Bots: Mechanical Marquise 2.0 and Electric Eyrie
+
+### Goal
+- Play against the two Rootbotics bots (`resources/rules/Law_of_Rootbotics.md` ch. 1–5, Electric Eyrie errata board).
+- A bot seat needs no human: it is seated by the engine, takes its whole turn on its own and answers its own prompts (battle hits, outrage…).
+- Humans see the bot's pieces with the cat / bird art, its order card, Buildings tracks / Decree and Roosts track.
+
+### Approach
+1. New faction ids `mechanicalMarquise` and `electricEyrie`, own boards (`kind` = faction id) and own `Faction` classes. `baseFactionOf()` maps a bot to the art faction (`marquise` / `eyrie`). Lords of the Forest (5.2.1) and the keep (4.2.1) reuse the human rules.
+2. Priority markers (2.1): Fall clearing id + 1 = printed clearing number = priority. Player target priority (2.2): setup order A…F.
+3. Engine drives bots: a bot's steps are all automatic (`autoActions`), one unit of work per auto action (one battle, one move…), so a battle opened by a bot waits for the human's answers and the turn resumes after. A bot ends its steps with an automatic `endPhase`. Pending prompts whose actor is a bot are answered by a bot policy (decline ambush, no effects, removal per 1.2.1).
+4. Bots join by themselves: at create and after each join, bot seats are seated with player id `bot-<faction>`.
+5. Rule changes (ch. 1–2): bot crafts without pieces for 1 VP, never persistent cards (1.1); takes hits tokens → buildings, random building type (1.2.1); no hand: a card given to a bot is discarded for +1 VP, a card taken from a bot is drawn instead (2.8.1); no ambush against bots (2.8.2); bots draw no starting hand, dominance out with ≤ 2 humans (3.4); bots never buy Riverfolk services.
+6. Backend: faction enum, AI-player faction tables, OpenAPI + client regen (`pnpm gen:api-client`).
+7. React: bots in the hotseat menu (local party skips joining bot seats), art and colours via `baseFactionOf`, a bot board panel (order card, tracks / Decree columns / Roosts, crafted items) in Tailwind.
+
+### Risks
+- Expand (4.5.5) loops while no building is placed; with no open slot anywhere it never ends. House rule: at most `MAXIMUM_EXPAND_COUNT` expands per turn (documented in code).
+- "Adjacent clearings with the most enemy pieces" (4.7.4) read as one destination per origin, like 4.5.4.
+- Mechanical Marquise track VP: +0 … +5 on every track, read from the bot board art (Root Database).
+- Decree columns left → right read fox, mouse, rabbit, bird from the errata board.
+- Traits / difficulty (3.3) not in scope: default difficulty, no traits.
+
+### Test plan
+- lib unit tests (fixture factory) per rule bullet: setup, order card craft, Marquise battle/recruit/build/move/expand/escalated/score, Eyrie recruit/move/battle/build/turmoil/new roost/score, hits removal, poor manual dexterity, hates surprises.
+- lib: seeded random games with each bot vs humans run to 30 VP / turn cap with no error.
+- backend: create game with bot factions, bot seats auto-joined, bot turn resolved after human endPhase.
+- React: menu party with a bot, bot board view model tests.
+- Manual: hotseat Marquise (human) vs Electric Eyrie (bot) and Eyrie (human) vs Mechanical Marquise (bot) in the browser through chrome-devtools.
+
+### Commit plan
+- [x] `docs(plan): Rootbotics Marquise and Eyrie bots`
+  - `PLAN.md`
+- [x] `feat(lib): bot faction ids, boards and target priority`
+  - `lib/src/pieces/types.ts`, `lib/src/state/boards.ts`, `lib/src/state/botBoards.ts` (new)
+  - `lib/src/factions/bots/botFactions.ts` (new), `lib/src/factions/bots/priority.ts` (new) + tests
+  - exhaustive switches over faction / board kind
+- [x] `feat(lib): bot setup and auto-seated bots`
+  - `lib/src/factions/bots/mechanicalMarquise/setup.ts`, `lib/src/factions/bots/electricEyrie/setup.ts` (new) + tests
+  - `lib/src/game/factionSetup.ts`, `lib/src/game/setup.ts`, `lib/src/game/Game.ts`
+- [x] `feat(lib): bots answer prompts, take hits and keep no hand`
+  - `lib/src/factions/bots/botAnswers.ts` (new) + test, `lib/src/events/battle/*`, `lib/src/rules/remove.ts`, `lib/src/factions/Vagabond.ts`, `lib/src/events/buyServices.ts`, `lib/src/game/Game.ts`
+- [x] `feat(lib): Mechanical Marquise turn`
+  - `lib/src/factions/bots/MechanicalMarquise.ts`, `lib/src/factions/bots/mechanicalMarquise/*.ts` (new) + tests, `lib/src/factions/index.ts`
+- [x] `feat(lib): Electric Eyrie turn`
+  - `lib/src/factions/bots/ElectricEyrie.ts`, `lib/src/factions/bots/electricEyrie/*.ts` (new) + tests, `lib/src/factions/index.ts`
+- [x] `test(lib): seeded games with bots play out`
+  - `lib/src/factions/bots/botGames.test.ts` (new)
+- [x] `feat(api): bot factions`
+  - `backend/web/src/schemas/common.ts`, `backend/web/src/typeGuards.ts`, `backend/web/src/aiPlayer/*`, `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts` (generated)
+- [x] `feat(react): bots in the hotseat menu with cat and bird art`
+  - `frontend/react/src/game/menuPartySetup.ts`, `GameSession.ts`, `theme.ts`, `assets/*`, `react/ActionTray.tsx`, `react/PieceStack.tsx`
+- [x] `feat(react): bot faction board`
+  - `frontend/react/src/ui/botBoardViewModel.ts` (new) + test, `frontend/react/src/react/BotFactionBoard.tsx` (new), `FactionBoardModal.tsx`
+
+
+## Solo mode: one player against both bots, no backend
+
+### Goal
+- Menu "Solo vs bots": the player picks a faction and plays it against Mechanical Marquise and Electric Eyrie.
+- Runs in the browser only: no API server, no WebSocket. Works in production builds.
+- A page reload in the same tab goes back into the solo game.
+
+### Approach
+1. `frontend/react/src/api/localGameApi.ts` (new): the `GameApi` surface over an in-memory `lib` `Game` (create / join / start / getGame / legalActions / submitAction / gameLog / undo / undoTurnAction / delete / snapshot load), plus a `connectSocket` that pushes after each change. Errors come out as `ApiError` like the server's. Every change saves the snapshot to `localStorage`.
+2. `GameSession.rebindApi` takes the socket factory too, so the session runs on the local api unchanged (hotseat flow: `startLocalParty`, follow the actor).
+3. Menu: `MenuSoloSetup.tsx` (faction pick among the factions no bot replaces + start). `App.tsx` binds the session to the local api, starts the party, enters the game; back on the menu the session goes back to the server api.
+
+### Risks
+- Bot turns run inside `apply`: the whole bot turn lands in one push (no step-by-step animation beyond the log effects).
+- Bundle grows by `lib` (already partly imported).
+
+### Test plan
+- `localGameApi.test.ts`: create + join + start a solo party, submit an action, illegal action → `ApiError`, delete → `NO_GAME`, push after change, snapshot restored from storage.
+- `menuPartySetup.test.ts`: solo factions.
+- Manual: chrome-devtools, backend stopped, solo game played for several turns; demo video.
+
+### Commit plan
+- [x] `feat(react): in-browser game api`
+  - `frontend/react/src/api/localGameApi.ts` (new) + test, `frontend/react/vite.config.ts` (`#` imports resolved per package so `lib` bundles)
+- [x] `feat(react): solo mode against both bots`
+  - `frontend/react/src/game/menuPartySetup.ts` + test, `frontend/react/src/react/MenuSoloSetup.tsx` (new), `MenuOverlay.tsx`, `game/hudStore.ts`, `game/GameSession.ts`, `game/soloGame.ts` (new), `App.tsx`
+
+
+## Bot difficulty and traits (Rootbotics 3.3)
+
+### Goal
+- Each bot seat gets a difficulty (easy / default / challenging / nightmare) and any of its five traits, chosen in the menu (solo and hotseat) and shown on the bot board.
+- Card text SoT: `resources/rules/Rootbotics_difficulty_and_traits.md` (scans in `resources/rules/rootbotics-cards/`).
+
+### Approach
+1. `lib`: `GameState.botSettings?: Partial<Record<BotFactionId, BotSettings>>` (`{ difficulty, traits }`), set by `Game.create({ …, botSettings })`, kept by undo. Absent = default difficulty, no trait (old snapshots unchanged). Ids, names and card text in `lib/src/public/botSettings.ts` (no runtime imports, shared with React).
+2. Mechanical Marquise: Easy recruits 2; Challenging/Nightmare +2 warriors in the highest-priority ruled ordered clearing after recruiting; Nightmare +1 VP at end of Evening. Traits: Blitz (task after the move step), Fortified (battle removal: a building costs 2 hits, a lone hit on buildings does nothing), Hospitals (battle end as defender, ≥ 2 warriors lost → 2 warriors at the keep), Iron Will (Escalated recruit ×2), Overwhelming (+1 VP per 2 unplaced Recruit warriors, Expand at most once).
+3. Electric Eyrie: Easy one vizier; Challenging/Nightmare a bird Ambush from the draw pile into the bird column; Nightmare +1 VP at end of Evening. Traits: Focused (extra hit on a tie for the longest column), Nobility (turmoil also when a Decree recruit cannot place all its warriors; turmoil scores +1 per bird card instead of losing), Relentless (after the Decree, remove defenseless enemy buildings/tokens where it has warriors), Swoop (end of Daylight, 2 warriors in the highest-priority clearing with no Eyrie piece), War Tax (each building/token it removes costs the owner 1 VP).
+4. API: `botSettings` on `POST /game`; client regen (`pnpm gen:api-client`).
+5. React: difficulty select + trait toggles per bot in the solo and hotseat menus; difficulty and traits listed on the bot board.
+
+### Risks (readings of the card text)
+- Easy Marquise in Escalated Daylight: half the warriors too (one per clearing, two if it rules one).
+- "Matching the order card" on a bird order: every clearing matches.
+- Blitz destination: the adjacent clearing with the most enemy pieces, like 4.5.4; it runs once after each move step (normal and Escalated).
+- Fortified only changes battle hits.
+- Nobility "unable to place a warrior": a Decree recruit placing fewer warriors than its column's cards (no clearing or empty supply). Turmoil then ends Daylight.
+- War Tax: the owner's VP does not go below 0.
+
+### Test plan
+- lib unit tests per card (fixture factory): each difficulty, each trait, settings kept by undo and snapshot.
+- lib seeded games: every trait on, nightmare, both bots, play out with no error.
+- React: menu settings model tests; bot board view model shows settings.
+- Manual: solo game with nightmare + all traits, hotseat with settings via backend; demo video.
+
+### Commit plan
+- [x] `feat(lib): bot difficulty and trait settings`
+  - `resources/rules/Rootbotics_difficulty_and_traits.md`, `resources/rules/rootbotics-cards/*`, `lib/src/public/botSettings.ts` (new), `lib/src/state/types.ts`, `lib/src/game/Game.ts`, `lib/src/game/setup.ts`, `lib/src/factions/bots/botSettings.ts` (new) + test
+- [x] `feat(lib): Mechanical Marquise difficulty and traits`
+  - `lib/src/factions/bots/mechanicalMarquise/*`, `MechanicalMarquise.ts`, `lib/src/events/battle/removal.ts`, `lib/src/events/battle/stages.ts` + tests
+- [x] `feat(lib): Electric Eyrie difficulty and traits`
+  - `lib/src/factions/bots/electricEyrie/*`, `ElectricEyrie.ts`, `lib/src/rules/remove.ts` + tests, `botGames.test.ts`
+- [x] `feat(api): bot settings on create game`
+  - `backend/web/src/schemas/*`, `backend/web/src/routes/game.ts`, `backend/web/openapi.json`, `backend/web_client/src/*`
+- [x] `feat(react): pick bot difficulty and traits`
+  - `frontend/react/src/react/MenuBotSettings.tsx` (new), `MenuSoloSetup.tsx`, `MenuHotseatSetup.tsx`, `game/*`, `api/localGameApi.ts`, `ui/botBoardViewModel.ts`, `react/BotFactionBoard.tsx` + tests
+
+
+## Solo run lobby: player vs bots
+
+### Goal
+- Start menu button "Solo run" opens a lobby-style screen: player tile, "VS", bot tiles, a shared faction track, Back / Play solo.
+- One or more bots (today: up to both Rootbotics bots); ＋ tile adds a bot, × removes one (at least one stays).
+- Any faction for the player; a bot and the faction it replaces never sit together (Rootbotics 3.2): Marquise / Eyrie are open when their bot is not seated.
+- ⚙ on a bot tile opens its difficulty and trait cards (`MenuBotSettings`).
+
+### Approach
+1. `game/soloTableSetup.ts` (new, pure): `SoloTable` (player faction, seated bots, selected slot: player / bot / new bot) + transitions (select slot, pick faction, remove bot, can add bot) + `soloTrackChoices` (the track as `MenuFactionChoice[]`: picked / blocked / free for the selected slot) + party factions.
+2. `menuPartySetup.ts`: drop `SOLO_FACTION_IDS` / `soloPartyFactions`; `onStartSolo` takes the party factions (`hudStore`, `App.tsx`, `soloGame.ts`).
+3. React: `MenuSoloSetup.tsx` rewritten as the lobby screen; solo seat tiles in `MenuSoloSeats.tsx` (new) follow the lobby seat look; lobby title / cancel / footer classes move to `MenuParts.tsx`; the track is `LobbyFactionDock` with a tab label and column override. `MenuOverlay.tsx`: "Solo run" button toggles the screen.
+
+### Risks
+- 2-seat solo (one human, one bot): lib already seats it (`setup.test.ts`), dominance cards out.
+
+### Test plan
+- `soloTableSetup.test.ts`: default table, clash blocking both ways, add / replace / remove bot, minimum one bot, party factions valid by `validatePartyFactions`.
+- Manual: chrome-devtools, solo run with Marquise vs Electric Eyrie only; QA solo demo script still records.
+
+### Commit plan
+- [x] `feat(react): solo run lobby`
+  - `frontend/react/src/game/soloTableSetup.ts` (new) + test, `game/menuPartySetup.ts` + test, `game/hudStore.ts`, `game/soloGame.ts`, `App.tsx`, `react/MenuSoloSetup.tsx`, `react/MenuSoloSeats.tsx` (new), `react/MenuLobbyFactionDock.tsx`, `react/MenuLobbyPanel.tsx`, `react/MenuParts.tsx`, `react/MenuOverlay.tsx`, `react/MenuBotSettings.tsx`, `react/MenuHotseatSetup.tsx`
+- [x] `dx(skills): solo demo through the solo run lobby`
+  - `.agents/skills/QA/record-solo-vs-bots.mjs`
+
+
 ## Follow-up: deprecate `GET /game/actions`
 
 ### Goal
@@ -59,3 +210,60 @@
   - `backend/web_client/src/schema.d.ts` (generated)
   - `backend/web_client/src/gameApi.ts`
   - `README.md` (endpoint table)
+
+
+## Online lobby: Co-op vs bots (Rootbotics 3.5.1)
+
+### Goal
+- Online lobby gets a host-only switch: **Free-for-all** (today, unchanged) | **Co-op vs bots**.
+- Co-op: humans (the Woodland) vs Mechanical Marquise and/or Electric Eyrie (the Clockwork).
+- Victory (3.5.1 only, no 3.5.2 variants): humans win when **every** human reaches 30 VP before any bot does; any bot at 30 → bots win. Dominance cards out. Bots never target bot pieces / each other in battle; humans still treat each other as enemies.
+- Start gate: at least **2 human players** and at least 1 bot. No AI (LLM) players in co-op.
+- Host only: mode, add / remove bot, bot difficulty + traits. Bot pace is changed **in game** by the host; guests see it read-only.
+- Mockups: `resources/mockups/coop-lobby/index.html` (boards 1–8).
+
+### Approach
+1. `lib`: `GameState.cooperative?: boolean`. `checkWin()` branch: any bot ≥ 30 → bots win; all humans ≥ 30 → humans win. Team result on state (`winningTeam: 'humans' | 'bots'`). `enemyPieceCount` and bot battle target picks skip bot seats when `cooperative`.
+2. API: lobby `playMode: 'freeForAll' | 'cooperative'` in `GameStore`; host-only routes to set mode and to add / remove a bot seat (bot faction + `BotSettings`). Co-op rejects AI players (switch to co-op drops AI seats). Start rejects < 2 humans or 0 bots. Seats stay ≤ 4, bots ≤ 2. Bot faction and its human twin never sit together (Marquise ↔ Mechanical Marquise, Eyrie ↔ Electric Eyrie). OpenAPI + `pnpm gen:api-client`.
+3. API: online bot pace. Store `botStepDelaySeconds` per game (choices from `BOT_STEP_DELAY_SECONDS_CHOICES`: 5 / 2 / 1 s); host-only route to set it; the server waits that long between bot auto actions and pushes each step over WS.
+4. React, lobby:
+   - `SeatNumberMedallion` (new): seat number; with `onRemove` it turns into ✕ on hover / focus (touch: first tap shows ✕, second removes). Replaces the separate expel ✕ (`MenuLobbySeats`) and bot ✕ (`MenuSoloSeats`).
+   - Mode switch under the lobby title (host: buttons, guest: locked + toast on change).
+   - Co-op layout: Woodland | VS | Clockwork, reusing Solo run tiles. One open human seat trails the humans; the next appears as players join.
+   - Faction dock: locks factions held by a human (name) or a bot. ＋ bot tile → dock becomes the bot picker. ⚙ → existing `MenuBotSettingsModal` (read-only for guests).
+   - Start disabled with one short reason line ("Needs 2 human players").
+5. React, game: `BotTurnBanner` pace button shown in online co-op; host changes it (calls the API), guests see a locked pace. End screen: "The Woodland holds" / "The Clockwork wins" with scores.
+
+### Risks
+- Tie: a bot and the last human reach 30 in the same action. Reading: same tie rule as base game (current turn player's team wins). Ask if wrong.
+- Server-side pacing changes how online bot turns run today (resolved in one go). Needs a way to run one bot auto action at a time from the server.
+- Mockup pace labels say Step / Normal / Fast; the build reuses the existing 5 / 2 / 1 s pace button.
+- `finishGameWithWinner` takes one seat; team win needs a new game-over shape on state and in the UI.
+
+### Test plan
+- `lib` (fixture factory): co-op win when all humans ≥ 30; loss when any bot hits 30 first; one human at 30 → game goes on; bots skip bot pieces as targets; dominance cards out; free-for-all unchanged.
+- API route tests: host-only mode / bot / pace routes (guest → 403), co-op rejects AI players, start gate (1 human → 400), twin faction clash → 400, switch drops AI seats.
+- React unit tests: co-op lobby view model (seat list, open seat trailing, locks, start reason), `SeatNumberMedallion` hover / focus / tap.
+- Manual (chrome-devtools, two browsers): host + guest, co-op with both bots, start, host changes pace mid-game, guest sees it locked, play to an end screen.
+
+### Commit plan
+- [x] `docs(plan): co-op vs bots lobby with mockups`
+  - `PLAN.md`, `resources/mockups/coop-lobby/*.html` (new)
+- [x] `feat(lib): cooperative victory against bots`
+  - `lib/src/state/types.ts`, `lib/src/game/Game.ts`, `lib/src/game/setup.ts` + tests
+- [x] `feat(lib): bots spare bot pieces in co-op`
+  - `lib/src/factions/bots/botQueries.ts`, `lib/src/factions/bots/mechanicalMarquise/turn.ts`, `lib/src/factions/bots/electricEyrie/decree.ts` + tests
+- [x] `feat(api): lobby play mode and bot seats`
+  - `backend/web/src/store/GameStore.ts`, `backend/web/src/schemas/game.ts`, `backend/web/src/routes/game.ts`, `backend/web/src/routes/lobbyPlayer.ts`, `backend/web/src/routes/aiPlayer.ts` + tests, `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts` (generated), `backend/web_client/src/gameApi.ts`
+- [x] `feat(api): host sets bot pace in online games`
+  - `backend/web/src/store/GameStore.ts`, `backend/web/src/schemas/game.ts`, `backend/web/src/routes/game.ts`, `backend/web/src/ws/GameHub.ts` + tests, `backend/web/openapi.json`, `backend/web_client/src/*` (generated)
+- [x] `refactor(react): seat number medallion with hover remove`
+  - `frontend/react/src/react/SeatNumberMedallion.tsx` (new), `react/MenuLobbySeats.tsx`, `react/MenuSoloSeats.tsx`
+- [x] `feat(react): co-op switch and seats in the online lobby`
+  - `frontend/react/src/game/menuLobby.ts` + test, `game/hudStore.ts`, `game/GameSession.ts`, `api/client.ts`, `react/MenuLobbyPanel.tsx`, `react/MenuCoopLobby.tsx` (new), `react/MenuOverlay.tsx`
+- [x] `feat(react): pick and tune bots in the co-op lobby`
+  - `frontend/react/src/react/MenuCoopLobby.tsx`, `react/MenuLobbyFactionDock.tsx`, `react/MenuBotSettingsModal.tsx`
+- [x] `feat(react): host bot pace in online co-op games`
+  - `frontend/react/src/game/botPace.ts` + test, `react/BotTurnBanner.tsx`, `game/GameSession.ts`
+- [x] `feat(react): co-op end screen`
+  - game-over view + its view model test

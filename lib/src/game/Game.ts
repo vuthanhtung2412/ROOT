@@ -14,6 +14,12 @@ import {
   type MarquiseForecast,
 } from '#factions/marquise/workshopForecast.js'
 import { factionFor } from '#factions/index.js'
+import { botEventAnswer } from '#factions/bots/botAnswers.js'
+import {
+  botPlayerIdFor,
+  isBotFaction,
+  isBotSeat,
+} from '#factions/bots/botFactions.js'
 import { beginFactionSetup } from '#game/factionSetup.js'
 import {
   markHiddenInformation,
@@ -21,6 +27,12 @@ import {
   type HiddenInformationMark,
 } from '#game/hiddenInformation.js'
 import { createInitialState, runSharedSetup } from '#game/setup.js'
+import {
+  checkCooperativeWin,
+  WINNING_VICTORY_POINTS,
+} from '#rules/cooperativeVictory.js'
+import type { BotSettings, BotSettingsByFaction } from '#public/botSettings.js'
+import type { BotFactionId } from '#public/botFactionIds.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -59,6 +71,22 @@ const PHASES: Phase[] = ['birdsong', 'daylight', 'evening']
 const MAX_PLAYERS = 4
 /** The lobby creator joins first: seat 0 hosts and cannot be expelled. */
 const LOBBY_HOST_SEAT = 0
+/**
+ * Automatic steps run in a row before a player is asked again. Bots take
+ * their whole turn (one task per step), two bots in a row included.
+ */
+const MAX_AUTOMATIC_STEPS = 1000
+
+/** What a new game starts from: seats in advance (empty = open lobby) and bot settings. */
+export type GameCreation = {
+  seed: number
+  factions?: GameState['factions']
+  id?: string
+  /** Rule: Rootbotics 3.3 — difficulty and traits per bot. */
+  botSettings?: BotSettingsByFaction
+  /** Rule: Rootbotics 3.5.1 — humans against the bots as one team. */
+  cooperative?: boolean
+}
 
 type UndoCheckpoint = {
   wasPlaying: boolean
@@ -84,6 +112,7 @@ export class Game {
   private choiceHistory: boolean[]
   private rng: SeededRng
   private signalBus: SignalBus
+  private pacesBots: boolean = false
 
   private constructor(args: {
     state: GameState
@@ -110,7 +139,7 @@ export class Game {
    * `factions` decides the seats in advance; an empty list opens the lobby:
    * each player then picks an untaken faction when joining.
    */
-  static create(args: { seed: number; factions?: GameState['factions']; id?: string }): Game {
+  static create(args: GameCreation): Game {
     const factions = args.factions ?? [...DEFAULT_FACTIONS]
     for (const faction of factions) {
       factionFor(faction)
@@ -119,14 +148,18 @@ export class Game {
       id: args.id ?? `game-${args.seed}`,
       seed: args.seed,
       factions,
+      ...(args.botSettings === undefined ? {} : { botSettings: args.botSettings }),
+      ...(args.cooperative === true ? { cooperative: true } : {}),
     })
-    return new Game({
+    const game = new Game({
       state:
         factions.length === 0 ? { ...initialState, openLobby: true } : initialState,
       history: [],
       log: [],
       rng: new SeededRng({ seed: args.seed, cursor: 0 }),
     })
+    game.log.push(...game.seatWaitingBots())
+    return game
   }
 
   static replay(
@@ -171,6 +204,22 @@ export class Game {
       rng: this.rng.toJSON(),
       choiceHistory: [...this.choiceHistory],
     }
+  }
+
+  /** Lobby only: switch between free-for-all and the humans-vs-bots team game. */
+  setCooperative(isCooperative: boolean): void {
+    if (this.state.status !== 'waiting') throw new RuleError('NOT_WAITING')
+    if (isCooperative) {
+      this.state.cooperative = true
+    } else {
+      delete this.state.cooperative
+    }
+  }
+
+  /** Lobby only: one bot's difficulty and traits (Rootbotics 3.3). */
+  setBotSettings(faction: BotFactionId, settings: BotSettings): void {
+    if (this.state.status !== 'waiting') throw new RuleError('NOT_WAITING')
+    this.state.botSettings = { ...this.state.botSettings, [faction]: settings }
   }
 
   join(playerId: string): ActionResult {
@@ -311,6 +360,10 @@ export class Game {
       logs.push(...this.runAutoActions())
     }
 
+    if (this.botHasWork()) {
+      logs.push(...this.runAutoActions())
+    }
+
     this.history.push(action)
     this.choiceHistory.push(before.isChoice)
     this.log.push(...logs)
@@ -418,11 +471,17 @@ export class Game {
     const seed = this.state.seed
     const actions = this.history.slice(0, -1)
     // An open lobby is rebuilt open: its joins carry the faction picks.
-    const restored = Game.replay(
+    const restored = Game.create({
       seed,
-      actions,
-      this.state.openLobby === true ? [] : this.state.factions,
-    )
+      factions: this.state.openLobby === true ? [] : this.state.factions,
+      ...(this.state.botSettings === undefined
+        ? {}
+        : { botSettings: this.state.botSettings }),
+      ...(this.state.cooperative === true ? { cooperative: true } : {}),
+    })
+    for (const action of actions) {
+      restored.apply(action)
+    }
     this.state = restored.state
     this.history = restored.history
     this.choiceHistory = restored.choiceHistory
@@ -590,7 +649,25 @@ export class Game {
     if (pickedFaction !== undefined && pickedFaction !== faction) {
       throw new RuleError('WRONG_FACTION', { faction: pickedFaction })
     }
-    return this.seatPlayer(playerId, faction)
+    return [...this.seatPlayer(playerId, faction), ...this.seatWaitingBots()]
+  }
+
+  /**
+   * Rule: Rootbotics 2.6 — a bot needs no human: the next preset seats that
+   * are bots take their place on their own.
+   */
+  private seatWaitingBots(): LogEntry[] {
+    const { state } = this
+    const logs: LogEntry[] = []
+    if (state.openLobby === true || state.status !== 'waiting') return logs
+    for (
+      let faction = state.factions[state.players.length];
+      faction !== undefined && isBotFaction(faction);
+      faction = state.factions[state.players.length]
+    ) {
+      logs.push(...this.seatPlayer(botPlayerIdFor(faction), faction))
+    }
+    return logs
   }
 
   /**
@@ -792,23 +869,84 @@ export class Game {
     return logs
   }
 
+  /**
+   * Paced bots: the bot work waits for `stepBot`, one step per call, so a
+   * player can watch each bot action land. Not saved: a reloaded game plays
+   * its bots at once until paced again.
+   */
+  setBotPacing(isPaced: boolean): void {
+    this.pacesBots = isPaced
+  }
+
+  /** Paced bots: take one bot step (one task, answer or phase end), then the automatic work after it. */
+  stepBot(): ActionResult {
+    if (!this.botHasWork()) throw new RuleError('NO_BOT_WORK')
+    const stepLogs: LogEntry[] | null = this.runAutomaticStep()
+    if (stepLogs === null) throw new RuleError('BOT_STUCK')
+    const logs: LogEntry[] = [...stepLogs]
+    if (this.state.status === 'playing') logs.push(...this.runAutoActions())
+    this.log.push(...logs)
+    return { state: this.state, log: logs }
+  }
+
   private runAutoActions(): LogEntry[] {
     const logs: LogEntry[] = []
     let guard = 0
-    while (guard++ < 50) {
-      // A pending choice (e.g. buying services at the start of Birdsong) comes first.
-      if (this.state.pending.length > 0) break
-      const faction = factionFor(factionOf(this.state, this.state.currentSeat))
-      const autos = faction
-        .autoActions(this.state, this.state.phase, this.state.step)
-        .filter((action) => !this.isAutoBlocked(action))
-      if (autos.length === 0) break
-      for (const action of autos) {
-        faction.validate(this.state, action, this.makeCtx())
-        logs.push(...faction.apply(this.state, action, this.makeCtx()))
-      }
+    while (guard++ < MAX_AUTOMATIC_STEPS && this.state.status === 'playing') {
+      if (this.pacesBots && this.botHasWork()) break
+      const stepLogs: LogEntry[] | null = this.runAutomaticStep()
+      if (stepLogs === null) break
+      logs.push(...stepLogs)
     }
     return logs
+  }
+
+  /** One automatic step: a bot's answer, or the auto actions of the step. Null when there is none. */
+  private runAutomaticStep(): LogEntry[] | null {
+    // A pending choice (e.g. buying services at the start of Birdsong) comes
+    // first; a bot answers its own at once.
+    if (this.state.pending.length > 0) return this.answerForBot()
+    const faction = factionFor(factionOf(this.state, this.state.currentSeat))
+    const autos = faction
+      .autoActions(this.state, this.state.phase, this.state.step)
+      .filter((action) => !this.isAutoBlocked(action))
+    if (autos.length === 0) return null
+    const logs: LogEntry[] = []
+    for (const action of autos) {
+      if (action.type === 'endPhase') {
+        // A bot ends its own steps (Rootbotics 2.6).
+        logs.push(...this.advanceOrHoldAtEndOfBirdsong())
+        continue
+      }
+      faction.validate(this.state, action, this.makeCtx())
+      logs.push(...faction.apply(this.state, action, this.makeCtx()))
+      if (this.state.status === 'playing') logs.push(...this.checkWin())
+    }
+    return logs
+  }
+
+  /** Rule: Rootbotics 2.6 — the pending event waits on a bot: it answers. Null when not. */
+  private answerForBot(): LogEntry[] | null {
+    const head = this.state.pending[0]
+    if (head === undefined) return null
+    const specs: ActionSpec[] = this.pendingLegalActions()
+    const actor: Seat | undefined = specs[0]?.actor
+    if (actor === undefined || !isBotSeat(this.state, actor)) return null
+    const ctx = this.makeCtx()
+    const answer = botEventAnswer(head, specs, ctx.rng)
+    if (answer === null || !RESOLVERS[head.type].matchesAction(this.state, head, answer, ctx)) {
+      throw new RuleError('BOT_CANNOT_ANSWER', { event: head })
+    }
+    return RESOLVERS[head.type].apply(this.state, { event: head, action: answer, actor }, ctx)
+  }
+
+  /** A bot has to act now: answer a pending event, or take its turn. */
+  botHasWork(): boolean {
+    const { state } = this
+    if (state.status !== 'playing') return false
+    if (state.pending.length === 0) return isBotSeat(state, state.currentSeat)
+    const actor: Seat | undefined = this.pendingLegalActions()[0]?.actor
+    return actor !== undefined && isBotSeat(state, actor)
   }
 
   private isAutoBlocked(action: { type: string }): boolean {
@@ -893,7 +1031,10 @@ export class Game {
 
   private checkWin(): LogEntry[] {
     const { state } = this
-    const contenders = state.players.filter((player) => player.vp >= 30)
+    if (state.cooperative === true) return checkCooperativeWin(state)
+    const contenders = state.players.filter(
+      (player) => player.vp >= WINNING_VICTORY_POINTS,
+    )
     if (contenders.length === 0) return []
 
     let winner: Seat

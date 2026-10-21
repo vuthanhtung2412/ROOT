@@ -74,12 +74,20 @@ export type GameState = {
   }
   /** Created with no faction set: players pick an untaken faction on joining. */
   openLobby?: boolean
+  /** Rootbotics 3.3 — difficulty and traits per bot; absent = default, none. */
+  botSettings?: BotSettingsByFaction
+  /** Rootbotics 3.5.1 — the humans against the bots as one team; absent = free-for-all. */
+  cooperative?: boolean
   /** Items left in the supply on the map, by item type. */
   itemSupply?: Record<string, number>
   /** Latest actions the player whose turn it is may take back; absent = none. */
   undoableActions?: number
   pending: unknown[]
   winner?: number
+  /** Seats that win along with `winner` (Vagabond coalition, co-op team). */
+  coWinners?: number[]
+  /** Co-op game over: the team that won. */
+  winningTeam?: 'humans' | 'bots'
   turnScratch?: unknown
 }
 
@@ -97,10 +105,29 @@ export type LobbyMode = components['schemas']['LobbyMode']
 /** Request header carrying the caller's join id (online mode seat check). */
 export const PLAYER_ID_HEADER = 'X-Player-Id'
 
+/** Rootbotics 3.3 — difficulty and traits per bot faction. */
+export type BotSettingsByFaction = components['schemas']['BotSettingsByFaction']
+export type BotSettings = components['schemas']['BotSettings']
+export type BotFactionId = components['schemas']['BotFactionId']
+/** Free-for-all, or the humans against the bots (Rootbotics 3.5.1). */
+export type PlayMode = components['schemas']['PlayMode']
+/** Online bot pace: seconds the server waits after each bot action. */
+export type BotStepDelaySeconds = components['schemas']['BotStepDelaySeconds']
+
+/** The paces the server offers, slowest first. */
+export const BOT_STEP_DELAY_SECONDS_OFFERED: readonly BotStepDelaySeconds[] = [5, 2, 1]
+
+export function isBotStepDelaySeconds(value: number): value is BotStepDelaySeconds {
+  return BOT_STEP_DELAY_SECONDS_OFFERED.some(
+    (seconds: BotStepDelaySeconds): boolean => seconds === value,
+  )
+}
+
 export type CreateGameInput = {
   factions?: string[]
   replace?: boolean
   mode?: LobbyMode
+  botSettings?: BotSettingsByFaction
 }
 
 export type CreateGameApiOptions = {
@@ -125,13 +152,23 @@ export type GameApi = {
   join: (playerId: string, faction?: string) => Promise<ActionResult>
   /** Open lobby, host only: free the seat of a human or AI player. */
   expelPlayer: (seat: number) => Promise<void>
+  /** Open lobby, host only: free-for-all or co-op vs bots. */
+  setPlayMode: (playMode: PlayMode) => Promise<void>
+  /** Co-op lobby, host only: seat a bot (settings left out: remembered or default). */
+  addBot: (faction: BotFactionId, settings?: BotSettings) => Promise<void>
+  /** Lobby, host only: a bot's difficulty and traits. */
+  setBotSettings: (faction: BotFactionId, settings: BotSettings) => Promise<void>
   start: () => Promise<ActionResult>
   getGame: () => Promise<{
     state: GameState
     historyLength: number
     mode: LobbyMode
     aiPlayers: AiPlayer[]
+    /** Seconds between two bot actions (online: set by the host). */
+    botStepDelaySeconds: number
   }>
+  /** Online host (hotseat: anyone): the wait between two bot actions. */
+  setBotPace: (botStepDelaySeconds: BotStepDelaySeconds) => Promise<void>
   gameView: () => Promise<string>
   getSnapshot: () => Promise<GameSnapshot>
   loadSnapshot: (snapshot: unknown, replace?: boolean) => Promise<{ state: GameState }>
@@ -237,7 +274,9 @@ function isFactionId(value: string): value is FactionId {
     value === 'alliance' ||
     value === 'vagabond' ||
     value === 'lizard' ||
-    value === 'riverfolk'
+    value === 'riverfolk' ||
+    value === 'mechanicalMarquise' ||
+    value === 'electricEyrie'
   )
 }
 
@@ -341,6 +380,9 @@ export function createGameApi(
             ? {}
             : { factions: parseFactionIds(input.factions) }),
           ...(input.mode === undefined ? {} : { mode: input.mode }),
+          ...(input.botSettings === undefined
+            ? {}
+            : { botSettings: input.botSettings }),
         },
       })
       const data = requireData(result)
@@ -367,6 +409,27 @@ export function createGameApi(
       )
     },
 
+    async setPlayMode(playMode: PlayMode): Promise<void> {
+      requireSuccess(await client.PUT('/game/play-mode', { body: { playMode } }))
+    },
+
+    async addBot(faction: BotFactionId, settings?: BotSettings): Promise<void> {
+      requireSuccess(
+        await client.POST('/game/bots', {
+          body: { faction, ...(settings === undefined ? {} : { settings }) },
+        }),
+      )
+    },
+
+    async setBotSettings(faction: BotFactionId, settings: BotSettings): Promise<void> {
+      requireSuccess(
+        await client.PUT('/game/bots/{faction}', {
+          params: { path: { faction } },
+          body: { settings },
+        }),
+      )
+    },
+
     async start(): Promise<ActionResult> {
       return parseActionResult(requireData(await client.POST('/game/start')))
     },
@@ -376,6 +439,7 @@ export function createGameApi(
       historyLength: number
       mode: LobbyMode
       aiPlayers: AiPlayer[]
+      botStepDelaySeconds: number
     }> {
       const data = requireData(
         await client.GET('/game', { params: { query: viewQuery } }),
@@ -386,7 +450,12 @@ export function createGameApi(
         mode: data.mode,
         // Absent on a server from before AI players.
         aiPlayers: data.aiPlayers ?? [],
+        botStepDelaySeconds: data.botStepDelaySeconds,
       }
+    },
+
+    async setBotPace(botStepDelaySeconds: BotStepDelaySeconds): Promise<void> {
+      requireSuccess(await client.PUT('/game/bot-pace', { body: { botStepDelaySeconds } }))
     },
 
     async gameView(): Promise<string> {

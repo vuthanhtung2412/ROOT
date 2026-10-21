@@ -31,6 +31,7 @@ import {
 import {
   formatDecreeSuitCounts,
   sortDecreeSuits,
+  type ArtFactionBoardViewModel,
   type CraftedItemView,
   type FactionBoardViewModel,
   type VagabondRelationshipMarkerView,
@@ -42,7 +43,7 @@ import {
 import { SuitIcon } from '#react/SuitIcon.tsx'
 
 type OverlayBaseProps = {
-  view: FactionBoardViewModel
+  view: ArtFactionBoardViewModel
   layout: FactionBoardPixelLayout
 }
 

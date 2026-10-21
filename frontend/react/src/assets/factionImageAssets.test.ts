@@ -13,6 +13,8 @@ const EVERY_FACTION: readonly string[] = [
   'vagabond',
   'lizard',
   'riverfolk',
+  'mechanicalMarquise',
+  'electricEyrie',
 ]
 
 function assetKeysForFactions(factionIds: readonly string[]): readonly string[] {
@@ -45,6 +47,16 @@ describe('factionImageAssetsFor', () => {
 
     expect(keys).not.toContain(GAME_ASSET_KEYS.suitFox)
     expect(keys).not.toContain(GAME_ASSET_KEYS.itemBoot)
+  })
+})
+
+describe('bot faction art', () => {
+  it('fetches the bot board and the tokens of the faction it replaces', () => {
+    const keys = assetKeysForFactions(['electricEyrie'])
+
+    expect(keys).toContain(GAME_ASSET_KEYS.characterBoardElectricEyrie)
+    expect(keys).toContain(GAME_ASSET_KEYS.tokenEyrieRoost)
+    expect(keys).not.toContain(GAME_ASSET_KEYS.characterBoardMechanicalMarquise)
   })
 })
 

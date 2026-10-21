@@ -258,6 +258,32 @@
           "sourceUrl": "https://www.therootdatabase.com/media/uploads/posts/knaves-of-the-deepwood/en/board/back.webp"
         }
       ]
+    },
+    {
+      "id": "mechanical-marquise",
+      "name": "Mechanical Marquise 2.0",
+      "expansion": "clockwork",
+      "page": "https://www.therootdatabase.com/clockwork/mechanical-marquise-20/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "mechanical-marquise/mechanical-marquise-front.webp",
+          "sourceUrl": "mechanical-marquise/mechanical-marquise-front.png"
+        }
+      ]
+    },
+    {
+      "id": "electric-eyrie",
+      "name": "Electric Eyrie",
+      "expansion": "clockwork",
+      "page": "https://www.therootdatabase.com/clockwork/electric-eyrie/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "electric-eyrie/electric-eyrie-front.webp",
+          "sourceUrl": "resources/rules/Electric_Eyrie_Errata.pdf"
+        }
+      ]
     }
   ],
   "vagabonds": [

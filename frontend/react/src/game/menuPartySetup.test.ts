@@ -34,6 +34,23 @@ describe('menuPartySetup', () => {
     })
   })
 
+  it('seats bots, never beside the faction they replace, and needs one human', () => {
+    expect(validatePartyFactions(['marquise', 'electricEyrie'])).toEqual({
+      ok: true,
+      factions: ['marquise', 'electricEyrie'],
+    })
+    expect(validatePartyFactions(['eyrie', 'electricEyrie']).ok).toBe(false)
+    expect(
+      validatePartyFactions(['mechanicalMarquise', 'electricEyrie']),
+    ).toEqual({ ok: false, reason: 'Seat at least one human player' })
+  })
+
+  it('assignFactionAtSeat swaps out the faction a bot replaces', () => {
+    expect(
+      assignFactionAtSeat(['marquise', 'eyrie'], 1, 'mechanicalMarquise'),
+    ).toEqual(['eyrie', 'mechanicalMarquise'])
+  })
+
   it('assignFactionAtSeat swaps when target taken', () => {
     expect(
       assignFactionAtSeat(['marquise', 'eyrie', 'alliance'], 1, 'alliance'),

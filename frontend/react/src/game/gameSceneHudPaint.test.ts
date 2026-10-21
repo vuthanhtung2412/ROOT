@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canUndoTurnAction } from '#game/gameSceneHudPaint.ts'
+import { canUndoTurnAction, hudStatusMessage } from '#game/gameSceneHudPaint.ts'
 import { makeGameState } from '#test/factories.ts'
 
 describe('canUndoTurnAction', () => {
@@ -23,5 +23,29 @@ describe('canUndoTurnAction', () => {
         true,
       ),
     ).toBe(false)
+  })
+})
+
+describe('hudStatusMessage', () => {
+  it('waits for the other seat while the game goes on', () => {
+    expect(hudStatusMessage(null, makeGameState(), false)).toBe(
+      'Waiting for other player…',
+    )
+  })
+
+  it('says nothing to the seat that acts', () => {
+    expect(hudStatusMessage(null, makeGameState(), true)).toBeNull()
+  })
+
+  it('waits for nobody once the game is over', () => {
+    expect(
+      hudStatusMessage(null, makeGameState({ status: 'finished' }), false),
+    ).toBeNull()
+  })
+
+  it('shows an error first', () => {
+    expect(hudStatusMessage('Not your seat', makeGameState(), true)).toBe(
+      'Not your seat',
+    )
   })
 })

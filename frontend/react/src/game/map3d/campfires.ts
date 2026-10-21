@@ -30,6 +30,8 @@ export type CampfireSite = {
   clearing: ClearingGround
   /** Its building slots and where its armies stand: the fire keeps away. */
   occupied: readonly MapGroundPoint[]
+  /** A spot picked by hand: the fire stands there instead. */
+  handPicked: MapGroundPoint | undefined
 }
 
 export type CampfiresInput = {
@@ -143,7 +145,10 @@ function campfireGround(
   site: CampfireSite,
   river: readonly MapGroundPoint[],
 ): MapGroundPoint {
-  const { clearing, occupied } = site
+  const { clearing, occupied, handPicked } = site
+  if (handPicked !== undefined) {
+    return handPicked
+  }
   const reach: number = clearing.radius * FIRE_REACH_RATIO
   const stepCount: number = Math.floor(reach / SEARCH_STEP)
   let roomiest: MapGroundPoint = clearing.center

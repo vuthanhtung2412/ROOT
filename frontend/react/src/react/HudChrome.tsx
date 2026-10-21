@@ -14,6 +14,7 @@ import {
   subscribeHud,
   type GameDrawerHudState,
 } from '#game/hudStore.ts'
+import type { GameOverView } from '#ui/gameOverViewModel.ts'
 import { GameLogButton } from '#react/GameLog.tsx'
 import { ItemSupplyButton } from '#react/ItemSupply.tsx'
 import {
@@ -209,9 +210,12 @@ export function WinnerOverlay(): JSX.Element | null {
       aria-modal="true"
     >
       <div className={`absolute ${VEIL_CLASS_NAME}`} />
-      <p className="root-panel relative z-1 m-0 px-5 py-3 text-center font-display text-4xl text-ink">
-        {`${winner.winnerFaction} wins`}
-      </p>
+      <div className="game-over root-panel relative z-1 m-0 flex flex-col items-center gap-1 px-5 py-3 text-center">
+        <p className="m-0 font-display text-4xl text-ink">{winner.title}</p>
+        {winner.scoreLine !== null ? (
+          <p className="game-over__scores m-0 font-body text-lg text-ink-soft">{winner.scoreLine}</p>
+        ) : null}
+      </div>
       <button
         type="button"
         className="root-button root-button--accent relative z-1 px-3.5 py-2 text-base"
@@ -300,12 +304,15 @@ export function syncGameDrawer(next: NonNullable<GameDrawerHudState>): void {
   patchHud({ gameDrawer: { ...next } })
 }
 
-export function syncWinnerOverlay(winnerFaction: string | null): void {
-  if (winnerFaction === null) {
-    patchHud({ winner: null })
+export function syncWinnerOverlay(gameOver: GameOverView | null): void {
+  const current = getHudSnapshot().winner
+  if (
+    current?.title === gameOver?.title &&
+    current?.scoreLine === gameOver?.scoreLine
+  ) {
     return
   }
-  patchHud({ winner: { winnerFaction } })
+  patchHud({ winner: gameOver })
 }
 
 /** Full-screen card pick: Eyrie leaders, or Vagabond characters in setup. */

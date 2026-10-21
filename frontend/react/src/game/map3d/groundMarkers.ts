@@ -61,6 +61,8 @@ export type GroundMarkers = {
   setZoom: (zoom: number) => void
   /** The pointer's ray, or null off the map: zoomed in, it shows a suit. */
   hoverAt: (raycaster: Raycaster | null) => void
+  /** Rootbotics priority beside each suit (clearing id → priority); empty = none. */
+  setClearingPriorities: (priorities: ReadonlyMap<number, number>) => void
 }
 
 /** The ground the clearings lie on. */
@@ -93,6 +95,56 @@ const SUIT_CHIP_BORDER_COLOR = '#5b4630'
 /** Over the woodland, under the piece icons. */
 const SUIT_CHIP_RENDER_ORDER = 7
 const SUIT_ICON_RENDER_ORDER = 8
+
+/** Priority chip beside the suit, relative to the suit chip. */
+const PRIORITY_CHIP_RELATIVE_SIZE = 0.72
+const PRIORITY_CHIP_OFFSET_X = 0.82
+const PRIORITY_CHIP_COLOR = '#2c2118'
+const PRIORITY_NUMBER_COLOR = '#f0e6d3'
+const PRIORITY_NUMBER_FONT = 'bold 76px Georgia, serif'
+/** The digits sit a little low in their box: lift them to the middle. */
+const PRIORITY_NUMBER_BASELINE_LIFT_PIXELS = 4
+
+/** A dark chip with the clearing's priority number, like the printed marker. */
+function createPriorityChipTexture(priority: number): CanvasTexture {
+  const canvas: HTMLCanvasElement = document.createElement('canvas')
+  canvas.width = SUIT_CHIP_TEXTURE_SIZE_PIXELS
+  canvas.height = SUIT_CHIP_TEXTURE_SIZE_PIXELS
+  const context: CanvasRenderingContext2D | null = canvas.getContext('2d')
+  if (context !== null) {
+    const center: number = SUIT_CHIP_TEXTURE_SIZE_PIXELS * HALF
+    context.beginPath()
+    context.arc(center, center, center - SUIT_CHIP_BORDER_WIDTH_PIXELS, 0, FULL_TURN_RADIANS)
+    context.fillStyle = PRIORITY_CHIP_COLOR
+    context.fill()
+    context.lineWidth = SUIT_CHIP_BORDER_WIDTH_PIXELS
+    context.strokeStyle = SUIT_CHIP_COLOR
+    context.stroke()
+    context.fillStyle = PRIORITY_NUMBER_COLOR
+    context.font = PRIORITY_NUMBER_FONT
+    context.textAlign = 'center'
+    context.textBaseline = 'middle'
+    context.fillText(String(priority), center, center + PRIORITY_NUMBER_BASELINE_LIFT_PIXELS)
+  }
+  const texture: CanvasTexture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  return texture
+}
+
+function createPriorityChip(priority: number): Sprite {
+  const chip: Sprite = new Sprite(
+    new SpriteMaterial({ map: createPriorityChipTexture(priority), depthTest: false }),
+  )
+  chip.scale.setScalar(PRIORITY_CHIP_RELATIVE_SIZE)
+  chip.position.x = PRIORITY_CHIP_OFFSET_X
+  chip.renderOrder = SUIT_ICON_RENDER_ORDER
+  return chip
+}
+
+function disposeSprite(sprite: Sprite): void {
+  sprite.material.map?.dispose()
+  sprite.material.dispose()
+}
 
 /** A round parchment chip, drawn once, behind every suit icon. */
 function createSuitChipTexture(): CanvasTexture {
@@ -154,6 +206,7 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
   const textureLoader: TextureLoader = new TextureLoader()
   const suitChipTexture: CanvasTexture = createSuitChipTexture()
   const suitBadges: Map<number, Group> = new Map<number, Group>()
+  const priorityChips: Map<number, Sprite> = new Map<number, Sprite>()
   for (const clearing of clearings) {
     const suitTexturePath: string | undefined = input.suitTexturePaths.get(
       clearing.clearingId,
@@ -239,6 +292,20 @@ export function createGroundMarkers(input: GroundMarkersInput): GroundMarkers {
     },
     hoverAt: (raycaster: Raycaster | null): void => {
       suitPops.setHovered(raycaster === null ? null : clearingIdAt(raycaster))
+    },
+    setClearingPriorities: (priorities: ReadonlyMap<number, number>): void => {
+      for (const [clearingId, chip] of priorityChips) {
+        suitBadges.get(clearingId)?.remove(chip)
+        disposeSprite(chip)
+      }
+      priorityChips.clear()
+      for (const [clearingId, priority] of priorities) {
+        const badge: Group | undefined = suitBadges.get(clearingId)
+        if (badge === undefined) continue
+        const chip: Sprite = createPriorityChip(priority)
+        badge.add(chip)
+        priorityChips.set(clearingId, chip)
+      }
     },
   }
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { isBotBoardViewModel } from '#ui/botBoardViewModel.ts'
 import {
   buildFactionBoardViewModelFromPlayer,
   formatDecreeSuitCounts,
@@ -144,8 +145,8 @@ describe('buildFactionBoardViewModelFromPlayer', () => {
       },
     })
     expect(view).not.toBeNull()
-    if (view === null) {
-      throw new Error('expected view')
+    if (view === null || isBotBoardViewModel(view)) {
+      throw new Error('expected an art board view')
     }
     expect(view.crafted.items).toEqual([
       { type: 'tea', exhausted: true, count: 1 },

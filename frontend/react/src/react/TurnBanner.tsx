@@ -21,6 +21,7 @@ import type {
 } from '#ui/TurnBanner.ts'
 import type { IconType } from 'react-icons'
 import { LuCheck, LuMinus, LuPlus, LuX } from 'react-icons/lu'
+import { useIsBotTakingTurn } from '#react/BotTurnBanner.tsx'
 import { SuitIcon } from '#react/SuitIcon.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 import {
@@ -75,7 +76,10 @@ export function TurnBanner(): JSX.Element | null {
     )
   }, [composer])
 
-  if (turn === null) {
+  const isBotTakingTurn: boolean = useIsBotTakingTurn()
+
+  // A bot's turn shows in the toast stack; the banner is back only to answer it.
+  if (turn === null || (isBotTakingTurn && composer === null)) {
     return null
   }
 

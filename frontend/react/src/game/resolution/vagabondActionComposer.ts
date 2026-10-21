@@ -285,13 +285,14 @@ export function createVagabondComposerHooks(
       }
       if (spec.type === 'repair') {
         const indexes = params.clearings ?? []
-        draft = { type: 'repair', indexes }
+        // Ready at once: no draft left behind to hold the dock hidden.
         if (indexes.length === 1) {
           return {
             kind: 'ready',
             action: { type: 'repair', itemIndex: indexes[0]! },
           }
         }
+        draft = { type: 'repair', indexes }
         const damagedItems = params.vagabondItems ?? []
         promptOptions = indexes.map((itemIndex) => {
           const item = damagedItems[itemIndex]
@@ -337,13 +338,14 @@ export function createVagabondComposerHooks(
       }
       if (spec.type === 'steal') {
         const defenders = params.defender ?? []
-        draft = { type: 'steal', defenders }
+        // Ready at once: no draft left behind to hold the dock hidden.
         if (defenders.length === 1) {
           return {
             kind: 'ready',
             action: { type: 'steal', target: defenders[0]! },
           }
         }
+        draft = { type: 'steal', defenders }
         return setDefenderPrompt('Steal — pick target', defenders)
       }
       if (spec.type === 'dayLabor') {

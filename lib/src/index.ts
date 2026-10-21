@@ -32,6 +32,31 @@ export type {
 } from '#factions/marquise/workshopForecast.js'
 export { dividendVictoryPoints } from '#factions/riverfolk/rules.js'
 export {
+  BOT_FACTION_IDS,
+  BOT_PLAYER_ID_PREFIX,
+  baseFactionOf,
+  botPlayerIdFor,
+  isBotFaction,
+  type BotFactionId,
+  type HumanFactionId,
+} from '#factions/bots/botFactions.js'
+export { clearingPriority } from '#factions/bots/priority.js'
+export {
+  BOT_DIFFICULTIES,
+  BOT_TRAITS,
+  isBotTraitOf,
+  type BotDifficulty,
+  type BotSettings,
+  type BotSettingsByFaction,
+  type BotTrait,
+} from '#public/botSettings.js'
+export {
+  ELECTRIC_EYRIE_DECREE_COLUMNS,
+  ELECTRIC_EYRIE_ROOST_VICTORY_POINTS,
+  type ElectricEyrieBoard,
+  type MechanicalMarquiseBoard,
+} from '#state/botBoards.js'
+export {
   DECREE_COLUMNS,
   EYRIE_ROOST_VP,
   type DecreeColumn,
@@ -55,7 +80,7 @@ export type {
 } from '#actions/types.js'
 export type { FactionId, Seat, Building, BuildingType, CraftingBuilding, CraftingBuildingType } from '#pieces/types.js'
 export { isCraftingBuilding, isCraftingBuildingType } from '#pieces/types.js'
-export type { GameState, GameStatus, Phase, Step, PlayerState } from '#state/types.js'
+export type { GameState, GameStatus, Phase, Step, PlayerState, Team } from '#state/types.js'
 export type { GameSnapshot } from '#state/snapshot.js'
 export {
   DEFAULT_FACTIONS,

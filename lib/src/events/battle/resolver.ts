@@ -9,6 +9,9 @@ import {
 } from '#factions/vagabond/items.js'
 import type { BattleEvent } from '#events/types.js'
 import { legalRemovalSpecs } from '#events/battle/removal.js'
+import { isBotSeat } from '#factions/bots/botFactions.js'
+import { botHasTrait } from '#factions/bots/botSettings.js'
+import { warriors } from '#queries/pieces.js'
 import {
   ambushCards,
   applyBattleStage,
@@ -32,6 +35,8 @@ function legalBattleActions(
       const specs: ActionSpec[] = [
         { type: 'resolveEvent', actor: event.defender, params: { decline: [true] } },
       ]
+      // Rule: Rootbotics 2.8.2 Hates Surprises — no ambush against bots.
+      if (isBotSeat(state, event.attacker)) return specs
       for (const card of ambushCards(state, event.defender, event.clearing)) {
         specs.push({
           type: 'resolveEvent',
@@ -139,6 +144,18 @@ function soleForcedBattleResolve(
   event: BattleEvent,
   ctx: Ctx,
 ): BattleEventApply | null {
+  // Rule: Rootbotics 2.8.1 / 2.8.2 — no ambush against a bot, and a bot holds
+  // no ambush: nothing to ask.
+  if (
+    event.stage === 'ambush' &&
+    (isBotSeat(state, event.attacker) || isBotSeat(state, event.defender))
+  ) {
+    return {
+      event,
+      actor: event.defender,
+      action: { type: 'resolveEvent', decline: true },
+    }
+  }
   // Always wait for player Skip/play — even with empty hand (no auto-decline).
   if (event.stage === 'ambush' || event.stage === 'foil') {
     return null
@@ -229,6 +246,12 @@ export function openBattle(state: GameState, open: OpenBattle, ctx: Ctx): LogEnt
   }
   if (alliedSeat !== undefined) {
     event.alliedSeat = alliedSeat
+  }
+  if (open.attackerExtraHits !== undefined) {
+    event.attackerExtraHits = open.attackerExtraHits
+  }
+  if (botHasTrait(state, defender, 'hospitals')) {
+    event.defenderWarriorsAtStart = warriors(state, clearing, defender)
   }
   state.pending.push(event)
   ctx.emit({ s: 'battle.start', ev: event })

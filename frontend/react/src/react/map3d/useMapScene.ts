@@ -26,7 +26,10 @@ import {
   type MapWorldSize,
   type NormalizedMapPoint,
 } from '#game/map3d/mapWorldSpace.ts'
-import { occupiedGroundsOfClearing } from '#react/map3d/mapPieces.ts'
+import {
+  handPickedCampfireGround,
+  occupiedGroundsOfClearing,
+} from '#react/map3d/mapPieces.ts'
 import { useSettledValue } from '#react/map3d/useSettledValue.ts'
 import { fallForestLayouts, type FallForestLayout } from '@root/lib/fall-metadata'
 
@@ -144,6 +147,7 @@ export function useMapScene(
             clearing,
             river: terrain.river,
           }),
+          handPicked: handPickedCampfireGround(clearing),
         }),
       ),
       suitTexturePaths: suitTexturePathsFor(terrain.clearings),

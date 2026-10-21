@@ -4,7 +4,7 @@ import {
   defaultFactionsForPlayerCount,
   factionDisplayName,
   isMenuFactionId,
-  MENU_FACTION_IDS,
+  HOTSEAT_FACTION_IDS,
   MENU_PLAYER_COUNTS,
   validatePartyFactions,
   type MenuFactionId,
@@ -12,6 +12,16 @@ import {
   type PartySetupValidation,
 } from '#game/menuPartySetup.ts'
 import { factionColorCss } from '#game/theme.ts'
+import { isBotFaction } from '@root/lib/bot-factions'
+import type { BotDifficulty, BotSettingsByFaction, BotTrait } from '@root/lib/bot-settings'
+import {
+  defaultBotSettingsChoices,
+  partyBotSettings,
+  withBotDifficulty,
+  withBotTraitToggled,
+  type BotSettingsChoices,
+} from '#game/botSettingsMenu.ts'
+import { MenuBotSettings } from '#react/MenuBotSettings.tsx'
 import {
   FactionBadge,
   PAPER_SHEET_CLASS_NAME,
@@ -35,9 +45,10 @@ const DEFAULT_PLAYER_COUNT: MenuPlayerCount = 2
 export function MenuHotseatSetup(props: {
   disabled: boolean
   showQaContinue: boolean
-  onStartParty: (factions: string[]) => void
+  onStartParty: (factions: string[], botSettings: BotSettingsByFaction) => void
   onQaContinue: () => void
 }): JSX.Element {
+  const [botSettings, setBotSettings] = useState<BotSettingsChoices>(defaultBotSettingsChoices)
   const [playerCount, setPlayerCount] =
     useState<MenuPlayerCount>(DEFAULT_PLAYER_COUNT)
   const [seatFactions, setSeatFactions] = useState<MenuFactionId[]>(() =>
@@ -90,7 +101,7 @@ export function MenuHotseatSetup(props: {
             (factionId: MenuFactionId, seatIndex: number): JSX.Element => (
               <li
                 key={`seat-${String(seatIndex)}`}
-                className={`menu-seat ${SEAT_ROW_CLASS_NAME} gap-3`}
+                className={`menu-seat ${SEAT_ROW_CLASS_NAME} flex-wrap gap-3`}
                 style={{ borderLeftColor: factionColorCss(factionId) }}
               >
                 <FactionBadge factionId={factionId} />
@@ -112,7 +123,7 @@ export function MenuHotseatSetup(props: {
                       )
                     }}
                   >
-                    {MENU_FACTION_IDS.map(
+                    {HOTSEAT_FACTION_IDS.map(
                       (optionId: MenuFactionId): JSX.Element => (
                         <option key={optionId} value={optionId}>
                           {factionDisplayName(optionId)}
@@ -121,6 +132,24 @@ export function MenuHotseatSetup(props: {
                     )}
                   </select>
                 </label>
+                {isBotFaction(factionId) ? (
+                  <div className="w-full pl-12">
+                    <MenuBotSettings
+                      faction={factionId}
+                      settings={botSettings[factionId]}
+                      onDifficultyChange={(difficulty: BotDifficulty): void => {
+                        setBotSettings(
+                          withBotDifficulty(botSettings, { faction: factionId, difficulty }),
+                        )
+                      }}
+                      onTraitToggle={(trait: BotTrait): void => {
+                        setBotSettings(
+                          withBotTraitToggled(botSettings, { faction: factionId, trait }),
+                        )
+                      }}
+                    />
+                  </div>
+                ) : null}
               </li>
             ),
           )}
@@ -135,7 +164,10 @@ export function MenuHotseatSetup(props: {
           if (!validation.ok) {
             return
           }
-          props.onStartParty(validation.factions)
+          props.onStartParty(
+            validation.factions,
+            partyBotSettings(validation.factions, botSettings),
+          )
         }}
       >
         Start game

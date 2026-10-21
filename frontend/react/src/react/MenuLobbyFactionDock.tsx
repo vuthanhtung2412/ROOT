@@ -21,8 +21,9 @@ const MODEL_TAB_CLASS_NAME =
   'menu-ai-player root-paper root-paper-fine flex flex-row items-center gap-2 px-2.5 py-0.5 font-display text-base whitespace-nowrap text-ink [--root-paper-color:var(--color-parchment)]'
 const MODEL_SELECT_CLASS_NAME =
   'menu-ai-player-model min-h-8 border-0 bg-transparent font-body text-[15px] text-ink'
-const FACTION_GRID_CLASS_NAME =
-  'm-0 grid grid-cols-3 gap-x-2.5 gap-y-2 border-0 p-0 md:grid-cols-6 md:gap-3'
+const FACTION_GRID_CLASS_NAME = 'm-0 grid gap-x-2.5 gap-y-2 border-0 p-0 md:gap-3'
+/** The six factions: two rows of three, one row from `md`. */
+const SIX_FACTION_COLUMNS_CLASS_NAME = 'grid-cols-3 md:grid-cols-6'
 /** One faction: head tile only, its name comes as a tooltip. */
 const FACTION_BUTTON_CLASS_NAME =
   'menu-faction-choice m-0 block cursor-root-pointer border-0 bg-transparent p-0 disabled:cursor-root-not-allowed'
@@ -69,13 +70,17 @@ export function LobbyFactionDock(props: {
   /** Non-null in `ai` mode. */
   modelPicker: LobbyDockModelPicker | null
   onPick: (faction: string) => void
+  /** Replaces the seat tab text (solo run names its own seats). */
+  tabLabel?: string
+  /** Grid columns for a track of other than six factions. */
+  columnsClassName?: string
 }): JSX.Element {
   const modelPicker: LobbyDockModelPicker | null = props.modelPicker
   return (
     <div className={DOCK_FRAME_CLASS_NAME}>
       <div className={TAB_ROW_CLASS_NAME}>
         <span className={SEAT_TAB_CLASS_NAME}>
-          {seatTabLabel(props.mode, props.seatIndex, props.isSeated)}
+          {props.tabLabel ?? seatTabLabel(props.mode, props.seatIndex, props.isSeated)}
         </span>
         {modelPicker !== null ? (
           <label className={MODEL_TAB_CLASS_NAME}>
@@ -98,7 +103,10 @@ export function LobbyFactionDock(props: {
           </label>
         ) : null}
       </div>
-      <fieldset className={FACTION_GRID_CLASS_NAME} disabled={props.disabled}>
+      <fieldset
+        className={`${FACTION_GRID_CLASS_NAME} ${props.columnsClassName ?? SIX_FACTION_COLUMNS_CLASS_NAME}`}
+        disabled={props.disabled}
+      >
         <legend className="sr-only">Choose a faction</legend>
         {props.choices.map((choice: MenuFactionChoice): JSX.Element => {
           const isPicked: boolean = props.mode === 'own' && choice.takenBy === 'you'

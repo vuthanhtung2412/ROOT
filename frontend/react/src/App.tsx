@@ -12,6 +12,7 @@ import {
   createFrontendApi,
   type AddAiPlayerInput,
   type AiPlayerApi,
+  type PlayMode,
 } from '#api/client.ts'
 import { resolveDefaultApiBaseUrl } from '#api/defaultApiBaseUrl.ts'
 import {
@@ -33,13 +34,25 @@ import {
   markHotseatGameOpen,
   reloadHotseatSlot,
 } from '#game/hotseatResume.ts'
-import { getHudSnapshot, setMenuCallbacks, subscribeHud } from '#game/hudStore.ts'
-import { buildMenuLobby } from '#game/menuLobby.ts'
+import {
+  getHudSnapshot,
+  setMenuCallbacks,
+  subscribeHud,
+  type LobbyTableChange,
+} from '#game/hudStore.ts'
+import { buildMenuLobby, PLAY_MODE_LABELS } from '#game/menuLobby.ts'
+import type { MenuFactionId } from '#game/menuPartySetup.ts'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import {
   fetchQaSnapshot,
   readQaSnapshotPath,
 } from '#game/qaSnapshotAutoload.ts'
 import { ReactGameController } from '#game/ReactGameController.ts'
+import {
+  clearSoloGameOpen,
+  resumeSoloGame,
+  startSoloGame,
+} from '#game/soloGame.ts'
 import {
   clearBootLoading,
   syncBootLoading,
@@ -138,7 +151,14 @@ export function App(): JSX.Element {
   )
   const playPendingRef = useRef(false)
   const lobbyUnsubscribeRef = useRef<(() => void) | null>(null)
-  const handleStartPartyRef = useRef<(factions: string[]) => void>(() => undefined)
+  const handleStartPartyRef = useRef<
+    (factions: string[], botSettings: BotSettingsByFaction) => void
+  >(() => undefined)
+  const handleStartSoloRef = useRef<
+    (factions: MenuFactionId[], botSettings: BotSettingsByFaction) => void
+  >(
+    () => undefined,
+  )
   const handleQaContinueRef = useRef<() => void>(() => undefined)
   const handlePlayOnlineRef = useRef<() => void>(() => undefined)
   const handlePickFactionRef = useRef<(faction: string) => void>(
@@ -148,6 +168,9 @@ export function App(): JSX.Element {
     () => undefined,
   )
   const handleExpelPlayerRef = useRef<(seat: number) => void>(() => undefined)
+  const handleChangeLobbyTableRef = useRef<(change: LobbyTableChange) => void>(
+    () => undefined,
+  )
   const handleStartOnlineRef = useRef<() => void>(() => undefined)
   const handleLeaveOnlineRef = useRef<() => void>(() => undefined)
   const resumeOnlineGameRef = useRef<() => Promise<void>>(() =>
@@ -211,8 +234,11 @@ export function App(): JSX.Element {
   const showMenu = useCallback((): void => {
     showMenuShell(import.meta.env.DEV === true)
     setMenuCallbacks({
-      onStartParty: (factions) => {
-        handleStartPartyRef.current(factions)
+      onStartParty: (factions, botSettings) => {
+        handleStartPartyRef.current(factions, botSettings)
+      },
+      onStartSolo: (factions, botSettings) => {
+        handleStartSoloRef.current(factions, botSettings)
       },
       onQaContinue: () => {
         handleQaContinueRef.current()
@@ -228,6 +254,9 @@ export function App(): JSX.Element {
       },
       onExpelPlayer: (seat) => {
         handleExpelPlayerRef.current(seat)
+      },
+      onChangeLobbyTable: (change) => {
+        handleChangeLobbyTableRef.current(change)
       },
       onStartOnline: () => {
         handleStartOnlineRef.current()
@@ -248,10 +277,20 @@ export function App(): JSX.Element {
       ])
       void controller.start(session, () => {
         clearHotseatGameOpen()
+        clearSoloGameOpen()
+        // A solo game ran on the in-browser api: the menu talks to the server.
+        const serverBaseUrl: string = resolveDefaultApiBaseUrl()
+        session.rebindApi(
+          createFrontendApi({
+            baseUrl: serverBaseUrl,
+            playerId: readRequestPlayerId,
+          }),
+          serverBaseUrl,
+        )
         showMenu()
       })
     })()
-  }, [clearLobbyWait, controller, ensureSession, showMenu])
+  }, [clearLobbyWait, controller, ensureSession, readRequestPlayerId, showMenu])
 
   const rebindSessionApi = useCallback(
     (baseUrl: string): void => {
@@ -272,6 +311,7 @@ export function App(): JSX.Element {
     clearLobbyWait()
     const session = ensureSession()
     let wasSeatedInLobby: boolean = false
+    let shownPlayMode: PlayMode | null = null
     const showLobby = (snapshot: GameSessionSnapshot): void => {
       const state = snapshot.state
       if (state === null) {
@@ -291,14 +331,17 @@ export function App(): JSX.Element {
           return
         }
         wasSeatedInLobby = isSeated
-        syncMenuLobby(
-          buildMenuLobby(
-            state,
-            session.getLocalSeat(),
-            session.isOnlineHost(),
-            getAiPlayerSnapshot().aiPlayers,
-          ),
+        const lobby = buildMenuLobby(
+          state,
+          session.getLocalSeat(),
+          session.isOnlineHost(),
+          getAiPlayerSnapshot().aiPlayers,
         )
+        if (shownPlayMode !== null && lobby.playMode !== shownPlayMode && !lobby.isHost) {
+          syncMenuStatus(`The host switched to ${PLAY_MODE_LABELS[lobby.playMode]}`, '#9a9a9a')
+        }
+        shownPlayMode = lobby.playMode
+        syncMenuLobby(lobby)
         return
       }
       if (state.status === 'setup' || state.status === 'playing') {
@@ -428,7 +471,7 @@ export function App(): JSX.Element {
   }, [clearLobbyWait, ensureSession, watchOnlineLobby])
 
   const handleStartParty = useCallback(
-    async (factions: string[]): Promise<void> => {
+    async (factions: string[], botSettings: BotSettingsByFaction): Promise<void> => {
       if (playPendingRef.current) {
         return
       }
@@ -443,7 +486,7 @@ export function App(): JSX.Element {
       const session = ensureSession()
       let started: boolean
       try {
-        started = await session.startLocalParty(factions)
+        started = await session.startLocalParty(factions, botSettings)
       } catch (error: unknown) {
         const message: string =
           error instanceof Error ? error.message : 'Start failed'
@@ -472,6 +515,29 @@ export function App(): JSX.Element {
       syncMenuStatus('Game not ready', '#c44')
     },
     [clearLobbyWait, ensureSession, enterGame, rebindSessionApi],
+  )
+
+  /** Solo: the player's faction against the bots, on the in-browser game. */
+  const handleStartSolo = useCallback(
+    async (factions: MenuFactionId[], botSettings: BotSettingsByFaction): Promise<void> => {
+      if (playPendingRef.current) {
+        return
+      }
+      playPendingRef.current = true
+      syncMenuPlayPending(true)
+      clearLobbyWait()
+      syncMenuStatus('Starting…', '#9a9a9a')
+      const session = ensureSession()
+      const started: boolean = await startSoloGame(session, { factions, botSettings })
+      playPendingRef.current = false
+      syncMenuPlayPending(false)
+      if (!started) {
+        syncMenuStatus(session.getSnapshot().error ?? 'Start failed', '#c44')
+        return
+      }
+      enterGame()
+    },
+    [clearLobbyWait, ensureSession, enterGame],
   )
 
   const handleQaContinue = useCallback(async (): Promise<void> => {
@@ -512,14 +578,17 @@ export function App(): JSX.Element {
     enterGame()
   }, [apiBaseUrlInput, ensureSession, enterGame, rebindSessionApi])
 
-  handleStartPartyRef.current = (factions: string[]) => {
-    void handleStartParty(factions)
+  handleStartPartyRef.current = (factions: string[], botSettings: BotSettingsByFaction) => {
+    void handleStartParty(factions, botSettings)
   }
   handleQaContinueRef.current = () => {
     void handleQaContinue()
   }
   handlePlayOnlineRef.current = () => {
     void handlePlayOnline()
+  }
+  handleStartSoloRef.current = (factions: MenuFactionId[], botSettings: BotSettingsByFaction) => {
+    void handleStartSolo(factions, botSettings)
   }
   handlePickFactionRef.current = (faction: string) => {
     void handlePickFaction(faction)
@@ -529,6 +598,16 @@ export function App(): JSX.Element {
   }
   handleExpelPlayerRef.current = (seat: number) => {
     void handleExpelPlayer(seat)
+  }
+  handleChangeLobbyTableRef.current = (change: LobbyTableChange) => {
+    void (async (): Promise<void> => {
+      const session = ensureSession()
+      const changed: boolean = await session.changeLobbyTable(change)
+      syncMenuStatus(
+        changed ? '' : (session.getSnapshot().error ?? 'Could not change the table'),
+        changed ? '#9a9a9a' : '#c44',
+      )
+    })()
   }
   handleLeaveOnlineRef.current = () => {
     void handleLeaveOnline()
@@ -543,6 +622,11 @@ export function App(): JSX.Element {
     }
   }
   resumeHotseatGameRef.current = async (): Promise<void> => {
+    // Reload in a solo game: the saved in-browser game, no server.
+    if (await resumeSoloGame(ensureSession())) {
+      enterGame()
+      return
+    }
     if (!isHotseatGameOpen()) {
       return
     }

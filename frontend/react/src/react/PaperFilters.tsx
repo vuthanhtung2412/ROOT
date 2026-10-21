@@ -2,7 +2,12 @@ import type { JSX } from 'react'
 
 /** Filter ids referenced by the `root-paper` utilities in `style.css`. */
 const TORN_EDGE_FILTER_ID = 'root-torn-edge'
-const TORN_EDGE_FINE_FILTER_ID = 'root-torn-edge-fine'
+export const TORN_EDGE_FINE_FILTER_ID = 'root-torn-edge-fine'
+/** Paper grain over an SVG shape: the `--root-paper-grain` recipe in `style.css`. */
+export const PAPER_GRAIN_FILTER_ID = 'root-paper-grain'
+const PAPER_GRAIN_NOISE_FREQUENCY = 0.9
+const PAPER_GRAIN_NOISE_OCTAVES = 3
+const PAPER_GRAIN_INK_MATRIX = '0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.18 0'
 
 type TornEdge = {
   filterId: string
@@ -57,6 +62,20 @@ export function PaperFilters(): JSX.Element {
           <feDisplacementMap in="SourceGraphic" scale={edge.displacementScale} />
         </filter>
       ))}
+      <filter id={PAPER_GRAIN_FILTER_ID}>
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency={PAPER_GRAIN_NOISE_FREQUENCY}
+          numOctaves={PAPER_GRAIN_NOISE_OCTAVES}
+          stitchTiles="stitch"
+        />
+        <feColorMatrix values={PAPER_GRAIN_INK_MATRIX} result="grain" />
+        <feComposite in="grain" in2="SourceGraphic" operator="in" result="grainOnShape" />
+        <feMerge>
+          <feMergeNode in="SourceGraphic" />
+          <feMergeNode in="grainOnShape" />
+        </feMerge>
+      </filter>
     </svg>
   )
 }

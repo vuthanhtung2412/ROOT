@@ -25,6 +25,7 @@ import { OptionGridModal } from '#react/OptionGridModal.tsx'
 import { PaperFilters } from '#react/PaperFilters.tsx'
 import { PlayerRail } from '#react/PlayerRail.tsx'
 import { StatusMessage } from '#react/StatusMessage.tsx'
+import { BotTurnBanner } from '#react/BotTurnBanner.tsx'
 import { TurnBanner } from '#react/TurnBanner.tsx'
 
 /** React HUD layer above the game screen. */
@@ -35,6 +36,7 @@ export function ReactHud(): JSX.Element {
       <BootOverlay />
       <MenuOverlay />
       <TurnBanner />
+      <BotTurnBanner />
       <BattleOverlay />
       <BattleClearingBadge />
       <ClearingWoodSteppers />

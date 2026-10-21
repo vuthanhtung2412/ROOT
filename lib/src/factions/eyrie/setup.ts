@@ -14,13 +14,14 @@ import {
 } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
 import { boardOf } from '#factions/eyrie/rules.js'
+import { baseFactionOf } from '#factions/bots/botFactions.js'
 
 /** Rule: Eyrie > Setup 2 — free corner, prefer diagonally opposite Marquise keep. */
 export function eyrieStartClearing(state: GameState): ClearingId {
   const taken = new Set<ClearingId>()
   let marquiseKeep: ClearingId | null = null
   for (const player of state.players) {
-    if (player.faction !== 'marquise') continue
+    if (baseFactionOf(player.faction) !== 'marquise') continue
     for (const corner of FALL.corners) {
       const hasKeep = state.clearings[corner]!.pieces.some(
         (piece) =>

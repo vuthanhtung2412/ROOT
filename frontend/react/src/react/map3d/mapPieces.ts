@@ -64,6 +64,26 @@ const SLOT_SPOTS_BY_COUNT: Readonly<
     [0.68, 0.42],
   ],
 }
+/**
+ * Clearings laid out by hand. Clearing 10: the river pushes its middle slot
+ * over the priority marker, so that slot takes the right side instead and
+ * the campfire goes to the bottom (see `CAMPFIRE_SPOTS_BY_CLEARING`).
+ */
+const SLOT_SPOTS_BY_CLEARING: Readonly<
+  Record<number, ReadonlyArray<readonly [number, number]>>
+> = {
+  10: [
+    [-0.54, -0.26],
+    [0.54, -0.32],
+    [0.68, 0.42],
+  ],
+}
+/** Where a clearing's campfire stands when picked by hand (radius ratios). */
+const CAMPFIRE_SPOTS_BY_CLEARING: Readonly<
+  Record<number, readonly [number, number]>
+> = {
+  10: [0.24, 0.64],
+}
 /** How far a slot may shift from its spot (ratio of the clearing radius). */
 const SLOT_JITTER_RATIO = 0.07
 /** How far a slot may turn either way, radians. */
@@ -130,10 +150,13 @@ function patternSpots(clearing: ClearingGround, count: number): SlotSpot[] {
   const random: () => number = createSeededRandom(
     (clearing.clearingId + 1) * SLOT_SEED_STEP,
   )
-  // Every other clearing mirrors the pattern.
-  const mirror: number = clearing.clearingId % DOUBLE === 0 ? 1 : -1
+  const handLaid: ReadonlyArray<readonly [number, number]> | undefined =
+    SLOT_SPOTS_BY_CLEARING[clearing.clearingId]
+  // Every other clearing mirrors the pattern; one laid out by hand stays.
+  const mirror: number =
+    handLaid !== undefined || clearing.clearingId % DOUBLE === 0 ? 1 : -1
   const pattern: ReadonlyArray<readonly [number, number]> | undefined =
-    SLOT_SPOTS_BY_COUNT[count]
+    handLaid ?? SLOT_SPOTS_BY_COUNT[count]
   const jitter = (): number =>
     (random() - HALF) * DOUBLE * SLOT_JITTER_RATIO * clearing.radius
   if (pattern === undefined) {
@@ -272,7 +295,9 @@ function slotPieces(
 /** Whether one of the clearing's slots lies in its front half. */
 function hasFrontSlot(clearingId: number): boolean {
   const pattern: ReadonlyArray<readonly [number, number]> =
-    SLOT_SPOTS_BY_COUNT[FALL_CLEARING_SLOT_COUNTS[clearingId] ?? 0] ?? []
+    SLOT_SPOTS_BY_CLEARING[clearingId] ??
+    SLOT_SPOTS_BY_COUNT[FALL_CLEARING_SLOT_COUNTS[clearingId] ?? 0] ??
+    []
   return pattern.some(
     ([, ratioZ]: readonly [number, number]): boolean => ratioZ > 0,
   )
@@ -384,6 +409,22 @@ export function occupiedGroundsOfClearing(site: SlotSite): MapGroundPoint[] {
         : 0,
     }),
   ]
+}
+
+/** Where the campfire of a clearing stands, when it is picked by hand. */
+export function handPickedCampfireGround(
+  clearing: ClearingGround,
+): MapGroundPoint | undefined {
+  const spot: readonly [number, number] | undefined =
+    CAMPFIRE_SPOTS_BY_CLEARING[clearing.clearingId]
+  if (spot === undefined) {
+    return undefined
+  }
+  const [ratioX, ratioZ] = spot
+  return {
+    x: clearing.center.x + ratioX * clearing.radius,
+    z: clearing.center.z + ratioZ * clearing.radius,
+  }
 }
 
 /** Everything to stand on the 3D map for the current board. */

@@ -1,6 +1,7 @@
 /**
  * Menu party setup — player count + unique faction seats.
  */
+import { artFactionOf, isBotFaction } from '@root/lib/bot-factions'
 
 export const MENU_FACTION_IDS = [
   'marquise',
@@ -11,7 +12,16 @@ export const MENU_FACTION_IDS = [
   'riverfolk',
 ] as const
 
-export type MenuFactionId = (typeof MENU_FACTION_IDS)[number]
+/** Rootbotics bots: a hotseat seat the engine plays by itself. */
+export const MENU_BOT_FACTION_IDS = ['mechanicalMarquise', 'electricEyrie'] as const
+
+/** Hotseat choices: every faction, then the bots. */
+export const HOTSEAT_FACTION_IDS = [
+  ...MENU_FACTION_IDS,
+  ...MENU_BOT_FACTION_IDS,
+] as const
+
+export type MenuFactionId = (typeof HOTSEAT_FACTION_IDS)[number]
 
 export type MenuPlayerCount = 2 | 3 | 4
 
@@ -30,7 +40,7 @@ export function defaultFactionsForPlayerCount(
 }
 
 export function isMenuFactionId(value: string): value is MenuFactionId {
-  return MENU_FACTION_IDS.some((factionId) => factionId === value)
+  return HOTSEAT_FACTION_IDS.some((factionId) => factionId === value)
 }
 
 export function isMenuPlayerCount(value: number): value is MenuPlayerCount {
@@ -58,11 +68,16 @@ export function validatePartyFactions(
     if (!isMenuFactionId(faction)) {
       return { ok: false, reason: `Unknown faction: ${faction}` }
     }
-    if (seen.has(faction)) {
+    // A bot uses the pieces of the faction it replaces (Rootbotics 3.2).
+    const pieces: string = artFactionOf(faction)
+    if (seen.has(pieces)) {
       return { ok: false, reason: 'Each player needs a different faction' }
     }
-    seen.add(faction)
+    seen.add(pieces)
     resolved.push(faction)
+  }
+  if (resolved.every((faction: MenuFactionId): boolean => isBotFaction(faction))) {
+    return { ok: false, reason: 'Seat at least one human player' }
   }
   return { ok: true, factions: resolved }
 }
@@ -77,7 +92,11 @@ export function assignFactionAtSeat(
     return [...factions]
   }
   const next = [...factions]
-  const previousIndex = next.indexOf(nextFaction)
+  // A bot and the faction it replaces share pieces: one of them per game.
+  const previousIndex = next.findIndex(
+    (faction: MenuFactionId): boolean =>
+      artFactionOf(faction) === artFactionOf(nextFaction),
+  )
   const previousFaction = next[seatIndex]!
   if (previousIndex >= 0 && previousIndex !== seatIndex) {
     next[previousIndex] = previousFaction
@@ -100,5 +119,9 @@ export function factionDisplayName(factionId: MenuFactionId): string {
       return 'Lizard Cult'
     case 'riverfolk':
       return 'Riverfolk Company'
+    case 'mechanicalMarquise':
+      return 'Mechanical Marquise'
+    case 'electricEyrie':
+      return 'Electric Eyrie'
   }
 }

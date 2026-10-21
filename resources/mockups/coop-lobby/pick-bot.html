@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Co-op pick bot</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.paper{background:#efe3c4;color:#2b2118;border-radius:6px;box-shadow:0 2px 0 #b9a77b,0 8px 24px rgba(0,0,0,.35)}
+.seg{display:flex;padding:4px;gap:4px;background:#2b2118;border-radius:999px}
+.seg button{all:unset;min-height:40px;padding:0 20px;border-radius:999px;font:600 16px Fraunces,serif;color:#efe3c4;display:flex;align-items:center}
+.seg button[aria-pressed="true"]{background:#c99a2e;color:#2b2118}
+.tile{width:110px;height:110px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:800 34px Fraunces,serif;color:rgba(43,33,24,.55);position:relative}
+.medal{position:absolute;top:-11px;left:-11px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 15px 'JetBrains Mono',monospace;background:#d8c79c;color:#2b2118;border:2px solid #2b2118}
+.gear{all:unset;cursor:pointer;position:absolute;top:-14px;right:-14px;width:40px;height:40px;border-radius:50%;background:#2f3a44;border:2px solid #c9d4dd;display:flex;align-items:center;justify-content:center}
+.xbtn{all:unset;cursor:pointer;position:absolute;bottom:-6px;right:-14px;width:32px;height:32px;border-radius:50%;background:#a5482c;display:flex;align-items:center;justify-content:center}
+.label{margin-top:-8px;position:relative;padding:4px 10px;min-width:110px;text-align:center;border-radius:4px;background:#efe3c4}
+.label b{display:block;font:600 15px Fraunces,serif}
+.label i{display:block;font:italic 400 12px 'Alegreya Sans',sans-serif;color:#5b4a36}
+.side{border-radius:10px;padding:12px 18px 16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.side h3{margin:0;font:600 17px Fraunces,serif;letter-spacing:.04em;text-transform:uppercase}
+.bot{all:unset;cursor:pointer;display:flex;gap:14px;align-items:center;width:330px;padding:12px;border-radius:8px;background:#e4dccb;box-sizing:border-box}
+.bot .art{width:96px;height:96px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font:800 30px Fraunces,serif;color:rgba(43,33,24,.55);outline:3px solid #8fa1b1;outline-offset:-3px}
+.bot b{display:block;font:600 19px Fraunces,serif}
+.bot i{display:block;font:italic 14px 'Alegreya Sans',sans-serif;color:#5b4a36}
+.btn{all:unset;cursor:pointer;min-height:48px;padding:0 28px;border-radius:6px;font:600 19px Fraunces,serif;display:flex;align-items:center}
+.callout{position:absolute;font:500 14px 'Alegreya Sans',sans-serif;color:#2b2118;background:#ffd970;border-radius:6px;padding:8px 12px;max-width:220px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+</style>
+<style>.seat-medal{all:unset;box-sizing:border-box;cursor:pointer;width:40px;height:40px;border-radius:50%;border:2px solid #2b2118;background:#c9d4dd;color:#2b2118;display:flex;align-items:center;justify-content:center;font:600 17px "JetBrains Mono",monospace}.seat-medal .cross{display:none}.seat-medal:hover,.seat-medal:focus-visible{background:#a5482c}.seat-medal:hover .number,.seat-medal:focus-visible .number{display:none}.seat-medal:hover .cross,.seat-medal:focus-visible .cross{display:flex}</style>
+</helmet>
+<div style="width:1280px;height:800px;box-sizing:border-box;background:radial-gradient(ellipse at 50% 30%,#3c5236,#1b261b 70%);font-family:'Alegreya Sans',sans-serif;position:relative;display:flex;flex-direction:column;align-items:center;padding:24px 48px;gap:14px">
+  <h2 class="paper" style="margin:0;padding:6px 22px;font:600 22px Fraunces,serif">Online lobby · 3 of 4 seats</h2>
+  <div class="seg" role="group" aria-label="Game mode"><button aria-pressed="false">Free-for-all</button><button aria-pressed="true">Co-op vs bots</button></div>
+
+  <div style="display:flex;align-items:stretch;gap:18px;margin-top:6px">
+    <section class="side" style="background:rgba(239,227,196,.12);border:2px solid #c99a2e" aria-label="Woodland team">
+      <h3 style="color:#f4dc95">Woodland · humans</h3>
+      <ol style="margin:4px 0 0;padding:0;list-style:none;display:flex;gap:24px">
+        <li style="display:flex;flex-direction:column;align-items:center">
+          <div class="tile" style="background:#9cc596">WA<span class="medal" style="background:#c99a2e">1</span></div>
+          <div class="label" style="background:#f4dc95"><b>Woodland Alliance</b><i>you · host</i></div>
+        </li>
+        <li style="display:flex;flex-direction:column;align-items:center">
+          <div class="tile" style="background:#bdbdbd">VB<span class="medal">2</span></div>
+          <div class="label"><b>Vagabond</b><i>Ana</i></div>
+        </li>
+      </ol>
+    </section>
+    <div style="align-self:center;width:54px;height:54px;border-radius:50%;background:#2b2118;color:#efe3c4;border:3px solid #c99a2e;display:flex;align-items:center;justify-content:center;font:800 19px Fraunces,serif">VS</div>
+    <section class="side" style="background:rgba(93,107,120,.35);border:2px solid #8fa1b1" aria-label="Clockwork bots">
+      <h3 style="color:#dfe6ec">Clockwork · bots</h3>
+      <ol style="margin:4px 0 0;padding:0;list-style:none;display:flex;gap:28px">
+        <li style="display:flex;flex-direction:column;align-items:center">
+          <div class="tile" style="background:#e9a866;outline:3px solid #8fa1b1;outline-offset:-3px">MM<span style="position:absolute;top:-14px;left:-14px"><button class="seat-medal" aria-label="Remove Mechanical Marquise"><span class="number">3</span><svg class="cross" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbf3df" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></span>
+            <button class="gear" aria-label="Mechanical Marquise settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dfe6ec" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>          </div>
+          <div class="label"><b>Mech. Marquise</b><i>Challenging · 1 trait</i></div>
+        </li>
+        <li style="display:flex;flex-direction:column;align-items:center">
+          <button aria-label="Add a bot" style="all:unset;cursor:pointer;width:110px;height:110px;box-sizing:border-box;border-radius:8px;border:3px dashed #c99a2e;box-shadow:0 0 0 4px #c99a2e;background:rgba(201,212,221,.18);display:flex;align-items:center;justify-content:center;font:800 48px Fraunces,serif;color:#f4dc95;position:relative">+<span class="medal" style="background:#c9d4dd;font-size:15px">4</span></button>
+          <div class="label" style="background:#f4dc95"><b>Add bot</b><i>pick below</i></div>
+        </li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="paper" aria-label="Bot dock" style="margin-top:8px;padding:16px 22px 18px;display:flex;flex-direction:column;gap:12px;align-items:center;background:#dfe6ec">
+    <span style="font:600 16px Fraunces,serif;color:#1d252c">Seat 4 · pick a bot</span>
+    <div style="display:flex;gap:16px">
+      <button class="bot" disabled aria-disabled="true" style="cursor:not-allowed;opacity:.45">
+        <span class="art" style="background:#e9a866">MM</span>
+        <span><b>Mechanical Marquise</b><i>seat 3</i></span>
+      </button>
+      <button class="bot" style="background:#f6f1e3;box-shadow:0 0 0 3px #c99a2e">
+        <span class="art" style="background:#8fb0d9">EE</span>
+        <span><b>Electric Eyrie</b><i>Default · no trait</i></span>
+      </button>
+    </div>
+  </section>
+
+  <div style="display:flex;gap:18px;margin-top:auto">
+    <button class="btn" style="background:#a5482c;color:#fbf3df">Close lobby</button>
+    <button class="btn" style="background:#c99a2e;color:#2b2118">Start co-op game</button>
+  </div>
+
+  <div class="callout" style="top:330px;right:14px;max-width:190px">Host only. Tap + → dock below turns into the bot picker (same flow as Solo run). Picked bot joins at Default, no trait.</div>
+  <div class="callout" style="top:560px;left:14px;max-width:190px">Electric Eyrie locks if a human holds Eyrie Dynasties (and vice versa).</div>
+  <div class="callout" style="top:150px;left:860px;max-width:200px">⚙ opens board 8. Hover (or focus / tap) the seat number → it turns into ✕ to remove. Try it in Play.</div>
+</div>
+</x-dc>
+</body>
+</html>

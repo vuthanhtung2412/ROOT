@@ -1,7 +1,11 @@
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
 import { redactLogForViewer } from '#view/redactLogForViewer.js'
 import { redactStateForViewer } from '#view/redactStateForViewer.js'
-import { store } from '#store/GameStore.js'
+import {
+  DEFAULT_BOT_STEP_DELAY_SECONDS,
+  store,
+  type BotStepDelaySeconds,
+} from '#store/GameStore.js'
 import { listAiPlayerViews, type AiPlayerView } from '#view/aiPlayerView.js'
 
 export type GamePushPayload = {
@@ -11,6 +15,8 @@ export type GamePushPayload = {
   log: unknown[]
   /** Seats played by an LLM: model and live status, never a join id. */
   aiPlayers: AiPlayerView[]
+  /** Online games: seconds the server waits after each bot action. */
+  botStepDelaySeconds: BotStepDelaySeconds
 }
 
 export type GameHubClient = {
@@ -25,6 +31,7 @@ const EMPTY_GAME_PUSH: GamePushPayload = {
   legalActions: [],
   log: [],
   aiPlayers: [],
+  botStepDelaySeconds: DEFAULT_BOT_STEP_DELAY_SECONDS,
 }
 
 /** Build the WS push payload for one viewer (opponent hands redacted). */
@@ -43,6 +50,7 @@ export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
     ),
     log: redactLogForViewer(game.log, game.state, playerId),
     aiPlayers: listAiPlayerViews(),
+    botStepDelaySeconds: store.botStepDelaySeconds,
   }
 }
 

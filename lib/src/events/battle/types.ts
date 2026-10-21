@@ -27,6 +27,8 @@ export type OpenBattle = {
   defender: Seat
   /** Rule: 9.2.9.IIc — Vagabond treats this Allied faction's warriors as own. */
   alliedSeat?: Seat
+  /** Rule: Rootbotics 5.5.1.III — Electric Eyrie's longest Decree column: extra hits. */
+  attackerExtraHits?: number
 }
 
 export type BattleEventApply = {

@@ -1,4 +1,11 @@
-import type { ActionSpec, AddAiPlayerInput, GameState } from '#api/client.ts'
+import type {
+  ActionSpec,
+  AddAiPlayerInput,
+  BotFactionId,
+  BotSettings,
+  GameState,
+  PlayMode,
+} from '#api/client.ts'
 import type { CardCatalogEntry } from '#assets/gameAssets.ts'
 import type {
   CardPileModalContent,
@@ -6,8 +13,11 @@ import type {
   CraftedCardsModalContent,
 } from '#ui/cardGalleryTypes.ts'
 import type { DecreeCardOption } from '#game/eyrieActionComposerModels.ts'
+import type { MenuFactionId } from '#game/menuPartySetup.ts'
+import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import type { DecreePanelView } from '#ui/decreePanel.ts'
 import type { FactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
+import type { GameOverView } from '#ui/gameOverViewModel.ts'
 import type { ActionTraySyncOptions } from '#ui/ActionTray.ts'
 import type { TurnBannerComposerView, TurnBannerViewModel } from '#ui/TurnBanner.ts'
 import type { BattleOverlayViewModel } from '#ui/BattleOverlay.ts'
@@ -25,9 +35,7 @@ export type CardDetailContent = {
   catalog: CardCatalogEntry
 }
 
-export type WinnerHudState = {
-  winnerFaction: string
-} | null
+export type WinnerHudState = GameOverView | null
 
 export type LeaderPickHudState = {
   /** Offered card ids: Eyrie leaders, or Vagabond characters. */
@@ -121,7 +129,21 @@ export type MenuLobbyHudState = {
   factionChoices: MenuFactionChoice[]
   /** Open lobby: seats nobody took yet. 0 when seats are preset. */
   openSeatCount: number
+  /** Free-for-all, or the humans against the bots (Rootbotics 3.5.1). */
+  playMode: PlayMode
+  /** Why the host cannot start yet ("Needs 2 human players"); null when it can. */
+  startBlockedReason: string | null
+  /** Co-op: the bots the host may seat, marked like the faction choices. */
+  botChoices: MenuFactionChoice[]
+  /** Difficulty and traits the lobby holds per bot. */
+  botSettings: BotSettingsByFaction
 }
+
+/** A change of the co-op table the host asks the server for. */
+export type LobbyTableChange =
+  | { kind: 'setPlayMode'; playMode: PlayMode }
+  | { kind: 'addBot'; faction: BotFactionId }
+  | { kind: 'setBotSettings'; faction: BotFactionId; settings: BotSettings }
 
 export type MenuHudState = {
   statusText: string
@@ -136,7 +158,9 @@ export type MenuHudState = {
 
 export type MenuCallbacks = {
   /** Local hotseat: create lobby with chosen factions, join all, start. */
-  onStartParty: (factions: string[]) => void
+  onStartParty: (factions: string[], botSettings: BotSettingsByFaction) => void
+  /** Solo: the player's faction, then the bots, in the browser (no server). */
+  onStartSolo: (factions: MenuFactionId[], botSettings: BotSettingsByFaction) => void
   onQaContinue: () => void
   /** The one start button: join the waiting lobby, or create one. */
   onPlayOnline: () => void
@@ -146,6 +170,8 @@ export type MenuCallbacks = {
   onAddAiPlayer: (input: AddAiPlayerInput) => void
   /** Open lobby, host only: free the seat of a human or AI player. */
   onExpelPlayer: (seat: number) => void
+  /** Open lobby, host only: play mode, bots and their settings. */
+  onChangeLobbyTable: (change: LobbyTableChange) => void
   /** Online host: start once every seat is filled. */
   onStartOnline: () => void
   /** Online lobby: host closes the lobby, guest steps out of it. */
@@ -289,11 +315,13 @@ const NOOP_CALLBACKS: HudCallbacks = {
 
 const NOOP_MENU_CALLBACKS: MenuCallbacks = {
   onStartParty: () => undefined,
+  onStartSolo: () => undefined,
   onQaContinue: () => undefined,
   onPlayOnline: () => undefined,
   onPickFaction: () => undefined,
   onAddAiPlayer: () => undefined,
   onExpelPlayer: () => undefined,
+  onChangeLobbyTable: () => undefined,
   onStartOnline: () => undefined,
   onLeaveOnline: () => undefined,
 }

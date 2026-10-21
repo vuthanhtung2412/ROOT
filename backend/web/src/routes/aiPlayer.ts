@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { Action, Game, PlayerState } from '@root/lib'
+import { isBotFaction, type Action, type Game, type PlayerState } from '@root/lib'
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { streamSSE, type SSEStreamingApi } from 'hono/streaming'
 import {
@@ -128,8 +128,16 @@ aiPlayerRoutes.openapi(addAiPlayerRoute, async (context) => {
   const game = requireGame()
   requireLobby(game)
   requireHostInOnlineGame(game, context.req.header(PLAYER_ID_HEADER))
+  if (game.state.cooperative === true) {
+    // Rule: Rootbotics 3.5.1 — co-op is humans against the bots: no LLM seat.
+    throw new HttpError(400, 'COOPERATIVE_GAME', 'co-op games have no AI players')
+  }
   const body = context.req.valid('json') ?? {}
   const model = requireOfferedModel(body.model)
+  if (body.faction !== undefined && isBotFaction(body.faction)) {
+    // A Rootbotics bot plays its own turns: no AI player can take its seat.
+    throw new HttpError(400, 'BOT_FACTION', { faction: body.faction })
+  }
   const joinAction: Action = {
     type: 'join',
     playerId: `${AI_PLAYER_ID_PREFIX}${randomUUID()}`,

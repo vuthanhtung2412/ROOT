@@ -12,10 +12,14 @@ export {
   ApiError,
   type ActionResult,
   type ActionSpec,
+  type BotFactionId,
+  type BotSettings,
+  type BotStepDelaySeconds,
   type CreateGameInput,
   type GameState,
   type LegalActionsResponse,
   type LobbyMode,
+  type PlayMode,
 } from '@root/web-client/game-api'
 
 export type {

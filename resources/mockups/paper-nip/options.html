@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paper nip</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2c2118;--ink-deep:#1a1408;--parchment:#f0e6d3;--parchment-deep:#e4d4b8;--gold:#c9a04a;--gold-light:#fbe9a8;--forest-deep:#24362e;
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--forest-deep);color:var(--parchment);font-family:Georgia,'Times New Roman',serif;padding:28px 16px 64px}
+main{max-width:1180px;margin:0 auto}
+h1{font:400 34px 'IM Fell English',serif;margin:0 0 6px}
+.lead{margin:0 0 22px;color:#d9c9a3;max-width:860px;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px}
+figure{margin:0;padding:12px 12px 16px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(240,230,211,.15)}
+figcaption{margin-top:10px;color:#d9c9a3;line-height:1.4}
+figcaption b{display:block;font:400 22px 'IM Fell English',serif;color:var(--gold-light);margin-bottom:2px}
+.stage{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:18px;padding:30px 26px;border-radius:6px;overflow:hidden;
+  background:linear-gradient(90deg,rgba(26,20,8,.75),rgba(26,20,8,.15)),url(../../reference/wallpapers/ulrick-wery-riverside.webp) center/cover}
+
+/* === the app's root-paper, copied === */
+.paper{position:relative;isolation:isolate;border:0;background:transparent;color:var(--ink);font:400 24px 'IM Fell English',serif;padding:10px 26px;min-width:260px;text-align:left}
+.paper::before{content:'';position:absolute;inset:0;z-index:-1;border:3px solid var(--ink-deep);
+  background-color:var(--paper-color,var(--parchment-deep));background-image:var(--grain);background-blend-mode:multiply;
+  filter:url(#torn-fine) drop-shadow(1px 2px 0 color-mix(in srgb,#1a1408 40%,transparent));
+  clip-path:var(--nip-clip,none)}
+.paper.panel{min-width:300px;padding:16px 22px;font:italic 16px Georgia,serif;--paper-color:var(--parchment)}
+.paper.panel::before{filter:url(#torn) drop-shadow(1px 2px 0 color-mix(in srgb,#1a1408 40%,transparent))}
+
+/* === the nip: paper is cut by a V, ink lines the cut === */
+.nip{position:absolute;pointer-events:none;z-index:1;filter:url(#torn-nip)}
+.nip svg{display:block;overflow:visible}
+.nip path{fill:none;stroke:var(--ink-deep);stroke-width:3;stroke-linejoin:miter;stroke-linecap:round}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="torn" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4"/><feDisplacementMap in="SourceGraphic" scale="8"/></filter>
+  <filter id="torn-fine" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="9"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter>
+  <filter id="torn-nip" x="-30%" y="-30%" width="160%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.25" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="1.5"/></filter>
+</svg>
+<main>
+<h1>Paper nip</h1>
+<p class="lead">A small V cut into the edge of the torn paper, lined with ink, like the reference. Paper is clipped by the V (the cut shows what is behind), the ink stroke traces the cut. Same <code>root-paper</code> colours, grain and torn filters as the app. Shown on a start-menu button and a status panel.</p>
+<div class="grid" id="grid"></div>
+</main>
+<script>
+// Each nip: edge (top|bottom), x = offset from left (fraction), width, depth in px, shape (v|fang|crack)
+const OPTIONS = [
+  {key:'A', title:'A. Single V, top right', note:'One narrow nip near the top-right corner, like the reference.',
+    nips:[{edge:'top',x:.82,w:12,d:16,shape:'v'}]},
+  {key:'B', title:'B. Fang (double tip)', note:'The reference read closely: a deep tip with a short second tooth beside it.',
+    nips:[{edge:'top',x:.82,w:16,d:18,shape:'fang'}]},
+  {key:'C', title:'C. V + crack', note:'The V keeps tearing: a hairline ink crack runs on past the tip.',
+    nips:[{edge:'top',x:.82,w:12,d:14,shape:'crack'}]},
+  {key:'D', title:'D. Two nips, opposite edges', note:'Top-right V plus a smaller bottom-left one so the piece feels handled.',
+    nips:[{edge:'top',x:.82,w:12,d:16,shape:'v'},{edge:'bottom',x:.18,w:9,d:10,shape:'v'}]},
+  {key:'E', title:'E. Scattered nicks (chosen)', note:'Three tiny shallow nicks, more worn than cut.',
+    nips:[{edge:'top',x:.3,w:7,d:7,shape:'v'},{edge:'top',x:.78,w:9,d:10,shape:'v'},{edge:'bottom',x:.6,w:7,d:7,shape:'v'}]},
+];
+
+const OVERHANG = 20; // room for the torn displacement outside the box
+
+function nipPath(n){
+  const half=n.w/2;
+  if(n.shape==='fang') return `M0 0 L${n.w*.45} ${n.d} L${n.w*.6} ${n.d*.45} L${n.w*.75} ${n.d*.7} L${n.w} 0`;
+  if(n.shape==='crack') return `M0 0 L${half} ${n.d} L${n.w} 0 M${half} ${n.d} l1 4 l-2 4 l1.5 3`;
+  return `M0 0 L${half} ${n.d} L${n.w} 0`;
+}
+function nipPolygonPoints(n,width,height){
+  // cut points (paper side) of the V, in element px
+  const left=n.x*width-n.w/2, right=left+n.w, tipX=n.shape==='fang'?left+n.w*.45:left+n.w/2;
+  const pts = n.shape==='fang'
+    ? [[left,0],[tipX,n.d],[left+n.w*.6,n.d*.45],[left+n.w*.75,n.d*.7],[right,0]]
+    : [[left,0],[tipX,n.d],[right,0]];
+  return n.edge==='top' ? pts : pts.map(([x,y])=>[x,height-y]).reverse();
+}
+function clipFor(nips,width,height){
+  const o=OVERHANG;
+  const top=nips.filter(n=>n.edge==='top').sort((a,b)=>a.x-b.x);
+  const bottom=nips.filter(n=>n.edge==='bottom').sort((a,b)=>b.x-a.x);
+  const pts=[[-o,-o]];
+  top.forEach(n=>{const p=nipPolygonPoints(n,width,height);pts.push([p[0][0],-o],...p,[p[p.length-1][0],-o])});
+  pts.push([width+o,-o],[width+o,height+o]);
+  bottom.forEach(n=>{const p=nipPolygonPoints(n,width,height);pts.push([p[0][0],height+o],...p,[p[p.length-1][0],height+o])});
+  pts.push([-o,height+o]);
+  return `polygon(${pts.map(([x,y])=>`${x}px ${y}px`).join(',')})`;
+}
+function applyNips(el,nips){
+  const {width,height}=el.getBoundingClientRect();
+  el.style.setProperty('--nip-clip',clipFor(nips,width,height));
+  nips.forEach(n=>{
+    const box=document.createElement('span');box.className='nip';
+    box.style.left=`${n.x*width-n.w/2}px`;
+    box.style[n.edge]='0px';
+    if(n.edge==='bottom') box.style.transform='scaleY(-1)';
+    box.innerHTML=`<svg width="${n.w}" height="${n.d+12}"><path d="${nipPath(n)}"/></svg>`;
+    el.appendChild(box);
+  });
+}
+
+const grid=document.getElementById('grid');
+OPTIONS.forEach(opt=>{
+  const fig=document.createElement('figure');
+  fig.innerHTML=`<div class="stage">
+      <button class="paper">Play vs bots</button>
+      <button class="paper">Online lobby</button>
+      <p class="paper panel">Waiting for the Marquise to take their turn…</p>
+    </div>
+    <figcaption><b>${opt.title}</b>${opt.note}</figcaption>`;
+  grid.appendChild(fig);
+  requestAnimationFrame(()=>fig.querySelectorAll('.paper').forEach(el=>applyNips(el,opt.nips)));
+});
+</script>
+</body>
+</html>

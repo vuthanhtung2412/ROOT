@@ -47,6 +47,20 @@ describe('clearingRuler', () => {
     ).toBe(1)
   })
 
+  it('Electric Eyrie wins ties too (Rootbotics 5.2.1)', () => {
+    expect(
+      clearingRuler(
+        {
+          pieces: [
+            { kind: 'warrior', owner: 0 },
+            { kind: 'warrior', owner: 1 },
+          ],
+        },
+        ['marquise', 'electricEyrie'],
+      ),
+    ).toBe(1)
+  })
+
   it('contested non-Eyrie tie is null', () => {
     expect(
       clearingRuler(

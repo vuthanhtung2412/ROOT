@@ -29,15 +29,25 @@ export type AiPlayerSeat = {
   status: AiPlayerStatus
 }
 
+/** Online bot pace: seconds between two bot actions, slowest first (the pace button order). */
+export const BOT_STEP_DELAY_SECONDS_CHOICES = [5, 2, 1] as const
+
+export type BotStepDelaySeconds = (typeof BOT_STEP_DELAY_SECONDS_CHOICES)[number]
+
+export const DEFAULT_BOT_STEP_DELAY_SECONDS: BotStepDelaySeconds = 5
+
 export type GameStore = {
   game: Game | null
   mode: LobbyMode
   /** AI seats of the current game. Replaced, never mutated in place. */
   aiPlayers: readonly AiPlayerSeat[]
+  /** Online games: the wait between bot actions, set by the host. */
+  botStepDelaySeconds: BotStepDelaySeconds
 }
 
 export const store: GameStore = {
   game: null,
   mode: DEFAULT_LOBBY_MODE,
   aiPlayers: [],
+  botStepDelaySeconds: DEFAULT_BOT_STEP_DELAY_SECONDS,
 }
