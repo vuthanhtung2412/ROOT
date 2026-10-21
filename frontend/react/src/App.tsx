@@ -614,19 +614,18 @@ export function App(): JSX.Element {
     }
   }
   resumeHotseatGameRef.current = async (): Promise<void> => {
-    // Reload in a solo game: the saved in-browser game, no server.
+    // This tab was in a hotseat game: back into it, not the saved solo run.
+    if (isHotseatGameOpen()) {
+      if (await reloadHotseatSlot(ensureSession())) {
+        enterGame()
+        return
+      }
+      clearHotseatGameOpen()
+    }
+    // A solo run left unfinished (reload or browser closed): continue it.
     if (await resumeSoloGame()) {
       enterGame(soloGameSession())
-      return
     }
-    if (!isHotseatGameOpen()) {
-      return
-    }
-    if (await reloadHotseatSlot(ensureSession())) {
-      enterGame()
-      return
-    }
-    clearHotseatGameOpen()
   }
 
   useEffect(() => {
