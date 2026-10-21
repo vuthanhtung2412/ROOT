@@ -32,10 +32,6 @@ backend/web/.data/
 # 3D assets (Blender sources, exports, renders)
 *.blend
 *.blend1
-*.glb
-# … except the game's models, kept with Git LFS (see .gitattributes)
-!resources/reference/models/**/*.glb
-!frontend/react/public/assets/models/buildings/final/sympathy.glb
 *.gltf
 *.fbx
 *.obj
