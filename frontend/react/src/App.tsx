@@ -51,6 +51,7 @@ import { ReactGameController } from '#game/ReactGameController.ts'
 import {
   clearSoloGameOpen,
   resumeSoloGame,
+  soloGameSession,
   startSoloGame,
 } from '#game/soloGame.ts'
 import {
@@ -267,10 +268,10 @@ export function App(): JSX.Element {
     })
   }, [])
 
-  const enterGame = useCallback((): void => {
+  /** Solo passes its own session; online and hotseat play on the server one. */
+  const enterGame = useCallback((session: GameSession = ensureSession()): void => {
     void (async (): Promise<void> => {
       clearLobbyWait()
-      const session = ensureSession()
       await Promise.all([
         sharedGameAssetsPromiseRef.current ?? prefetchSharedGameAssets(),
         prefetchFactionAssets(session.getSnapshot().state?.factions ?? []),
@@ -278,19 +279,10 @@ export function App(): JSX.Element {
       void controller.start(session, () => {
         clearHotseatGameOpen()
         clearSoloGameOpen()
-        // A solo game ran on the in-browser api: the menu talks to the server.
-        const serverBaseUrl: string = resolveDefaultApiBaseUrl()
-        session.rebindApi(
-          createFrontendApi({
-            baseUrl: serverBaseUrl,
-            playerId: readRequestPlayerId,
-          }),
-          serverBaseUrl,
-        )
         showMenu()
       })
     })()
-  }, [clearLobbyWait, controller, ensureSession, readRequestPlayerId, showMenu])
+  }, [clearLobbyWait, controller, ensureSession, showMenu])
 
   const rebindSessionApi = useCallback(
     (baseUrl: string): void => {
@@ -527,17 +519,17 @@ export function App(): JSX.Element {
       syncMenuPlayPending(true)
       clearLobbyWait()
       syncMenuStatus('Starting…', '#9a9a9a')
-      const session = ensureSession()
-      const started: boolean = await startSoloGame(session, { factions, botSettings })
+      const session: GameSession = soloGameSession()
+      const started: boolean = await startSoloGame({ factions, botSettings })
       playPendingRef.current = false
       syncMenuPlayPending(false)
       if (!started) {
         syncMenuStatus(session.getSnapshot().error ?? 'Start failed', '#c44')
         return
       }
-      enterGame()
+      enterGame(session)
     },
-    [clearLobbyWait, ensureSession, enterGame],
+    [clearLobbyWait, enterGame],
   )
 
   const handleQaContinue = useCallback(async (): Promise<void> => {
@@ -623,8 +615,8 @@ export function App(): JSX.Element {
   }
   resumeHotseatGameRef.current = async (): Promise<void> => {
     // Reload in a solo game: the saved in-browser game, no server.
-    if (await resumeSoloGame(ensureSession())) {
-      enterGame()
+    if (await resumeSoloGame()) {
+      enterGame(soloGameSession())
       return
     }
     if (!isHotseatGameOpen()) {
