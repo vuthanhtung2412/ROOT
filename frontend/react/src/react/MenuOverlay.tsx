@@ -12,6 +12,12 @@ import {
 } from '#game/hudStore.ts'
 import type { MenuFactionId } from '#game/menuPartySetup.ts'
 import type { BotSettingsByFaction } from '@root/lib/bot-settings'
+import {
+  BirthdayCandle,
+  Confetti,
+  SCREEN_CONFETTI,
+  ScreenBunting,
+} from '#react/BirthdayDecorations.tsx'
 import { MenuHotseatSetup } from '#react/MenuHotseatSetup.tsx'
 import { MenuSoloSetup } from '#react/MenuSoloSetup.tsx'
 import { OnlineLobbyPanel } from '#react/MenuLobbyPanel.tsx'
@@ -38,6 +44,16 @@ const WALLPAPER_CLASS_NAME =
   'pointer-events-none absolute inset-0 size-full -scale-x-100 object-cover select-none max-sm:object-[35%_center] contrast-104 saturate-92'
 /** Play mode buttons share one width so the column reads as a list; warm cream stands off the parchment panel. */
 const HOME_BUTTON_CLASS_NAME = 'min-w-65 [--root-paper-color:var(--color-parchment-deep)]!'
+/** Birthday edition: Create game is the cake, frosting pink with a lit candle. */
+const BIRTHDAY_BUTTON_CLASS_NAME = 'min-w-65 [--root-paper-color:var(--color-frosting)]!'
+/** Banner, edition ribbon and tagline: one group, centred under the banner. */
+const BANNER_GROUP_CLASS_NAME = 'mb-auto flex w-[min(80vw,420px)] flex-col items-center'
+const EDITION_RIBBON_CLASS_NAME =
+  'relative -mt-3.5 -rotate-2 border-3 border-ink-deep bg-berry px-5.5 py-1.5 font-display text-2xl tracking-[0.06em] text-paper-bright italic shadow-stamp-lg max-sm:text-lg'
+const TAGLINE_CLASS_NAME =
+  'm-0 mt-3.5 w-max max-w-[calc(100vw-2rem)] -rotate-2 border-3 border-ink-deep bg-gold-light px-4.5 py-1.5 font-body text-base text-ink italic max-sm:text-sm'
+const EDITION_LABEL = 'Birthday Edition'
+const TAGLINE = 'The woodland throws a party. Bring a gift for the Cult.'
 /** Status line on a paper strip, like the lobby title. */
 const STATUS_CLASS_NAME =
   'root-paper root-paper-fine m-0 max-w-[70vw] px-5 py-1.5 text-center font-body text-[15px] italic'
@@ -96,18 +112,26 @@ export function MenuOverlay(): JSX.Element | null {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,color-mix(in_srgb,var(--color-moss)_55%,transparent),transparent_60%),var(--color-forest-deep)]" />
       )}
       <div className={isLobbyScreen ? MENU_DIM_CLASS_NAME : HOME_SHADE_CLASS_NAME} />
+      <ScreenBunting />
+      <Confetti pieces={SCREEN_CONFETTI} />
       <div className={isLobbyScreen ? MENU_STAGE_CLASS_NAME : HOME_STAGE_CLASS_NAME}>
-        {isLobbyScreen ? null : bannerPath !== null ? (
-          <img
-            className="mb-auto block h-auto w-[min(80vw,420px)] select-none drop-shadow-banner"
-            src={bannerPath}
-            alt="ROOT"
-            draggable={false}
-          />
-        ) : (
-          <h1 className="m-0 mb-auto font-display text-[56px] tracking-heading text-ink">
-            ROOT
-          </h1>
+        {isLobbyScreen ? null : (
+          <div className={BANNER_GROUP_CLASS_NAME}>
+            {bannerPath !== null ? (
+              <img
+                className="block h-auto w-full select-none drop-shadow-banner"
+                src={bannerPath}
+                alt="ROOT"
+                draggable={false}
+              />
+            ) : (
+              <h1 className="m-0 font-display text-[56px] tracking-heading text-ink">
+                ROOT
+              </h1>
+            )}
+            <span className={EDITION_RIBBON_CLASS_NAME}>{EDITION_LABEL}</span>
+            <p className={TAGLINE_CLASS_NAME}>{TAGLINE}</p>
+          </div>
         )}
 
         {menu.lobby !== null ? (
@@ -148,13 +172,14 @@ export function MenuOverlay(): JSX.Element | null {
             {/* The one start button: a lobby waits → join it; else create one. */}
             <button
               type="button"
-              className={`menu-play-online ${PRIMARY_BUTTON_CLASS_NAME} ${HOME_BUTTON_CLASS_NAME}`}
+              className={`menu-play-online ${PRIMARY_BUTTON_CLASS_NAME} ${BIRTHDAY_BUTTON_CLASS_NAME}`}
               disabled={menu.playPending}
               onClick={(): void => {
                 callbacks.onPlayOnline()
               }}
             >
               {menu.lobbyOnServer ? JOIN_GAME_LABEL : CREATE_GAME_LABEL}
+              <BirthdayCandle />
             </button>
             {menu.soloRunSaved ? (
               <button
