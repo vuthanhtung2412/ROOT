@@ -25,7 +25,8 @@ export type ExpansionImageAsset = {
 export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = [
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.factionLizard,
-    path: 'assets/factions/lizard.webp',
+    // Birthday edition: party hat on the icon, hat and bows on the tokens below.
+    path: 'assets/factions/lizard-birthday.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.factionRiverfolk,
@@ -41,27 +42,27 @@ export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = 
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardWarrior,
-    path: 'assets/tokens/lizard/warrior.webp',
+    path: 'assets/tokens/lizard/birthday/warrior.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenFox,
-    path: 'assets/tokens/lizard/garden-fox.webp',
+    path: 'assets/tokens/lizard/birthday/garden-fox.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenMouse,
-    path: 'assets/tokens/lizard/garden-mouse.webp',
+    path: 'assets/tokens/lizard/birthday/garden-mouse.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenRabbit,
-    path: 'assets/tokens/lizard/garden-rabbit.webp',
+    path: 'assets/tokens/lizard/birthday/garden-rabbit.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcast,
-    path: 'assets/tokens/lizard/outcast.webp',
+    path: 'assets/tokens/lizard/birthday/outcast.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcastHated,
-    path: 'assets/tokens/lizard/outcast-hated.webp',
+    path: 'assets/tokens/lizard/birthday/outcast-hated.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkWarrior,
