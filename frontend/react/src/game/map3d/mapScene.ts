@@ -11,6 +11,7 @@ import {
 import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import { createBirthdayBalloons } from '#game/map3d/birthdayBalloons.ts'
 import { createBirthdayConfetti } from '#game/map3d/birthdayConfetti.ts'
+import { createBirthdayStringLights } from '#game/map3d/birthdayStringLights.ts'
 import {
   createCampfires,
   type Campfires,
@@ -166,7 +167,10 @@ export function createMapScene(input: MapSceneInput): MapScene {
       ? []
       : [createBirthdayBalloons(treePlacements, balloonModel)]),
     ...(IS_BIRTHDAY_EDITION
-      ? [createBirthdayConfetti(input.terrain)]
+      ? [
+          createBirthdayConfetti(input.terrain),
+          createBirthdayStringLights(input.terrain),
+        ]
       : []),
     groundMarkers.group,
     pieceLayer.group,
