@@ -41,6 +41,12 @@
   --color-vagabond: #5a5a5a;
   --color-lizard: #c9b530;
   --color-riverfolk: #2f9a94;
+  /* Birthday edition party kit: bunting, confetti, gift boxes, candles. */
+  --color-frosting: #f2b8c6;
+  --color-berry: #a63d58;
+  --color-balloon: #7fb3d5;
+  --color-mint: #9fcfb0;
+  --color-flame: #f5a623;
   /* Parchment darkened like `.root-panel`. */
   --color-parchment-aged: color-mix(in srgb, #f0e6d3 94%, #1a1410);
   --tracking-display: 0.02em;
