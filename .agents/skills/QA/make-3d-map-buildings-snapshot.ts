@@ -8,10 +8,13 @@
  *   Lizard    garden (fox, mouse and rabbit)
  *   also      ruins, and clearings with empty building slots
  *
- * Marquise daylight, so the board can be played on from here.
+ * Marquise daylight, so the board can be played on from here. With
+ * `--evening`: Marquise Evening discard (two cards over the limit) instead,
+ * so the map waits at dusk with the campfires lit.
  *
- *   cd lib && pnpm exec tsx ../.agents/skills/QA/make-3d-map-buildings-snapshot.ts
+ *   cd lib && pnpm exec tsx ../.agents/skills/QA/make-3d-map-buildings-snapshot.ts [--evening]
  *   React → /?qaSnapshot=tmp/qa/snapshots/3d-map-buildings.json
+ *   React → /?qaSnapshot=tmp/qa/snapshots/3d-map-buildings-evening.json
  */
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -24,7 +27,21 @@ import type { Seat } from '../../../lib/src/pieces/types.ts'
 const skillDirectory: string = path.dirname(fileURLToPath(import.meta.url))
 const rootDirectory: string = path.resolve(skillDirectory, '../../..')
 const outDirectory: string = path.join(rootDirectory, 'tmp/qa/snapshots')
-const OUT_NAME = '3d-map-buildings.json'
+const EVENING_FLAG = '--evening'
+const IS_EVENING: boolean = process.argv.includes(EVENING_FLAG)
+const OUT_NAME: string = IS_EVENING
+  ? '3d-map-buildings-evening.json'
+  : '3d-map-buildings.json'
+/** Seven cards: two over the Evening hand limit of five. */
+const EVENING_HAND_CARD_DEFINITION_IDS: readonly string[] = [
+  'ROOT-72',
+  'ROOT-57',
+  'ROOT-205',
+  'ROOT-204',
+  'ROOT-81',
+  'ROOT-71',
+  'ROOT-73',
+]
 const SEED = 2026
 const SETUP_STEP_LIMIT = 60
 
@@ -254,13 +271,20 @@ async function main(): Promise<void> {
   syncFactionBoards(snapshot)
   snapshot.state.turn = 6
   snapshot.state.currentSeat = MARQUISE
-  snapshot.state.phase = 'daylight'
-  snapshot.state.step = 'actions'
+  snapshot.state.phase = IS_EVENING ? 'evening' : 'daylight'
+  snapshot.state.step = IS_EVENING ? 'discard' : 'actions'
+  const marquisePlayer = snapshot.state.players[MARQUISE]
+  if (IS_EVENING && marquisePlayer !== undefined) {
+    // Over the hand limit: the discard waits for a pick, so dusk holds.
+    marquisePlayer.hand = EVENING_HAND_CARD_DEFINITION_IDS.map(
+      (defId: string, index: number) => ({ id: `evening-${String(index)}`, defId }),
+    )
+  }
   snapshot.state.pending = []
   snapshot.state.turnScratch = {
     ...createTurnScratch(),
     birdsongWoodDone: true,
-    actionsLeft: 3,
+    actionsLeft: IS_EVENING ? 0 : 3,
   }
 
   const restored: Game = Game.fromJSON(snapshot)
