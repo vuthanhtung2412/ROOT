@@ -57,7 +57,7 @@ const EDITION_RIBBON_CLASS_NAME =
 const TAGLINE_CLASS_NAME =
   'm-0 mt-3.5 w-max max-w-[calc(100vw-2rem)] -rotate-2 border-3 border-ink-deep bg-gold-light px-4.5 py-1.5 font-body text-base text-ink italic max-sm:text-sm'
 const EDITION_LABEL = 'Birthday Edition'
-const TAGLINE = 'The woodland throws a party. Bring a gift for the Cult.'
+const TAGLINE = 'The woodland throws a party. Bring a gift for the Phuong.'
 /** Status line on a paper strip, like the lobby title. */
 const STATUS_CLASS_NAME =
   'root-paper root-paper-fine m-0 max-w-[70vw] px-5 py-1.5 text-center font-body text-[15px] italic'
