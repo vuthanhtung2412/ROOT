@@ -18,7 +18,10 @@ import {
   RIVERFOLK_EXPANSION_ASSET_KEYS,
   tradePostTextureKey,
 } from '#assets/riverfolkExpansionAssets.ts'
-import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
+import {
+  BIRTHDAY_ACOLYTE_NAME_TAG,
+  IS_BIRTHDAY_EDITION,
+} from '#game/birthdayEdition.ts'
 import { getHudCallbacks } from '#game/hudStore.ts'
 import { TokenBow } from '#react/BirthdayDecorations.tsx'
 import {
@@ -63,6 +66,10 @@ const FUND_WARRIOR_CLASS_NAME = 'block h-[30%] max-h-10 w-auto select-none'
 /** Sits astride the top-right corner of the box, taking no room inside it. */
 const FUND_COUNT_CLASS_NAME =
   'absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-parchment/93 px-1 font-mono text-[clamp(10px,1.8vh,13px)] leading-tight text-ink-deep'
+/** Birthday edition: name tag along the bottom edge of the acolytes icon. */
+const ACOLYTE_NAME_TAG_BOX_CLASS_NAME = 'pointer-events-none absolute z-2'
+const ACOLYTE_NAME_TAG_CLASS_NAME =
+  'absolute bottom-[2%] left-1/2 -translate-x-1/2 font-mono text-[clamp(10px,2vh,14px)] font-bold leading-tight text-ink-deep text-shadow-outline-white'
 const SERVICE_MARKER_CLASS_NAME =
   'absolute z-2 rounded-full border-[3px] border-riverfolk bg-riverfolk/28'
 
@@ -216,6 +223,16 @@ function LizardBoardOverlays(
           textureKey={RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardWarrior}
           alt="Acolytes"
         />
+      ) : null}
+      {IS_BIRTHDAY_EDITION && acolytesRegion !== null ? (
+        <div
+          className={ACOLYTE_NAME_TAG_BOX_CLASS_NAME}
+          style={layoutRegionStyle(acolytesRegion, props.layout)}
+        >
+          <span className={ACOLYTE_NAME_TAG_CLASS_NAME}>
+            {BIRTHDAY_ACOLYTE_NAME_TAG}
+          </span>
+        </div>
       ) : null}
       <OutcastMarker view={props.view} layout={props.layout} />
       {BOARD_SUITS.map((suit: BoardSuit) => (

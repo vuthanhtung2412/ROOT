@@ -95,6 +95,10 @@
   --text-shadow-outline:
     -1px -1px 0 #1a1a1a, 1px -1px 0 #1a1a1a, -1px 1px 0 #1a1a1a,
     1px 1px 0 #1a1a1a;
+  /* Dark text readable on dark or busy art: a white border round each letter. */
+  --text-shadow-outline-white:
+    -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff,
+    1px 1px 0 #ffffff;
   /*
    * Themed cursors: `cursor-root-default`, `cursor-root-pointer`,
    * `cursor-root-not-allowed` (variants work: `disabled:cursor-root-not-allowed`).
