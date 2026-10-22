@@ -38,6 +38,7 @@ import {
   PRIMARY_BUTTON_CLASS_NAME,
 } from '#react/MenuParts.tsx'
 import { SoloAddBotTile, SoloBotTile, SoloPlayerTile } from '#react/MenuSoloSeats.tsx'
+import { PartyMedallion } from '#react/PartyMedallion.tsx'
 import { useFitHeightZoom } from '#react/useFitHeightZoom.ts'
 import { VersusMedallion } from '#react/VersusMedallion.tsx'
 
@@ -145,7 +146,7 @@ export function MenuSoloSetup(props: {
               }}
             />
           </div>
-          <VersusMedallion />
+          {IS_BIRTHDAY_EDITION ? <PartyMedallion /> : <VersusMedallion />}
           <div className={SIDE_CLASS_NAME}>
             <h3 className={SIDE_HEADING_CLASS_NAME}>Bots</h3>
             <ul className={BOT_LIST_CLASS_NAME}>
