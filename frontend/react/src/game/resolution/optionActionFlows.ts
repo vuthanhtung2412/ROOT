@@ -1,3 +1,4 @@
+import { LIZARD_CULT_DISPLAY_NAME } from '#game/birthdayEdition.ts'
 import type { ActionSpec } from '#api/client.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 import { CARD_ACTION_FLOWS } from '#game/resolution/cardActionFlows.ts'
@@ -295,7 +296,7 @@ function resolveEventFlow(
 ): OptionFlow | null {
   if (pendingType === 'chooseCultCorner') {
     return setupFlow(
-      'Lizard Cult',
+      LIZARD_CULT_DISPLAY_NAME,
       { field: 'clearing', kind: 'clearing', prompt: 'choose starting corner' },
       singleFieldOptions(spec, 'clearing', 'clearing'),
     )
@@ -313,7 +314,7 @@ function resolveEventFlow(
   }
   if (pendingType === 'chooseOutcast') {
     return setupFlow(
-      'Lizard Cult',
+      LIZARD_CULT_DISPLAY_NAME,
       {
         field: 'suit',
         kind: 'choice',

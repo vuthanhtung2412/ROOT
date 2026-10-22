@@ -1,3 +1,4 @@
+import { LIZARD_CULT_DISPLAY_NAME } from '#game/birthdayEdition.ts'
 import { RIVERFOLK_EXPANSION_ASSET_KEYS } from '#assets/riverfolkExpansionAssets.ts'
 import type { CraftedLookup } from '#ui/factionBoardViewModel.ts'
 
@@ -147,7 +148,7 @@ function lizardViewModel(
   return {
     kind: 'lizard',
     seat: player.seat,
-    factionName: 'Lizard Cult',
+    factionName: LIZARD_CULT_DISPLAY_NAME,
     victoryPoints: player.vp,
     warriors: readSupplyWarriors(board),
     handSize: player.hand.length,

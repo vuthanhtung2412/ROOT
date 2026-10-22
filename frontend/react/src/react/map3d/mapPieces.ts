@@ -78,11 +78,20 @@ const SLOT_SPOTS_BY_CLEARING: Readonly<
     [0.68, 0.42],
   ],
 }
-/** Where a clearing's campfire stands when picked by hand (radius ratios). */
+/**
+ * Where a clearing's campfire stands when picked by hand (radius ratios).
+ * Clearings 0, 2, 3, 7 and 11 (priority 1, 3, 4, 8 and 12) keep it in the
+ * bottom half.
+ */
 const CAMPFIRE_SPOTS_BY_CLEARING: Readonly<
   Record<number, readonly [number, number]>
 > = {
+  0: [0.24, 0.64],
+  2: [0.24, 0.64],
+  3: [0.24, 0.64],
+  7: [0.24, 0.64],
   10: [0.24, 0.64],
+  11: [0.24, 0.64],
 }
 /** How far a slot may shift from its spot (ratio of the clearing radius). */
 const SLOT_JITTER_RATIO = 0.07

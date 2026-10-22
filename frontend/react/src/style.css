@@ -41,6 +41,20 @@
   --color-vagabond: #5a5a5a;
   --color-lizard: #c9b530;
   --color-riverfolk: #2f9a94;
+  /* Birthday edition party kit: bunting, confetti, gift boxes, candles. */
+  --color-frosting: #f2b8c6;
+  --color-berry: #a63d58;
+  --color-balloon: #7fb3d5;
+  --color-mint: #9fcfb0;
+  --color-flame: #f5a623;
+  /* Watercolour washes of the bridge letter cards, muted to sit in the wallpaper. */
+  --color-rose-wash: #d9968a;
+  --color-sage-wash: #a9c2b5;
+  --color-ochre-wash: #e3b65c;
+  /* Suit icon colours of the Lizard Cult garden tokens (birthday bows). */
+  --color-suit-fox: #c8524a;
+  --color-suit-rabbit: #e8c860;
+  --color-suit-mouse: #d98a3a;
   /* Parchment darkened like `.root-panel`. */
   --color-parchment-aged: color-mix(in srgb, #f0e6d3 94%, #1a1410);
   --tracking-display: 0.02em;
@@ -81,6 +95,10 @@
   --text-shadow-outline:
     -1px -1px 0 #1a1a1a, 1px -1px 0 #1a1a1a, -1px 1px 0 #1a1a1a,
     1px 1px 0 #1a1a1a;
+  /* Dark text readable on dark or busy art: a white border round each letter. */
+  --text-shadow-outline-white:
+    -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff,
+    1px 1px 0 #ffffff;
   /*
    * Themed cursors: `cursor-root-default`, `cursor-root-pointer`,
    * `cursor-root-not-allowed` (variants work: `disabled:cursor-root-not-allowed`).

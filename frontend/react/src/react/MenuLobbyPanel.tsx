@@ -11,6 +11,14 @@ import type {
   MenuLobbyHudState,
   MenuLobbySeat,
 } from '#game/hudStore.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
+import {
+  BIRTHDAY_START_LABEL,
+  BIRTHDAY_START_PAPER_CLASS_NAME,
+  BIRTHDAY_TABLE_TITLE,
+  BirthdayCandle,
+  GUEST_COUNT_CLASS_NAME,
+} from '#react/BirthdayDecorations.tsx'
 import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
 import { LobbyPlayModeSwitch, MenuCoopLobby } from '#react/MenuCoopLobby.tsx'
 import {
@@ -37,8 +45,14 @@ const NO_SEAT_INDEX = -1
 const SEAT_ROW_CLASS_NAME =
   'm-0 grid list-none grid-cols-2 gap-x-7 gap-y-4 p-0 md:flex md:flex-row md:items-start md:gap-11'
 const LEAVE_BUTTON_CLASS_NAME = `menu-leave-lobby ${CANCEL_BUTTON_CLASS_NAME}`
-const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME}`
+/** Birthday edition: start is the cake, frosting pink with a lit candle. */
+const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME} ${
+  IS_BIRTHDAY_EDITION ? BIRTHDAY_START_PAPER_CLASS_NAME : ''
+}`
 const PANEL_CLASS_NAME = 'm-0 flex w-full flex-col items-center gap-6'
+const LOBBY_TITLE = 'Online lobby'
+const VERSUS_START_LABEL = IS_BIRTHDAY_EDITION ? BIRTHDAY_START_LABEL : 'Start game'
+const COOPERATIVE_START_LABEL = 'Start co-op game'
 
 /** Host start; while blocked, hovering it tells why. */
 function StartButton(props: {
@@ -55,6 +69,7 @@ function StartButton(props: {
       onClick={props.onStart}
     >
       {props.label}
+      {IS_BIRTHDAY_EDITION ? <BirthdayCandle /> : null}
     </button>
   )
   if (props.blockedReason === null) return button
@@ -143,9 +158,18 @@ export function OnlineLobbyPanel(props: {
 
   const header: JSX.Element = (
     <>
-      <h2 className={LOBBY_TITLE_CLASS_NAME}>
-        Online lobby · {takenSeatCount} of {tableSeatCount} seats
-      </h2>
+      {IS_BIRTHDAY_EDITION ? (
+        <>
+          <h2 className={LOBBY_TITLE_CLASS_NAME}>{BIRTHDAY_TABLE_TITLE}</h2>
+          <p className={GUEST_COUNT_CLASS_NAME}>
+            {takenSeatCount} of {tableSeatCount} guests seated
+          </p>
+        </>
+      ) : (
+        <h2 className={LOBBY_TITLE_CLASS_NAME}>
+          {LOBBY_TITLE} · {takenSeatCount} of {tableSeatCount} seats
+        </h2>
+      )}
       {isOpenLobby ? (
         <LobbyPlayModeSwitch
           playMode={lobby.playMode}
@@ -172,7 +196,7 @@ export function OnlineLobbyPanel(props: {
         </button>
         {lobby.isHost ? (
           <StartButton
-            label={isCooperative ? 'Start co-op game' : 'Start game'}
+            label={isCooperative ? COOPERATIVE_START_LABEL : VERSUS_START_LABEL}
             blockedReason={lobby.startBlockedReason}
             disabled={props.playPending || !lobby.canStart}
             onStart={props.onStart}

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { LIZARD_CULT_DISPLAY_NAME } from '#game/birthdayEdition.ts'
 import {
   factionBoardLayoutForKind,
   findBoardLayoutRegion,
@@ -60,7 +61,7 @@ describe('Lizard Cult board view model', () => {
   it('reads acolytes, the Outcast, garden tracks and revealed cards', () => {
     const view = buildFactionBoardViewModelFromPlayer(makeLizardPlayer())
     if (view?.kind !== 'lizard') throw new Error('expected lizard board')
-    expect(view.factionName).toBe('Lizard Cult')
+    expect(view.factionName).toBe(LIZARD_CULT_DISPLAY_NAME)
     expect(view.warriors).toBe(18)
     expect(view.acolytes).toBe(2)
     expect(view.outcast).toBe('rabbit')

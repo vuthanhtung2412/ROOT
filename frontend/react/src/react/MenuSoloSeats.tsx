@@ -3,8 +3,21 @@ import { LuPlus, LuSettings2 } from 'react-icons/lu'
 import type { BotFactionId } from '@root/lib/bot-factions'
 import { BOT_DIFFICULTY_CARDS, type BotSettings } from '@root/lib/bot-settings'
 import { factionPortraitPath } from '#assets/factionPortraits.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import { factionDisplayName, type MenuFactionId } from '#game/menuPartySetup.ts'
-import { factionTintCss } from '#react/MenuLobbySeats.tsx'
+import {
+  BALLOON_GIFT_WRAP,
+  Confetti,
+  GiftBoxWrap,
+  GiftTag,
+  TILE_CONFETTI,
+  TileBunting,
+} from '#react/BirthdayDecorations.tsx'
+import {
+  factionTintCss,
+  isBirthdayGuest,
+  OPEN_SEAT_CONTENT_CLASS_NAME,
+} from '#react/MenuLobbySeats.tsx'
 import { SeatNumberMedallion } from '#react/SeatNumberMedallion.tsx'
 
 /** Portrait tile like a lobby seat; the faction tint is the paper colour. */
@@ -13,7 +26,12 @@ const PLAYER_TILE_CLASS_NAME =
 const BOT_TILE_CLASS_NAME =
   'root-paper relative box-border flex items-center justify-center p-1.5 [--root-paper-color:currentColor]'
 const ADD_BOT_TILE_CLASS_NAME =
-  'root-paper relative box-border flex items-center justify-center p-1.5 [--root-paper-color:var(--color-cream-deep)]'
+  'root-paper relative box-border flex items-center justify-center p-1.5'
+/** Birthday edition: the empty bot seat is a gift box, its ＋ on a tag. */
+const ADD_BOT_PAPER_CLASS_NAME: string = IS_BIRTHDAY_EDITION
+  ? BALLOON_GIFT_WRAP.paperClassName
+  : '[--root-paper-color:var(--color-cream-deep)]'
+const ADD_BOT_ICON_CLASS_NAME = 'text-5xl md:text-6xl'
 /** Solo run: bots stack in a column, smaller tiles. Co-op: as big as a lobby seat. */
 export type BotTileSize = 'compact' | 'lobbySeat'
 const BOT_TILE_SIZE_CLASS_NAMES: Readonly<Record<BotTileSize, string>> = {
@@ -105,6 +123,12 @@ export function SoloPlayerTile(props: {
         >
           <Portrait faction={props.faction} />
         </button>
+        {isBirthdayGuest(props.faction) ? (
+          <>
+            <TileBunting />
+            <Confetti pieces={TILE_CONFETTI} />
+          </>
+        ) : null}
         <SeatNumberMedallion seatNumber={PLAYER_SEAT_NUMBER} isLocal={true} onRemove={null} />
       </div>
       <SeatLabel title={name} note="you" paperClassName={PLAYER_LABEL_PAPER_CLASS_NAME} />
@@ -186,17 +210,24 @@ export function SoloAddBotTile(props: {
   return (
     <li className={SEAT_COLUMN_CLASS_NAME}>
       <div
-        className={`${ADD_BOT_TILE_CLASS_NAME} ${BOT_TILE_SIZE_CLASS_NAMES[props.tileSize ?? DEFAULT_BOT_TILE_SIZE]} ${selectedClassName(props.isSelected)}`}
+        className={`${ADD_BOT_TILE_CLASS_NAME} ${ADD_BOT_PAPER_CLASS_NAME} ${BOT_TILE_SIZE_CLASS_NAMES[props.tileSize ?? DEFAULT_BOT_TILE_SIZE]} ${selectedClassName(props.isSelected)}`}
       >
+        {IS_BIRTHDAY_EDITION ? <GiftBoxWrap wrap={BALLOON_GIFT_WRAP} /> : null}
         <button
           type="button"
-          className={`menu-solo-add-bot ${TILE_BUTTON_CLASS_NAME}`}
+          className={`menu-solo-add-bot relative z-1 ${TILE_BUTTON_CLASS_NAME}`}
           aria-pressed={props.isSelected}
           aria-label="Add a bot"
           disabled={props.disabled}
           onClick={props.onSelect}
         >
-          <LuPlus className="text-5xl md:text-6xl" aria-hidden="true" />
+          {IS_BIRTHDAY_EDITION ? (
+            <GiftTag note={LuPlus} />
+          ) : (
+            <span className={OPEN_SEAT_CONTENT_CLASS_NAME}>
+              <LuPlus className={ADD_BOT_ICON_CLASS_NAME} aria-hidden="true" />
+            </span>
+          )}
         </button>
       </div>
       <SeatLabel

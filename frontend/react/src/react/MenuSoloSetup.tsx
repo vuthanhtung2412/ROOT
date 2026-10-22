@@ -8,6 +8,7 @@ import {
   withBotTraitToggled,
   type BotSettingsChoices,
 } from '#game/botSettingsMenu.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import type { MenuFactionId } from '#game/menuPartySetup.ts'
 import {
   canAddSoloBot,
@@ -21,6 +22,13 @@ import {
   type SoloSlot,
   type SoloTable,
 } from '#game/soloTableSetup.ts'
+import {
+  BIRTHDAY_START_LABEL,
+  BIRTHDAY_START_PAPER_CLASS_NAME,
+  BIRTHDAY_TABLE_TITLE,
+  BirthdayCandle,
+  GUEST_COUNT_CLASS_NAME,
+} from '#react/BirthdayDecorations.tsx'
 import { MenuBotSettingsModal } from '#react/MenuBotSettingsModal.tsx'
 import { LobbyFactionDock } from '#react/MenuLobbyFactionDock.tsx'
 import {
@@ -30,6 +38,7 @@ import {
   PRIMARY_BUTTON_CLASS_NAME,
 } from '#react/MenuParts.tsx'
 import { SoloAddBotTile, SoloBotTile, SoloPlayerTile } from '#react/MenuSoloSeats.tsx'
+import { PartyMedallion } from '#react/PartyMedallion.tsx'
 import { useFitHeightZoom } from '#react/useFitHeightZoom.ts'
 import { VersusMedallion } from '#react/VersusMedallion.tsx'
 
@@ -44,6 +53,11 @@ const BOT_LIST_CLASS_NAME = 'm-0 grid list-none grid-cols-2 items-start justify-
 /** Six factions, then the two bots: one row from `md`. */
 const TRACK_COLUMNS_CLASS_NAME = 'grid-cols-4 md:grid-cols-8'
 const TRACK_SEAT_INDEX = 0
+/** Birthday edition: start is the cake, frosting pink with a lit candle. */
+const START_BUTTON_CLASS_NAME = `menu-start-solo ${PRIMARY_BUTTON_CLASS_NAME} ${
+  IS_BIRTHDAY_EDITION ? BIRTHDAY_START_PAPER_CLASS_NAME : ''
+}`
+const START_LABEL = IS_BIRTHDAY_EDITION ? BIRTHDAY_START_LABEL : 'Play solo'
 /** The whole menu screen: the solo run shrinks to fit its height. */
 const MENU_FRAME_SELECTOR = '.menu-overlay'
 
@@ -108,9 +122,18 @@ export function MenuSoloSetup(props: {
         style={{ zoom }}
         aria-label="Solo run against the bots"
       >
-        <h2 className={LOBBY_TITLE_CLASS_NAME}>
-          Solo run · {botCount} {botCount === 1 ? 'bot' : 'bots'}
-        </h2>
+        {IS_BIRTHDAY_EDITION ? (
+          <>
+            <h2 className={LOBBY_TITLE_CLASS_NAME}>{BIRTHDAY_TABLE_TITLE}</h2>
+            <p className={GUEST_COUNT_CLASS_NAME}>
+              You and {botCount} {botCount === 1 ? 'bot guest' : 'bot guests'}
+            </p>
+          </>
+        ) : (
+          <h2 className={LOBBY_TITLE_CLASS_NAME}>
+            Solo run · {botCount} {botCount === 1 ? 'bot' : 'bots'}
+          </h2>
+        )}
         <div className={TABLE_CLASS_NAME}>
           <div className={SIDE_CLASS_NAME}>
             <h3 className={SIDE_HEADING_CLASS_NAME}>Player</h3>
@@ -123,7 +146,7 @@ export function MenuSoloSetup(props: {
               }}
             />
           </div>
-          <VersusMedallion />
+          {IS_BIRTHDAY_EDITION ? <PartyMedallion /> : <VersusMedallion />}
           <div className={SIDE_CLASS_NAME}>
             <h3 className={SIDE_HEADING_CLASS_NAME}>Bots</h3>
             <ul className={BOT_LIST_CLASS_NAME}>
@@ -188,14 +211,15 @@ export function MenuSoloSetup(props: {
           </button>
           <button
             type="button"
-            className={`menu-start-solo ${PRIMARY_BUTTON_CLASS_NAME}`}
+            className={START_BUTTON_CLASS_NAME}
             disabled={props.disabled}
             onClick={(): void => {
               const factions: MenuFactionId[] = soloPartyFactions(table)
               props.onStartSolo(factions, partyBotSettings(factions, botSettings))
             }}
           >
-            Play solo
+            {START_LABEL}
+            {IS_BIRTHDAY_EDITION ? <BirthdayCandle /> : null}
           </button>
         </div>
       </section>

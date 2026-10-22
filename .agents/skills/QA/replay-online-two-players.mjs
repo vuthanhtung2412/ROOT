@@ -41,6 +41,9 @@ const HIDDEN_CARD_DEFINITION_ID = 'HIDDEN'
 const TRAY_ACTION_LABELS = ['march', 'battle', 'recruit', 'build', 'craft', 'end phase']
 /** Faction each browser picks in the lobby, host first (seat order). */
 const LOBBY_FACTIONS = ['marquise', 'eyrie', 'alliance', 'vagabond']
+/** Match the dev server: `ROOT_BIRTHDAY_EDITION=1` renames the host's Start. */
+const START_GAME_LABEL =
+  process.env.ROOT_BIRTHDAY_EDITION === '1' ? 'Light the candles' : 'Start game'
 
 const results = []
 
@@ -338,11 +341,11 @@ async function main() {
       async () => {
         await host.button('Create game')
         await host.pickFaction(LOBBY_FACTIONS[0])
-        await host.page.getByRole('button', { name: 'Start game' }).waitFor()
+        await host.page.getByRole('button', { name: START_GAME_LABEL }).waitFor()
         host.joinId = await host.storedJoinId()
         expectThat(host.joinId !== null, 'host has no stored join id')
         const startEnabled = await host.page
-          .getByRole('button', { name: 'Start game' })
+          .getByRole('button', { name: START_GAME_LABEL })
           .isEnabled()
         expectThat(!startEnabled, 'Start enabled with a single player')
         return 'Lobby shown, Start disabled until a second player picks'
@@ -363,12 +366,12 @@ async function main() {
         }
         const joinIds = new Set(players.map((player) => player.joinId))
         expectThat(joinIds.size === playerCount && !joinIds.has(null), 'join ids not unique')
-        await host.page.waitForFunction(() => {
+        await host.page.waitForFunction((startLabel) => {
           const start = [...document.querySelectorAll('button')].find(
-            (button) => button.textContent?.trim() === 'Start game',
+            (button) => button.textContent?.trim() === startLabel,
           )
           return start !== undefined && !start.disabled
-        })
+        }, START_GAME_LABEL)
         return `${guests.length} guest(s) seated with their own faction, host Start enabled`
       },
     ],
@@ -389,7 +392,7 @@ async function main() {
     [
       'Host starts; every browser enters the game',
       async () => {
-        await host.button('Start game')
+        await host.button(START_GAME_LABEL)
         for (const player of players) await player.waitForBoard()
         return 'Board visible in every browser'
       },

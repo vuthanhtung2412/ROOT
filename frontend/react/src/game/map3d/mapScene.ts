@@ -1,4 +1,5 @@
 import {
+  type Group,
   PCFSoftShadowMap,
   PointLight,
   Scene,
@@ -7,6 +8,10 @@ import {
   WebGLRenderer,
   type Object3D,
 } from 'three'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
+import { createBirthdayBalloons } from '#game/map3d/birthdayBalloons.ts'
+import { createBirthdayConfetti } from '#game/map3d/birthdayConfetti.ts'
+import { createBirthdayStringLights } from '#game/map3d/birthdayStringLights.ts'
 import {
   createCampfires,
   type Campfires,
@@ -42,7 +47,7 @@ import { createSkyClouds, type SkyClouds } from '#game/map3d/skyClouds.ts'
 import { createGround } from '#game/map3d/sceneGround.ts'
 import { disposeObjectTree } from '#game/map3d/sceneObjects.ts'
 import { createTreeMeshes } from '#game/map3d/treeMeshes.ts'
-import { placeTrees } from '#game/map3d/treePlacement.ts'
+import { placeTrees, type TreePlacement } from '#game/map3d/treePlacement.ts'
 import {
   createTreeSightlines,
   type TreeSightlines,
@@ -148,6 +153,8 @@ export function createMapScene(input: MapSceneInput): MapScene {
     skyLight: daylight.skyLight,
     backdrop: daylight.backdrop,
   })
+  const treePlacements: TreePlacement[] = placeTrees(input.terrain, TREE_SEED)
+  const balloonModel: Group | null = input.models.balloon
   scene.add(
     campfires.group,
     ...daylight.lights,
@@ -155,11 +162,16 @@ export function createMapScene(input: MapSceneInput): MapScene {
     createEdgeMist(input.terrain, daylight.mistColors),
     skyClouds.group,
     riverFlow.mesh,
-    createTreeMeshes(
-      placeTrees(input.terrain, TREE_SEED),
-      input.models.trees,
-      treeSightlines,
-    ),
+    createTreeMeshes(treePlacements, input.models.trees, treeSightlines),
+    ...(balloonModel === null
+      ? []
+      : [createBirthdayBalloons(treePlacements, balloonModel)]),
+    ...(IS_BIRTHDAY_EDITION
+      ? [
+          createBirthdayConfetti(input.terrain),
+          createBirthdayStringLights(input.terrain),
+        ]
+      : []),
     groundMarkers.group,
     pieceLayer.group,
   )

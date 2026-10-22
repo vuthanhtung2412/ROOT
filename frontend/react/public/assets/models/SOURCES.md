@@ -41,6 +41,7 @@ Sizes are the longest side of the model, in metres of the Blender file:
 | `sawmill.glb` | Marquise sawmill | modelled for this project (round hut, great saw, steam boiler) | own work |
 | `roost.glb` | Eyrie roost | modelled for this project (leaning tree, platform, blue canopy, lanterns) | own work |
 | `garden.glb` | Lizard Cult garden | modelled for this project (pyramids, palms, a sphinx with the lizard meeple's head; no ground slab) | own work |
+| `garden_birthday.glb` | Lizard Cult garden, birthday edition | `garden.glb` with a party hat on the sphinx, a bow on the great pyramid, bunting between the pyramids and a "HAPPY BIRTHDAY" banner behind them | own work |
 | `wood.glb` | Marquise wood | modelled for this project (stack of short logs) | own work |
 | `sympathy.glb` | Woodland Alliance sympathy | modelled for this project (a crowd of fox, rabbit and mouse meeples with swords under a green banner bearing the sympathy fist) | own work |
 
@@ -68,6 +69,8 @@ Required credit for the ruin:
 | File | What | Made from | Licence |
 |------|------|-----------|---------|
 | `campfire.glb` | Campfire in the middle of every clearing (logs in a ring of stones; flames and sparks are drawn by `src/game/map3d/campfires.ts`) | "Campfire" by J-Toastie — https://poly.pizza/m/bAjGJYCozp — unmodified | **CC-BY 3.0**: credit required (line below) |
+| `campfire_birthday.glb` | Campfire of the birthday edition: a birthday cake with lit candles | "Cake Birthday" by Isa Lousberg — https://poly.pizza/m/JCT2SAoBud — unmodified | CC0 |
+| `balloon.glb` | Balloons of the birthday edition, tied above the woodland | "Balloon" by Poly by Google — https://poly.pizza/m/d1gDDhM7pTf — string split onto its own off-white `string` material, the `balloon` material made white (each balloon is tinted by `src/game/map3d/birthdayBalloons.ts`), foot of the string moved to the origin | **CC-BY 3.0**: credit required (line below) |
 
 | `cliff-{a,b}.glb` | Cliff walls of overlapping slab stacks, about 14 wide, 8 tall, 6 deep, ~1,750–2,200 triangles | "Stone Pack" by ashkan.fancy — https://sketchfab.com/3d-models/stone-pack-f3e0a67b9ca243b09119177649f21e17 — decimated, smooth shaded with edges sharper than 40° kept hard, the pack's base colour / normal / occlusion-roughness textures downscaled to 1K JPEG, moss as a vertex colour tint on what looks up, stones scaled and joined | **CC-BY-4.0**: credit required (line below) |
 
@@ -80,6 +83,11 @@ Required credit for the campfire:
 
 > "Campfire" (https://poly.pizza/m/bAjGJYCozp) by J-Toastie, licensed under
 > CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+
+Required credit for the balloon:
+
+> "Balloon" (https://poly.pizza/m/d1gDDhM7pTf) by Poly by Google, licensed
+> under CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
 
 Required credit for the cliffs:
 
@@ -115,6 +123,9 @@ token's body colour. Feet on the ground, front towards +Z.
 stand in the sympathy crowd) are made the same way from art drawn for this
 project, in the colour of their suit. `items/sword.glb` is the sword they
 carry, modelled after the sword item.
+
+`lizard-warrior_birthday` is the lizard warrior wearing a party hat (blue
+cone, white dots, pink pompom) for the birthday edition; own work.
 
 The three Vagabond pawns hold a torch at their right side. `items/torch.glb`
 is that torch on its own: "Minecraft Torch" by Blender3D —

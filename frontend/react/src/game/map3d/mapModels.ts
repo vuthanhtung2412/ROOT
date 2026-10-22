@@ -2,6 +2,7 @@ import type { Group } from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 import { retryAssetFetch } from '#assets/retryAssetFetch.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import { mergePartsByMaterial } from '#game/map3d/mergeModelParts.ts'
 
 /**
@@ -28,7 +29,17 @@ const AUTUMN_MODEL_NAMES: readonly string[] = [
   'nature/tree_default_fall',
   'nature/tree_oak_fall',
 ]
-const CAMPFIRE_MODEL_NAME = 'props/campfire'
+/** Birthday edition models carry this suffix next to the regular file. */
+const BIRTHDAY_MODEL_SUFFIX = '_birthday'
+
+/** Birthday edition: a cake for the campfire, a party hat and a dressed garden for the Lizard Cult. */
+function birthdayModelName(name: string): string {
+  return IS_BIRTHDAY_EDITION ? `${name}${BIRTHDAY_MODEL_SUFFIX}` : name
+}
+
+const CAMPFIRE_MODEL_NAME: string = birthdayModelName('props/campfire')
+/** Birthday edition only: balloons tied to the pines. */
+const BALLOON_MODEL_NAME = 'props/balloon'
 
 /**
  * A meeple stands as modelled; a structure is centred on a building plot.
@@ -60,7 +71,7 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-marquise-warrior': meeple('marquise-warrior'),
   'token-eyrie-warrior': meeple('eyrie-warrior'),
   'token-alliance-warrior': meeple('alliance-warrior'),
-  'token-lizard-warrior': meeple('lizard-warrior'),
+  'token-lizard-warrior': meeple(birthdayModelName('lizard-warrior')),
   'token-riverfolk-warrior': meeple('riverfolk-warrior'),
   'token-vagabond-pawn': meeple('vagabond-pawn'),
   'token-vagabond-pawn-tinker': meeple('vagabond-pawn-tinker'),
@@ -75,9 +86,9 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-alliance-base-mouse': structure('base'),
   'token-alliance-base-rabbit': structure('base'),
   'token-alliance-sympathy': structure('sympathy'),
-  'token-lizard-garden-fox': structure('garden'),
-  'token-lizard-garden-mouse': structure('garden'),
-  'token-lizard-garden-rabbit': structure('garden'),
+  'token-lizard-garden-fox': structure(birthdayModelName('garden')),
+  'token-lizard-garden-mouse': structure(birthdayModelName('garden')),
+  'token-lizard-garden-rabbit': structure(birthdayModelName('garden')),
   'token-riverfolk-trade-post-fox': structure('trade-post'),
   'token-riverfolk-trade-post-mouse': structure('trade-post'),
   'token-riverfolk-trade-post-rabbit': structure('trade-post'),
@@ -101,6 +112,8 @@ export type MapModels = {
   trees: TreeModels
   /** Logs in a ring of stones: the fire of every clearing. */
   campfire: Group
+  /** Birthday edition only: null otherwise, and no balloons are drawn. */
+  balloon: Group | null
 }
 
 /** Model per token texture key; a piece without one is only its icon. */
@@ -124,14 +137,22 @@ function loadModels(
 
 async function fetchMapModels(): Promise<MapModels> {
   const loader: GLTFLoader = new GLTFLoader()
-  const [pine, leafy, autumn, campfire]: [Group[], Group[], Group[], Group] =
-    await Promise.all([
-      loadModels(loader, PINE_MODEL_NAMES),
-      loadModels(loader, LEAFY_MODEL_NAMES),
-      loadModels(loader, AUTUMN_MODEL_NAMES),
-      loadModel(loader, CAMPFIRE_MODEL_NAME),
-    ])
-  return { trees: { pine, leafy, autumn }, campfire }
+  const [pine, leafy, autumn, campfire, balloon]: [
+    Group[],
+    Group[],
+    Group[],
+    Group,
+    Group | null,
+  ] = await Promise.all([
+    loadModels(loader, PINE_MODEL_NAMES),
+    loadModels(loader, LEAFY_MODEL_NAMES),
+    loadModels(loader, AUTUMN_MODEL_NAMES),
+    loadModel(loader, CAMPFIRE_MODEL_NAME),
+    IS_BIRTHDAY_EDITION
+      ? loadModel(loader, BALLOON_MODEL_NAME)
+      : Promise.resolve(null),
+  ])
+  return { trees: { pine, leafy, autumn }, campfire, balloon }
 }
 
 /**

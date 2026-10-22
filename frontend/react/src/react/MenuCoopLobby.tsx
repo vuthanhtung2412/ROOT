@@ -2,6 +2,7 @@ import { useRef, useState, type JSX } from 'react'
 import { isBotFaction, type BotFactionId } from '@root/lib/bot-factions'
 import type { BotDifficulty, BotTrait } from '@root/lib/bot-settings'
 import type { PlayMode } from '#api/client.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import {
   defaultBotSettingsChoices,
   withBotDifficulty,
@@ -24,6 +25,7 @@ import {
   type LobbySide,
 } from '#react/MenuLobbySeats.tsx'
 import { SoloAddBotTile, SoloBotTile } from '#react/MenuSoloSeats.tsx'
+import { PartyMedallion } from '#react/PartyMedallion.tsx'
 import { useFitHeightZoom } from '#react/useFitHeightZoom.ts'
 import { VersusMedallion } from '#react/VersusMedallion.tsx'
 
@@ -206,7 +208,11 @@ export function MenuCoopLobby(props: {
               {emptySlots({ side: 'human', usedSlotCount: humans.length + (hasOpenSeat ? 1 : 0) })}
             </ol>
           </div>
-          <VersusMedallion sizeClassName={COOP_MEDALLION_SIZE_CLASS_NAME} />
+          {IS_BIRTHDAY_EDITION ? (
+            <PartyMedallion sizeClassName={COOP_MEDALLION_SIZE_CLASS_NAME} />
+          ) : (
+            <VersusMedallion sizeClassName={COOP_MEDALLION_SIZE_CLASS_NAME} />
+          )}
           <div className={SIDE_CLASS_NAME}>
             <ul className={SEAT_GRID_CLASS_NAME}>
               {bots.map(

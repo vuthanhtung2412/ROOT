@@ -1,5 +1,18 @@
 /** Texture keys and public paths for the Lizard Cult and Riverfolk Company. */
 
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
+
+/**
+ * Birthday edition: party hat on the icon and the warrior. Gardens and the
+ * Outcast keep their art; their bows are drawn over them (`TokenBow`).
+ */
+const LIZARD_FACTION_ICON_PATH: string = IS_BIRTHDAY_EDITION
+  ? 'assets/factions/lizard-birthday.webp'
+  : 'assets/factions/lizard.webp'
+const LIZARD_WARRIOR_TOKEN_PATH: string = IS_BIRTHDAY_EDITION
+  ? 'assets/tokens/lizard/birthday/warrior.webp'
+  : 'assets/tokens/lizard/warrior.webp'
+
 export const RIVERFOLK_EXPANSION_ASSET_KEYS = {
   factionLizard: 'faction-lizard',
   factionRiverfolk: 'faction-riverfolk',
@@ -25,7 +38,7 @@ export type ExpansionImageAsset = {
 export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = [
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.factionLizard,
-    path: 'assets/factions/lizard.webp',
+    path: LIZARD_FACTION_ICON_PATH,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.factionRiverfolk,
@@ -41,7 +54,7 @@ export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = 
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardWarrior,
-    path: 'assets/tokens/lizard/warrior.webp',
+    path: LIZARD_WARRIOR_TOKEN_PATH,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenFox,

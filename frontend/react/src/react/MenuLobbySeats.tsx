@@ -4,12 +4,36 @@ import { factionPortraitPath } from '#assets/factionPortraits.ts'
 import { modelDisplayName } from '#game/aiPlayerStore.ts'
 import type { MenuLobbySeat } from '#game/hudStore.ts'
 import { factionDisplayName, isMenuFactionId } from '#game/menuPartySetup.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import { factionColorCss } from '#game/theme.ts'
+import {
+  Confetti,
+  GiftBoxWrap,
+  GiftTag,
+  giftWrapForSeat,
+  TILE_CONFETTI,
+  TileBunting,
+  type GiftWrap,
+} from '#react/BirthdayDecorations.tsx'
 import { SeatNumberMedallion } from '#react/SeatNumberMedallion.tsx'
 import { SuitIcon } from '#react/SuitIcon.tsx'
 
 /** The lobby creator joins first, so the host always holds seat 0. */
 const HOST_SEAT_INDEX = 0
+/** Birthday edition: the Lizard Cult is the guest of honour, its seat hung with bunting. */
+const BIRTHDAY_FACTION_ID = 'lizard'
+const OPEN_SEAT_NOTE = IS_BIRTHDAY_EDITION ? 'a gift awaits' : 'waiting…'
+/** Your seat before you pick a faction: on a gift tag in the birthday edition. */
+const CHOOSING_FACTION_MARK = '?'
+/** What an open seat offers, straight on the tile; the birthday edition hangs it on a `GiftTag`. */
+export const OPEN_SEAT_CONTENT_CLASS_NAME = 'contents'
+const SEAT_AI_ICON_CLASS_NAME = 'text-4xl md:text-5xl'
+const OPEN_TILE_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-cream-deep)]'
+
+/** Birthday edition: the Lizard Cult seat and dock tile get bunting and confetti. */
+export function isBirthdayGuest(faction: string | null): boolean {
+  return IS_BIRTHDAY_EDITION && faction === BIRTHDAY_FACTION_ID
+}
 /** Faction colour softened toward parchment so the head art stays readable. */
 const PORTRAIT_TINT_PERCENT = 55
 /** Each seat tile sits a little askew, like a piece dropped on the table. */
@@ -45,7 +69,6 @@ const SEAT_LABEL_NOTE_CLASS_NAME =
 const LOCAL_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-gold-light)]'
 const TAKEN_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-parchment)]'
 const OPEN_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-parchment-deep)]'
-const OPEN_TILE_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-cream-deep)]'
 const SEAT_COLUMN_CLASS_NAME = 'menu-seat flex list-none flex-col items-center'
 /** Hook class name of a co-op placeholder slot. */
 const EMPTY_SLOT_CLASS_NAME = 'menu-seat-empty flex list-none flex-col items-center'
@@ -153,6 +176,12 @@ export function LobbySeatTile(props: {
         ) : (
           portrait
         )}
+        {isBirthdayGuest(seat.faction) ? (
+          <>
+            <TileBunting />
+            <Confetti pieces={TILE_CONFETTI} />
+          </>
+        ) : null}
         {seat.aiModel !== null ? (
           <span className={SEAT_AI_MARK_CLASS_NAME} role="img" aria-label="AI player">
             <LuBot aria-hidden="true" />
@@ -186,30 +215,50 @@ export function LobbySeatTile(props: {
  */
 export type LobbyOpenSeatKind = 'local' | 'ai' | 'waiting'
 
-/** Co-op: an inert slot that keeps each side a full 2x2 grid. */
-export function LobbyEmptySeatTile(props: { slotIndex: number; side: LobbySide }): JSX.Element {
+/** Stitched, pinned slot with a faded suit (Woodland) or cog (bots) on it. */
+function EmptySlotMarks(props: { slotIndex: number; side: LobbySide }): JSX.Element {
   const suit: string = EMPTY_SLOT_SUITS[props.slotIndex % EMPTY_SLOT_SUITS.length] ?? ''
   const suitToneClassName: string =
     suit === BIRD_SUIT ? EMPTY_SLOT_BIRD_TONE_CLASS_NAME : EMPTY_SLOT_SUIT_TONE_CLASS_NAME
   return (
+    <>
+      <span className={EMPTY_SLOT_STITCH_CLASS_NAME} />
+      {EMPTY_SLOT_PIN_CORNER_CLASS_NAMES.map(
+        (cornerClassName: string): JSX.Element => (
+          <span key={cornerClassName} className={`${EMPTY_SLOT_PIN_CLASS_NAME} ${cornerClassName}`} />
+        ),
+      )}
+      {props.side === 'bot' ? (
+        <LuCog className={EMPTY_SLOT_COG_CLASS_NAME} />
+      ) : (
+        <SuitIcon
+          suit={suit}
+          className={`${EMPTY_SLOT_SUIT_CLASS_NAME} ${suitToneClassName}`}
+          isOutlined={false}
+        />
+      )}
+    </>
+  )
+}
+
+/**
+ * Co-op: an inert slot that keeps each side a full 2x2 grid.
+ * Birthday edition: a wrapped present instead, no tag since nothing is on offer.
+ */
+export function LobbyEmptySeatTile(props: { slotIndex: number; side: LobbySide }): JSX.Element {
+  const giftWrap: GiftWrap = giftWrapForSeat(props.slotIndex)
+  const tilePaperClassName: string = IS_BIRTHDAY_EDITION
+    ? giftWrap.paperClassName
+    : EMPTY_SLOT_TILE_PAPER_CLASS_NAME
+  return (
     <li className={EMPTY_SLOT_CLASS_NAME} aria-hidden="true">
       <div
-        className={`${SEAT_TILE_CLASS_NAME} ${EMPTY_SLOT_TILE_PAPER_CLASS_NAME} ${tiltClassName(props.slotIndex)}`}
+        className={`${SEAT_TILE_CLASS_NAME} ${tilePaperClassName} ${tiltClassName(props.slotIndex)}`}
       >
-        <span className={EMPTY_SLOT_STITCH_CLASS_NAME} />
-        {EMPTY_SLOT_PIN_CORNER_CLASS_NAMES.map(
-          (cornerClassName: string): JSX.Element => (
-            <span key={cornerClassName} className={`${EMPTY_SLOT_PIN_CLASS_NAME} ${cornerClassName}`} />
-          ),
-        )}
-        {props.side === 'bot' ? (
-          <LuCog className={EMPTY_SLOT_COG_CLASS_NAME} />
+        {IS_BIRTHDAY_EDITION ? (
+          <GiftBoxWrap wrap={giftWrap} />
         ) : (
-          <SuitIcon
-            suit={suit}
-            className={`${EMPTY_SLOT_SUIT_CLASS_NAME} ${suitToneClassName}`}
-            isOutlined={false}
-          />
+          <EmptySlotMarks slotIndex={props.slotIndex} side={props.side} />
         )}
       </div>
       <div className={`${SEAT_LABEL_CLASS_NAME} ${OPEN_PAPER_CLASS_NAME}`}>
@@ -229,30 +278,43 @@ export function LobbyOpenSeatTile(props: {
   onSelect: () => void
 }): JSX.Element {
   const isLocal: boolean = props.kind === 'local'
+  const giftWrap: GiftWrap = giftWrapForSeat(props.seatIndex)
+  const tilePaperClassName: string = IS_BIRTHDAY_EDITION
+    ? giftWrap.paperClassName
+    : OPEN_TILE_PAPER_CLASS_NAME
   return (
     <li className={SEAT_COLUMN_CLASS_NAME} data-lobby-seat={props.seatIndex}>
       <div
-        className={`${SEAT_TILE_CLASS_NAME} ${OPEN_TILE_PAPER_CLASS_NAME} ${tiltClassName(props.seatIndex)} ${
+        className={`${SEAT_TILE_CLASS_NAME} ${tilePaperClassName} ${tiltClassName(props.seatIndex)} ${
           props.isSelected ? SEAT_TILE_SELECTED_CLASS_NAME : ''
         }`}
       >
+        {IS_BIRTHDAY_EDITION ? <GiftBoxWrap wrap={giftWrap} /> : null}
         {props.kind === 'ai' ? (
           <button
             type="button"
-            className={`menu-seat-add-ai ${SEAT_TILE_BUTTON_CLASS_NAME}`}
+            className={`menu-seat-add-ai relative z-1 ${SEAT_TILE_BUTTON_CLASS_NAME}`}
             aria-pressed={props.isSelected}
+            aria-label="Seat an AI"
             onClick={props.onSelect}
           >
-            <LuBot className="text-4xl md:text-5xl" aria-hidden="true" />
-            Seat an AI
+            {IS_BIRTHDAY_EDITION ? (
+              <GiftTag note={LuBot} />
+            ) : (
+              <span className={OPEN_SEAT_CONTENT_CLASS_NAME}>
+                <LuBot className={SEAT_AI_ICON_CLASS_NAME} aria-hidden="true" />
+                Seat an AI
+              </span>
+            )}
           </button>
         ) : null}
-        {isLocal ? (
+        {isLocal && IS_BIRTHDAY_EDITION ? <GiftTag note={CHOOSING_FACTION_MARK} /> : null}
+        {isLocal && !IS_BIRTHDAY_EDITION ? (
           <span
-            className="font-display text-6xl text-ink md:text-8xl"
+            className={`${OPEN_SEAT_CONTENT_CLASS_NAME} font-display text-6xl text-ink md:text-8xl`}
             aria-hidden="true"
           >
-            ?
+            {CHOOSING_FACTION_MARK}
           </span>
         ) : null}
         <SeatNumberMedallion seatNumber={props.seatIndex + 1} isLocal={isLocal} onRemove={null} />
@@ -266,7 +328,7 @@ export function LobbyOpenSeatTile(props: {
           {isLocal ? 'Your seat' : 'Open seat'}
         </span>
         <span className={SEAT_LABEL_NOTE_CLASS_NAME}>
-          {isLocal ? 'you · choosing…' : 'waiting…'}
+          {isLocal ? 'you · choosing…' : OPEN_SEAT_NOTE}
         </span>
       </div>
     </li>
