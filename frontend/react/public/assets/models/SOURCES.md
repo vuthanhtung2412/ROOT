@@ -70,6 +70,7 @@ Required credit for the ruin:
 |------|------|-----------|---------|
 | `campfire.glb` | Campfire in the middle of every clearing (logs in a ring of stones; flames and sparks are drawn by `src/game/map3d/campfires.ts`) | "Campfire" by J-Toastie — https://poly.pizza/m/bAjGJYCozp — unmodified | **CC-BY 3.0**: credit required (line below) |
 | `campfire_birthday.glb` | Campfire of the birthday edition: a birthday cake with lit candles | "Cake Birthday" by Isa Lousberg — https://poly.pizza/m/JCT2SAoBud — unmodified | CC0 |
+| `balloon.glb` | Balloons of the birthday edition, tied above the woodland | "Balloon" by Poly by Google — https://poly.pizza/m/d1gDDhM7pTf — string split onto its own off-white `string` material, the `balloon` material made white (each balloon is tinted by `src/game/map3d/birthdayBalloons.ts`), foot of the string moved to the origin | **CC-BY 3.0**: credit required (line below) |
 
 | `cliff-{a,b}.glb` | Cliff walls of overlapping slab stacks, about 14 wide, 8 tall, 6 deep, ~1,750–2,200 triangles | "Stone Pack" by ashkan.fancy — https://sketchfab.com/3d-models/stone-pack-f3e0a67b9ca243b09119177649f21e17 — decimated, smooth shaded with edges sharper than 40° kept hard, the pack's base colour / normal / occlusion-roughness textures downscaled to 1K JPEG, moss as a vertex colour tint on what looks up, stones scaled and joined | **CC-BY-4.0**: credit required (line below) |
 
@@ -82,6 +83,11 @@ Required credit for the campfire:
 
 > "Campfire" (https://poly.pizza/m/bAjGJYCozp) by J-Toastie, licensed under
 > CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+
+Required credit for the balloon:
+
+> "Balloon" (https://poly.pizza/m/d1gDDhM7pTf) by Poly by Google, licensed
+> under CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
 
 Required credit for the cliffs:
 
