@@ -38,6 +38,8 @@ function birthdayModelName(name: string): string {
 }
 
 const CAMPFIRE_MODEL_NAME: string = birthdayModelName('props/campfire')
+/** Birthday edition only: balloons tied to the pines. */
+const BALLOON_MODEL_NAME = 'props/balloon'
 
 /**
  * A meeple stands as modelled; a structure is centred on a building plot.
@@ -110,6 +112,8 @@ export type MapModels = {
   trees: TreeModels
   /** Logs in a ring of stones: the fire of every clearing. */
   campfire: Group
+  /** Birthday edition only: null otherwise, and no balloons are drawn. */
+  balloon: Group | null
 }
 
 /** Model per token texture key; a piece without one is only its icon. */
@@ -133,14 +137,22 @@ function loadModels(
 
 async function fetchMapModels(): Promise<MapModels> {
   const loader: GLTFLoader = new GLTFLoader()
-  const [pine, leafy, autumn, campfire]: [Group[], Group[], Group[], Group] =
-    await Promise.all([
-      loadModels(loader, PINE_MODEL_NAMES),
-      loadModels(loader, LEAFY_MODEL_NAMES),
-      loadModels(loader, AUTUMN_MODEL_NAMES),
-      loadModel(loader, CAMPFIRE_MODEL_NAME),
-    ])
-  return { trees: { pine, leafy, autumn }, campfire }
+  const [pine, leafy, autumn, campfire, balloon]: [
+    Group[],
+    Group[],
+    Group[],
+    Group,
+    Group | null,
+  ] = await Promise.all([
+    loadModels(loader, PINE_MODEL_NAMES),
+    loadModels(loader, LEAFY_MODEL_NAMES),
+    loadModels(loader, AUTUMN_MODEL_NAMES),
+    loadModel(loader, CAMPFIRE_MODEL_NAME),
+    IS_BIRTHDAY_EDITION
+      ? loadModel(loader, BALLOON_MODEL_NAME)
+      : Promise.resolve(null),
+  ])
+  return { trees: { pine, leafy, autumn }, campfire, balloon }
 }
 
 /**
