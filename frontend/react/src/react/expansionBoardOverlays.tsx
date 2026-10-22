@@ -18,7 +18,9 @@ import {
   RIVERFOLK_EXPANSION_ASSET_KEYS,
   tradePostTextureKey,
 } from '#assets/riverfolkExpansionAssets.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import { getHudCallbacks } from '#game/hudStore.ts'
+import { TokenBow } from '#react/BirthdayDecorations.tsx'
 import {
   FitToken,
   layoutRegionStyle,
@@ -102,13 +104,39 @@ function OutcastMarker(
     return null
   }
   return (
-    <FitToken
-      region={region}
-      layout={props.layout}
-      imagePath={imagePath}
-      alt={props.view.hated ? 'Hated Outcast' : 'Outcast'}
-    />
+    <>
+      <FitToken
+        region={region}
+        layout={props.layout}
+        imagePath={imagePath}
+        alt={props.view.hated ? 'Hated Outcast' : 'Outcast'}
+      />
+      {IS_BIRTHDAY_EDITION ? (
+        <TokenBow style={layoutRegionStyle(region, props.layout)} suit={null} />
+      ) : null}
+    </>
   )
+}
+
+/** Birthday edition: a bow in the suit's colour on every garden left on its track. */
+function GardenTrackBows(
+  props: LayoutProps & { suit: BoardSuit; gardensOnTrack: number },
+): JSX.Element {
+  const emptiedCount: number = LIZARD_GARDEN_TRACK_SLOT_COUNT - props.gardensOnTrack
+  const bows: JSX.Element[] = []
+  for (let cellIndex = emptiedCount; cellIndex < LIZARD_GARDEN_TRACK_SLOT_COUNT; cellIndex += 1) {
+    const region = trackCellRegion(props.layout, `garden-${props.suit}`, cellIndex)
+    if (region !== null) {
+      bows.push(
+        <TokenBow
+          key={`garden-bow-${props.suit}-${String(cellIndex)}`}
+          style={layoutRegionStyle(region, props.layout)}
+          suit={props.suit}
+        />,
+      )
+    }
+  }
+  return <>{bows}</>
 }
 
 /**
@@ -203,6 +231,16 @@ function LizardBoardOverlays(
           alt={`${suit} garden`}
         />
       ))}
+      {IS_BIRTHDAY_EDITION
+        ? BOARD_SUITS.map((suit: BoardSuit) => (
+            <GardenTrackBows
+              key={`garden-bows-${suit}`}
+              layout={props.layout}
+              suit={suit}
+              gardensOnTrack={props.view.gardensOnTrack[suit]}
+            />
+          ))
+        : null}
       {lostSoulsRegion !== null ? (
         <LostSoulsPile
           view={props.view}

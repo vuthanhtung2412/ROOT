@@ -261,31 +261,81 @@ export function GiftBoxWrap(props: { wrap: GiftWrap }): JSX.Element {
         className={`${GIFT_RIBBON_CLASS_NAME} inset-x-0 top-[43%] h-[11%] border-y-3`}
         style={ribbonStyle}
       />
-      <svg
+      <RibbonBow
         className="absolute -top-[17%] left-[26%] h-auto w-[45%]"
-        viewBox={`0 0 ${String(BOW_WIDTH)} ${String(BOW_HEIGHT)}`}
-      >
-        {[BOW_LEFT_LOOP_PATH, BOW_RIGHT_LOOP_PATH].map(
-          (loopPath: string): JSX.Element => (
-            <path
-              key={loopPath}
-              d={loopPath}
-              fill={props.wrap.ribbonColor}
-              stroke={INK_COLOR}
-              strokeWidth={BUNTING_STROKE_WIDTH}
-              strokeLinejoin="round"
-            />
-          ),
-        )}
-        <circle
-          cx={BOW_KNOT_CENTER_X}
-          cy={BOW_KNOT_CENTER_Y}
-          r={BOW_KNOT_RADIUS}
-          fill={props.wrap.knotColor}
-          stroke={INK_COLOR}
-          strokeWidth={BUNTING_STROKE_WIDTH}
-        />
-      </svg>
+        ribbonColor={props.wrap.ribbonColor}
+        knotColor={props.wrap.knotColor}
+      />
+    </span>
+  )
+}
+
+type RibbonBowProps = {
+  className: string
+  ribbonColor: string
+  knotColor: string
+}
+
+function RibbonBow(props: RibbonBowProps): JSX.Element {
+  return (
+    <svg
+      className={props.className}
+      viewBox={`0 0 ${String(BOW_WIDTH)} ${String(BOW_HEIGHT)}`}
+      aria-hidden="true"
+    >
+      {[BOW_LEFT_LOOP_PATH, BOW_RIGHT_LOOP_PATH].map(
+        (loopPath: string): JSX.Element => (
+          <path
+            key={loopPath}
+            d={loopPath}
+            fill={props.ribbonColor}
+            stroke={INK_COLOR}
+            strokeWidth={BUNTING_STROKE_WIDTH}
+            strokeLinejoin="round"
+          />
+        ),
+      )}
+      <circle
+        cx={BOW_KNOT_CENTER_X}
+        cy={BOW_KNOT_CENTER_Y}
+        r={BOW_KNOT_RADIUS}
+        fill={props.knotColor}
+        stroke={INK_COLOR}
+        strokeWidth={BUNTING_STROKE_WIDTH}
+      />
+    </svg>
+  )
+}
+
+/**
+ * The knot sits on the token's top edge, the loops stand above it. Lay it
+ * over a token's box (same position and size); it overflows upward.
+ */
+const TOKEN_BOW_CLASS_NAME =
+  'pointer-events-none absolute z-2 select-none overflow-visible'
+const TOKEN_BOW_SVG_CLASS_NAME =
+  'absolute top-0 left-1/2 h-auto w-[62%] -translate-x-1/2 -translate-y-[84%]'
+/** Bow colour per suit, matching the suit icon on the token. */
+const SUIT_BOW_COLORS: Readonly<Record<string, string>> = {
+  fox: 'var(--color-suit-fox)',
+  rabbit: 'var(--color-suit-rabbit)',
+  mouse: 'var(--color-suit-mouse)',
+}
+
+/** Bow on a garden (its suit's colour) or the Outcast marker (berry). */
+export function TokenBow(props: {
+  style: CSSProperties
+  suit: string | null
+}): JSX.Element {
+  const ribbonColor: string =
+    props.suit === null ? BERRY_COLOR : (SUIT_BOW_COLORS[props.suit] ?? BERRY_COLOR)
+  return (
+    <span className={TOKEN_BOW_CLASS_NAME} style={props.style} aria-hidden="true">
+      <RibbonBow
+        className={TOKEN_BOW_SVG_CLASS_NAME}
+        ribbonColor={ribbonColor}
+        knotColor={GOLD_LIGHT_COLOR}
+      />
     </span>
   )
 }

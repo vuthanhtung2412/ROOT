@@ -2,13 +2,16 @@
 
 import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 
-/** Birthday edition: party hat on the icon, hat and bows on the tokens. */
+/**
+ * Birthday edition: party hat on the icon and the warrior. Gardens and the
+ * Outcast keep their art; their bows are drawn over them (`TokenBow`).
+ */
 const LIZARD_FACTION_ICON_PATH: string = IS_BIRTHDAY_EDITION
   ? 'assets/factions/lizard-birthday.webp'
   : 'assets/factions/lizard.webp'
-const LIZARD_TOKEN_DIRECTORY: string = IS_BIRTHDAY_EDITION
-  ? 'assets/tokens/lizard/birthday'
-  : 'assets/tokens/lizard'
+const LIZARD_WARRIOR_TOKEN_PATH: string = IS_BIRTHDAY_EDITION
+  ? 'assets/tokens/lizard/birthday/warrior.webp'
+  : 'assets/tokens/lizard/warrior.webp'
 
 export const RIVERFOLK_EXPANSION_ASSET_KEYS = {
   factionLizard: 'faction-lizard',
@@ -51,27 +54,27 @@ export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = 
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardWarrior,
-    path: `${LIZARD_TOKEN_DIRECTORY}/warrior.webp`,
+    path: LIZARD_WARRIOR_TOKEN_PATH,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenFox,
-    path: `${LIZARD_TOKEN_DIRECTORY}/garden-fox.webp`,
+    path: 'assets/tokens/lizard/garden-fox.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenMouse,
-    path: `${LIZARD_TOKEN_DIRECTORY}/garden-mouse.webp`,
+    path: 'assets/tokens/lizard/garden-mouse.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenRabbit,
-    path: `${LIZARD_TOKEN_DIRECTORY}/garden-rabbit.webp`,
+    path: 'assets/tokens/lizard/garden-rabbit.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcast,
-    path: `${LIZARD_TOKEN_DIRECTORY}/outcast.webp`,
+    path: 'assets/tokens/lizard/outcast.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcastHated,
-    path: `${LIZARD_TOKEN_DIRECTORY}/outcast-hated.webp`,
+    path: 'assets/tokens/lizard/outcast-hated.webp',
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkWarrior,

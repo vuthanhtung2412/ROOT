@@ -47,6 +47,10 @@
   --color-balloon: #7fb3d5;
   --color-mint: #9fcfb0;
   --color-flame: #f5a623;
+  /* Suit icon colours of the Lizard Cult garden tokens (birthday bows). */
+  --color-suit-fox: #c8524a;
+  --color-suit-rabbit: #e8c860;
+  --color-suit-mouse: #d98a3a;
   /* Parchment darkened like `.root-panel`. */
   --color-parchment-aged: color-mix(in srgb, #f0e6d3 94%, #1a1410);
   --tracking-display: 0.02em;
