@@ -71,6 +71,10 @@ export function MenuOverlay(): JSX.Element | null {
   const [isSoloRunOpen, setIsSoloRunOpen] = useState<boolean>(false)
 
   if (shell !== 'menu' || menu === null) {
+    // Stays mounted under the game: back on the menu means the home screen.
+    if (isSoloRunOpen) {
+      setIsSoloRunOpen(false)
+    }
     return null
   }
   const callbacks = getMenuCallbacks()
