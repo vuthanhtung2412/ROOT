@@ -2,6 +2,7 @@
  * Menu party setup — player count + unique faction seats.
  */
 import { artFactionOf, isBotFaction } from '@root/lib/bot-factions'
+import { LIZARD_CULT_DISPLAY_NAME } from '#game/birthdayEdition.ts'
 
 export const MENU_FACTION_IDS = [
   'marquise',
@@ -116,7 +117,7 @@ export function factionDisplayName(factionId: MenuFactionId): string {
     case 'vagabond':
       return 'Vagabond'
     case 'lizard':
-      return 'Lizard Cult'
+      return LIZARD_CULT_DISPLAY_NAME
     case 'riverfolk':
       return 'Riverfolk Company'
     case 'mechanicalMarquise':

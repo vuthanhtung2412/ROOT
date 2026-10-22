@@ -1,3 +1,5 @@
+import { LIZARD_CULT_DISPLAY_NAME } from '#game/birthdayEdition.ts'
+
 /** Pending events of the Lizard Cult, the Riverfolk Company and crafted cards. */
 
 /** `type` of an opaque pending event; null when it has none. */
@@ -10,8 +12,8 @@ export function pendingEventType(pending: unknown): string | null {
 }
 
 const EXPANSION_PENDING_PROMPTS: Readonly<Record<string, string>> = {
-  chooseCultCorner: 'Lizard Cult — choose starting corner',
-  chooseOutcast: 'Lizard Cult — choose the Outcast suit',
+  chooseCultCorner: `${LIZARD_CULT_DISPLAY_NAME} — choose starting corner`,
+  chooseOutcast: `${LIZARD_CULT_DISPLAY_NAME} — choose the Outcast suit`,
   placeRiverfolkWarrior: 'Riverfolk Company — place a warrior on the river',
   setStartingCosts: 'Riverfolk Company — set starting service costs',
   buyServices: 'Riverfolk services — buy or decline',

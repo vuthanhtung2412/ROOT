@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { LIZARD_CULT_DISPLAY_NAME } from '#game/birthdayEdition.ts'
 import {
   ActionComposer,
   type ComposerOutcome,
@@ -220,7 +221,9 @@ describe('optionActionComposer pending events', () => {
         makeActionSpec({ type: 'resolveEvent', params: { clearing: [2] } }),
       ),
     )
-    expect(begun.prompt.message).toBe('Lizard Cult — choose starting corner')
+    expect(begun.prompt.message).toBe(
+      `${LIZARD_CULT_DISPLAY_NAME} — choose starting corner`,
+    )
     expect(begun.prompt.highlightClearings).toEqual([2])
     expect(begun.prompt.canCancel).toBe(false)
     expect(composer.cancel().kind).toBe('incomplete')
@@ -374,7 +377,7 @@ describe('expansion tray labels and banner prompts', () => {
       pending: [{ type: 'chooseOutcast', seat: 1 }],
     })
     expect(buildTurnBannerViewModel(setup).prompt).toBe(
-      'Lizard Cult — choose the Outcast suit',
+      `${LIZARD_CULT_DISPLAY_NAME} — choose the Outcast suit`,
     )
     const buying = makeGameState({
       pending: [{ type: 'buyServices', buyer: 0, bought: 0 }],
