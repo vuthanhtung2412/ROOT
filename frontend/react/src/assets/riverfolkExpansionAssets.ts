@@ -1,5 +1,15 @@
 /** Texture keys and public paths for the Lizard Cult and Riverfolk Company. */
 
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
+
+/** Birthday edition: party hat on the icon, hat and bows on the tokens. */
+const LIZARD_FACTION_ICON_PATH: string = IS_BIRTHDAY_EDITION
+  ? 'assets/factions/lizard-birthday.webp'
+  : 'assets/factions/lizard.webp'
+const LIZARD_TOKEN_DIRECTORY: string = IS_BIRTHDAY_EDITION
+  ? 'assets/tokens/lizard/birthday'
+  : 'assets/tokens/lizard'
+
 export const RIVERFOLK_EXPANSION_ASSET_KEYS = {
   factionLizard: 'faction-lizard',
   factionRiverfolk: 'faction-riverfolk',
@@ -25,8 +35,7 @@ export type ExpansionImageAsset = {
 export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = [
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.factionLizard,
-    // Birthday edition: party hat on the icon, hat and bows on the tokens below.
-    path: 'assets/factions/lizard-birthday.webp',
+    path: LIZARD_FACTION_ICON_PATH,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.factionRiverfolk,
@@ -42,27 +51,27 @@ export const RIVERFOLK_EXPANSION_IMAGE_ASSETS: readonly ExpansionImageAsset[] = 
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardWarrior,
-    path: 'assets/tokens/lizard/birthday/warrior.webp',
+    path: `${LIZARD_TOKEN_DIRECTORY}/warrior.webp`,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenFox,
-    path: 'assets/tokens/lizard/birthday/garden-fox.webp',
+    path: `${LIZARD_TOKEN_DIRECTORY}/garden-fox.webp`,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenMouse,
-    path: 'assets/tokens/lizard/birthday/garden-mouse.webp',
+    path: `${LIZARD_TOKEN_DIRECTORY}/garden-mouse.webp`,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardGardenRabbit,
-    path: 'assets/tokens/lizard/birthday/garden-rabbit.webp',
+    path: `${LIZARD_TOKEN_DIRECTORY}/garden-rabbit.webp`,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcast,
-    path: 'assets/tokens/lizard/birthday/outcast.webp',
+    path: `${LIZARD_TOKEN_DIRECTORY}/outcast.webp`,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenLizardOutcastHated,
-    path: 'assets/tokens/lizard/birthday/outcast-hated.webp',
+    path: `${LIZARD_TOKEN_DIRECTORY}/outcast-hated.webp`,
   },
   {
     key: RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkWarrior,

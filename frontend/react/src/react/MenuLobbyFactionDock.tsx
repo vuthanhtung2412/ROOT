@@ -4,7 +4,7 @@ import { modelDisplayName } from '#game/aiPlayerStore.ts'
 import type { MenuFactionChoice } from '#game/hudStore.ts'
 import { factionDisplayName, isMenuFactionId } from '#game/menuPartySetup.ts'
 import { Confetti, TILE_CONFETTI } from '#react/BirthdayDecorations.tsx'
-import { BIRTHDAY_FACTION_ID, factionTintCss } from '#react/MenuLobbySeats.tsx'
+import { factionTintCss, isBirthdayGuest } from '#react/MenuLobbySeats.tsx'
 import { Tooltip } from '#react/Tooltip.tsx'
 
 /** `own`: this browser picks its faction. `ai`: the host seats an AI player. */
@@ -150,7 +150,7 @@ export function LobbyFactionDock(props: {
                       draggable={false}
                     />
                   ) : null}
-                  {isPicked && choice.faction === BIRTHDAY_FACTION_ID ? (
+                  {isPicked && isBirthdayGuest(choice.faction) ? (
                     <Confetti pieces={TILE_CONFETTI} />
                   ) : null}
                 </span>

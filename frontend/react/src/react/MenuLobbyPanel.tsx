@@ -11,6 +11,7 @@ import type {
   MenuLobbyHudState,
   MenuLobbySeat,
 } from '#game/hudStore.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import { BirthdayCandle, PartyCloud } from '#react/BirthdayDecorations.tsx'
 import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
 import { LobbyPlayModeSwitch, MenuCoopLobby } from '#react/MenuCoopLobby.tsx'
@@ -39,10 +40,13 @@ const SEAT_ROW_CLASS_NAME =
   'm-0 grid list-none grid-cols-2 gap-x-7 gap-y-4 p-0 md:flex md:flex-row md:items-start md:gap-11'
 const LEAVE_BUTTON_CLASS_NAME = `menu-leave-lobby ${CANCEL_BUTTON_CLASS_NAME}`
 /** Birthday edition: start is the cake, frosting pink with a lit candle. */
-const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME} [--root-paper-color:var(--color-frosting)]`
+const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME} ${
+  IS_BIRTHDAY_EDITION ? '[--root-paper-color:var(--color-frosting)]' : ''
+}`
 const PANEL_CLASS_NAME = 'm-0 flex w-full flex-col items-center gap-6'
-const LOBBY_TITLE = 'The Birthday Table'
-const VERSUS_START_LABEL = 'Light the candles'
+const BIRTHDAY_LOBBY_TITLE = 'The Birthday Table'
+const LOBBY_TITLE = 'Online lobby'
+const VERSUS_START_LABEL = IS_BIRTHDAY_EDITION ? 'Light the candles' : 'Start game'
 const COOPERATIVE_START_LABEL = 'Start co-op game'
 /** Guest count on a berry strip tucked under the title. */
 const GUEST_COUNT_CLASS_NAME =
@@ -65,7 +69,7 @@ function StartButton(props: {
       onClick={props.onStart}
     >
       {props.label}
-      <BirthdayCandle />
+      {IS_BIRTHDAY_EDITION ? <BirthdayCandle /> : null}
     </button>
   )
   if (props.blockedReason === null) return button
@@ -131,7 +135,9 @@ export function OnlineLobbyPanel(props: {
     (seat: MenuLobbySeat): boolean => seat.occupied,
   ).length
   const tableSeatCount: number = lobby.seats.length + lobby.openSeatCount
-  const partyCloudSeatIndex: number = Math.ceil(tableSeatCount / SEAT_ROW_HALF_DIVISOR)
+  const partyCloudSeatIndex: number = IS_BIRTHDAY_EDITION
+    ? Math.ceil(tableSeatCount / SEAT_ROW_HALF_DIVISOR)
+    : NO_SEAT_INDEX
 
   function openSeatKind(seatIndex: number): LobbyOpenSeatKind {
     if (seatIndex !== nextOpenSeatIndex) return 'waiting'
@@ -155,10 +161,18 @@ export function OnlineLobbyPanel(props: {
 
   const header: JSX.Element = (
     <>
-      <h2 className={LOBBY_TITLE_CLASS_NAME}>{LOBBY_TITLE}</h2>
-      <p className={GUEST_COUNT_CLASS_NAME}>
-        {takenSeatCount} of {tableSeatCount} guests seated
-      </p>
+      {IS_BIRTHDAY_EDITION ? (
+        <>
+          <h2 className={LOBBY_TITLE_CLASS_NAME}>{BIRTHDAY_LOBBY_TITLE}</h2>
+          <p className={GUEST_COUNT_CLASS_NAME}>
+            {takenSeatCount} of {tableSeatCount} guests seated
+          </p>
+        </>
+      ) : (
+        <h2 className={LOBBY_TITLE_CLASS_NAME}>
+          {LOBBY_TITLE} · {takenSeatCount} of {tableSeatCount} seats
+        </h2>
+      )}
       {isOpenLobby ? (
         <LobbyPlayModeSwitch
           playMode={lobby.playMode}

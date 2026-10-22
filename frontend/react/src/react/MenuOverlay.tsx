@@ -11,6 +11,7 @@ import {
   type MenuLobbyHudState,
 } from '#game/hudStore.ts'
 import type { MenuFactionId } from '#game/menuPartySetup.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import type { BotSettingsByFaction } from '@root/lib/bot-settings'
 import {
   BirthdayCandle,
@@ -46,6 +47,9 @@ const WALLPAPER_CLASS_NAME =
 const HOME_BUTTON_CLASS_NAME = 'min-w-65 [--root-paper-color:var(--color-parchment-deep)]!'
 /** Birthday edition: Create game is the cake, frosting pink with a lit candle. */
 const BIRTHDAY_BUTTON_CLASS_NAME = 'min-w-65 [--root-paper-color:var(--color-frosting)]!'
+const PLAY_ONLINE_BUTTON_CLASS_NAME: string = IS_BIRTHDAY_EDITION
+  ? BIRTHDAY_BUTTON_CLASS_NAME
+  : HOME_BUTTON_CLASS_NAME
 /** Banner, edition ribbon and tagline: one group, centred under the banner. */
 const BANNER_GROUP_CLASS_NAME = 'mb-auto flex w-[min(80vw,420px)] flex-col items-center'
 const EDITION_RIBBON_CLASS_NAME =
@@ -112,8 +116,12 @@ export function MenuOverlay(): JSX.Element | null {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,color-mix(in_srgb,var(--color-moss)_55%,transparent),transparent_60%),var(--color-forest-deep)]" />
       )}
       <div className={isLobbyScreen ? MENU_DIM_CLASS_NAME : HOME_SHADE_CLASS_NAME} />
-      <ScreenBunting />
-      <Confetti pieces={SCREEN_CONFETTI} />
+      {IS_BIRTHDAY_EDITION ? (
+        <>
+          <ScreenBunting />
+          <Confetti pieces={SCREEN_CONFETTI} />
+        </>
+      ) : null}
       <div className={isLobbyScreen ? MENU_STAGE_CLASS_NAME : HOME_STAGE_CLASS_NAME}>
         {isLobbyScreen ? null : (
           <div className={BANNER_GROUP_CLASS_NAME}>
@@ -129,8 +137,12 @@ export function MenuOverlay(): JSX.Element | null {
                 ROOT
               </h1>
             )}
-            <span className={EDITION_RIBBON_CLASS_NAME}>{EDITION_LABEL}</span>
-            <p className={TAGLINE_CLASS_NAME}>{TAGLINE}</p>
+            {IS_BIRTHDAY_EDITION ? (
+              <>
+                <span className={EDITION_RIBBON_CLASS_NAME}>{EDITION_LABEL}</span>
+                <p className={TAGLINE_CLASS_NAME}>{TAGLINE}</p>
+              </>
+            ) : null}
           </div>
         )}
 
@@ -172,14 +184,14 @@ export function MenuOverlay(): JSX.Element | null {
             {/* The one start button: a lobby waits → join it; else create one. */}
             <button
               type="button"
-              className={`menu-play-online ${PRIMARY_BUTTON_CLASS_NAME} ${BIRTHDAY_BUTTON_CLASS_NAME}`}
+              className={`menu-play-online ${PRIMARY_BUTTON_CLASS_NAME} ${PLAY_ONLINE_BUTTON_CLASS_NAME}`}
               disabled={menu.playPending}
               onClick={(): void => {
                 callbacks.onPlayOnline()
               }}
             >
               {menu.lobbyOnServer ? JOIN_GAME_LABEL : CREATE_GAME_LABEL}
-              <BirthdayCandle />
+              {IS_BIRTHDAY_EDITION ? <BirthdayCandle /> : null}
             </button>
             {menu.soloRunSaved ? (
               <button

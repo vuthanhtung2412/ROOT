@@ -4,6 +4,7 @@ import { factionPortraitPath } from '#assets/factionPortraits.ts'
 import { modelDisplayName } from '#game/aiPlayerStore.ts'
 import type { MenuLobbySeat } from '#game/hudStore.ts'
 import { factionDisplayName, isMenuFactionId } from '#game/menuPartySetup.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import { factionColorCss } from '#game/theme.ts'
 import {
   Confetti,
@@ -19,11 +20,24 @@ import { SuitIcon } from '#react/SuitIcon.tsx'
 /** The lobby creator joins first, so the host always holds seat 0. */
 const HOST_SEAT_INDEX = 0
 /** Birthday edition: the Lizard Cult is the guest of honour, its seat hung with bunting. */
-export const BIRTHDAY_FACTION_ID = 'lizard'
-const OPEN_SEAT_NOTE = 'a gift awaits'
-/** What an open seat offers, on a parchment tag laid over the gift ribbon. */
-const GIFT_TAG_CLASS_NAME =
-  'root-paper root-paper-fine relative z-1 flex flex-col items-center px-3 py-1 [--root-paper-color:var(--color-parchment)]'
+const BIRTHDAY_FACTION_ID = 'lizard'
+const OPEN_SEAT_NOTE = IS_BIRTHDAY_EDITION ? 'a gift awaits' : 'waiting…'
+/**
+ * What an open seat offers: on a parchment tag laid over the gift ribbon in
+ * the birthday edition, else straight on the tile.
+ */
+const OPEN_SEAT_CONTENT_CLASS_NAME = IS_BIRTHDAY_EDITION
+  ? 'root-paper root-paper-fine relative z-1 flex flex-col items-center px-3 py-1 [--root-paper-color:var(--color-parchment)]'
+  : 'contents'
+const SEAT_AI_ICON_CLASS_NAME = IS_BIRTHDAY_EDITION
+  ? 'text-3xl md:text-4xl'
+  : 'text-4xl md:text-5xl'
+const OPEN_TILE_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-cream-deep)]'
+
+/** Birthday edition: the Lizard Cult seat and dock tile get bunting and confetti. */
+export function isBirthdayGuest(faction: string | null): boolean {
+  return IS_BIRTHDAY_EDITION && faction === BIRTHDAY_FACTION_ID
+}
 /** Faction colour softened toward parchment so the head art stays readable. */
 const PORTRAIT_TINT_PERCENT = 55
 /** Each seat tile sits a little askew, like a piece dropped on the table. */
@@ -166,7 +180,7 @@ export function LobbySeatTile(props: {
         ) : (
           portrait
         )}
-        {seat.faction === BIRTHDAY_FACTION_ID ? (
+        {isBirthdayGuest(seat.faction) ? (
           <>
             <TileBunting />
             <Confetti pieces={TILE_CONFETTI} />
@@ -249,14 +263,17 @@ export function LobbyOpenSeatTile(props: {
 }): JSX.Element {
   const isLocal: boolean = props.kind === 'local'
   const giftWrap: GiftWrap = giftWrapForSeat(props.seatIndex)
+  const tilePaperClassName: string = IS_BIRTHDAY_EDITION
+    ? giftWrap.paperClassName
+    : OPEN_TILE_PAPER_CLASS_NAME
   return (
     <li className={SEAT_COLUMN_CLASS_NAME} data-lobby-seat={props.seatIndex}>
       <div
-        className={`${SEAT_TILE_CLASS_NAME} ${giftWrap.paperClassName} ${tiltClassName(props.seatIndex)} ${
+        className={`${SEAT_TILE_CLASS_NAME} ${tilePaperClassName} ${tiltClassName(props.seatIndex)} ${
           props.isSelected ? SEAT_TILE_SELECTED_CLASS_NAME : ''
         }`}
       >
-        <GiftBoxWrap wrap={giftWrap} />
+        {IS_BIRTHDAY_EDITION ? <GiftBoxWrap wrap={giftWrap} /> : null}
         {props.kind === 'ai' ? (
           <button
             type="button"
@@ -264,15 +281,15 @@ export function LobbyOpenSeatTile(props: {
             aria-pressed={props.isSelected}
             onClick={props.onSelect}
           >
-            <span className={GIFT_TAG_CLASS_NAME}>
-              <LuBot className="text-3xl md:text-4xl" aria-hidden="true" />
+            <span className={OPEN_SEAT_CONTENT_CLASS_NAME}>
+              <LuBot className={SEAT_AI_ICON_CLASS_NAME} aria-hidden="true" />
               Seat an AI
             </span>
           </button>
         ) : null}
         {isLocal ? (
           <span
-            className={`${GIFT_TAG_CLASS_NAME} font-display text-6xl text-ink md:text-8xl`}
+            className={`${OPEN_SEAT_CONTENT_CLASS_NAME} font-display text-6xl text-ink md:text-8xl`}
             aria-hidden="true"
           >
             ?
