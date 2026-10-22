@@ -1,4 +1,4 @@
-import { Fragment, useState, useSyncExternalStore, type JSX } from 'react'
+import { useState, useSyncExternalStore, type JSX } from 'react'
 import type { AddAiPlayerInput } from '#api/client.ts'
 import {
   getAiPlayerSnapshot,
@@ -18,7 +18,6 @@ import {
   BIRTHDAY_TABLE_TITLE,
   BirthdayCandle,
   GUEST_COUNT_CLASS_NAME,
-  PartyCloud,
 } from '#react/BirthdayDecorations.tsx'
 import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
 import { LobbyPlayModeSwitch, MenuCoopLobby } from '#react/MenuCoopLobby.tsx'
@@ -54,8 +53,6 @@ const PANEL_CLASS_NAME = 'm-0 flex w-full flex-col items-center gap-6'
 const LOBBY_TITLE = 'Online lobby'
 const VERSUS_START_LABEL = IS_BIRTHDAY_EDITION ? BIRTHDAY_START_LABEL : 'Start game'
 const COOPERATIVE_START_LABEL = 'Start co-op game'
-/** The PARTY! cloud sits halfway along the seat row. */
-const SEAT_ROW_HALF_DIVISOR = 2
 
 /** Host start; while blocked, hovering it tells why. */
 function StartButton(props: {
@@ -138,9 +135,6 @@ export function OnlineLobbyPanel(props: {
     (seat: MenuLobbySeat): boolean => seat.occupied,
   ).length
   const tableSeatCount: number = lobby.seats.length + lobby.openSeatCount
-  const partyCloudSeatIndex: number = IS_BIRTHDAY_EDITION
-    ? Math.ceil(tableSeatCount / SEAT_ROW_HALF_DIVISOR)
-    : NO_SEAT_INDEX
 
   function openSeatKind(seatIndex: number): LobbyOpenSeatKind {
     if (seatIndex !== nextOpenSeatIndex) return 'waiting'
@@ -240,45 +234,41 @@ export function OnlineLobbyPanel(props: {
               !seat.isLocalPlayer &&
               seatIndex !== HOST_SEAT_INDEX
             return (
-              <Fragment key={`lobby-seat-${String(seatIndex)}`}>
-                {seatIndex === partyCloudSeatIndex ? <PartyCloud /> : null}
-                <LobbySeatTile
-                  seat={seat}
-                  seatIndex={seatIndex}
-                  isSelected={isOwnSeat && dockMode === 'own'}
-                  onSelect={
-                    isOwnSeat
-                      ? (): void => {
-                          setIsSeatingAi(false)
-                        }
-                      : null
-                  }
-                  onExpel={
-                    canExpel && !props.playPending
-                      ? (): void => {
-                          props.onExpelPlayer(seatIndex)
-                        }
-                      : null
-                  }
-                />
-              </Fragment>
+              <LobbySeatTile
+                key={`lobby-seat-${String(seatIndex)}`}
+                seat={seat}
+                seatIndex={seatIndex}
+                isSelected={isOwnSeat && dockMode === 'own'}
+                onSelect={
+                  isOwnSeat
+                    ? (): void => {
+                        setIsSeatingAi(false)
+                      }
+                    : null
+                }
+                onExpel={
+                  canExpel && !props.playPending
+                    ? (): void => {
+                        props.onExpelPlayer(seatIndex)
+                      }
+                    : null
+                }
+              />
             )
           },
         )}
         {openSeatIndexes(lobby).map((seatIndex: number): JSX.Element => {
           const kind: LobbyOpenSeatKind = openSeatKind(seatIndex)
           return (
-            <Fragment key={`lobby-seat-${String(seatIndex)}`}>
-              {seatIndex === partyCloudSeatIndex ? <PartyCloud /> : null}
-              <LobbyOpenSeatTile
-                seatIndex={seatIndex}
-                kind={kind}
-                isSelected={isOpenSeatSelected(kind)}
-                onSelect={(): void => {
-                  setIsSeatingAi(true)
-                }}
-              />
-            </Fragment>
+            <LobbyOpenSeatTile
+              key={`lobby-seat-${String(seatIndex)}`}
+              seatIndex={seatIndex}
+              kind={kind}
+              isSelected={isOpenSeatSelected(kind)}
+              onSelect={(): void => {
+                setIsSeatingAi(true)
+              }}
+            />
           )
         })}
       </ol>

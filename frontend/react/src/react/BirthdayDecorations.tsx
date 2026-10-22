@@ -475,14 +475,3 @@ export function TokenBow(props: {
     </span>
   )
 }
-
-/** "PARTY!" in comic lettering on a frosting cloud, between the lobby seats. */
-export function PartyCloud(): JSX.Element {
-  return (
-    <li className="hidden -rotate-6 self-center md:-mx-4.5 md:block" aria-hidden="true">
-      <span className="block rounded-[48%_52%_44%_56%/58%_46%_54%_42%] border-3 border-ink-deep bg-frosting px-5.5 py-3.5 font-comic text-[40px] tracking-[0.04em] text-ink-deep shadow-[3px_4px_0_color-mix(in_srgb,var(--color-ink-deep)_45%,transparent)]">
-        PARTY!
-      </span>
-    </li>
-  )
-}
