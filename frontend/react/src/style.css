@@ -47,6 +47,10 @@
   --color-balloon: #7fb3d5;
   --color-mint: #9fcfb0;
   --color-flame: #f5a623;
+  /* Watercolour washes of the bridge letter cards, muted to sit in the wallpaper. */
+  --color-rose-wash: #d9968a;
+  --color-sage-wash: #a9c2b5;
+  --color-ochre-wash: #e3b65c;
   /* Suit icon colours of the Lizard Cult garden tokens (birthday bows). */
   --color-suit-fox: #c8524a;
   --color-suit-rabbit: #e8c860;

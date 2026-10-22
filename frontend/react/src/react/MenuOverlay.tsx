@@ -19,6 +19,7 @@ import {
   SCREEN_CONFETTI,
   ScreenBunting,
 } from '#react/BirthdayDecorations.tsx'
+import { BirthdayBridgeBanner } from '#react/BirthdayBridgeBanner.tsx'
 import { MenuHotseatSetup } from '#react/MenuHotseatSetup.tsx'
 import { MenuSoloSetup } from '#react/MenuSoloSetup.tsx'
 import { OnlineLobbyPanel } from '#react/MenuLobbyPanel.tsx'
@@ -115,6 +116,7 @@ export function MenuOverlay(): JSX.Element | null {
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,color-mix(in_srgb,var(--color-moss)_55%,transparent),transparent_60%),var(--color-forest-deep)]" />
       )}
+      {IS_BIRTHDAY_EDITION && wallpaperPath !== null ? <BirthdayBridgeBanner /> : null}
       <div className={isLobbyScreen ? MENU_DIM_CLASS_NAME : HOME_SHADE_CLASS_NAME} />
       {IS_BIRTHDAY_EDITION ? (
         <>
