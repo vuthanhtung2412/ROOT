@@ -26,7 +26,7 @@ const OPEN_SEAT_NOTE = IS_BIRTHDAY_EDITION ? 'a gift awaits' : 'waiting…'
  * What an open seat offers: on a parchment tag laid over the gift ribbon in
  * the birthday edition, else straight on the tile.
  */
-const OPEN_SEAT_CONTENT_CLASS_NAME = IS_BIRTHDAY_EDITION
+export const OPEN_SEAT_CONTENT_CLASS_NAME = IS_BIRTHDAY_EDITION
   ? 'root-paper root-paper-fine relative z-1 flex flex-col items-center px-3 py-1 [--root-paper-color:var(--color-parchment)]'
   : 'contents'
 const SEAT_AI_ICON_CLASS_NAME = IS_BIRTHDAY_EDITION

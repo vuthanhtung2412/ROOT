@@ -12,7 +12,14 @@ import type {
   MenuLobbySeat,
 } from '#game/hudStore.ts'
 import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
-import { BirthdayCandle, PartyCloud } from '#react/BirthdayDecorations.tsx'
+import {
+  BIRTHDAY_START_LABEL,
+  BIRTHDAY_START_PAPER_CLASS_NAME,
+  BIRTHDAY_TABLE_TITLE,
+  BirthdayCandle,
+  GUEST_COUNT_CLASS_NAME,
+  PartyCloud,
+} from '#react/BirthdayDecorations.tsx'
 import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
 import { LobbyPlayModeSwitch, MenuCoopLobby } from '#react/MenuCoopLobby.tsx'
 import {
@@ -41,16 +48,12 @@ const SEAT_ROW_CLASS_NAME =
 const LEAVE_BUTTON_CLASS_NAME = `menu-leave-lobby ${CANCEL_BUTTON_CLASS_NAME}`
 /** Birthday edition: start is the cake, frosting pink with a lit candle. */
 const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME} ${
-  IS_BIRTHDAY_EDITION ? '[--root-paper-color:var(--color-frosting)]' : ''
+  IS_BIRTHDAY_EDITION ? BIRTHDAY_START_PAPER_CLASS_NAME : ''
 }`
 const PANEL_CLASS_NAME = 'm-0 flex w-full flex-col items-center gap-6'
-const BIRTHDAY_LOBBY_TITLE = 'The Birthday Table'
 const LOBBY_TITLE = 'Online lobby'
-const VERSUS_START_LABEL = IS_BIRTHDAY_EDITION ? 'Light the candles' : 'Start game'
+const VERSUS_START_LABEL = IS_BIRTHDAY_EDITION ? BIRTHDAY_START_LABEL : 'Start game'
 const COOPERATIVE_START_LABEL = 'Start co-op game'
-/** Guest count on a berry strip tucked under the title. */
-const GUEST_COUNT_CLASS_NAME =
-  'm-0 -mt-4.5 -rotate-2 border-3 border-ink-deep bg-berry px-4 py-0.5 font-body text-base text-paper-bright italic'
 /** The PARTY! cloud sits halfway along the seat row. */
 const SEAT_ROW_HALF_DIVISOR = 2
 
@@ -163,7 +166,7 @@ export function OnlineLobbyPanel(props: {
     <>
       {IS_BIRTHDAY_EDITION ? (
         <>
-          <h2 className={LOBBY_TITLE_CLASS_NAME}>{BIRTHDAY_LOBBY_TITLE}</h2>
+          <h2 className={LOBBY_TITLE_CLASS_NAME}>{BIRTHDAY_TABLE_TITLE}</h2>
           <p className={GUEST_COUNT_CLASS_NAME}>
             {takenSeatCount} of {tableSeatCount} guests seated
           </p>

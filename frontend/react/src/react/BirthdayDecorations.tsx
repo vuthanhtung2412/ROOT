@@ -29,6 +29,15 @@ const FLAG_COLORS: readonly string[] = [
 
 const DECORATION_LAYER_CLASS_NAME = 'pointer-events-none absolute select-none'
 
+/** Lobby title shared by the online lobby and the solo run. */
+export const BIRTHDAY_TABLE_TITLE = 'The Birthday Table'
+/** Guest count on a berry strip tucked under the lobby title. */
+export const GUEST_COUNT_CLASS_NAME =
+  'm-0 -mt-4.5 -rotate-2 border-3 border-ink-deep bg-berry px-4 py-0.5 font-body text-base text-paper-bright italic'
+/** Start is the cake: frosting pink, with a `BirthdayCandle` on it. */
+export const BIRTHDAY_START_LABEL = 'Light the candles'
+export const BIRTHDAY_START_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-frosting)]'
+
 /** The string sags across the screen top; flags hang from it, one every `FLAG_SPACING`. */
 const SCREEN_BUNTING_WIDTH = 1440
 const SCREEN_BUNTING_HEIGHT = 130
@@ -220,7 +229,7 @@ export type GiftWrap = {
   knotColor: string
 }
 
-const BALLOON_GIFT_WRAP: GiftWrap = {
+export const BALLOON_GIFT_WRAP: GiftWrap = {
   paperClassName: '[--root-paper-color:var(--color-balloon)]',
   ribbonColor: BERRY_COLOR,
   knotColor: LIZARD_COLOR,
