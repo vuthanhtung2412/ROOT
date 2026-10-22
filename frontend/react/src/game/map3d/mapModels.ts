@@ -2,6 +2,7 @@ import type { Group } from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 import { retryAssetFetch } from '#assets/retryAssetFetch.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import { mergePartsByMaterial } from '#game/map3d/mergeModelParts.ts'
 
 /**
@@ -28,7 +29,15 @@ const AUTUMN_MODEL_NAMES: readonly string[] = [
   'nature/tree_default_fall',
   'nature/tree_oak_fall',
 ]
-const CAMPFIRE_MODEL_NAME = 'props/campfire'
+/** Birthday edition models carry this suffix next to the regular file. */
+const BIRTHDAY_MODEL_SUFFIX = '_birthday'
+
+/** Birthday edition: a cake for the campfire, a party hat and a dressed garden for the Lizard Cult. */
+function birthdayModelName(name: string): string {
+  return IS_BIRTHDAY_EDITION ? `${name}${BIRTHDAY_MODEL_SUFFIX}` : name
+}
+
+const CAMPFIRE_MODEL_NAME: string = birthdayModelName('props/campfire')
 
 /**
  * A meeple stands as modelled; a structure is centred on a building plot.
@@ -60,7 +69,7 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-marquise-warrior': meeple('marquise-warrior'),
   'token-eyrie-warrior': meeple('eyrie-warrior'),
   'token-alliance-warrior': meeple('alliance-warrior'),
-  'token-lizard-warrior': meeple('lizard-warrior'),
+  'token-lizard-warrior': meeple(birthdayModelName('lizard-warrior')),
   'token-riverfolk-warrior': meeple('riverfolk-warrior'),
   'token-vagabond-pawn': meeple('vagabond-pawn'),
   'token-vagabond-pawn-tinker': meeple('vagabond-pawn-tinker'),
@@ -75,9 +84,9 @@ const PIECE_MODEL_SOURCE_BY_TEXTURE_KEY: Readonly<
   'token-alliance-base-mouse': structure('base'),
   'token-alliance-base-rabbit': structure('base'),
   'token-alliance-sympathy': structure('sympathy'),
-  'token-lizard-garden-fox': structure('garden'),
-  'token-lizard-garden-mouse': structure('garden'),
-  'token-lizard-garden-rabbit': structure('garden'),
+  'token-lizard-garden-fox': structure(birthdayModelName('garden')),
+  'token-lizard-garden-mouse': structure(birthdayModelName('garden')),
+  'token-lizard-garden-rabbit': structure(birthdayModelName('garden')),
   'token-riverfolk-trade-post-fox': structure('trade-post'),
   'token-riverfolk-trade-post-mouse': structure('trade-post'),
   'token-riverfolk-trade-post-rabbit': structure('trade-post'),

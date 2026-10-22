@@ -7,11 +7,13 @@ import {
   MeshBasicMaterial,
   PointLight,
   Vector3,
+  type Material,
 } from 'three'
 import {
   createCampfireEmbers,
   type CampfireEmbers,
 } from '#game/map3d/campfireEmbers.ts'
+import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import type { TimeOfDay } from '#game/map3d/daylight.ts'
 import type { ClearingGround } from '#game/map3d/mapTerrain.ts'
 import {
@@ -62,6 +64,12 @@ const BURN_LEVEL_BY_TIME_OF_DAY: Readonly<Record<TimeOfDay, number>> = {
 const BURN_FADE_RATE_PER_SECOND = 2.2
 /** Below this the flames are not drawn at all. */
 const BURN_LEVEL_HIDDEN_BELOW = 0.02
+
+/**
+ * Birthday edition: the campfire is a cake whose candles carry their own
+ * flames, so the fire cones and sparks stay out; the warm light stays.
+ */
+const HAS_FIRE_FLAMES: boolean = !IS_BIRTHDAY_EDITION
 
 /** Ring of stones, side to side, world units. */
 const CAMPFIRE_WIDTH = 1.5
@@ -196,6 +204,17 @@ function createCampfireParts(): CampfireParts {
   }
 }
 
+/**
+ * A see-through part (the glow around a birthday candle) would throw a
+ * shadow as dark as a solid one: it casts none.
+ */
+function isSeeThrough(mesh: Mesh): boolean {
+  const materials: readonly Material[] = Array.isArray(mesh.material)
+    ? mesh.material
+    : [mesh.material]
+  return materials.some((material: Material): boolean => material.transparent)
+}
+
 /** The model at its size in the woodland, standing on the ground. */
 function createHearth(model: Group): Group {
   const bounds: Box3 = new Box3().setFromObject(model)
@@ -204,7 +223,7 @@ function createHearth(model: Group): Group {
   const stonesAndLogs: Group = model.clone()
   stonesAndLogs.position.y = -bounds.min.y
   for (const mesh of meshesOf(stonesAndLogs)) {
-    mesh.castShadow = true
+    mesh.castShadow = !isSeeThrough(mesh)
     mesh.receiveShadow = true
   }
   // Scale lives on a wrapper group so the lift stays in model units.
@@ -250,13 +269,14 @@ export function createCampfires(input: CampfiresInput): Campfires {
       light.position.y = FIRELIGHT_HEIGHT
       const campfire: Group = new Group()
       campfire.position.set(ground.x, 0, ground.z)
-      campfire.add(createHearth(input.model), flames, light)
+      campfire.add(createHearth(input.model), light)
+      if (HAS_FIRE_FLAMES) campfire.add(flames)
       group.add(campfire)
       return { flames, light, flickerPhase: index * FLICKER_PHASE_STEP }
     },
   )
   const embers: CampfireEmbers = createCampfireEmbers(grounds)
-  group.add(embers.points)
+  if (HAS_FIRE_FLAMES) group.add(embers.points)
 
   let burnLevel: number = BURN_LEVEL_BY_TIME_OF_DAY[input.timeOfDay]
   let targetBurnLevel: number = burnLevel
@@ -298,6 +318,7 @@ export function createCampfires(input: CampfiresInput): Campfires {
           burnLevel *
           (1 + flicker * FIRELIGHT_FLICKER_SHARE)
       }
+      if (!HAS_FIRE_FLAMES) return
       embers.points.visible = burnLevel > BURN_LEVEL_HIDDEN_BELOW
       embers.update(elapsedSeconds, burnLevel)
     },
