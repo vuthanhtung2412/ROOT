@@ -9,6 +9,7 @@ import {
   BALLOON_GIFT_WRAP,
   Confetti,
   GiftBoxWrap,
+  GiftTag,
   TILE_CONFETTI,
   TileBunting,
 } from '#react/BirthdayDecorations.tsx'
@@ -30,9 +31,7 @@ const ADD_BOT_TILE_CLASS_NAME =
 const ADD_BOT_PAPER_CLASS_NAME: string = IS_BIRTHDAY_EDITION
   ? BALLOON_GIFT_WRAP.paperClassName
   : '[--root-paper-color:var(--color-cream-deep)]'
-const ADD_BOT_ICON_CLASS_NAME: string = IS_BIRTHDAY_EDITION
-  ? 'text-4xl md:text-5xl'
-  : 'text-5xl md:text-6xl'
+const ADD_BOT_ICON_CLASS_NAME = 'text-5xl md:text-6xl'
 /** Solo run: bots stack in a column, smaller tiles. Co-op: as big as a lobby seat. */
 export type BotTileSize = 'compact' | 'lobbySeat'
 const BOT_TILE_SIZE_CLASS_NAMES: Readonly<Record<BotTileSize, string>> = {
@@ -222,9 +221,13 @@ export function SoloAddBotTile(props: {
           disabled={props.disabled}
           onClick={props.onSelect}
         >
-          <span className={OPEN_SEAT_CONTENT_CLASS_NAME}>
-            <LuPlus className={ADD_BOT_ICON_CLASS_NAME} aria-hidden="true" />
-          </span>
+          {IS_BIRTHDAY_EDITION ? (
+            <GiftTag note={LuPlus} />
+          ) : (
+            <span className={OPEN_SEAT_CONTENT_CLASS_NAME}>
+              <LuPlus className={ADD_BOT_ICON_CLASS_NAME} aria-hidden="true" />
+            </span>
+          )}
         </button>
       </div>
       <SeatLabel

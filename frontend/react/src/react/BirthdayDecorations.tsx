@@ -1,4 +1,5 @@
 import type { CSSProperties, JSX } from 'react'
+import type { IconType } from 'react-icons'
 
 /**
  * Birthday edition party kit: paper bunting, confetti, candles and gift wrap,
@@ -331,9 +332,46 @@ const GIFT_TAG_TEXT_CENTER_X = 68
 const GIFT_TAG_TEXT_BASELINE_Y = 55
 const GIFT_TAG_FONT_SIZE = 22
 const GIFT_TAG_STROKE_WIDTH = 1.4
+/** An icon note sits square inside the tag, below the string hole. */
+const GIFT_TAG_ICON_SIZE = 13
+const GIFT_TAG_ICON_LEFT_X = GIFT_TAG_TEXT_CENTER_X - GIFT_TAG_ICON_SIZE / 2
+const GIFT_TAG_ICON_TOP_Y = 40
 
-/** A paper tag on string, tied to the gift bow, with a short note written on it. */
-export function GiftTag(props: { note: string }): JSX.Element {
+/** What the tag reads: a short word, or an icon when a word would not fit. */
+export type GiftTagNote = string | IconType
+
+function isTextNote(note: GiftTagNote): note is string {
+  return typeof note === 'string'
+}
+
+function GiftTagNoteMark(props: { note: GiftTagNote }): JSX.Element {
+  if (isTextNote(props.note)) {
+    return (
+      <text
+        className="font-display"
+        x={GIFT_TAG_TEXT_CENTER_X}
+        y={GIFT_TAG_TEXT_BASELINE_Y}
+        textAnchor="middle"
+        fontSize={GIFT_TAG_FONT_SIZE}
+        fill={INK_COLOR}
+      >
+        {props.note}
+      </text>
+    )
+  }
+  const NoteIcon: IconType = props.note
+  return (
+    <NoteIcon
+      x={GIFT_TAG_ICON_LEFT_X}
+      y={GIFT_TAG_ICON_TOP_Y}
+      size={GIFT_TAG_ICON_SIZE}
+      color={INK_COLOR}
+    />
+  )
+}
+
+/** A paper tag on string, tied to the gift bow, with a short note or icon on it. */
+export function GiftTag(props: { note: GiftTagNote }): JSX.Element {
   return (
     <svg
       className={`${DECORATION_LAYER_CLASS_NAME} inset-0 z-1 size-full overflow-visible`}
@@ -362,16 +400,7 @@ export function GiftTag(props: { note: string }): JSX.Element {
           r={GIFT_TAG_HOLE_RADIUS}
           fill={INK_COLOR}
         />
-        <text
-          className="font-display"
-          x={GIFT_TAG_TEXT_CENTER_X}
-          y={GIFT_TAG_TEXT_BASELINE_Y}
-          textAnchor="middle"
-          fontSize={GIFT_TAG_FONT_SIZE}
-          fill={INK_COLOR}
-        >
-          {props.note}
-        </text>
+        <GiftTagNoteMark note={props.note} />
       </g>
     </svg>
   )

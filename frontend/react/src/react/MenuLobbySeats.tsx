@@ -25,16 +25,9 @@ const BIRTHDAY_FACTION_ID = 'lizard'
 const OPEN_SEAT_NOTE = IS_BIRTHDAY_EDITION ? 'a gift awaits' : 'waiting…'
 /** Your seat before you pick a faction: on a gift tag in the birthday edition. */
 const CHOOSING_FACTION_MARK = '?'
-/**
- * What an open seat offers: on a parchment tag laid over the gift ribbon in
- * the birthday edition, else straight on the tile.
- */
-export const OPEN_SEAT_CONTENT_CLASS_NAME = IS_BIRTHDAY_EDITION
-  ? 'root-paper root-paper-fine relative z-1 flex flex-col items-center px-3 py-1 [--root-paper-color:var(--color-parchment)]'
-  : 'contents'
-const SEAT_AI_ICON_CLASS_NAME = IS_BIRTHDAY_EDITION
-  ? 'text-3xl md:text-4xl'
-  : 'text-4xl md:text-5xl'
+/** What an open seat offers, straight on the tile; the birthday edition hangs it on a `GiftTag`. */
+export const OPEN_SEAT_CONTENT_CLASS_NAME = 'contents'
+const SEAT_AI_ICON_CLASS_NAME = 'text-4xl md:text-5xl'
 const OPEN_TILE_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-cream-deep)]'
 
 /** Birthday edition: the Lizard Cult seat and dock tile get bunting and confetti. */
@@ -282,12 +275,17 @@ export function LobbyOpenSeatTile(props: {
             type="button"
             className={`menu-seat-add-ai relative z-1 ${SEAT_TILE_BUTTON_CLASS_NAME}`}
             aria-pressed={props.isSelected}
+            aria-label="Seat an AI"
             onClick={props.onSelect}
           >
-            <span className={OPEN_SEAT_CONTENT_CLASS_NAME}>
-              <LuBot className={SEAT_AI_ICON_CLASS_NAME} aria-hidden="true" />
-              Seat an AI
-            </span>
+            {IS_BIRTHDAY_EDITION ? (
+              <GiftTag note={LuBot} />
+            ) : (
+              <span className={OPEN_SEAT_CONTENT_CLASS_NAME}>
+                <LuBot className={SEAT_AI_ICON_CLASS_NAME} aria-hidden="true" />
+                Seat an AI
+              </span>
+            )}
           </button>
         ) : null}
         {isLocal && IS_BIRTHDAY_EDITION ? <GiftTag note={CHOOSING_FACTION_MARK} /> : null}
