@@ -41,6 +41,7 @@ Sizes are the longest side of the model, in metres of the Blender file:
 | `sawmill.glb` | Marquise sawmill | modelled for this project (round hut, great saw, steam boiler) | own work |
 | `roost.glb` | Eyrie roost | modelled for this project (leaning tree, platform, blue canopy, lanterns) | own work |
 | `garden.glb` | Lizard Cult garden | modelled for this project (pyramids, palms, a sphinx with the lizard meeple's head; no ground slab) | own work |
+| `garden_birthday.glb` | Lizard Cult garden, birthday edition | `garden.glb` with a party hat on the sphinx, a bow on the great pyramid, bunting between the pyramids and a "HAPPY BIRTHDAY" banner behind them | own work |
 | `wood.glb` | Marquise wood | modelled for this project (stack of short logs) | own work |
 | `sympathy.glb` | Woodland Alliance sympathy | modelled for this project (a crowd of fox, rabbit and mouse meeples with swords under a green banner bearing the sympathy fist) | own work |
 
