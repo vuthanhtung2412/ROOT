@@ -270,6 +270,67 @@ export function GiftBoxWrap(props: { wrap: GiftWrap }): JSX.Element {
   )
 }
 
+/**
+ * Gift tag tied to the `GiftBoxWrap` bow knot, hanging on the box face.
+ * Drawn in percent of the tile (viewBox 100 × 100) so the string meets the knot.
+ */
+const GIFT_TAG_VIEWBOX_SIZE = 100
+const GIFT_TAG_STRING_PATH = 'M48 5 C 56 12, 62 18, 68 30'
+const GIFT_TAG_OUTLINE_POINTS = '60,30 68,24 76,30 76,62 60,62'
+const GIFT_TAG_HOLE_CENTER_X = 68
+const GIFT_TAG_HOLE_CENTER_Y = 30
+const GIFT_TAG_HOLE_RADIUS = 2
+const GIFT_TAG_TILT_DEGREES = 14
+const GIFT_TAG_TEXT_CENTER_X = 68
+const GIFT_TAG_TEXT_BASELINE_Y = 55
+const GIFT_TAG_FONT_SIZE = 22
+const GIFT_TAG_STROKE_WIDTH = 1.4
+
+/** A paper tag on string, tied to the gift bow, with a short note written on it. */
+export function GiftTag(props: { note: string }): JSX.Element {
+  return (
+    <svg
+      className={`${DECORATION_LAYER_CLASS_NAME} inset-0 z-1 size-full overflow-visible`}
+      viewBox={`0 0 ${String(GIFT_TAG_VIEWBOX_SIZE)} ${String(GIFT_TAG_VIEWBOX_SIZE)}`}
+      aria-hidden="true"
+    >
+      <path
+        d={GIFT_TAG_STRING_PATH}
+        fill="none"
+        stroke={INK_COLOR}
+        strokeWidth={GIFT_TAG_STROKE_WIDTH}
+      />
+      <g
+        transform={`rotate(${String(GIFT_TAG_TILT_DEGREES)} ${String(GIFT_TAG_HOLE_CENTER_X)} ${String(GIFT_TAG_HOLE_CENTER_Y)})`}
+      >
+        <polygon
+          points={GIFT_TAG_OUTLINE_POINTS}
+          fill={PARCHMENT_COLOR}
+          stroke={INK_COLOR}
+          strokeWidth={GIFT_TAG_STROKE_WIDTH}
+          strokeLinejoin="round"
+        />
+        <circle
+          cx={GIFT_TAG_HOLE_CENTER_X}
+          cy={GIFT_TAG_HOLE_CENTER_Y}
+          r={GIFT_TAG_HOLE_RADIUS}
+          fill={INK_COLOR}
+        />
+        <text
+          className="font-display"
+          x={GIFT_TAG_TEXT_CENTER_X}
+          y={GIFT_TAG_TEXT_BASELINE_Y}
+          textAnchor="middle"
+          fontSize={GIFT_TAG_FONT_SIZE}
+          fill={INK_COLOR}
+        >
+          {props.note}
+        </text>
+      </g>
+    </svg>
+  )
+}
+
 type RibbonBowProps = {
   className: string
   ribbonColor: string

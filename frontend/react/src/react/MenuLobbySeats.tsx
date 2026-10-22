@@ -9,6 +9,7 @@ import { factionColorCss } from '#game/theme.ts'
 import {
   Confetti,
   GiftBoxWrap,
+  GiftTag,
   giftWrapForSeat,
   TILE_CONFETTI,
   TileBunting,
@@ -22,6 +23,8 @@ const HOST_SEAT_INDEX = 0
 /** Birthday edition: the Lizard Cult is the guest of honour, its seat hung with bunting. */
 const BIRTHDAY_FACTION_ID = 'lizard'
 const OPEN_SEAT_NOTE = IS_BIRTHDAY_EDITION ? 'a gift awaits' : 'waiting…'
+/** Your seat before you pick a faction: on a gift tag in the birthday edition. */
+const CHOOSING_FACTION_MARK = '?'
 /**
  * What an open seat offers: on a parchment tag laid over the gift ribbon in
  * the birthday edition, else straight on the tile.
@@ -287,12 +290,13 @@ export function LobbyOpenSeatTile(props: {
             </span>
           </button>
         ) : null}
-        {isLocal ? (
+        {isLocal && IS_BIRTHDAY_EDITION ? <GiftTag note={CHOOSING_FACTION_MARK} /> : null}
+        {isLocal && !IS_BIRTHDAY_EDITION ? (
           <span
             className={`${OPEN_SEAT_CONTENT_CLASS_NAME} font-display text-6xl text-ink md:text-8xl`}
             aria-hidden="true"
           >
-            ?
+            {CHOOSING_FACTION_MARK}
           </span>
         ) : null}
         <SeatNumberMedallion seatNumber={props.seatIndex + 1} isLocal={isLocal} onRemove={null} />
