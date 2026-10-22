@@ -215,30 +215,50 @@ export function LobbySeatTile(props: {
  */
 export type LobbyOpenSeatKind = 'local' | 'ai' | 'waiting'
 
-/** Co-op: an inert slot that keeps each side a full 2x2 grid. */
-export function LobbyEmptySeatTile(props: { slotIndex: number; side: LobbySide }): JSX.Element {
+/** Stitched, pinned slot with a faded suit (Woodland) or cog (bots) on it. */
+function EmptySlotMarks(props: { slotIndex: number; side: LobbySide }): JSX.Element {
   const suit: string = EMPTY_SLOT_SUITS[props.slotIndex % EMPTY_SLOT_SUITS.length] ?? ''
   const suitToneClassName: string =
     suit === BIRD_SUIT ? EMPTY_SLOT_BIRD_TONE_CLASS_NAME : EMPTY_SLOT_SUIT_TONE_CLASS_NAME
   return (
+    <>
+      <span className={EMPTY_SLOT_STITCH_CLASS_NAME} />
+      {EMPTY_SLOT_PIN_CORNER_CLASS_NAMES.map(
+        (cornerClassName: string): JSX.Element => (
+          <span key={cornerClassName} className={`${EMPTY_SLOT_PIN_CLASS_NAME} ${cornerClassName}`} />
+        ),
+      )}
+      {props.side === 'bot' ? (
+        <LuCog className={EMPTY_SLOT_COG_CLASS_NAME} />
+      ) : (
+        <SuitIcon
+          suit={suit}
+          className={`${EMPTY_SLOT_SUIT_CLASS_NAME} ${suitToneClassName}`}
+          isOutlined={false}
+        />
+      )}
+    </>
+  )
+}
+
+/**
+ * Co-op: an inert slot that keeps each side a full 2x2 grid.
+ * Birthday edition: a wrapped present instead, no tag since nothing is on offer.
+ */
+export function LobbyEmptySeatTile(props: { slotIndex: number; side: LobbySide }): JSX.Element {
+  const giftWrap: GiftWrap = giftWrapForSeat(props.slotIndex)
+  const tilePaperClassName: string = IS_BIRTHDAY_EDITION
+    ? giftWrap.paperClassName
+    : EMPTY_SLOT_TILE_PAPER_CLASS_NAME
+  return (
     <li className={EMPTY_SLOT_CLASS_NAME} aria-hidden="true">
       <div
-        className={`${SEAT_TILE_CLASS_NAME} ${EMPTY_SLOT_TILE_PAPER_CLASS_NAME} ${tiltClassName(props.slotIndex)}`}
+        className={`${SEAT_TILE_CLASS_NAME} ${tilePaperClassName} ${tiltClassName(props.slotIndex)}`}
       >
-        <span className={EMPTY_SLOT_STITCH_CLASS_NAME} />
-        {EMPTY_SLOT_PIN_CORNER_CLASS_NAMES.map(
-          (cornerClassName: string): JSX.Element => (
-            <span key={cornerClassName} className={`${EMPTY_SLOT_PIN_CLASS_NAME} ${cornerClassName}`} />
-          ),
-        )}
-        {props.side === 'bot' ? (
-          <LuCog className={EMPTY_SLOT_COG_CLASS_NAME} />
+        {IS_BIRTHDAY_EDITION ? (
+          <GiftBoxWrap wrap={giftWrap} />
         ) : (
-          <SuitIcon
-            suit={suit}
-            className={`${EMPTY_SLOT_SUIT_CLASS_NAME} ${suitToneClassName}`}
-            isOutlined={false}
-          />
+          <EmptySlotMarks slotIndex={props.slotIndex} side={props.side} />
         )}
       </div>
       <div className={`${SEAT_LABEL_CLASS_NAME} ${OPEN_PAPER_CLASS_NAME}`}>
