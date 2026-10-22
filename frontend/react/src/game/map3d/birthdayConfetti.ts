@@ -1,5 +1,5 @@
 import {
-  Color,
+  type Color,
   DoubleSide,
   InstancedMesh,
   type Matrix4,
@@ -7,6 +7,7 @@ import {
   Object3D,
   PlaneGeometry,
 } from 'three'
+import { pickPartyColor } from '#game/map3d/birthdayPartyColors.ts'
 import type { ClearingGround, MapTerrain } from '#game/map3d/mapTerrain.ts'
 import type { MapGroundPoint } from '#game/map3d/mapWorldSpace.ts'
 import {
@@ -35,15 +36,6 @@ const QUARTER_TURN_RADIANS = Math.PI / 2
 const FULL_TURN_RADIANS = Math.PI * 2
 const HALF = 0.5
 const CONFETTI_ROUGHNESS = 0.6
-/** The party kit of `style.css` (frosting, balloon, mint, flame, berry) and a lemon. */
-const CONFETTI_COLORS: readonly number[] = [
-  0xf2b8c6, 0x7fb3d5, 0x9fcfb0, 0xf5a623, 0xa63d58, 0xe8c860,
-]
-
-function pickColor(roll: number): Color {
-  const index: number = Math.floor(roll * CONFETTI_COLORS.length)
-  return new Color(CONFETTI_COLORS[index] ?? CONFETTI_COLORS[0])
-}
 
 /** One piece of confetti: how it lies, its colour. */
 type ConfettiPiece = {
@@ -78,7 +70,7 @@ function placePiece(
   )
   transform.scale.setScalar(1 + (random() - HALF) * CONFETTI_SIZE_SPREAD)
   transform.updateMatrix()
-  return { matrix: transform.matrix.clone(), color: pickColor(random()) }
+  return { matrix: transform.matrix.clone(), color: pickPartyColor(random()) }
 }
 
 /** Every piece of every clearing, none on the river crossing it. */

@@ -1,5 +1,5 @@
 import {
-  Color,
+  type Color,
   Group,
   InstancedMesh,
   Matrix4,
@@ -8,6 +8,7 @@ import {
   MeshStandardMaterial,
   Object3D,
 } from 'three'
+import { pickPartyColor } from '#game/map3d/birthdayPartyColors.ts'
 import { meshesOf } from '#game/map3d/sceneObjects.ts'
 import {
   createSeededRandom,
@@ -44,20 +45,11 @@ const HALF = 0.5
 const BALLOON_MATERIAL_NAME = 'balloon'
 /** A bit of shine: balloons are rubber, not felt. */
 const BALLOON_ROUGHNESS = 0.45
-/** The party kit of `style.css` (frosting, balloon, mint, flame, berry) and a lemon. */
-const BALLOON_COLORS: readonly number[] = [
-  0xf2b8c6, 0x7fb3d5, 0x9fcfb0, 0xf5a623, 0xa63d58, 0xe8c860,
-]
 
 /** One balloon: where its string is tied, how it leans, its colour. */
 type BalloonPlacement = {
   matrix: Matrix4
   color: Color
-}
-
-function pickColor(roll: number): Color {
-  const index: number = Math.floor(roll * BALLOON_COLORS.length)
-  return new Color(BALLOON_COLORS[index] ?? BALLOON_COLORS[0])
 }
 
 /** One balloon tied to the top of a pine. */
@@ -78,7 +70,7 @@ function placeBalloon(
     BALLOON_MODEL_SCALE * (1 + (random() - HALF) * BALLOON_SCALE_SPREAD),
   )
   transform.updateMatrix()
-  return { matrix: transform.matrix.clone(), color: pickColor(random()) }
+  return { matrix: transform.matrix.clone(), color: pickPartyColor(random()) }
 }
 
 /** The full-height pines, by the square of woodland they stand in. */
