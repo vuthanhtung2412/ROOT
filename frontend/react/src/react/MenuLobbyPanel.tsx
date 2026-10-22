@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore, type JSX } from 'react'
+import { Fragment, useState, useSyncExternalStore, type JSX } from 'react'
 import type { AddAiPlayerInput } from '#api/client.ts'
 import {
   getAiPlayerSnapshot,
@@ -11,6 +11,7 @@ import type {
   MenuLobbyHudState,
   MenuLobbySeat,
 } from '#game/hudStore.ts'
+import { BirthdayCandle, PartyCloud } from '#react/BirthdayDecorations.tsx'
 import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
 import { LobbyPlayModeSwitch, MenuCoopLobby } from '#react/MenuCoopLobby.tsx'
 import {
@@ -37,8 +38,17 @@ const NO_SEAT_INDEX = -1
 const SEAT_ROW_CLASS_NAME =
   'm-0 grid list-none grid-cols-2 gap-x-7 gap-y-4 p-0 md:flex md:flex-row md:items-start md:gap-11'
 const LEAVE_BUTTON_CLASS_NAME = `menu-leave-lobby ${CANCEL_BUTTON_CLASS_NAME}`
-const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME}`
+/** Birthday edition: start is the cake, frosting pink with a lit candle. */
+const START_BUTTON_CLASS_NAME = `menu-start-online ${PRIMARY_BUTTON_CLASS_NAME} [--root-paper-color:var(--color-frosting)]`
 const PANEL_CLASS_NAME = 'm-0 flex w-full flex-col items-center gap-6'
+const LOBBY_TITLE = 'The Birthday Table'
+const VERSUS_START_LABEL = 'Light the candles'
+const COOPERATIVE_START_LABEL = 'Start co-op game'
+/** Guest count on a berry strip tucked under the title. */
+const GUEST_COUNT_CLASS_NAME =
+  'm-0 -mt-4.5 -rotate-2 border-3 border-ink-deep bg-berry px-4 py-0.5 font-body text-base text-paper-bright italic'
+/** The PARTY! cloud sits halfway along the seat row. */
+const SEAT_ROW_HALF_DIVISOR = 2
 
 /** Host start; while blocked, hovering it tells why. */
 function StartButton(props: {
@@ -55,6 +65,7 @@ function StartButton(props: {
       onClick={props.onStart}
     >
       {props.label}
+      <BirthdayCandle />
     </button>
   )
   if (props.blockedReason === null) return button
@@ -120,6 +131,7 @@ export function OnlineLobbyPanel(props: {
     (seat: MenuLobbySeat): boolean => seat.occupied,
   ).length
   const tableSeatCount: number = lobby.seats.length + lobby.openSeatCount
+  const partyCloudSeatIndex: number = Math.ceil(tableSeatCount / SEAT_ROW_HALF_DIVISOR)
 
   function openSeatKind(seatIndex: number): LobbyOpenSeatKind {
     if (seatIndex !== nextOpenSeatIndex) return 'waiting'
@@ -143,9 +155,10 @@ export function OnlineLobbyPanel(props: {
 
   const header: JSX.Element = (
     <>
-      <h2 className={LOBBY_TITLE_CLASS_NAME}>
-        Online lobby · {takenSeatCount} of {tableSeatCount} seats
-      </h2>
+      <h2 className={LOBBY_TITLE_CLASS_NAME}>{LOBBY_TITLE}</h2>
+      <p className={GUEST_COUNT_CLASS_NAME}>
+        {takenSeatCount} of {tableSeatCount} guests seated
+      </p>
       {isOpenLobby ? (
         <LobbyPlayModeSwitch
           playMode={lobby.playMode}
@@ -172,7 +185,7 @@ export function OnlineLobbyPanel(props: {
         </button>
         {lobby.isHost ? (
           <StartButton
-            label={isCooperative ? 'Start co-op game' : 'Start game'}
+            label={isCooperative ? COOPERATIVE_START_LABEL : VERSUS_START_LABEL}
             blockedReason={lobby.startBlockedReason}
             disabled={props.playPending || !lobby.canStart}
             onStart={props.onStart}
@@ -210,41 +223,45 @@ export function OnlineLobbyPanel(props: {
               !seat.isLocalPlayer &&
               seatIndex !== HOST_SEAT_INDEX
             return (
-              <LobbySeatTile
-                key={`lobby-seat-${String(seatIndex)}`}
-                seat={seat}
-                seatIndex={seatIndex}
-                isSelected={isOwnSeat && dockMode === 'own'}
-                onSelect={
-                  isOwnSeat
-                    ? (): void => {
-                        setIsSeatingAi(false)
-                      }
-                    : null
-                }
-                onExpel={
-                  canExpel && !props.playPending
-                    ? (): void => {
-                        props.onExpelPlayer(seatIndex)
-                      }
-                    : null
-                }
-              />
+              <Fragment key={`lobby-seat-${String(seatIndex)}`}>
+                {seatIndex === partyCloudSeatIndex ? <PartyCloud /> : null}
+                <LobbySeatTile
+                  seat={seat}
+                  seatIndex={seatIndex}
+                  isSelected={isOwnSeat && dockMode === 'own'}
+                  onSelect={
+                    isOwnSeat
+                      ? (): void => {
+                          setIsSeatingAi(false)
+                        }
+                      : null
+                  }
+                  onExpel={
+                    canExpel && !props.playPending
+                      ? (): void => {
+                          props.onExpelPlayer(seatIndex)
+                        }
+                      : null
+                  }
+                />
+              </Fragment>
             )
           },
         )}
         {openSeatIndexes(lobby).map((seatIndex: number): JSX.Element => {
           const kind: LobbyOpenSeatKind = openSeatKind(seatIndex)
           return (
-            <LobbyOpenSeatTile
-              key={`lobby-seat-${String(seatIndex)}`}
-              seatIndex={seatIndex}
-              kind={kind}
-              isSelected={isOpenSeatSelected(kind)}
-              onSelect={(): void => {
-                setIsSeatingAi(true)
-              }}
-            />
+            <Fragment key={`lobby-seat-${String(seatIndex)}`}>
+              {seatIndex === partyCloudSeatIndex ? <PartyCloud /> : null}
+              <LobbyOpenSeatTile
+                seatIndex={seatIndex}
+                kind={kind}
+                isSelected={isOpenSeatSelected(kind)}
+                onSelect={(): void => {
+                  setIsSeatingAi(true)
+                }}
+              />
+            </Fragment>
           )
         })}
       </ol>

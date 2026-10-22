@@ -214,16 +214,28 @@ const BOW_KNOT_RADIUS = 7
 
 /** Gift wrap colours: box paper, ribbon and bow knot. */
 export type GiftWrap = {
-  paperColor: string
+  /** Sets the `root-paper` colour of the tile the wrap sits on. */
+  paperClassName: string
   ribbonColor: string
   knotColor: string
 }
 
+const BALLOON_GIFT_WRAP: GiftWrap = {
+  paperClassName: '[--root-paper-color:var(--color-balloon)]',
+  ribbonColor: BERRY_COLOR,
+  knotColor: LIZARD_COLOR,
+}
+const MINT_GIFT_WRAP: GiftWrap = {
+  paperClassName: '[--root-paper-color:var(--color-mint)]',
+  ribbonColor: LIZARD_COLOR,
+  knotColor: FROSTING_COLOR,
+}
 /** Open lobby seats come wrapped in turn. */
-export const GIFT_WRAPS: readonly GiftWrap[] = [
-  { paperColor: BALLOON_COLOR, ribbonColor: BERRY_COLOR, knotColor: LIZARD_COLOR },
-  { paperColor: MINT_COLOR, ribbonColor: LIZARD_COLOR, knotColor: FROSTING_COLOR },
-]
+const GIFT_WRAPS: readonly GiftWrap[] = [BALLOON_GIFT_WRAP, MINT_GIFT_WRAP]
+
+export function giftWrapForSeat(seatIndex: number): GiftWrap {
+  return GIFT_WRAPS[seatIndex % GIFT_WRAPS.length] ?? BALLOON_GIFT_WRAP
+}
 
 const GIFT_RIBBON_CLASS_NAME = 'absolute border-ink-deep'
 
