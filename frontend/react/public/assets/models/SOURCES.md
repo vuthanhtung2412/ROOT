@@ -117,6 +117,9 @@ stand in the sympathy crowd) are made the same way from art drawn for this
 project, in the colour of their suit. `items/sword.glb` is the sword they
 carry, modelled after the sword item.
 
+`lizard-warrior_birthday` is the lizard warrior wearing a party hat (blue
+cone, white dots, pink pompom) for the birthday edition; own work.
+
 The three Vagabond pawns hold a torch at their right side. `items/torch.glb`
 is that torch on its own: "Minecraft Torch" by Blender3D —
 https://sketchfab.com/3d-models/minecraft-torch-e88c4214d4bc4437ae6d249237591071
