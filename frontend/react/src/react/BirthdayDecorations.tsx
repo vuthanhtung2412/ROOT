@@ -38,21 +38,66 @@ export const GUEST_COUNT_CLASS_NAME =
 export const BIRTHDAY_START_LABEL = 'Light the candles'
 export const BIRTHDAY_START_PAPER_CLASS_NAME = '[--root-paper-color:var(--color-frosting)]'
 
-/** The string sags across the screen top; flags hang from it, one every `FLAG_SPACING`. */
+type Point = { x: number; y: number }
+/** One quadratic Bézier piece of the bunting string, left to right. */
+type StringSegment = { start: Point; control: Point; end: Point }
+
+/** The string sags across the screen top; flags hang from it, tops pinned to the curve. */
 const SCREEN_BUNTING_WIDTH = 1440
 const SCREEN_BUNTING_HEIGHT = 130
-const SCREEN_BUNTING_STRING_PATH = 'M-10 18 Q 360 92 720 30 T 1450 24'
+const SCREEN_BUNTING_STRING_SEGMENTS: readonly StringSegment[] = [
+  { start: { x: -10, y: 2 }, control: { x: 360, y: 76 }, end: { x: 720, y: 14 } },
+  { start: { x: 720, y: 14 }, control: { x: 1080, y: 44 }, end: { x: 1450, y: 8 } },
+]
 const SCREEN_BUNTING_FLAG_LEFTS: readonly number[] = [
   40, 120, 202, 286, 372, 458, 544, 630, 742, 852, 962, 1072, 1182, 1292, 1392,
 ]
-/** How far below the screen top each flag's string point sits. */
-const SCREEN_BUNTING_FLAG_TOPS: readonly number[] = [
-  28, 42, 54, 62, 64, 60, 52, 40, 30, 34, 42, 44, 38, 30, 26,
-]
 const SCREEN_FLAG_WIDTH = 44
 const SCREEN_FLAG_DROP = 50
-const SCREEN_FLAG_TILT = 6
 const BUNTING_STROKE_WIDTH = 3
+/** Bisection steps to find the curve point above an x; well under a pixel. */
+const STRING_HEIGHT_SEARCH_STEPS = 24
+
+function quadraticAt(segment: StringSegment, progress: number): Point {
+  const remaining: number = 1 - progress
+  const startWeight: number = remaining * remaining
+  const controlWeight: number = 2 * remaining * progress
+  const endWeight: number = progress * progress
+  return {
+    x: startWeight * segment.start.x + controlWeight * segment.control.x + endWeight * segment.end.x,
+    y: startWeight * segment.start.y + controlWeight * segment.control.y + endWeight * segment.end.y,
+  }
+}
+
+/** Height of the string at `x` (segments run left to right, x grows along each). */
+function stringHeightAt(segments: readonly StringSegment[], x: number): number {
+  const segment: StringSegment | undefined =
+    segments.find((candidate: StringSegment): boolean => x <= candidate.end.x) ??
+    segments[segments.length - 1]
+  if (segment === undefined) return 0
+  let lowProgress = 0
+  let highProgress = 1
+  for (let step = 0; step < STRING_HEIGHT_SEARCH_STEPS; step += 1) {
+    const middleProgress: number = (lowProgress + highProgress) / 2
+    if (quadraticAt(segment, middleProgress).x < x) lowProgress = middleProgress
+    else highProgress = middleProgress
+  }
+  return quadraticAt(segment, (lowProgress + highProgress) / 2).y
+}
+
+function stringPath(segments: readonly StringSegment[]): string {
+  const first: StringSegment | undefined = segments[0]
+  if (first === undefined) return ''
+  const curves: string = segments
+    .map(
+      (segment: StringSegment): string =>
+        `Q ${String(segment.control.x)} ${String(segment.control.y)} ${String(segment.end.x)} ${String(segment.end.y)}`,
+    )
+    .join(' ')
+  return `M${String(first.start.x)} ${String(first.start.y)} ${curves}`
+}
+
+const SCREEN_BUNTING_STRING_PATH: string = stringPath(SCREEN_BUNTING_STRING_SEGMENTS)
 
 function flagColor(flagIndex: number): string {
   return FLAG_COLORS[flagIndex % FLAG_COLORS.length] ?? FROSTING_COLOR
@@ -73,14 +118,15 @@ export function ScreenBunting(): JSX.Element {
         strokeWidth={BUNTING_STROKE_WIDTH}
       />
       {SCREEN_BUNTING_FLAG_LEFTS.map((left: number, flagIndex: number): JSX.Element => {
-        const top: number = SCREEN_BUNTING_FLAG_TOPS[flagIndex] ?? 0
-        const tilt: number = flagIndex % 2 === 0 ? SCREEN_FLAG_TILT : -SCREEN_FLAG_TILT
         const right: number = left + SCREEN_FLAG_WIDTH
+        const leftTop: number = stringHeightAt(SCREEN_BUNTING_STRING_SEGMENTS, left)
+        const rightTop: number = stringHeightAt(SCREEN_BUNTING_STRING_SEGMENTS, right)
         const tipX: number = left + SCREEN_FLAG_WIDTH / 2
+        const tipY: number = (leftTop + rightTop) / 2 + SCREEN_FLAG_DROP
         return (
           <polygon
             key={left}
-            points={`${String(left)},${String(top)} ${String(right)},${String(top + tilt)} ${String(tipX)},${String(top + SCREEN_FLAG_DROP)}`}
+            points={`${String(left)},${String(leftTop)} ${String(right)},${String(rightTop)} ${String(tipX)},${String(tipY)}`}
             fill={flagColor(flagIndex)}
             stroke={INK_COLOR}
             strokeWidth={BUNTING_STROKE_WIDTH}
