@@ -1,3 +1,4 @@
+- Reply in the language of the user's latest message (English question → English answer, caveman style still applies). Never switch language on your own.
 - Prefer language for anything is typescript
   - Exception: scripts that only glue CLIs together (`gh`, `git`, `tailscale`, `curl`, process start/stop) → bash in `scripts/`
 - If there is a script to do certain thing use it (boostrap ts project, generate client) instead of modifying code
