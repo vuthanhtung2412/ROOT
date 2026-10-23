@@ -73,7 +73,6 @@ const DEFAULT_MENU: MenuHudState = {
   statusColor: '#c44',
   playPending: false,
   showQaContinue: IS_DEVELOPMENT_BUILD,
-  lobbyOnServer: false,
   soloRunSaved: false,
   lobby: null,
 }
@@ -303,20 +302,6 @@ export function syncMenuLobby(lobby: MenuLobbyHudState | null): void {
     menu: {
       ...current,
       lobby,
-    },
-  })
-}
-
-/** A live online game is on the server: the start button reads "Join game". */
-export function syncMenuLobbyOnServer(lobbyOnServer: boolean): void {
-  const current = getHudSnapshot().menu
-  if (current === null || current.lobbyOnServer === lobbyOnServer) {
-    return
-  }
-  patchHud({
-    menu: {
-      ...current,
-      lobbyOnServer,
     },
   })
 }

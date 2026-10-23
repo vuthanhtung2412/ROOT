@@ -142,98 +142,6 @@ describe('GameSession', () => {
       }
     }
 
-    it('host creates an online lobby and takes seat 0', async () => {
-      const fetchMock = stubFetchSequence([
-        { body: { state: lobbyState([]), mode: 'online' }, status: 201 },
-        { body: { state: lobbyState([HOST_PLAYER_ID]), log: [] } },
-      ])
-      const storage = createMemoryStorage()
-      const session = createSession({
-        storage,
-        generatePlayerId: () => HOST_PLAYER_ID,
-      })
-
-      const hosted = await session.hostOnlineGame(['marquise', 'eyrie'])
-
-      expect(hosted).toBe(true)
-      const createRequest: unknown = fetchMock.mock.calls[0]![0]
-      if (!(createRequest instanceof Request)) throw new Error('expected Request')
-      expect(await createRequest.json()).toMatchObject({ mode: 'online' })
-      expect(session.getLocalPlayerId()).toBe(HOST_PLAYER_ID)
-      expect(session.getLocalSeat()).toBe(0)
-      expect(session.isOnlineHost()).toBe(true)
-      expect(storage.getItem('root.react.playerIdentity')).toContain(HOST_PLAYER_ID)
-    })
-
-    it('host replaces a leftover hotseat game in the slot', async () => {
-      const fetchMock = stubFetchSequence([
-        { body: { code: 'GAME_EXISTS', detail: null }, status: 409 },
-        {
-          body: {
-            state: makeGameState({ status: 'setup' }),
-            historyLength: 3,
-            mode: 'hotseat',
-          },
-        },
-        { body: { state: lobbyState([]), mode: 'online' }, status: 201 },
-        { body: { state: lobbyState([HOST_PLAYER_ID]), log: [] } },
-      ])
-      const session = createSession({ generatePlayerId: () => HOST_PLAYER_ID })
-
-      const hosted = await session.hostOnlineGame(['marquise', 'eyrie'])
-
-      expect(hosted).toBe(true)
-      const replaceRequest: unknown = fetchMock.mock.calls[2]![0]
-      if (!(replaceRequest instanceof Request)) throw new Error('expected Request')
-      expect(new URL(replaceRequest.url).searchParams.get('replace')).toBe('1')
-      expect(session.isOnlineHost()).toBe(true)
-    })
-
-    it('host does not replace a live online game', async () => {
-      const fetchMock = stubFetchSequence([
-        { body: { code: 'GAME_EXISTS', detail: null }, status: 409 },
-        {
-          body: {
-            state: lobbyState([GUEST_PLAYER_ID]),
-            historyLength: 0,
-            mode: 'online',
-          },
-        },
-      ])
-      const session = createSession({ generatePlayerId: () => HOST_PLAYER_ID })
-
-      expect(await session.hostOnlineGame(['marquise', 'eyrie'])).toBe(false)
-      expect(session.getSnapshot().error).toBe(
-        'A game is already running on this server',
-      )
-      expect(fetchMock).toHaveBeenCalledTimes(2)
-    })
-
-    it('guest joins the next free seat of a waiting online lobby', async () => {
-      stubFetchSequence([
-        {
-          body: {
-            state: lobbyState([HOST_PLAYER_ID]),
-            historyLength: 0,
-            mode: 'online',
-          },
-        },
-        {
-          body: {
-            state: lobbyState(['hidden-seat-0', GUEST_PLAYER_ID]),
-            log: [],
-          },
-        },
-      ])
-      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
-
-      const joined = await session.joinOnlineGame()
-
-      expect(joined).toBe(true)
-      expect(session.getLocalSeat()).toBe(1)
-      expect(session.isOnlineHost()).toBe(false)
-    })
-
     /** Open lobby as the server sends it: players so far, each with a pick. */
     function openLobbyState(picks: Array<[string, string]>): GameState {
       const base = makeGameState({ status: 'waiting' })
@@ -368,41 +276,42 @@ describe('GameSession', () => {
       expect(session.getSnapshot().error).not.toBeNull()
     })
 
-    it('tells the menu whether a live online game is on the server', async () => {
-      const liveLobby = {
-        state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),
-        historyLength: 1,
-        mode: 'online',
-      }
-      stubFetchSequence([
-        { body: liveLobby },
-        { body: { ...liveLobby, mode: 'hotseat' } },
-        { body: { code: 'NO_GAME', detail: null }, status: 404 },
-      ])
-      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
-
-      expect(await session.hasLiveOnlineGame()).toBe(true)
-      expect(await session.hasLiveOnlineGame()).toBe(false)
-      expect(await session.hasLiveOnlineGame()).toBe(false)
-    })
-
-    it('guest cannot join a hotseat or missing game', async () => {
-      stubFetchSequence([
+    it('a browser still watching a lobby goes back to it instead of opening another', async () => {
+      const fetchMock = stubFetchSequence([
         {
           body: {
-            state: lobbyState([HOST_PLAYER_ID]),
-            historyLength: 0,
-            mode: 'hotseat',
+            state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),
+            historyLength: 1,
+            mode: 'online',
+            roomCode: ROOM_CODE,
           },
         },
       ])
-      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
-
-      expect(await session.joinOnlineGame()).toBe(false)
-      expect(session.getSnapshot().error).toBe(
-        'The game on this server cannot be joined',
+      const storage = createMemoryStorage()
+      storage.setItem(
+        'root.react.playerIdentity',
+        JSON.stringify({ playerId: GUEST_PLAYER_ID, apiBaseUrl: 'http://example.test' }),
       )
-      expect(session.getLocalPlayerId()).toBeNull()
+      const session = createSession({ storage })
+
+      expect(await session.createOnlineRoom()).toBe(true)
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(session.getLocalPlayerId()).toBe(GUEST_PLAYER_ID)
+      expect(session.getRoomCode()).toBe(ROOM_CODE)
+    })
+
+    it('one game per player: the server names the game to finish first', async () => {
+      stubFetchSequence([
+        { body: { code: 'ALREADY_IN_GAME', detail: { roomCode: ROOM_CODE } }, status: 409 },
+      ])
+      const session = createSession({ generatePlayerId: () => HOST_PLAYER_ID })
+
+      expect(await session.createOnlineRoom()).toBe(false)
+
+      expect(session.getSnapshot().error).toBe(
+        `You are already in online game ${ROOM_CODE} — finish or leave it first`,
+      )
     })
 
     it('resumes the stored seat after a reload', async () => {

@@ -155,8 +155,6 @@ export type MenuHudState = {
   statusColor: string
   playPending: boolean
   showQaContinue: boolean
-  /** A live online game is on the server: the start button reads "Join game". */
-  lobbyOnServer: boolean
   /** An unfinished solo run is saved: "Continue solo run" shows. */
   soloRunSaved: boolean
   /** Non-null while this browser waits in an online lobby. */

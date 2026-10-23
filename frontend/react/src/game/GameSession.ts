@@ -44,15 +44,6 @@ export type JoinMatchResult = 'waiting' | 'playing'
 /** Play = resume stored seat when still in slot, else joinMatch. */
 export type PlayResult = 'continued' | JoinMatchResult
 
-/**
- * Server slot seen from the menu: nothing there, an online lobby with a free
- * seat, or a game that cannot be joined (hotseat, full, already started).
- */
-export type OnlineLobbyStatus = 'none' | 'joinable' | 'busy'
-
-/** Seats of an open lobby (players pick their faction): the table size. */
-const OPEN_LOBBY_SEAT_COUNT = 4
-
 /** The lobby creator joins first, so the host always holds seat 0. */
 const ONLINE_HOST_SEAT = 0
 
@@ -335,112 +326,6 @@ export class GameSession {
     return !this.qaMode && this.getLocalSeat() === ONLINE_HOST_SEAT
   }
 
-  /** What an online player can do with the server slot right now. */
-  async findOnlineLobby(): Promise<OnlineLobbyStatus> {
-    try {
-      const game = await this.api.getGame()
-      const seatCount: number =
-        game.state.openLobby === true
-          ? OPEN_LOBBY_SEAT_COUNT
-          : game.state.factions.length
-      const hasFreeSeat = game.state.players.length < seatCount
-      if (
-        game.mode === 'online' &&
-        game.state.status === 'waiting' &&
-        hasFreeSeat
-      ) {
-        return 'joinable'
-      }
-      return 'busy'
-    } catch (error: unknown) {
-      if (isNoGameError(error)) {
-        return 'none'
-      }
-      throw error
-    }
-  }
-
-  /**
-   * A live online game (lobby or in progress) sits on the server: the start
-   * button then joins — or rejoins a seat held earlier — instead of creating.
-   */
-  async hasLiveOnlineGame(): Promise<boolean> {
-    try {
-      return !(await this.isSlotLeftover())
-    } catch (error: unknown) {
-      if (isNoGameError(error)) {
-        return false
-      }
-      throw error
-    }
-  }
-
-  /**
-   * True when the server slot holds no live online game: a hotseat / QA game
-   * (e.g. reloaded from disk after a restart) or a finished one. Such a slot
-   * belongs to nobody, so a new online host may replace it.
-   */
-  private async isSlotLeftover(): Promise<boolean> {
-    const game = await this.api.getGame()
-    return game.mode !== 'online' || game.state.status === 'finished'
-  }
-
-  /**
-   * Online host: create an online lobby with the chosen factions and take
-   * seat 0. Other browsers join; the host starts once every seat is filled.
-   */
-  async hostOnlineGame(factions: readonly string[]): Promise<boolean> {
-    this.setLoading(true)
-    this.qaMode = false
-    try {
-      try {
-        await this.api.createGame({ factions: [...factions], mode: 'online' })
-      } catch (error: unknown) {
-        if (!isGameExistsError(error) || !(await this.isSlotLeftover())) {
-          throw error
-        }
-        await this.api.createGame({
-          factions: [...factions],
-          mode: 'online',
-          replace: true,
-        })
-      }
-      return await this.takeNextOnlineSeat()
-    } catch (error: unknown) {
-      this.setError(
-        isGameExistsError(error)
-          ? 'A game is already running on this server'
-          : errorMessage(error),
-      )
-      return false
-    }
-  }
-
-  /** Online guest: take the next free seat of the waiting online lobby. */
-  async joinOnlineGame(): Promise<boolean> {
-    this.setLoading(true)
-    this.qaMode = false
-    try {
-      // Already seated (left to the menu earlier): take the same seat back.
-      if (await this.resumeOnlineGame()) {
-        return true
-      }
-      const lobby = await this.findOnlineLobby()
-      if (lobby !== 'joinable') {
-        this.setError(
-          lobby === 'none'
-            ? 'No online game to join — ask the host to create one'
-            : 'The game on this server cannot be joined',
-        )
-        return false
-      }
-      return await this.takeNextOnlineSeat()
-    } catch (error: unknown) {
-      this.setError(errorMessage(error))
-      return false
-    }
-  }
-
   /**
    * Create game: open a new online room with an open lobby (no faction
    * decided). The browser watches it; it takes a seat by picking a faction.
@@ -575,11 +460,14 @@ export class GameSession {
       await this.restart()
       return
     }
+    // The room forgets the watcher; a failed call only leaves it listed until the room ends.
+    await this.api.leaveRoom().catch((): void => undefined)
     this.disconnectSocket()
     clearPlayerIdentity(
       this.identityStorage === undefined ? undefined : this.identityStorage,
     )
     this.localPlayerId = null
+    this.roomCode = null
     this.publish({
       state: null,
       legalActions: [],
@@ -616,9 +504,14 @@ export class GameSession {
     this.localPlayerId = stored.playerId
     try {
       const game = await this.api.getGame()
+      // The server answers from the stored id's room: seated there, or still
+      // watching its lobby, the browser goes back in (one game per player).
+      // A string, not just non-null: an older server sends no code at all.
+      const isWatchingLobby: boolean =
+        typeof game.roomCode === 'string' && game.state.status === 'waiting'
       if (
         game.mode === 'online' &&
-        playerIdInState(game.state, stored.playerId) &&
+        (playerIdInState(game.state, stored.playerId) || isWatchingLobby) &&
         isResumableStatus(game.state.status)
       ) {
         this.qaMode = false
@@ -644,22 +537,6 @@ export class GameSession {
     this.localPlayerId = null
     clearPlayerIdentity(storage)
     return false
-  }
-
-  private async takeNextOnlineSeat(): Promise<boolean> {
-    const playerId = this.generatePlayerId()
-    const joined = await this.api.join(playerId)
-    this.bindLocalPlayer(playerId)
-    this.connectLocalSocket(playerId)
-    this.publish({
-      state: joined.state,
-      legalActions: [],
-      historyLength: 0,
-      log: [],
-      error: null,
-      loading: false,
-    })
-    return true
   }
 
   /**
@@ -984,7 +861,21 @@ const FRIENDLY_API_ERRORS: Readonly<Record<string, string>> = {
   ROOM_LIMIT: 'The server is full — try again later',
 }
 
+/** `ALREADY_IN_GAME` detail: the room the player must finish or leave first. */
+function blockingRoomCodeOf(error: ApiError): string | null {
+  const detail: unknown = error.detail
+  const roomCode: unknown =
+    typeof detail === 'object' && detail !== null ? Reflect.get(detail, 'roomCode') : null
+  return typeof roomCode === 'string' ? roomCode : null
+}
+
 function errorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.code === 'ALREADY_IN_GAME') {
+    const roomCode: string | null = blockingRoomCodeOf(error)
+    return roomCode === null
+      ? 'You are already in an online game'
+      : `You are already in online game ${roomCode} — finish or leave it first`
+  }
   if (error instanceof ApiError) {
     return FRIENDLY_API_ERRORS[error.code] ?? error.message
   }

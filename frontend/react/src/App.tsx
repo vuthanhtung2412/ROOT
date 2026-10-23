@@ -63,7 +63,6 @@ import { GameScreen } from '#react/GameScreen.tsx'
 import {
   showMenuShell,
   syncMenuLobby,
-  syncMenuLobbyOnServer,
   syncMenuPlayPending,
   syncMenuSoloRunSaved,
   syncMenuStatus,
@@ -72,8 +71,6 @@ import { ReactHud } from '#react/ReactHud.tsx'
 import { useViewportFit } from '#react/useViewportFit.ts'
 import { useViewportLayoutMode } from '#react/useViewportLayoutMode.ts'
 
-/** How often the menu asks the server whether a lobby waits to be joined. */
-const LOBBY_STATUS_POLL_MS = 2500
 const EXPELLED_FROM_LOBBY_MESSAGE = 'The host removed you from the lobby'
 
 function loadImage(source: string): Promise<void> {
@@ -695,30 +692,6 @@ export function App(): JSX.Element {
       controller.stop()
     }
   }, [clearLobbyWait, controller, showMenu])
-
-  // Menu: the start button reads "Join game" while a lobby waits on the server.
-  useEffect(() => {
-    if (shell !== 'menu') {
-      return undefined
-    }
-    let cancelled = false
-    const askServer = async (): Promise<void> => {
-      const hasLiveGame: boolean = await ensureSession()
-        .hasLiveOnlineGame()
-        .catch((): boolean => false)
-      if (!cancelled) {
-        syncMenuLobbyOnServer(hasLiveGame)
-      }
-    }
-    void askServer()
-    const timer: number = window.setInterval(() => {
-      void askServer()
-    }, LOBBY_STATUS_POLL_MS)
-    return () => {
-      cancelled = true
-      window.clearInterval(timer)
-    }
-  }, [ensureSession, shell])
 
   const gameVisible = shell === 'game'
   const viewportZoom = useViewportFit()

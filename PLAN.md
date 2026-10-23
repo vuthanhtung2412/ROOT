@@ -327,5 +327,5 @@
   - `frontend/react/src/game/GameSession.ts` + test, `game/hudStore.ts`, `App.tsx`, `react/MenuOverlay.tsx`, `react/MenuJoinRoomForm.tsx` (new) + test
 - [x] `feat(react): lobby shows room code`
   - `frontend/react/src/game/GameSession.ts` + test, `game/hudStore.ts`, `game/menuLobby.ts`, `api/gameSocket.ts`, `App.tsx`, `react/MenuLobbyPanel.tsx`, `react/LobbyRoomCode.tsx` (new)
-- [ ] `feat(react): resume when already in a game`
-  - `frontend/react/src/game/GameSession.ts` + test, `App.tsx` (drop single-slot busy check / menu poll)
+- [x] `feat(react): resume when already in a game`
+  - `frontend/react/src/game/GameSession.ts` + test, `App.tsx`, `game/hudStore.ts`, `react/MenuOverlay.tsx` (drop single-slot busy check / menu poll)
