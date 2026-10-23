@@ -311,7 +311,7 @@
   - `frontend/react/src/game/GameSession.ts` + test
 - [x] `refactor(web): GameRoom type, drivers take a room`
   - `backend/web/src/store/GameStore.ts`, `bots/BotStepDriver.ts`, `aiPlayer/AiPlayerDriver.ts`, `store/roomRuntime.ts` (new, replaces `aiPlayerRuntime.ts` + `botStepRuntime.ts`) + tests
-- [ ] `refactor(web): routes read room from request context`
+- [x] `refactor(web): routes read room from request context`
   - `backend/web/src/middleware/roomResolver.ts` (new, hotseat only for now), `routes/*.ts`, `view/aiPlayerView.ts`
 - [ ] `feat(web): online create opens a new room with a code`
   - `backend/web/src/store/roomRegistry.ts` (new) + test, `middleware/roomResolver.ts`, `routes/game.ts`, `schemas/game.ts`, `ws/GameHub.ts`, `routes/ws.ts` + tests

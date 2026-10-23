@@ -6,8 +6,8 @@ import {
 } from '#aiPlayer/aiPlayerTools.js'
 import { loadRulebook } from '#aiPlayer/rulebook.js'
 import { HttpError, noGame } from '#middleware/errors.js'
+import { resolveRoom } from '#middleware/roomResolver.js'
 import { errorResponses, JsonObjectSchema } from '#schemas/common.js'
-import { store } from '#store/GameStore.js'
 import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
 
 export const playerToolRoutes = new OpenAPIHono()
@@ -49,7 +49,7 @@ const runPlayerToolRoute = createRoute({
 })
 
 playerToolRoutes.openapi(runPlayerToolRoute, (context) => {
-  const game = store.game ?? noGame()
+  const game = resolveRoom(context.req.header(PLAYER_ID_HEADER)).game ?? noGame()
   const { tool } = context.req.valid('param')
   if (!READ_ONLY_PLAYER_TOOL_NAMES.includes(tool)) {
     throw new HttpError(400, 'UNKNOWN_PLAYER_TOOL', {

@@ -1,9 +1,10 @@
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { HttpError, noGame } from '#middleware/errors.js'
+import { resolveRoom } from '#middleware/roomResolver.js'
 import { publishGameChange } from '#routes/game.js'
 import { errorResponses } from '#schemas/common.js'
 import { SetBotPaceBodySchema } from '#schemas/game.js'
-import { store } from '#store/GameStore.js'
+import type { GameRoom } from '#store/GameStore.js'
 import {
   ONLINE_HOST_SEAT,
   PLAYER_ID_HEADER,
@@ -32,15 +33,16 @@ const setBotPaceRoute = createRoute({
 })
 
 botPaceRoutes.openapi(setBotPaceRoute, (context) => {
-  const game = store.game
-  if (game === null) noGame()
   const playerId = context.req.header(PLAYER_ID_HEADER)
+  const room: GameRoom = resolveRoom(playerId)
+  const game = room.game
+  if (game === null) noGame()
   const isHost =
     playerId !== undefined && seatForPlayerId(game.state, playerId) === ONLINE_HOST_SEAT
-  if (store.mode === 'online' && !isHost) {
+  if (room.mode === 'online' && !isHost) {
     throw new HttpError(403, 'NOT_HOST', 'only the host may set the bot pace')
   }
-  store.botStepDelaySeconds = context.req.valid('json').botStepDelaySeconds
-  publishGameChange()
+  room.botStepDelaySeconds = context.req.valid('json').botStepDelaySeconds
+  publishGameChange(room)
   return context.body(null, 204)
 })

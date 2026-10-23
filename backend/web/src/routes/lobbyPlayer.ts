@@ -9,8 +9,9 @@ import {
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { logGameEvent } from '#debug/logGame.js'
 import { requireNoTwinClash } from '#lobby/cooperativeLobby.js'
-import { HttpError, noGame } from '#middleware/errors.js'
-import { publishGameChange } from '#routes/game.js'
+import { HttpError } from '#middleware/errors.js'
+import { resolveGameCaller, type GameCaller } from '#middleware/roomResolver.js'
+import { publishGameChange, requireGame } from '#routes/game.js'
 import { errorResponses } from '#schemas/common.js'
 import {
   AddBotBodySchema,
@@ -19,7 +20,7 @@ import {
   SetBotSettingsBodySchema,
   SetPlayModeBodySchema,
 } from '#schemas/game.js'
-import { store, type AiPlayerSeat } from '#store/GameStore.js'
+import type { AiPlayerSeat, GameRoom } from '#store/GameStore.js'
 import {
   ONLINE_HOST_SEAT,
   PLAYER_ID_HEADER,
@@ -31,23 +32,18 @@ const LOBBY_STATUS = 'waiting'
 
 export const lobbyPlayerRoutes = new OpenAPIHono()
 
-function requireGame(): Game {
-  if (store.game === null) noGame()
-  return store.game
-}
-
 /** Online mode: the host decides who sits at the table. Hotseat: anyone. */
 function requireHostInOnlineGame(
   game: Game,
-  playerId: string | undefined,
+  caller: GameCaller,
   hostOnlyDeed: string,
 ): void {
-  if (store.mode !== 'online') {
+  if (caller.room.mode !== 'online') {
     return
   }
   const isHost =
-    playerId !== undefined &&
-    seatForPlayerId(game.state, playerId) === ONLINE_HOST_SEAT
+    caller.playerId !== undefined &&
+    seatForPlayerId(game.state, caller.playerId) === ONLINE_HOST_SEAT
   if (!isHost) {
     throw new HttpError(403, 'NOT_HOST', `only the host may ${hostOnlyDeed}`)
   }
@@ -93,8 +89,10 @@ const expelPlayerRoute = createRoute({
 })
 
 lobbyPlayerRoutes.openapi(expelPlayerRoute, (context) => {
-  const game = requireGame()
-  requireHostInOnlineGame(game, context.req.header(PLAYER_ID_HEADER), 'expel a player')
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const room: GameRoom = caller.room
+  const game = requireGame(room)
+  requireHostInOnlineGame(game, caller, 'expel a player')
   const seat: number = context.req.valid('param').seat
   if (!isSeat(seat)) {
     throw new HttpError(400, 'BAD_SEAT', { seat })
@@ -103,10 +101,10 @@ lobbyPlayerRoutes.openapi(expelPlayerRoute, (context) => {
     (player: PlayerState): boolean => player.seat === seat,
   )
   expelSeat(game, seat)
-  store.aiPlayers = store.aiPlayers.filter(
+  room.aiPlayers = room.aiPlayers.filter(
     (aiSeat: AiPlayerSeat): boolean => aiSeat.playerId !== expelled?.playerId,
   )
-  publishGameChange()
+  publishGameChange(room)
   return context.body(null, 204)
 })
 
@@ -130,21 +128,23 @@ const setPlayModeRoute = createRoute({
 })
 
 lobbyPlayerRoutes.openapi(setPlayModeRoute, (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const room: GameRoom = caller.room
+  const game = requireGame(room)
   requireOpenLobby(game)
-  requireHostInOnlineGame(game, context.req.header(PLAYER_ID_HEADER), 'change the play mode')
+  requireHostInOnlineGame(game, caller, 'change the play mode')
   const isCooperative = context.req.valid('json').playMode === 'cooperative'
   if (isCooperative) {
-    const aiPlayerIds: string[] = store.aiPlayers.map(
+    const aiPlayerIds: string[] = room.aiPlayers.map(
       (aiSeat: AiPlayerSeat): string => aiSeat.playerId,
     )
     expelPlayers(game, (player: PlayerState): boolean => aiPlayerIds.includes(player.playerId))
-    store.aiPlayers = []
+    room.aiPlayers = []
   } else {
     expelPlayers(game, (player: PlayerState): boolean => isBotFaction(player.faction))
   }
   game.setCooperative(isCooperative)
-  publishGameChange()
+  publishGameChange(room)
   return context.body(null, 204)
 })
 
@@ -168,9 +168,10 @@ const addBotRoute = createRoute({
 })
 
 lobbyPlayerRoutes.openapi(addBotRoute, (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const game = requireGame(caller.room)
   requireOpenLobby(game)
-  requireHostInOnlineGame(game, context.req.header(PLAYER_ID_HEADER), 'add a bot')
+  requireHostInOnlineGame(game, caller, 'add a bot')
   if (game.state.cooperative !== true) {
     throw new HttpError(400, 'NOT_COOPERATIVE', 'bots join co-op games only')
   }
@@ -187,7 +188,7 @@ lobbyPlayerRoutes.openapi(addBotRoute, (context) => {
   const result = game.apply(joinAction)
   if (settings !== undefined) game.setBotSettings(faction, settings)
   logGameEvent('JOIN', result.state, joinAction)
-  publishGameChange()
+  publishGameChange(caller.room)
   return context.body(null, 204)
 })
 
@@ -211,15 +212,16 @@ const setBotSettingsRoute = createRoute({
 })
 
 lobbyPlayerRoutes.openapi(setBotSettingsRoute, (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const game = requireGame(caller.room)
   requireOpenLobby(game)
-  requireHostInOnlineGame(game, context.req.header(PLAYER_ID_HEADER), 'tune a bot')
+  requireHostInOnlineGame(game, caller, 'tune a bot')
   const faction = context.req.valid('param').faction
   const settings = context.req.valid('json').settings
   if (!hasOnlyTraitsOf(faction, settings.traits)) {
     throw new HttpError(400, 'BAD_BOT_SETTINGS', settings)
   }
   game.setBotSettings(faction, settings)
-  publishGameChange()
+  publishGameChange(caller.room)
   return context.body(null, 204)
 })

@@ -1,8 +1,8 @@
 import type { PlayerState } from '@root/lib'
-import {
-  store,
-  type AiPlayerSeat,
-  type AiPlayerStatus,
+import type {
+  AiPlayerSeat,
+  AiPlayerStatus,
+  GameRoom,
 } from '#store/GameStore.js'
 
 /** An AI seat as any viewer may see it. Its join id stays on the server. */
@@ -13,12 +13,12 @@ export type AiPlayerView = {
   status: AiPlayerStatus
 }
 
-/** AI seats of the current game, by seat. */
-export function listAiPlayerViews(): AiPlayerView[] {
-  const players: readonly PlayerState[] = store.game?.state.players ?? []
+/** AI seats of the room's game, by seat. */
+export function listAiPlayerViews(room: GameRoom): AiPlayerView[] {
+  const players: readonly PlayerState[] = room.game?.state.players ?? []
   const views: AiPlayerView[] = []
   for (const player of players) {
-    const aiSeat = store.aiPlayers.find(
+    const aiSeat = room.aiPlayers.find(
       (candidate: AiPlayerSeat): boolean =>
         candidate.playerId === player.playerId,
     )

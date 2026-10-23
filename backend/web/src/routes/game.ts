@@ -23,6 +23,11 @@ import {
   notYourSeat,
 } from '#middleware/errors.js'
 import {
+  resolveGameCaller,
+  resolveRoom,
+  type GameCaller,
+} from '#middleware/roomResolver.js'
+import {
   mayPlayerSendAction,
   ONLINE_HOST_SEAT,
   PLAYER_ID_HEADER,
@@ -53,7 +58,7 @@ import {
   DEFAULT_BOT_STEP_DELAY_SECONDS,
   DEFAULT_LOBBY_MODE,
   resetGameStore,
-  store,
+  type GameRoom,
 } from '#store/GameStore.js'
 import { listAiPlayerViews } from '#view/aiPlayerView.js'
 import { formatPlayerGameView, formatPlayerLog } from '#view/playerView.js'
@@ -71,57 +76,49 @@ import {
   isGameSnapshot,
 } from '#typeGuards.js'
 
-function requireGame(): Game {
-  if (!store.game) noGame()
-  return store.game
+export function requireGame(room: GameRoom): Game {
+  if (!room.game) noGame()
+  return room.game
 }
 
 /**
  * After every slot change: save to disk, push to connected viewers, then let
  * the AI seats play what is theirs to play.
  */
-export function publishGameChange(): void {
+export function publishGameChange(room: GameRoom): void {
   persistCurrentGame()
   broadcastCurrentGame()
-  runtimeOf(store).aiPlayerDriver.handleGameChanged()
-  runtimeOf(store).botStepDriver.handleGameChanged()
+  runtimeOf(room).aiPlayerDriver.handleGameChanged()
+  runtimeOf(room).botStepDriver.handleGameChanged()
 }
 
 /**
  * Seat-scoped calls see and do only what the caller's seat may. Always in
  * online mode; in hotseat only when the caller asks for the player view.
  */
-export function isSeatScoped(view: string | undefined): boolean {
-  return store.mode === 'online' || view === PLAYER_VIEW
+export function isSeatScoped(room: GameRoom, view: string | undefined): boolean {
+  return room.mode === 'online' || view === PLAYER_VIEW
 }
 
 /** Seat-scoped: state as the caller may see it. Otherwise: full state. */
-function stateForCaller(
-  game: Game,
-  playerId: string | undefined,
-  view?: string,
-): GameState {
-  if (!isSeatScoped(view)) {
+function stateForCaller(game: Game, caller: GameCaller): GameState {
+  if (!isSeatScoped(caller.room, caller.view)) {
     return game.state
   }
-  return redactStateForViewer(game.state, playerId ?? '')
+  return redactStateForViewer(game.state, caller.playerId ?? '')
 }
 
 /** Seat-scoped: log entries as the caller may see them. Otherwise: full log. */
-function logForCaller(
-  game: Game,
-  playerId: string | undefined,
-  view?: string,
-): ViewerLogEntry[] {
-  if (!isSeatScoped(view)) {
+function logForCaller(game: Game, caller: GameCaller): ViewerLogEntry[] {
+  if (!isSeatScoped(caller.room, caller.view)) {
     return [...game.log]
   }
-  return redactLogForViewer(game.log, game.state, playerId ?? '')
+  return redactLogForViewer(game.log, game.state, caller.playerId ?? '')
 }
 
 /** Online mode: full-slot dumps would leak hands and join ids. */
-function requireHotseatForFullDump(): void {
-  if (store.mode === 'online') {
+function requireHotseatForFullDump(room: GameRoom): void {
+  if (room.mode === 'online') {
     throw new HttpError(403, 'ONLINE_MODE', 'full game dump is hotseat-only')
   }
 }
@@ -130,11 +127,12 @@ function requireHotseatForFullDump(): void {
  * A live online game belongs to its players: only the host (seat 0) may
  * replace or remove it. Free slot, hotseat games and finished games are open.
  */
-function requireHostToReplaceOnlineGame(playerId: string | undefined): void {
-  const game = store.game
+function requireHostToReplaceOnlineGame(caller: GameCaller): void {
+  const { room, playerId } = caller
+  const game = room.game
   if (
     game === null ||
-    store.mode !== 'online' ||
+    room.mode !== 'online' ||
     game.state.status === 'finished' ||
     // Lobby nobody joined yet has no host to ask.
     game.state.players.length === 0
@@ -152,14 +150,13 @@ function requireHostToReplaceOnlineGame(playerId: string | undefined): void {
 /** Seat-scoped only: reject callers whose seat may not send this action type. */
 function requireSeatForAction(
   game: Game,
-  playerId: string | undefined,
+  caller: GameCaller,
   actionType: string,
-  view?: string,
 ): void {
-  if (!isSeatScoped(view)) {
+  if (!isSeatScoped(caller.room, caller.view)) {
     return
   }
-  if (!mayPlayerSendAction(game, playerId, actionType)) {
+  if (!mayPlayerSendAction(game, caller.playerId, actionType)) {
     notYourSeat()
   }
 }
@@ -191,10 +188,12 @@ const createGameRoute = createRoute({
 })
 
 gameRoutes.openapi(createGameRoute, async (context) => {
-  if (store.game && context.req.valid('query').replace !== '1') {
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const room: GameRoom = caller.room
+  if (room.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
-  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
+  requireHostToReplaceOnlineGame(caller)
   const body = context.req.valid('json') ?? {}
   const seed = Math.floor(Math.random() * 1_000_000_000)
   const factions =
@@ -209,17 +208,18 @@ gameRoutes.openapi(createGameRoute, async (context) => {
   if (botSettings !== undefined && !hasOnlyOwnTraits(botSettings)) {
     throw new HttpError(400, 'BAD_BOT_SETTINGS', botSettings)
   }
-  store.game = Game.create({
+  const game: Game = Game.create({
     seed,
     factions,
     ...(botSettings === undefined ? {} : { botSettings }),
   })
-  store.mode = body.mode ?? DEFAULT_LOBBY_MODE
-  store.aiPlayers = []
-  store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
-  logGameEvent('CREATE', store.game.state)
-  publishGameChange()
-  return context.json({ state: store.game.state, mode: store.mode }, 201)
+  room.game = game
+  room.mode = body.mode ?? DEFAULT_LOBBY_MODE
+  room.aiPlayers = []
+  room.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
+  logGameEvent('CREATE', game.state)
+  publishGameChange(room)
+  return context.json({ state: game.state, mode: room.mode }, 201)
 })
 
 const joinRoute = createRoute({
@@ -243,10 +243,12 @@ const joinRoute = createRoute({
 })
 
 gameRoutes.openapi(joinRoute, async (context) => {
-  const game = requireGame()
   const body = context.req.valid('json')
+  const caller: GameCaller = resolveGameCaller(body.playerId)
+  const room: GameRoom = caller.room
+  const game = requireGame(room)
   if (body.faction !== undefined) {
-    if (store.mode === 'online' && isBotFaction(body.faction)) {
+    if (room.mode === 'online' && isBotFaction(body.faction)) {
       // Online bots are seated by the host through `POST /game/bots`.
       throw new HttpError(400, 'BOT_FACTION', { faction: body.faction })
     }
@@ -259,11 +261,8 @@ gameRoutes.openapi(joinRoute, async (context) => {
   }
   const result = game.apply(joinAction)
   logGameEvent('JOIN', result.state, joinAction)
-  publishGameChange()
-  return context.json(
-    { ...result, state: stateForCaller(game, body.playerId) },
-    200,
-  )
+  publishGameChange(room)
+  return context.json({ ...result, state: stateForCaller(game, caller) }, 200)
 })
 
 const startRoute = createRoute({
@@ -281,17 +280,14 @@ const startRoute = createRoute({
 })
 
 gameRoutes.openapi(startRoute, (context) => {
-  const game = requireGame()
-  const playerId = context.req.header(PLAYER_ID_HEADER)
-  requireSeatForAction(game, playerId, 'start')
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const game = requireGame(caller.room)
+  requireSeatForAction(game, caller, 'start')
   requireCooperativeStart(game.state)
   const result = game.start()
   logGameEvent('START', result.state, { type: 'start' })
-  publishGameChange()
-  return context.json(
-    { ...result, state: stateForCaller(game, playerId) },
-    200,
-  )
+  publishGameChange(caller.room)
+  return context.json({ ...result, state: stateForCaller(game, caller) }, 200)
 })
 
 const getGameRoute = createRoute({
@@ -310,18 +306,19 @@ const getGameRoute = createRoute({
 })
 
 gameRoutes.openapi(getGameRoute, (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(
+    context.req.header(PLAYER_ID_HEADER),
+    context.req.valid('query').view,
+  )
+  const room: GameRoom = caller.room
+  const game = requireGame(room)
   return context.json(
     {
-      state: stateForCaller(
-        game,
-        context.req.header(PLAYER_ID_HEADER),
-        context.req.valid('query').view,
-      ),
+      state: stateForCaller(game, caller),
       historyLength: game.history.length,
-      mode: store.mode,
-      aiPlayers: listAiPlayerViews(),
-      botStepDelaySeconds: store.botStepDelaySeconds,
+      mode: room.mode,
+      aiPlayers: listAiPlayerViews(room),
+      botStepDelaySeconds: room.botStepDelaySeconds,
     },
     200,
   )
@@ -343,14 +340,12 @@ const getGameViewRoute = createRoute({
 })
 
 gameRoutes.openapi(getGameViewRoute, (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const game = requireGame(caller.room)
   if (context.req.valid('query').view === PLAYER_VIEW) {
-    return context.text(
-      formatPlayerGameView(game, context.req.header(PLAYER_ID_HEADER) ?? ''),
-      200,
-    )
+    return context.text(formatPlayerGameView(game, caller.playerId ?? ''), 200)
   }
-  requireHotseatForFullDump()
+  requireHotseatForFullDump(caller.room)
   return context.text(
     formatGameView(game.state, { historyLength: game.history.length }),
     200,
@@ -372,8 +367,9 @@ const getSnapshotRoute = createRoute({
 })
 
 gameRoutes.openapi(getSnapshotRoute, (context) => {
-  const game = requireGame()
-  requireHotseatForFullDump()
+  const room: GameRoom = resolveRoom(context.req.header(PLAYER_ID_HEADER))
+  const game = requireGame(room)
+  requireHotseatForFullDump(room)
   return context.json(game.toJSON(), 200)
 })
 
@@ -399,16 +395,19 @@ const putSnapshotRoute = createRoute({
 })
 
 gameRoutes.openapi(putSnapshotRoute, async (context) => {
-  if (store.game && context.req.valid('query').replace !== '1') {
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const room: GameRoom = caller.room
+  if (room.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
-  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
+  requireHostToReplaceOnlineGame(caller)
   const body = context.req.valid('json')
   if (!isGameSnapshot(body)) {
     throw new HttpError(400, 'BAD_SNAPSHOT', 'invalid snapshot shape')
   }
+  let game: Game
   try {
-    store.game = Game.fromJSON(body)
+    game = Game.fromJSON(body)
   } catch (err) {
     throw new HttpError(
       400,
@@ -416,14 +415,15 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
       err instanceof Error ? err.message : 'fromJSON failed',
     )
   }
+  room.game = game
   // Loaded snapshots are QA / dev slots: every seat is driven from one device.
-  store.mode = DEFAULT_LOBBY_MODE
-  store.aiPlayers = []
-  store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
+  room.mode = DEFAULT_LOBBY_MODE
+  room.aiPlayers = []
+  room.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
   persistCurrentGame()
-  runtimeOf(store).aiPlayerDriver.handleGameChanged()
-  logGameEvent('LOAD', store.game.state)
-  return context.json({ state: store.game.state, mode: store.mode }, 200)
+  runtimeOf(room).aiPlayerDriver.handleGameChanged()
+  logGameEvent('LOAD', game.state)
+  return context.json({ state: game.state, mode: room.mode }, 200)
 })
 
 const getActionsRoute = createRoute({
@@ -442,13 +442,17 @@ const getActionsRoute = createRoute({
 })
 
 gameRoutes.openapi(getActionsRoute, (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(
+    context.req.header(PLAYER_ID_HEADER),
+    context.req.valid('query').view,
+  )
+  const game = requireGame(caller.room)
   const actions =
-    isSeatScoped(context.req.valid('query').view)
+    isSeatScoped(caller.room, caller.view)
       ? redactLegalActionsForViewer(
           game.legalActions(),
           game.state,
-          context.req.header(PLAYER_ID_HEADER) ?? '',
+          caller.playerId ?? '',
         )
       : game.legalActions()
   return context.json({ actions }, 200)
@@ -476,21 +480,20 @@ const postActionsRoute = createRoute({
 })
 
 gameRoutes.openapi(postActionsRoute, async (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(
+    context.req.header(PLAYER_ID_HEADER),
+    context.req.valid('query').view,
+  )
+  const game = requireGame(caller.room)
   const body = context.req.valid('json')
   if (!isAction(body)) {
     throw new HttpError(400, 'BAD_ACTION', 'invalid action shape')
   }
-  const playerId = context.req.header(PLAYER_ID_HEADER)
-  const view = context.req.valid('query').view
-  requireSeatForAction(game, playerId, body.type, view)
+  requireSeatForAction(game, caller, body.type)
   const result = game.apply(body)
   logGameEvent('ACT', result.state, body, result.log)
-  publishGameChange()
-  return context.json(
-    { ...result, state: stateForCaller(game, playerId, view) },
-    200,
-  )
+  publishGameChange(caller.room)
+  return context.json({ ...result, state: stateForCaller(game, caller) }, 200)
 })
 
 const getLogRoute = createRoute({
@@ -509,17 +512,12 @@ const getLogRoute = createRoute({
 })
 
 gameRoutes.openapi(getLogRoute, (context) => {
-  const game = requireGame()
-  return context.json(
-    {
-      log: logForCaller(
-        game,
-        context.req.header(PLAYER_ID_HEADER),
-        context.req.valid('query').view,
-      ),
-    },
-    200,
+  const caller: GameCaller = resolveGameCaller(
+    context.req.header(PLAYER_ID_HEADER),
+    context.req.valid('query').view,
   )
+  const game = requireGame(caller.room)
+  return context.json({ log: logForCaller(game, caller) }, 200)
 })
 
 const getFormattedLogRoute = createRoute({
@@ -538,18 +536,15 @@ const getFormattedLogRoute = createRoute({
 })
 
 gameRoutes.openapi(getFormattedLogRoute, (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const game = requireGame(caller.room)
   if (context.req.valid('query').view === PLAYER_VIEW) {
     return context.text(
-      formatPlayerLog(
-        game,
-        context.req.header(PLAYER_ID_HEADER) ?? '',
-        game.log.length,
-      ),
+      formatPlayerLog(game, caller.playerId ?? '', game.log.length),
       200,
     )
   }
-  requireHotseatForFullDump()
+  requireHotseatForFullDump(caller.room)
   return context.text(formatTurnLog(game.log, game.state), 200)
 })
 
@@ -569,12 +564,14 @@ const undoRoute = createRoute({
 })
 
 gameRoutes.openapi(undoRoute, (context) => {
-  const game = requireGame()
-  const playerId = context.req.header(PLAYER_ID_HEADER)
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const room: GameRoom = caller.room
+  const game = requireGame(room)
+  const playerId = caller.playerId
   if (context.req.valid('query').scope === TURN_UNDO_SCOPE) {
     // A player takes back an action of their own turn (see `undoableActions`).
     if (
-      store.mode === 'online' &&
+      room.mode === 'online' &&
       (playerId === undefined ||
         seatForPlayerId(game.state, playerId) !== game.state.currentSeat)
     ) {
@@ -582,15 +579,15 @@ gameRoutes.openapi(undoRoute, (context) => {
     }
     game.undoTurnAction()
   } else {
-    if (store.mode === 'online') {
+    if (room.mode === 'online') {
       // Rewinding at will would undo draws and reveals other players have seen.
       throw new HttpError(403, 'ONLINE_MODE', 'full undo is hotseat-only')
     }
     game.undo()
   }
   logGameEvent('UNDO', game.state)
-  publishGameChange()
-  return context.json({ state: stateForCaller(game, playerId) }, 200)
+  publishGameChange(room)
+  return context.json({ state: stateForCaller(game, caller) }, 200)
 })
 
 const mapSvgRoute = createRoute({
@@ -608,7 +605,7 @@ const mapSvgRoute = createRoute({
 })
 
 gameRoutes.openapi(mapSvgRoute, (context) => {
-  requireGame()
+  requireGame(resolveRoom(context.req.header(PLAYER_ID_HEADER)))
   const svg = toSvg(FALL, FALL_LAYOUT)
   return context.body(svg, 200, { 'Content-Type': 'image/svg+xml' })
 })
@@ -628,7 +625,7 @@ const mapAsciiRoute = createRoute({
 })
 
 gameRoutes.openapi(mapAsciiRoute, (context) => {
-  requireGame()
+  requireGame(resolveRoom(context.req.header(PLAYER_ID_HEADER)))
   const ascii = toAscii(FALL, FALL_LAYOUT)
   return context.text(ascii, 200)
 })
@@ -644,8 +641,9 @@ const deleteGameRoute = createRoute({
 })
 
 gameRoutes.openapi(deleteGameRoute, (context) => {
-  requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  requireHostToReplaceOnlineGame(caller)
   resetGameStore()
-  publishGameChange()
+  publishGameChange(caller.room)
   return context.body(null, 204)
 })

@@ -11,8 +11,13 @@ import {
   resolveDefaultModel,
 } from '#aiPlayer/modelIdentifier.js'
 import { logGameEvent } from '#debug/logGame.js'
-import { HttpError, noGame } from '#middleware/errors.js'
-import { publishGameChange } from '#routes/game.js'
+import { HttpError } from '#middleware/errors.js'
+import {
+  resolveGameCaller,
+  resolveRoom,
+  type GameCaller,
+} from '#middleware/roomResolver.js'
+import { publishGameChange, requireGame } from '#routes/game.js'
 import {
   AddAiPlayerBodySchema,
   AiModelsResponseSchema,
@@ -24,8 +29,8 @@ import {
 import { errorResponses } from '#schemas/common.js'
 import {
   DEFAULT_AI_PLAYER_STATUS,
-  store,
   type AiPlayerSeat,
+  type GameRoom,
 } from '#store/GameStore.js'
 import { runtimeOf } from '#store/roomRuntime.js'
 import {
@@ -44,11 +49,6 @@ const KEEP_ALIVE_INTERVAL_MILLISECONDS = 15000
 
 export const aiPlayerRoutes = new OpenAPIHono()
 
-function requireGame(): Game {
-  if (store.game === null) noGame()
-  return store.game
-}
-
 /** AI seats are set up before the game starts, like every other seat. */
 function requireLobby(game: Game): void {
   if (game.state.status !== LOBBY_STATUS) {
@@ -57,13 +57,13 @@ function requireLobby(game: Game): void {
 }
 
 /** Online mode: the host decides who sits at the table. Hotseat: anyone. */
-function requireHostInOnlineGame(game: Game, playerId: string | undefined): void {
-  if (store.mode !== 'online') {
+function requireHostInOnlineGame(game: Game, caller: GameCaller): void {
+  if (caller.room.mode !== 'online') {
     return
   }
   const isHost =
-    playerId !== undefined &&
-    seatForPlayerId(game.state, playerId) === ONLINE_HOST_SEAT
+    caller.playerId !== undefined &&
+    seatForPlayerId(game.state, caller.playerId) === ONLINE_HOST_SEAT
   if (!isHost) {
     throw new HttpError(403, 'NOT_HOST', 'only the host may set AI players')
   }
@@ -125,9 +125,11 @@ const addAiPlayerRoute = createRoute({
 })
 
 aiPlayerRoutes.openapi(addAiPlayerRoute, async (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const room: GameRoom = caller.room
+  const game = requireGame(room)
   requireLobby(game)
-  requireHostInOnlineGame(game, context.req.header(PLAYER_ID_HEADER))
+  requireHostInOnlineGame(game, caller)
   if (game.state.cooperative === true) {
     // Rule: Rootbotics 3.5.1 — co-op is humans against the bots: no LLM seat.
     throw new HttpError(400, 'COOPERATIVE_GAME', 'co-op games have no AI players')
@@ -144,8 +146,8 @@ aiPlayerRoutes.openapi(addAiPlayerRoute, async (context) => {
     ...(body.faction === undefined ? {} : { faction: body.faction }),
   }
   const result = game.apply(joinAction)
-  store.aiPlayers = [
-    ...store.aiPlayers,
+  room.aiPlayers = [
+    ...room.aiPlayers,
     {
       playerId: joinAction.playerId,
       model,
@@ -153,8 +155,8 @@ aiPlayerRoutes.openapi(addAiPlayerRoute, async (context) => {
     },
   ]
   logGameEvent('JOIN', result.state, joinAction)
-  publishGameChange()
-  return context.json({ aiPlayers: listAiPlayerViews() }, 201)
+  publishGameChange(room)
+  return context.json({ aiPlayers: listAiPlayerViews(room) }, 201)
 })
 
 const setAiPlayerModelRoute = createRoute({
@@ -179,17 +181,19 @@ const setAiPlayerModelRoute = createRoute({
 })
 
 aiPlayerRoutes.openapi(setAiPlayerModelRoute, async (context) => {
-  const game = requireGame()
+  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
+  const room: GameRoom = caller.room
+  const game = requireGame(room)
   requireLobby(game)
-  requireHostInOnlineGame(game, context.req.header(PLAYER_ID_HEADER))
+  requireHostInOnlineGame(game, caller)
   const model = requireOfferedModel(context.req.valid('json').model)
-  const playerId = requireAiPlayerId(game, context.req.valid('param').seat)
-  store.aiPlayers = store.aiPlayers.map(
+  const playerId = requireAiPlayerId(room, context.req.valid('param').seat)
+  room.aiPlayers = room.aiPlayers.map(
     (aiSeat: AiPlayerSeat): AiPlayerSeat =>
       aiSeat.playerId === playerId ? { ...aiSeat, model } : aiSeat,
   )
-  publishGameChange()
-  return context.json({ aiPlayers: listAiPlayerViews() }, 200)
+  publishGameChange(room)
+  return context.json({ aiPlayers: listAiPlayerViews(room) }, 200)
 })
 
 const restartAiPlayerRoute = createRoute({
@@ -211,9 +215,10 @@ const restartAiPlayerRoute = createRoute({
 
 aiPlayerRoutes.openapi(restartAiPlayerRoute, (context) => {
   const seat = context.req.valid('param').seat
-  requireAiPlayerId(requireGame(), seat)
-  runtimeOf(store).aiPlayerDriver.restart(seat)
-  return context.json({ aiPlayers: listAiPlayerViews() }, 200)
+  const room: GameRoom = resolveRoom(context.req.header(PLAYER_ID_HEADER))
+  requireAiPlayerId(room, seat)
+  runtimeOf(room).aiPlayerDriver.restart(seat)
+  return context.json({ aiPlayers: listAiPlayerViews(room) }, 200)
 })
 
 const streamAiPlayerActivityRoute = createRoute({
@@ -255,11 +260,11 @@ aiPlayerRoutes.openapi(streamAiPlayerActivityRoute, (context) => {
 })
 
 /** Join id of the AI player at `seat`; 404 when a human (or nobody) sits there. */
-function requireAiPlayerId(game: Game, seat: number): string {
-  const player = game.state.players.find(
+function requireAiPlayerId(room: GameRoom, seat: number): string {
+  const player = requireGame(room).state.players.find(
     (candidate: PlayerState): boolean => candidate.seat === seat,
   )
-  const aiSeat = store.aiPlayers.find(
+  const aiSeat = room.aiPlayers.find(
     (candidate: AiPlayerSeat): boolean =>
       candidate.playerId === player?.playerId,
   )

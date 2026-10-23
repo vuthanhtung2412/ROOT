@@ -1,10 +1,11 @@
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { loadRulebook } from '#aiPlayer/rulebook.js'
 import { noGame } from '#middleware/errors.js'
+import { resolveRoom } from '#middleware/roomResolver.js'
 import { isSeatScoped } from '#routes/game.js'
 import { errorResponses, ViewQuerySchema } from '#schemas/common.js'
 import { ExplainedActionsResponseSchema } from '#schemas/game.js'
-import { store } from '#store/GameStore.js'
+import type { GameRoom } from '#store/GameStore.js'
 import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
 import { explainLegalActions } from '#view/explainLegalActions.js'
 
@@ -30,14 +31,14 @@ const getExplainedActionsRoute = createRoute({
 })
 
 explainedActionRoutes.openapi(getExplainedActionsRoute, (context) => {
-  if (!store.game) noGame()
-  const playerId: string | null = isSeatScoped(
-    context.req.valid('query').view,
-  )
-    ? (context.req.header(PLAYER_ID_HEADER) ?? '')
+  const requestPlayerId: string | undefined = context.req.header(PLAYER_ID_HEADER)
+  const room: GameRoom = resolveRoom(requestPlayerId)
+  if (!room.game) noGame()
+  const playerId: string | null = isSeatScoped(room, context.req.valid('query').view)
+    ? (requestPlayerId ?? '')
     : null
   return context.json(
-    { actions: explainLegalActions(store.game, playerId, loadRulebook()) },
+    { actions: explainLegalActions(room.game, playerId, loadRulebook()) },
     200,
   )
 })

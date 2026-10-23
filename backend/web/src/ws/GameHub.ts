@@ -49,7 +49,7 @@ export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
       playerId,
     ),
     log: redactLogForViewer(game.log, game.state, playerId),
-    aiPlayers: listAiPlayerViews(),
+    aiPlayers: listAiPlayerViews(store),
     botStepDelaySeconds: store.botStepDelaySeconds,
   }
 }

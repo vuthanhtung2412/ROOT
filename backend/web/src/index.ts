@@ -60,7 +60,7 @@ startInactiveGameCleanup({
   clearGame: (): void => {
     console.log(`Clearing game after ${inactiveGameTimeoutSeconds} seconds without activity`)
     resetGameStore()
-    publishGameChange()
+    publishGameChange(store)
   },
 })
 
