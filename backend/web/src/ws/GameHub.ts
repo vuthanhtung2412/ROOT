@@ -1,14 +1,18 @@
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
 import { redactLogForViewer } from '#view/redactLogForViewer.js'
 import { redactStateForViewer } from '#view/redactStateForViewer.js'
+import { resolveRoom } from '#middleware/roomResolver.js'
 import {
   DEFAULT_BOT_STEP_DELAY_SECONDS,
-  store,
+  HOTSEAT_ROOM_CODE,
   type BotStepDelaySeconds,
+  type GameRoom,
 } from '#store/GameStore.js'
 import { listAiPlayerViews, type AiPlayerView } from '#view/aiPlayerView.js'
 
 export type GamePushPayload = {
+  /** The online room the viewer is in; null for the hotseat slot. */
+  roomCode: string | null
   state: unknown | null
   historyLength: number
   legalActions: unknown[]
@@ -26,6 +30,7 @@ export type GameHubClient = {
 }
 
 const EMPTY_GAME_PUSH: GamePushPayload = {
+  roomCode: HOTSEAT_ROOM_CODE,
   state: null,
   historyLength: 0,
   legalActions: [],
@@ -34,13 +39,15 @@ const EMPTY_GAME_PUSH: GamePushPayload = {
   botStepDelaySeconds: DEFAULT_BOT_STEP_DELAY_SECONDS,
 }
 
-/** Build the WS push payload for one viewer (opponent hands redacted). */
+/** Build the WS push payload of the viewer's room (opponent hands redacted). */
 export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
-  const game = store.game
+  const room: GameRoom = resolveRoom(playerId)
+  const game = room.game
   if (game === null) {
-    return EMPTY_GAME_PUSH
+    return { ...EMPTY_GAME_PUSH, roomCode: room.roomCode }
   }
   return {
+    roomCode: room.roomCode,
     state: redactStateForViewer(game.state, playerId),
     historyLength: game.history.length,
     legalActions: redactLegalActionsForViewer(
@@ -49,8 +56,8 @@ export function snapshotGamePushForViewer(playerId: string): GamePushPayload {
       playerId,
     ),
     log: redactLogForViewer(game.log, game.state, playerId),
-    aiPlayers: listAiPlayerViews(store),
-    botStepDelaySeconds: store.botStepDelaySeconds,
+    aiPlayers: listAiPlayerViews(room),
+    botStepDelaySeconds: room.botStepDelaySeconds,
   }
 }
 
@@ -116,8 +123,12 @@ export class GameHub {
    */
   broadcastToViewers(
     buildPayload: (playerId: string) => GamePushPayload,
+    isRecipient: (playerId: string) => boolean = (): boolean => true,
   ): void {
     for (const [playerId, clients] of this.clientsByPlayerId) {
+      if (!isRecipient(playerId)) {
+        continue
+      }
       const message = JSON.stringify(buildPayload(playerId))
       for (const client of [...clients]) {
         if (!client.isOpen()) {
@@ -139,7 +150,10 @@ export class GameHub {
 
 export const gameHub = new GameHub()
 
-/** Push current slot to every connected viewer with per-seat hand redaction. */
-export function broadcastCurrentGame(): void {
-  gameHub.broadcastToViewers((playerId) => snapshotGamePushForViewer(playerId))
+/** Push the room to its connected viewers only, with per-seat hand redaction. */
+export function broadcastCurrentGame(room: GameRoom): void {
+  gameHub.broadcastToViewers(
+    (playerId: string): GamePushPayload => snapshotGamePushForViewer(playerId),
+    (playerId: string): boolean => resolveRoom(playerId) === room,
+  )
 }

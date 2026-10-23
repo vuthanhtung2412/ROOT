@@ -5,8 +5,13 @@ import {
 } from '#aiPlayer/AiPlayerActivityFeed.js'
 import { app } from '#openapi.js'
 import { AI_PLAYER_ACTIVITY_EVENT } from '#routes/aiPlayer.js'
-import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
+import { store } from '#store/GameStore.js'
 import { runtimeOf } from '#store/roomRuntime.js'
+import {
+  enterOnlyOnlineRoom,
+  onlyOnlineRoom,
+  resetAllRooms,
+} from '#test/roomFixtures.js'
 import { snapshotGamePushForViewer } from '#ws/GameHub.js'
 
 const ANTHROPIC_API_KEY = 'anthropic-secret-key-value'
@@ -42,11 +47,15 @@ async function createLobby(body: object): Promise<void> {
   await app.request('/game', jsonRequest('POST', body))
 }
 
+/** Online room made by the host; the guest is in it, unseated. */
+async function createOnlineLobby(body: object): Promise<void> {
+  await app.request('/game', jsonRequest('POST', body, HOST_PLAYER_ID))
+  enterOnlyOnlineRoom(GUEST_PLAYER_ID)
+}
+
 describe('AI player routes', () => {
   beforeEach((): void => {
-    store.game = null
-    store.mode = DEFAULT_LOBBY_MODE
-    store.aiPlayers = []
+    resetAllRooms()
     vi.stubEnv('ANTHROPIC_API_KEY', ANTHROPIC_API_KEY)
     vi.stubEnv('OPENAI_API_KEY', OPENAI_API_KEY)
     vi.stubEnv('ROOT_AI_PLAYER_MODELS', `${DEFAULT_MODEL},${OTHER_MODEL}`)
@@ -54,9 +63,7 @@ describe('AI player routes', () => {
   })
 
   afterEach((): void => {
-    store.game = null
-    store.mode = DEFAULT_LOBBY_MODE
-    store.aiPlayers = []
+    resetAllRooms()
     vi.unstubAllEnvs()
   })
 
@@ -185,7 +192,7 @@ describe('AI player routes', () => {
   })
 
   it('online mode: only the host seats AI players', async () => {
-    await createLobby({ factions: ['marquise', 'eyrie', 'alliance'], mode: 'online' })
+    await createOnlineLobby({ factions: ['marquise', 'eyrie', 'alliance'], mode: 'online' })
     await app.request('/game/join', jsonRequest('POST', { playerId: HOST_PLAYER_ID }))
     await app.request('/game/join', jsonRequest('POST', { playerId: GUEST_PLAYER_ID }))
 
@@ -203,20 +210,24 @@ describe('AI player routes', () => {
     expect(byHost.status).toBe(201)
   })
 
-  it('restarts the session of an AI seat for any caller, 404 for a human seat', async () => {
-    const restart = vi.spyOn(runtimeOf(store).aiPlayerDriver, 'restart').mockReturnValue(true)
-    await createLobby({ factions: ['marquise', 'eyrie'], mode: 'online' })
+  it('restarts the session of an AI seat for anyone in the room, 404 for a human seat', async () => {
+    await createOnlineLobby({ factions: ['marquise', 'eyrie'], mode: 'online' })
+    const restart = vi
+      .spyOn(runtimeOf(onlyOnlineRoom()).aiPlayerDriver, 'restart')
+      .mockReturnValue(true)
     await app.request('/game/join', jsonRequest('POST', { playerId: HOST_PLAYER_ID }))
     await app.request('/game/ai-players', jsonRequest('POST', {}, HOST_PLAYER_ID))
 
     const humanSeat = await app.request('/game/ai-players/0/restart', {
       method: 'POST',
+      headers: { 'X-Player-Id': GUEST_PLAYER_ID },
     })
     expect(humanSeat.status).toBe(404)
     expect(restart).not.toHaveBeenCalled()
 
     const aiSeat = await app.request('/game/ai-players/1/restart', {
       method: 'POST',
+      headers: { 'X-Player-Id': GUEST_PLAYER_ID },
     })
     expect(aiSeat.status).toBe(200)
     expect(await aiSeat.json()).toEqual({

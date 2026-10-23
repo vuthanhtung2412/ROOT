@@ -30,6 +30,10 @@ export const ActionResultSchema = z
 
 export const LobbyModeSchema = z.enum(LOBBY_MODES).openapi('LobbyMode')
 
+export const RoomCodeSchema = z.string().nullable().openapi({
+  description: 'Code players type to enter this online room; null for the hotseat slot.',
+})
+
 /** Rootbotics 3.3 — one bot's difficulty card and face-up trait cards. */
 export const BotSettingsSchema = z
   .object({
@@ -108,6 +112,7 @@ export const CreateGameResponseSchema = z
   .object({
     state: GameStateSchema,
     mode: LobbyModeSchema,
+    roomCode: RoomCodeSchema,
   })
   .openapi('CreateGameResponse')
 
@@ -147,6 +152,7 @@ export const GetGameResponseSchema = z
     state: GameStateSchema,
     historyLength: z.number().int().nonnegative(),
     mode: LobbyModeSchema,
+    roomCode: RoomCodeSchema,
     aiPlayers: z.array(AiPlayerSchema),
     botStepDelaySeconds: BotStepDelaySecondsSchema,
   })

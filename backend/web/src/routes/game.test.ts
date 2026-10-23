@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { app } from '#openapi.js'
-import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
+import { store } from '#store/GameStore.js'
+import { roomRegistry } from '#store/roomRegistry.js'
+import {
+  enterOnlyOnlineRoom,
+  onlyOnlineRoom,
+  resetAllRooms,
+} from '#test/roomFixtures.js'
 
 function jsonRequest(method: string, body: object): RequestInit {
   return {
@@ -11,15 +17,9 @@ function jsonRequest(method: string, body: object): RequestInit {
 }
 
 describe('game routes', () => {
-  beforeEach((): void => {
-    store.game = null
-    store.mode = DEFAULT_LOBBY_MODE
-  })
+  beforeEach(resetAllRooms)
 
-  afterEach((): void => {
-    store.game = null
-    store.mode = DEFAULT_LOBBY_MODE
-  })
+  afterEach(resetAllRooms)
 
   it('supports the game lifecycle, snapshots, undo, and slot conflicts', async () => {
     const createResponse = await app.request(
@@ -99,8 +99,9 @@ describe('game routes', () => {
     async function createOnlineLobby(): Promise<void> {
       await app.request(
         '/game',
-        jsonRequest('POST', { factions: ['marquise', 'eyrie'], mode: 'online' }),
+        asPlayer(HOST_PLAYER_ID, 'POST', { factions: ['marquise', 'eyrie'], mode: 'online' }),
       )
+      enterOnlyOnlineRoom(GUEST_PLAYER_ID)
       await app.request('/game/join', jsonRequest('POST', { playerId: HOST_PLAYER_ID }))
       await app.request('/game/join', jsonRequest('POST', { playerId: GUEST_PLAYER_ID }))
     }
@@ -112,7 +113,8 @@ describe('game routes', () => {
       expect(await guestStart.json()).toMatchObject({ code: 'NOT_YOUR_SEAT' })
 
       const anonymousStart = await app.request('/game/start', { method: 'POST' })
-      expect(anonymousStart.status).toBe(403)
+      // No join id: the caller is in no room and finds no game.
+      expect(anonymousStart.status).toBe(404)
 
       const hostStart = await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
       expect(hostStart.status).toBe(200)
@@ -127,7 +129,7 @@ describe('game routes', () => {
       expect(guestBody).toContain(GUEST_PLAYER_ID)
       expect(guestBody).not.toContain(HOST_PLAYER_ID)
 
-      const hostState = store.game?.state.players[0]
+      const hostState = onlyOnlineRoom().game?.state.players[0]
       expect(hostState?.hand.length).toBeGreaterThan(0)
       const firstHostCardId = hostState?.hand[0]?.id ?? ''
       expect(guestBody).not.toContain(`"${firstHostCardId}"`)
@@ -145,7 +147,7 @@ describe('game routes', () => {
       expect(snapshotDump.status).toBe(403)
     })
 
-    it('only the host may remove or replace a live online game; undo is off', async () => {
+    it('only the host may remove a live online game; hotseat never touches it; undo is off', async () => {
       await createOnlineLobby()
       await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
 
@@ -153,12 +155,13 @@ describe('game routes', () => {
       expect(guestDelete.status).toBe(403)
       expect(await guestDelete.json()).toMatchObject({ code: 'NOT_HOST' })
 
-      const strangerReplace = await app.request(
+      const strangerHotseat = await app.request(
         '/game?replace=1',
         jsonRequest('POST', { factions: ['marquise', 'eyrie'] }),
       )
-      expect(strangerReplace.status).toBe(403)
-      expect(store.mode).toBe('online')
+      expect(strangerHotseat.status).toBe(201)
+      expect(store.mode).toBe('hotseat')
+      expect(onlyOnlineRoom().game?.state.status).toBe('setup')
 
       const hostUndo = await app.request('/game/undo', asPlayer(HOST_PLAYER_ID, 'POST'))
       expect(hostUndo.status).toBe(403)
@@ -166,15 +169,19 @@ describe('game routes', () => {
 
       const hostDelete = await app.request('/game', asPlayer(HOST_PLAYER_ID, 'DELETE'))
       expect(hostDelete.status).toBe(204)
-      expect(store.game).toBeNull()
+      expect(roomRegistry.rooms()).toEqual([])
+      expect(roomRegistry.roomOfPlayer(GUEST_PLAYER_ID)).toBeNull()
+      // The hotseat game is still there.
+      expect(store.game).not.toBeNull()
     })
 
     it('open lobby: players pick their faction; a taken one is refused', async () => {
       await app.request(
         '/game',
-        jsonRequest('POST', { factions: [], mode: 'online' }),
+        asPlayer(HOST_PLAYER_ID, 'POST', { factions: [], mode: 'online' }),
       )
-      expect(store.game?.state.openLobby).toBe(true)
+      enterOnlyOnlineRoom(GUEST_PLAYER_ID)
+      expect(onlyOnlineRoom().game?.state.openLobby).toBe(true)
 
       const hostJoin = await app.request(
         '/game/join',
@@ -200,16 +207,16 @@ describe('game routes', () => {
         jsonRequest('POST', { playerId: GUEST_PLAYER_ID, faction: 'riverfolk' }),
       )
       expect(guestJoin.status).toBe(200)
-      expect(store.game?.state.factions).toEqual(['lizard', 'riverfolk'])
+      expect(onlyOnlineRoom().game?.state.factions).toEqual(['lizard', 'riverfolk'])
 
       const hostStart = await app.request('/game/start', asPlayer(HOST_PLAYER_ID, 'POST'))
       expect(hostStart.status).toBe(200)
     })
 
-    /** Resolve setup straight on the store: the online game reaches turn 1. */
+    /** Resolve setup straight on the room: the online game reaches turn 1. */
     function finishSetupOnStore(): void {
-      const game = store.game
-      if (game === null) throw new Error('no game in the store')
+      const game = onlyOnlineRoom().game
+      if (game === null) throw new Error('no game in the room')
       let guard = 0
       while (game.state.pending.length > 0 && guard++ < MAX_SETUP_EVENTS) {
         const spec = game.legalActions()[0]
@@ -243,18 +250,18 @@ describe('game routes', () => {
         )
         expect(hostAction.status).toBe(200)
       }
-      const historyBeforeRecruit = (store.game?.history.length ?? 0) - 1
+      const historyBeforeRecruit = (onlyOnlineRoom().game?.history.length ?? 0) - 1
 
       const guestUndo = await app.request(TURN_UNDO_ROUTE, asPlayer(GUEST_PLAYER_ID, 'POST'))
       expect(guestUndo.status).toBe(403)
       expect(await guestUndo.json()).toMatchObject({ code: 'NOT_YOUR_TURN' })
 
       const anonymousUndo = await app.request(TURN_UNDO_ROUTE, { method: 'POST' })
-      expect(anonymousUndo.status).toBe(403)
+      expect(anonymousUndo.status).toBe(404)
 
       const hostUndo = await app.request(TURN_UNDO_ROUTE, asPlayer(HOST_PLAYER_ID, 'POST'))
       expect(hostUndo.status).toBe(200)
-      expect(store.game?.history.length).toBe(historyBeforeRecruit)
+      expect(onlyOnlineRoom().game?.history.length).toBe(historyBeforeRecruit)
     })
 
     it('rejects an action from a seat that is not the actor', async () => {
@@ -272,7 +279,7 @@ describe('game routes', () => {
         '/game/actions',
         jsonRequest('POST', KEEP_CORNER_ACTION),
       )
-      expect(anonymousAction.status).toBe(403)
+      expect(anonymousAction.status).toBe(404)
 
       const hostAction = await app.request(
         '/game/actions',
@@ -434,16 +441,21 @@ describe('game routes', () => {
     expect(await getResponse.json()).toMatchObject({ mode: 'hotseat' })
   })
 
-  it('creates an online lobby; a loaded snapshot falls back to hotseat', async () => {
-    const createResponse = await app.request(
-      '/game',
-      jsonRequest('POST', { factions: ['marquise', 'eyrie'], mode: 'online' }),
-    )
-    expect(await createResponse.json()).toMatchObject({ mode: 'online' })
-    expect(store.mode).toBe('online')
+  it('creates an online lobby in a room; a loaded snapshot goes to the hotseat slot', async () => {
+    const createResponse = await app.request('/game', {
+      ...jsonRequest('POST', { factions: ['marquise', 'eyrie'], mode: 'online' }),
+      headers: { 'Content-Type': 'application/json', 'X-Player-Id': 'online-host' },
+    })
+    const room = onlyOnlineRoom()
+    expect(await createResponse.json()).toMatchObject({
+      mode: 'online',
+      roomCode: room.roomCode,
+    })
+    expect(room.mode).toBe('online')
+    expect(store.game).toBeNull()
 
-    // GET /game/snapshot is blocked in online mode; dump straight from the store.
-    const snapshot = JSON.stringify(store.game?.toJSON())
+    // GET /game/snapshot is blocked in online mode; dump straight from the room.
+    const snapshot = JSON.stringify(room.game?.toJSON())
     const restoreResponse = await app.request('/game/snapshot?replace=1', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -451,5 +463,6 @@ describe('game routes', () => {
     })
     expect(restoreResponse.status).toBe(200)
     expect(store.mode).toBe('hotseat')
+    expect(room.mode).toBe('online')
   })
 })

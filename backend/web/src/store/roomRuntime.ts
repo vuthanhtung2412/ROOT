@@ -32,9 +32,11 @@ function createRoomRuntime(room: GameRoom): RoomRuntime {
     wait: (milliseconds: number): Promise<void> => wait(milliseconds),
     publishGameChange: (): void => {
       persistCurrentGame()
-      broadcastCurrentGame()
+      broadcastCurrentGame(room)
     },
-    publishStatusChange: broadcastCurrentGame,
+    publishStatusChange: (): void => {
+      broadcastCurrentGame(room)
+    },
     publishActivity: (activity: AiPlayerSeatActivity): void => {
       aiPlayerActivityFeed.publish(activity)
     },
@@ -45,7 +47,7 @@ function createRoomRuntime(room: GameRoom): RoomRuntime {
     publishGameChange: (stepLog: readonly LogEntry[]): void => {
       if (room.game !== null) logGameEvent('ACT', room.game.state, undefined, [...stepLog])
       persistCurrentGame()
-      broadcastCurrentGame()
+      broadcastCurrentGame(room)
       aiPlayerDriver.handleGameChanged()
     },
     reportFailure: (error: unknown): void => {

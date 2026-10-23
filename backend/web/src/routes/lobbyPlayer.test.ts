@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FactionId, PlayerState } from '@root/lib'
 import { app } from '#openapi.js'
-import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
+import {
+  enterOnlyOnlineRoom,
+  onlyOnlineRoom,
+  resetAllRooms,
+} from '#test/roomFixtures.js'
 
 const AI_MODEL = 'anthropic:claude-opus-5-5'
 const HOST_PLAYER_ID = 'host-secret'
@@ -33,30 +37,27 @@ async function joinWithFaction(playerId: string, faction: FactionId): Promise<vo
 
 /** Open online lobby: the host as Marquise, a guest as Eyrie. */
 async function createOpenLobbyWithGuest(): Promise<void> {
-  await app.request('/game', jsonRequest('POST', { factions: [], mode: 'online' }))
+  await app.request('/game', jsonRequest('POST', { factions: [], mode: 'online' }, HOST_PLAYER_ID))
+  enterOnlyOnlineRoom(GUEST_PLAYER_ID, LATE_PLAYER_ID)
   await joinWithFaction(HOST_PLAYER_ID, 'marquise')
   await joinWithFaction(GUEST_PLAYER_ID, 'eyrie')
 }
 
 function seatedPlayerIds(): string[] {
-  const players: readonly PlayerState[] = store.game?.state.players ?? []
+  const players: readonly PlayerState[] = onlyOnlineRoom().game?.state.players ?? []
   return players.map((player: PlayerState): string => player.playerId)
 }
 
 describe('lobby player routes', () => {
   beforeEach((): void => {
-    store.game = null
-    store.mode = DEFAULT_LOBBY_MODE
-    store.aiPlayers = []
+    resetAllRooms()
     vi.stubEnv('ANTHROPIC_API_KEY', 'anthropic-secret-key-value')
     vi.stubEnv('ROOT_AI_PLAYER_MODELS', AI_MODEL)
     vi.stubEnv('ROOT_AI_PLAYER_DEFAULT_MODEL', AI_MODEL)
   })
 
   afterEach((): void => {
-    store.game = null
-    store.mode = DEFAULT_LOBBY_MODE
-    store.aiPlayers = []
+    resetAllRooms()
     vi.unstubAllEnvs()
   })
 
@@ -106,7 +107,7 @@ describe('lobby player routes', () => {
       '/game/ai-players',
       jsonRequest('POST', { faction: 'alliance' }, HOST_PLAYER_ID),
     )
-    expect(store.aiPlayers).toHaveLength(1)
+    expect(onlyOnlineRoom().aiPlayers).toHaveLength(1)
 
     const response = await app.request(
       '/game/players/2',
@@ -114,7 +115,7 @@ describe('lobby player routes', () => {
     )
 
     expect(response.status).toBe(204)
-    expect(store.aiPlayers).toEqual([])
+    expect(onlyOnlineRoom().aiPlayers).toEqual([])
     expect(seatedPlayerIds()).toEqual([HOST_PLAYER_ID, GUEST_PLAYER_ID])
   })
 

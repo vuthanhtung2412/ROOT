@@ -48,21 +48,21 @@ describe('game persistence', () => {
     rmSync(temporaryDirectory, { recursive: true, force: true })
   })
 
-  it('restores the game and its lobby mode after a restart', async () => {
+  it('restores the hotseat game and its lobby mode after a restart', async () => {
     enableGamePersistence(storeFile)
     await app.request(
       '/game',
-      jsonRequest('POST', { factions: ['marquise', 'eyrie'], mode: 'online' }),
+      jsonRequest('POST', { factions: ['marquise', 'eyrie'], mode: 'hotseat' }),
     )
     await app.request('/game/join', jsonRequest('POST', { playerId: HOST_PLAYER_ID }))
     expect(existsSync(storeFile)).toBe(true)
 
     // Simulate a server restart: memory wiped, then persistence re-enabled.
     store.game = null
-    store.mode = DEFAULT_LOBBY_MODE
+    store.mode = 'online'
     enableGamePersistence(storeFile)
 
-    expect(store.mode).toBe('online')
+    expect(store.mode).toBe(DEFAULT_LOBBY_MODE)
     expect(restoredFirstPlayerId()).toBe(HOST_PLAYER_ID)
   })
 

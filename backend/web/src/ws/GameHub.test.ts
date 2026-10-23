@@ -14,6 +14,7 @@ function makeClient(
 }
 
 const samplePayload: GamePushPayload = {
+  roomCode: null,
   state: { id: 'g1' },
   historyLength: 0,
   legalActions: [],
@@ -86,6 +87,22 @@ describe('GameHub', () => {
     expect(secondSend).toHaveBeenCalledWith(
       JSON.stringify({ ...samplePayload, state: { viewer: 'eyrie' } }),
     )
+  })
+
+  it('broadcastToViewers skips viewers who are not recipients (another room)', () => {
+    const hub = new GameHub()
+    const sameRoomSend = vi.fn()
+    const otherRoomSend = vi.fn()
+    hub.addClient(makeClient('same-room-player', { send: sameRoomSend }))
+    hub.addClient(makeClient('other-room-player', { send: otherRoomSend }))
+
+    hub.broadcastToViewers(
+      (): GamePushPayload => samplePayload,
+      (playerId: string): boolean => playerId === 'same-room-player',
+    )
+
+    expect(sameRoomSend).toHaveBeenCalledTimes(1)
+    expect(otherRoomSend).not.toHaveBeenCalled()
   })
 
   it('removeClient stops further broadcasts', () => {

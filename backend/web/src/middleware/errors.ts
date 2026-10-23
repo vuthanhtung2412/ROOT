@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { RuleError } from '@root/lib'
 
-export type HttpErrorStatus = 400 | 403 | 404 | 409
+export type HttpErrorStatus = 400 | 403 | 404 | 409 | 503
 
 export class HttpError extends Error {
   readonly status: HttpErrorStatus

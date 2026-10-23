@@ -1,4 +1,5 @@
 import { store, type GameRoom } from '#store/GameStore.js'
+import { roomRegistry } from '#store/roomRegistry.js'
 
 /** Who calls a game route: the room they reach, their join id, the view they ask for. */
 export type GameCaller = {
@@ -7,9 +8,12 @@ export type GameCaller = {
   view?: string | undefined
 }
 
-/** The room a caller's requests reach: the hotseat slot for now. */
-export function resolveRoom(_playerId: string | undefined): GameRoom {
-  return store
+/** A player in an online room reaches that room; anyone else the hotseat slot. */
+export function resolveRoom(playerId: string | undefined): GameRoom {
+  if (playerId === undefined) {
+    return store
+  }
+  return roomRegistry.roomOfPlayer(playerId) ?? store
 }
 
 export function resolveGameCaller(

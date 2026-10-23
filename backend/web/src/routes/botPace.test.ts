@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { app } from '#openapi.js'
+import { DEFAULT_BOT_STEP_DELAY_SECONDS } from '#store/GameStore.js'
 import {
-  DEFAULT_BOT_STEP_DELAY_SECONDS,
-  DEFAULT_LOBBY_MODE,
-  store,
-} from '#store/GameStore.js'
+  enterOnlyOnlineRoom,
+  onlyOnlineRoom,
+  resetAllRooms,
+} from '#test/roomFixtures.js'
 
 const HOST_PLAYER_ID = 'host-secret'
 const GUEST_PLAYER_ID = 'guest-secret'
@@ -26,25 +27,20 @@ async function setPace(seconds: number, playerId?: string): Promise<Response> {
   return app.request('/game/bot-pace', jsonRequest('PUT', { botStepDelaySeconds: seconds }, playerId))
 }
 
-async function createLobby(mode: string): Promise<void> {
-  await app.request('/game', jsonRequest('POST', { factions: [], mode }))
+/** Online room made by the host, host and guest seated. */
+async function createOnlineLobby(): Promise<void> {
+  await app.request('/game', jsonRequest('POST', { factions: [], mode: 'online' }, HOST_PLAYER_ID))
+  enterOnlyOnlineRoom(GUEST_PLAYER_ID)
   await app.request('/game/join', jsonRequest('POST', { playerId: HOST_PLAYER_ID, faction: 'alliance' }))
   await app.request('/game/join', jsonRequest('POST', { playerId: GUEST_PLAYER_ID, faction: 'vagabond' }))
 }
 
-function resetStore(): void {
-  store.game = null
-  store.mode = DEFAULT_LOBBY_MODE
-  store.aiPlayers = []
-  store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
-}
-
 describe('bot pace route', () => {
-  beforeEach(resetStore)
-  afterEach(resetStore)
+  beforeEach(resetAllRooms)
+  afterEach(resetAllRooms)
 
   it('the online host sets the pace; the game view reports it', async () => {
-    await createLobby('online')
+    await createOnlineLobby()
 
     const response = await setPace(FAST_PACE_SECONDS, HOST_PLAYER_ID)
 
@@ -56,24 +52,25 @@ describe('bot pace route', () => {
   })
 
   it('an online guest may not', async () => {
-    await createLobby('online')
+    await createOnlineLobby()
 
     expect((await setPace(FAST_PACE_SECONDS, GUEST_PLAYER_ID)).status).toBe(403)
-    expect(store.botStepDelaySeconds).toBe(DEFAULT_BOT_STEP_DELAY_SECONDS)
+    expect(onlyOnlineRoom().botStepDelaySeconds).toBe(DEFAULT_BOT_STEP_DELAY_SECONDS)
   })
 
   it('takes only an offered pace', async () => {
-    await createLobby('online')
+    await createOnlineLobby()
 
     expect((await setPace(UNOFFERED_PACE_SECONDS, HOST_PLAYER_ID)).status).toBe(400)
   })
 
   it('a new game starts at the default pace', async () => {
-    await createLobby('online')
+    await createOnlineLobby()
     await setPace(FAST_PACE_SECONDS, HOST_PLAYER_ID)
 
-    await app.request('/game?replace=1', jsonRequest('POST', { factions: [] }, HOST_PLAYER_ID))
+    await app.request('/game', { method: 'DELETE', headers: { 'X-Player-Id': HOST_PLAYER_ID } })
+    await createOnlineLobby()
 
-    expect(store.botStepDelaySeconds).toBe(DEFAULT_BOT_STEP_DELAY_SECONDS)
+    expect(onlyOnlineRoom().botStepDelaySeconds).toBe(DEFAULT_BOT_STEP_DELAY_SECONDS)
   })
 })

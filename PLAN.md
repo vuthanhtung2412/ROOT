@@ -313,8 +313,8 @@
   - `backend/web/src/store/GameStore.ts`, `bots/BotStepDriver.ts`, `aiPlayer/AiPlayerDriver.ts`, `store/roomRuntime.ts` (new, replaces `aiPlayerRuntime.ts` + `botStepRuntime.ts`) + tests
 - [x] `refactor(web): routes read room from request context`
   - `backend/web/src/middleware/roomResolver.ts` (new, hotseat only for now), `routes/*.ts`, `view/aiPlayerView.ts`
-- [ ] `feat(web): online create opens a new room with a code`
-  - `backend/web/src/store/roomRegistry.ts` (new) + test, `middleware/roomResolver.ts`, `routes/game.ts`, `schemas/game.ts`, `ws/GameHub.ts`, `routes/ws.ts` + tests
+- [x] `feat(web): online create opens a new room with a code`
+  - `backend/web/src/store/roomRegistry.ts` (new) + test, `lobby/onlineRooms.ts` (new), `middleware/roomResolver.ts`, `routes/game.ts`, `schemas/game.ts`, `ws/GameHub.ts`, `test/roomFixtures.ts` (new) + route / hub tests
 - [ ] `feat(web): enter room by code, leave, one active game per player`
   - `backend/web/src/routes/rooms.ts` (new) + test, `store/roomRegistry.ts`, `index.ts`
 - [ ] `feat(web): persist every room`

@@ -16,6 +16,7 @@ import {
   requireCooperativeStart,
   requireNoTwinClash,
 } from '#lobby/cooperativeLobby.js'
+import { isOnlineRoom, openOnlineRoom } from '#lobby/onlineRooms.js'
 import {
   gameExists,
   HttpError,
@@ -36,6 +37,7 @@ import {
 import {
   errorResponses,
   PLAYER_VIEW,
+  roomLimitResponse,
   ReplaceQuerySchema,
   UndoQuerySchema,
   ViewQuerySchema,
@@ -58,8 +60,10 @@ import {
   DEFAULT_BOT_STEP_DELAY_SECONDS,
   DEFAULT_LOBBY_MODE,
   resetGameStore,
+  store,
   type GameRoom,
 } from '#store/GameStore.js'
+import { roomRegistry } from '#store/roomRegistry.js'
 import { listAiPlayerViews } from '#view/aiPlayerView.js'
 import { formatPlayerGameView, formatPlayerLog } from '#view/playerView.js'
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
@@ -87,9 +91,20 @@ export function requireGame(room: GameRoom): Game {
  */
 export function publishGameChange(room: GameRoom): void {
   persistCurrentGame()
-  broadcastCurrentGame()
+  broadcastCurrentGame(room)
   runtimeOf(room).aiPlayerDriver.handleGameChanged()
   runtimeOf(room).botStepDriver.handleGameChanged()
+}
+
+/**
+ * End an online room: its viewers get an empty slot, its AI seats and bots
+ * stop, every member is free to create or enter another game.
+ */
+export function closeOnlineRoom(room: GameRoom): void {
+  room.game = null
+  room.aiPlayers = []
+  publishGameChange(room)
+  roomRegistry.removeRoom(room)
 }
 
 /**
@@ -171,6 +186,8 @@ const createGameRoute = createRoute({
   path: '/',
   tags: ['game'],
   summary: 'Create lobby',
+  description:
+    'Online mode: always a new room with its own code; the caller (X-Player-Id) is in it. 409 ALREADY_IN_GAME while the caller is in another unfinished game. Hotseat: the single hotseat slot.',
   request: {
     query: ReplaceQuerySchema,
     body: {
@@ -184,17 +201,20 @@ const createGameRoute = createRoute({
       content: { 'application/json': { schema: CreateGameResponseSchema } },
     },
     ...errorResponses,
+    ...roomLimitResponse,
   },
 })
 
 gameRoutes.openapi(createGameRoute, async (context) => {
-  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
-  const room: GameRoom = caller.room
-  if (room.game && context.req.valid('query').replace !== '1') {
-    gameExists()
-  }
-  requireHostToReplaceOnlineGame(caller)
+  const playerId: string | undefined = context.req.header(PLAYER_ID_HEADER)
   const body = context.req.valid('json') ?? {}
+  const isOnline: boolean = body.mode === 'online'
+  if (!isOnline) {
+    if (store.game && context.req.valid('query').replace !== '1') {
+      gameExists()
+    }
+    requireHostToReplaceOnlineGame({ room: store, playerId })
+  }
   const seed = Math.floor(Math.random() * 1_000_000_000)
   const factions =
     body.factions === undefined
@@ -213,13 +233,17 @@ gameRoutes.openapi(createGameRoute, async (context) => {
     factions,
     ...(botSettings === undefined ? {} : { botSettings }),
   })
+  const room: GameRoom = isOnline ? openOnlineRoom(playerId) : store
   room.game = game
   room.mode = body.mode ?? DEFAULT_LOBBY_MODE
   room.aiPlayers = []
   room.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
   logGameEvent('CREATE', game.state)
   publishGameChange(room)
-  return context.json({ state: game.state, mode: room.mode }, 201)
+  return context.json(
+    { state: game.state, mode: room.mode, roomCode: room.roomCode },
+    201,
+  )
 })
 
 const joinRoute = createRoute({
@@ -317,6 +341,7 @@ gameRoutes.openapi(getGameRoute, (context) => {
       state: stateForCaller(game, caller),
       historyLength: game.history.length,
       mode: room.mode,
+      roomCode: room.roomCode,
       aiPlayers: listAiPlayerViews(room),
       botStepDelaySeconds: room.botStepDelaySeconds,
     },
@@ -395,12 +420,12 @@ const putSnapshotRoute = createRoute({
 })
 
 gameRoutes.openapi(putSnapshotRoute, async (context) => {
-  const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
-  const room: GameRoom = caller.room
+  // Snapshots are QA / dev loads: always the hotseat slot, never an online room.
+  const room: GameRoom = store
   if (room.game && context.req.valid('query').replace !== '1') {
     gameExists()
   }
-  requireHostToReplaceOnlineGame(caller)
+  requireHostToReplaceOnlineGame({ room, playerId: context.req.header(PLAYER_ID_HEADER) })
   const body = context.req.valid('json')
   if (!isGameSnapshot(body)) {
     throw new HttpError(400, 'BAD_SNAPSHOT', 'invalid snapshot shape')
@@ -423,7 +448,10 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   persistCurrentGame()
   runtimeOf(room).aiPlayerDriver.handleGameChanged()
   logGameEvent('LOAD', game.state)
-  return context.json({ state: game.state, mode: room.mode }, 200)
+  return context.json(
+    { state: game.state, mode: room.mode, roomCode: room.roomCode },
+    200,
+  )
 })
 
 const getActionsRoute = createRoute({
@@ -643,7 +671,11 @@ const deleteGameRoute = createRoute({
 gameRoutes.openapi(deleteGameRoute, (context) => {
   const caller: GameCaller = resolveGameCaller(context.req.header(PLAYER_ID_HEADER))
   requireHostToReplaceOnlineGame(caller)
-  resetGameStore()
-  publishGameChange(caller.room)
+  if (isOnlineRoom(caller.room)) {
+    closeOnlineRoom(caller.room)
+  } else {
+    resetGameStore()
+    publishGameChange(caller.room)
+  }
   return context.body(null, 204)
 })

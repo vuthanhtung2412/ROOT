@@ -65,3 +65,11 @@ export const errorResponses = {
     content: { 'application/json': { schema: ErrorBodySchema } },
   },
 } as const
+
+/** Opening an online room: the server holds as many as it allows. */
+export const roomLimitResponse = {
+  503: {
+    description: 'Every online room is in use',
+    content: { 'application/json': { schema: ErrorBodySchema } },
+  },
+} as const
