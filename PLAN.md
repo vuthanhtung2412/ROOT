@@ -267,3 +267,65 @@
   - `frontend/react/src/game/botPace.ts` + test, `react/BotTurnBanner.tsx`, `game/GameSession.ts`
 - [x] `feat(react): co-op end screen`
   - game-over view + its view model test
+
+
+## Multi-room: several online games at once
+
+### Goal
+- Server runs many **online** games at once (free-for-all + co-op lobbies), each a room with a 6-char code.
+- A player id is in at most **1 active game** (lobby / setup / playing). Create or enter while in one → `409 ALREADY_IN_GAME {roomCode}`; menu offers "Resume" instead.
+- Host shares the room code; guests type it in the menu. No invite link.
+- Hotseat (dev local party, QA snapshot, CLI) keeps **one separate slot**, unchanged; can never replace an online room. Solo run (browser only) untouched.
+
+### Approach
+- Backend `GameRoom` = today's slot fields (`game`, `mode`, `aiPlayers`, `botStepDelaySeconds`) + `roomCode`. `store` stays as the hotseat room object.
+- `RoomRegistry` (`backend/web/src/store/roomRegistry.ts`): `roomsByCode`, `roomCodeByPlayerId` (members = seated players + unseated watchers). `MAXIMUM_ONLINE_ROOM_COUNT` cap → `503 ROOM_LIMIT`.
+- Room resolution: middleware on `/game/*` reads `X-Player-Id`; player in a room → that room, else hotseat slot. Routes read the room from request context instead of `store` (same paths).
+- `POST /game` with `mode: 'online'` → always a new room, caller (header required) registered as member. No `replace` for online. Response + `GET /game` add `roomCode`.
+- `POST /game/rooms/{roomCode}/enter`: watch lobby, register member (`404 ROOM_NOT_FOUND`, `409 ALREADY_IN_GAME`). `POST /game/leave`: unseated watcher or lobby seat leaves; in a running game only finish / host end / idle cleanup frees you.
+- "Active" = room status not `finished`. Finished room keeps membership so the final screen shows, but no longer blocks create / enter.
+- One `AiPlayerDriver` + `BotStepDriver` per room; their dependencies get a room instead of the global `store`.
+- WS: `GameHub` stays global; a room broadcast reaches only clients whose player id maps to that room (hotseat → clients in no room). AI activity stream filtered the same way.
+- Persistence: `.data/rooms/<roomCode>.json` per room (+ existing `game-slot.json` for hotseat); restore all on boot, re-register members from `state.players`.
+- Idle cleanup: per-room timer (same `ROOT_INACTIVE_GAME_TIMEOUT_SECONDS`), removes room + memberships.
+- Frontend: drop single-slot busy logic (`findOnlineLobby` / `hasLiveOnlineGame`). Menu Online → "Create game" / "Join with code" input. Lobby shows code + copy-code button. `ALREADY_IN_GAME` → resume stored game.
+- Client regen via `pnpm gen:api-client`.
+
+### Risks
+- Identity is per tab (sessionStorage) → one human with two tabs = two players. Accepted.
+- `routes/game.ts` already 652 lines: room helpers go in new files.
+
+### Test plan
+- Unit (fixture factories): registry codes unique, membership, active vs finished, cap; resolver picks room / hotseat.
+- Routes: two online rooms isolated (actions, state, bot pace, AI seats); create while active → 409 with code; unknown code → 404; finished room → may create again; hotseat replace never touches rooms; host-only delete per room; leave frees player.
+- WS: push for room A never reaches a room B client.
+- Persistence: two rooms saved + restored with memberships; removed room deletes its file.
+- Cleanup: idle room A removed, active room B kept.
+- React: lobby view model shows code, join-by-code flow, `ALREADY_IN_GAME` → resume.
+- Manual (chrome-devtools, frontend + backend on different machines): A creates free-for-all, B creates co-op, C joins A by code, D joins B by code; play turns in both; B creates again → resume; idle room dropped, other survives; hotseat QA Continue still works.
+
+### Commit plan
+- [x] `docs(plan): multi-room online games`
+  - `PLAN.md`
+- [ ] `refactor(react): send player id when creating online game`
+  - `frontend/react/src/game/GameSession.ts` + test
+- [ ] `refactor(web): GameRoom type, drivers take a room`
+  - `backend/web/src/store/GameStore.ts`, `bots/BotStepDriver.ts`, `bots/botStepRuntime.ts`, `aiPlayer/AiPlayerDriver.ts`, `aiPlayer/aiPlayerRuntime.ts`, `roomRuntime.ts` (new) + tests
+- [ ] `refactor(web): routes read room from request context`
+  - `backend/web/src/middleware/roomResolver.ts` (new, hotseat only for now), `routes/*.ts`, `view/aiPlayerView.ts`
+- [ ] `feat(web): online create opens a new room with a code`
+  - `backend/web/src/store/roomRegistry.ts` (new) + test, `middleware/roomResolver.ts`, `routes/game.ts`, `schemas/game.ts`, `ws/GameHub.ts`, `routes/ws.ts` + tests
+- [ ] `feat(web): enter room by code, leave, one active game per player`
+  - `backend/web/src/routes/rooms.ts` (new) + test, `store/roomRegistry.ts`, `index.ts`
+- [ ] `feat(web): persist every room`
+  - `backend/web/src/store/gamePersistence.ts` + test, `index.ts`
+- [ ] `feat(web): idle cleanup per room`
+  - `backend/web/src/store/inactiveGameCleanup.ts` + test, `index.ts`
+- [ ] `chore(api): regen client for rooms`
+  - `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts`, `backend/web_client/src/gameApi.ts`
+- [ ] `feat(react): join online game by room code`
+  - `frontend/react/src/game/GameSession.ts` + test, `App.tsx`, `react/MenuOverlay.tsx`
+- [ ] `feat(react): lobby shows room code`
+  - `frontend/react/src/game/menuLobby.ts` + test, `react/MenuLobbyPanel.tsx`
+- [ ] `feat(react): resume when already in a game`
+  - `frontend/react/src/game/GameSession.ts` + test, `App.tsx` (drop single-slot busy check / menu poll)
