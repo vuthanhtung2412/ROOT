@@ -129,6 +129,7 @@ describe('GameSession', () => {
   describe('online play', () => {
     const HOST_PLAYER_ID = 'player-host'
     const GUEST_PLAYER_ID = 'player-guest'
+    const ROOM_CODE = 'ABC234'
 
     function lobbyState(joinedPlayerIds: string[]): ReturnType<typeof makeGameState> {
       const full = makeGameState({ status: 'waiting' })
@@ -250,17 +251,16 @@ describe('GameSession', () => {
       }
     }
 
-    it('one button: no game on the server → creates an open lobby and watches it', async () => {
+    it('create game: opens a new online room and watches its lobby', async () => {
       const fetchMock = stubFetchSequence([
-        { body: { code: 'NO_GAME', detail: null }, status: 404 },
-        { body: { state: openLobbyState([]), mode: 'online' }, status: 201 },
-        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online' } },
+        { body: { state: openLobbyState([]), mode: 'online', roomCode: ROOM_CODE }, status: 201 },
+        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online', roomCode: ROOM_CODE } },
       ])
       const session = createSession({ generatePlayerId: () => HOST_PLAYER_ID })
 
-      expect(await session.enterOnlineLobby()).toBe(true)
+      expect(await session.createOnlineRoom()).toBe(true)
 
-      const createRequest: unknown = fetchMock.mock.calls[1]![0]
+      const createRequest: unknown = fetchMock.mock.calls[0]![0]
       if (!(createRequest instanceof Request)) throw new Error('expected Request')
       expect(await createRequest.json()).toEqual({ factions: [], mode: 'online' })
       // The server learns who created the lobby.
@@ -270,35 +270,53 @@ describe('GameSession', () => {
       expect(session.getLocalSeat()).toBeNull()
     })
 
-    it('one button: a waiting lobby → enters it without creating a game', async () => {
+    it('join with code: enters the room as itself, then watches the lobby', async () => {
       const lobby = {
         state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),
         historyLength: 1,
         mode: 'online',
+        roomCode: ROOM_CODE,
       }
-      const fetchMock = stubFetchSequence([{ body: lobby }, { body: lobby }])
+      const fetchMock = stubFetchSequence([
+        { body: { roomCode: ROOM_CODE, mode: 'online' } },
+        { body: lobby },
+      ])
       const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
 
-      expect(await session.enterOnlineLobby()).toBe(true)
+      expect(await session.enterOnlineRoom(` ${ROOM_CODE} `)).toBe(true)
 
-      expect(fetchMock).toHaveBeenCalledTimes(2)
+      const enterRequest: unknown = fetchMock.mock.calls[0]![0]
+      if (!(enterRequest instanceof Request)) throw new Error('expected Request')
+      expect(new URL(enterRequest.url).pathname).toBe(`/game/rooms/${ROOM_CODE}/enter`)
+      expect(enterRequest.headers.get(PLAYER_ID_HEADER)).toBe(GUEST_PLAYER_ID)
       expect(session.getSnapshot().state?.players).toHaveLength(1)
       expect(session.getLocalSeat()).toBeNull()
     })
 
+    it('join with an unknown code: a clear error, no identity kept', async () => {
+      stubFetchSequence([
+        { body: { code: 'ROOM_NOT_FOUND', detail: { roomCode: ROOM_CODE } }, status: 404 },
+      ])
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
+
+      expect(await session.enterOnlineRoom(ROOM_CODE)).toBe(false)
+
+      expect(session.getSnapshot().error).toBe('No online game has this code')
+      expect(session.getLocalPlayerId()).toBeNull()
+    })
+
     it('picking a faction takes the seat; the first to pick hosts', async () => {
       const fetchMock = stubFetchSequence([
-        { body: { code: 'NO_GAME', detail: null }, status: 404 },
-        { body: { state: openLobbyState([]), mode: 'online' }, status: 201 },
-        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online' } },
+        { body: { state: openLobbyState([]), mode: 'online', roomCode: ROOM_CODE }, status: 201 },
+        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online', roomCode: ROOM_CODE } },
         { body: { state: openLobbyState([[HOST_PLAYER_ID, 'lizard']]), log: [] } },
       ])
       const session = createSession({ generatePlayerId: () => HOST_PLAYER_ID })
-      await session.enterOnlineLobby()
+      await session.createOnlineRoom()
 
       expect(await session.pickLobbyFaction('lizard')).toBe(true)
 
-      const joinRequest: unknown = fetchMock.mock.calls[3]![0]
+      const joinRequest: unknown = fetchMock.mock.calls[2]![0]
       if (!(joinRequest instanceof Request)) throw new Error('expected Request')
       expect(await joinRequest.json()).toEqual({
         playerId: HOST_PLAYER_ID,
@@ -313,14 +331,15 @@ describe('GameSession', () => {
         state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),
         historyLength: 1,
         mode: 'online',
+        roomCode: ROOM_CODE,
       }
       stubFetchSequence([
-        { body: lobby },
+        { body: { roomCode: ROOM_CODE, mode: 'online' } },
         { body: lobby },
         { body: { code: 'FACTION_TAKEN', detail: null }, status: 400 },
       ])
       const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
-      await session.enterOnlineLobby()
+      await session.enterOnlineRoom(ROOM_CODE)
 
       expect(await session.pickLobbyFaction('marquise')).toBe(false)
 
@@ -344,23 +363,6 @@ describe('GameSession', () => {
       expect(await session.hasLiveOnlineGame()).toBe(true)
       expect(await session.hasLiveOnlineGame()).toBe(false)
       expect(await session.hasLiveOnlineGame()).toBe(false)
-    })
-
-    it('one button: a game in progress is not replaced', async () => {
-      const running = {
-        state: { ...openLobbyState([[HOST_PLAYER_ID, 'marquise']]), status: 'playing' },
-        historyLength: 9,
-        mode: 'online',
-      }
-      const fetchMock = stubFetchSequence([{ body: running }, { body: running }])
-      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
-
-      expect(await session.enterOnlineLobby()).toBe(false)
-
-      expect(session.getSnapshot().error).toBe(
-        'A game is already running on this server',
-      )
-      expect(fetchMock).toHaveBeenCalledTimes(2)
     })
 
     it('guest cannot join a hotseat or missing game', async () => {

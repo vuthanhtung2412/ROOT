@@ -323,8 +323,8 @@
   - `backend/web/src/store/inactiveGameCleanup.ts` + test, `index.ts`
 - [x] `chore(api): regen client for rooms`
   - `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts`, `backend/web_client/src/gameApi.ts`, `frontend/react/src/api/localGameApi.ts`
-- [ ] `feat(react): join online game by room code`
-  - `frontend/react/src/game/GameSession.ts` + test, `App.tsx`, `react/MenuOverlay.tsx`
+- [x] `feat(react): join online game by room code`
+  - `frontend/react/src/game/GameSession.ts` + test, `game/hudStore.ts`, `App.tsx`, `react/MenuOverlay.tsx`, `react/MenuJoinRoomForm.tsx` (new) + test
 - [ ] `feat(react): lobby shows room code`
   - `frontend/react/src/game/menuLobby.ts` + test, `react/MenuLobbyPanel.tsx`
 - [ ] `feat(react): resume when already in a game`

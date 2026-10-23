@@ -165,6 +165,7 @@ export function App(): JSX.Element {
   const handleQaContinueRef = useRef<() => void>(() => undefined)
   const handleContinueSoloRef = useRef<() => void>(() => undefined)
   const handlePlayOnlineRef = useRef<() => void>(() => undefined)
+  const handleJoinRoomRef = useRef<(roomCode: string) => void>(() => undefined)
   const handlePickFactionRef = useRef<(faction: string) => void>(
     () => undefined,
   )
@@ -255,6 +256,9 @@ export function App(): JSX.Element {
       },
       onPlayOnline: () => {
         handlePlayOnlineRef.current()
+      },
+      onJoinRoom: (roomCode) => {
+        handleJoinRoomRef.current(roomCode)
       },
       onPickFaction: (faction) => {
         handlePickFactionRef.current(faction)
@@ -404,11 +408,20 @@ export function App(): JSX.Element {
     [ensureSession, rebindSessionApi, watchOnlineLobby],
   )
 
-  /** The one start button: join the waiting lobby, or create one. */
+  /** Create game: a new online room, its lobby open. */
   const handlePlayOnline = useCallback(
     (): Promise<void> =>
       runOnlineLobbyAction('Opening lobby…', (session) =>
-        session.enterOnlineLobby(),
+        session.createOnlineRoom(),
+      ),
+    [runOnlineLobbyAction],
+  )
+
+  /** Join with code: the lobby of the room the host shared. */
+  const handleJoinRoom = useCallback(
+    (roomCode: string): Promise<void> =>
+      runOnlineLobbyAction('Entering room…', (session) =>
+        session.enterOnlineRoom(roomCode),
       ),
     [runOnlineLobbyAction],
   )
@@ -584,6 +597,9 @@ export function App(): JSX.Element {
   }
   handleQaContinueRef.current = () => {
     void handleQaContinue()
+  }
+  handleJoinRoomRef.current = (roomCode: string) => {
+    void handleJoinRoom(roomCode)
   }
   handlePlayOnlineRef.current = () => {
     void handlePlayOnline()

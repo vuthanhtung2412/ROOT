@@ -166,8 +166,10 @@ export type MenuCallbacks = {
   onQaContinue: () => void
   /** Back into the saved solo run. */
   onContinueSolo: () => void
-  /** The one start button: join the waiting lobby, or create one. */
+  /** Create game: open a new online room. */
   onPlayOnline: () => void
+  /** Join with code: enter the online room the host shared. */
+  onJoinRoom: (roomCode: string) => void
   /** Open lobby: take a seat with this faction, or change the pick. */
   onPickFaction: (faction: string) => void
   /** Online host: seat an AI player (faction only in an open lobby). */
@@ -323,6 +325,7 @@ const NOOP_MENU_CALLBACKS: MenuCallbacks = {
   onQaContinue: () => undefined,
   onContinueSolo: () => undefined,
   onPlayOnline: () => undefined,
+  onJoinRoom: () => undefined,
   onPickFaction: () => undefined,
   onAddAiPlayer: () => undefined,
   onExpelPlayer: () => undefined,

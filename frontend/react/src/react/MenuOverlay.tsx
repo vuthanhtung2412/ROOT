@@ -21,6 +21,7 @@ import {
 } from '#react/BirthdayDecorations.tsx'
 import { BirthdayBridgeBanner } from '#react/BirthdayBridgeBanner.tsx'
 import { MenuHotseatSetup } from '#react/MenuHotseatSetup.tsx'
+import { MenuJoinRoomForm } from '#react/MenuJoinRoomForm.tsx'
 import { MenuSoloSetup } from '#react/MenuSoloSetup.tsx'
 import { OnlineLobbyPanel } from '#react/MenuLobbyPanel.tsx'
 import { PRIMARY_BUTTON_CLASS_NAME } from '#react/MenuParts.tsx'
@@ -64,7 +65,6 @@ const STATUS_CLASS_NAME =
   'root-paper root-paper-fine m-0 max-w-[70vw] px-5 py-1.5 text-center font-body text-[15px] italic'
 
 const CREATE_GAME_LABEL = 'Create game'
-const JOIN_GAME_LABEL = 'Join game'
 const SOLO_RUN_LABEL = 'Solo run'
 const CONTINUE_SOLO_RUN_LABEL = 'Continue solo run'
 
@@ -183,7 +183,7 @@ export function MenuOverlay(): JSX.Element | null {
           />
         ) : (
           <>
-            {/* The one start button: a lobby waits → join it; else create one. */}
+            {/* Create opens a new online room; guests join it with its code. */}
             <button
               type="button"
               className={`menu-play-online ${PRIMARY_BUTTON_CLASS_NAME} ${PLAY_ONLINE_BUTTON_CLASS_NAME}`}
@@ -192,9 +192,15 @@ export function MenuOverlay(): JSX.Element | null {
                 callbacks.onPlayOnline()
               }}
             >
-              {menu.lobbyOnServer ? JOIN_GAME_LABEL : CREATE_GAME_LABEL}
+              {CREATE_GAME_LABEL}
               {IS_BIRTHDAY_EDITION ? <BirthdayCandle /> : null}
             </button>
+            <MenuJoinRoomForm
+              disabled={menu.playPending}
+              onJoinRoom={(roomCode: string): void => {
+                callbacks.onJoinRoom(roomCode)
+              }}
+            />
             {menu.soloRunSaved ? (
               <button
                 type="button"

@@ -431,11 +431,25 @@ export class GameSession {
   }
 
   /**
-   * The one start button: enter the waiting online lobby, or create an open
-   * one (no faction decided) when the server slot is free. The browser then
-   * watches the lobby; it takes a seat by picking a faction.
+   * Create game: open a new online room with an open lobby (no faction
+   * decided). The browser watches it; it takes a seat by picking a faction.
    */
-  async enterOnlineLobby(): Promise<boolean> {
+  async createOnlineRoom(): Promise<boolean> {
+    return this.enterOnlineRoomWith(async (): Promise<void> => {
+      await this.api.createGame({ factions: [], mode: 'online' })
+    })
+  }
+
+  /** Join with code: watch the lobby of the room the host shared. */
+  async enterOnlineRoom(roomCode: string): Promise<boolean> {
+    return this.enterOnlineRoomWith(async (): Promise<void> => {
+      await this.api.enterRoom(roomCode.trim())
+    })
+  }
+
+  private async enterOnlineRoomWith(
+    openOrEnterRoom: () => Promise<void>,
+  ): Promise<boolean> {
     this.setLoading(true)
     this.qaMode = false
     try {
@@ -443,21 +457,10 @@ export class GameSession {
       if (await this.resumeOnlineGame()) {
         return true
       }
-      const lobby: OnlineLobbyStatus = await this.findOnlineLobby()
-      if (lobby === 'busy' && !(await this.isSlotLeftover())) {
-        this.setError('A game is already running on this server')
-        return false
-      }
-      // Bound first: the create request carries it, so the server knows the creator.
+      // Bound first: the server finds the room by the id the request carries.
       const playerId: string = this.generatePlayerId()
       this.bindLocalPlayer(playerId)
-      if (lobby !== 'joinable') {
-        await this.api.createGame({
-          factions: [],
-          mode: 'online',
-          replace: lobby === 'busy',
-        })
-      }
+      await openOrEnterRoom()
       this.connectLocalSocket(playerId)
       const game = await this.api.getGame()
       this.publish({
@@ -470,6 +473,10 @@ export class GameSession {
       })
       return true
     } catch (error: unknown) {
+      this.localPlayerId = null
+      clearPlayerIdentity(
+        this.identityStorage === undefined ? undefined : this.identityStorage,
+      )
       this.setError(errorMessage(error))
       return false
     }
@@ -960,6 +967,8 @@ function actorSeatFromState(
 const FRIENDLY_API_ERRORS: Readonly<Record<string, string>> = {
   NOT_HOST: 'An online game is running — only its host can end it',
   NOT_YOUR_SEAT: 'Not your seat',
+  ROOM_NOT_FOUND: 'No online game has this code',
+  ROOM_LIMIT: 'The server is full — try again later',
 }
 
 function errorMessage(error: unknown): string {
