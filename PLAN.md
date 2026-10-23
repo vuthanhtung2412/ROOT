@@ -321,8 +321,8 @@
   - `backend/web/src/store/gamePersistence.ts` + test, `store/roomRegistry.ts`, `index.ts`
 - [x] `feat(web): idle cleanup per room`
   - `backend/web/src/store/inactiveGameCleanup.ts` + test, `index.ts`
-- [ ] `chore(api): regen client for rooms`
-  - `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts`, `backend/web_client/src/gameApi.ts`
+- [x] `chore(api): regen client for rooms`
+  - `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts`, `backend/web_client/src/gameApi.ts`, `frontend/react/src/api/localGameApi.ts`
 - [ ] `feat(react): join online game by room code`
   - `frontend/react/src/game/GameSession.ts` + test, `App.tsx`, `react/MenuOverlay.tsx`
 - [ ] `feat(react): lobby shows room code`

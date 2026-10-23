@@ -144,10 +144,18 @@ export type CreateGameApiOptions = {
   playerView?: boolean
 }
 
+/** Code of the online room; null for the hotseat slot. */
+export type RoomCode = string | null
+
 export type GameApi = {
+  /** Online mode: always a new room (409 ALREADY_IN_GAME while in another game). */
   createGame: (
     input?: CreateGameInput,
-  ) => Promise<{ state: GameState; mode: LobbyMode }>
+  ) => Promise<{ state: GameState; mode: LobbyMode; roomCode: RoomCode }>
+  /** Watch the online room with this code; pick a faction with `join`. */
+  enterRoom: (roomCode: string) => Promise<{ roomCode: string; mode: LobbyMode }>
+  /** Leave the online room (watcher or lobby guest). */
+  leaveRoom: () => Promise<void>
   /** `faction`: the player's pick in an open lobby (created with no factions). */
   join: (playerId: string, faction?: string) => Promise<ActionResult>
   /** Open lobby, host only: free the seat of a human or AI player. */
@@ -163,6 +171,7 @@ export type GameApi = {
     state: GameState
     historyLength: number
     mode: LobbyMode
+    roomCode: RoomCode
     aiPlayers: AiPlayer[]
     /** Seconds between two bot actions (online: set by the host). */
     botStepDelaySeconds: number
@@ -370,7 +379,7 @@ export function createGameApi(
   return {
     async createGame(
       input: CreateGameInput = {},
-    ): Promise<{ state: GameState; mode: LobbyMode }> {
+    ): Promise<{ state: GameState; mode: LobbyMode; roomCode: RoomCode }> {
       const result = await client.POST('/game', {
         params: {
           query: input.replace === true ? { replace: '1' } : {},
@@ -386,7 +395,23 @@ export function createGameApi(
         },
       })
       const data = requireData(result)
-      return { state: parseGameState(data.state), mode: data.mode }
+      return {
+        state: parseGameState(data.state),
+        mode: data.mode,
+        roomCode: data.roomCode,
+      }
+    },
+
+    async enterRoom(roomCode: string): Promise<{ roomCode: string; mode: LobbyMode }> {
+      return requireData(
+        await client.POST('/game/rooms/{roomCode}/enter', {
+          params: { path: { roomCode } },
+        }),
+      )
+    },
+
+    async leaveRoom(): Promise<void> {
+      requireSuccess(await client.POST('/game/leave'))
     },
 
     async join(playerId: string, faction?: string): Promise<ActionResult> {
@@ -438,6 +463,7 @@ export function createGameApi(
       state: GameState
       historyLength: number
       mode: LobbyMode
+      roomCode: RoomCode
       aiPlayers: AiPlayer[]
       botStepDelaySeconds: number
     }> {
@@ -448,6 +474,7 @@ export function createGameApi(
         state: parseGameState(data.state),
         historyLength: data.historyLength,
         mode: data.mode,
+        roomCode: data.roomCode,
         // Absent on a server from before AI players.
         aiPlayers: data.aiPlayers ?? [],
         botStepDelaySeconds: data.botStepDelaySeconds,

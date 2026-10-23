@@ -26,6 +26,7 @@ import {
   type GameState,
   type LegalActionsResponse,
   type LobbyMode,
+  type RoomCode,
 } from '@root/web-client/game-api'
 import type {
   ConnectGameSocketOptions,
@@ -43,6 +44,8 @@ import type { PlayerIdentityStorage } from '#game/playerIdentity.ts'
 const SAVED_GAME_STORAGE_KEY = 'root.react.soloGame'
 /** One device plays every human seat, like a hotseat server slot. */
 const LOCAL_LOBBY_MODE: LobbyMode = 'hotseat'
+/** Like the hotseat slot, the browser game is in no online room. */
+const LOCAL_ROOM_CODE: RoomCode = null
 const HTTP_STATUS_BAD_REQUEST = 400
 const HTTP_STATUS_NOT_FOUND = 404
 const HTTP_STATUS_NOT_IMPLEMENTED = 501
@@ -227,7 +230,7 @@ export function createLocalGame(
   const api: GameApi = {
     async createGame(
       input: CreateGameInput = {},
-    ): Promise<{ state: GameState; mode: LobbyMode }> {
+    ): Promise<{ state: GameState; mode: LobbyMode; roomCode: RoomCode }> {
       const seed: number = Math.floor(Math.random() * SEED_RANGE)
       const factions: FactionId[] | undefined =
         input.factions === undefined ? undefined : parseFactionIds(input.factions)
@@ -239,7 +242,13 @@ export function createLocalGame(
         }),
       )
       replaceGame(created)
-      return { state: stateCopy(created), mode: LOCAL_LOBBY_MODE }
+      return { state: stateCopy(created), mode: LOCAL_LOBBY_MODE, roomCode: LOCAL_ROOM_CODE }
+    },
+    async enterRoom(): Promise<{ roomCode: string; mode: LobbyMode }> {
+      throw unsupported('Online rooms')
+    },
+    async leaveRoom(): Promise<void> {
+      throw unsupported('Online rooms')
     },
     async join(playerId: string, faction?: string): Promise<ActionResult> {
       return applyAction({
@@ -269,6 +278,7 @@ export function createLocalGame(
         state: stateCopy(engine),
         historyLength: engine.history.length,
         mode: LOCAL_LOBBY_MODE,
+        roomCode: LOCAL_ROOM_CODE,
         aiPlayers: [],
         botStepDelaySeconds: botStepDelaySeconds(),
       }

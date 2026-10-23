@@ -56,7 +56,10 @@ export interface paths {
         };
       };
     };
-    /** Create lobby */
+    /**
+     * Create lobby
+     * @description Online mode: always a new room with its own code; the caller (X-Player-Id) is in it. 409 ALREADY_IN_GAME while the caller is in another unfinished game. Hotseat: the single hotseat slot.
+     */
     post: {
       parameters: {
         query?: {
@@ -90,6 +93,12 @@ export interface paths {
         };
         /** @description Game already exists */
         409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Every online room is in use */
+        503: {
           content: {
             "application/json": components["schemas"]["ErrorBody"];
           };
@@ -971,6 +980,78 @@ export interface paths {
       };
     };
   };
+  "/game/rooms/{roomCode}/enter": {
+    /**
+     * Enter an online room by its code
+     * @description The caller (X-Player-Id) watches the room from now on: every /game call and the WS reach it. Pick a faction with POST /game/join. 409 ALREADY_IN_GAME while the caller is in another unfinished game.
+     */
+    post: {
+      parameters: {
+        path: {
+          /** @description Code the host shares; any letter case. */
+          roomCode: string;
+        };
+      };
+      responses: {
+        /** @description In the room */
+        200: {
+          content: {
+            "application/json": components["schemas"]["EnterRoomResponse"];
+          };
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
+  "/game/leave": {
+    /**
+     * Leave the online room
+     * @description A watcher or a guest of a lobby leaves (their seat is freed). The host ends the room with DELETE /game instead. Nobody leaves a game in progress.
+     */
+    post: {
+      responses: {
+        /** @description Left (or was in no room) */
+        204: {
+          content: never;
+        };
+        /** @description Rule or request error */
+        400: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description No game in slot */
+        404: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+        /** @description Game already exists */
+        409: {
+          content: {
+            "application/json": components["schemas"]["ErrorBody"];
+          };
+        };
+      };
+    };
+  };
   "/map/fall": {
     /** Fall map graph */
     get: {
@@ -1013,6 +1094,8 @@ export interface components {
     CreateGameResponse: {
       state: components["schemas"]["GameState"];
       mode: components["schemas"]["LobbyMode"];
+      /** @description Code players type to enter this online room; null for the hotseat slot. */
+      roomCode: string | null;
     };
     GameState: {
       [key: string]: unknown;
@@ -1059,6 +1142,8 @@ export interface components {
       state: components["schemas"]["GameState"];
       historyLength: number;
       mode: components["schemas"]["LobbyMode"];
+      /** @description Code players type to enter this online room; null for the hotseat slot. */
+      roomCode: string | null;
       aiPlayers: components["schemas"]["AiPlayer"][];
       botStepDelaySeconds: components["schemas"]["BotStepDelaySeconds"];
     };
@@ -1179,6 +1264,10 @@ export interface components {
     PlayerToolResult: {
       content: string;
       isError: boolean;
+    };
+    EnterRoomResponse: {
+      roomCode: string;
+      mode: components["schemas"]["LobbyMode"];
     };
     FallMapResponse: {
       clearings: unknown[];

@@ -3,7 +3,7 @@
   "info": {
     "title": "@root/web",
     "version": "0.0.1",
-    "description": "Single-slot Root GP2 HTTP API (Marquise vs Eyrie)"
+    "description": "Root GP2 HTTP API: online rooms found by the caller X-Player-Id, plus one hotseat slot"
   },
   "security": [
     {
@@ -54,11 +54,17 @@
           },
           "mode": {
             "$ref": "#/components/schemas/LobbyMode"
+          },
+          "roomCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Code players type to enter this online room; null for the hotseat slot."
           }
         },
         "required": [
           "state",
-          "mode"
+          "mode",
+          "roomCode"
         ]
       },
       "GameState": {
@@ -227,6 +233,11 @@
           "mode": {
             "$ref": "#/components/schemas/LobbyMode"
           },
+          "roomCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Code players type to enter this online room; null for the hotseat slot."
+          },
           "aiPlayers": {
             "type": "array",
             "items": {
@@ -241,6 +252,7 @@
           "state",
           "historyLength",
           "mode",
+          "roomCode",
           "aiPlayers",
           "botStepDelaySeconds"
         ]
@@ -698,6 +710,21 @@
           "isError"
         ]
       },
+      "EnterRoomResponse": {
+        "type": "object",
+        "properties": {
+          "roomCode": {
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/LobbyMode"
+          }
+        },
+        "required": [
+          "roomCode",
+          "mode"
+        ]
+      },
       "FallMapResponse": {
         "type": "object",
         "properties": {
@@ -821,6 +848,7 @@
           "game"
         ],
         "summary": "Create lobby",
+        "description": "Online mode: always a new room with its own code; the caller (X-Player-Id) is in it. 409 ALREADY_IN_GAME while the caller is in another unfinished game. Hotseat: the single hotseat slot.",
         "parameters": [
           {
             "schema": {
@@ -879,6 +907,16 @@
           },
           "409": {
             "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Every online room is in use",
             "content": {
               "application/json": {
                 "schema": {
@@ -2367,6 +2405,114 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/rooms/{roomCode}/enter": {
+      "post": {
+        "tags": [
+          "game"
+        ],
+        "summary": "Enter an online room by its code",
+        "description": "The caller (X-Player-Id) watches the room from now on: every /game call and the WS reach it. Pick a faction with POST /game/join. 409 ALREADY_IN_GAME while the caller is in another unfinished game.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Code the host shares; any letter case."
+            },
+            "required": true,
+            "description": "Code the host shares; any letter case.",
+            "name": "roomCode",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "In the room",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnterRoomResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rule or request error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game in slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Game already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/game/leave": {
+      "post": {
+        "tags": [
+          "game"
+        ],
+        "summary": "Leave the online room",
+        "description": "A watcher or a guest of a lobby leaves (their seat is freed). The host ends the room with DELETE /game instead. Nobody leaves a game in progress.",
+        "responses": {
+          "204": {
+            "description": "Left (or was in no room)"
           },
           "400": {
             "description": "Rule or request error",
