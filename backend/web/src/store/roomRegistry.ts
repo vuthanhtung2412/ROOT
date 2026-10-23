@@ -47,6 +47,14 @@ export class RoomRegistry {
     return room
   }
 
+  /** A room saved before a restart comes back under its own code. */
+  restoreRoom(room: GameRoom): void {
+    if (room.roomCode === null) {
+      return
+    }
+    this.roomsByCode.set(room.roomCode, room)
+  }
+
   findRoom(roomCode: string): GameRoom | null {
     return this.roomsByCode.get(roomCode) ?? null
   }

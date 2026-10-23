@@ -59,7 +59,7 @@ import {
   publishGameChange,
   requireGame,
 } from '#routes/roomAccess.js'
-import { persistCurrentGame } from '#store/gamePersistence.js'
+import { persistRoom } from '#store/gamePersistence.js'
 import { runtimeOf } from '#store/roomRuntime.js'
 import {
   DEFAULT_BOT_STEP_DELAY_SECONDS,
@@ -414,7 +414,7 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   room.mode = DEFAULT_LOBBY_MODE
   room.aiPlayers = []
   room.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
-  persistCurrentGame()
+  persistRoom(room)
   runtimeOf(room).aiPlayerDriver.handleGameChanged()
   logGameEvent('LOAD', game.state)
   return context.json(

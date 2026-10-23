@@ -1,7 +1,7 @@
 import type { Game } from '@root/lib'
 import { noGame } from '#middleware/errors.js'
 import { PLAYER_VIEW } from '#schemas/common.js'
-import { persistCurrentGame } from '#store/gamePersistence.js'
+import { persistRoom } from '#store/gamePersistence.js'
 import type { GameRoom } from '#store/GameStore.js'
 import { roomRegistry } from '#store/roomRegistry.js'
 import { runtimeOf } from '#store/roomRuntime.js'
@@ -17,7 +17,7 @@ export function requireGame(room: GameRoom): Game {
  * the AI seats play what is theirs to play.
  */
 export function publishGameChange(room: GameRoom): void {
-  persistCurrentGame()
+  persistRoom(room)
   broadcastCurrentGame(room)
   runtimeOf(room).aiPlayerDriver.handleGameChanged()
   runtimeOf(room).botStepDriver.handleGameChanged()

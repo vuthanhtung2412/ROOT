@@ -5,6 +5,7 @@ import {
   enableGamePersistence,
 } from '#store/gamePersistence.js'
 import { resetGameStore, store } from '#store/GameStore.js'
+import { roomRegistry } from '#store/roomRegistry.js'
 import { runtimeOf } from '#store/roomRuntime.js'
 import {
   DEFAULT_INACTIVE_GAME_TIMEOUT_SECONDS,
@@ -33,14 +34,18 @@ const DEFAULT_GAME_STORE_FILE = path.resolve(
 // The feed keeps serving GET /game/ai-players/stream; the file gets every activity too.
 aiPlayerActivityFeed.subscribe(logAiPlayerActivity)
 
-// Survive restarts: reload the saved game slot, keep it saved on every change.
-// ROOT_GAME_STORE_FILE=<path> moves the file; =off keeps the slot in memory only.
+// Survive restarts: reload the hotseat slot and the online rooms (in `rooms/`
+// next to the file), keep them saved on every change.
+// ROOT_GAME_STORE_FILE=<path> moves the file; =off keeps the slots in memory only.
 const gameStoreFile: string =
   process.env[GAME_STORE_FILE_ENV_KEY] ?? DEFAULT_GAME_STORE_FILE
 if (gameStoreFile !== GAME_STORE_DISABLED_VALUE) {
   enableGamePersistence(gameStoreFile)
-  // A restored game may be waiting on an AI seat: let it play on.
-  runtimeOf(store).aiPlayerDriver.handleGameChanged()
+  // A restored game may be waiting on an AI seat or a bot: let it play on.
+  for (const room of [store, ...roomRegistry.rooms()]) {
+    runtimeOf(room).aiPlayerDriver.handleGameChanged()
+    runtimeOf(room).botStepDriver.handleGameChanged()
+  }
 }
 
 // Always on: drop a game nobody has touched for a while, so the slot frees up.

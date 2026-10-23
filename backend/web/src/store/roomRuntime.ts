@@ -11,7 +11,7 @@ import { createModelProvider } from '#aiPlayer/providers/providerRegistry.js'
 import { loadRulebook } from '#aiPlayer/rulebook.js'
 import { BotStepDriver } from '#bots/BotStepDriver.js'
 import { logGameEvent } from '#debug/logGame.js'
-import { persistCurrentGame } from '#store/gamePersistence.js'
+import { persistRoom } from '#store/gamePersistence.js'
 import type { GameRoom } from '#store/GameStore.js'
 import { broadcastCurrentGame } from '#ws/GameHub.js'
 
@@ -31,7 +31,7 @@ function createRoomRuntime(room: GameRoom): RoomRuntime {
     loadRulebook,
     wait: (milliseconds: number): Promise<void> => wait(milliseconds),
     publishGameChange: (): void => {
-      persistCurrentGame()
+      persistRoom(room)
       broadcastCurrentGame(room)
     },
     publishStatusChange: (): void => {
@@ -46,7 +46,7 @@ function createRoomRuntime(room: GameRoom): RoomRuntime {
     wait: (milliseconds: number): Promise<void> => wait(milliseconds),
     publishGameChange: (stepLog: readonly LogEntry[]): void => {
       if (room.game !== null) logGameEvent('ACT', room.game.state, undefined, [...stepLog])
-      persistCurrentGame()
+      persistRoom(room)
       broadcastCurrentGame(room)
       aiPlayerDriver.handleGameChanged()
     },
