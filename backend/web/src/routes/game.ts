@@ -53,6 +53,7 @@ import { persistCurrentGame } from '#store/gamePersistence.js'
 import {
   DEFAULT_BOT_STEP_DELAY_SECONDS,
   DEFAULT_LOBBY_MODE,
+  resetGameStore,
   store,
 } from '#store/GameStore.js'
 import { listAiPlayerViews } from '#view/aiPlayerView.js'
@@ -645,10 +646,7 @@ const deleteGameRoute = createRoute({
 
 gameRoutes.openapi(deleteGameRoute, (context) => {
   requireHostToReplaceOnlineGame(context.req.header(PLAYER_ID_HEADER))
-  store.game = null
-  store.mode = DEFAULT_LOBBY_MODE
-  store.aiPlayers = []
-  store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
+  resetGameStore()
   publishGameChange()
   return context.body(null, 204)
 })

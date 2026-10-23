@@ -51,3 +51,11 @@ export const store: GameStore = {
   aiPlayers: [],
   botStepDelaySeconds: DEFAULT_BOT_STEP_DELAY_SECONDS,
 }
+
+/** Empty the slot: no game, every setting back to its default. */
+export function resetGameStore(): void {
+  store.game = null
+  store.mode = DEFAULT_LOBBY_MODE
+  store.aiPlayers = []
+  store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
+}
