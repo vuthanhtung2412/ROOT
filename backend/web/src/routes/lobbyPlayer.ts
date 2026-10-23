@@ -59,7 +59,7 @@ function requireOpenLobby(game: Game): void {
   }
 }
 
-function expelSeat(game: Game, seat: Seat): void {
+export function expelSeat(game: Game, seat: Seat): void {
   const expelAction: Action = { type: 'expel', seat }
   const result = game.apply(expelAction)
   logGameEvent('EXPEL', result.state, expelAction)

@@ -11,6 +11,7 @@ import { gameRoutes } from '#routes/game.js'
 import { lobbyPlayerRoutes } from '#routes/lobbyPlayer.js'
 import { mapRoutes } from '#routes/map.js'
 import { playerToolRoutes } from '#routes/playerTools.js'
+import { roomRoutes } from '#routes/rooms.js'
 import { rulesRoutes } from '#routes/rules.js'
 import { PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
 
@@ -23,7 +24,8 @@ const openApiInfo = {
   info: {
     title: '@root/web',
     version: '0.0.1',
-    description: 'Single-slot Root GP2 HTTP API (Marquise vs Eyrie)',
+    description:
+      'Root GP2 HTTP API: online rooms found by the caller X-Player-Id, plus one hotseat slot',
   },
   // Lets the Swagger UI "Authorize" button send the caller's player id.
   security: [{ [PLAYER_ID_SECURITY_SCHEME]: [] }],
@@ -77,6 +79,7 @@ app.route('/game', lobbyPlayerRoutes)
 app.route('/game', botPaceRoutes)
 app.route('/game', rulesRoutes)
 app.route('/game', playerToolRoutes)
+app.route('/game', roomRoutes)
 app.route('/map', mapRoutes)
 
 app.openAPIRegistry.registerComponent(

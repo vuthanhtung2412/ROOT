@@ -126,6 +126,20 @@ export const JoinBodySchema = z
   })
   .openapi('JoinBody')
 
+export const RoomCodeParamsSchema = z.object({
+  roomCode: z.string().min(1).openapi({
+    param: { name: 'roomCode', in: 'path' },
+    description: 'Code the host shares; any letter case.',
+  }),
+})
+
+export const EnterRoomResponseSchema = z
+  .object({
+    roomCode: z.string(),
+    mode: LobbyModeSchema,
+  })
+  .openapi('EnterRoomResponse')
+
 export const LobbySeatParamsSchema = z.object({
   seat: z.coerce.number().int().min(0).max(3).openapi({
     param: { name: 'seat', in: 'path' },
