@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { PLAYER_ID_HEADER } from '@root/web-client/game-api'
 import { createFrontendApi, type GameState } from '#api/client.ts'
 import type { GameSocketPush } from '#api/gameSocket.ts'
 import {
@@ -54,8 +55,11 @@ function createSession(options?: {
     onPush?.(payload)
   }
 
-  return new GameSession({
-    api: createFrontendApi({ baseUrl: 'http://example.test' }),
+  const session: GameSession = new GameSession({
+    api: createFrontendApi({
+      baseUrl: 'http://example.test',
+      playerId: (): string | null => session.getRequestPlayerId(),
+    }),
     apiBaseUrl: 'http://example.test',
     identityStorage: options?.storage ?? createMemoryStorage(),
     connectSocket: ({ handlers }) => {
@@ -67,6 +71,7 @@ function createSession(options?: {
       ? {}
       : { generatePlayerId: options.generatePlayerId }),
   })
+  return session
 }
 
 describe('GameSession', () => {
@@ -258,6 +263,8 @@ describe('GameSession', () => {
       const createRequest: unknown = fetchMock.mock.calls[1]![0]
       if (!(createRequest instanceof Request)) throw new Error('expected Request')
       expect(await createRequest.json()).toEqual({ factions: [], mode: 'online' })
+      // The server learns who created the lobby.
+      expect(createRequest.headers.get(PLAYER_ID_HEADER)).toBe(HOST_PLAYER_ID)
       expect(session.getLocalPlayerId()).toBe(HOST_PLAYER_ID)
       // No faction picked yet: watching, not seated.
       expect(session.getLocalSeat()).toBeNull()

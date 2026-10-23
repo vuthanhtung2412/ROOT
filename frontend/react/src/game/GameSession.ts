@@ -448,6 +448,9 @@ export class GameSession {
         this.setError('A game is already running on this server')
         return false
       }
+      // Bound first: the create request carries it, so the server knows the creator.
+      const playerId: string = this.generatePlayerId()
+      this.bindLocalPlayer(playerId)
       if (lobby !== 'joinable') {
         await this.api.createGame({
           factions: [],
@@ -455,8 +458,6 @@ export class GameSession {
           replace: lobby === 'busy',
         })
       }
-      const playerId: string = this.generatePlayerId()
-      this.bindLocalPlayer(playerId)
       this.connectLocalSocket(playerId)
       const game = await this.api.getGame()
       this.publish({

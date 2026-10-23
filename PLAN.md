@@ -307,7 +307,7 @@
 ### Commit plan
 - [x] `docs(plan): multi-room online games`
   - `PLAN.md`
-- [ ] `refactor(react): send player id when creating online game`
+- [x] `refactor(react): send player id when creating online game`
   - `frontend/react/src/game/GameSession.ts` + test
 - [ ] `refactor(web): GameRoom type, drivers take a room`
   - `backend/web/src/store/GameStore.ts`, `bots/BotStepDriver.ts`, `bots/botStepRuntime.ts`, `aiPlayer/AiPlayerDriver.ts`, `aiPlayer/aiPlayerRuntime.ts`, `roomRuntime.ts` (new) + tests
