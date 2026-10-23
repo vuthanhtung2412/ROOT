@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, renameSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { Game } from '@root/lib'
@@ -8,6 +8,7 @@ import {
   clearStoredGame,
   disableGamePersistence,
   enableGamePersistence,
+  persistRoom,
 } from '#store/gamePersistence.js'
 import { DEFAULT_LOBBY_MODE, store, type GameRoom } from '#store/GameStore.js'
 import { roomRegistry } from '#store/roomRegistry.js'
@@ -15,6 +16,8 @@ import { resetAllRooms } from '#test/roomFixtures.js'
 
 const HOST_PLAYER_ID = 'host-secret'
 const OTHER_HOST_PLAYER_ID = 'other-host-secret'
+const FIRST_ROOM_CODE = 'AAAAAA'
+const LAST_ROOM_CODE = 'ZZZZZZ'
 
 function jsonRequest(method: string, body: object, playerId?: string): RequestInit {
   return {
@@ -148,6 +151,50 @@ describe('game persistence', () => {
     const hostRoom = roomRegistry.roomOfPlayer(HOST_PLAYER_ID)
     expect(hostRoom?.mode).toBe('online')
     expect(hostRoom?.game?.state.players[0]?.playerId).toBe(HOST_PLAYER_ID)
+  })
+
+  it('brings back the unseated creator and watchers of a room', async () => {
+    enableGamePersistence(storeFile)
+    await app.request('/game', jsonRequest('POST', { factions: [], mode: 'online' }, HOST_PLAYER_ID))
+    const roomCode: string = roomRegistry.roomOfPlayer(HOST_PLAYER_ID)?.roomCode ?? ''
+    await app.request(`/game/rooms/${roomCode}/enter`, {
+      method: 'POST',
+      headers: { 'X-Player-Id': OTHER_HOST_PLAYER_ID },
+    })
+
+    resetAllRooms()
+    enableGamePersistence(storeFile)
+
+    const restoredRoom: GameRoom | null = roomRegistry.findRoom(roomCode)
+    expect(restoredRoom?.creatorPlayerId).toBe(HOST_PLAYER_ID)
+    expect(roomRegistry.roomOfPlayer(HOST_PLAYER_ID)).toBe(restoredRoom)
+    expect(roomRegistry.roomOfPlayer(OTHER_HOST_PLAYER_ID)).toBe(restoredRoom)
+  })
+
+  it('a player listed in a finished room and an active one goes back to the active one', async () => {
+    enableGamePersistence(storeFile)
+    await app.request('/game', jsonRequest('POST', { factions: [], mode: 'online' }, HOST_PLAYER_ID))
+    const finishedRoom: GameRoom | null = roomRegistry.roomOfPlayer(HOST_PLAYER_ID)
+    if (finishedRoom === null || finishedRoom.game === null) throw new Error('expected the first room')
+    finishedRoom.game.state.status = 'finished'
+    persistRoom(finishedRoom)
+    await app.request('/game', jsonRequest('POST', { factions: [], mode: 'online' }, HOST_PLAYER_ID))
+    const activeRoomCode: string | null = roomRegistry.roomOfPlayer(HOST_PLAYER_ID)?.roomCode ?? null
+    // File names decide the read order: put the finished room last.
+    const roomsDirectory = path.join(path.dirname(storeFile), 'rooms')
+    renameSync(
+      path.join(roomsDirectory, `${finishedRoom.roomCode ?? ''}.json`),
+      path.join(roomsDirectory, `${LAST_ROOM_CODE}.json`),
+    )
+    renameSync(
+      path.join(roomsDirectory, `${activeRoomCode ?? ''}.json`),
+      path.join(roomsDirectory, `${FIRST_ROOM_CODE}.json`),
+    )
+
+    resetAllRooms()
+    enableGamePersistence(storeFile)
+
+    expect(roomRegistry.roomOfPlayer(HOST_PLAYER_ID)?.roomCode).toBe(FIRST_ROOM_CODE)
   })
 
   it('an ended room loses its file; a stopped server forgets every room', async () => {

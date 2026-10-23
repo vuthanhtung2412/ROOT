@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import path from 'node:path'
-import { Game } from '@root/lib'
+import { Game, type PlayerState } from '@root/lib'
 import { logGameEvent } from '#debug/logGame.js'
 import {
   BOT_STEP_DELAY_SECONDS_CHOICES,
@@ -24,7 +24,7 @@ import {
   type LobbyMode,
 } from '#store/GameStore.js'
 import { recordGameActivity } from '#store/inactiveGameCleanup.js'
-import { roomRegistry } from '#store/roomRegistry.js'
+import { isActiveRoom, roomRegistry } from '#store/roomRegistry.js'
 import { isGameSnapshot } from '#typeGuards.js'
 
 const TEMPORARY_FILE_SUFFIX = '.tmp'
@@ -46,9 +46,15 @@ function isBotStepDelaySeconds(value: unknown): value is BotStepDelaySeconds {
 /** What is saved of an AI seat: who and which model, not its live status. */
 type StoredAiPlayerSeat = Pick<AiPlayerSeat, 'playerId' | 'model'>
 
-/** A slot read back from disk. */
-type StoredSlot = Pick<GameRoom, 'mode' | 'aiPlayers' | 'botStepDelaySeconds'> & {
+/** A slot read back from disk. Creator and members are online-room only. */
+type StoredSlot = Pick<GameRoom, 'mode' | 'aiPlayers' | 'botStepDelaySeconds' | 'creatorPlayerId'> & {
   game: Game
+  /** Everyone in the room, watchers included; seated players for older files. */
+  memberPlayerIds: readonly string[]
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item: unknown): boolean => typeof item === 'string')
 }
 
 function isStoredAiPlayerSeat(value: unknown): value is StoredAiPlayerSeat {
@@ -115,8 +121,15 @@ function readStoredSlot(filePath: string): StoredSlot | null {
     }
     const mode: unknown = Reflect.get(stored, 'mode')
     const botStepDelaySeconds: unknown = Reflect.get(stored, 'botStepDelaySeconds')
+    const creatorPlayerId: unknown = Reflect.get(stored, 'creatorPlayerId')
+    const memberPlayerIds: unknown = Reflect.get(stored, 'memberPlayerIds')
+    const game: Game = Game.fromJSON(snapshot)
     return {
-      game: Game.fromJSON(snapshot),
+      game,
+      creatorPlayerId: typeof creatorPlayerId === 'string' ? creatorPlayerId : null,
+      memberPlayerIds: isStringArray(memberPlayerIds)
+        ? memberPlayerIds
+        : game.state.players.map((player: PlayerState): string => player.playerId),
       mode: isLobbyMode(mode) ? mode : DEFAULT_LOBBY_MODE,
       aiPlayers: restoreAiPlayerSeats(Reflect.get(stored, 'aiPlayers')),
       botStepDelaySeconds: isBotStepDelaySeconds(botStepDelaySeconds)
@@ -153,27 +166,47 @@ function restoreHotseatSlot(filePath: string): void {
   reportRestoredSlot(slot, filePath)
 }
 
-/** Every saved room comes back under its code, with its seated players in it. */
+/** A room read back from its file, with who was in it. */
+type RestoredRoom = {
+  room: GameRoom
+  memberPlayerIds: readonly string[]
+}
+
+function restoreOnlineRoom(roomsDirectory: string, fileName: string): RestoredRoom | null {
+  const filePath = path.join(roomsDirectory, fileName)
+  const slot: StoredSlot | null = readStoredSlot(filePath)
+  if (slot === null) {
+    return null
+  }
+  const roomCode: string = path.basename(fileName, ROOM_FILE_EXTENSION)
+  const { memberPlayerIds, ...roomFields } = slot
+  const room: GameRoom = { ...createGameRoom(roomCode), ...roomFields }
+  roomRegistry.restoreRoom(room)
+  reportRestoredSlot(slot, filePath)
+  return { room, memberPlayerIds }
+}
+
+/**
+ * Every saved room comes back under its code, with everyone who was in it.
+ * Members of active rooms are added last: a player still listed in a finished
+ * room awaiting cleanup goes back to the game they were playing.
+ */
 function restoreOnlineRooms(roomsDirectory: string): void {
   if (!existsSync(roomsDirectory)) {
     return
   }
-  const fileNames: string[] = readdirSync(roomsDirectory).filter(
-    (fileName: string): boolean => fileName.endsWith(ROOM_FILE_EXTENSION),
-  )
-  for (const fileName of fileNames) {
-    const filePath = path.join(roomsDirectory, fileName)
-    const slot: StoredSlot | null = readStoredSlot(filePath)
-    if (slot === null) {
-      continue
+  const restoredRooms: RestoredRoom[] = readdirSync(roomsDirectory)
+    .filter((fileName: string): boolean => fileName.endsWith(ROOM_FILE_EXTENSION))
+    .map((fileName: string): RestoredRoom | null => restoreOnlineRoom(roomsDirectory, fileName))
+    .filter((restored: RestoredRoom | null): restored is RestoredRoom => restored !== null)
+  const finishedRoomsFirst: RestoredRoom[] = [
+    ...restoredRooms.filter((restored: RestoredRoom): boolean => !isActiveRoom(restored.room)),
+    ...restoredRooms.filter((restored: RestoredRoom): boolean => isActiveRoom(restored.room)),
+  ]
+  for (const { room, memberPlayerIds } of finishedRoomsFirst) {
+    for (const playerId of memberPlayerIds) {
+      roomRegistry.addMember(room, playerId)
     }
-    const roomCode: string = path.basename(fileName, ROOM_FILE_EXTENSION)
-    const room: GameRoom = { ...createGameRoom(roomCode), ...slot }
-    roomRegistry.restoreRoom(room)
-    for (const player of slot.game.state.players) {
-      roomRegistry.addMember(room, player.playerId)
-    }
-    reportRestoredSlot(slot, filePath)
   }
 }
 
@@ -211,6 +244,8 @@ export function persistRoom(room: GameRoom): void {
       temporaryPath,
       JSON.stringify({
         mode: room.mode,
+        creatorPlayerId: room.creatorPlayerId,
+        memberPlayerIds: roomRegistry.membersOf(room),
         botStepDelaySeconds: room.botStepDelaySeconds,
         aiPlayers: room.aiPlayers.map(
           (seat: AiPlayerSeat): StoredAiPlayerSeat => ({

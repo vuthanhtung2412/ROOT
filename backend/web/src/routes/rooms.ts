@@ -7,6 +7,7 @@ import { closeOnlineRoom, publishGameChange } from '#routes/roomAccess.js'
 import { errorResponses } from '#schemas/common.js'
 import { EnterRoomResponseSchema, RoomCodeParamsSchema } from '#schemas/game.js'
 import type { GameRoom } from '#store/GameStore.js'
+import { persistRoom } from '#store/gamePersistence.js'
 import { roomRegistry } from '#store/roomRegistry.js'
 import { ONLINE_HOST_SEAT, PLAYER_ID_HEADER } from '#view/actionSeatGuard.js'
 
@@ -52,6 +53,8 @@ roomRoutes.openapi(enterRoomRoute, (context) => {
   if (roomRegistry.roomOfPlayer(playerId) !== room) {
     roomRegistry.requireNoActiveRoom(playerId)
     roomRegistry.addMember(room, playerId)
+    // Saved with the room: a restart keeps the watcher in it.
+    persistRoom(room)
   }
   return context.json({ roomCode, mode: room.mode }, 200)
 })
@@ -82,19 +85,23 @@ roomRoutes.openapi(leaveRoomRoute, (context) => {
   }
   if (room === null || game === null || seated === undefined) {
     roomRegistry.removeMember(playerId)
+    // The saved member list must not bring the watcher back after a restart.
+    if (room !== null) persistRoom(room)
     return context.body(null, 204)
   }
   const status = game.state.status
   if (status !== LOBBY_STATUS && status !== FINISHED_STATUS) {
     throw new HttpError(409, 'GAME_IN_PROGRESS', 'nobody leaves a game in progress')
   }
-  if (status === LOBBY_STATUS) {
-    if (seated.seat === ONLINE_HOST_SEAT) {
-      throw new HttpError(409, 'HOST_MUST_END', 'the host ends the room with DELETE /game')
-    }
-    expelSeat(game, seated.seat)
-    publishGameChange(room)
+  if (status === LOBBY_STATUS && seated.seat === ONLINE_HOST_SEAT) {
+    throw new HttpError(409, 'HOST_MUST_END', 'the host ends the room with DELETE /game')
   }
   roomRegistry.removeMember(playerId)
+  if (status === LOBBY_STATUS) {
+    expelSeat(game, seated.seat)
+    publishGameChange(room)
+  } else {
+    persistRoom(room)
+  }
   return context.body(null, 204)
 })
