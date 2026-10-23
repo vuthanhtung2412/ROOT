@@ -17,7 +17,7 @@ import {
   resolveRoom,
   type GameCaller,
 } from '#middleware/roomResolver.js'
-import { publishGameChange, requireGame } from '#routes/game.js'
+import { publishGameChange, requireGame } from '#routes/roomAccess.js'
 import {
   AddAiPlayerBodySchema,
   AiModelsResponseSchema,

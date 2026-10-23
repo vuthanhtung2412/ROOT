@@ -10,7 +10,7 @@ import {
   DEFAULT_INACTIVE_GAME_TIMEOUT_SECONDS,
   startInactiveGameCleanup,
 } from '#store/inactiveGameCleanup.js'
-import { publishGameChange } from '#routes/game.js'
+import { publishGameChange } from '#routes/roomAccess.js'
 import { aiPlayerActivityFeed } from '#aiPlayer/AiPlayerActivityFeed.js'
 import { logAiPlayerActivity } from '#debug/logAiPlayerActivity.js'
 import { serve } from '@hono/node-server'

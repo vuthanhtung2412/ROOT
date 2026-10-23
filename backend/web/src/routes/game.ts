@@ -20,7 +20,6 @@ import { isOnlineRoom, openOnlineRoom } from '#lobby/onlineRooms.js'
 import {
   gameExists,
   HttpError,
-  noGame,
   notYourSeat,
 } from '#middleware/errors.js'
 import {
@@ -54,6 +53,12 @@ import {
   LogResponseSchema,
   UndoResponseSchema,
 } from '#schemas/game.js'
+import {
+  closeOnlineRoom,
+  isSeatScoped,
+  publishGameChange,
+  requireGame,
+} from '#routes/roomAccess.js'
 import { persistCurrentGame } from '#store/gamePersistence.js'
 import { runtimeOf } from '#store/roomRuntime.js'
 import {
@@ -63,7 +68,6 @@ import {
   store,
   type GameRoom,
 } from '#store/GameStore.js'
-import { roomRegistry } from '#store/roomRegistry.js'
 import { listAiPlayerViews } from '#view/aiPlayerView.js'
 import { formatPlayerGameView, formatPlayerLog } from '#view/playerView.js'
 import { redactLegalActionsForViewer } from '#view/redactLegalActionsForViewer.js'
@@ -72,7 +76,6 @@ import {
   type ViewerLogEntry,
 } from '#view/redactLogForViewer.js'
 import { redactStateForViewer } from '#view/redactStateForViewer.js'
-import { broadcastCurrentGame } from '#ws/GameHub.js'
 import {
   isAction,
   hasOnlyOwnTraits,
@@ -80,40 +83,6 @@ import {
   isGameSnapshot,
 } from '#typeGuards.js'
 
-export function requireGame(room: GameRoom): Game {
-  if (!room.game) noGame()
-  return room.game
-}
-
-/**
- * After every slot change: save to disk, push to connected viewers, then let
- * the AI seats play what is theirs to play.
- */
-export function publishGameChange(room: GameRoom): void {
-  persistCurrentGame()
-  broadcastCurrentGame(room)
-  runtimeOf(room).aiPlayerDriver.handleGameChanged()
-  runtimeOf(room).botStepDriver.handleGameChanged()
-}
-
-/**
- * End an online room: its viewers get an empty slot, its AI seats and bots
- * stop, every member is free to create or enter another game.
- */
-export function closeOnlineRoom(room: GameRoom): void {
-  room.game = null
-  room.aiPlayers = []
-  publishGameChange(room)
-  roomRegistry.removeRoom(room)
-}
-
-/**
- * Seat-scoped calls see and do only what the caller's seat may. Always in
- * online mode; in hotseat only when the caller asks for the player view.
- */
-export function isSeatScoped(room: GameRoom, view: string | undefined): boolean {
-  return room.mode === 'online' || view === PLAYER_VIEW
-}
 
 /** Seat-scoped: state as the caller may see it. Otherwise: full state. */
 function stateForCaller(game: Game, caller: GameCaller): GameState {

@@ -11,7 +11,7 @@ import { logGameEvent } from '#debug/logGame.js'
 import { requireNoTwinClash } from '#lobby/cooperativeLobby.js'
 import { HttpError } from '#middleware/errors.js'
 import { resolveGameCaller, type GameCaller } from '#middleware/roomResolver.js'
-import { publishGameChange, requireGame } from '#routes/game.js'
+import { publishGameChange, requireGame } from '#routes/roomAccess.js'
 import { errorResponses } from '#schemas/common.js'
 import {
   AddBotBodySchema,

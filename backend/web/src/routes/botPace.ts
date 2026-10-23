@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { HttpError, noGame } from '#middleware/errors.js'
 import { resolveRoom } from '#middleware/roomResolver.js'
-import { publishGameChange } from '#routes/game.js'
+import { publishGameChange } from '#routes/roomAccess.js'
 import { errorResponses } from '#schemas/common.js'
 import { SetBotPaceBodySchema } from '#schemas/game.js'
 import type { GameRoom } from '#store/GameStore.js'
