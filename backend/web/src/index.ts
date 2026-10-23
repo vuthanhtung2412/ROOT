@@ -4,6 +4,12 @@ import {
   clearStoredGame,
   enableGamePersistence,
 } from '#store/gamePersistence.js'
+import { resetGameStore } from '#store/GameStore.js'
+import {
+  DEFAULT_INACTIVE_GAME_TIMEOUT_SECONDS,
+  startInactiveGameCleanup,
+} from '#store/inactiveGameCleanup.js'
+import { publishGameChange } from '#routes/game.js'
 import { aiPlayerActivityFeed } from '#aiPlayer/AiPlayerActivityFeed.js'
 import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import { logAiPlayerActivity } from '#debug/logAiPlayerActivity.js'
@@ -15,6 +21,7 @@ import { mountReactStatic, reactPublicDirectory } from '#static.js'
 
 const GAME_STORE_FILE_ENV_KEY = 'ROOT_GAME_STORE_FILE'
 const GAME_STORE_DISABLED_VALUE = 'off'
+const INACTIVE_GAME_TIMEOUT_ENV_KEY = 'ROOT_INACTIVE_GAME_TIMEOUT_SECONDS'
 const STOP_SIGNAL = 'SIGINT'
 /** Shell convention: 128 + signal number (SIGINT = 2). */
 const STOP_SIGNAL_EXIT_CODE = 130
@@ -35,6 +42,27 @@ if (gameStoreFile !== GAME_STORE_DISABLED_VALUE) {
   // A restored game may be waiting on an AI seat: let it play on.
   aiPlayerDriver.handleGameChanged()
 }
+
+// Always on: drop a game nobody has touched for a while, so the slot frees up.
+// ROOT_INACTIVE_GAME_TIMEOUT_SECONDS=<seconds> changes the wait (default 300).
+// `||`, not `??`: an empty value (blank line copied from env.template) means default.
+const inactiveGameTimeoutSetting: string =
+  process.env[INACTIVE_GAME_TIMEOUT_ENV_KEY] || String(DEFAULT_INACTIVE_GAME_TIMEOUT_SECONDS)
+const inactiveGameTimeoutSeconds: number = Number(inactiveGameTimeoutSetting)
+if (!Number.isFinite(inactiveGameTimeoutSeconds) || inactiveGameTimeoutSeconds <= 0) {
+  throw new Error(
+    `${INACTIVE_GAME_TIMEOUT_ENV_KEY} must be a positive number of seconds, ` +
+      `got "${inactiveGameTimeoutSetting}"`,
+  )
+}
+startInactiveGameCleanup({
+  inactivityTimeoutSeconds: inactiveGameTimeoutSeconds,
+  clearGame: (): void => {
+    console.log(`Clearing game after ${inactiveGameTimeoutSeconds} seconds without activity`)
+    resetGameStore()
+    publishGameChange()
+  },
+})
 
 // Stopping the server by hand (Ctrl+C) ends the game: drop the saved slot.
 // A crash or a dev-watch restart (SIGTERM) keeps it, so those still resume.

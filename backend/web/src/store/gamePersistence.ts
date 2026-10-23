@@ -20,6 +20,7 @@ import {
   type BotStepDelaySeconds,
   type LobbyMode,
 } from '#store/GameStore.js'
+import { recordGameActivity } from '#store/inactiveGameCleanup.js'
 import { isGameSnapshot } from '#typeGuards.js'
 
 const TEMPORARY_FILE_SUFFIX = '.tmp'
@@ -121,6 +122,8 @@ export function clearStoredGame(): void {
 
 /** Write the current slot (or remove the file when the slot is empty). */
 export function persistCurrentGame(): void {
+  // Every slot change is saved here, so it is also where activity is seen.
+  recordGameActivity()
   const filePath = persistenceFilePath
   if (filePath === null) {
     return
