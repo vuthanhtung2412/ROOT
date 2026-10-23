@@ -66,6 +66,9 @@ export const AiPlayerActivitySchema = z
       description: 'Rises by one per activity since the server started.',
     }),
     at: z.string().openapi({ description: 'ISO 8601 time.' }),
+    roomCode: z.string().nullable().openapi({
+      description: 'Online room the AI seat plays in; null for the hotseat slot.',
+    }),
     seat: z.number().int().min(0).max(3),
     model: z.string().openapi({ description: MODEL_DESCRIPTION }),
     kind: AiPlayerActivityKindSchema,

@@ -16,6 +16,7 @@ function makeActivity(text: string): AiPlayerActivity {
     toolName: null,
     text,
     isError: false,
+    roomCode: null,
     seat: 1,
     model: 'anthropic:claude-opus-5-5',
     sequence: 1,

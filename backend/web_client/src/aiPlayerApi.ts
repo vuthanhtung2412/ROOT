@@ -23,6 +23,7 @@ function isAiPlayerActivity(value: unknown): value is AiPlayerActivity {
     value !== null &&
     typeof Reflect.get(value, 'sequence') === 'number' &&
     typeof Reflect.get(value, 'at') === 'string' &&
+    (typeof Reflect.get(value, 'roomCode') === 'string' || Reflect.get(value, 'roomCode') === null) &&
     typeof Reflect.get(value, 'seat') === 'number' &&
     typeof Reflect.get(value, 'model') === 'string' &&
     typeof Reflect.get(value, 'kind') === 'string' &&

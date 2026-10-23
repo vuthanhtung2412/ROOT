@@ -38,7 +38,7 @@ function createRoomRuntime(room: GameRoom): RoomRuntime {
       broadcastCurrentGame(room)
     },
     publishActivity: (activity: AiPlayerSeatActivity): void => {
-      aiPlayerActivityFeed.publish(activity)
+      aiPlayerActivityFeed.publish({ ...activity, roomCode: room.roomCode })
     },
   })
   const botStepDriver = new BotStepDriver({

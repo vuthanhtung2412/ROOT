@@ -714,7 +714,7 @@ export interface paths {
   "/game/ai-players/stream": {
     /**
      * Stream what the AI players do
-     * @description Server-sent events, one per activity (message to the model, its reply, tool call, tool result, failure): the latest ones first, then live. Shows what an AI player sees and thinks, its hand included. Operator tool: no seat check.
+     * @description Server-sent events, one per activity (message to the model, its reply, tool call, tool result, failure): the latest ones first, then live. Shows what an AI player sees and thinks, its hand included. With X-Player-Id: only the caller room; without: every room, each activity tagged with its roomCode. Operator tool: no seat check.
      */
     get: {
       responses: {
@@ -1228,6 +1228,8 @@ export interface components {
       sequence: number;
       /** @description ISO 8601 time. */
       at: string;
+      /** @description Online room the AI seat plays in; null for the hotseat slot. */
+      roomCode: string | null;
       seat: number;
       /** @description Model as <provider>:<modelId>, one of GET /game/ai-models. */
       model: string;

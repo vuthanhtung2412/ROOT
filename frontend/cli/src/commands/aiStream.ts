@@ -43,7 +43,9 @@ export function formatAiPlayerActivity(
     '\n',
     `\n${CONTINUATION_INDENT}`,
   )
-  return `${time} seat ${String(activity.seat)} ${activity.model} ${KIND_LABELS[activity.kind]}${tool}${error}\n${CONTINUATION_INDENT}${text}`
+  // Every room streams here: tag online ones, the hotseat slot has no code.
+  const room = activity.roomCode === null ? '' : ` [${activity.roomCode}]`
+  return `${time}${room} seat ${String(activity.seat)} ${activity.model} ${KIND_LABELS[activity.kind]}${tool}${error}\n${CONTINUATION_INDENT}${text}`
 }
 
 /**

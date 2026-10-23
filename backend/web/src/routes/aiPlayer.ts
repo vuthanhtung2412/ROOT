@@ -227,7 +227,7 @@ const streamAiPlayerActivityRoute = createRoute({
   tags: ['ai-player'],
   summary: 'Stream what the AI players do',
   description:
-    'Server-sent events, one per activity (message to the model, its reply, tool call, tool result, failure): the latest ones first, then live. Shows what an AI player sees and thinks, its hand included. Operator tool: no seat check.',
+    'Server-sent events, one per activity (message to the model, its reply, tool call, tool result, failure): the latest ones first, then live. Shows what an AI player sees and thinks, its hand included. With X-Player-Id: only the caller room; without: every room, each activity tagged with its roomCode. Operator tool: no seat check.',
   responses: {
     200: {
       description: 'Event stream; the data of each event is one AiPlayerActivity',
@@ -237,8 +237,13 @@ const streamAiPlayerActivityRoute = createRoute({
 })
 
 aiPlayerRoutes.openapi(streamAiPlayerActivityRoute, (context) => {
+  const playerId: string | undefined = context.req.header(PLAYER_ID_HEADER)
+  // A player sees the AI seats of their own room; the operator (no join id) sees every room.
+  const watchedRoomCode: string | null | undefined =
+    playerId === undefined ? undefined : resolveRoom(playerId).roomCode
   return streamSSE(context, async (stream: SSEStreamingApi): Promise<void> => {
     const send = (activity: AiPlayerActivity): void => {
+      if (watchedRoomCode !== undefined && activity.roomCode !== watchedRoomCode) return
       void stream.writeSSE({
         id: String(activity.sequence),
         event: AI_PLAYER_ACTIVITY_EVENT,

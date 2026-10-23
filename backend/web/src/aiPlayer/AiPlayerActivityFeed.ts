@@ -32,8 +32,13 @@ export type AiPlayerSeatActivity = AiPlayerSessionActivity & {
   model: string
 }
 
+/** A seat activity plus the room it happens in: null for the hotseat slot. */
+export type AiPlayerRoomActivity = AiPlayerSeatActivity & {
+  roomCode: string | null
+}
+
 /** What observers receive: numbered and dated by the feed. */
-export type AiPlayerActivity = AiPlayerSeatActivity & {
+export type AiPlayerActivity = AiPlayerRoomActivity & {
   sequence: number
   /** ISO 8601 time. */
   at: string
@@ -52,9 +57,9 @@ export class AiPlayerActivityFeed {
   private recent: readonly AiPlayerActivity[] = []
   private nextSequence = FIRST_SEQUENCE
 
-  publish(seatActivity: AiPlayerSeatActivity, now: Date = new Date()): void {
+  publish(roomActivity: AiPlayerRoomActivity, now: Date = new Date()): void {
     const activity: AiPlayerActivity = {
-      ...seatActivity,
+      ...roomActivity,
       sequence: this.nextSequence,
       at: now.toISOString(),
     }

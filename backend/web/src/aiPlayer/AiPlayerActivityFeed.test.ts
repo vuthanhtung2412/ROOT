@@ -3,17 +3,18 @@ import {
   AiPlayerActivityFeed,
   RECENT_ACTIVITY_LIMIT,
   type AiPlayerActivityListener,
-  type AiPlayerSeatActivity,
+  type AiPlayerRoomActivity,
 } from '#aiPlayer/AiPlayerActivityFeed.js'
 
 const PUBLISHED_AT = new Date('2026-10-13T20:00:00.000Z')
 
-function makeSeatActivity(text: string): AiPlayerSeatActivity {
+function makeSeatActivity(text: string): AiPlayerRoomActivity {
   return {
     kind: 'reply',
     toolName: null,
     text,
     isError: false,
+    roomCode: null,
     seat: 1,
     model: 'anthropic:claude-opus-5-5',
   }
