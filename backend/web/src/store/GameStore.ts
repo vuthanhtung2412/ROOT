@@ -43,6 +43,8 @@ export const HOTSEAT_ROOM_CODE: null = null
 export type GameRoom = {
   /** What players type to enter an online room; null for the hotseat slot. */
   readonly roomCode: string | null
+  /** Who opened the online room: its owner until someone takes seat 0. Null for hotseat. */
+  readonly creatorPlayerId: string | null
   game: Game | null
   mode: LobbyMode
   /** AI seats of the current game. Replaced, never mutated in place. */
@@ -52,9 +54,13 @@ export type GameRoom = {
 }
 
 /** An empty slot: no game, every setting at its default. */
-export function createGameRoom(roomCode: string | null): GameRoom {
+export function createGameRoom(
+  roomCode: string | null,
+  creatorPlayerId: string | null = null,
+): GameRoom {
   return {
     roomCode,
+    creatorPlayerId,
     game: null,
     mode: DEFAULT_LOBBY_MODE,
     aiPlayers: [],

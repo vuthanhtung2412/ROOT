@@ -449,13 +449,13 @@ export class GameSession {
   }
 
   /**
-   * Leave the lobby screen. A browser that only watches a lobby others sit
-   * in walks away; the host (or the last one in an empty lobby) closes it.
+   * Leave the lobby screen. A browser without a seat walks away (the server
+   * ends the room when its creator leaves before anyone sat); a seated one
+   * goes through restart, where the host closes the room.
    */
   async leaveOnlineLobby(): Promise<void> {
     const state: GameState | null = this.snapshot.state
-    const isWatchingOnly: boolean =
-      state !== null && this.getLocalSeat() === null && state.players.length > 0
+    const isWatchingOnly: boolean = state !== null && this.getLocalSeat() === null
     if (!isWatchingOnly) {
       await this.restart()
       return

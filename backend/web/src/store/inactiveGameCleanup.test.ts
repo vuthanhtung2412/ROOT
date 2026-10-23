@@ -13,6 +13,7 @@ const TIMEOUT_SECONDS = 300
 const MILLISECONDS_PER_SECOND = 1000
 const TIMEOUT_MILLISECONDS = TIMEOUT_SECONDS * MILLISECONDS_PER_SECOND
 const ONE_MILLISECOND = 1
+const CREATOR_PLAYER_ID = 'creator-secret'
 
 function clearRoom(room: GameRoom): void {
   if (room === store) {
@@ -87,8 +88,8 @@ describe('inactive game cleanup', () => {
   })
 
   it('an idle room ends while a busy one keeps going', () => {
-    const idleRoom: GameRoom = roomRegistry.createRoom()
-    const busyRoom: GameRoom = roomRegistry.createRoom()
+    const idleRoom: GameRoom = roomRegistry.createRoom(CREATOR_PLAYER_ID)
+    const busyRoom: GameRoom = roomRegistry.createRoom(CREATOR_PLAYER_ID)
     idleRoom.game = createStartedTwoPlayerGame()
     busyRoom.game = createStartedTwoPlayerGame()
     const cleanupConfig = createCleanupConfig()

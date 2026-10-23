@@ -34,7 +34,7 @@ export class RoomRegistry {
   constructor(private readonly createRoomCode: () => string = generateRoomCode) {}
 
   /** A new empty room with a code no other room uses. */
-  createRoom(): GameRoom {
+  createRoom(creatorPlayerId: string): GameRoom {
     if (this.roomsByCode.size >= MAXIMUM_ONLINE_ROOM_COUNT) {
       throw new HttpError(503, 'ROOM_LIMIT', { maximum: MAXIMUM_ONLINE_ROOM_COUNT })
     }
@@ -42,7 +42,7 @@ export class RoomRegistry {
     while (this.roomsByCode.has(roomCode)) {
       roomCode = this.createRoomCode()
     }
-    const room: GameRoom = createGameRoom(roomCode)
+    const room: GameRoom = createGameRoom(roomCode, creatorPlayerId)
     this.roomsByCode.set(roomCode, room)
     return room
   }

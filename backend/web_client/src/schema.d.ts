@@ -1023,7 +1023,7 @@ export interface paths {
   "/game/leave": {
     /**
      * Leave the online room
-     * @description A watcher or a guest of a lobby leaves (their seat is freed). The host ends the room with DELETE /game instead. Nobody leaves a game in progress.
+     * @description A watcher or a guest of a lobby leaves (their seat is freed). The host ends the room with DELETE /game instead; the creator leaving a lobby nobody sat in ends it too. Nobody leaves a game in progress.
      */
     post: {
       responses: {

@@ -47,8 +47,8 @@ describe('RoomRegistry', () => {
   it('never gives two rooms the same code', () => {
     const registry = new RoomRegistry(scriptedCodes(FIRST_CODE, FIRST_CODE, SECOND_CODE))
 
-    const first: GameRoom = registry.createRoom()
-    const second: GameRoom = registry.createRoom()
+    const first: GameRoom = registry.createRoom(PLAYER_ID)
+    const second: GameRoom = registry.createRoom(PLAYER_ID)
 
     expect(first.roomCode).toBe(FIRST_CODE)
     expect(second.roomCode).toBe(SECOND_CODE)
@@ -57,15 +57,15 @@ describe('RoomRegistry', () => {
 
   it('refuses a room past the limit', () => {
     const registry = new RoomRegistry(scriptedCodes())
-    for (let index = 0; index < MAXIMUM_ONLINE_ROOM_COUNT; index += 1) registry.createRoom()
+    for (let index = 0; index < MAXIMUM_ONLINE_ROOM_COUNT; index += 1) registry.createRoom(PLAYER_ID)
 
-    expect(errorCodeOf((): void => { registry.createRoom() })).toBe('ROOM_LIMIT')
+    expect(errorCodeOf((): void => { registry.createRoom(PLAYER_ID) })).toBe('ROOM_LIMIT')
   })
 
   it('a player belongs to one room: joining another moves them', () => {
     const registry = new RoomRegistry(scriptedCodes(FIRST_CODE, SECOND_CODE))
-    const first = registry.createRoom()
-    const second = registry.createRoom()
+    const first = registry.createRoom(PLAYER_ID)
+    const second = registry.createRoom(PLAYER_ID)
 
     registry.addMember(first, PLAYER_ID)
     registry.addMember(second, PLAYER_ID)
@@ -76,7 +76,7 @@ describe('RoomRegistry', () => {
 
   it('an unfinished game blocks another; a finished or empty one does not', () => {
     const registry = new RoomRegistry(scriptedCodes(FIRST_CODE))
-    const room = registry.createRoom()
+    const room = registry.createRoom(PLAYER_ID)
     registry.addMember(room, PLAYER_ID)
 
     expect(errorCodeOf((): void => { registry.requireNoActiveRoom(PLAYER_ID) })).toBe('')
@@ -91,7 +91,7 @@ describe('RoomRegistry', () => {
 
   it('removing a room frees its members', () => {
     const registry = new RoomRegistry(scriptedCodes(FIRST_CODE))
-    const room = registry.createRoom()
+    const room = registry.createRoom(PLAYER_ID)
     registry.addMember(room, PLAYER_ID)
 
     registry.removeRoom(room)

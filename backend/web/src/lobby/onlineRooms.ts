@@ -14,7 +14,7 @@ export function requirePlayerId(playerId: string | undefined): string {
 export function openOnlineRoom(playerId: string | undefined): GameRoom {
   const creatorPlayerId: string = requirePlayerId(playerId)
   roomRegistry.requireNoActiveRoom(creatorPlayerId)
-  const room: GameRoom = roomRegistry.createRoom()
+  const room: GameRoom = roomRegistry.createRoom(creatorPlayerId)
   roomRegistry.addMember(room, creatorPlayerId)
   return room
 }

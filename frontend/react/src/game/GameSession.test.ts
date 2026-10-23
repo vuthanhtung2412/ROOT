@@ -199,6 +199,26 @@ describe('GameSession', () => {
       expect(session.getRoomCode()).toBeNull()
     })
 
+    it('leaving a lobby nobody sat in only leaves the room: no delete', async () => {
+      const fetchMock = stubFetchSequence([
+        { body: { state: openLobbyState([]), mode: 'online', roomCode: ROOM_CODE }, status: 201 },
+        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online', roomCode: ROOM_CODE } },
+        { body: null, status: 204 },
+      ])
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID })
+      await session.createOnlineRoom()
+
+      await session.leaveOnlineLobby()
+
+      const leaveRequest: unknown = fetchMock.mock.calls[2]![0]
+      if (!(leaveRequest instanceof Request)) throw new Error('expected Request')
+      // The server decides: a guest walks away, the creator's leave ends the room.
+      expect(leaveRequest.method).toBe('POST')
+      expect(leaveRequest.url).toContain('/game/leave')
+      expect(session.getSnapshot().state).toBeNull()
+      expect(session.getRoomCode()).toBeNull()
+    })
+
     it('join with code: enters the room as itself, then watches the lobby', async () => {
       const lobby = {
         state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),

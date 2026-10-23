@@ -114,18 +114,18 @@ function requireHotseatForFullDump(room: GameRoom): void {
 function requireHostToReplaceOnlineGame(caller: GameCaller): void {
   const { room, playerId } = caller
   const game = room.game
-  if (
-    game === null ||
-    room.mode !== 'online' ||
-    game.state.status === 'finished' ||
-    // Lobby nobody joined yet has no host to ask.
-    game.state.players.length === 0
-  ) {
+  if (game === null || room.mode !== 'online' || game.state.status === 'finished') {
     return
   }
-  const isHost =
-    playerId !== undefined &&
-    seatForPlayerId(game.state, playerId) === ONLINE_HOST_SEAT
+  const isNobodySeated: boolean = game.state.players.length === 0
+  // Lobby nobody sat in yet: its creator owns it (none for a lobby outside every room).
+  if (isNobodySeated && room.creatorPlayerId === null) {
+    return
+  }
+  const isHost = isNobodySeated
+    ? playerId === room.creatorPlayerId
+    : playerId !== undefined &&
+      seatForPlayerId(game.state, playerId) === ONLINE_HOST_SEAT
   if (!isHost) {
     throw new HttpError(403, 'NOT_HOST', 'only the host may end an online game')
   }

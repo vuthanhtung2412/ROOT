@@ -120,6 +120,30 @@ describe('room routes', () => {
     expect(roomRegistry.roomOfPlayer(GUEST_PLAYER_ID)).toBe(onlyOnlineRoom())
   })
 
+  it('in a lobby nobody sat in, a guest neither ends the room nor leaves with it', async () => {
+    await app.request('/game', asPlayer(HOST_PLAYER_ID, 'POST', { factions: [], mode: 'online' }))
+    const roomCode = onlyOnlineRoom().roomCode ?? ''
+    await enter(roomCode, GUEST_PLAYER_ID)
+
+    const guestDelete = await app.request('/game', asPlayer(GUEST_PLAYER_ID, 'DELETE'))
+    expect(guestDelete.status).toBe(403)
+    expect(await guestDelete.json()).toMatchObject({ code: 'NOT_HOST' })
+
+    expect((await leave(GUEST_PLAYER_ID)).status).toBe(204)
+    expect(roomRegistry.roomOfPlayer(GUEST_PLAYER_ID)).toBeNull()
+    expect(roomRegistry.roomOfPlayer(HOST_PLAYER_ID)).toBe(onlyOnlineRoom())
+  })
+
+  it('the creator leaving a lobby nobody sat in ends the room', async () => {
+    await app.request('/game', asPlayer(HOST_PLAYER_ID, 'POST', { factions: [], mode: 'online' }))
+    await enter(onlyOnlineRoom().roomCode ?? '', GUEST_PLAYER_ID)
+
+    expect((await leave(HOST_PLAYER_ID)).status).toBe(204)
+
+    expect(roomRegistry.rooms()).toEqual([])
+    expect(roomRegistry.roomOfPlayer(GUEST_PLAYER_ID)).toBeNull()
+  })
+
   it('an unseated watcher leaves at any time', async () => {
     const roomCode = await openLobbyAsHost()
     await enter(roomCode, GUEST_PLAYER_ID)

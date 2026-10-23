@@ -3,7 +3,7 @@ import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { requirePlayerId } from '#lobby/onlineRooms.js'
 import { HttpError } from '#middleware/errors.js'
 import { expelSeat } from '#routes/lobbyPlayer.js'
-import { publishGameChange } from '#routes/roomAccess.js'
+import { closeOnlineRoom, publishGameChange } from '#routes/roomAccess.js'
 import { errorResponses } from '#schemas/common.js'
 import { EnterRoomResponseSchema, RoomCodeParamsSchema } from '#schemas/game.js'
 import type { GameRoom } from '#store/GameStore.js'
@@ -14,6 +14,16 @@ const LOBBY_STATUS = 'waiting'
 const FINISHED_STATUS = 'finished'
 
 export const roomRoutes = new OpenAPIHono()
+
+/** Nobody sat in the creator's lobby yet: nobody is left to own it once they go. */
+function isCreatorOfEmptyLobby(room: GameRoom, playerId: string): boolean {
+  return (
+    room.creatorPlayerId === playerId &&
+    room.game !== null &&
+    room.game.state.status === LOBBY_STATUS &&
+    room.game.state.players.length === 0
+  )
+}
 
 const enterRoomRoute = createRoute({
   method: 'post',
@@ -52,7 +62,7 @@ const leaveRoomRoute = createRoute({
   tags: ['game'],
   summary: 'Leave the online room',
   description:
-    'A watcher or a guest of a lobby leaves (their seat is freed). The host ends the room with DELETE /game instead. Nobody leaves a game in progress.',
+    'A watcher or a guest of a lobby leaves (their seat is freed). The host ends the room with DELETE /game instead; the creator leaving a lobby nobody sat in ends it too. Nobody leaves a game in progress.',
   responses: {
     204: { description: 'Left (or was in no room)' },
     ...errorResponses,
@@ -66,6 +76,10 @@ roomRoutes.openapi(leaveRoomRoute, (context) => {
   const seated: PlayerState | undefined = game?.state.players.find(
     (player: PlayerState): boolean => player.playerId === playerId,
   )
+  if (room !== null && isCreatorOfEmptyLobby(room, playerId)) {
+    closeOnlineRoom(room)
+    return context.body(null, 204)
+  }
   if (room === null || game === null || seated === undefined) {
     roomRegistry.removeMember(playerId)
     return context.body(null, 204)
