@@ -194,7 +194,7 @@ export function clearStoredGame(): void {
 /** Write the room (or remove its file when the room is empty). */
 export function persistRoom(room: GameRoom): void {
   // Every slot change is saved here, so it is also where activity is seen.
-  recordGameActivity()
+  recordGameActivity(room)
   const filePath = fileOfRoom(room)
   if (filePath === null) {
     return

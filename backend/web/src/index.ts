@@ -4,14 +4,15 @@ import {
   clearStoredGame,
   enableGamePersistence,
 } from '#store/gamePersistence.js'
-import { resetGameStore, store } from '#store/GameStore.js'
+import { resetGameStore, store, type GameRoom } from '#store/GameStore.js'
 import { roomRegistry } from '#store/roomRegistry.js'
 import { runtimeOf } from '#store/roomRuntime.js'
 import {
   DEFAULT_INACTIVE_GAME_TIMEOUT_SECONDS,
   startInactiveGameCleanup,
 } from '#store/inactiveGameCleanup.js'
-import { publishGameChange } from '#routes/roomAccess.js'
+import { isOnlineRoom } from '#lobby/onlineRooms.js'
+import { closeOnlineRoom, publishGameChange } from '#routes/roomAccess.js'
 import { aiPlayerActivityFeed } from '#aiPlayer/AiPlayerActivityFeed.js'
 import { logAiPlayerActivity } from '#debug/logAiPlayerActivity.js'
 import { serve } from '@hono/node-server'
@@ -49,6 +50,7 @@ if (gameStoreFile !== GAME_STORE_DISABLED_VALUE) {
 }
 
 // Always on: drop a game nobody has touched for a while, so the slot frees up.
+// Each room counts on its own: an idle online room ends, its players are free.
 // ROOT_INACTIVE_GAME_TIMEOUT_SECONDS=<seconds> changes the wait (default 300).
 // `||`, not `??`: an empty value (blank line copied from env.template) means default.
 const inactiveGameTimeoutSetting: string =
@@ -62,8 +64,15 @@ if (!Number.isFinite(inactiveGameTimeoutSeconds) || inactiveGameTimeoutSeconds <
 }
 startInactiveGameCleanup({
   inactivityTimeoutSeconds: inactiveGameTimeoutSeconds,
-  clearGame: (): void => {
-    console.log(`Clearing game after ${inactiveGameTimeoutSeconds} seconds without activity`)
+  clearGame: (room: GameRoom): void => {
+    const roomName: string = room.roomCode === null ? 'hotseat slot' : `room ${room.roomCode}`
+    console.log(
+      `Clearing ${roomName} after ${inactiveGameTimeoutSeconds} seconds without activity`,
+    )
+    if (isOnlineRoom(room)) {
+      closeOnlineRoom(room)
+      return
+    }
     resetGameStore()
     publishGameChange(store)
   },

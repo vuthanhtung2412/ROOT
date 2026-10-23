@@ -319,7 +319,7 @@
   - `backend/web/src/routes/rooms.ts` (new) + test, `schemas/game.ts`, `routes/lobbyPlayer.ts`, `openapi.ts`
 - [x] `feat(web): persist every room`
   - `backend/web/src/store/gamePersistence.ts` + test, `store/roomRegistry.ts`, `index.ts`
-- [ ] `feat(web): idle cleanup per room`
+- [x] `feat(web): idle cleanup per room`
   - `backend/web/src/store/inactiveGameCleanup.ts` + test, `index.ts`
 - [ ] `chore(api): regen client for rooms`
   - `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts`, `backend/web_client/src/gameApi.ts`

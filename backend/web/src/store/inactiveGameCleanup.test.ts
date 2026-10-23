@@ -5,17 +5,28 @@ import {
   startInactiveGameCleanup,
   type InactiveGameCleanupConfig,
 } from '#store/inactiveGameCleanup.js'
-import { resetGameStore, store } from '#store/GameStore.js'
+import { resetGameStore, store, type GameRoom } from '#store/GameStore.js'
+import { roomRegistry } from '#store/roomRegistry.js'
+import { resetAllRooms } from '#test/roomFixtures.js'
 
 const TIMEOUT_SECONDS = 300
 const MILLISECONDS_PER_SECOND = 1000
 const TIMEOUT_MILLISECONDS = TIMEOUT_SECONDS * MILLISECONDS_PER_SECOND
 const ONE_MILLISECOND = 1
 
+function clearRoom(room: GameRoom): void {
+  if (room === store) {
+    resetGameStore()
+    return
+  }
+  room.game = null
+  roomRegistry.removeRoom(room)
+}
+
 function createCleanupConfig(): InactiveGameCleanupConfig {
   return {
     inactivityTimeoutSeconds: TIMEOUT_SECONDS,
-    clearGame: vi.fn(resetGameStore),
+    clearGame: vi.fn(clearRoom),
   }
 }
 
@@ -26,7 +37,7 @@ describe('inactive game cleanup', () => {
 
   afterEach((): void => {
     vi.clearAllTimers()
-    resetGameStore()
+    resetAllRooms()
     vi.useRealTimers()
   })
 
@@ -48,7 +59,7 @@ describe('inactive game cleanup', () => {
 
     vi.advanceTimersByTime(TIMEOUT_MILLISECONDS)
 
-    expect(cleanupConfig.clearGame).toHaveBeenCalledOnce()
+    expect(cleanupConfig.clearGame).toHaveBeenCalledExactlyOnceWith(store)
     expect(store.game).toBeNull()
   })
 
@@ -58,7 +69,7 @@ describe('inactive game cleanup', () => {
     startInactiveGameCleanup(cleanupConfig)
 
     vi.advanceTimersByTime(TIMEOUT_MILLISECONDS - ONE_MILLISECOND)
-    recordGameActivity()
+    recordGameActivity(store)
     vi.advanceTimersByTime(TIMEOUT_MILLISECONDS - ONE_MILLISECOND)
 
     expect(cleanupConfig.clearGame).not.toHaveBeenCalled()
@@ -73,5 +84,22 @@ describe('inactive game cleanup', () => {
     vi.advanceTimersByTime(TIMEOUT_MILLISECONDS)
 
     expect(cleanupConfig.clearGame).not.toHaveBeenCalled()
+  })
+
+  it('an idle room ends while a busy one keeps going', () => {
+    const idleRoom: GameRoom = roomRegistry.createRoom()
+    const busyRoom: GameRoom = roomRegistry.createRoom()
+    idleRoom.game = createStartedTwoPlayerGame()
+    busyRoom.game = createStartedTwoPlayerGame()
+    const cleanupConfig = createCleanupConfig()
+    startInactiveGameCleanup(cleanupConfig)
+
+    vi.advanceTimersByTime(TIMEOUT_MILLISECONDS - ONE_MILLISECOND)
+    recordGameActivity(busyRoom)
+    vi.advanceTimersByTime(ONE_MILLISECOND)
+
+    expect(cleanupConfig.clearGame).toHaveBeenCalledExactlyOnceWith(idleRoom)
+    expect(roomRegistry.rooms()).toEqual([busyRoom])
+    expect(busyRoom.game).not.toBeNull()
   })
 })
