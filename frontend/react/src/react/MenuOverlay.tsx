@@ -65,6 +65,7 @@ const STATUS_CLASS_NAME =
   'root-paper root-paper-fine m-0 max-w-[70vw] px-5 py-1.5 text-center font-body text-[15px] italic'
 
 const CREATE_GAME_LABEL = 'Create game'
+const JOIN_GAME_LABEL = 'Join game'
 const SOLO_RUN_LABEL = 'Solo run'
 const CONTINUE_SOLO_RUN_LABEL = 'Continue solo run'
 
@@ -89,19 +90,27 @@ export function MenuOverlay(): JSX.Element | null {
     () => getHudSnapshot().menu,
   )
   const [isSoloRunOpen, setIsSoloRunOpen] = useState<boolean>(false)
+  const [isJoinRoomOpen, setIsJoinRoomOpen] = useState<boolean>(false)
 
   if (shell !== 'menu' || menu === null) {
     // Stays mounted under the game: back on the menu means the home screen.
     if (isSoloRunOpen) {
       setIsSoloRunOpen(false)
     }
+    if (isJoinRoomOpen) {
+      setIsJoinRoomOpen(false)
+    }
     return null
+  }
+  // Joined: the lobby replaces the code screen, and leaving it goes home.
+  if (menu.lobby !== null && isJoinRoomOpen) {
+    setIsJoinRoomOpen(false)
   }
   const callbacks = getMenuCallbacks()
   const wallpaperPath = imagePathForAssetKey(GAME_ASSET_KEYS.menuWallpaper)
   const bannerPath = imagePathForAssetKey(GAME_ASSET_KEYS.rootBanner)
-  /** Online lobby and solo run fill the stage: no banner above them. */
-  const isLobbyScreen: boolean = menu.lobby !== null || isSoloRunOpen
+  /** Online lobby, join by code and solo run fill the stage: no banner above them. */
+  const isLobbyScreen: boolean = menu.lobby !== null || isSoloRunOpen || isJoinRoomOpen
 
   return (
     <div className="menu-overlay fixed inset-0 z-450 flex items-center justify-center overflow-hidden bg-forest-deep">
@@ -170,6 +179,16 @@ export function MenuOverlay(): JSX.Element | null {
               callbacks.onLeaveOnline()
             }}
           />
+        ) : isJoinRoomOpen ? (
+          <MenuJoinRoomForm
+            disabled={menu.playPending}
+            onJoinRoom={(roomCode: string): void => {
+              callbacks.onJoinRoom(roomCode)
+            }}
+            onBack={(): void => {
+              setIsJoinRoomOpen(false)
+            }}
+          />
         ) : isSoloRunOpen ? (
           <MenuSoloSetup
             disabled={menu.playPending}
@@ -194,12 +213,16 @@ export function MenuOverlay(): JSX.Element | null {
               {CREATE_GAME_LABEL}
               {IS_BIRTHDAY_EDITION ? <BirthdayCandle /> : null}
             </button>
-            <MenuJoinRoomForm
+            <button
+              type="button"
+              className={`menu-join-game ${PRIMARY_BUTTON_CLASS_NAME} ${HOME_BUTTON_CLASS_NAME}`}
               disabled={menu.playPending}
-              onJoinRoom={(roomCode: string): void => {
-                callbacks.onJoinRoom(roomCode)
+              onClick={(): void => {
+                setIsJoinRoomOpen(true)
               }}
-            />
+            >
+              {JOIN_GAME_LABEL}
+            </button>
             {menu.soloRunSaved ? (
               <button
                 type="button"
