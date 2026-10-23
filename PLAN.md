@@ -309,8 +309,8 @@
   - `PLAN.md`
 - [x] `refactor(react): send player id when creating online game`
   - `frontend/react/src/game/GameSession.ts` + test
-- [ ] `refactor(web): GameRoom type, drivers take a room`
-  - `backend/web/src/store/GameStore.ts`, `bots/BotStepDriver.ts`, `bots/botStepRuntime.ts`, `aiPlayer/AiPlayerDriver.ts`, `aiPlayer/aiPlayerRuntime.ts`, `roomRuntime.ts` (new) + tests
+- [x] `refactor(web): GameRoom type, drivers take a room`
+  - `backend/web/src/store/GameStore.ts`, `bots/BotStepDriver.ts`, `aiPlayer/AiPlayerDriver.ts`, `store/roomRuntime.ts` (new, replaces `aiPlayerRuntime.ts` + `botStepRuntime.ts`) + tests
 - [ ] `refactor(web): routes read room from request context`
   - `backend/web/src/middleware/roomResolver.ts` (new, hotseat only for now), `routes/*.ts`, `view/aiPlayerView.ts`
 - [ ] `feat(web): online create opens a new room with a code`

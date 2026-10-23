@@ -11,8 +11,6 @@ import {
   toSvg,
 } from '@root/lib'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
-import { botStepDriver } from '#bots/botStepRuntime.js'
 import { logGameEvent } from '#debug/logGame.js'
 import {
   requireCooperativeStart,
@@ -50,6 +48,7 @@ import {
   UndoResponseSchema,
 } from '#schemas/game.js'
 import { persistCurrentGame } from '#store/gamePersistence.js'
+import { runtimeOf } from '#store/roomRuntime.js'
 import {
   DEFAULT_BOT_STEP_DELAY_SECONDS,
   DEFAULT_LOBBY_MODE,
@@ -84,8 +83,8 @@ function requireGame(): Game {
 export function publishGameChange(): void {
   persistCurrentGame()
   broadcastCurrentGame()
-  aiPlayerDriver.handleGameChanged()
-  botStepDriver.handleGameChanged()
+  runtimeOf(store).aiPlayerDriver.handleGameChanged()
+  runtimeOf(store).botStepDriver.handleGameChanged()
 }
 
 /**
@@ -422,7 +421,7 @@ gameRoutes.openapi(putSnapshotRoute, async (context) => {
   store.aiPlayers = []
   store.botStepDelaySeconds = DEFAULT_BOT_STEP_DELAY_SECONDS
   persistCurrentGame()
-  aiPlayerDriver.handleGameChanged()
+  runtimeOf(store).aiPlayerDriver.handleGameChanged()
   logGameEvent('LOAD', store.game.state)
   return context.json({ state: store.game.state, mode: store.mode }, 200)
 })

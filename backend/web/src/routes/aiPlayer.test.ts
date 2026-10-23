@@ -3,10 +3,10 @@ import {
   aiPlayerActivityFeed,
   type AiPlayerSeatActivity,
 } from '#aiPlayer/AiPlayerActivityFeed.js'
-import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import { app } from '#openapi.js'
 import { AI_PLAYER_ACTIVITY_EVENT } from '#routes/aiPlayer.js'
 import { DEFAULT_LOBBY_MODE, store } from '#store/GameStore.js'
+import { runtimeOf } from '#store/roomRuntime.js'
 import { snapshotGamePushForViewer } from '#ws/GameHub.js'
 
 const ANTHROPIC_API_KEY = 'anthropic-secret-key-value'
@@ -204,7 +204,7 @@ describe('AI player routes', () => {
   })
 
   it('restarts the session of an AI seat for any caller, 404 for a human seat', async () => {
-    const restart = vi.spyOn(aiPlayerDriver, 'restart').mockReturnValue(true)
+    const restart = vi.spyOn(runtimeOf(store).aiPlayerDriver, 'restart').mockReturnValue(true)
     await createLobby({ factions: ['marquise', 'eyrie'], mode: 'online' })
     await app.request('/game/join', jsonRequest('POST', { playerId: HOST_PLAYER_ID }))
     await app.request('/game/ai-players', jsonRequest('POST', {}, HOST_PLAYER_ID))

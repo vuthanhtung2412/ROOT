@@ -6,7 +6,6 @@ import {
   aiPlayerActivityFeed,
   type AiPlayerActivity,
 } from '#aiPlayer/AiPlayerActivityFeed.js'
-import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import {
   listOfferedModels,
   resolveDefaultModel,
@@ -28,6 +27,7 @@ import {
   store,
   type AiPlayerSeat,
 } from '#store/GameStore.js'
+import { runtimeOf } from '#store/roomRuntime.js'
 import {
   ONLINE_HOST_SEAT,
   PLAYER_ID_HEADER,
@@ -212,7 +212,7 @@ const restartAiPlayerRoute = createRoute({
 aiPlayerRoutes.openapi(restartAiPlayerRoute, (context) => {
   const seat = context.req.valid('param').seat
   requireAiPlayerId(requireGame(), seat)
-  aiPlayerDriver.restart(seat)
+  runtimeOf(store).aiPlayerDriver.restart(seat)
   return context.json({ aiPlayers: listAiPlayerViews() }, 200)
 })
 

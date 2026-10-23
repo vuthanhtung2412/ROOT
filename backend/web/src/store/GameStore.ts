@@ -36,7 +36,13 @@ export type BotStepDelaySeconds = (typeof BOT_STEP_DELAY_SECONDS_CHOICES)[number
 
 export const DEFAULT_BOT_STEP_DELAY_SECONDS: BotStepDelaySeconds = 5
 
-export type GameStore = {
+/** The hotseat slot has no code: it is reached by callers outside every online room. */
+export const HOTSEAT_ROOM_CODE: null = null
+
+/** One game slot: the hotseat slot or an online room. */
+export type GameRoom = {
+  /** What players type to enter an online room; null for the hotseat slot. */
+  readonly roomCode: string | null
   game: Game | null
   mode: LobbyMode
   /** AI seats of the current game. Replaced, never mutated in place. */
@@ -45,12 +51,19 @@ export type GameStore = {
   botStepDelaySeconds: BotStepDelaySeconds
 }
 
-export const store: GameStore = {
-  game: null,
-  mode: DEFAULT_LOBBY_MODE,
-  aiPlayers: [],
-  botStepDelaySeconds: DEFAULT_BOT_STEP_DELAY_SECONDS,
+/** An empty slot: no game, every setting at its default. */
+export function createGameRoom(roomCode: string | null): GameRoom {
+  return {
+    roomCode,
+    game: null,
+    mode: DEFAULT_LOBBY_MODE,
+    aiPlayers: [],
+    botStepDelaySeconds: DEFAULT_BOT_STEP_DELAY_SECONDS,
+  }
 }
+
+/** The hotseat slot (local party, QA, CLI). */
+export const store: GameRoom = createGameRoom(HOTSEAT_ROOM_CODE)
 
 /** Empty the slot: no game, every setting back to its default. */
 export function resetGameStore(): void {

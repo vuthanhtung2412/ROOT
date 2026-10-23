@@ -35,6 +35,7 @@ type DriverFixture = {
 
 function createDriver(provider: ModelProvider | null): DriverFixture {
   const dependencies: AiPlayerDriverDependencies = {
+    room: store,
     createProvider: vi.fn((): ModelProvider | null => provider),
     loadRulebook: () => [],
     wait: (): Promise<void> => Promise.resolve(),

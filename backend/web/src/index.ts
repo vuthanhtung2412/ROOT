@@ -4,14 +4,14 @@ import {
   clearStoredGame,
   enableGamePersistence,
 } from '#store/gamePersistence.js'
-import { resetGameStore } from '#store/GameStore.js'
+import { resetGameStore, store } from '#store/GameStore.js'
+import { runtimeOf } from '#store/roomRuntime.js'
 import {
   DEFAULT_INACTIVE_GAME_TIMEOUT_SECONDS,
   startInactiveGameCleanup,
 } from '#store/inactiveGameCleanup.js'
 import { publishGameChange } from '#routes/game.js'
 import { aiPlayerActivityFeed } from '#aiPlayer/AiPlayerActivityFeed.js'
-import { aiPlayerDriver } from '#aiPlayer/aiPlayerRuntime.js'
 import { logAiPlayerActivity } from '#debug/logAiPlayerActivity.js'
 import { serve } from '@hono/node-server'
 import { WebSocketServer } from 'ws'
@@ -40,7 +40,7 @@ const gameStoreFile: string =
 if (gameStoreFile !== GAME_STORE_DISABLED_VALUE) {
   enableGamePersistence(gameStoreFile)
   // A restored game may be waiting on an AI seat: let it play on.
-  aiPlayerDriver.handleGameChanged()
+  runtimeOf(store).aiPlayerDriver.handleGameChanged()
 }
 
 // Always on: drop a game nobody has touched for a while, so the slot frees up.

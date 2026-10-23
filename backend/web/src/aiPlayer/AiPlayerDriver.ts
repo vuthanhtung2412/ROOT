@@ -17,14 +17,16 @@ import {
 } from '#aiPlayer/modelIdentifier.js'
 import type { ModelProvider } from '#aiPlayer/ModelProvider.js'
 import type { RuleSection } from '#aiPlayer/rulebook.js'
-import {
-  store,
-  type AiPlayerSeat,
-  type AiPlayerStatus,
+import type {
+  AiPlayerSeat,
+  AiPlayerStatus,
+  GameRoom,
 } from '#store/GameStore.js'
 import { listPlayerLegalActions } from '#view/playerView.js'
 
 export type AiPlayerDriverDependencies = {
+  /** The slot whose AI seats this driver plays. */
+  room: GameRoom
   /** Null when the server cannot reach that provider (no API key). */
   createProvider: (providerName: ModelProviderName) => ModelProvider | null
   loadRulebook: () => readonly RuleSection[]
@@ -55,7 +57,7 @@ type ActiveSession = {
 }
 
 /**
- * Plays the AI seats of the game in the store. One session (= one context
+ * Plays the AI seats of the game in its room. One session (= one context
  * window) per AI turn: opened when the turn reaches the seat, continued after
  * another seat answers, dropped when the turn passes on. A decision an AI seat
  * owes outside its turn (ambush, setup choice) gets a short session of its own.
@@ -76,7 +78,7 @@ export class AiPlayerDriver {
 
   /** Call after every change of the game slot. */
   handleGameChanged(): void {
-    const game = store.game
+    const game = this.dependencies.room.game
     const wasRewound =
       game !== this.observedGame ||
       (game !== null && game.history.length < this.observedHistoryLength)
@@ -87,7 +89,7 @@ export class AiPlayerDriver {
     this.observedGame = game
     this.observedHistoryLength = game?.history.length ?? 0
     if (game !== null) {
-      for (const seat of store.aiPlayers) {
+      for (const seat of this.dependencies.room.aiPlayers) {
         this.advanceSeat(game, seat)
       }
     }
@@ -99,11 +101,11 @@ export class AiPlayerDriver {
    * state. False when no AI player sits at that seat.
    */
   restart(seat: number): boolean {
-    const game = store.game
+    const game = this.dependencies.room.game
     const player = game?.state.players.find(
       (candidate: PlayerState): boolean => candidate.seat === seat,
     )
-    const isAiSeat = store.aiPlayers.some(
+    const isAiSeat = this.dependencies.room.aiPlayers.some(
       (aiSeat: AiPlayerSeat): boolean => aiSeat.playerId === player?.playerId,
     )
     if (player === undefined || !isAiSeat) {
@@ -264,7 +266,7 @@ export class AiPlayerDriver {
   }
 
   private publishStatuses(): void {
-    const updated = store.aiPlayers.map(
+    const updated = this.dependencies.room.aiPlayers.map(
       (seat: AiPlayerSeat): AiPlayerSeat => ({
         ...seat,
         status: this.statusOf(seat.playerId),
@@ -272,10 +274,10 @@ export class AiPlayerDriver {
     )
     const hasChanged = updated.some(
       (seat: AiPlayerSeat, index: number): boolean =>
-        seat.status !== store.aiPlayers[index]?.status,
+        seat.status !== this.dependencies.room.aiPlayers[index]?.status,
     )
     if (hasChanged) {
-      store.aiPlayers = updated
+      this.dependencies.room.aiPlayers = updated
       this.dependencies.publishStatusChange()
     }
   }

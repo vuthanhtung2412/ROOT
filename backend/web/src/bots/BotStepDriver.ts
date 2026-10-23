@@ -1,5 +1,5 @@
 import type { Game, LogEntry } from '@root/lib'
-import { store } from '#store/GameStore.js'
+import type { GameRoom } from '#store/GameStore.js'
 
 const MILLISECONDS_PER_SECOND = 1000
 
@@ -7,6 +7,8 @@ const MILLISECONDS_PER_SECOND = 1000
 const SILENT_ACTION_TYPES: ReadonlySet<string> = new Set<string>(['endPhase'])
 
 export type BotStepDriverDependencies = {
+  /** The slot whose bots this driver plays. */
+  room: GameRoom
   wait: (milliseconds: number) => Promise<void>
   /** Save the slot and push it to viewers (a bot acted). */
   publishGameChange: (stepLog: readonly LogEntry[]) => void
@@ -24,7 +26,7 @@ function isBotAnswerPending(game: Game): boolean {
 
 /**
  * Online games: bots play one action at a time, each pushed to the players,
- * then the host's pace (`store.botStepDelaySeconds`) before the next one.
+ * then the host's pace (`room.botStepDelaySeconds`) before the next one.
  * Hotseat games keep resolving bot turns in one go.
  */
 export class BotStepDriver {
@@ -34,8 +36,9 @@ export class BotStepDriver {
 
   /** After every change of the slot: pace the online game and play its bots. */
   handleGameChanged(): void {
-    const game: Game | null = store.game
-    if (game === null || store.mode !== 'online') return
+    const room: GameRoom = this.dependencies.room
+    const game: Game | null = room.game
+    if (game === null || room.mode !== 'online') return
     game.setBotPacing(true)
     if (this.playingGame === game || !game.botHasWork()) return
     this.playingGame = game
@@ -49,7 +52,7 @@ export class BotStepDriver {
   }
 
   private isStillPlaying(game: Game): boolean {
-    return store.game === game && game.botHasWork()
+    return this.dependencies.room.game === game && game.botHasWork()
   }
 
   private async playBotSteps(game: Game): Promise<void> {
@@ -62,10 +65,12 @@ export class BotStepDriver {
       if (unshownLog.some(isWatchedLogEntry) && !isBotAnswerPending(game)) {
         this.dependencies.publishGameChange(unshownLog)
         unshownLog = []
-        await this.dependencies.wait(store.botStepDelaySeconds * MILLISECONDS_PER_SECOND)
+        await this.dependencies.wait(
+          this.dependencies.room.botStepDelaySeconds * MILLISECONDS_PER_SECOND,
+        )
       }
     }
-    if (store.game === game && unshownLog.length > 0) {
+    if (this.dependencies.room.game === game && unshownLog.length > 0) {
       this.dependencies.publishGameChange(unshownLog)
     }
   }

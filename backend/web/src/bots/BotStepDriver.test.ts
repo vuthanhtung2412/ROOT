@@ -19,6 +19,7 @@ function botFirstGame(): Game {
 
 function createDriver(publishedLogs: LogEntry[][], waits: number[]): BotStepDriver {
   return new BotStepDriver({
+    room: store,
     wait: async (milliseconds: number): Promise<void> => {
       waits.push(milliseconds)
     },
