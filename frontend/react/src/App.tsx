@@ -346,7 +346,7 @@ export function App(): JSX.Element {
           syncMenuStatus(`The host switched to ${PLAY_MODE_LABELS[lobby.playMode]}`, '#9a9a9a')
         }
         shownPlayMode = lobby.playMode
-        syncMenuLobby(lobby)
+        syncMenuLobby({ ...lobby, roomCode: session.getRoomCode() })
         return
       }
       if (state.status === 'setup' || state.status === 'playing') {

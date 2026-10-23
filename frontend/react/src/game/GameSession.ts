@@ -93,6 +93,8 @@ export class GameSession {
   private readonly generatePlayerId: () => string
   private readonly listeners: Set<GameSessionListener> = new Set()
   private localPlayerId: string | null = null
+  /** Code of the online room this browser is in; null outside one. */
+  private roomCode: string | null = null
   private socket: GameSocketConnection | null = null
   /** QA Continue: live WS wake + REST refresh; never touch Play identity storage. */
   private qaMode = false
@@ -123,6 +125,11 @@ export class GameSession {
 
   getLocalPlayerId(): string | null {
     return this.localPlayerId
+  }
+
+  /** The code the host shares so guests can join; null outside an online room. */
+  getRoomCode(): string | null {
+    return this.roomCode
   }
 
   getLocalSeat(): number | null {
@@ -163,7 +170,11 @@ export class GameSession {
   applySocketPush(payload: GameSocketPush): void {
     setAiPlayers(payload.aiPlayers ?? [])
     this.syncOnlineBotPace(payload.state, payload.botStepDelaySeconds)
+    if (payload.roomCode !== undefined) {
+      this.roomCode = payload.roomCode
+    }
     if (payload.state === null) {
+      this.roomCode = null
       this.disconnectSocket()
       clearPlayerIdentity(
         this.identityStorage === undefined
@@ -463,6 +474,7 @@ export class GameSession {
       await openOrEnterRoom()
       this.connectLocalSocket(playerId)
       const game = await this.api.getGame()
+      this.roomCode = game.roomCode
       this.publish({
         state: game.state,
         legalActions: [],
@@ -610,6 +622,7 @@ export class GameSession {
         isResumableStatus(game.state.status)
       ) {
         this.qaMode = false
+        this.roomCode = game.roomCode
         this.connectLocalSocket(stored.playerId)
         this.publish({
           state: game.state,

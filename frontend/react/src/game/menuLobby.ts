@@ -3,7 +3,7 @@ import type { AiPlayer, GameState, PlayMode } from '#api/client.ts'
 import { findAiPlayer } from '#game/aiPlayerStore.ts'
 import type {
   MenuFactionChoice,
-  MenuLobbyHudState,
+  MenuLobbyTableState,
   MenuLobbySeat,
 } from '#game/hudStore.ts'
 import { MENU_BOT_FACTION_IDS, MENU_FACTION_IDS } from '#game/menuPartySetup.ts'
@@ -88,7 +88,7 @@ export function buildMenuLobby(
   localSeat: number | null,
   isHost: boolean,
   aiPlayers: readonly AiPlayer[] = [],
-): MenuLobbyHudState {
+): MenuLobbyTableState {
   const joinedCount: number = state.players.length
   const tableSettings = {
     playMode: playModeOf(state),

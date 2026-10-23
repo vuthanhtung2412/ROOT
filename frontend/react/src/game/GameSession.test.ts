@@ -268,6 +268,27 @@ describe('GameSession', () => {
       expect(session.getLocalPlayerId()).toBe(HOST_PLAYER_ID)
       // No faction picked yet: watching, not seated.
       expect(session.getLocalSeat()).toBeNull()
+      // The host shares this code with the guests.
+      expect(session.getRoomCode()).toBe(ROOM_CODE)
+    })
+
+    it('a closed room forgets its code', async () => {
+      stubFetchSequence([
+        { body: { state: openLobbyState([]), mode: 'online', roomCode: ROOM_CODE }, status: 201 },
+        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online', roomCode: ROOM_CODE } },
+      ])
+      const session = createSession({ generatePlayerId: () => HOST_PLAYER_ID })
+      await session.createOnlineRoom()
+
+      session.applySocketPush({
+        roomCode: null,
+        state: null,
+        historyLength: 0,
+        legalActions: [],
+        log: [],
+      })
+
+      expect(session.getRoomCode()).toBeNull()
     })
 
     it('join with code: enters the room as itself, then watches the lobby', async () => {

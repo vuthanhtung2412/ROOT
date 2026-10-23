@@ -325,7 +325,7 @@
   - `backend/web/openapi.json`, `backend/web_client/src/schema.d.ts`, `backend/web_client/src/gameApi.ts`, `frontend/react/src/api/localGameApi.ts`
 - [x] `feat(react): join online game by room code`
   - `frontend/react/src/game/GameSession.ts` + test, `game/hudStore.ts`, `App.tsx`, `react/MenuOverlay.tsx`, `react/MenuJoinRoomForm.tsx` (new) + test
-- [ ] `feat(react): lobby shows room code`
-  - `frontend/react/src/game/menuLobby.ts` + test, `react/MenuLobbyPanel.tsx`
+- [x] `feat(react): lobby shows room code`
+  - `frontend/react/src/game/GameSession.ts` + test, `game/hudStore.ts`, `game/menuLobby.ts`, `api/gameSocket.ts`, `App.tsx`, `react/MenuLobbyPanel.tsx`, `react/LobbyRoomCode.tsx` (new)
 - [ ] `feat(react): resume when already in a game`
   - `frontend/react/src/game/GameSession.ts` + test, `App.tsx` (drop single-slot busy check / menu poll)

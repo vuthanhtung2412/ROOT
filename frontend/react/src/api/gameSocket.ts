@@ -1,6 +1,8 @@
 import type { ActionSpec, AiPlayer, GameState } from '#api/client.ts'
 
 export type GameSocketPush = {
+  /** Online room of the viewer; null for the hotseat slot. Absent on an older server. */
+  roomCode?: string | null
   state: GameState | null
   historyLength: number
   legalActions: ActionSpec[]

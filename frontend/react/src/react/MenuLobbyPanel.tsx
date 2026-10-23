@@ -21,6 +21,7 @@ import {
 } from '#react/BirthdayDecorations.tsx'
 import { MenuAiPlayerForm } from '#react/MenuAiPlayerForm.tsx'
 import { LobbyPlayModeSwitch, MenuCoopLobby } from '#react/MenuCoopLobby.tsx'
+import { LobbyRoomCode } from '#react/LobbyRoomCode.tsx'
 import {
   LobbyFactionDock,
   type LobbyDockMode,
@@ -170,6 +171,7 @@ export function OnlineLobbyPanel(props: {
           {LOBBY_TITLE} · {takenSeatCount} of {tableSeatCount} seats
         </h2>
       )}
+      <LobbyRoomCode roomCode={lobby.roomCode} />
       {isOpenLobby ? (
         <LobbyPlayModeSwitch
           playMode={lobby.playMode}

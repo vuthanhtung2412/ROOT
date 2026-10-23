@@ -137,7 +137,12 @@ export type MenuLobbyHudState = {
   botChoices: MenuFactionChoice[]
   /** Difficulty and traits the lobby holds per bot. */
   botSettings: BotSettingsByFaction
+  /** Code guests type to enter this online room; null when unknown. */
+  roomCode: string | null
 }
+
+/** What the table alone says about the lobby: everything but the room code. */
+export type MenuLobbyTableState = Omit<MenuLobbyHudState, 'roomCode'>
 
 /** A change of the co-op table the host asks the server for. */
 export type LobbyTableChange =
