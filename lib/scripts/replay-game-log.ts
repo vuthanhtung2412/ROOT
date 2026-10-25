@@ -2,14 +2,19 @@
  * Rebuild a logged game as it stood after one of its events, as a snapshot the
  * web server can load. Dice and shuffles follow the logged seed.
  *
- * Run: pnpm --filter @root/lib replay:log <logs/…/game.json> [event seq]
- *   (no seq = last event; `seq` is the field of that name in game.json)
+ * Run: pnpm --filter @root/lib replay:log <logs/…/game.jsonl> [event seq]
+ *   (no seq = last event; `seq` is the field of that name in each event;
+ *   older `game.json` logs work too)
  * Then: pnpm --filter @root/cli start -- load <printed snapshot path>
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { isLoggedGame, snapshotAtLoggedEvent } from '#game/replayEventLog.js'
+import {
+  isLoggedGame,
+  parseLoggedGameFile,
+  snapshotAtLoggedEvent,
+} from '#game/replayEventLog.js'
 import type { GameSnapshot } from '#state/snapshot.js'
 
 const root: string = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -20,10 +25,10 @@ const callerDirectory: string = process.env.INIT_CWD ?? process.cwd()
 function main(): void {
   const logArgument: string | undefined = process.argv[2]
   if (logArgument === undefined) {
-    throw new Error('usage: replay:log <logs/…/game.json> [event seq]')
+    throw new Error('usage: replay:log <logs/…/game.jsonl> [event seq]')
   }
   const logPath: string = resolve(callerDirectory, logArgument)
-  const parsed: unknown = JSON.parse(readFileSync(logPath, 'utf8'))
+  const parsed: unknown = parseLoggedGameFile(logPath, readFileSync(logPath, 'utf8'))
   if (!isLoggedGame(parsed)) {
     throw new Error(`not a game log: ${logPath}`)
   }

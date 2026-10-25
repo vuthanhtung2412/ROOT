@@ -3,6 +3,7 @@ import type { Action } from '#actions/types.js'
 import { Game } from '#game/Game.js'
 import {
   isLoggedGame,
+  parseLoggedGameFile,
   snapshotAtLoggedEvent,
   type LoggedGame,
   type LoggedGameEvent,
@@ -113,5 +114,24 @@ describe('isLoggedGame', () => {
         events: [{ ...loggedGame.events[1]!, action: actionWithoutType }],
       }),
     ).toBe(false)
+  })
+})
+
+describe('parseLoggedGameFile', () => {
+  it('reads one event per line from a game.jsonl log', () => {
+    const loggedGame: LoggedGame = loggedGameOf(createPlayingGame({ seed: SEED }))
+    const lines: string = loggedGame.events
+      .map((event: LoggedGameEvent): string => `${JSON.stringify(event)}\n`)
+      .join('')
+
+    expect(parseLoggedGameFile('logs/game.jsonl', lines)).toEqual(loggedGame)
+  })
+
+  it('still reads an older game.json log', () => {
+    const loggedGame: LoggedGame = loggedGameOf(createPlayingGame({ seed: SEED }))
+
+    expect(parseLoggedGameFile('logs/game.json', JSON.stringify(loggedGame))).toEqual(
+      loggedGame,
+    )
   })
 })

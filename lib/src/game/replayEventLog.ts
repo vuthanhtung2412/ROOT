@@ -3,12 +3,13 @@ import { Game } from '#game/Game.js'
 import type { GameSnapshot } from '#state/snapshot.js'
 import type { GameState } from '#state/types.js'
 
-/** Labels the web server writes in `logs/<stamp>/game.json`. */
+/** Labels the web server writes in `logs/<stamp>/game.jsonl`. */
 const CREATE_LABEL = 'CREATE'
 const UNDO_LABEL = 'UNDO'
 const LOAD_LABEL = 'LOAD'
+const EVENT_LINES_FILE_EXTENSION = '.jsonl'
 
-/** One entry of `game.json`: what happened and the state right after it. */
+/** One entry of a game log: what happened and the state right after it. */
 export type LoggedGameEvent = {
   seq: number
   label: string
@@ -56,6 +57,21 @@ export function isLoggedGame(value: unknown): value is LoggedGame {
     Array.isArray(value.events) &&
     value.events.every(isLoggedGameEvent)
   )
+}
+
+/**
+ * Read a game log file: `game.jsonl` holds one event per line (appended as the
+ * game goes), older `game.json` files hold every event in one `events` list.
+ */
+export function parseLoggedGameFile(fileName: string, content: string): unknown {
+  if (!fileName.endsWith(EVENT_LINES_FILE_EXTENSION)) {
+    return JSON.parse(content)
+  }
+  const events: unknown[] = content
+    .split('\n')
+    .filter((line: string): boolean => line.trim() !== '')
+    .map((line: string): unknown => JSON.parse(line))
+  return { events }
 }
 
 /** Actions still standing at `untilSeq`: an UNDO drops the action before it. */
