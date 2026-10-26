@@ -1,6 +1,12 @@
 # Root
 
-TypeScript implementation of the Root board game (GP2 playable: Marquise vs Eyrie Builder; GP1 also supported).
+## DEMO
+
+
+
+https://github.com/user-attachments/assets/9a45f350-2552-439a-bdc5-937bb4ecdb0f
+
+
 
 ## Packages
 
