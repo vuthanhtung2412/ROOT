@@ -6,7 +6,6 @@
 import { artFactionOf, type BotFactionId } from '@root/lib/bot-factions'
 import type { MenuFactionChoice } from '#game/hudStore.ts'
 import {
-  HOTSEAT_FACTION_IDS,
   MENU_BOT_FACTION_IDS,
   MENU_FACTION_IDS,
   type MenuFactionId,
@@ -86,9 +85,14 @@ function isPickableOnSelectedSlot(table: SoloTable, faction: MenuFactionId): boo
   return isMenuBotFactionId(faction) && isBotFactionFree(table, faction)
 }
 
-/** The track for the selected slot: its faction picked, the ones it cannot take blocked. */
+/** Factions of the selected side: the woodland ones for the player, the bots otherwise. */
+function selectedSideFactions(table: SoloTable): readonly MenuFactionId[] {
+  return table.selectedSlot.kind === 'player' ? MENU_FACTION_IDS : MENU_BOT_FACTION_IDS
+}
+
+/** The track for the selected slot: its side only, its faction picked, the ones it cannot take blocked. */
 export function soloTrackChoices(table: SoloTable): MenuFactionChoice[] {
-  return HOTSEAT_FACTION_IDS.map((faction: MenuFactionId): MenuFactionChoice => {
+  return selectedSideFactions(table).map((faction: MenuFactionId): MenuFactionChoice => {
     if (isPickedOnSelectedSlot(table, faction)) return { faction, takenBy: 'you' }
     return { faction, takenBy: isPickableOnSelectedSlot(table, faction) ? null : 'other' }
   })

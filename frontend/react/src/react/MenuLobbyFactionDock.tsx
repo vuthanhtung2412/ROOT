@@ -24,7 +24,7 @@ const MODEL_SELECT_CLASS_NAME =
   'menu-ai-player-model min-h-8 border-0 bg-transparent font-body text-[15px] text-ink'
 const FACTION_GRID_CLASS_NAME = 'm-0 grid gap-x-2.5 gap-y-2 border-0 p-0 md:gap-3'
 /** The six factions: two rows of three, one row from `md`. */
-const SIX_FACTION_COLUMNS_CLASS_NAME = 'grid-cols-3 md:grid-cols-6'
+export const SIX_FACTION_COLUMNS_CLASS_NAME = 'grid-cols-3 md:grid-cols-6'
 /** One faction: head tile only, its name comes as a tooltip. */
 const FACTION_BUTTON_CLASS_NAME =
   'menu-faction-choice m-0 block cursor-root-pointer border-0 bg-transparent p-0 disabled:cursor-root-not-allowed'

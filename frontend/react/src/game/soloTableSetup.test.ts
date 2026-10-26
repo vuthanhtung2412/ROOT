@@ -33,7 +33,7 @@ describe('solo run table (Rootbotics 3.2)', () => {
     expect(canAddSoloBot({ ...table, bots: [...table.bots, 'vagabot'] })).toBe(false)
   })
 
-  it('blocks the bots and the factions a seated bot replaces on the player track', () => {
+  it('shows only the woodland factions on the player track, blocking the ones a bot replaces', () => {
     const table = soloTableFixture({ bots: ['electricEyrie'] })
     expect(takenByOf(table)).toEqual({
       marquise: null,
@@ -42,28 +42,24 @@ describe('solo run table (Rootbotics 3.2)', () => {
       vagabond: null,
       lizard: null,
       riverfolk: null,
-      mechanicalMarquise: 'other',
-      electricEyrie: 'other',
-      automatedAlliance: 'other',
-      vagabot: 'other',
     })
     expect(withSoloFactionPicked(table, 'eyrie')).toBe(table)
     expect(withSoloFactionPicked(table, 'marquise').playerFaction).toBe('marquise')
   })
 
-  it('blocks the bot of the player faction and other seated bots on a bot track', () => {
+  it('shows only the bots on a bot track, blocking the player faction bot and seated bots', () => {
     const table = soloTableFixture({
       playerFaction: 'marquise',
       bots: ['electricEyrie', 'automatedAlliance'],
       selectedSlot: { kind: 'newBot' },
     })
     expect(canAddSoloBot(table)).toBe(true)
-    const choices = takenByOf(table)
-    expect(choices.mechanicalMarquise).toBe('other')
-    expect(choices.electricEyrie).toBe('other')
-    expect(choices.automatedAlliance).toBe('other')
-    expect(choices.vagabot).toBe(null)
-    expect(choices.lizard).toBe('other')
+    expect(takenByOf(table)).toEqual({
+      mechanicalMarquise: 'other',
+      electricEyrie: 'other',
+      automatedAlliance: 'other',
+      vagabot: null,
+    })
   })
 
   it('adds a bot from ＋ and selects it, then replaces it from its own tile', () => {
