@@ -86,22 +86,42 @@ export function placeStartDelay(effect: BoardPlaceEffect): number {
   return effect.step * PLACE_STEP_MS
 }
 
+/** A ruin explored: rattle, item up, ruin down, +1 floating off. */
+export const EXPLORE_MOMENT_MS = 3200
+/** A revolt's brawl cloud, from popping up to gone. */
+export const REVOLT_MOMENT_MS = 1900
+/** The revolt's pieces go when its brawl starts to thin out. */
+export const REVOLT_LEAD_IN_MS = 1400
+
+/** How long the other effects of an update wait for its map moments. */
+export function mapMomentsLeadIn(effects: readonly BoardEffect[]): number {
+  return effects.some((effect: BoardEffect): boolean => effect.kind === 'revolt')
+    ? REVOLT_LEAD_IN_MS
+    : 0
+}
+
 /** When an effect is over, its wait for earlier steps included. */
-function effectEnd(effect: BoardEffect): number {
+function effectEnd(effect: BoardEffect, leadInMs: number): number {
+  if (effect.kind === 'explore') {
+    return EXPLORE_MOMENT_MS
+  }
+  if (effect.kind === 'revolt') {
+    return REVOLT_MOMENT_MS
+  }
   if (effect.kind === 'move') {
-    return moveStartDelay(effect) + MOVE_LIFETIME_MS
+    return leadInMs + moveStartDelay(effect) + MOVE_LIFETIME_MS
   }
   if (effect.kind === 'place') {
-    return placeStartDelay(effect) + EFFECT_LIFETIME_MS
+    return leadInMs + placeStartDelay(effect) + EFFECT_LIFETIME_MS
   }
-  return EFFECT_LIFETIME_MS
+  return leadInMs + EFFECT_LIFETIME_MS
 }
 
 /** How long a batch stays on the map: long enough for its last effect. */
 export function batchLifetime(batch: BoardEffectBatch): number {
   return batch.effects.reduce(
     (lifetime: number, effect: BoardEffect): number =>
-      Math.max(lifetime, effectEnd(effect)),
+      Math.max(lifetime, effectEnd(effect, batch.leadInMs ?? 0)),
     EFFECT_LIFETIME_MS,
   )
 }
