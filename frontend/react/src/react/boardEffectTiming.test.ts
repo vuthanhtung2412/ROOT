@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest'
+import type { BoardEffect } from '#game/boardEffects.ts'
 import {
+  batchLifetime,
+  EFFECT_LIFETIME_MS,
+  EXPLORE_MOMENT_MS,
+  mapMomentsLeadIn,
   marchArrivalShare,
   marchTiming,
   MARCH_MAXIMUM_PIECE_COUNT,
   MOVE_SLIDE_MS,
+  REVOLT_LEAD_IN_MS,
   type MarchTiming,
 } from '#react/boardEffectTiming.ts'
 
@@ -58,5 +64,36 @@ describe('marchTiming', () => {
 
     expect(timing.pieceCount).toBe(MARCH_MAXIMUM_PIECE_COUNT)
     expect(marchDuration(timing)).toBeCloseTo(MOVE_SLIDE_MS)
+  })
+})
+
+describe('map moments lead-in', () => {
+  it('holds the pieces of a revolt until its brawl thins out', () => {
+    const effects: BoardEffect[] = [
+      { kind: 'revolt', clearing: 3 },
+      {
+        kind: 'remove',
+        clearing: 3,
+        owner: 0,
+        pieceKind: 'warrior',
+        count: 2,
+        slot: { index: 0, total: 1 },
+      },
+    ]
+    const leadInMs: number = mapMomentsLeadIn(effects)
+
+    expect(leadInMs).toBe(REVOLT_LEAD_IN_MS)
+    expect(batchLifetime({ sequence: 1, effects, leadInMs })).toBe(
+      REVOLT_LEAD_IN_MS + EFFECT_LIFETIME_MS,
+    )
+  })
+
+  it('lets an explore play with no lead-in', () => {
+    const effects: BoardEffect[] = [
+      { kind: 'explore', clearing: 2, itemType: 'boot' },
+    ]
+
+    expect(mapMomentsLeadIn(effects)).toBe(0)
+    expect(batchLifetime({ sequence: 1, effects })).toBe(EXPLORE_MOMENT_MS)
   })
 })

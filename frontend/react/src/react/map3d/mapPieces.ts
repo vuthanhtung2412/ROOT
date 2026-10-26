@@ -246,6 +246,11 @@ function singlePiece(
   }
 }
 
+/** Map piece key of the ruin of a clearing. */
+export function ruinPieceKey(clearingId: number): string {
+  return `${String(clearingId)}-ruin`
+}
+
 /**
  * The building slots of a clearing: the ruin and each building take one,
  * every slot left over shows as an empty plot. Rule: Board > Slots
@@ -260,7 +265,7 @@ function slotPieces(
   const ruin: MapPiece[] = clearingHasRuin(clearing)
     ? [
         {
-          key: `${String(clearingId)}-ruin`,
+          key: ruinPieceKey(clearingId),
           shape: 'piece',
           textureKey: GAME_ASSET_KEYS.markerRuin,
           texturePath: imagePathForAssetKey(GAME_ASSET_KEYS.markerRuin),

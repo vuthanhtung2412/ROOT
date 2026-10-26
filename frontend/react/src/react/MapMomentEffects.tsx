@@ -5,6 +5,8 @@ import {
   itemTextureKey,
 } from '#assets/gameAssets.ts'
 import type { BoardExploreEffect } from '#game/mapMoments.ts'
+import { PIECE_DRAW } from '#game/theme.ts'
+import type { BoardEffectPosition } from '#react/BoardEffectsLayer.tsx'
 import type { ClearingHitCenter } from '#react/PieceStack.tsx'
 import { useKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
 
@@ -108,12 +110,18 @@ const RATTLE_DUST_COUNT = 7
 const CRUMBLE_DUST_COUNT = 9
 const VICTORY_POINT_AT_MS = 2100
 const FLOATING_TEXT_MS = 1100
-/** Sizes and heights, as shares of the clearing radius. */
-const RUIN_SHARE_OF_RADIUS = 0.9
-const ITEM_SHARE_OF_RADIUS = 0.6
-const GLINT_SHARE_OF_RADIUS = 1.2
-const ITEM_RISE_SHARE_OF_RADIUS = 0.75
-const VICTORY_POINT_SHARE_OF_RADIUS = 0.3
+/**
+ * The ruin keeps the size the map draws it at; the rest is sized off it:
+ * the item, its glint, how high it rises and how far the dust flies.
+ */
+const RUIN_SIZE: number = PIECE_DRAW.buildingIconSize
+const ITEM_SHARE_OF_RUIN = 0.9
+const GLINT_SHARE_OF_RUIN = 2
+const ITEM_RISE_SHARE_OF_RUIN = 1.1
+const DUST_REACH_SHARE_OF_RUIN = 1.2
+const VICTORY_POINT_SHARE_OF_RUIN = 0.6
+/** The crumbled ruin settles this far into the ground as it fades. */
+const RUIN_SINK_PIXELS = 6
 
 function rattleKeyframes(): Keyframe[] {
   return Array.from({ length: RATTLE_SWINGS + 1 }, (_, index: number) => {
@@ -138,17 +146,18 @@ function ruinSteps(): KeyframeStep[] {
       options: { duration: RUIN_RATTLE_MS, delay: RUIN_RATTLE_AT_MS },
     },
     {
+      // Greys out and fades where it stands: never bigger or smaller.
       keyframes: [
-        { opacity: 1, transform: `${CENTERED} scale(1)`, filter: 'none' },
+        { opacity: 1, transform: CENTERED, filter: 'none' },
         {
           opacity: 1,
-          transform: 'translate(-50%, -40%) scale(0.95)',
+          transform: CENTERED,
           filter: 'grayscale(1) brightness(0.8)',
           offset: 0.3,
         },
         {
           opacity: 0,
-          transform: 'translate(-50%, -20%) scale(0.6)',
+          transform: `translate(-50%, calc(-50% + ${String(RUIN_SINK_PIXELS)}px))`,
           filter: 'grayscale(1) brightness(0.6)',
         },
       ],
@@ -253,15 +262,19 @@ export type MapMomentProps<Effect> = {
   center: ClearingHitCenter
 }
 
+export type ExploreMomentProps = {
+  effect: BoardExploreEffect
+  /** Where the map draws the ruin icon, in its building slot. */
+  ruin: BoardEffectPosition
+}
+
 /**
- * The ruin rattles, its item rises with a glint and fades, then the emptied
- * ruin crumbles in a puff of dust and +1 floats off.
+ * The ruin rattles in its slot, its item rises with a glint and fades, then
+ * the emptied ruin greys out and fades in a puff of dust and +1 floats off.
  */
-export function ExploreMomentView(
-  props: MapMomentProps<BoardExploreEffect>,
-): JSX.Element {
-  const radius: number = props.center.radius
-  const riseHeight: number = radius * ITEM_RISE_SHARE_OF_RADIUS
+export function ExploreMomentView(props: ExploreMomentProps): JSX.Element {
+  const riseHeight: number = RUIN_SIZE * ITEM_RISE_SHARE_OF_RUIN
+  const dustReach: number = RUIN_SIZE * DUST_REACH_SHARE_OF_RUIN
   const ruinRef = useKeyframeSteps(ruinSteps())
   const itemRef = useKeyframeSteps(itemSteps(riseHeight))
   const glintRef = useKeyframeSteps(glintSteps(riseHeight))
@@ -269,25 +282,24 @@ export function ExploreMomentView(
   const itemKey: string | null = itemTextureKey(props.effect.itemType)
   const itemPath: string | null =
     itemKey === null ? null : imagePathForAssetKey(itemKey)
-  const ruinSize: number = radius * RUIN_SHARE_OF_RADIUS
-  const itemSize: number = radius * ITEM_SHARE_OF_RADIUS
-  const glintSize: number = radius * GLINT_SHARE_OF_RADIUS
+  const itemSize: number = RUIN_SIZE * ITEM_SHARE_OF_RUIN
+  const glintSize: number = RUIN_SIZE * GLINT_SHARE_OF_RUIN
   return (
     <div
       className={MOMENT_CLASS_NAME}
-      style={centeredAt(props.center.centerX, props.center.centerY)}
+      style={centeredAt(props.ruin.left, props.ruin.top)}
     >
       {ruinPath !== null ? (
         <div
           ref={ruinRef}
           className={CENTERED_PART_CLASS_NAME}
-          style={{ width: ruinSize }}
+          style={{ width: RUIN_SIZE, height: RUIN_SIZE }}
         >
-          <img className="block w-full drop-shadow-md" src={ruinPath} alt="" />
+          <img className="block size-full object-fill" src={ruinPath} alt="" />
         </div>
       ) : null}
       <DustBurst
-        radius={radius}
+        radius={dustReach}
         delayMs={RATTLE_DUST_AT_MS}
         count={RATTLE_DUST_COUNT}
         color={DUST_COLOR}
@@ -307,7 +319,7 @@ export function ExploreMomentView(
         </div>
       ) : null}
       <DustBurst
-        radius={radius}
+        radius={dustReach}
         delayMs={CRUMBLE_DUST_AT_MS}
         count={CRUMBLE_DUST_COUNT}
         color={CRUMBLE_DUST_COLOR}
@@ -316,7 +328,7 @@ export function ExploreMomentView(
         text="+1"
         delayMs={VICTORY_POINT_AT_MS}
         left={0}
-        top={-radius * VICTORY_POINT_SHARE_OF_RADIUS}
+        top={-RUIN_SIZE * VICTORY_POINT_SHARE_OF_RUIN}
       />
     </div>
   )

@@ -74,7 +74,9 @@ import {
   type BoardEffect,
   type BoardEffectBatch,
 } from '#game/boardEffects.ts'
+import { mapMomentEffectsBetween } from '#game/mapMoments.ts'
 import { moveHoldMs, placementHoldMs } from '#game/recruitJoin.ts'
+import { mapMomentsLeadIn } from '#react/boardEffectTiming.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
 import { CLEARING_FLASH_MS, type ClearingFlash } from '#game/clearingFlash.ts'
 import type { GameSession, GameSessionSnapshot } from '#game/GameSession.ts'
@@ -918,11 +920,15 @@ export class ReactGameController {
       this.effectLogLength,
       snapshot.log,
     )
-    const effects = withPawnForestMoves(
-      boardEffectsBetween(this.effectState, state, newLogEntries),
-      this.effectState,
-      state,
-    )
+    const effects: BoardEffect[] = [
+      ...mapMomentEffectsBetween(this.effectState, state, newLogEntries),
+      ...withPawnForestMoves(
+        boardEffectsBetween(this.effectState, state, newLogEntries),
+        this.effectState,
+        state,
+      ),
+    ]
+    const leadInMs: number = mapMomentsLeadIn(effects)
     // Same guard as the board effects: nothing flies for another game.
     if (this.effectState?.id === state.id) {
       this.syncCardFlights([
@@ -930,13 +936,14 @@ export class ReactGameController {
         ...boughtCardFlights(this.effectState, state, newLogEntries),
       ])
     }
-    this.holdBackLaterPlacements(effects)
+    this.holdBackLaterPlacements(effects, leadInMs)
     this.effectState = state
     this.effectLogLength = snapshot.log.length
     if (effects.length > 0) {
       this.boardEffects = {
         sequence: this.boardEffects.sequence + 1,
         effects,
+        leadInMs,
       }
     }
   }
@@ -945,15 +952,23 @@ export class ReactGameController {
    * Pieces placed one clearing after the other (wood at each sawmill) stay
    * off the board until their step starts, so they appear with their effect;
    * recruits stay off it until they have walked up to the warriors they join,
-   * and so do pieces moved onto a stack of their kind.
+   * and so do pieces moved onto a stack of their kind. Placed pieces also
+   * wait out the lead-in of the update's map moments (a revolt's brawl).
    */
-  private holdBackLaterPlacements(effects: readonly BoardEffect[]): void {
+  private holdBackLaterPlacements(
+    effects: readonly BoardEffect[],
+    leadInMs: number,
+  ): void {
     for (const effect of effects) {
       if (effect.kind !== 'place' && effect.kind !== 'move') {
         continue
       }
       const holdMs: number =
-        effect.kind === 'place' ? placementHoldMs(effect) : moveHoldMs(effect)
+        effect.kind === 'place'
+          ? leadInMs + placementHoldMs(effect)
+          : moveHoldMs(effect) === 0
+            ? 0
+            : leadInMs + moveHoldMs(effect)
       if (holdMs === 0) {
         continue
       }
