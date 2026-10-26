@@ -307,6 +307,24 @@ export function describeAction(action: Action, state: GameState): string {
       return `BOT SPREAD SYMPATHY C${action.clearing}`
     case 'botOrganize':
       return `BOT ORGANIZE C${action.clearing}`
+    case 'botPawnMove':
+      return `BOT PAWN →C${action.to}`
+    case 'botSlip':
+      return `BOT SLIP F${fallForestDisplayId(action.forest)}`
+    case 'botExplore':
+      return `BOT EXPLORE C${action.clearing} ${action.item}`
+    case 'botQuest':
+      return `BOT QUEST C${action.clearing}`
+    case 'botAid':
+      return `BOT AID ${playerRefBySeat(state, action.target)} ×${action.count}`
+    case 'botRepair':
+      return 'BOT REPAIR'
+    case 'botSteal':
+      return `BOT STEAL from ${playerRefBySeat(state, action.target)}`
+    case 'botDayLabor':
+      return `BOT DAY LABOR ${findCard(action.cardId)}`
+    case 'botRefresh':
+      return `BOT REFRESH ${action.count}`
     case 'eveningDraw':
       return 'EVENING draw cards'
     case 'march':

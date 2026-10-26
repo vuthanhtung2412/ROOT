@@ -21,6 +21,8 @@ const TABLES: readonly FactionId[][] = [
   ['mechanicalMarquise', 'electricEyrie', 'riverfolk'],
   ['marquise', 'automatedAlliance'],
   ['mechanicalMarquise', 'automatedAlliance', 'riverfolk'],
+  ['marquise', 'vagabot'],
+  ['electricEyrie', 'automatedAlliance', 'vagabot', 'riverfolk'],
 ]
 
 /** A human who only answers prompts and ends phases. */

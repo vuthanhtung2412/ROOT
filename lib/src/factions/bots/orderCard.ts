@@ -8,6 +8,7 @@ import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { playerOf } from '#queries/seat.js'
 import { addVictoryPoints } from '#rules/dominance.js'
+import { gainItem } from '#factions/bots/vagabot/items.js'
 import type {
   AutomatedAllianceBoard,
   ElectricEyrieBoard,
@@ -80,14 +81,20 @@ export function craftOrderCard(
   seat: Seat,
   ctx: Ctx,
 ): LogEntry[] {
-  const order = botBoardOf(state, seat).orderCard
+  const board = botBoardOf(state, seat)
+  const order = board.orderCard
   if (order === null) return []
   const definition = defOf(order)
   if (definition.type !== 'item' || definition.item === undefined) return []
   const item = definition.item
   if ((state.itemSupply[item] ?? 0) < 1) return []
   state.itemSupply[item] -= 1
-  playerOf(state, seat).craftedItems.push({ type: item, exhausted: false })
+  // Rule: Rootbotics 7.2.3 — the Vagabot's items go face up in its Satchel.
+  if (board.kind === 'vagabot') {
+    gainItem(board, item)
+  } else {
+    playerOf(state, seat).craftedItems.push({ type: item, exhausted: false })
+  }
   ctx.emit({ s: 'craft.item', actor: seat, cardId: order.id, item })
   const logs: LogEntry[] = [
     { t: 'action', actor: seat, action: { type: 'botCraft', cardId: order.id } },

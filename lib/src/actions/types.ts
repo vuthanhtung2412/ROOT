@@ -308,6 +308,24 @@ export type BotAction =
   | { type: 'botSpreadSympathy'; clearing: ClearingId }
   /** Rule: Rootbotics 6.6.1 — Automated Alliance organizes. */
   | { type: 'botOrganize'; clearing: ClearingId }
+  /** Rule: Rootbotics 7.5 — the Vagabot moves its pawn to a clearing. */
+  | { type: 'botPawnMove'; to: ClearingId }
+  /** Rule: Rootbotics 7.4.3 / 7.7.3 — the Vagabot slips into a forest. */
+  | { type: 'botSlip'; forest: number }
+  /** Rule: Rootbotics 7.5.1 — the Vagabot explores a ruin. */
+  | { type: 'botExplore'; clearing: ClearingId; item: ItemType }
+  /** Rule: Rootbotics 7.5.2 — the Vagabot completes its quest. */
+  | { type: 'botQuest'; clearing: ClearingId }
+  /** Rule: Rootbotics 7.5.3 — the Vagabot aids a player. */
+  | { type: 'botAid'; target: Seat; count: number }
+  /** Rule: Rootbotics 7.5.5 / 7.6.2 — the Vagabot repairs. */
+  | { type: 'botRepair' }
+  /** Rule: Rootbotics 7.7.1 — Thief steals a card. */
+  | { type: 'botSteal'; target: Seat }
+  /** Rule: Rootbotics 7.7.2 — Tinker crafts from the discard pile. */
+  | { type: 'botDayLabor'; cardId: string }
+  /** Rule: Rootbotics 7.6.1 — the Vagabot refreshes items. */
+  | { type: 'botRefresh'; count: number }
 
 /** Rule: 11.4–11.6 — Riverfolk Company turn actions. */
 export type RiverfolkAction =

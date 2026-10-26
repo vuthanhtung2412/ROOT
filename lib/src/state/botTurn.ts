@@ -1,5 +1,6 @@
 import type { CardSuit } from '#cards/types.js'
 import type { ClearingId } from '#map/types.js'
+import type { Seat } from '#pieces/types.js'
 import type { Phase, Step } from '#state/types.js'
 
 /** Rule: Rootbotics 4.4–4.7 — one unit of the Mechanical Marquise turn. */
@@ -57,7 +58,34 @@ export type AutomatedAllianceTask =
   /** Difficulty Nightmare — 1 VP at the end of Evening. */
   | { kind: 'nightmareScore' }
 
-export type BotTask = MechanicalMarquiseTask | ElectricEyrieTask | AutomatedAllianceTask
+/** Rule: Rootbotics 7.4–7.6 — one unit of the Vagabot turn. */
+export type VagabotTask =
+  | { kind: 'revealOrder' }
+  | { kind: 'craftOrder' }
+  | { kind: 'slip' }
+  | { kind: 'explore' }
+  | { kind: 'quest' }
+  | { kind: 'aid' }
+  /** Rule: Rootbotics 7.5.4 — battle the player with the most points. */
+  | { kind: 'battleTarget' }
+  | { kind: 'battleAgain'; clearing: ClearingId; defender: Seat }
+  | { kind: 'repair' }
+  | { kind: 'special' }
+  | { kind: 'refresh' }
+  | { kind: 'eveningRepair' }
+  | { kind: 'discardOrder' }
+  /** Trait Adventurer — remaining items on repeated quests at the end of Daylight. */
+  | { kind: 'adventurerQuests' }
+  /** Trait Berserker — repair one more item at the end of the turn. */
+  | { kind: 'berserkerRepair' }
+  /** Difficulty Nightmare — 1 VP at the end of Evening. */
+  | { kind: 'nightmareScore' }
+
+export type BotTask =
+  | MechanicalMarquiseTask
+  | ElectricEyrieTask
+  | AutomatedAllianceTask
+  | VagabotTask
 
 /** Work a bot still has in one step of its turn, done one task at a time. */
 export type BotPlan = {
