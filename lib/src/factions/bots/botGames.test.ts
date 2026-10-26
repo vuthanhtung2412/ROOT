@@ -6,8 +6,11 @@ import type { FactionId } from '#pieces/types.js'
 import {
   BOT_DIFFICULTIES,
   BOT_TRAITS,
+  DEFAULT_VAGABOT_CHARACTER,
+  VAGABOT_CHARACTERS,
   type BotDifficulty,
   type BotSettingsByFaction,
+  type VagabotCharacter,
 } from '#public/botSettings.js'
 import { HAND_LIMIT } from '#state/constants.js'
 import { finishSetup } from '#test/fixtures.js'
@@ -100,10 +103,14 @@ describe('seeded games with bots (Rootbotics 4–5)', () => {
 
 const BOTS_WITH_A_HUMAN: readonly FactionId[] = ['mechanicalMarquise', 'electricEyrie', 'riverfolk']
 
-function everyTraitAt(difficulty: BotDifficulty): BotSettingsByFaction {
+const NEW_BOTS_WITH_A_HUMAN: readonly FactionId[] = ['automatedAlliance', 'vagabot', 'marquise']
+
+function everyTraitAt(difficulty: BotDifficulty, character: VagabotCharacter): BotSettingsByFaction {
   return {
     mechanicalMarquise: { difficulty, traits: [...BOT_TRAITS.mechanicalMarquise] },
     electricEyrie: { difficulty, traits: [...BOT_TRAITS.electricEyrie] },
+    automatedAlliance: { difficulty, traits: [...BOT_TRAITS.automatedAlliance] },
+    vagabot: { difficulty, traits: [...BOT_TRAITS.vagabot], character },
   }
 }
 
@@ -111,11 +118,20 @@ describe('seeded games with bot difficulty and every trait (Rootbotics 3.3)', ()
   for (const difficulty of BOT_DIFFICULTIES) {
     for (const seed of SEEDS) {
       it(`${difficulty}, every trait (seed ${seed}) plays to a winner`, () => {
-        const game = startedGame(seed, BOTS_WITH_A_HUMAN, everyTraitAt(difficulty))
+        const settings = everyTraitAt(difficulty, DEFAULT_VAGABOT_CHARACTER)
+        const game = startedGame(seed, BOTS_WITH_A_HUMAN, settings)
         playPassively(game)
 
         expect(game.state.status).toBe('finished')
-        expect(game.state.botSettings).toEqual(everyTraitAt(difficulty))
+        expect(game.state.botSettings).toEqual(settings)
+      })
+    }
+    for (const character of VAGABOT_CHARACTERS) {
+      it(`${difficulty}, every trait, Alliance and ${character} Vagabot play to a winner`, () => {
+        const game = startedGame(SEEDS[0]!, NEW_BOTS_WITH_A_HUMAN, everyTraitAt(difficulty, character))
+        playPassively(game)
+
+        expect(game.state.status).toBe('finished')
       })
     }
   }

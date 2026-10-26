@@ -393,7 +393,7 @@
   - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/automatedAlliance/*` + tests
 - [x] `feat(lib): Vagabot characters, difficulty and traits`
   - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/vagabot/*` + tests
-- [ ] `test(lib): seeded games with the new bots play out`
+- [x] `test(lib): seeded games with the new bots play out`
   - `lib/src/factions/bots/botGames.test.ts`
 - [ ] `feat(api): Automated Alliance and Vagabot`
   - `backend/web/src/schemas/*`, `backend/web/src/typeGuards.ts`, `backend/web/src/aiPlayer/*`, `backend/web/openapi.json`, `backend/web_client/src/*` (generated)
