@@ -75,6 +75,10 @@ import {
   type BoardEffectBatch,
 } from '#game/boardEffects.ts'
 import { mapMomentEffectsBetween } from '#game/mapMoments.ts'
+import {
+  woodlandMomentsBetween,
+  type WoodlandMoment,
+} from '#game/woodlandMoments.ts'
 import { moveHoldMs, placementHoldMs } from '#game/recruitJoin.ts'
 import { mapMomentsLeadIn } from '#react/boardEffectTiming.ts'
 import type { BoardLayout } from '#game/boardLayout.ts'
@@ -935,6 +939,9 @@ export class ReactGameController {
         ...cardFlightsFromLog(newLogEntries),
         ...boughtCardFlights(this.effectState, state, newLogEntries),
       ])
+      this.syncWoodlandMoments(
+        woodlandMomentsBetween(this.effectState, state, newLogEntries),
+      )
     }
     this.holdBackLaterPlacements(effects, leadInMs)
     this.effectState = state
@@ -996,6 +1003,19 @@ export class ReactGameController {
     }
     this.placementTimers.clear()
     this.heldBackPieceIds.clear()
+  }
+
+  /** Big turns of one server update are told over the whole screen. */
+  private syncWoodlandMoments(moments: readonly WoodlandMoment[]): void {
+    if (moments.length === 0) {
+      return
+    }
+    patchHud({
+      woodlandMoments: {
+        sequence: getHudSnapshot().woodlandMoments.sequence + 1,
+        moments,
+      },
+    })
   }
 
   /** Crafted / revealed cards of one server update fly out of the rail. */
