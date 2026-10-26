@@ -51,8 +51,8 @@ const SEAT_GRID_CLASS_NAME = 'm-0 grid list-none grid-cols-2 items-start justify
 const TABLE_FULL_NOTE_CLASS_NAME = 'm-0 max-w-44 text-center font-body text-sm text-ink-soft italic'
 /** The whole menu screen: the co-op lobby shrinks to fit its height. */
 const MENU_FRAME_SELECTOR = '.menu-overlay'
-/** The two Rootbotics bots side by side. */
-const BOT_PICKER_COLUMNS_CLASS_NAME = 'grid-cols-2'
+/** The four Rootbotics bots in one row. */
+const BOT_PICKER_COLUMNS_CLASS_NAME = 'grid-cols-4'
 
 /** Each side is always a full 2x2 grid; unused slots stay empty. */
 const SIDE_SLOT_COUNT = 4
@@ -160,6 +160,10 @@ export function MenuCoopLobby(props: {
   const showDock: boolean = isSeated || hasOpenSeat
   const [isPickingBot, setIsPickingBot] = useState<boolean>(false)
   const [settingsOpenBot, setSettingsOpenBot] = useState<BotFactionId | null>(null)
+  /** Woodland side clicked: the dock goes back to the woodland factions. */
+  function showFactionDock(): void {
+    setIsPickingBot(false)
+  }
   const canAddBot: boolean =
     lobby.isHost &&
     hasOpenSeat &&
@@ -183,8 +187,8 @@ export function MenuCoopLobby(props: {
                     key={`coop-seat-${String(indexed.seatIndex)}`}
                     seat={indexed.seat}
                     seatIndex={indexed.seatIndex}
-                    isSelected={indexed.seat.isLocalPlayer}
-                    onSelect={indexed.seat.isLocalPlayer ? (): void => undefined : null}
+                    isSelected={indexed.seat.isLocalPlayer && !isPickingBot}
+                    onSelect={indexed.seat.isLocalPlayer ? showFactionDock : null}
                     onExpel={
                       lobby.isHost &&
                       !indexed.seat.isLocalPlayer &&
@@ -202,8 +206,8 @@ export function MenuCoopLobby(props: {
                 <LobbyOpenSeatTile
                   seatIndex={nextSeatIndex}
                   kind={isSeated ? 'waiting' : 'local'}
-                  isSelected={!isSeated}
-                  onSelect={(): void => undefined}
+                  isSelected={!isSeated && !isPickingBot}
+                  onSelect={showFactionDock}
                 />
               ) : null}
               {emptySlots({ side: 'human', usedSlotCount: humans.length + (hasOpenSeat ? 1 : 0) })}
