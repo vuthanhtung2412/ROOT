@@ -95,10 +95,25 @@ export function BotBoardStrip(props: { view: BotBoardViewModel }): JSX.Element {
         <b>{view.victoryPoints}</b> VP
       </span>
       <span className={SEPARATOR_CLASS_NAME} />
-      <div className={GROUP_CLASS_NAME}>
-        <h3 className={HEADING_CLASS_NAME}>Supply</h3>
-        <WarriorSupply view={view} />
-      </div>
+      {view.kind === 'vagabot' ? (
+        <div className={`bot-board-quest ${GROUP_CLASS_NAME}`} aria-label="Quest">
+          <h3 className={HEADING_CLASS_NAME}>Quest</h3>
+          {view.quest === null ? (
+            <span>{EMPTY_TEXT}</span>
+          ) : (
+            <StripChip
+              label={view.quest.name}
+              suit={view.quest.suit}
+              tip={<>Complete in a {view.quest.suit} clearing for two items.</>}
+            />
+          )}
+        </div>
+      ) : (
+        <div className={GROUP_CLASS_NAME}>
+          <h3 className={HEADING_CLASS_NAME}>Supply</h3>
+          <WarriorSupply view={view} />
+        </div>
+      )}
       <span className={SEPARATOR_CLASS_NAME} />
       <BotSettingsGroup view={view} />
     </div>

@@ -28,6 +28,8 @@ export const GAME_ASSET_KEYS = {
   characterBoardVagabond: 'character-board-vagabond',
   characterBoardMechanicalMarquise: 'character-board-mechanical-marquise',
   characterBoardElectricEyrie: 'character-board-electric-eyrie',
+  characterBoardAutomatedAlliance: 'character-board-automated-alliance',
+  characterBoardVagabot: 'character-board-vagabot',
   characterCardVagabondThief: 'character-card-vagabond-thief',
   characterCardVagabondTinker: 'character-card-vagabond-tinker',
   characterCardVagabondRanger: 'character-card-vagabond-ranger',
@@ -303,6 +305,14 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.characterBoardElectricEyrie,
     path: 'assets/character-boards/electric-eyrie-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterBoardAutomatedAlliance,
+    path: 'assets/character-boards/automated-alliance-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterBoardVagabot,
+    path: 'assets/character-boards/vagabot-front.webp',
   },
   {
     key: GAME_ASSET_KEYS.characterCardVagabondThief,

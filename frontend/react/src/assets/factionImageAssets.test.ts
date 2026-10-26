@@ -15,6 +15,8 @@ const EVERY_FACTION: readonly string[] = [
   'riverfolk',
   'mechanicalMarquise',
   'electricEyrie',
+  'automatedAlliance',
+  'vagabot',
 ]
 
 function assetKeysForFactions(factionIds: readonly string[]): readonly string[] {

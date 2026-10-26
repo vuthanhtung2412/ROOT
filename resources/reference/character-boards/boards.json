@@ -284,6 +284,32 @@
           "sourceUrl": "resources/rules/Electric_Eyrie_Errata.pdf"
         }
       ]
+    },
+    {
+      "id": "automated-alliance",
+      "name": "Automated Alliance",
+      "expansion": "clockwork",
+      "page": "https://www.therootdatabase.com/clockwork/automated-alliance/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "automated-alliance/automated-alliance-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/1a2e450f03e04bf9b8af089fe47abaab.webp"
+        }
+      ]
+    },
+    {
+      "id": "vagabot",
+      "name": "Vagabot",
+      "expansion": "clockwork",
+      "page": "https://www.therootdatabase.com/clockwork/vagabot/?lang=en",
+      "boards": [
+        {
+          "side": "front",
+          "image": "vagabot/vagabot-front.webp",
+          "sourceUrl": "https://www.therootdatabase.com/media/boards/eef96f3980f944a78ad826354533f29d.webp"
+        }
+      ]
     }
   ],
   "vagabonds": [

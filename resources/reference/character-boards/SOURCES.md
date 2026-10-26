@@ -13,6 +13,7 @@ Layout: one subdirectory per faction id (`marquise-de-cat/`, `eyrie-dynasties/`,
 | Decimator85 Root Assets (Drive) | https://drive.google.com/drive/folders/1MFx-NK40quaThNRBovrjISwbuQdUddkJ | Riverfolk Company + Lizard Cult boards (higher resolution, PNG → webp) |
 | Own scan | printed Clockwork board | Mechanical Marquise 2.0 bot board: raw scan `mechanical-marquise/mechanical-marquise-front.png` (2090 px, SoT); `.webp` = same scan colour-matched to the Root Database print (therootdatabase.com/clockwork/mechanical-marquise-20/) |
 | Electric Eyrie errata sheet | `resources/rules/Electric_Eyrie_Errata.pdf` (Leder Games) | Electric Eyrie bot board (front, rendered at 300 dpi, rotated, 2000 px) |
+| Root Database Clockwork pages | https://www.therootdatabase.com/clockwork/{automated-alliance,vagabot}/ | Automated Alliance and Vagabot bot boards (front, 950 px) |
 | Leder Games | https://ledergames.com | publisher / © |
 
 ## Coverage

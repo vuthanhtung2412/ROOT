@@ -399,5 +399,5 @@
   - `backend/web/src/schemas/*`, `backend/web/src/typeGuards.ts`, `backend/web/src/aiPlayer/*`, `backend/web/openapi.json`, `backend/web_client/src/*` (generated)
 - [x] `feat(react): pick Automated Alliance and Vagabot`
   - `frontend/react/src/game/menuPartySetup.ts`, `soloTableSetup.ts`, `botSettingsMenu.ts`, `react/MenuBotSettings.tsx`, art / pawn helpers + tests
-- [ ] `feat(react): Automated Alliance and Vagabot boards`
+- [x] `feat(react): Automated Alliance and Vagabot boards`
   - `frontend/react/src/ui/botBoardViewModel.ts` + test, `react/BotFactionBoard.tsx`
