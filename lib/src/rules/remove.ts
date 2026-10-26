@@ -22,6 +22,7 @@ import {
 import { applyTradeDisruption } from '#factions/riverfolk/rules.js'
 import { warTax } from '#factions/bots/electricEyrie/warTax.js'
 import { applyCrackdown } from '#factions/bots/automatedAlliance/crackdown.js'
+import { sympathyScoresNothing } from '#factions/bots/automatedAlliance/cards.js'
 import { vagabotBoardOf } from '#factions/bots/botBoards.js'
 import { damageItems } from '#factions/bots/vagabot/items.js'
 import { hasKeep } from '#queries/place.js'
@@ -287,6 +288,13 @@ export function removePieces(
       enqueueOutrage(state, actor, clearing)
     }
     if (piece.owner === actor) continue
+    if (
+      piece.kind === 'token' &&
+      piece.type === 'sympathy' &&
+      sympathyScoresNothing(state, piece.owner)
+    ) {
+      continue
+    }
     if (piece.kind === 'building' || piece.kind === 'token') {
       if (piece.kind === 'token' && piece.type === 'keep') {
         // Rule: Marquise > The Keep — token never returns to supply.

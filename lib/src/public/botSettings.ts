@@ -30,7 +30,14 @@ export type ElectricEyrieTrait =
   | 'swoop'
   | 'warTax'
 
-export type BotTrait = MechanicalMarquiseTrait | ElectricEyrieTrait
+export type AutomatedAllianceTrait =
+  | 'steadfast'
+  | 'wildfire'
+  | 'informants'
+  | 'popularity'
+  | 'veterans'
+
+export type BotTrait = MechanicalMarquiseTrait | ElectricEyrieTrait | AutomatedAllianceTrait
 
 /** Rule: Rootbotics 7.3.1 / 7.7 — Vagabot character cards played here. */
 export type VagabotCharacter = 'thief' | 'tinker' | 'ranger'
@@ -57,7 +64,7 @@ export type BotCardText = {
 export const BOT_TRAITS: Readonly<Record<BotFactionId, readonly BotTrait[]>> = {
   mechanicalMarquise: ['blitz', 'fortified', 'hospitals', 'ironWill', 'overwhelming'],
   electricEyrie: ['focused', 'nobility', 'relentless', 'swoop', 'warTax'],
-  automatedAlliance: [],
+  automatedAlliance: ['steadfast', 'wildfire', 'informants', 'popularity', 'veterans'],
   vagabot: [],
 }
 
@@ -101,6 +108,26 @@ export const BOT_TRAIT_CARDS: Readonly<Record<BotTrait, BotCardText>> = {
   warTax: {
     name: 'War Tax',
     text: 'Whenever you destroy a token or building, the owner loses 1 VP.',
+  },
+  steadfast: {
+    name: 'Steadfast',
+    text: 'Skip Public Pity if Surprise Revolt will happen this turn. (Take only one of these actions each turn.) Ignore Martial Law.',
+  },
+  wildfire: {
+    name: 'Wildfire',
+    text: 'At the end of evening, Spread Sympathy. Do not score points for placing this sympathy token.',
+  },
+  informants: {
+    name: 'Informants',
+    text: 'Defenseless sympathy tokens benefit from Automated Ambush when attacked.',
+  },
+  popularity: {
+    name: 'Popularity',
+    text: 'Destroying sympathy tokens grants no victory points for your opponents.',
+  },
+  veterans: {
+    name: 'Veterans',
+    text: 'In battle as defender, you use the higher roll and the attacker uses the lower roll.',
   },
 }
 

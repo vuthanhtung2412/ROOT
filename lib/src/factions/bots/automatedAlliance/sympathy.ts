@@ -1,6 +1,7 @@
 import type { CardSuit } from '#cards/types.js'
 import { clearingHasSympathy, sympatheticClearings } from '#factions/alliance/rules.js'
 import { automatedAllianceBoardOf } from '#factions/bots/botBoards.js'
+import { ignoresMartialLaw } from '#factions/bots/automatedAlliance/cards.js'
 import { enemyPieceCount, isEnemyOfBot } from '#factions/bots/botQueries.js'
 import { orderSuitOf, orderedClearings } from '#factions/bots/orderCard.js'
 import {
@@ -105,7 +106,10 @@ function scoreSympathy(
   ctx: Ctx,
 ): LogEntry[] {
   const { seat, clearing } = placement
-  const penalty = isUnderMartialLaw(state, clearing, seat) ? MARTIAL_LAW_PENALTY : 0
+  const penalty =
+    isUnderMartialLaw(state, clearing, seat) && !ignoresMartialLaw(state, seat)
+      ? MARTIAL_LAW_PENALTY
+      : 0
   const scored = addVictoryPoints(state, seat, Math.max(0, placement.points - penalty))
   if (scored === 0) return []
   ctx.emit({ s: 'vp', actor: seat, delta: scored })

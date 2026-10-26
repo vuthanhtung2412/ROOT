@@ -11,7 +11,10 @@ import { battleWarriorCount } from '#queries/mercenaries.js'
 import { warriors } from '#queries/pieces.js'
 import { keepClearingFor } from '#queries/place.js'
 import { placeBotWarriors } from '#factions/bots/botQueries.js'
-import { automatedAmbushHits } from '#factions/bots/automatedAlliance/battle.js'
+import {
+  automatedAmbushHits,
+  defenderUsesHigherRoll,
+} from '#factions/bots/automatedAlliance/battle.js'
 import {
   isVagabotDefenseless,
   isVagabotSeat,
@@ -149,9 +152,8 @@ function rollStage(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   const rolls: [number, number] = rollBattleDice(ctx)
   event.rolls = rolls
   const [high, low] = rolls
-  // Rule: Alliance Guerrilla War — as defender, deal higher die; attacker deals lower.
-  const defenderIsAlliance =
-    playerOf(state, event.defender).faction === 'alliance'
+  // Rule: Alliance Guerrilla War (and trait Veterans) — as defender, deal higher die; attacker deals lower.
+  const defenderIsAlliance = defenderUsesHigherRoll(state, event.defender)
   const attackerDie = defenderIsAlliance ? low : high
   const defenderDie = defenderIsAlliance ? high : low
   event.hits.attacker += capHits(

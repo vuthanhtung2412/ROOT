@@ -389,7 +389,7 @@
   - `lib/src/factions/bots/vagabot/items.ts` (new) + test, `lib/src/events/battle/stages.ts`, `lib/src/events/battle/removal.ts`, `lib/src/rules/remove.ts`
 - [x] `feat(lib): Vagabot turn`
   - `lib/src/factions/bots/Vagabot.ts`, `lib/src/factions/bots/vagabot/*.ts` (new) + tests, `lib/src/factions/index.ts`, `lib/src/state/botTurn.ts`
-- [ ] `feat(lib): Automated Alliance difficulty and traits`
+- [x] `feat(lib): Automated Alliance difficulty and traits`
   - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/automatedAlliance/*` + tests
 - [ ] `feat(lib): Vagabot characters, difficulty and traits`
   - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/vagabot/*` + tests

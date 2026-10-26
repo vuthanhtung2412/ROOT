@@ -1,9 +1,9 @@
 import { BotFaction, taskDone, type BotTaskResult } from '#factions/bots/BotFaction.js'
-import { scoreNightmareEvening } from '#factions/bots/botSettings.js'
+import { botHasTrait, scoreNightmareEvening } from '#factions/bots/botSettings.js'
+import { organizeWarriors } from '#factions/bots/automatedAlliance/cards.js'
 import { spreadSympathy } from '#factions/bots/automatedAlliance/sympathy.js'
 import {
   birdsongRevolt,
-  ORGANIZE_WARRIORS,
   organize,
   publicPity,
   recruitAtBases,
@@ -25,6 +25,8 @@ const STEPS: Record<Phase, Step[]> = {
   evening: ['organize'],
 }
 
+const WILDFIRE: BotTask = { kind: 'wildfire' }
+
 /** Rule: Rootbotics 6 — Automated Alliance. Plays its turn by itself. */
 export class AutomatedAlliance extends BotFaction {
   readonly id = 'automatedAlliance' as const
@@ -33,7 +35,7 @@ export class AutomatedAlliance extends BotFaction {
   /** Rule: Rootbotics 6.3 — bases and sympathy start on the board. */
   setup(_state: GameState, _seat: Seat, _ctx: Ctx): void {}
 
-  protected planStep(state: GameState, _seat: Seat): BotTask[] {
+  protected planStep(state: GameState, seat: Seat): BotTask[] {
     switch (state.phase) {
       // Rule: Rootbotics 6.4 — reveal, craft, revolt, Public Pity.
       case 'birdsong':
@@ -46,11 +48,13 @@ export class AutomatedAlliance extends BotFaction {
       // Rule: Rootbotics 6.5 — spread sympathy, then a Surprise Revolt on a bird.
       case 'daylight':
         return [{ kind: 'spreadSympathy' }, { kind: 'surpriseRevolt' }]
-      // Rule: Rootbotics 6.6 — organize, recruit, discard; Nightmare's point last.
+      // Rule: Rootbotics 6.6 — organize, recruit, discard (Wildfire spreads
+      // with the order still known); Nightmare's point last.
       case 'evening':
         return [
           { kind: 'organize' },
           { kind: 'recruit' },
+          ...(botHasTrait(state, seat, 'wildfire') ? [WILDFIRE] : []),
           { kind: 'discardOrder' },
           { kind: 'nightmareScore' },
         ]
@@ -73,7 +77,9 @@ export class AutomatedAlliance extends BotFaction {
       case 'surpriseRevolt':
         return surpriseRevolt(state, seat, ctx)
       case 'organize':
-        return taskDone(organize(state, { seat, threshold: ORGANIZE_WARRIORS }, ctx))
+        return taskDone(organize(state, { seat, threshold: organizeWarriors(state, seat) }, ctx))
+      case 'wildfire':
+        return taskDone(spreadSympathy(state, { seat, scores: false }, ctx))
       case 'recruit':
         return taskDone(recruitAtBases(state, seat))
       case 'discardOrder':
