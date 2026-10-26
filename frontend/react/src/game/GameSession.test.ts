@@ -252,6 +252,24 @@ describe('GameSession', () => {
       expect(session.getRoomCode()).toBeNull()
     })
 
+    it('a failed leave keeps the browser in the lobby with an error', async () => {
+      stubFetchSequence([
+        { body: { state: openLobbyState([]), mode: 'online', roomCode: ROOM_CODE }, status: 201 },
+        { body: { state: openLobbyState([]), historyLength: 0, mode: 'online', roomCode: ROOM_CODE } },
+        { body: { code: 'INTERNAL_ERROR', detail: null }, status: 500 },
+      ])
+      const storage = createMemoryStorage()
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID, storage })
+      await session.createOnlineRoom()
+
+      await session.leaveOnlineLobby()
+
+      expect(session.getSnapshot().state).not.toBeNull()
+      expect(session.getSnapshot().error).not.toBeNull()
+      expect(session.getRoomCode()).toBe(ROOM_CODE)
+      expect(loadPlayerIdentity(storage)?.playerId).toBe(GUEST_PLAYER_ID)
+    })
+
     it('join with code: enters the room as itself, then watches the lobby', async () => {
       const lobby = {
         state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),

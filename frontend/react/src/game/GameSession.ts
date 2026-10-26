@@ -458,8 +458,13 @@ export class GameSession {
       await this.restart()
       return
     }
-    // The room forgets the browser; a failed call only leaves it listed until the room ends.
-    await this.api.leaveRoom().catch((): void => undefined)
+    // A failed call keeps the browser in the room: walking away would leave its seat taken.
+    try {
+      await this.api.leaveRoom()
+    } catch (error: unknown) {
+      this.setError(errorMessage(error))
+      return
+    }
     this.disconnectSocket()
     clearPlayerIdentity(
       this.identityStorage === undefined ? undefined : this.identityStorage,
