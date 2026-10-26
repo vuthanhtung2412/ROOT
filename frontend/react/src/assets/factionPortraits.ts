@@ -11,6 +11,8 @@ const FACTION_PORTRAIT_PATHS: Readonly<Record<string, string>> = {
   riverfolk: '/assets/portraits/riverfolk.webp',
   mechanicalMarquise: '/assets/portraits/mechanicalMarquise.webp',
   electricEyrie: '/assets/portraits/electricEyrie.webp',
+  automatedAlliance: '/assets/portraits/automatedAlliance.webp',
+  vagabot: '/assets/portraits/vagabot.webp',
 }
 
 /**
