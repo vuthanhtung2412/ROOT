@@ -41,7 +41,23 @@ export type ElectricEyrieTask =
   /** Difficulty Nightmare — 1 VP at the end of Evening. */
   | { kind: 'nightmareScore' }
 
-export type BotTask = MechanicalMarquiseTask | ElectricEyrieTask
+/** Rule: Rootbotics 6.4–6.6 — one unit of the Automated Alliance turn. */
+export type AutomatedAllianceTask =
+  | { kind: 'revealOrder' }
+  | { kind: 'craftOrder' }
+  | { kind: 'revolt' }
+  | { kind: 'publicPity' }
+  | { kind: 'spreadSympathy' }
+  | { kind: 'surpriseRevolt' }
+  | { kind: 'organize' }
+  | { kind: 'recruit' }
+  | { kind: 'discardOrder' }
+  /** Trait Wildfire — a spread that scores nothing, at the end of Evening. */
+  | { kind: 'wildfire' }
+  /** Difficulty Nightmare — 1 VP at the end of Evening. */
+  | { kind: 'nightmareScore' }
+
+export type BotTask = MechanicalMarquiseTask | ElectricEyrieTask | AutomatedAllianceTask
 
 /** Work a bot still has in one step of its turn, done one task at a time. */
 export type BotPlan = {

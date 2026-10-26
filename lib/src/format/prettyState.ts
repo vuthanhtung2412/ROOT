@@ -301,6 +301,12 @@ export function describeAction(action: Action, state: GameState): string {
       return `BOT BATTLE s${action.defender} C${action.clearing}`
     case 'botTurmoil':
       return 'BOT TURMOIL'
+    case 'botRevolt':
+      return `BOT REVOLT C${action.clearing}`
+    case 'botSpreadSympathy':
+      return `BOT SPREAD SYMPATHY C${action.clearing}`
+    case 'botOrganize':
+      return `BOT ORGANIZE C${action.clearing}`
     case 'eveningDraw':
       return 'EVENING draw cards'
     case 'march':

@@ -164,6 +164,9 @@ export const ACTION_FIELD_SCHEMAS: ActionFieldSchemaTable = {
   botMove: { from: NUMBER, to: NUMBER, count: NUMBER },
   botBattle: CLEARING_AND_DEFENDER,
   botTurmoil: NO_FIELDS,
+  botRevolt: { clearing: NUMBER },
+  botSpreadSympathy: { clearing: NUMBER },
+  botOrganize: { clearing: NUMBER },
   resolveEvent: {
     order: optional(z.array(NUMBER)),
     pieceIds: optional(z.array(TEXT)),

@@ -102,6 +102,8 @@ export type TurnScratch = {
   botBuiltThisTurn?: boolean
   /** Mechanical Marquise — Expands taken this turn (house-rule cap). */
   botExpandCount?: number
+  /** Automated Alliance — revolted in Birdsong (no Public Pity, 6.4.4). */
+  botRevolted?: boolean
 }
 
 export type GameState = {

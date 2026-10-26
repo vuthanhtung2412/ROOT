@@ -154,5 +154,11 @@ export const ACTION_GUIDE: Readonly<Record<Action['type'], ActionGuideEntry>> = 
     ruleSections: [BATTLE],
   },
   botTurmoil: { kind: 'Turmoil (Rootbotics 5.7)', ruleSections: ['7.7'] },
+  botRevolt: { kind: 'Revolt (Rootbotics 6.4.3, 6.5.2)', ruleSections: ['8.4.1'] },
+  botSpreadSympathy: {
+    kind: 'Spread Sympathy (Rootbotics 6.5.1)',
+    ruleSections: ['8.4.2'],
+  },
+  botOrganize: { kind: 'Organize (Rootbotics 6.6.1)', ruleSections: ['8.6.1'] },
   resolveEvent:{ kind: 'Answer Pending Event', ruleSections: [INTERRUPTS] },
 }

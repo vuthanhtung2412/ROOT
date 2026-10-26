@@ -6,6 +6,7 @@ import { LIZARD } from '#factions/Lizard.js'
 import { MARQUISE } from '#factions/Marquise.js'
 import { RIVERFOLK } from '#factions/Riverfolk.js'
 import { VAGABOND } from '#factions/Vagabond.js'
+import { AUTOMATED_ALLIANCE } from '#factions/bots/AutomatedAlliance.js'
 import { ELECTRIC_EYRIE } from '#factions/bots/ElectricEyrie.js'
 import { MECHANICAL_MARQUISE } from '#factions/bots/MechanicalMarquise.js'
 import { RuleError } from '#rules/RuleError.js'
@@ -19,6 +20,7 @@ export const FACTIONS: Partial<Record<FactionId, Faction>> = {
   riverfolk: RIVERFOLK,
   mechanicalMarquise: MECHANICAL_MARQUISE,
   electricEyrie: ELECTRIC_EYRIE,
+  automatedAlliance: AUTOMATED_ALLIANCE,
 }
 
 export function factionFor(faction: FactionId): Faction {

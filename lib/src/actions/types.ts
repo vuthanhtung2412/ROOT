@@ -302,6 +302,12 @@ export type BotAction =
   | { type: 'botMove'; from: ClearingId; to: ClearingId; count: number }
   | { type: 'botBattle'; clearing: ClearingId; defender: Seat }
   | { type: 'botTurmoil' }
+  /** Rule: Rootbotics 6.4.3 / 6.5.2 — Automated Alliance revolt. */
+  | { type: 'botRevolt'; clearing: ClearingId }
+  /** Rule: Rootbotics 6.5.1 — Automated Alliance spreads sympathy. */
+  | { type: 'botSpreadSympathy'; clearing: ClearingId }
+  /** Rule: Rootbotics 6.6.1 — Automated Alliance organizes. */
+  | { type: 'botOrganize'; clearing: ClearingId }
 
 /** Rule: 11.4–11.6 — Riverfolk Company turn actions. */
 export type RiverfolkAction =

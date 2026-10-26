@@ -60,9 +60,6 @@ export function setUpFactionsAfterMarquise(state: GameState, ctx: Ctx): void {
       placeEyrieRoostSetup(state, player.seat)
     } else if (player.faction === 'electricEyrie') {
       placeElectricEyrieSetup(state, player.seat, ctx.rng)
-    } else if (player.faction === 'automatedAlliance') {
-      // Rule: Rootbotics 6.3 — bases and sympathy start on the board: nothing on the map.
-      continue
     } else if (player.faction === 'vagabot') {
       placeVagabotSetup(state, player.seat, ctx.rng)
     } else {

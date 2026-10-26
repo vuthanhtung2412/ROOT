@@ -383,7 +383,7 @@
   - `lib/src/public/botFactionIds.ts`, `lib/src/pieces/types.ts`, `lib/src/state/botBoards.ts`, `lib/src/state/boards.ts`, `lib/src/factions/bots/automatedAlliance/setup.ts`, `lib/src/factions/bots/vagabot/setup.ts` (new) + tests, `lib/src/game/factionSetup.ts`, exhaustive switches
 - [x] `feat(lib): Automated Alliance outrage, ambush, crackdown`
   - `lib/src/factions/alliance/rules.ts`, `lib/src/events/outrage.ts`, `lib/src/rules/remove.ts`, `lib/src/events/battle/stages.ts` + tests
-- [ ] `feat(lib): Automated Alliance turn`
+- [x] `feat(lib): Automated Alliance turn`
   - `lib/src/factions/bots/AutomatedAlliance.ts`, `lib/src/factions/bots/automatedAlliance/*.ts` (new) + tests, `lib/src/factions/index.ts`, `lib/src/state/botTurn.ts`
 - [ ] `feat(lib): Vagabot items, battle and removal`
   - `lib/src/factions/bots/vagabot/items.ts` (new) + test, `lib/src/events/battle/stages.ts`, `lib/src/events/battle/removal.ts`, `lib/src/rules/remove.ts`
