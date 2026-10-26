@@ -163,7 +163,11 @@ describe('Rootbotics 7.5 Daylight Actions', () => {
       { type: 'hammer', exhausted: false },
       { type: 'tea', exhausted: false },
     ]
-    aid(state, { seat: VAGABOT, bonusVictoryPoints: 0, cardsPerItem: 1 }, testContext({ state }))
+    aid(
+      state,
+      { seat: VAGABOT, bonusVictoryPoints: 0, cardsPerItem: 1, travels: false },
+      testContext({ state }),
+    )
 
     expect(state.players[EYRIE]!.craftedItems).toEqual([])
     expect(state.players[EYRIE]!.hand).toHaveLength(2)

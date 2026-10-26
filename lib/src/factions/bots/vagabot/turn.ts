@@ -1,6 +1,7 @@
-import type { CardSuit } from '#cards/types.js'
 import { taskDone, type BotTaskResult } from '#factions/bots/BotFaction.js'
 import { vagabotBoardOf } from '#factions/bots/botBoards.js'
+import { botHasTrait } from '#factions/bots/botSettings.js'
+import { daylightActionsOf, type VagabotAction } from '#factions/bots/vagabot/cards.js'
 import { orderSuitOf } from '#factions/bots/orderCard.js'
 import {
   damagedItems,
@@ -23,26 +24,18 @@ export const REFRESH_WITHOUT_DAMAGE = 6
 /** Rule: Rootbotics 7.6.2 — out of a forest, repair one item. */
 const REPAIRS_OUTSIDE_FOREST = 1
 
-export type VagabotAction = 'explore' | 'quest' | 'aid' | 'battle' | 'repair' | 'special'
-
-/** Rule: Rootbotics 7.5 / Vagabot board — Daylight Actions by order suit. */
-export const DAYLIGHT_ACTIONS: Readonly<Record<CardSuit, readonly VagabotAction[]>> = {
-  fox: ['explore', 'battle', 'special'],
-  rabbit: ['battle', 'repair', 'special'],
-  mouse: ['quest', 'aid', 'battle', 'repair'],
-  bird: ['explore', 'quest', 'aid', 'battle'],
-}
-
-/** Rule: Rootbotics 7.5 — the order card sets the actions; none after a slip. */
-export function daylightTasks(
-  state: GameState,
-  seat: Seat,
-  actions: Readonly<Record<CardSuit, readonly VagabotAction[]>> = DAYLIGHT_ACTIONS,
-): VagabotTask[] {
+/**
+ * Rule: Rootbotics 7.5 — the order card sets the actions; none after a slip.
+ * Trait Adventurer — repeated quests at the end of Daylight.
+ */
+export function daylightTasks(state: GameState, seat: Seat): VagabotTask[] {
   if (state.turnScratch.botSlipped === true) return []
   const suit = orderSuitOf(vagabotBoardOf(state, seat))
   if (suit === null) return []
-  return actions[suit].map(taskOf)
+  const adventurer: VagabotTask[] = botHasTrait(state, seat, 'adventurer')
+    ? [{ kind: 'adventurerQuests' }]
+    : []
+  return [...daylightActionsOf(state, seat)[suit].map(taskOf), ...adventurer]
 }
 
 function taskOf(action: VagabotAction): VagabotTask {

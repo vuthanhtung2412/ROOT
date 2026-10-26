@@ -5,9 +5,19 @@ import {
   discardOrderCard,
   revealOrderCard,
 } from '#factions/bots/orderCard.js'
-import { aid, explore, quest, QUEST_VICTORY_POINTS, repair } from '#factions/bots/vagabot/actions.js'
+import {
+  adventurerQuests,
+  aid,
+  explore,
+  quest,
+  repair,
+} from '#factions/bots/vagabot/actions.js'
 import { battle, battleAgain } from '#factions/bots/vagabot/battleAction.js'
+import { aidSettings, questVictoryPoints, refreshBonus } from '#factions/bots/vagabot/cards.js'
 import { special } from '#factions/bots/vagabot/characters.js'
+import { repairOneItem } from '#factions/bots/vagabot/items.js'
+import { vagabotBoardOf } from '#factions/bots/botBoards.js'
+import { botHasTrait } from '#factions/bots/botSettings.js'
 import { placeVagabotSetup } from '#factions/bots/vagabot/setup.js'
 import {
   daylightTasks,
@@ -26,11 +36,7 @@ const STEPS: Record<Phase, Step[]> = {
   evening: ['rest'],
 }
 
-/** Rule: Rootbotics 7.5.3 — the Vagabot scores no extra point; one card per item. */
-const AID_BONUS_VICTORY_POINTS = 0
-const AID_CARDS_PER_ITEM = 1
-/** Rule: Rootbotics 7.6.1 — default difficulty refreshes the board's count. */
-const DEFAULT_REFRESH_BONUS = 0
+const BERSERKER_REPAIR: BotTask = { kind: 'berserkerRepair' }
 
 /** Rule: Rootbotics 7 — Vagabot. Plays its turn by itself. */
 export class Vagabot extends BotFaction {
@@ -49,13 +55,15 @@ export class Vagabot extends BotFaction {
       // Rule: Rootbotics 7.5 — the Daylight Actions of the order suit.
       case 'daylight':
         return daylightTasks(state, seat)
-      // Rule: Rootbotics 7.6 — refresh, repair, discard; Nightmare's point last.
+      // Rule: Rootbotics 7.6 — refresh, repair, discard; Nightmare's point,
+      // then Berserker's repair at the end of the turn.
       case 'evening':
         return [
           { kind: 'refresh' },
           { kind: 'eveningRepair' },
           { kind: 'discardOrder' },
           { kind: 'nightmareScore' },
+          ...(botHasTrait(state, seat, 'berserker') ? [BERSERKER_REPAIR] : []),
         ]
     }
   }
@@ -72,13 +80,11 @@ export class Vagabot extends BotFaction {
       case 'explore':
         return explore(state, seat, ctx)
       case 'quest':
-        return quest(state, { seat, points: QUEST_VICTORY_POINTS }, ctx)
+        return quest(state, { seat, points: questVictoryPoints(state, seat) }, ctx)
+      case 'adventurerQuests':
+        return adventurerQuests(state, { seat, points: questVictoryPoints(state, seat) }, ctx)
       case 'aid':
-        return aid(
-          state,
-          { seat, bonusVictoryPoints: AID_BONUS_VICTORY_POINTS, cardsPerItem: AID_CARDS_PER_ITEM },
-          ctx,
-        )
+        return aid(state, { seat, ...aidSettings(state, seat) }, ctx)
       case 'battleTarget':
         return battle(state, seat, ctx)
       case 'battleAgain':
@@ -92,9 +98,12 @@ export class Vagabot extends BotFaction {
       case 'special':
         return special(state, seat, ctx)
       case 'refresh':
-        return taskDone(refresh(state, { seat, difficultyBonus: DEFAULT_REFRESH_BONUS }))
+        return taskDone(refresh(state, { seat, difficultyBonus: refreshBonus(state, seat) }))
       case 'eveningRepair':
         return taskDone(eveningRepair(state, seat))
+      case 'berserkerRepair':
+        repairOneItem(vagabotBoardOf(state, seat))
+        return taskDone()
       case 'discardOrder':
         discardOrderCard(state, seat)
         return taskDone()

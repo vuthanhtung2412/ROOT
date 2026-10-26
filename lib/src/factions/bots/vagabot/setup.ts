@@ -1,5 +1,6 @@
 import { QUEST_DECK, type QuestCard } from '#cards/quests.js'
 import { vagabotBoardOf } from '#factions/bots/botBoards.js'
+import { botHasTrait } from '#factions/bots/botSettings.js'
 import { shuffleWithRng } from '#game/setup.js'
 import { FALL } from '#map/fall.js'
 import type { ClearingId } from '#map/types.js'
@@ -69,4 +70,5 @@ export function placeVagabotSetup(state: GameState, seat: Seat, rng: Rng): void 
   board.quest = drawVagabotQuest(state, rng)
   // Rule: Rootbotics 7.3.4 — the ruins are populated at game setup.
   board.items = startingItems(character)
+  board.questingBattleTrack = botHasTrait(state, seat, 'questing')
 }

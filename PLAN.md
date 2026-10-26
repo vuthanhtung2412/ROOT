@@ -391,7 +391,7 @@
   - `lib/src/factions/bots/Vagabot.ts`, `lib/src/factions/bots/vagabot/*.ts` (new) + tests, `lib/src/factions/index.ts`, `lib/src/state/botTurn.ts`
 - [x] `feat(lib): Automated Alliance difficulty and traits`
   - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/automatedAlliance/*` + tests
-- [ ] `feat(lib): Vagabot characters, difficulty and traits`
+- [x] `feat(lib): Vagabot characters, difficulty and traits`
   - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/vagabot/*` + tests
 - [ ] `test(lib): seeded games with the new bots play out`
   - `lib/src/factions/bots/botGames.test.ts`

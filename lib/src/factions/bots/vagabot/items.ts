@@ -28,27 +28,37 @@ export function battleTrackSlotsFor(itemCount: number): number {
     .length
 }
 
-/** Rule: Rootbotics 7.2.4 — Battle Track slots in use; Questing never lets them empty. */
+/**
+ * Rule: Rootbotics 7.2.4 — Battle Track slots in use. Trait Questing:
+ * damaged items count too and filled slots never empty again.
+ */
 export function battleTrackSlots(board: VagabotBoard): number {
-  return Math.max(battleTrackSlotsFor(undamagedItems(board).length), board.battleTrackRecord)
+  if (!board.questingBattleTrack) return battleTrackSlotsFor(undamagedItems(board).length)
+  return Math.max(battleTrackSlotsFor(board.items.length), board.battleTrackRecord)
 }
 
-function isOnTrack(item: VagabotItem): boolean {
-  return item.onBattleTrack && !item.damaged
+function staysOnTrack(board: VagabotBoard): (item: VagabotItem) => boolean {
+  return (item: VagabotItem): boolean =>
+    item.onBattleTrack && (board.questingBattleTrack || !item.damaged)
 }
 
 /**
  * Rule: Rootbotics 7.2.4 / 7.2.5 — fill the Battle Track up to its slots,
- * exhausted items before face-up ones; damaged items go back to the Satchel.
+ * exhausted items before face-up ones; damaged items go back to the Satchel
+ * (not with Questing).
  */
 export function syncBattleTrack(board: VagabotBoard): void {
-  for (const item of board.items) {
-    if (item.damaged) item.onBattleTrack = false
-  }
   const slots = battleTrackSlots(board)
-  const onTrack = board.items.filter(isOnTrack)
+  board.battleTrackRecord = Math.max(board.battleTrackRecord, slots)
+  for (const item of board.items) {
+    if (!staysOnTrack(board)(item)) item.onBattleTrack = false
+  }
+  const onTrack = board.items.filter(staysOnTrack(board))
   for (const extra of onTrack.slice(slots)) extra.onBattleTrack = false
-  const free = board.items.filter((item: VagabotItem): boolean => !item.damaged && !item.onBattleTrack)
+  const free = board.items.filter(
+    (item: VagabotItem): boolean =>
+      !item.onBattleTrack && (board.questingBattleTrack || !item.damaged),
+  )
   const candidates = [
     ...free.filter((item: VagabotItem): boolean => item.exhausted),
     ...free.filter((item: VagabotItem): boolean => !item.exhausted),

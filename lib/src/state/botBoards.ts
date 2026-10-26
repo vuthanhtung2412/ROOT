@@ -116,7 +116,12 @@ export type VagabotBoard = {
   character: VagabotCharacter
   /** Satchel, Battle Track and Damaged box together. */
   items: VagabotItem[]
-  /** Trait Questing — Battle Track slots never empty again once filled. */
+  /**
+   * Trait Questing — damaged items count toward the Battle Track and its
+   * items never leave it (slots never empty again once filled).
+   */
+  questingBattleTrack: boolean
+  /** Trait Questing — most Battle Track slots filled so far. */
   battleTrackRecord: number
   /** Rule: Rootbotics 7.3.3 — the quest only the Vagabot can complete. */
   quest: QuestCard | null
@@ -141,6 +146,7 @@ export function createVagabotBoard(): VagabotBoard {
     kind: 'vagabot',
     character: DEFAULT_VAGABOT_CHARACTER,
     items: [],
+    questingBattleTrack: false,
     battleTrackRecord: 0,
     quest: null,
     forest: null,

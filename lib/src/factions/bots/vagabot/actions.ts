@@ -10,6 +10,7 @@ import {
   gainItem,
   repairOneItem,
 } from '#factions/bots/vagabot/items.js'
+import type { AidSettings } from '#factions/bots/vagabot/cards.js'
 import { travelToAct, vagabotClearing } from '#factions/bots/vagabot/pawn.js'
 import { drawCards } from '#factions/sharedTurn.js'
 import type { Ctx } from '#game/ctx.js'
@@ -28,8 +29,6 @@ import type { GameState } from '#state/types.js'
 const EXPLORE_COST = 1
 /** Rule: Rootbotics 7.5.2 — two items to complete a quest. */
 const QUEST_COST = 2
-/** Rule: Rootbotics 7.5.2 — a completed quest scores one point. */
-export const QUEST_VICTORY_POINTS = 1
 /** Rule: Rootbotics 7.5.5 — one item to repair. */
 const REPAIR_COST = 1
 /** Rule: Rootbotics 7.5.3 — an aided bot scores one point (2.8.1). */
@@ -163,17 +162,39 @@ export function aidPlayer(state: GameState, aid: Aid, ctx: Ctx): LogEntry[] {
   return logs
 }
 
-/** Rule: Rootbotics 7.5.3 — aid in the Vagabot's clearing (no move). */
+/**
+ * Rule: Rootbotics 7.5.3 — aid in the Vagabot's clearing (no move).
+ * Trait Questing — move to the nearest clearing with such a player first.
+ */
 export function aid(
   state: GameState,
-  aiding: { seat: Seat; bonusVictoryPoints: number; cardsPerItem: number },
+  aiding: { seat: Seat } & AidSettings,
   ctx: Ctx,
 ): BotTaskResult {
-  const clearing = vagabotClearing(state, aiding.seat)
-  if (clearing === null) return taskDone()
-  const [target] = aidTargets(state, aiding.seat, clearing)
-  if (target === undefined) return taskDone()
-  return taskDone(aidPlayer(state, { ...aiding, target }, ctx))
+  const { seat } = aiding
+  const travel = aiding.travels
+    ? travelToAct(state, {
+        seat,
+        canActIn: (clearing: ClearingId): boolean => aidTargets(state, seat, clearing).length > 0,
+      })
+    : { logs: [], clearing: vagabotClearing(state, seat) }
+  if (travel.clearing === null) return taskDone(travel.logs)
+  const [target] = aidTargets(state, seat, travel.clearing)
+  if (target === undefined) return taskDone(travel.logs)
+  return taskDone([...travel.logs, ...aidPlayer(state, { ...aiding, target }, ctx)])
+}
+
+/** Trait Adventurer — quest again while the last quest was completed. */
+export function adventurerQuests(
+  state: GameState,
+  questing: { seat: Seat; points: number },
+  ctx: Ctx,
+): BotTaskResult {
+  const result = quest(state, questing, ctx)
+  const completed = result.logs.some(
+    (entry: LogEntry): boolean => entry.t === 'action' && entry.action.type === 'botQuest',
+  )
+  return completed ? { logs: result.logs, followUps: [{ kind: 'adventurerQuests' }] } : result
 }
 
 /** Rule: Rootbotics 7.5.5 Repair — exhaust one item to repair one. */
