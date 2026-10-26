@@ -431,6 +431,28 @@ describe('game routes', () => {
     expect(refused.status).toBe(400)
   })
 
+  it('creates a game with the Automated Alliance and a Vagabot character; a character elsewhere is refused', async () => {
+    const botSettings = {
+      automatedAlliance: { difficulty: 'easy', traits: ['wildfire'] },
+      vagabot: { difficulty: 'challenging', traits: ['questing'], character: 'ranger' },
+    }
+    const created = await app.request(
+      '/game',
+      jsonRequest('POST', { factions: ['marquise', 'automatedAlliance', 'vagabot'], botSettings }),
+    )
+    expect(created.status).toBe(201)
+    expect(store.game?.state.botSettings).toEqual(botSettings)
+
+    const refused = await app.request(
+      '/game?replace=1',
+      jsonRequest('POST', {
+        factions: ['marquise', 'automatedAlliance'],
+        botSettings: { automatedAlliance: { difficulty: 'easy', traits: [], character: 'thief' } },
+      }),
+    )
+    expect(refused.status).toBe(400)
+  })
+
   it('defaults to hotseat mode and reports it on GET', async () => {
     const createResponse = await app.request(
       '/game',

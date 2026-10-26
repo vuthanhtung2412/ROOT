@@ -395,7 +395,7 @@
   - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/vagabot/*` + tests
 - [x] `test(lib): seeded games with the new bots play out`
   - `lib/src/factions/bots/botGames.test.ts`
-- [ ] `feat(api): Automated Alliance and Vagabot`
+- [x] `feat(api): Automated Alliance and Vagabot`
   - `backend/web/src/schemas/*`, `backend/web/src/typeGuards.ts`, `backend/web/src/aiPlayer/*`, `backend/web/openapi.json`, `backend/web_client/src/*` (generated)
 - [ ] `feat(react): pick Automated Alliance and Vagabot`
   - `frontend/react/src/game/menuPartySetup.ts`, `soloTableSetup.ts`, `botSettingsMenu.ts`, `react/MenuBotSettings.tsx`, art / pawn helpers + tests

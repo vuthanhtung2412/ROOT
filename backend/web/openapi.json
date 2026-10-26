@@ -122,9 +122,11 @@
           "lizard",
           "riverfolk",
           "mechanicalMarquise",
-          "electricEyrie"
+          "electricEyrie",
+          "automatedAlliance",
+          "vagabot"
         ],
-        "description": "mechanicalMarquise and electricEyrie are Rootbotics bots: seated and played by the engine."
+        "description": "mechanicalMarquise, electricEyrie, automatedAlliance and vagabot are Rootbotics bots: seated and played by the engine."
       },
       "BotSettingsByFaction": {
         "type": "object",
@@ -133,6 +135,12 @@
             "$ref": "#/components/schemas/BotSettings"
           },
           "electricEyrie": {
+            "$ref": "#/components/schemas/BotSettings"
+          },
+          "automatedAlliance": {
+            "$ref": "#/components/schemas/BotSettings"
+          },
+          "vagabot": {
             "$ref": "#/components/schemas/BotSettings"
           }
         },
@@ -164,9 +172,28 @@
                 "nobility",
                 "relentless",
                 "swoop",
-                "warTax"
+                "warTax",
+                "steadfast",
+                "wildfire",
+                "informants",
+                "popularity",
+                "veterans",
+                "adventurer",
+                "berserker",
+                "marksman",
+                "helper",
+                "questing"
               ]
             }
+          },
+          "character": {
+            "type": "string",
+            "enum": [
+              "thief",
+              "tinker",
+              "ranger"
+            ],
+            "description": "Vagabot only — its character card (Rootbotics 7.7); absent = thief."
           }
         },
         "required": [
@@ -676,7 +703,9 @@
         "type": "string",
         "enum": [
           "mechanicalMarquise",
-          "electricEyrie"
+          "electricEyrie",
+          "automatedAlliance",
+          "vagabot"
         ]
       },
       "SetBotSettingsBody": {
