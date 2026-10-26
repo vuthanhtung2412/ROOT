@@ -27,6 +27,10 @@ import {
   TurmoilMomentView,
 } from '#react/TurmoilMoment.tsx'
 import {
+  LEADER_PICK_MOMENT_MS,
+  LeaderPickMomentView,
+} from '#react/LeaderPickMoment.tsx'
+import {
   MomentSlowdownContext,
   useKeyframes,
 } from '#react/useKeyframes.ts'
@@ -59,6 +63,9 @@ function momentDurationMs(moment: WoodlandMoment): number {
   const slowdown: number = momentSlowdown(moment)
   if (moment.kind === 'revolt') return momentMs(REVOLT_MOMENT_MS, slowdown)
   if (moment.kind === 'turmoil') return momentMs(TURMOIL_MOMENT_MS, slowdown)
+  if (moment.kind === 'leaderPick') {
+    return momentMs(LEADER_PICK_MOMENT_MS, slowdown)
+  }
   return momentMs(EXPLORE_MOMENT_MS, slowdown)
 }
 
@@ -99,6 +106,9 @@ function MomentView(props: { moment: WoodlandMoment }): JSX.Element | null {
   }
   if (moment.kind === 'turmoil') {
     return <TurmoilMomentView moment={moment} />
+  }
+  if (moment.kind === 'leaderPick') {
+    return <LeaderPickMomentView moment={moment} />
   }
   return null
 }
