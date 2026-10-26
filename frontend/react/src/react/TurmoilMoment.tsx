@@ -18,7 +18,7 @@ import {
   SETTLE_EASING,
 } from '#react/MomentPaper.tsx'
 import { SuitIcon } from '#react/SuitIcon.tsx'
-import { useKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
+import { useMomentKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
 import type { EyrieDecreeColumnId } from '#ui/factionBoardViewModel.ts'
 
 /** Beats of a turmoil, from its start (ms). */
@@ -133,8 +133,8 @@ function tokenSteps(props: DecreeTokenProps): KeyframeStep[] {
 
 /** A decree card shown as its suit; viziers wear a gold ring. */
 function DecreeToken(props: DecreeTokenProps): JSX.Element {
-  const tokenRef = useKeyframeSteps(tokenSteps(props))
-  const markRef = useKeyframeSteps([
+  const tokenRef = useMomentKeyframeSteps(tokenSteps(props))
+  const markRef = useMomentKeyframeSteps([
     {
       keyframes: [
         { opacity: 0, transform: 'scale(2)' },
@@ -173,8 +173,10 @@ export function LeaderCard(props: {
   leader: EyrieLeaderId
   flipAtMs: number | null
   faceDown?: boolean
+  /** Size and place of the card; the decree's leader column by default. */
+  className?: string
 }): JSX.Element {
-  const flipRef = useKeyframeSteps(
+  const flipRef = useMomentKeyframeSteps(
     props.flipAtMs === null
       ? []
       : [
@@ -193,7 +195,7 @@ export function LeaderCard(props: {
   return (
     <div
       ref={flipRef}
-      className={LEADER_CARD_CLASS_NAME}
+      className={props.className ?? LEADER_CARD_CLASS_NAME}
       style={props.faceDown === true ? { transform: 'rotateY(180deg)' } : undefined}
     >
       <div className={LEADER_SIDE_CLASS_NAME}>
@@ -219,7 +221,7 @@ function birdIndexes(decree: readonly TurmoilDecreeColumn[]): number[][] {
 }
 
 function TurmoilDecree(props: { moment: TurmoilMoment }): JSX.Element {
-  const decreeRef = useKeyframeSteps([
+  const decreeRef = useMomentKeyframeSteps([
     {
       keyframes: [
         { opacity: 0, transform: 'translateY(24px)' },

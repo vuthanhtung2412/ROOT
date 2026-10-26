@@ -8,7 +8,7 @@ import type { BoardExploreEffect } from '#game/mapMoments.ts'
 import { PIECE_DRAW } from '#game/theme.ts'
 import type { BoardEffectPosition } from '#react/BoardEffectsLayer.tsx'
 import type { ClearingHitCenter } from '#react/PieceStack.tsx'
-import { useKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
+import { useMomentKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
 
 /** Smooth stop, used by most beats of the moments. */
 const SETTLE_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
@@ -51,7 +51,7 @@ type DustBurstProps = {
 function DustDot(props: DustBurstProps & { index: number }): JSX.Element {
   const angle: number = props.index * DUST_TURN_RADIANS
   const distance: number = props.radius * DUST_SPREAD_SHARE_OF_RADIUS
-  const dotRef = useKeyframeSteps([
+  const dotRef = useMomentKeyframeSteps([
     {
       keyframes: [
         {
@@ -230,7 +230,7 @@ type FloatingTextProps = {
 
 /** A score change floating up off the map, then gone. */
 export function FloatingText(props: FloatingTextProps): JSX.Element {
-  const textRef = useKeyframeSteps([
+  const textRef = useMomentKeyframeSteps([
     {
       keyframes: [
         { opacity: 0, transform: 'translate(-50%, -20%) scale(0.6)' },
@@ -275,9 +275,9 @@ export type ExploreMomentProps = {
 export function ExploreMomentView(props: ExploreMomentProps): JSX.Element {
   const riseHeight: number = RUIN_SIZE * ITEM_RISE_SHARE_OF_RUIN
   const dustReach: number = RUIN_SIZE * DUST_REACH_SHARE_OF_RUIN
-  const ruinRef = useKeyframeSteps(ruinSteps())
-  const itemRef = useKeyframeSteps(itemSteps(riseHeight))
-  const glintRef = useKeyframeSteps(glintSteps(riseHeight))
+  const ruinRef = useMomentKeyframeSteps(ruinSteps())
+  const itemRef = useMomentKeyframeSteps(itemSteps(riseHeight))
+  const glintRef = useMomentKeyframeSteps(glintSteps(riseHeight))
   const ruinPath: string | null = imagePathForAssetKey(GAME_ASSET_KEYS.markerRuin)
   const itemKey: string | null = itemTextureKey(props.effect.itemType)
   const itemPath: string | null =

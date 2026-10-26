@@ -6,6 +6,11 @@ import {
   type JSX,
 } from 'react'
 import { getHudSnapshot, subscribeHud } from '#game/hudStore.ts'
+import {
+  EYRIE_MOMENT_SLOWDOWN,
+  momentMs,
+  MOMENT_SLOWDOWN,
+} from '#game/momentPace.ts'
 import type {
   ExploreMoment,
   RevoltMoment,
@@ -21,7 +26,10 @@ import {
   TURMOIL_MOMENT_MS,
   TurmoilMomentView,
 } from '#react/TurmoilMoment.tsx'
-import { useKeyframes } from '#react/useKeyframes.ts'
+import {
+  MomentSlowdownContext,
+  useKeyframes,
+} from '#react/useKeyframes.ts'
 
 /** How long each moment holds the screen before the next one plays. */
 const EXPLORE_RIBBON_HOLD_MS = 2600
@@ -37,16 +45,21 @@ type QueuedMoment = {
   moment: WoodlandMoment
 }
 
-function momentDurationMs(moment: WoodlandMoment): number {
-  if (moment.kind === 'explore') return EXPLORE_MOMENT_MS
-  if (moment.kind === 'revolt') return REVOLT_MOMENT_MS
-  if (moment.kind === 'turmoil') return TURMOIL_MOMENT_MS
-  return EXPLORE_MOMENT_MS
+/** The Eyrie moments: they dim the map, and a click on the dim skips them. */
+function isEyrieMoment(moment: WoodlandMoment): boolean {
+  return moment.kind === 'turmoil' || moment.kind === 'leaderPick'
 }
 
-/** Moments that dim the map; a click on the dim skips to the end. */
-function dimsTheMap(moment: WoodlandMoment): boolean {
-  return moment.kind === 'turmoil' || moment.kind === 'leaderPick'
+function momentSlowdown(moment: WoodlandMoment): number {
+  return isEyrieMoment(moment) ? EYRIE_MOMENT_SLOWDOWN : MOMENT_SLOWDOWN
+}
+
+/** How long a moment holds the screen, at its pace. */
+function momentDurationMs(moment: WoodlandMoment): number {
+  const slowdown: number = momentSlowdown(moment)
+  if (moment.kind === 'revolt') return momentMs(REVOLT_MOMENT_MS, slowdown)
+  if (moment.kind === 'turmoil') return momentMs(TURMOIL_MOMENT_MS, slowdown)
+  return momentMs(EXPLORE_MOMENT_MS, slowdown)
 }
 
 function ExploreMomentBanner(props: { moment: ExploreMoment }): JSX.Element {
@@ -92,7 +105,7 @@ function MomentView(props: { moment: WoodlandMoment }): JSX.Element | null {
 
 function MomentVeil(props: { onSkip: () => void }): JSX.Element {
   const veilRef = useKeyframes([{ opacity: 0 }, { opacity: 1 }], {
-    duration: VEIL_FADE_IN_MS,
+    duration: momentMs(VEIL_FADE_IN_MS, EYRIE_MOMENT_SLOWDOWN),
     fill: 'both',
   })
   return (
@@ -164,8 +177,12 @@ export function WoodlandMomentLayer(): JSX.Element | null {
   }
   return (
     <>
-      {dimsTheMap(playing.moment) ? <MomentVeil key="veil" onSkip={skip} /> : null}
-      <MomentView key={playing.key} moment={playing.moment} />
+      {isEyrieMoment(playing.moment) ? (
+        <MomentVeil key="veil" onSkip={skip} />
+      ) : null}
+      <MomentSlowdownContext.Provider value={momentSlowdown(playing.moment)}>
+        <MomentView key={playing.key} moment={playing.moment} />
+      </MomentSlowdownContext.Provider>
     </>
   )
 }

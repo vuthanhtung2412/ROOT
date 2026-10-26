@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
 import { factionPortraitPath } from '#assets/factionPortraits.ts'
-import { useKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
+import { useMomentKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
 
 /**
  * Torn-paper pieces of the woodland moments: the faction banner that pops
@@ -85,7 +85,7 @@ function bannerSteps(inAtMs: number, outAtMs: number): KeyframeStep[] {
 
 /** The faction's banner: portrait tile, big title, the reason under it. */
 export function MomentBanner(props: MomentBannerProps): JSX.Element {
-  const bannerRef = useKeyframeSteps(bannerSteps(props.inAtMs, props.outAtMs))
+  const bannerRef = useMomentKeyframeSteps(bannerSteps(props.inAtMs, props.outAtMs))
   const portraitPath: string | null = factionPortraitPath(props.faction)
   const colorClassName: string =
     BANNER_COLOR_CLASS_NAMES[props.faction] ?? NEUTRAL_BANNER_COLOR_CLASS_NAME
@@ -156,7 +156,7 @@ function ribbonSteps(atMs: number, holdMs: number | null): KeyframeStep[] {
 
 /** The parchment strip under the turn banner, telling what happens. */
 export function MomentRibbon(props: MomentRibbonProps): JSX.Element {
-  const ribbonRef = useKeyframeSteps(ribbonSteps(props.atMs, props.holdMs))
+  const ribbonRef = useMomentKeyframeSteps(ribbonSteps(props.atMs, props.holdMs))
   return (
     <div className={RIBBON_PLACE_CLASS_NAME}>
       <div ref={ribbonRef} className={RIBBON_CLASS_NAME}>
@@ -175,7 +175,7 @@ type MomentStampProps = {
 
 /** A small rust tile slammed down onto the paper. */
 export function MomentStamp(props: MomentStampProps): JSX.Element {
-  const stampRef = useKeyframeSteps([
+  const stampRef = useMomentKeyframeSteps([
     {
       keyframes: [
         { opacity: 0, transform: `${STAMP_TILT} scale(2.2)` },

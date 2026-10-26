@@ -8,7 +8,7 @@ import {
   MOMENT_CLASS_NAME,
   type MapMomentProps,
 } from '#react/MapMomentEffects.tsx'
-import { useKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
+import { useMomentKeyframeSteps, type KeyframeStep } from '#react/useKeyframes.ts'
 
 const POP_EASING = 'cubic-bezier(0.34, 1.56, 0.64, 1)'
 
@@ -82,7 +82,7 @@ function spotStyle(spot: BrawlSpot): CSSProperties {
 }
 
 function BrawlPuffView(props: { puff: BrawlPuff; index: number; radius: number }): JSX.Element {
-  const puffRef = useKeyframeSteps([
+  const puffRef = useMomentKeyframeSteps([
     {
       keyframes: [
         { transform: `${CENTERED} scale(1)` },
@@ -114,7 +114,7 @@ function fistTransform(angle: number, scale: number): string {
 
 function BrawlFistView(props: { fist: BrawlFist; index: number; radius: number }): JSX.Element {
   const angle: number = props.fist.angle
-  const fistRef = useKeyframeSteps([
+  const fistRef = useMomentKeyframeSteps([
     {
       keyframes: Array.from({ length: FIST_JABS + 1 }, (_, step: number) =>
         step % 2 === 0
@@ -144,7 +144,7 @@ function BrawlFistView(props: { fist: BrawlFist; index: number; radius: number }
 }
 
 function BrawlSparkView(props: { spark: BrawlSpot; index: number }): JSX.Element {
-  const sparkRef = useKeyframeSteps([
+  const sparkRef = useMomentKeyframeSteps([
     {
       keyframes: [
         { opacity: 0, transform: `${CENTERED} scale(0.3)` },
@@ -188,7 +188,7 @@ export function RevoltMomentView(
   props: MapMomentProps<BoardRevoltEffect>,
 ): JSX.Element {
   const radius: number = props.center.radius
-  const cloudRef = useKeyframeSteps([
+  const cloudRef = useMomentKeyframeSteps([
     {
       keyframes: [
         { opacity: 0, transform: `${CENTERED} scale(0.2)` },
@@ -210,7 +210,7 @@ export function RevoltMomentView(
       },
     },
   ])
-  const shakeRef = useKeyframeSteps(BRAWL_SHAKE_AT_MS.map(shakeStep))
+  const shakeRef = useMomentKeyframeSteps(BRAWL_SHAKE_AT_MS.map(shakeStep))
   return (
     <div
       className={MOMENT_CLASS_NAME}

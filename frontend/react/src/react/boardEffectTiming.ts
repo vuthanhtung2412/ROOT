@@ -1,3 +1,4 @@
+import { momentMs } from '#game/momentPace.ts'
 import {
   PLACE_STEP_MS,
   type BoardEffect,
@@ -86,7 +87,7 @@ export function placeStartDelay(effect: BoardPlaceEffect): number {
   return effect.step * PLACE_STEP_MS
 }
 
-/** A ruin explored: rattle, item up, ruin down, +1 floating off. */
+/** A ruin explored: rattle, item up, ruin down, +1 floating off (mockup pace, see `momentPace`). */
 export const EXPLORE_MOMENT_MS = 3200
 /** A revolt's brawl cloud, from popping up to gone. */
 export const REVOLT_MOMENT_MS = 1900
@@ -96,17 +97,17 @@ export const REVOLT_LEAD_IN_MS = 1400
 /** How long the other effects of an update wait for its map moments. */
 export function mapMomentsLeadIn(effects: readonly BoardEffect[]): number {
   return effects.some((effect: BoardEffect): boolean => effect.kind === 'revolt')
-    ? REVOLT_LEAD_IN_MS
+    ? momentMs(REVOLT_LEAD_IN_MS)
     : 0
 }
 
 /** When an effect is over, its wait for earlier steps included. */
 function effectEnd(effect: BoardEffect, leadInMs: number): number {
   if (effect.kind === 'explore') {
-    return EXPLORE_MOMENT_MS
+    return momentMs(EXPLORE_MOMENT_MS)
   }
   if (effect.kind === 'revolt') {
-    return REVOLT_MOMENT_MS
+    return momentMs(REVOLT_MOMENT_MS)
   }
   if (effect.kind === 'move') {
     return leadInMs + moveStartDelay(effect) + MOVE_LIFETIME_MS

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardEffect } from '#game/boardEffects.ts'
+import { momentMs } from '#game/momentPace.ts'
 import {
   batchLifetime,
   EFFECT_LIFETIME_MS,
@@ -82,9 +83,9 @@ describe('map moments lead-in', () => {
     ]
     const leadInMs: number = mapMomentsLeadIn(effects)
 
-    expect(leadInMs).toBe(REVOLT_LEAD_IN_MS)
+    expect(leadInMs).toBe(momentMs(REVOLT_LEAD_IN_MS))
     expect(batchLifetime({ sequence: 1, effects, leadInMs })).toBe(
-      REVOLT_LEAD_IN_MS + EFFECT_LIFETIME_MS,
+      momentMs(REVOLT_LEAD_IN_MS) + EFFECT_LIFETIME_MS,
     )
   })
 
@@ -94,6 +95,6 @@ describe('map moments lead-in', () => {
     ]
 
     expect(mapMomentsLeadIn(effects)).toBe(0)
-    expect(batchLifetime({ sequence: 1, effects })).toBe(EXPLORE_MOMENT_MS)
+    expect(batchLifetime({ sequence: 1, effects })).toBe(momentMs(EXPLORE_MOMENT_MS))
   })
 })

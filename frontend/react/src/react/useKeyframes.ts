@@ -1,4 +1,16 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  type Context,
+  type RefObject,
+} from 'react'
+import { atMomentPace, MOMENT_SLOWDOWN } from '#game/momentPace.ts'
+
+/** How many times slower than the mockup the moment around plays. */
+export const MomentSlowdownContext: Context<number> =
+  createContext<number>(MOMENT_SLOWDOWN)
 
 /** Run a Web Animation on the element for as long as it is mounted. */
 export function useKeyframes(
@@ -25,6 +37,21 @@ export function useKeyframes(
 export type KeyframeStep = {
   keyframes: Keyframe[]
   options: KeyframeAnimationOptions
+}
+
+/** `useKeyframeSteps` at the pace of the woodland moments (`momentPace`). */
+export function useMomentKeyframeSteps(
+  steps: readonly KeyframeStep[],
+): RefObject<HTMLDivElement | null> {
+  const slowdown: number = useContext(MomentSlowdownContext)
+  return useKeyframeSteps(
+    steps.map(
+      (step: KeyframeStep): KeyframeStep => ({
+        keyframes: step.keyframes,
+        options: atMomentPace(step.options, slowdown),
+      }),
+    ),
+  )
 }
 
 /** Run several Web Animations on the element for as long as it is mounted. */
