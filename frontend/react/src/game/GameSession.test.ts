@@ -8,7 +8,7 @@ import {
   makeGameState,
 } from '#test/factories.ts'
 import { GameSession } from '#game/GameSession.ts'
-import type { PlayerIdentityStorage } from '#game/playerIdentity.ts'
+import { loadPlayerIdentity, type PlayerIdentityStorage } from '#game/playerIdentity.ts'
 
 function stubFetchSequence(
   responses: Array<{ body: unknown; status?: number }>,
@@ -216,6 +216,39 @@ describe('GameSession', () => {
       expect(leaveRequest.method).toBe('POST')
       expect(leaveRequest.url).toContain('/game/leave')
       expect(session.getSnapshot().state).toBeNull()
+      expect(session.getRoomCode()).toBeNull()
+    })
+
+    it('a seated guest leaving the lobby frees its seat and forgets the room', async () => {
+      const lobby = {
+        state: openLobbyState([[HOST_PLAYER_ID, 'marquise']]),
+        historyLength: 1,
+        mode: 'online',
+        roomCode: ROOM_CODE,
+      }
+      const seatedLobbyState = openLobbyState([
+        [HOST_PLAYER_ID, 'marquise'],
+        [GUEST_PLAYER_ID, 'eyrie'],
+      ])
+      const fetchMock = stubFetchSequence([
+        { body: { roomCode: ROOM_CODE, mode: 'online' } },
+        { body: lobby },
+        { body: { state: seatedLobbyState, log: [] } },
+        { body: null, status: 204 },
+      ])
+      const storage = createMemoryStorage()
+      const session = createSession({ generatePlayerId: () => GUEST_PLAYER_ID, storage })
+      await session.enterOnlineRoom(ROOM_CODE)
+      await session.pickLobbyFaction('eyrie')
+
+      await session.leaveOnlineLobby()
+
+      const leaveRequest: unknown = fetchMock.mock.calls[3]![0]
+      if (!(leaveRequest instanceof Request)) throw new Error('expected Request')
+      // Not a restart: the server must free the seat, or the guest stays bound to this room.
+      expect(leaveRequest.method).toBe('POST')
+      expect(leaveRequest.url).toContain('/game/leave')
+      expect(loadPlayerIdentity(storage)).toBeNull()
       expect(session.getRoomCode()).toBeNull()
     })
 

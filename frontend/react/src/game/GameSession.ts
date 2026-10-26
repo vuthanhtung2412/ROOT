@@ -449,18 +449,16 @@ export class GameSession {
   }
 
   /**
-   * Leave the lobby screen. A browser without a seat walks away (the server
-   * ends the room when its creator leaves before anyone sat); a seated one
-   * goes through restart, where the host closes the room.
+   * Leave the lobby screen. A watcher or a seated guest walks away (the server
+   * frees the guest's seat, and ends the room when its creator leaves before
+   * anyone sat); the host goes through restart, which closes the room.
    */
   async leaveOnlineLobby(): Promise<void> {
-    const state: GameState | null = this.snapshot.state
-    const isWatchingOnly: boolean = state !== null && this.getLocalSeat() === null
-    if (!isWatchingOnly) {
+    if (this.snapshot.state === null || this.isOnlineHost()) {
       await this.restart()
       return
     }
-    // The room forgets the watcher; a failed call only leaves it listed until the room ends.
+    // The room forgets the browser; a failed call only leaves it listed until the room ends.
     await this.api.leaveRoom().catch((): void => undefined)
     this.disconnectSocket()
     clearPlayerIdentity(
