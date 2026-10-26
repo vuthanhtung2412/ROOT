@@ -9,6 +9,10 @@ export type FactionId =
   | 'mechanicalMarquise'
   /** Rule: Rootbotics 5 — bot replacing the Eyrie Dynasties. */
   | 'electricEyrie'
+  /** Rule: Rootbotics 6 — bot replacing the Woodland Alliance. */
+  | 'automatedAlliance'
+  /** Rule: Rootbotics 7 — bot replacing the Vagabond. */
+  | 'vagabot'
 
 export type Seat = 0 | 1 | 2 | 3
 

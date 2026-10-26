@@ -1,6 +1,7 @@
 import { placeEyrieRoostSetup } from '#factions/Eyrie.js'
 import { placeElectricEyrieSetup } from '#factions/bots/electricEyrie/setup.js'
 import { placeMechanicalMarquiseSetup } from '#factions/bots/mechanicalMarquise/setup.js'
+import { placeVagabotSetup } from '#factions/bots/vagabot/setup.js'
 import { factionFor } from '#factions/index.js'
 import type { Ctx } from '#game/ctx.js'
 import type { FactionId } from '#pieces/types.js'
@@ -59,6 +60,11 @@ export function setUpFactionsAfterMarquise(state: GameState, ctx: Ctx): void {
       placeEyrieRoostSetup(state, player.seat)
     } else if (player.faction === 'electricEyrie') {
       placeElectricEyrieSetup(state, player.seat, ctx.rng)
+    } else if (player.faction === 'automatedAlliance') {
+      // Rule: Rootbotics 6.3 — bases and sympathy start on the board: nothing on the map.
+      continue
+    } else if (player.faction === 'vagabot') {
+      placeVagabotSetup(state, player.seat, ctx.rng)
     } else {
       factionFor(player.faction).setup(state, player.seat, ctx)
     }

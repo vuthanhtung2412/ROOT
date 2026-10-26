@@ -32,9 +32,18 @@ export type ElectricEyrieTrait =
 
 export type BotTrait = MechanicalMarquiseTrait | ElectricEyrieTrait
 
+/** Rule: Rootbotics 7.3.1 / 7.7 — Vagabot character cards played here. */
+export type VagabotCharacter = 'thief' | 'tinker' | 'ranger'
+
+export const VAGABOT_CHARACTERS: readonly VagabotCharacter[] = ['thief', 'tinker', 'ranger']
+
+export const DEFAULT_VAGABOT_CHARACTER: VagabotCharacter = 'thief'
+
 export type BotSettings = {
   difficulty: BotDifficulty
   traits: BotTrait[]
+  /** Vagabot only — its character card; absent = Thief. */
+  character?: VagabotCharacter
 }
 
 /** Settings per bot faction; a bot left out plays at default with no trait. */
@@ -48,6 +57,8 @@ export type BotCardText = {
 export const BOT_TRAITS: Readonly<Record<BotFactionId, readonly BotTrait[]>> = {
   mechanicalMarquise: ['blitz', 'fortified', 'hospitals', 'ironWill', 'overwhelming'],
   electricEyrie: ['focused', 'nobility', 'relentless', 'swoop', 'warTax'],
+  automatedAlliance: [],
+  vagabot: [],
 }
 
 export const BOT_TRAIT_CARDS: Readonly<Record<BotTrait, BotCardText>> = {
@@ -121,6 +132,27 @@ export const BOT_DIFFICULTY_CARDS: Readonly<
     nightmare: {
       name: 'Nightmare',
       text: 'During setup, take out one bird ambush from the deck and place it in the bird column. At the end of evening, score 1 VP.',
+    },
+  },
+  automatedAlliance: {
+    easy: { name: 'Easy', text: 'Organize if there are 4 or more warriors in the clearing.' },
+    default: { name: 'Default', text: 'The rules on the faction board.' },
+    challenging: {
+      name: 'Challenging',
+      text: 'Organize if there are 2 or more warriors in the clearing.',
+    },
+    nightmare: {
+      name: 'Nightmare',
+      text: 'Organize if there are 2 or more warriors in the clearing. At the end of evening, score 1 VP.',
+    },
+  },
+  vagabot: {
+    easy: { name: 'Easy', text: 'Refresh one less item during Evening.' },
+    default: { name: 'Default', text: 'The rules on the faction board.' },
+    challenging: { name: 'Challenging', text: 'Refresh one more item during Evening.' },
+    nightmare: {
+      name: 'Nightmare',
+      text: 'Refresh one more item during Evening. At the end of evening, score 1 VP.',
     },
   },
 }

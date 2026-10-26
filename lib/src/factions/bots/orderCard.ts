@@ -8,20 +8,37 @@ import type { ClearingId } from '#map/types.js'
 import type { Seat } from '#pieces/types.js'
 import { playerOf } from '#queries/seat.js'
 import { addVictoryPoints } from '#rules/dominance.js'
-import type { ElectricEyrieBoard, MechanicalMarquiseBoard } from '#state/botBoards.js'
+import type {
+  AutomatedAllianceBoard,
+  ElectricEyrieBoard,
+  MechanicalMarquiseBoard,
+  VagabotBoard,
+} from '#state/botBoards.js'
+import type { FactionBoard } from '#state/boards.js'
 import type { GameState } from '#state/types.js'
 
 /** Rule: Rootbotics 1.1.2 — a bot scores one point per crafted item. */
 const BOT_CRAFT_VICTORY_POINTS = 1
 const ORDER_CARDS_DRAWN = 1
 
-export type BotBoard = MechanicalMarquiseBoard | ElectricEyrieBoard
+export type BotBoard =
+  | MechanicalMarquiseBoard
+  | ElectricEyrieBoard
+  | AutomatedAllianceBoard
+  | VagabotBoard
+
+export function isBotBoard(board: FactionBoard): board is BotBoard {
+  return (
+    board.kind === 'mechanicalMarquise' ||
+    board.kind === 'electricEyrie' ||
+    board.kind === 'automatedAlliance' ||
+    board.kind === 'vagabot'
+  )
+}
 
 export function botBoardOf(state: GameState, seat: Seat): BotBoard {
   const board = playerOf(state, seat).board
-  if (board.kind === 'mechanicalMarquise' || board.kind === 'electricEyrie') {
-    return board
-  }
+  if (isBotBoard(board)) return board
   throw new Error(`seat ${seat} is not a bot`)
 }
 
