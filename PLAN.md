@@ -381,7 +381,7 @@
   - `PLAN.md`, `resources/rules/Rootbotics_difficulty_and_traits.md`, `resources/rules/rootbotics-cards/*` (new scans)
 - [x] `feat(lib): Automated Alliance and Vagabot ids, boards and setup`
   - `lib/src/public/botFactionIds.ts`, `lib/src/pieces/types.ts`, `lib/src/state/botBoards.ts`, `lib/src/state/boards.ts`, `lib/src/factions/bots/automatedAlliance/setup.ts`, `lib/src/factions/bots/vagabot/setup.ts` (new) + tests, `lib/src/game/factionSetup.ts`, exhaustive switches
-- [ ] `feat(lib): Automated Alliance outrage, ambush, crackdown`
+- [x] `feat(lib): Automated Alliance outrage, ambush, crackdown`
   - `lib/src/factions/alliance/rules.ts`, `lib/src/events/outrage.ts`, `lib/src/rules/remove.ts`, `lib/src/events/battle/stages.ts` + tests
 - [ ] `feat(lib): Automated Alliance turn`
   - `lib/src/factions/bots/AutomatedAlliance.ts`, `lib/src/factions/bots/automatedAlliance/*.ts` (new) + tests, `lib/src/factions/index.ts`, `lib/src/state/botTurn.ts`

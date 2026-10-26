@@ -11,7 +11,9 @@ import type { Ctx } from '#game/ctx.js'
 import type { LogEntry } from '#log/types.js'
 import { FALL } from '#map/fall.js'
 import type { Seat } from '#pieces/types.js'
-import { playerOf } from '#queries/seat.js'
+import { factionOf, playerOf } from '#queries/seat.js'
+import { applyAutomatedOutrage } from '#factions/bots/automatedAlliance/outrage.js'
+import { isBotSeat } from '#factions/bots/botFactions.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
 import type { OutrageEvent } from '#events/types.js'
@@ -83,10 +85,14 @@ export const outrageResolver: OutrageResolver = {
     if (alliance === null) {
       throw new RuleError('NO_ALLIANCE')
     }
-    const board = boardOf(state, alliance)
 
     const pendingIndex = state.pending.findIndex((pending) => pending === event)
     if (pendingIndex >= 0) state.pending.splice(pendingIndex, 1)
+
+    if (factionOf(state, alliance) === 'automatedAlliance') {
+      return applyAutomatedOutrage(state, { event, action, alliance }, ctx)
+    }
+    const board = boardOf(state, alliance)
 
     if (action.decline === true) {
       const drawn = Deck.draw(state.deck, 1, {
@@ -140,6 +146,10 @@ export function enqueueOutrage(
   const alliance = allianceSeat(state)
   if (alliance === null) return
   if (offender === alliance) return
+  // Rule: Rootbotics 6.2.3 — Automated Outrage is triggered by humans only.
+  if (factionOf(state, alliance) === 'automatedAlliance' && isBotSeat(state, offender)) {
+    return
+  }
   state.pending.push({
     type: 'outrage',
     offender,

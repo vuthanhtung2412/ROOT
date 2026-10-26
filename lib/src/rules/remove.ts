@@ -21,6 +21,7 @@ import {
 } from '#factions/lizard/rules.js'
 import { applyTradeDisruption } from '#factions/riverfolk/rules.js'
 import { warTax } from '#factions/bots/electricEyrie/warTax.js'
+import { applyCrackdown } from '#factions/bots/automatedAlliance/crackdown.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { warriorSupplyOf } from '#queries/supply.js'
@@ -98,7 +99,11 @@ function returnPieceToOwner(state: GameState, piece: Piece): void {
     // Rule: Eyrie — destroyed roosts return to rightmost empty track space (up to all 7).
     board.roostTrack.placed = Math.min(EYRIE_TOTAL_ROOSTS, board.roostTrack.placed + 1)
   }
-  if (piece.kind === 'token' && piece.type === 'sympathy' && board.kind === 'alliance') {
+  if (
+    piece.kind === 'token' &&
+    piece.type === 'sympathy' &&
+    (board.kind === 'alliance' || board.kind === 'automatedAlliance')
+  ) {
     board.sympathyTrack.placed = Math.min(
       10,
       board.sympathyTrack.placed + 1,
@@ -258,6 +263,13 @@ export function removePieces(
       playerOf(state, piece.owner).faction === 'alliance'
     ) {
       applyAllianceBaseRemoval(state, piece.owner, clearing)
+    }
+    if (
+      piece.kind === 'building' &&
+      piece.type === 'base' &&
+      playerOf(state, piece.owner).faction === 'automatedAlliance'
+    ) {
+      logs.push(...applyCrackdown(state, { seat: piece.owner, clearing }))
     }
     if (
       piece.kind === 'token' &&

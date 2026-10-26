@@ -11,6 +11,7 @@ import { battleWarriorCount } from '#queries/mercenaries.js'
 import { warriors } from '#queries/pieces.js'
 import { keepClearingFor } from '#queries/place.js'
 import { placeBotWarriors } from '#factions/bots/botQueries.js'
+import { automatedAmbushHits } from '#factions/bots/automatedAlliance/battle.js'
 import { playerOf } from '#queries/seat.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
@@ -212,6 +213,7 @@ function applyCommanderBonus(state: GameState, event: BattleEvent): void {
 function finalizeHitsAndRemoval(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   applyDefenseless(state, event)
   applyCommanderBonus(state, event)
+  event.hits.defender += automatedAmbushHits(state, event)
   event.hits.attacker += event.attackerExtraHits ?? 0
   ctx.emit({ s: 'battle.hits', ev: event, side: 'attacker' })
   ctx.emit({ s: 'battle.hits', ev: event, side: 'defender' })
