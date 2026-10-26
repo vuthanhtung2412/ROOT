@@ -17,6 +17,10 @@ import {
   MomentRibbon,
   momentFactionName,
 } from '#react/MomentPaper.tsx'
+import {
+  TURMOIL_MOMENT_MS,
+  TurmoilMomentView,
+} from '#react/TurmoilMoment.tsx'
 import { useKeyframes } from '#react/useKeyframes.ts'
 
 /** How long each moment holds the screen before the next one plays. */
@@ -36,6 +40,7 @@ type QueuedMoment = {
 function momentDurationMs(moment: WoodlandMoment): number {
   if (moment.kind === 'explore') return EXPLORE_MOMENT_MS
   if (moment.kind === 'revolt') return REVOLT_MOMENT_MS
+  if (moment.kind === 'turmoil') return TURMOIL_MOMENT_MS
   return EXPLORE_MOMENT_MS
 }
 
@@ -78,6 +83,9 @@ function MomentView(props: { moment: WoodlandMoment }): JSX.Element | null {
   }
   if (moment.kind === 'revolt') {
     return <RevoltMomentBanner moment={moment} />
+  }
+  if (moment.kind === 'turmoil') {
+    return <TurmoilMomentView moment={moment} />
   }
   return null
 }
