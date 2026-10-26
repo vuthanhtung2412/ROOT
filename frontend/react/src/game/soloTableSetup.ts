@@ -30,6 +30,8 @@ export type SoloTable = {
 const MAX_TABLE_SEAT_COUNT = 4
 const MIN_BOT_COUNT = 1
 const DEFAULT_PLAYER_FACTION: SoloPlayerFactionId = 'alliance'
+/** The first solo run: the Alliance against the cat and bird bots. */
+const DEFAULT_SOLO_BOTS: readonly BotFactionId[] = ['mechanicalMarquise', 'electricEyrie']
 const PLAYER_SLOT: SoloSlot = { kind: 'player' }
 
 function isSoloPlayerFactionId(faction: string): faction is SoloPlayerFactionId {
@@ -48,7 +50,7 @@ function isSameFactionPieces(first: string, second: string): boolean {
 export function defaultSoloTable(): SoloTable {
   return {
     playerFaction: DEFAULT_PLAYER_FACTION,
-    bots: [...MENU_BOT_FACTION_IDS],
+    bots: [...DEFAULT_SOLO_BOTS],
     selectedSlot: PLAYER_SLOT,
   }
 }

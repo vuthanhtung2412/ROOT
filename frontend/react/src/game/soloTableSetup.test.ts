@@ -28,7 +28,9 @@ describe('solo run table (Rootbotics 3.2)', () => {
     const table = defaultSoloTable()
     expect(soloPartyFactions(table)).toEqual(['alliance', 'mechanicalMarquise', 'electricEyrie'])
     expect(validatePartyFactions(soloPartyFactions(table)).ok).toBe(true)
-    expect(canAddSoloBot(table)).toBe(false)
+    // The Vagabot still fits the fourth seat; the Automated Alliance clashes with the player.
+    expect(canAddSoloBot(table)).toBe(true)
+    expect(canAddSoloBot({ ...table, bots: [...table.bots, 'vagabot'] })).toBe(false)
   })
 
   it('blocks the bots and the factions a seated bot replaces on the player track', () => {
@@ -42,6 +44,8 @@ describe('solo run table (Rootbotics 3.2)', () => {
       riverfolk: null,
       mechanicalMarquise: 'other',
       electricEyrie: 'other',
+      automatedAlliance: 'other',
+      vagabot: 'other',
     })
     expect(withSoloFactionPicked(table, 'eyrie')).toBe(table)
     expect(withSoloFactionPicked(table, 'marquise').playerFaction).toBe('marquise')
@@ -50,13 +54,15 @@ describe('solo run table (Rootbotics 3.2)', () => {
   it('blocks the bot of the player faction and other seated bots on a bot track', () => {
     const table = soloTableFixture({
       playerFaction: 'marquise',
-      bots: ['electricEyrie'],
+      bots: ['electricEyrie', 'automatedAlliance'],
       selectedSlot: { kind: 'newBot' },
     })
-    expect(canAddSoloBot(table)).toBe(false)
+    expect(canAddSoloBot(table)).toBe(true)
     const choices = takenByOf(table)
     expect(choices.mechanicalMarquise).toBe('other')
     expect(choices.electricEyrie).toBe('other')
+    expect(choices.automatedAlliance).toBe('other')
+    expect(choices.vagabot).toBe(null)
     expect(choices.lizard).toBe('other')
   })
 

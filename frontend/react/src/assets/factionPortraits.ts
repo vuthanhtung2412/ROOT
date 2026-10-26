@@ -1,3 +1,4 @@
+import { artFactionOf } from '@root/lib/bot-factions'
 import { publicAssetUrl } from '#assets/publicAssetUrl.ts'
 
 /** Head art of each faction, shown on the player rail seat tiles. */
@@ -12,8 +13,12 @@ const FACTION_PORTRAIT_PATHS: Readonly<Record<string, string>> = {
   electricEyrie: '/assets/portraits/electricEyrie.webp',
 }
 
-/** Public path of a faction's portrait; null when the faction has none. */
+/**
+ * Public path of a faction's portrait; a bot with no portrait of its own
+ * wears the one of the faction it replaces; null when there is none.
+ */
 export function factionPortraitPath(factionId: string): string | null {
-  const portraitPath: string | undefined = FACTION_PORTRAIT_PATHS[factionId]
+  const portraitPath: string | undefined =
+    FACTION_PORTRAIT_PATHS[factionId] ?? FACTION_PORTRAIT_PATHS[artFactionOf(factionId)]
   return portraitPath === undefined ? null : publicAssetUrl(portraitPath)
 }

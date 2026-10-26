@@ -111,6 +111,17 @@ describe('forestPawnsFromPlayers', () => {
     ])
   })
 
+  it('marks the Vagabot pawn in a forest too (Rootbotics 7)', () => {
+    const vagabot = {
+      seat: VAGABOND_SEAT,
+      faction: 'vagabot',
+      board: { kind: 'vagabot', forest: 2, character: 'ranger' },
+    }
+    expect(forestPawnsFromPlayers([MARQUISE_PLAYER, vagabot])).toEqual([
+      { forestIndex: 2, seat: VAGABOND_SEAT, factionId: 'vagabot', character: 'ranger' },
+    ])
+  })
+
   it('skips a Vagabond standing on a clearing', () => {
     expect(forestPawnsFromPlayers([makeVagabondPlayer('thief', null)])).toEqual(
       [],

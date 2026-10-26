@@ -6,9 +6,13 @@ import {
   BOT_DIFFICULTY_CARDS,
   BOT_TRAIT_CARDS,
   BOT_TRAITS,
+  DEFAULT_VAGABOT_CHARACTER,
+  VAGABOT_CHARACTER_CARDS,
+  VAGABOT_CHARACTERS,
   type BotDifficulty,
   type BotSettings,
   type BotTrait,
+  type VagabotCharacter,
 } from '@root/lib/bot-settings'
 import { factionPortraitPath } from '#assets/factionPortraits.ts'
 import { factionDisplayName } from '#game/menuPartySetup.ts'
@@ -22,8 +26,11 @@ const MODAL_CLASS_NAME =
   'menu-bot-settings-modal fixed inset-0 z-10 box-border flex items-center justify-center p-4'
 const BACKDROP_CLASS_NAME =
   'absolute inset-0 m-0 cursor-root-pointer border-0 bg-forest-deep/72 p-0'
+/** The paper stays put; only the body scrolls (a scrolled sheet slides its `::before` paper away). */
 const SHEET_CLASS_NAME =
-  'menu-bot-settings root-paper relative z-1 box-border flex max-h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto px-5 py-5 md:px-8 md:py-6'
+  'menu-bot-settings root-paper relative z-1 box-border flex max-h-full w-full max-w-5xl flex-col overflow-hidden'
+const SHEET_BODY_CLASS_NAME =
+  'flex min-h-0 flex-col gap-4 overflow-y-auto px-5 py-5 md:px-8 md:py-6'
 const HEADER_CLASS_NAME = 'flex flex-row items-center gap-4 pr-10'
 const PORTRAIT_FRAME_CLASS_NAME =
   'root-paper box-border size-16 flex-none -rotate-2 p-1 [--root-paper-color:currentColor] md:size-20'
@@ -32,10 +39,12 @@ const TITLE_CLASS_NAME =
   'm-0 font-display text-2xl leading-tight tracking-display text-ink md:text-3xl'
 const SUBTITLE_CLASS_NAME = 'm-0 font-body text-sm text-ink-soft italic md:text-base'
 const CLOSE_CLASS_NAME =
-  'menu-bot-settings-close root-paper root-medallion root-paper-press absolute top-3 right-3 m-0 flex size-11 items-center justify-center p-0 text-xl text-paper-bright [--root-paper-color:var(--color-rust)]'
+  'menu-bot-settings-close root-paper root-medallion root-paper-press absolute top-3 right-3 z-1 m-0 flex size-11 items-center justify-center p-0 text-xl text-paper-bright [--root-paper-color:var(--color-rust)]'
 const SECTION_CLASS_NAME = 'flex flex-col gap-2'
 const DIFFICULTY_GRID_CLASS_NAME = 'grid grid-cols-2 gap-3 md:grid-cols-4'
 const TRAIT_GRID_CLASS_NAME = 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5'
+const CHARACTER_GRID_CLASS_NAME = 'grid grid-cols-1 gap-3 sm:grid-cols-3'
+const VAGABOT_FACTION_ID: BotFactionId = 'vagabot'
 /** A card from the Rootbotics deck: name on top, its text under it. */
 const CARD_CLASS_NAME =
   'root-paper root-paper-fine root-paper-press relative m-0 box-border flex h-full flex-col items-start gap-1 px-3.5 py-2.5 text-left text-ink'
@@ -88,6 +97,8 @@ export type MenuBotSettingsModalProps = {
   settings: BotSettings
   onDifficultyChange: (difficulty: BotDifficulty) => void
   onTraitToggle: (trait: BotTrait) => void
+  /** Vagabot only — its character card (Rootbotics 7.3.1). */
+  onCharacterChange?: (character: VagabotCharacter) => void
   onClose: () => void
   /** Online guests: the host's choice, shown but not changed. */
   isReadOnly?: boolean
@@ -124,6 +135,10 @@ export function MenuBotSettingsModal(props: MenuBotSettingsModalProps): JSX.Elem
         onClick={onClose}
       />
       <div className={SHEET_CLASS_NAME}>
+        <button type="button" className={CLOSE_CLASS_NAME} aria-label="Close" onClick={onClose}>
+          <LuX aria-hidden="true" />
+        </button>
+        <div className={SHEET_BODY_CLASS_NAME}>
         <header className={HEADER_CLASS_NAME}>
           {portraitPath !== null ? (
             <div className={PORTRAIT_FRAME_CLASS_NAME} style={{ color: factionTintCss(faction) }}>
@@ -139,9 +154,6 @@ export function MenuBotSettingsModal(props: MenuBotSettingsModalProps): JSX.Elem
             </p>
           </div>
         </header>
-        <button type="button" className={CLOSE_CLASS_NAME} aria-label="Close" onClick={onClose}>
-          <LuX aria-hidden="true" />
-        </button>
         <fieldset className={CARDS_FIELDSET_CLASS_NAME} disabled={props.isReadOnly === true}>
         <section className={SECTION_CLASS_NAME} aria-label="Difficulty">
           <h4 className={SECTION_TITLE_CLASS_NAME}>Difficulty</h4>
@@ -179,6 +191,25 @@ export function MenuBotSettingsModal(props: MenuBotSettingsModalProps): JSX.Elem
             ))}
           </div>
         </section>
+        {faction === VAGABOT_FACTION_ID && props.onCharacterChange !== undefined ? (
+          <section className={SECTION_CLASS_NAME} aria-label="Character">
+            <h4 className={SECTION_TITLE_CLASS_NAME}>Character</h4>
+            <div className={CHARACTER_GRID_CLASS_NAME}>
+              {VAGABOT_CHARACTERS.map((character: VagabotCharacter): JSX.Element => (
+                <BotCard
+                  key={character}
+                  hookClassName={`menu-bot-character menu-bot-character-${character}`}
+                  name={VAGABOT_CHARACTER_CARDS[character].name}
+                  text={VAGABOT_CHARACTER_CARDS[character].text}
+                  isPicked={(settings.character ?? DEFAULT_VAGABOT_CHARACTER) === character}
+                  onPick={(): void => {
+                    props.onCharacterChange?.(character)
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
         </fieldset>
         <div className={FOOTER_CLASS_NAME}>
           <button
@@ -188,6 +219,7 @@ export function MenuBotSettingsModal(props: MenuBotSettingsModalProps): JSX.Elem
           >
             Done
           </button>
+        </div>
         </div>
       </div>
     </div>

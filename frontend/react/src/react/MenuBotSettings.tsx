@@ -5,12 +5,19 @@ import {
   BOT_DIFFICULTY_CARDS,
   BOT_TRAIT_CARDS,
   BOT_TRAITS,
+  DEFAULT_VAGABOT_CHARACTER,
+  VAGABOT_CHARACTER_CARDS,
+  VAGABOT_CHARACTERS,
   isBotDifficulty,
+  isVagabotCharacter,
   type BotDifficulty,
   type BotSettings,
   type BotTrait,
+  type VagabotCharacter,
 } from '@root/lib/bot-settings'
 import { factionDisplayName } from '#game/menuPartySetup.ts'
+
+const VAGABOT_FACTION_ID: BotFactionId = 'vagabot'
 
 const TRAIT_BUTTON_CLASS_NAME =
   'menu-bot-trait m-0 cursor-root-pointer border border-ink/50 px-2 py-0.5 font-body text-xs text-ink'
@@ -26,6 +33,8 @@ export function MenuBotSettings(props: {
   settings: BotSettings
   onDifficultyChange: (difficulty: BotDifficulty) => void
   onTraitToggle: (trait: BotTrait) => void
+  /** Vagabot only — its character card (Rootbotics 7.3.1). */
+  onCharacterChange?: (character: VagabotCharacter) => void
 }): JSX.Element {
   const { faction, settings } = props
   return (
@@ -51,6 +60,28 @@ export function MenuBotSettings(props: {
           )}
         </select>
       </label>
+      {faction === VAGABOT_FACTION_ID && props.onCharacterChange !== undefined ? (
+        <label className="flex flex-row items-center gap-2 font-body text-sm text-ink-soft">
+          Character
+          <select
+            className="menu-bot-character border border-ink bg-parchment px-1.5 py-0.5 font-body text-sm text-ink"
+            value={settings.character ?? DEFAULT_VAGABOT_CHARACTER}
+            aria-label={`Character of ${factionDisplayName(faction)}`}
+            onChange={(event): void => {
+              const nextValue: string = event.target.value
+              if (isVagabotCharacter(nextValue)) props.onCharacterChange?.(nextValue)
+            }}
+          >
+            {VAGABOT_CHARACTERS.map(
+              (character: VagabotCharacter): JSX.Element => (
+                <option key={character} value={character} title={VAGABOT_CHARACTER_CARDS[character].text}>
+                  {VAGABOT_CHARACTER_CARDS[character].name}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+      ) : null}
       <div className="flex flex-row flex-wrap gap-1" role="group" aria-label="Traits">
         {BOT_TRAITS[faction].map((trait: BotTrait): JSX.Element => {
           const picked: boolean = settings.traits.includes(trait)

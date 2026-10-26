@@ -1,12 +1,13 @@
 import { useRef, useState, type JSX } from 'react'
 import { isBotFaction, type BotFactionId } from '@root/lib/bot-factions'
-import type { BotDifficulty, BotTrait } from '@root/lib/bot-settings'
+import type { BotDifficulty, BotTrait, VagabotCharacter } from '@root/lib/bot-settings'
 import type { PlayMode } from '#api/client.ts'
 import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
 import {
   defaultBotSettingsChoices,
   withBotDifficulty,
   withBotTraitToggled,
+  withVagabotCharacter,
   type BotSettingsChoices,
 } from '#game/botSettingsMenu.ts'
 import type {
@@ -308,6 +309,14 @@ export function MenuCoopLobby(props: {
           }}
           onTraitToggle={(trait: BotTrait): void => {
             const choices = withBotTraitToggled(settingsByBot, { faction: settingsOpenBot, trait })
+            props.onChangeLobbyTable({
+              kind: 'setBotSettings',
+              faction: settingsOpenBot,
+              settings: choices[settingsOpenBot],
+            })
+          }}
+          onCharacterChange={(character: VagabotCharacter): void => {
+            const choices = withVagabotCharacter(settingsByBot, character)
             props.onChangeLobbyTable({
               kind: 'setBotSettings',
               faction: settingsOpenBot,

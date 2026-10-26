@@ -5,6 +5,8 @@
 import { isBotFaction, type BotFactionId } from '@root/lib/bot-factions'
 import {
   DEFAULT_BOT_DIFFICULTY,
+  DEFAULT_VAGABOT_CHARACTER,
+  type VagabotCharacter,
   type BotDifficulty,
   type BotSettings,
   type BotSettingsByFaction,
@@ -17,7 +19,21 @@ export function defaultBotSettingsChoices(): BotSettingsChoices {
   return {
     mechanicalMarquise: { difficulty: DEFAULT_BOT_DIFFICULTY, traits: [] },
     electricEyrie: { difficulty: DEFAULT_BOT_DIFFICULTY, traits: [] },
+    automatedAlliance: { difficulty: DEFAULT_BOT_DIFFICULTY, traits: [] },
+    vagabot: {
+      difficulty: DEFAULT_BOT_DIFFICULTY,
+      traits: [],
+      character: DEFAULT_VAGABOT_CHARACTER,
+    },
   }
+}
+
+/** Rootbotics 7.3.1 — the Vagabot's character card. */
+export function withVagabotCharacter(
+  settings: BotSettingsChoices,
+  character: VagabotCharacter,
+): BotSettingsChoices {
+  return { ...settings, vagabot: { ...settings.vagabot, character } }
 }
 
 export function withBotDifficulty(

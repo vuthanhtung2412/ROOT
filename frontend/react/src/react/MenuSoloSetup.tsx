@@ -1,11 +1,17 @@
 import { useRef, useState, type JSX } from 'react'
 import type { BotFactionId } from '@root/lib/bot-factions'
-import type { BotDifficulty, BotSettingsByFaction, BotTrait } from '@root/lib/bot-settings'
+import type {
+  BotDifficulty,
+  BotSettingsByFaction,
+  BotTrait,
+  VagabotCharacter,
+} from '@root/lib/bot-settings'
 import {
   defaultBotSettingsChoices,
   partyBotSettings,
   withBotDifficulty,
   withBotTraitToggled,
+  withVagabotCharacter,
   type BotSettingsChoices,
 } from '#game/botSettingsMenu.ts'
 import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
@@ -106,6 +112,9 @@ export function MenuSoloSetup(props: {
         }}
         onTraitToggle={(trait: BotTrait): void => {
           setBotSettings(withBotTraitToggled(botSettings, { faction, trait }))
+        }}
+        onCharacterChange={(character: VagabotCharacter): void => {
+          setBotSettings(withVagabotCharacter(botSettings, character))
         }}
         onClose={(): void => {
           setSettingsOpenBot(null)
