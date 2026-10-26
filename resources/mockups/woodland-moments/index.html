@@ -1,0 +1,886 @@
+<title>Woodland Moments Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap">
+<style>
+/* Layout: a stack of four "table" stages, each a dimmed slice of the woodland map
+   with its own replay control and a beat sheet (timings) beside it. One look: the
+   game's parchment-on-forest world, so the page is single-theme on purpose. */
+:root {
+  color-scheme: dark;
+  --table: #1c2a24;
+  --table-deep: #121c18;
+  --forest: #3d5348;
+  --moss: #5a7a6e;
+  --ink: #2c2118;
+  --ink-soft: #4a3a2c;
+  --parchment: #f0e6d3;
+  --parchment-deep: #e4d4b8;
+  --parchment-shadow: #cbb892;
+  --rust: #b55238;
+  --gold: #c9a04a;
+  --gold-light: #fbe9a8;
+  --eyrie: #3a5f8a;
+  --eyrie-deep: #27456a;
+  --ink-deep: #1a1408;
+  --wood: #5b3d26;
+  --paper-bright: #fff8e6;
+  --alliance: #3d7a4a;
+  --vagabond: #5a5a5a;
+  --marquise: #c45c26;
+  --text: #ece3cf;
+  --text-dim: #b8b09c;
+  --font-display: 'IM Fell English', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-caps: 'IM Fell English SC', 'IM Fell English', Palatino, Georgia, serif;
+  --font-body: Georgia, 'Times New Roman', serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  --shadow-stamp: 2px 3px 0 rgba(44, 33, 24, 0.35);
+}
+html { background: var(--table-deep); }
+body {
+  background: radial-gradient(120% 80% at 50% 0%, var(--table) 0%, var(--table-deep) 70%) fixed;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-inline: 16px;
+  padding-block: 32px 64px;
+}
+.page { max-width: 1120px; margin: 0 auto; display: grid; gap: 48px; }
+header.intro { display: grid; gap: 10px; max-width: 70ch; }
+.eyebrow { font-family: var(--font-caps); letter-spacing: 0.08em; color: var(--gold); font-size: 14px; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 5vw, 44px); line-height: 1.05; margin: 0; text-wrap: balance; color: var(--parchment); }
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 28px; margin: 0; color: var(--parchment); text-wrap: balance; }
+p { margin: 0; }
+.intro p { color: var(--text-dim); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
+
+button.paper, label.paper {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-deep) 100%);
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  padding: 6px 14px;
+  box-shadow: var(--shadow-stamp);
+  cursor: pointer;
+  display: inline-flex; gap: 8px; align-items: center;
+}
+button.paper:hover { background: var(--gold-light); }
+button.paper:active { transform: translate(1px, 2px); box-shadow: none; }
+button.paper:focus-visible, label.paper:focus-within { outline: 3px solid var(--gold); outline-offset: 2px; }
+label.paper input { accent-color: var(--rust); margin: 0; }
+
+section.moment { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px 28px; align-items: start; }
+.moment-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.moment-head .tag { font-family: var(--font-caps); letter-spacing: 0.08em; font-size: 13px; color: var(--text-dim); }
+.moment-head .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 860px) { section.moment { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- The stage: a slice of map ---------- */
+.stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  overflow: hidden;
+  border: 2px solid #0b120f;
+  border-radius: 4px;
+  background:
+    radial-gradient(60% 50% at 50% 55%, transparent 55%, rgba(0,0,0,0.45) 100%),
+    repeating-radial-gradient(circle at 20% 30%, rgba(255,255,255,0.025) 0 2px, transparent 2px 9px),
+    linear-gradient(160deg, #36503f 0%, #2a4134 55%, #213428 100%);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  container-type: inline-size;
+}
+.clearing {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle at 45% 40%, #d9c79f 0%, #c6b184 60%, #a8946a 100%);
+  box-shadow: inset 0 0 0 3px rgba(80, 60, 30, 0.35), 0 4px 14px rgba(0,0,0,0.35);
+  transform: translate(-50%, -50%);
+}
+.path { position: absolute; height: 2.2cqw; background: repeating-linear-gradient(90deg, #cdbd96 0 1.2cqw, transparent 1.2cqw 2cqw); transform-origin: left center; opacity: 0.7; }
+.suit-chip { position: absolute; width: 4cqw; height: 4cqw; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-caps); font-size: 1.6cqw; color: var(--parchment); border: 2px solid var(--ink); transform: translate(-50%, -50%); }
+.suit-fox { background: #c8524a; }
+.piece { position: absolute; transform: translate(-50%, -50%); filter: drop-shadow(1px 3px 2px rgba(0,0,0,0.45)); }
+.piece img { width: 100%; height: auto; display: block; }
+.count { position: absolute; right: -18%; bottom: -12%; min-width: 2.4cqw; height: 2.4cqw; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-size: 1.6cqw; color: var(--parchment); border: 2px solid var(--parchment); }
+
+.dim { position: absolute; inset: 0; background: radial-gradient(80% 70% at 50% 50%, rgba(12,10,8,0.45) 0%, rgba(12,10,8,0.8) 100%); opacity: 0; z-index: 20; pointer-events: none; }
+
+/* HUD bits */
+.score {
+  position: absolute; display: flex; gap: 0.8cqw; align-items: center;
+  padding: 0.5cqw 1.2cqw 0.5cqw 0.5cqw; border: 2px solid var(--ink); border-radius: 999px;
+  background: var(--parchment); color: var(--ink); font-family: var(--font-display); font-size: 2.2cqw;
+  box-shadow: var(--shadow-stamp); z-index: 30;
+}
+.score img { width: 3.6cqw; height: 3.6cqw; border-radius: 50%; }
+.score .vp { min-width: 2.6cqw; text-align: center; font-variant-numeric: tabular-nums; }
+.float {
+  position: absolute; z-index: 35; transform: translate(-50%, -50%);
+  font-family: var(--font-display); font-size: 2.6cqw; color: var(--gold-light);
+  text-shadow: 0 0 6px rgba(0,0,0,0.9), 1px 1px 0 var(--ink); pointer-events: none; opacity: 0;
+}
+.float.loss { color: #ffb9a4; }
+.dust { position: absolute; width: 1.6cqw; height: 1.6cqw; border-radius: 50%; background: #e7d8b4; opacity: 0; transform: translate(-50%, -50%); z-index: 6; pointer-events: none; }
+.ring { position: absolute; border-radius: 50%; border: 0.5cqw solid; transform: translate(-50%, -50%) scale(0); opacity: 0; pointer-events: none; z-index: 5; }
+
+/* Explore */
+.satchel {
+  position: absolute; right: 2.5%; bottom: 4%; display: grid; grid-template-columns: repeat(4, 5.4cqw); gap: 0.6cqw;
+  padding: 0.9cqw; background: linear-gradient(180deg, #8a5a33, #6b4325); border: 2px solid var(--ink); border-radius: 4px; box-shadow: var(--shadow-stamp); z-index: 30;
+}
+.satchel .label { grid-column: 1 / -1; font-family: var(--font-caps); font-size: 1.5cqw; color: var(--parchment); letter-spacing: 0.06em; line-height: 1; }
+.slot { width: 5.4cqw; height: 5.4cqw; border-radius: 3px; background: rgba(240,230,211,0.15); border: 2px dashed rgba(240,230,211,0.35); display: grid; place-items: center; }
+.slot img { width: 85%; }
+.slot.filled { background: var(--parchment-deep); border: 2px solid var(--ink-soft); }
+.item-fly { position: absolute; width: 6cqw; z-index: 32; transform: translate(-50%, -50%); opacity: 0; filter: drop-shadow(0 0 0.6cqw rgba(251, 233, 168, 0.9)); }
+.glint { position: absolute; width: 12cqw; height: 12cqw; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0; z-index: 31;
+  background: conic-gradient(from 0deg, transparent 0 8%, rgba(251,233,168,0.75) 10%, transparent 14% 33%, rgba(251,233,168,0.6) 35%, transparent 39% 58%, rgba(251,233,168,0.75) 60%, transparent 64% 83%, rgba(251,233,168,0.6) 85%, transparent 89%);
+  mask: radial-gradient(circle, #000 20%, transparent 70%); -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%); }
+
+/* Decree + leader cards */
+.decree {
+  position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%); z-index: 25; opacity: 0;
+  display: grid; grid-template-columns: 11cqw repeat(4, 8cqw); gap: 1cqw; align-items: start;
+  padding: 1.2cqw; background: var(--eyrie-deep); border: 2px solid #0e1a2a; border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+}
+.column { display: grid; gap: 0.4cqw; align-content: start; min-height: 18cqw; padding: 0.5cqw; background: rgba(0,0,0,0.22); border-radius: 3px; }
+.column h4 { margin: 0; font-family: var(--font-caps); font-weight: 400; font-size: 1.5cqw; letter-spacing: 0.06em; color: var(--parchment); text-align: center; }
+.card { width: 100%; aspect-ratio: 5 / 7; border-radius: 0.5cqw; overflow: hidden; border: 1px solid var(--ink); box-shadow: 1px 2px 0 rgba(0,0,0,0.4); background: var(--parchment); position: relative; }
+.card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.column { justify-items: center; }
+.suit-token { position: relative; width: 4.6cqw; height: 4.6cqw; border-radius: 50%; background: var(--parchment); border: 2px solid var(--ink); display: grid; place-items: center; box-shadow: 1px 2px 0 rgba(0,0,0,0.4); }
+.suit-token img { width: 72%; height: 72%; object-fit: contain; }
+.suit-token.vizier { box-shadow: 0 0 0 0.35cqw var(--gold), 1px 2px 0 rgba(0,0,0,0.4); }
+.suit-token .x-mark { font-size: 4cqw; }
+.x-mark { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-display); font-size: 5cqw; color: var(--rust); text-shadow: 0 0 4px var(--parchment); opacity: 0; }
+.leader-slot { display: grid; gap: 0.4cqw; }
+.leader-slot h4 { margin: 0; font-family: var(--font-caps); font-weight: 400; font-size: 1.5cqw; color: var(--gold-light); text-align: center; letter-spacing: 0.06em; }
+.leader-card { width: 100%; aspect-ratio: 5 / 7; position: relative; transform-style: preserve-3d; }
+.leader-card .face, .leader-card .back { position: absolute; inset: 0; border-radius: 0.6cqw; overflow: hidden; backface-visibility: hidden; border: 1px solid var(--ink); }
+.leader-card .face img { width: 100%; height: 100%; object-fit: cover; }
+.leader-card .back { transform: rotateY(180deg); background: var(--eyrie); }
+.leader-card .back img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.leader-row { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%); display: flex; gap: 2.2cqw; z-index: 25; perspective: 900px; }
+.leader-pick { width: 14cqw; position: relative; opacity: 0; }
+.leader-pick .caption { position: absolute; left: 0; right: 0; bottom: -3.2cqw; text-align: center; font-family: var(--font-caps); font-size: 1.6cqw; color: var(--parchment-deep); letter-spacing: 0.05em; }
+.board-mini {
+  position: absolute; left: 3%; bottom: 5%; z-index: 30; display: grid; grid-template-columns: 7cqw repeat(4, 6cqw); gap: 0.6cqw; padding: 0.8cqw;
+  background: var(--eyrie-deep); border: 2px solid #0e1a2a; border-radius: 4px; box-shadow: var(--shadow-stamp); opacity: 0;
+}
+.board-mini .mini-column { display: grid; gap: 0.3cqw; align-content: start; min-height: 9cqw; padding: 0.3cqw; background: rgba(0,0,0,0.25); border-radius: 3px; }
+.board-mini h5 { margin: 0; font-family: var(--font-caps); font-weight: 400; font-size: 1.2cqw; color: var(--parchment); text-align: center; }
+.board-mini .slot-leader { width: 7cqw; aspect-ratio: 5 / 7; border: 2px dashed rgba(240,230,211,0.4); border-radius: 0.5cqw; }
+.board-mini .mini-column { justify-items: center; }
+.board-mini .suit-token { width: 3.4cqw; height: 3.4cqw; }
+.vizier-fly { position: absolute; z-index: 34; transform: translate(-50%, -50%); opacity: 0; }
+
+/* Revolt */
+
+/* Revolt brawl cloud */
+.brawl { position: absolute; width: 34cqw; height: 26cqw; transform: translate(-50%, -50%) scale(0); opacity: 0; z-index: 28; pointer-events: none; }
+.brawl .puff { position: absolute; border-radius: 50%; transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 38% 35%, #f3ead2 0%, #ddcfa9 55%, #b9a77c 100%);
+  box-shadow: inset -0.6cqw -0.8cqw 0 rgba(120, 96, 60, 0.25); }
+.brawl .weapon { position: absolute; width: 6cqw; transform: translate(-50%, -50%); filter: drop-shadow(1px 2px 1px rgba(0,0,0,0.5)); z-index: -1; }
+.brawl .spark { position: absolute; transform: translate(-50%, -50%); font-family: var(--font-display); font-size: 3cqw; color: var(--gold-light); text-shadow: 0 0 3px var(--ink), 1px 1px 0 var(--ink); }
+.sign-badge { position: absolute; top: -0.6cqw; left: -0.6cqw; width: 2.2cqw; height: 2.2cqw; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-weight: 700; font-size: 1.7cqw; color: #fff; box-shadow: 0 0 0 1px #fff; line-height: 1; }
+.sign-badge.removed { background: #b3261e; }
+.sign-badge.placed { background: #2f8f4e; left: auto; right: -0.4cqw; width: 1.7cqw; height: 1.7cqw; font-size: 1.3cqw; }
+
+/* Beat sheet */
+aside.beats { display: grid; gap: 12px; align-content: start; min-width: 0; }
+aside.beats ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+aside.beats li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 10px; padding: 6px 8px; border-left: 3px solid rgba(240,230,211,0.15); transition: border-color 0.2s, background 0.2s; }
+aside.beats li.on { border-left-color: var(--gold); background: rgba(201,160,74,0.10); }
+aside.beats time { font-family: var(--font-mono); font-size: 12.5px; color: var(--gold); font-variant-numeric: tabular-nums; padding-top: 2px; }
+aside.beats span { font-size: 14px; color: var(--text); }
+aside.beats .note { font-size: 13.5px; color: var(--text-dim); border-top: 1px solid rgba(240,230,211,0.12); padding-top: 10px; }
+aside.beats .note b { color: var(--parchment); font-weight: 400; font-family: var(--font-caps); letter-spacing: 0.05em; }
+.questions { max-width: 75ch; display: grid; gap: 10px; border-top: 1px solid rgba(240,230,211,0.15); padding-top: 24px; }
+.questions ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--text-dim); }
+.questions li b { color: var(--parchment); font-weight: 400; }
+
+/* Game paper kit, copied from frontend/react/src/style.css (root-paper utility). */
+:root {
+  --root-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 0.38 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /*
+   * Worn nicks in `root-paper`: three small V cuts (two on top, one at the bottom).
+   * Cut shapes reach 20px past the edge so the torn bumps are cut too.
+   */
+  --root-paper-nick-cuts:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 0H9V20L5.5 27L2 20Z'/%3E%3C/svg%3E")
+      left 30% top -20px / 11px 29px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='32'%3E%3Cpath d='M2 0H11V20L6.5 30L2 20Z'/%3E%3C/svg%3E")
+      left 78% top -20px / 13px 32px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 29H9V9L5.5 2L2 9Z'/%3E%3C/svg%3E")
+      left 60% bottom -20px / 11px 29px no-repeat,
+    linear-gradient(#000 0 0) -20px -20px / calc(100% + 40px) calc(100% + 40px) no-repeat;
+  /* First layer is the corner chip (see `root-paper-chip-*`). */
+  --root-paper-nick-cuts-composite: exclude, exclude, exclude, exclude, add;
+  /*
+   * Torn chip: drawn for the top-right corner (box corner at 19,20 in the image),
+   * mirrored for the others. Reaches 20px past both edges like the nicks.
+   */
+  --root-paper-chip-cut-top-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5H39V0H2Z'/%3E%3C/svg%3E")
+    right -20px top -20px / 39px 37px no-repeat;
+  --root-paper-chip-cut-top-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(-1 0 0 1 39 0)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5H39V0H2Z'/%3E%3C/svg%3E")
+    left -20px top -20px / 39px 37px no-repeat;
+  --root-paper-chip-cut-bottom-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(1 0 0 -1 0 37)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5H39V0H2Z'/%3E%3C/svg%3E")
+    right -20px bottom -20px / 39px 37px no-repeat;
+  --root-paper-chip-cut-bottom-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(-1 0 0 -1 39 37)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5H39V0H2Z'/%3E%3C/svg%3E")
+    left -20px bottom -20px / 39px 37px no-repeat;
+  /* Ink lining the chip, same images and positions as the cuts. */
+  --root-paper-chip-ink-top-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+    right -20px top -20px / 39px 37px no-repeat;
+  --root-paper-chip-ink-top-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(-1 0 0 1 39 0)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+    left -20px top -20px / 39px 37px no-repeat;
+  --root-paper-chip-ink-bottom-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(1 0 0 -1 0 37)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+    right -20px bottom -20px / 39px 37px no-repeat;
+  --root-paper-chip-ink-bottom-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39' height='37'%3E%3Cpath transform='matrix(-1 0 0 -1 39 37)' d='M2 20L5.5 23L8.5 22L11 26.5L15 26L16.5 30.5L19 34.5' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+    left -20px bottom -20px / 39px 37px no-repeat;
+  /* Transparent layer: keeps the mask layer count when there is no chip. */
+  --root-paper-chip-empty: linear-gradient(transparent 0 0) no-repeat;
+  /* Ink lining each nick, same images and positions as the cuts. */
+  --root-paper-nick-ink:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 19L5.5 27L9 19' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+      left 30% top -20px / 11px 29px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='32'%3E%3Cpath d='M2 19L6.5 30L11 19' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+      left 78% top -20px / 13px 32px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='29'%3E%3Cpath d='M2 10L5.5 2L9 10' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+      left 60% bottom -20px / 11px 29px no-repeat;
+}
+.root-paper { position: relative; isolation: isolate; border: 0; background: transparent; }
+.root-paper::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  border: 3px solid var(--root-paper-edge, var(--ink-deep));
+  border-radius: var(--root-paper-radius, 0);
+  background-color: var(--root-paper-color, var(--parchment));
+  background-image: var(--root-paper-texture, var(--root-paper-grain));
+  background-blend-mode: multiply;
+  filter: var(--root-paper-filter, url(#root-torn-edge)) drop-shadow(1px 2px 0 rgba(26, 20, 8, 0.4));
+  mask: var(--root-paper-nick-mask, var(--root-paper-chip-cut, var(--root-paper-chip-cut-top-right)), var(--root-paper-nick-cuts));
+  mask-composite: var(--root-paper-nick-cuts-composite);
+  mask-clip: no-clip;
+  pointer-events: none;
+}
+.root-paper::after {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: var(--root-paper-nick-lining, var(--root-paper-chip-ink, var(--root-paper-chip-ink-top-right)), var(--root-paper-nick-ink));
+  pointer-events: none;
+}
+.root-paper-chip-bottom-left { --root-paper-chip-cut: var(--root-paper-chip-cut-bottom-left); --root-paper-chip-ink: var(--root-paper-chip-ink-bottom-left); }
+.root-paper-fine { --root-paper-filter: url(#root-torn-edge-fine); --root-paper-nick-mask: none; --root-paper-nick-lining: none; }
+.root-medallion { --root-paper-color: var(--wood); --root-paper-edge: var(--ink-deep); --root-paper-filter: url(#root-torn-edge-fine); --root-paper-radius: 9999px; --root-paper-nick-mask: none; --root-paper-nick-lining: none; }
+
+/* Top-centre prompt strip: the TurnBanner's parchment paper. */
+.ribbon {
+  position: absolute; left: 50%; top: 3%; z-index: 40;
+  transform: translate(-50%, -200%);
+  padding: 0.7cqw 2.6cqw;
+  font-family: var(--font-display); font-size: 2.4cqw; line-height: 1.2; color: var(--ink); white-space: nowrap;
+}
+
+/* Announcement: faction-coloured torn paper with the faction portrait, like the bot turn banner head. */
+.event-banner {
+  position: absolute; left: 50%; top: 13%; z-index: 26;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 1.8cqw;
+  padding: 1.4cqw 4cqw 1.4cqw 1.6cqw;
+  --root-paper-color: var(--eyrie); color: var(--parchment);
+  opacity: 0;
+}
+.event-banner.alliance { --root-paper-color: var(--alliance); }
+/* Faction portrait on a light paper tile, tilted like the bot banner's order card. */
+.event-banner .portrait { width: 9cqw; height: 9cqw; flex: none; padding: 0.5cqw; margin-block: -1.6cqw; transform: rotate(-4deg); --root-paper-color: var(--paper-bright); }
+.event-banner .portrait img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0.3cqw; }
+.event-banner .words { display: grid; gap: 0.5cqw; line-height: 1; }
+.event-banner .title { font-family: var(--font-display); font-size: 5.4cqw; letter-spacing: 0.02em; text-shadow: 1px 1px 0 rgba(44, 33, 24, 0.55); }
+.event-banner .reason { font-family: var(--font-body); font-size: 1.8cqw; opacity: 0.85; }
+
+/* Stamp: small torn tile, rust paper with parchment lettering (the bot action number chip). */
+.stamp {
+  position: absolute; z-index: 36; transform: translate(-50%, -50%) rotate(-4deg); opacity: 0;
+  padding: 0.5cqw 1.4cqw; white-space: nowrap;
+  font-family: var(--font-display); font-size: 2.4cqw; letter-spacing: 0.02em; color: var(--parchment);
+  --root-paper-color: var(--rust);
+}
+.stamp.gold { --root-paper-color: var(--gold); color: var(--ink); }
+.stamp.green { --root-paper-color: var(--alliance); }
+
+@media (prefers-reduced-motion: reduce) { .stage * { animation-duration: 1ms !important; } }
+</style>
+
+<svg aria-hidden="true" style="position:absolute;width:0;height:0">
+  <filter id="root-torn-edge" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4"/><feDisplacementMap in="SourceGraphic" scale="8"/></filter>
+  <filter id="root-torn-edge-fine" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="9"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter>
+</svg>
+<div class="page">
+  <header class="intro">
+    <div class="eyebrow">Mockup · branch more-anim</div>
+    <h1>Woodland Moments</h1>
+    <p>Four map animations proposed for the React client: Vagabond explore, Eyrie turmoil, Eyrie leader pick, Alliance revolt. All use the real game art and the client's parchment palette. Banners use the game's own torn-paper kit (root-paper): the parchment prompt strip of the turn banner, faction-coloured paper like the bot banner head, and small rust tiles for stamps. Each stage plays once on load. Hit Replay to watch it again, and read the beat sheet beside it for timings.</p>
+    <div class="toolbar">
+      <button class="paper" id="play-all" type="button">▶ Play all four</button>
+      <label class="paper"><input type="checkbox" id="slow-motion"> Slow motion ×3</label>
+    </div>
+  </header>
+
+  <!-- ===================== 1. EXPLORE ===================== -->
+  <section class="moment" id="explore">
+    <div class="moment-head">
+      <h2>Vagabond explores a ruin</h2>
+      <div class="controls">
+        <button class="paper" type="button" data-play="explore">↻ Replay</button>
+      </div>
+    </div>
+    <div class="stage" data-stage="explore">
+      <div class="path" style="left:10%;top:50%;width:30%;transform:rotate(-4deg)"></div>
+      <div class="path" style="left:58%;top:58%;width:34%;transform:rotate(12deg)"></div>
+      <div class="clearing" style="left:50%;top:56%;width:36%;aspect-ratio:1"></div>
+      <div class="suit-chip suit-fox" style="left:35%;top:36%">F</div>
+      <div class="piece" data-role="ruin" style="left:45%;top:56%;width:9cqw"><img src="../../../frontend/react/public/assets/markers/ruin.webp" alt="Ruin"></div>
+      <div class="piece" data-role="pawn" style="left:57%;top:55%;width:7cqw"><img src="../../../frontend/react/public/assets/tokens/vagabond/pawn.webp" alt="Vagabond pawn"></div>
+      <div class="glint" data-role="glint" style="left:45%;top:56%"></div>
+      <img class="item-fly" data-role="item" src="../../../frontend/react/public/assets/items/boot.webp" alt="Boots" style="left:45%;top:56%">
+      <div class="score" data-role="score" style="left:2.5%;top:4%"><img src="../../../frontend/react/public/assets/factions/vagabond.webp" alt=""><span class="vp" data-role="vp">7</span></div>
+      <div class="float" data-role="plus" style="left:57%;top:44%">+1</div>
+      <div class="ribbon root-paper" data-role="ribbon">Vagabond explores the ruin</div>
+    </div>
+    <aside class="beats" data-beats="explore">
+      <ol>
+        <li data-at="0"><time>0</time><span>Ribbon drops in. Pawn hops toward the ruin.</span></li>
+        <li data-at="450"><time>450</time><span>Ruin rattles, dust puffs out.</span></li>
+        <li data-at="950"><time>950</time><span>Item rises out with a gold glint and holds a beat so everyone sees what it is.</span></li>
+        <li data-at="1750"><time>1750</time><span>Item fades away. The emptied ruin crumbles in a puff of dust.</span></li>
+        <li data-at="2100"><time>2100</time><span>+1 floats off the pawn, score ticks 7 → 8.</span></li>
+        <li data-at="2600"><time>2600</time><span>Ribbon lifts.</span></li>
+      </ol>
+      <p class="note"><b>Trigger</b> · Explore resolved (the Vagabond took the item under a ruin). Rule 9.5.3. Each ruin holds one item, so the ruin always goes.</p>
+    </aside>
+  </section>
+
+  <!-- ===================== 2. TURMOIL ===================== -->
+  <section class="moment" id="turmoil">
+    <div class="moment-head">
+      <h2>Eyrie fall into turmoil</h2>
+      <div class="controls"><button class="paper" type="button" data-play="turmoil">↻ Replay</button></div>
+    </div>
+    <div class="stage" data-stage="turmoil">
+      <div class="clearing" style="left:22%;top:30%;width:18%;aspect-ratio:1"></div>
+      <div class="clearing" style="left:74%;top:70%;width:22%;aspect-ratio:1"></div>
+      <div class="piece" style="left:22%;top:30%;width:6cqw"><img src="../../../frontend/react/public/assets/tokens/eyrie/roost.webp" alt=""></div>
+      <div class="dim" data-role="dim"></div>
+      <div class="event-banner root-paper" data-role="banner">
+        <span class="portrait root-paper root-paper-fine"><img src="../../../frontend/react/public/assets/portraits/eyrie.webp" alt="Eyrie"></span>
+        <div class="words">
+          <span class="title">Turmoil</span>
+          <span class="reason">Could not Recruit in a fox clearing</span>
+        </div>
+      </div>
+      <div class="decree" data-role="decree">
+        <div class="leader-slot">
+          <h4>Leader</h4>
+          <div class="leader-card" data-role="old-leader">
+            <div class="face"><img src="../../../frontend/react/public/assets/eyrie-leaders/eyrie-leader-commander.webp" alt="Commander"></div>
+            <div class="back"><img src="../../reference/character-boards/eyrie-dynasties/eyrie-leader-back.webp" alt="Leader card back"></div>
+          </div>
+        </div>
+        <div class="column"><h4>Recruit</h4>
+          <div class="suit-token" data-role="fail-card" data-purge><img src="../../../frontend/react/public/assets/suits/fox.webp" alt="fox"><div class="x-mark" data-role="x">✕</div></div>
+          <div class="suit-token" data-bird data-purge><img src="../../../frontend/react/public/assets/suits/bird.webp" alt="bird"></div>
+        </div>
+        <div class="column"><h4>Move</h4>
+          <div class="suit-token vizier" data-bird title="Loyal Vizier"><img src="../../../frontend/react/public/assets/suits/bird.webp" alt="bird"></div>
+          <div class="suit-token" data-purge><img src="../../../frontend/react/public/assets/suits/mouse.webp" alt="mouse"></div>
+        </div>
+        <div class="column"><h4>Battle</h4>
+          <div class="suit-token vizier" data-bird title="Loyal Vizier"><img src="../../../frontend/react/public/assets/suits/bird.webp" alt="bird"></div>
+          <div class="suit-token" data-bird data-purge><img src="../../../frontend/react/public/assets/suits/bird.webp" alt="bird"></div>
+        </div>
+        <div class="column"><h4>Build</h4>
+          <div class="suit-token" data-purge><img src="../../../frontend/react/public/assets/suits/mouse.webp" alt="mouse"></div>
+        </div>
+      </div>
+      <div class="score" data-role="score" style="left:2.5%;top:4%"><img src="../../../frontend/react/public/assets/factions/eyrie.webp" alt=""><span class="vp" data-role="vp">12</span></div>
+      <div class="root-paper root-paper-fine stamp" data-role="humiliate" style="left:80%;top:37%">−4 VP · Humiliate</div>
+      <div class="root-paper root-paper-fine stamp" data-role="deposed" style="left:22%;top:60%">Deposed</div>
+      <div class="ribbon root-paper" data-role="ribbon">Eyrie are choosing a leader.</div>
+    </div>
+    <aside class="beats" data-beats="turmoil">
+      <ol>
+        <li data-at="0"><time>0</time><span>Map dims. Blue Eyrie banner pops in with the failed decree action as its reason line.</span></li>
+        <li data-at="700"><time>700</time><span>The decree slides up as suit icons only. The one that could not be carried out shakes and gets a red ✕.</span></li>
+        <li data-at="1400"><time>1400</time><span><b>Humiliate:</b> each bird suit (viziers too, gold ring) pulses and drops a −1. Score ticks down, stamp reads −4 VP.</span></li>
+        <li data-at="2600"><time>2600</time><span><b>Purge:</b> every non-vizier suit fades out in place. Viziers stay.</span></li>
+        <li data-at="3300"><time>3300</time><span><b>Depose:</b> leader card flips face down and is stamped Deposed.</span></li>
+        <li data-at="4100"><time>4100</time><span>Ribbon: "Eyrie are choosing a leader." Hands off to the leader pick below.</span></li>
+      </ol>
+      <p class="note"><b>Trigger</b> · Turmoil (rule 7.7), for players and bots alike (`botTurmoil` for Rootbotics). The banner stays up about 4 s, the longest of the four, since turmoil is the biggest swing.</p>
+    </aside>
+  </section>
+
+  <!-- ===================== 3. NEW LEADER ===================== -->
+  <section class="moment" id="leader">
+    <div class="moment-head">
+      <h2>Eyrie choose a new leader</h2>
+      <div class="controls"><button class="paper" type="button" data-play="leader">↻ Replay</button></div>
+    </div>
+    <div class="stage" data-stage="leader">
+      <div class="clearing" style="left:80%;top:22%;width:18%;aspect-ratio:1"></div>
+      <div class="dim" data-role="dim"></div>
+      <div class="ribbon root-paper" data-role="ribbon">Eyrie are choosing a leader.</div>
+      <div class="leader-row">
+        <div class="leader-pick" data-pick="builder"><div class="leader-card"><div class="face"><img src="../../../frontend/react/public/assets/eyrie-leaders/eyrie-leader-builder.webp" alt="Builder"></div><div class="back"><img src="../../reference/character-boards/eyrie-dynasties/eyrie-leader-back.webp" alt="Leader card back"></div></div><div class="caption">Builder</div></div>
+        <div class="leader-pick" data-pick="charismatic" data-chosen><div class="leader-card"><div class="face"><img src="../../../frontend/react/public/assets/eyrie-leaders/eyrie-leader-charismatic.webp" alt="Charismatic"></div><div class="back"><img src="../../reference/character-boards/eyrie-dynasties/eyrie-leader-back.webp" alt="Leader card back"></div></div><div class="caption">Charismatic</div></div>
+        <div class="leader-pick" data-pick="commander" data-face-down><div class="leader-card" style="transform:rotateY(180deg)"><div class="face"><img src="../../../frontend/react/public/assets/eyrie-leaders/eyrie-leader-commander.webp" alt="Commander"></div><div class="back"><img src="../../reference/character-boards/eyrie-dynasties/eyrie-leader-back.webp" alt="Leader card back"></div></div><div class="caption">Deposed</div></div>
+        <div class="leader-pick" data-pick="despot" data-face-down><div class="leader-card" style="transform:rotateY(180deg)"><div class="face"><img src="../../../frontend/react/public/assets/eyrie-leaders/eyrie-leader-despot.webp" alt="Despot"></div><div class="back"><img src="../../reference/character-boards/eyrie-dynasties/eyrie-leader-back.webp" alt="Leader card back"></div></div><div class="caption">Deposed</div></div>
+      </div>
+      <div class="board-mini" data-role="board">
+        <div class="slot-leader" data-role="leader-slot"></div>
+        <div class="mini-column" data-column="recruit"><h5>Recruit</h5></div>
+        <div class="mini-column" data-column="move"><h5>Move</h5></div>
+        <div class="mini-column" data-column="battle"><h5>Battle</h5></div>
+        <div class="mini-column" data-column="build"><h5>Build</h5></div>
+      </div>
+      <div class="vizier-fly" data-role="vizier-a"><div class="suit-token vizier"><img src="../../../frontend/react/public/assets/suits/bird.webp" alt="bird"></div></div>
+      <div class="vizier-fly" data-role="vizier-b"><div class="suit-token vizier"><img src="../../../frontend/react/public/assets/suits/bird.webp" alt="bird"></div></div>
+    </div>
+    <aside class="beats" data-beats="leader">
+      <ol>
+        <li data-at="0"><time>0</time><span>Map stays dimmed from turmoil. The four leader cards deal in; deposed ones lie face down.</span></li>
+        <li data-at="1700"><time>1700</time><span>Chosen card lifts with a gold glow; the others sink and fade.</span></li>
+        <li data-at="2400"><time>2400</time><span>Card shrinks into the leader slot on the faction board.</span></li>
+        <li data-at="3000"><time>3000</time><span>Two Loyal Viziers (bird icons, gold ring) fly out of the card into Recruit and Battle.</span></li>
+        <li data-at="3800"><time>3800</time><span>Dim lifts, Evening begins.</span></li>
+      </ol>
+      <p class="note"><b>Trigger</b> · Leader chosen, both after turmoil (7.7.3) and at setup. If every leader is face down, all four flip face up first: a short "A new clutch" flip on the deal.</p>
+    </aside>
+  </section>
+
+  <!-- ===================== 4. REVOLT ===================== -->
+  <section class="moment" id="revolt">
+    <div class="moment-head">
+      <h2>Woodland Alliance revolt</h2>
+      <div class="controls"><button class="paper" type="button" data-play="revolt">↻ Replay</button></div>
+    </div>
+    <div class="stage" data-stage="revolt">
+      <div class="path" style="left:50%;top:55%;width:36%;transform:rotate(-30deg)"></div>
+      <div class="path" style="left:50%;top:55%;width:38%;transform:rotate(200deg)"></div>
+      <div class="clearing" data-role="adjacent-a" style="left:82%;top:22%;width:16%;aspect-ratio:1"></div>
+      <div class="clearing" data-role="adjacent-b" style="left:15%;top:76%;width:16%;aspect-ratio:1"></div>
+      <div class="suit-chip suit-fox" style="left:82%;top:22%">F</div>
+      <div class="suit-chip suit-fox" style="left:15%;top:76%">F</div>
+      <div class="piece" data-role="sympathy-a" style="left:86%;top:28%;width:4.6cqw"><img src="../../../frontend/react/public/assets/tokens/alliance/sympathy.webp" alt=""></div>
+      <div class="piece" data-role="sympathy-b" style="left:19%;top:82%;width:4.6cqw"><img src="../../../frontend/react/public/assets/tokens/alliance/sympathy.webp" alt=""></div>
+      <div class="clearing" data-role="target" style="left:50%;top:55%;width:36%;aspect-ratio:1"></div>
+      <div class="suit-chip suit-fox" style="left:36%;top:34%">F</div>
+      <div class="piece" data-role="sympathy" style="left:60%;top:42%;width:5cqw"><img src="../../../frontend/react/public/assets/tokens/alliance/sympathy.webp" alt="Sympathy"></div>
+      <div class="piece" data-enemy data-scores style="left:41%;top:48%;width:6.4cqw"><img src="../../../frontend/react/public/assets/tokens/marquise/sawmill.webp" alt="Sawmill"></div>
+      <div class="piece" data-enemy style="left:51%;top:56%;width:5cqw"><img src="../../../frontend/react/public/assets/tokens/marquise/warrior.webp" alt="Marquise warrior"><span class="count" style="background:var(--marquise)">3</span></div>
+      <div class="piece" data-enemy style="left:42%;top:64%;width:5cqw"><img src="../../../frontend/react/public/assets/tokens/eyrie/warrior.webp" alt="Eyrie warrior"></div>
+      <div class="piece" data-enemy data-scores style="left:60%;top:65%;width:5.6cqw"><img src="../../../frontend/react/public/assets/tokens/eyrie/roost.webp" alt="Roost"></div>
+      <div class="piece" data-role="base" style="left:48%;top:55%;width:8cqw;opacity:0"><img src="../../../frontend/react/public/assets/tokens/alliance/base-fox.webp" alt="Fox base"></div>
+      <div class="piece" data-new-warrior style="left:39%;top:61%;width:4.8cqw;opacity:0"><img src="../../../frontend/react/public/assets/tokens/alliance/warrior.webp" alt=""></div>
+      <div class="piece" data-new-warrior style="left:58%;top:62%;width:4.8cqw;opacity:0"><img src="../../../frontend/react/public/assets/tokens/alliance/warrior.webp" alt=""></div>
+      <div class="brawl" data-role="brawl" style="left:50%;top:55%"><img class="weapon" data-angle="-40" src="../../reference/faction-tokens/woodland/sympathy_no_bg.png" alt="" style="left:18%;top:28%;transform:translate(-50%, -50%) rotate(-40deg)"><img class="weapon" data-angle="25" src="../../reference/faction-tokens/woodland/sympathy_no_bg.png" alt="" style="left:84%;top:30%;transform:translate(-50%, -50%) rotate(25deg)"><img class="weapon" data-angle="130" src="../../reference/faction-tokens/woodland/sympathy_no_bg.png" alt="" style="left:86%;top:76%;transform:translate(-50%, -50%) rotate(130deg)"><img class="weapon" data-angle="-150" src="../../reference/faction-tokens/woodland/sympathy_no_bg.png" alt="" style="left:14%;top:74%;transform:translate(-50%, -50%) rotate(-150deg)"><img class="weapon" data-angle="10" src="../../reference/faction-tokens/woodland/sympathy_no_bg.png" alt="" style="left:52%;top:10%;transform:translate(-50%, -50%) rotate(10deg)"><span class="puff" style="left:50%;top:50%;width:15cqw;height:15cqw"></span><span class="puff" style="left:32%;top:48%;width:12cqw;height:12cqw"></span><span class="puff" style="left:68%;top:46%;width:12cqw;height:12cqw"></span><span class="puff" style="left:42%;top:30%;width:11cqw;height:11cqw"></span><span class="puff" style="left:60%;top:30%;width:10cqw;height:10cqw"></span><span class="puff" style="left:24%;top:62%;width:9cqw;height:9cqw"></span><span class="puff" style="left:76%;top:62%;width:10cqw;height:10cqw"></span><span class="puff" style="left:50%;top:70%;width:12cqw;height:12cqw"></span><span class="puff" style="left:36%;top:70%;width:9cqw;height:9cqw"></span><span class="puff" style="left:64%;top:72%;width:9cqw;height:9cqw"></span><span class="spark" style="left:30%;top:22%">✶</span><span class="spark" style="left:74%;top:20%">✶</span><span class="spark" style="left:80%;top:56%">✶</span><span class="spark" style="left:20%;top:50%">✶</span><span class="spark" style="left:58%;top:86%">✶</span></div>
+      <div class="score" data-role="score" style="left:2.5%;top:4%"><img src="../../../frontend/react/public/assets/factions/alliance.webp" alt=""><span class="vp" data-role="vp">9</span></div>
+      <div class="event-banner alliance root-paper root-paper-chip-bottom-left" data-role="banner" style="top:4%">
+        <span class="portrait root-paper root-paper-fine"><img src="../../../frontend/react/public/assets/portraits/alliance.webp" alt="Woodland Alliance"></span>
+        <div class="words"><span class="title" style="font-size:5cqw">Revolt!</span><span class="reason">The fox clearing rises up</span></div>
+      </div>
+    </div>
+    <aside class="beats" data-beats="revolt">
+      <ol>
+        <li data-at="0"><time>0</time><span>Green banner pops in: Revolt!</span></li>
+        <li data-at="300"><time>300</time><span>A brawl cloud of dust swallows the clearing. Alliance fists punch out of it, sparks fly, the map shudders.</span></li>
+        <li data-at="1700"><time>1700</time><span>Cloud thins out. Enemy pieces play the <b>existing remove effect</b>: grey, red − badge, drift up and fade. +1 per building or token removed.</span></li>
+        <li data-at="2300"><time>2300</time><span>Fox base plays the <b>existing build effect</b>: dust billows over its slot, the icon grows out of the middle.</span></li>
+        <li data-at="3500"><time>3500</time><span>Warriors play the <b>existing place pop</b> with green +, one per sympathetic fox clearing.</span></li>
+      </ol>
+      <p class="note"><b>Trigger</b> · Revolt (rule 8.4.1). A Vagabond in the clearing is not removed; it takes the Full Removal hit instead (three items damaged). That reuses the existing item-damage flash.</p>
+    </aside>
+  </section>
+
+  <div class="questions">
+    <h2>Open questions</h2>
+    <ul>
+      <li><b>Turmoil + leader as one sequence?</b> The mock plays them back to back (about 8 s total). I can also cut the decree tour down to just the stamp for faster games.</li>
+      <li><b>Skip on click?</b> Proposed: any click on the dim skips to the end state, as for battles.</li>
+      <li><b>Bot speed.</b> Proposed: the bot pace setting scales these durations the same way it scales moves.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  const SLOW_MOTION_FACTOR = 3
+  let speed = 1
+  const ms = (value) => value * speed
+  const timers = {}
+
+  function stageOf(name) { return document.querySelector('[data-stage="' + name + '"]') }
+  function role(stage, name) { return stage.querySelector('[data-role="' + name + '"]') }
+  function animate(element, keyframes, options) {
+    return element.animate(keyframes, Object.assign({ fill: 'forwards', easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }, options, {
+      duration: ms(options.duration), delay: ms(options.delay || 0),
+    }))
+  }
+  function later(name, at, callback) { timers[name].push(setTimeout(callback, ms(at))) }
+  /** Center of `element` in the stage, as % of the stage box. */
+  function centerIn(stage, element) {
+    const stageBox = stage.getBoundingClientRect()
+    const box = element.getBoundingClientRect()
+    return { x: ((box.left + box.width / 2 - stageBox.left) / stageBox.width) * 100, y: ((box.top + box.height / 2 - stageBox.top) / stageBox.height) * 100 }
+  }
+  function reset(name) {
+    (timers[name] || []).forEach(clearTimeout)
+    timers[name] = []
+    const stage = stageOf(name)
+    stage.getAnimations({ subtree: true }).forEach((animation) => animation.cancel())
+    stage.querySelectorAll('.spawned').forEach((node) => node.remove())
+    stage.querySelectorAll('[data-reset-html]').forEach((node) => { node.innerHTML = node.dataset.resetHtml })
+    document.querySelectorAll('[data-beats="' + name + '"] li').forEach((item) => item.classList.remove('on'))
+    return stage
+  }
+  function lightBeats(name) {
+    document.querySelectorAll('[data-beats="' + name + '"] li').forEach((item) => {
+      later(name, Number(item.dataset.at), () => item.classList.add('on'))
+    })
+  }
+  function puff(stage, at, origin, count, color) {
+    for (let index = 0; index < count; index++) {
+      const dot = document.createElement('div')
+      dot.className = 'dust spawned'
+      dot.style.left = origin.x + '%'
+      dot.style.top = origin.y + '%'
+      if (color) dot.style.background = color
+      stage.appendChild(dot)
+      const angle = (Math.PI * 2 * index) / count + Math.random() * 0.4
+      const distance = 6 + Math.random() * 5
+      animate(dot, [
+        { opacity: 0.9, transform: 'translate(-50%, -50%) scale(0.6)' },
+        { opacity: 0, transform: 'translate(calc(-50% + ' + Math.cos(angle) * distance + 'cqw), calc(-50% + ' + Math.sin(angle) * distance * 0.7 + 'cqw)) scale(2.2)' },
+      ], { duration: 700, delay: at })
+    }
+  }
+  function floatText(stage, at, origin, text, className) {
+    const node = document.createElement('div')
+    node.className = 'float spawned ' + (className || '')
+    node.textContent = text
+    node.style.left = origin.x + '%'
+    node.style.top = origin.y + '%'
+    stage.appendChild(node)
+    animate(node, [
+      { opacity: 0, transform: 'translate(-50%, -20%) scale(0.6)' },
+      { opacity: 1, transform: 'translate(-50%, -80%) scale(1.15)', offset: 0.25 },
+      { opacity: 1, transform: 'translate(-50%, -130%) scale(1)', offset: 0.7 },
+      { opacity: 0, transform: 'translate(-50%, -180%) scale(1)' },
+    ], { duration: 1100, delay: at, easing: 'ease-out' })
+  }
+  function tickScore(stage, name, at, from, to) {
+    const vp = role(stage, 'vp')
+    vp.dataset.resetHtml = vp.dataset.resetHtml || String(from)
+    const step = from < to ? 1 : -1
+    const steps = Math.abs(to - from)
+    for (let index = 1; index <= steps; index++) {
+      later(name, at + index * 120, () => { vp.textContent = String(from + step * index) })
+    }
+    animate(role(stage, 'score'), [
+      { transform: 'scale(1)' }, { transform: 'scale(1.18)', boxShadow: '0 0 0 4px ' + (step > 0 ? '#c9a04a' : '#b55238') }, { transform: 'scale(1)' },
+    ], { duration: 260 + steps * 120, delay: at })
+  }
+  function ribbonIn(stage, at, holdFor) {
+    const ribbon = role(stage, 'ribbon')
+    animate(ribbon, [
+      { transform: 'translate(-50%, -200%)' },
+      { transform: 'translate(-50%, 12%)', offset: 0.7 },
+      { transform: 'translate(-50%, 0)' },
+    ], { duration: 420, delay: at })
+    if (holdFor) animate(ribbon, [{ transform: 'translate(-50%, 0)' }, { transform: 'translate(-50%, -200%)' }], { duration: 350, delay: at + holdFor, easing: 'ease-in' })
+  }
+  // Banner pops in with a small overshoot, and pops out with a swell before it shrinks away.
+  function bannerPopIn(banner, at) {
+    animate(banner, [
+      { opacity: 0, transform: 'translateX(-50%) scale(0.3)' },
+      { opacity: 1, transform: 'translateX(-50%) scale(1.12)', offset: 0.65 },
+      { opacity: 1, transform: 'translateX(-50%) scale(1)' },
+    ], { duration: 380, delay: at, easing: 'cubic-bezier(0.34, 1.4, 0.64, 1)' })
+  }
+  function bannerPopOut(banner, at) {
+    animate(banner, [
+      { opacity: 1, transform: 'translateX(-50%) scale(1)' },
+      { opacity: 1, transform: 'translateX(-50%) scale(1.08)', offset: 0.3 },
+      { opacity: 0, transform: 'translateX(-50%) scale(0.3)' },
+    ], { duration: 300, delay: at, easing: 'ease-in' })
+  }
+  function stamp(element, at) {
+    return animate(element, [
+      { opacity: 0, transform: 'translate(-50%, -50%) rotate(-4deg) scale(2.2)' },
+      { opacity: 1, transform: 'translate(-50%, -50%) rotate(-4deg) scale(0.92)', offset: 0.7 },
+      { opacity: 1, transform: 'translate(-50%, -50%) rotate(-4deg) scale(1)' },
+    ], { duration: 320, delay: at, easing: 'cubic-bezier(0.5, 0, 0.75, 0)' })
+  }
+  function shakeStage(stage, at, strength) {
+    animate(stage, [0, 1, 2, 3, 4, 5, 6].map((index) => ({ transform: index === 6 ? 'translate(0,0)' : 'translate(' + (index % 2 ? -strength : strength) + 'px,' + (index % 3 - 1) * strength * 0.6 + 'px)' })), { duration: 320, delay: at, easing: 'linear', fill: 'none' })
+  }
+  function flyTo(stage, element, from, to, options) {
+    const lift = options.lift || 0
+    const middle = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - lift }
+    const frame = (point, scale, opacity) => ({ left: point.x + '%', top: point.y + '%', transform: 'translate(-50%, -50%) scale(' + scale + ')', opacity })
+    return animate(element, [frame(from, options.fromScale, 1), frame(middle, (options.fromScale + options.toScale) / 2 + 0.15, 1), frame(to, options.toScale, options.endOpacity === undefined ? 1 : options.endOpacity)], { duration: options.duration, delay: options.at, easing: 'cubic-bezier(0.45, 0, 0.25, 1)' })
+  }
+
+  // ---------- 1. Explore ----------
+  function playExplore() {
+    const name = 'explore'
+    const stage = reset(name)
+    lightBeats(name)
+    const ruin = role(stage, 'ruin')
+    const pawn = role(stage, 'pawn')
+    const item = role(stage, 'item')
+    const glint = role(stage, 'glint')
+    ribbonIn(stage, 0, 2600)
+    animate(pawn, [
+      { transform: 'translate(-50%, -50%)' },
+      { transform: 'translate(-90%, -95%)', offset: 0.5 },
+      { transform: 'translate(-85%, -50%)' },
+    ], { duration: 420, delay: 80 })
+    animate(ruin, [0, 1, 2, 3, 4, 5, 6, 7].map((index) => ({ transform: 'translate(-50%, -50%) rotate(' + (index === 7 ? 0 : (index % 2 ? -5 : 5)) + 'deg)' })), { duration: 480, delay: 450, easing: 'linear' })
+    puff(stage, 520, { x: 45, y: 60 }, 7)
+    animate(item, [
+      { opacity: 0, transform: 'translate(-50%, -50%) scale(0.3)', top: '56%' },
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1.35)', top: '34%', offset: 0.6 },
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1.2)', top: '34%' },
+    ], { duration: 800, delay: 950 })
+    animate(glint, [
+      { opacity: 0, top: '56%', transform: 'translate(-50%, -50%) rotate(0deg) scale(0.4)' },
+      { opacity: 1, top: '34%', transform: 'translate(-50%, -50%) rotate(90deg) scale(1.1)', offset: 0.5 },
+      { opacity: 0, top: '34%', transform: 'translate(-50%, -50%) rotate(220deg) scale(1.3)' },
+    ], { duration: 1100, delay: 950, easing: 'ease-out' })
+    animate(item, [
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1.2)', top: '34%' },
+      { opacity: 0, transform: 'translate(-50%, -50%) scale(0.9)', top: '30%' },
+    ], { duration: 350, delay: 1750, easing: 'ease-in' })
+    floatText(stage, 2100, { x: 52, y: 46 }, '+1')
+    tickScore(stage, name, 2100, 7, 8)
+    animate(ruin, [
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1)', filter: 'none' },
+      { opacity: 1, transform: 'translate(-50%, -40%) scale(0.95)', filter: 'grayscale(1) brightness(0.8)', offset: 0.3 },
+      { opacity: 0, transform: 'translate(-50%, -20%) scale(0.6)', filter: 'grayscale(1) brightness(0.6)' },
+    ], { duration: 700, delay: 1750, easing: 'ease-in' })
+    puff(stage, 1900, { x: 45, y: 60 }, 9, '#bfb08c')
+  }
+
+  // ---------- 2. Turmoil ----------
+  function playTurmoil() {
+    const name = 'turmoil'
+    const stage = reset(name)
+    lightBeats(name)
+    animate(role(stage, 'dim'), [{ opacity: 0 }, { opacity: 1 }], { duration: 350 })
+    const banner = role(stage, 'banner')
+    bannerPopIn(banner, 150)
+    const decree = role(stage, 'decree')
+    animate(decree, [{ opacity: 0, transform: 'translate(-50%, -30%)' }, { opacity: 1, transform: 'translate(-50%, -38%)' }], { duration: 450, delay: 700 })
+    const failCard = role(stage, 'fail-card')
+    animate(failCard, [0, 1, 2, 3, 4, 5].map((index) => ({ transform: 'translateX(' + (index === 5 ? 0 : (index % 2 ? -4 : 4)) + 'px)' })), { duration: 360, delay: 1050, easing: 'linear' })
+    animate(role(stage, 'x'), [{ opacity: 0, transform: 'scale(2)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 220, delay: 1150 })
+    const birds = Array.from(stage.querySelectorAll('[data-bird]'))
+    birds.forEach((card, index) => {
+      const at = 1400 + index * 220
+      animate(card, [{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(1)' }], { duration: 300, delay: at })
+      later(name, at, () => floatText(stage, 0, centerIn(stage, card), '−1', 'loss'))
+    })
+    tickScore(stage, name, 1500, 12, 8)
+    stamp(role(stage, 'humiliate'), 2300)
+    stage.querySelectorAll('[data-purge]').forEach((card) => {
+      animate(card, [{ opacity: 1 }, { opacity: 0 }], { duration: 400, delay: 2600, easing: 'ease-out' })
+    })
+    const oldLeader = role(stage, 'old-leader')
+    animate(oldLeader, [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(180deg)' }], { duration: 600, delay: 3300, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' })
+    stamp(role(stage, 'deposed'), 3800)
+    bannerPopOut(banner, 4100)
+    ribbonIn(stage, 4100, 0)
+  }
+
+  // ---------- 3. New leader ----------
+  function playLeader() {
+    const name = 'leader'
+    const stage = reset(name)
+    lightBeats(name)
+    animate(role(stage, 'dim'), [{ opacity: 0.85 }, { opacity: 1 }], { duration: 200 })
+    animate(role(stage, 'board'), [{ opacity: 0 }, { opacity: 1 }], { duration: 300 })
+    ribbonIn(stage, 0, 3600)
+    const picks = Array.from(stage.querySelectorAll('.leader-pick'))
+    picks.forEach((pick, index) => {
+      animate(pick, [{ opacity: 0, transform: 'translateY(60%) rotate(' + (index - 1.5) * 8 + 'deg)' }, { opacity: 1, transform: 'translateY(0) rotate(' + (index - 1.5) * 2 + 'deg)' }], { duration: 480, delay: 120 + index * 110 })
+      if (pick.hasAttribute('data-face-down')) {
+        later(name, 700, () => animate(pick, [{ filter: 'none' }, { filter: 'grayscale(0.6) brightness(0.7)' }], { duration: 300 }))
+      }
+    })
+    const chosen = stage.querySelector('[data-chosen]')
+    picks.filter((pick) => pick !== chosen).forEach((pick) => {
+      animate(pick, [{ opacity: 1 }, { opacity: 0, transform: 'translateY(40%) rotate(0deg)' }], { duration: 450, delay: 1700, easing: 'ease-in' })
+    })
+    animate(chosen.querySelector('.leader-card'), [
+      { transform: 'translateY(0) scale(1)', filter: 'drop-shadow(0 0 0 #c9a04a)' },
+      { transform: 'translateY(-18%) scale(1.18)', filter: 'drop-shadow(0 0 1.6cqw #fbe9a8)' },
+    ], { duration: 500, delay: 1700 })
+    const slot = role(stage, 'leader-slot')
+    later(name, 2400, () => {
+      const from = centerIn(stage, chosen)
+      const to = centerIn(stage, slot)
+      const card = chosen.querySelector('.leader-card').cloneNode(true)
+      card.classList.add('spawned')
+      card.style.position = 'absolute'
+      card.style.width = chosen.getBoundingClientRect().width + 'px'
+      card.style.zIndex = '33'
+      stage.appendChild(card)
+      chosen.getAnimations({ subtree: true }).forEach((animation) => animation.cancel())
+      animate(chosen, [{ opacity: 0 }, { opacity: 0 }], { duration: 1 })
+      const ratio = slot.getBoundingClientRect().width / chosen.getBoundingClientRect().width
+      flyTo(stage, card, { x: from.x, y: from.y - 6 }, to, { at: 0, duration: 560, lift: 6, fromScale: 1.18, toScale: ratio })
+    })
+    const columns = { recruit: stage.querySelector('[data-column="recruit"]'), battle: stage.querySelector('[data-column="battle"]') }
+    ;[['vizier-a', 'recruit', 3000], ['vizier-b', 'battle', 3200]].forEach(([vizierRole, column, at]) => {
+      later(name, at, () => {
+        const vizier = role(stage, vizierRole)
+        const from = centerIn(stage, slot)
+        const target = columns[column]
+        const to = centerIn(stage, target)
+        flyTo(stage, vizier, from, { x: to.x, y: to.y + 1 }, { at: 0, duration: 560, lift: 12, fromScale: 0.6, toScale: 0.95 })
+        later(name, 560, () => {
+          vizier.getAnimations().forEach((animation) => animation.cancel())
+          const mini = vizier.firstElementChild.cloneNode(true)
+          mini.classList.add('spawned')
+          target.appendChild(mini)
+          animate(target, [{ boxShadow: 'inset 0 0 0 0 #c9a04a' }, { boxShadow: 'inset 0 0 0 3px #c9a04a' }, { boxShadow: 'inset 0 0 0 0 #c9a04a' }], { duration: 600, fill: 'none' })
+        })
+      })
+    })
+    animate(role(stage, 'dim'), [{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 3800 })
+  }
+
+  // ---------- 4. Revolt ----------
+  /** Same as BoardEffectsLayer: lifetime, start of the fade, drift. */
+  const EFFECT_LIFETIME_MS = 2800
+  const FADE_START_OFFSET = 0.75
+  const SIGNED_DRIFT_PIXELS = 26
+  const POP_MS = 450
+  /** Same as map3d buildAnimation: 1.5 s, rise from 30 %, 16 puffs over 45 %. */
+  const BUILD_MS = 1500
+  function badge(piece, kind, sign) {
+    const node = document.createElement('span')
+    node.className = 'sign-badge spawned ' + kind
+    node.textContent = sign
+    piece.appendChild(node)
+  }
+  function playRevolt() {
+    const name = 'revolt'
+    const stage = reset(name)
+    lightBeats(name)
+    const banner = role(stage, 'banner')
+    bannerPopIn(banner, 0)
+    bannerPopOut(banner, 4700)
+
+    // Brawl cloud
+    const brawl = role(stage, 'brawl')
+    animate(brawl, [
+      { opacity: 0, transform: 'translate(-50%, -50%) scale(0.2)' },
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1.08)', offset: 0.7 },
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
+    ], { duration: 380, delay: 300, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' })
+    animate(brawl, [
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
+      { opacity: 0, transform: 'translate(-50%, -50%) scale(1.25)' },
+    ], { duration: 500, delay: 1700, easing: 'ease-in' })
+    brawl.querySelectorAll('.puff').forEach((puffNode, index) => {
+      animate(puffNode, [
+        { transform: 'translate(-50%, -50%) scale(1)' },
+        { transform: 'translate(-50%, -50%) scale(1.14)' },
+        { transform: 'translate(-50%, -50%) scale(0.94)' },
+        { transform: 'translate(-50%, -50%) scale(1)' },
+      ], { duration: 260 + (index % 3) * 60, delay: 300 + index * 30, iterations: 5, easing: 'ease-in-out', fill: 'none' })
+    })
+    brawl.querySelectorAll('.weapon').forEach((weapon, index) => {
+      const angle = Number(weapon.dataset.angle)
+      const jabs = [0, 1, 2, 3, 4, 5, 6].map((step) => ({
+        transform: 'translate(-50%, -50%) rotate(' + (angle + (step % 2 ? 28 : -18)) + 'deg) scale(' + (step % 2 ? 1.1 : 0.9) + ')',
+      }))
+      animate(weapon, jabs, { duration: 1200, delay: 450 + index * 70, easing: 'ease-in-out', fill: 'none' })
+    })
+    brawl.querySelectorAll('.spark').forEach((spark, index) => {
+      animate(spark, [
+        { opacity: 0, transform: 'translate(-50%, -50%) scale(0.3)' },
+        { opacity: 1, transform: 'translate(-50%, -50%) scale(1.3)', offset: 0.4 },
+        { opacity: 0, transform: 'translate(-50%, -50%) scale(0.6)' },
+      ], { duration: 320, delay: 500 + index * 230, iterations: 2, fill: 'none' })
+    })
+    ;[400, 800, 1200].forEach((at) => shakeStage(stage, at, 3))
+
+    // Existing remove effect, on every enemy stack at once
+    let score = 9
+    stage.querySelectorAll('[data-enemy]').forEach((piece) => {
+      later(name, 1700, () => badge(piece, 'removed', '−'))
+      animate(piece, [{ filter: 'none' }, { filter: 'grayscale(1)' }], { duration: 1, delay: 1700 })
+      animate(piece, [
+        { transform: 'translate(-50%, -50%) translateY(0px) scale(1.2)', opacity: 1 },
+        { opacity: 1, offset: FADE_START_OFFSET },
+        { transform: 'translate(-50%, -50%) translateY(' + -SIGNED_DRIFT_PIXELS + 'px) scale(1.2)', opacity: 0 },
+      ], { duration: EFFECT_LIFETIME_MS, delay: 1700, easing: 'ease-out' })
+      if (piece.hasAttribute('data-scores')) {
+        const center = { x: parseFloat(piece.style.left), y: parseFloat(piece.style.top) }
+        floatText(stage, 1900, center, '+1')
+        tickScore(stage, name, 1950, score, score + 1)
+        score += 1
+      }
+    })
+
+    // Existing build effect for the base: dust billows, icon grows from the middle
+    const base = role(stage, 'base')
+    const baseCenter = { x: parseFloat(base.style.left), y: parseFloat(base.style.top) }
+    const PUFF_COUNT = 16
+    for (let index = 0; index < PUFF_COUNT; index++) {
+      puff(stage, 2300 + (index / PUFF_COUNT) * BUILD_MS * 0.45, { x: baseCenter.x + (Math.random() - 0.5) * 6, y: baseCenter.y + (Math.random() - 0.3) * 6 }, 1)
+    }
+    animate(base, [
+      { opacity: 0, transform: 'translate(-50%, -50%) scale(0)' },
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(0.05)', offset: 0.01 },
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
+    ], { duration: BUILD_MS * 0.7, delay: 2300 + BUILD_MS * 0.3, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' })
+
+    // Existing place pop for the new warriors
+    ;['sympathy-a', 'sympathy-b'].forEach((sympathyRole, index) => {
+      animate(role(stage, sympathyRole), [{ transform: 'translate(-50%, -50%) scale(1)', filter: 'none' }, { transform: 'translate(-50%, -50%) scale(1.4)', filter: 'drop-shadow(0 0 1cqw #7fd08f)' }, { transform: 'translate(-50%, -50%) scale(1)', filter: 'none' }], { duration: 500, delay: 3300 + index * 200 })
+    })
+    stage.querySelectorAll('[data-new-warrior]').forEach((warrior) => {
+      later(name, 3500, () => badge(warrior, 'placed', '+'))
+      animate(warrior, [
+        { opacity: 1, transform: 'translate(-50%, -50%) scale(0)' },
+        { opacity: 1, transform: 'translate(-50%, -50%) scale(1.5)', offset: 0.7 },
+        { opacity: 1, transform: 'translate(-50%, -50%) scale(1.2)' },
+      ], { duration: POP_MS, delay: 3500, easing: 'ease-out' })
+    })
+  }
+
+  const players = { explore: playExplore, turmoil: playTurmoil, leader: playLeader, revolt: playRevolt }
+  document.querySelectorAll('[data-play]').forEach((button) => button.addEventListener('click', () => players[button.dataset.play]()))
+  document.getElementById('slow-motion').addEventListener('change', (event) => { speed = event.target.checked ? SLOW_MOTION_FACTOR : 1 })
+  document.getElementById('play-all').addEventListener('click', () => {
+    playExplore()
+    setTimeout(() => { document.getElementById('turmoil').scrollIntoView({ behavior: 'smooth', block: 'start' }); playTurmoil() }, ms(3600))
+    setTimeout(() => { document.getElementById('leader').scrollIntoView({ behavior: 'smooth', block: 'start' }); playLeader() }, ms(8000))
+    setTimeout(() => { document.getElementById('revolt').scrollIntoView({ behavior: 'smooth', block: 'start' }); playRevolt() }, ms(12600))
+  })
+  function start() {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) speed = 0.01
+    Object.values(players).forEach((play) => play())
+    if (reduceMotion) speed = 1
+  }
+  if (document.readyState === 'complete') start()
+  else window.addEventListener('load', start)
+})()
+</script>
