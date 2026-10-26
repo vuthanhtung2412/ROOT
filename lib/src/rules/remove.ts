@@ -22,6 +22,8 @@ import {
 import { applyTradeDisruption } from '#factions/riverfolk/rules.js'
 import { warTax } from '#factions/bots/electricEyrie/warTax.js'
 import { applyCrackdown } from '#factions/bots/automatedAlliance/crackdown.js'
+import { vagabotBoardOf } from '#factions/bots/botBoards.js'
+import { damageItems } from '#factions/bots/vagabot/items.js'
 import { hasKeep } from '#queries/place.js'
 import { playerOf } from '#queries/seat.js'
 import { warriorSupplyOf } from '#queries/supply.js'
@@ -226,6 +228,10 @@ export function removePieces(
       if (playerOf(state, piece.owner).faction === 'vagabond') {
         vagabondSeatsDamaged.add(piece.owner)
       }
+      // Rule: Rootbotics 7.2.1.I Full Removal — the Vagabot damages three items.
+      if (playerOf(state, piece.owner).faction === 'vagabot') {
+        damageItems(vagabotBoardOf(state, piece.owner), VAGABOND_FULL_REMOVAL_ITEM_DAMAGE)
+      }
       return true
     }
     removed.push(piece)
@@ -306,6 +312,8 @@ export function removePieces(
     )
   }
 
+  logs.push(...scoreVagabotBattleWarriors(state, { actor, removed, options }, ctx))
+
   if (victoryPointsDelta > 0) {
     const scored = addVictoryPoints(state, actor, victoryPointsDelta)
     if (scored > 0) {
@@ -377,6 +385,28 @@ export function removePieces(
   }
 
   return logs
+}
+
+/**
+ * Rule: Rootbotics 7.5.4 — the Vagabot scores one point per enemy warrior it
+ * removes in battle as attacker (its own turn), not as defender.
+ */
+function scoreVagabotBattleWarriors(
+  state: GameState,
+  removal: { actor: Seat; removed: Piece[]; options: PieceRemoval['options'] },
+  ctx: Ctx | undefined,
+): LogEntry[] {
+  const { actor, removed, options } = removal
+  if (playerOf(state, actor).faction !== 'vagabot') return []
+  if (options?.fromBattle !== true || options.defendingInBattle !== true) return []
+  if (state.currentSeat !== actor) return []
+  const warriorsRemoved = removed.filter(
+    (piece: Piece): boolean => piece.kind === 'warrior' && piece.owner !== actor,
+  ).length
+  const scored = addVictoryPoints(state, actor, warriorsRemoved)
+  if (scored === 0) return []
+  ctx?.emit({ s: 'vp', actor, delta: scored })
+  return [{ t: 'vp', actor, delta: scored, reason: 'vagabot battle' }]
 }
 
 /** True when victim holds a card matching the clearing suit (or bird). */

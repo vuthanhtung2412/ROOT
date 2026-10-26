@@ -107,12 +107,14 @@ export type VagabotItem = {
   type: ItemType
   exhausted: boolean
   damaged: boolean
+  /** Rule: Rootbotics 7.2.4 — on the Battle Track: never exhausted. */
+  onBattleTrack: boolean
 }
 
 export type VagabotBoard = {
   kind: 'vagabot'
   character: VagabotCharacter
-  /** Satchel, Battle Track and Damaged box together (the track is derived). */
+  /** Satchel, Battle Track and Damaged box together. */
   items: VagabotItem[]
   /** Trait Questing — Battle Track slots never empty again once filled. */
   battleTrackRecord: number

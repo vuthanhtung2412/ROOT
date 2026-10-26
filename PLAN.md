@@ -385,7 +385,7 @@
   - `lib/src/factions/alliance/rules.ts`, `lib/src/events/outrage.ts`, `lib/src/rules/remove.ts`, `lib/src/events/battle/stages.ts` + tests
 - [x] `feat(lib): Automated Alliance turn`
   - `lib/src/factions/bots/AutomatedAlliance.ts`, `lib/src/factions/bots/automatedAlliance/*.ts` (new) + tests, `lib/src/factions/index.ts`, `lib/src/state/botTurn.ts`
-- [ ] `feat(lib): Vagabot items, battle and removal`
+- [x] `feat(lib): Vagabot items, battle and removal`
   - `lib/src/factions/bots/vagabot/items.ts` (new) + test, `lib/src/events/battle/stages.ts`, `lib/src/events/battle/removal.ts`, `lib/src/rules/remove.ts`
 - [ ] `feat(lib): Vagabot turn`
   - `lib/src/factions/bots/Vagabot.ts`, `lib/src/factions/bots/vagabot/*.ts` (new) + tests, `lib/src/factions/index.ts`, `lib/src/state/botTurn.ts`

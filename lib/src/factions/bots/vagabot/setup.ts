@@ -41,7 +41,14 @@ function startingItems(character: VagabotCharacter): VagabotItem[] {
   const count = character === 'tinker' ? TINKER_STARTING_ITEM_COUNT : STARTING_ITEM_COUNT
   return VAGABOND_START_ITEMS[character]
     .slice(0, count)
-    .map((type: ItemType): VagabotItem => ({ type, exhausted: false, damaged: false }))
+    .map(
+      (type: ItemType): VagabotItem => ({
+        type,
+        exhausted: false,
+        damaged: false,
+        onBattleTrack: false,
+      }),
+    )
 }
 
 /** Rule: Rootbotics 7.3.3 — draw one quest from the shuffled quest deck. */
