@@ -21,7 +21,15 @@ import { RevealedCardsPanel } from '#react/RevealedCardsPanel.tsx'
 import type { ArtFactionBoardViewModel } from '#ui/factionBoardViewModel.ts'
 import { isBotBoardViewModel } from '#ui/botBoardViewModel.ts'
 import { BotFactionBoard } from '#react/BotFactionBoard.tsx'
+import {
+  BOARD_OVERLAY_GROUP_CLASS_NAME,
+  BOARD_OVERLAY_LAYER_CLASS_NAME,
+  HideOverlaysButton,
+  OverlayPeekContext,
+  useOverlayPeek,
+} from '#react/HideOverlaysButton.tsx'
 
+const MODAL_CLASS_NAME = 'faction-board-modal pointer-events-auto fixed inset-0 z-360'
 const BOARD_MAX_WIDTH_RATIO = 0.96
 const BOARD_MAX_HEIGHT_RATIO = 0.94
 const BOARD_TOP_RATIO = 0.02
@@ -100,6 +108,7 @@ export function FactionBoardModal(): JSX.Element | null {
     getFactionBoardSnapshot,
   )
   const viewport = useViewportSize()
+  const peek = useOverlayPeek()
 
   if (view === null) {
     return null
@@ -108,9 +117,10 @@ export function FactionBoardModal(): JSX.Element | null {
   if (isBotBoardViewModel(view)) {
     return (
       <div
-        className="faction-board-modal pointer-events-auto fixed inset-0 z-360"
+        className={`${MODAL_CLASS_NAME} ${BOARD_OVERLAY_GROUP_CLASS_NAME}`}
         role="dialog"
         aria-modal="true"
+        data-overlays-hidden={peek.overlaysHidden}
       >
         <button
           type="button"
@@ -121,7 +131,9 @@ export function FactionBoardModal(): JSX.Element | null {
           }}
         />
         <CloseBoardButton />
-        <BotFactionBoard view={view} />
+        <OverlayPeekContext.Provider value={peek}>
+          <BotFactionBoard view={view} />
+        </OverlayPeekContext.Provider>
       </div>
     )
   }
@@ -139,9 +151,10 @@ export function FactionBoardModal(): JSX.Element | null {
 
   return (
     <div
-      className="faction-board-modal pointer-events-auto fixed inset-0 z-360"
+      className={`${MODAL_CLASS_NAME} ${BOARD_OVERLAY_GROUP_CLASS_NAME}`}
       role="dialog"
       aria-modal="true"
+      data-overlays-hidden={peek.overlaysHidden}
     >
       <button
         type="button"
@@ -184,8 +197,13 @@ export function FactionBoardModal(): JSX.Element | null {
               }`}
             />
           )}
-          <FactionBoardOverlays view={view} layout={layout} />
-          <ExpansionBoardOverlays view={view} layout={layout} />
+          <div className={BOARD_OVERLAY_LAYER_CLASS_NAME}>
+            <FactionBoardOverlays view={view} layout={layout} />
+            <ExpansionBoardOverlays view={view} layout={layout} />
+          </div>
+          <OverlayPeekContext.Provider value={peek}>
+            <HideOverlaysButton />
+          </OverlayPeekContext.Provider>
         </div>
         {hasSidePanel(view) ? (
           <aside

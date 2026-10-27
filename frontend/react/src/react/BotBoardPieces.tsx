@@ -9,6 +9,10 @@ import {
 } from '#assets/botBoardLayout.ts'
 import { imagePathForAssetKey, itemTextureKey } from '#assets/gameAssets.ts'
 import type { BotBoardViewModel } from '#ui/botBoardViewModel.ts'
+import {
+  BOARD_OVERLAY_LAYER_CLASS_NAME,
+  HideOverlaysButton,
+} from '#react/HideOverlaysButton.tsx'
 
 /** Pieces drawn on a Rootbotics bot board scan, placed in fractions of the art. */
 
@@ -115,7 +119,8 @@ export function BoardArt(props: {
           draggable={false}
         />
       ) : null}
-      {props.children}
+      <div className={BOARD_OVERLAY_LAYER_CLASS_NAME}>{props.children}</div>
+      <HideOverlaysButton />
     </div>
   )
 }
