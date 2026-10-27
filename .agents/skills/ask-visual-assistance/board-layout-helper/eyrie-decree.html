@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Eyrie decree regions</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 13px/1.4 ui-monospace, Menlo, monospace;
+      background: #1a1a1a;
+      color: #f0e6d3;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100vh;
+    }
+    aside {
+      padding: 12px;
+      border-right: 1px solid #444;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    h1 { font-size: 14px; margin: 0; }
+    h2 { font-size: 11px; margin: 0; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.04em; }
+    .hint { opacity: 0.7; margin: 0; font-size: 12px; }
+    button {
+      font: inherit;
+      color: #1a1a1a;
+      background: #f0e6d3;
+      border: 0;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    button.primary { background: #7ec8ff; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      cursor: pointer;
+    }
+    li.active { border-color: #7ec8ff; }
+    li .meta { opacity: 0.65; font-size: 11px; }
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      font: inherit;
+      background: #111;
+      color: #f0e6d3;
+      border: 1px solid #444;
+      padding: 8px;
+      resize: vertical;
+    }
+    main {
+      overflow: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 16px;
+      background: #111;
+    }
+    #stage {
+      position: relative;
+      display: inline-block;
+      line-height: 0;
+      max-width: 100%;
+    }
+    #board {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      user-select: none;
+      pointer-events: none;
+    }
+    .region {
+      position: absolute;
+      border: 2px solid #7ec8ff;
+      background: rgba(126, 200, 255, 0.18);
+      cursor: move;
+      min-width: 24px;
+      min-height: 24px;
+    }
+    .region.selected {
+      border-color: #ffe08a;
+      background: rgba(255, 224, 138, 0.22);
+      z-index: 2;
+    }
+    .region .label {
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      font: 11px/1 ui-monospace, Menlo, monospace;
+      color: #1a1a1a;
+      background: #ffe08a;
+      padding: 2px 4px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .region .handle {
+      position: absolute;
+      right: -5px;
+      bottom: -5px;
+      width: 12px;
+      height: 12px;
+      background: #ffe08a;
+      border: 1px solid #1a1a1a;
+      cursor: nwse-resize;
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <h1>Eyrie decree regions</h1>
+    <p class="hint">
+      Art: <code>eyrie-dynasties-front.webp</code>.
+      Mark 4 decree columns — top-left + width/height only.
+    </p>
+    <h2>Needed ids</h2>
+    <ul id="id-list"></ul>
+    <div class="row">
+      <button type="button" id="add-missing">Add missing boxes</button>
+      <button type="button" id="clear">Clear all</button>
+    </div>
+    <p class="hint">Drag box = move. Corner handle = resize. Click list to select.</p>
+    <div class="row">
+      <button type="button" id="export" class="primary">Export JSON</button>
+      <button type="button" id="copy">Copy</button>
+    </div>
+    <textarea id="export-json" readonly placeholder="export lands here"></textarea>
+    <p class="hint">Sets <code>window.__layoutExport</code>. Say <strong>done</strong> when finished.</p>
+  </aside>
+  <main>
+    <div id="stage">
+      <img
+        id="board"
+        alt="eyrie board"
+        src="/resources/reference/character-boards/eyrie-dynasties/eyrie-dynasties-front.webp"
+      />
+      <div id="regions"></div>
+    </div>
+  </main>
+  <script>
+    const NEEDED_IDS = [
+      "decree-recruit",
+      "decree-move",
+      "decree-battle",
+      "decree-build",
+    ];
+    const IMAGE_PATH =
+      "resources/reference/character-boards/eyrie-dynasties/eyrie-dynasties-front.webp";
+
+    /** @type {{ id: string, x: number, y: number, width: number, height: number }[]} */
+    let regions = [];
+    let selectedId = null;
+    let drag = null;
+
+    const board = document.getElementById("board");
+    const regionsEl = document.getElementById("regions");
+    const idList = document.getElementById("id-list");
+    const exportJson = document.getElementById("export-json");
+
+    function scale() {
+      const naturalW = board.naturalWidth || 1;
+      return board.clientWidth / naturalW;
+    }
+
+    function toNatural(clientX, clientY) {
+      const rect = board.getBoundingClientRect();
+      const s = scale();
+      return {
+        x: Math.round((clientX - rect.left) / s),
+        y: Math.round((clientY - rect.top) / s),
+      };
+    }
+
+    function clampRegion(region) {
+      const maxW = board.naturalWidth || 1600;
+      const maxH = board.naturalHeight || 1242;
+      const width = Math.max(24, Math.min(region.width, maxW));
+      const height = Math.max(24, Math.min(region.height, maxH));
+      const x = Math.max(0, Math.min(region.x, maxW - width));
+      const y = Math.max(0, Math.min(region.y, maxH - height));
+      return { ...region, x, y, width, height };
+    }
+
+    function publishExport() {
+      const payload = {
+        image: IMAGE_PATH,
+        unit: "px",
+        naturalWidth: board.naturalWidth || 0,
+        naturalHeight: board.naturalHeight || 0,
+        regions: regions.map(({ id, x, y, width, height }) => ({
+          id,
+          x,
+          y,
+          width,
+          height,
+        })),
+      };
+      exportJson.value = JSON.stringify(payload, null, 2);
+      window.__layoutExport = payload;
+      return payload;
+    }
+
+    function renderList() {
+      idList.innerHTML = "";
+      for (const id of NEEDED_IDS) {
+        const found = regions.find((entry) => entry.id === id);
+        const li = document.createElement("li");
+        if (selectedId === id) li.classList.add("active");
+        li.innerHTML = `<span>${id}</span><span class="meta">${
+          found
+            ? `${found.x},${found.y} ${found.width}×${found.height}`
+            : "missing"
+        }</span>`;
+        li.addEventListener("click", () => {
+          selectedId = id;
+          render();
+        });
+        idList.appendChild(li);
+      }
+    }
+
+    function syncRegionDom(region) {
+      let el = regionsEl.querySelector(`[data-id="${region.id}"]`);
+      if (!el) {
+        el = document.createElement("div");
+        el.className = "region";
+        el.dataset.id = region.id;
+        el.innerHTML =
+          `<span class="label"></span><div class="handle" data-handle="1"></div>`;
+        regionsEl.appendChild(el);
+
+        el.addEventListener("pointerdown", (event) => {
+          if (!(event.target instanceof Element)) return;
+          event.preventDefault();
+          selectedId = region.id;
+          const natural = toNatural(event.clientX, event.clientY);
+          const current = regions.find((entry) => entry.id === region.id);
+          if (!current) return;
+          const resizing = event.target.getAttribute("data-handle") === "1";
+          drag = {
+            id: region.id,
+            resizing,
+            startX: natural.x,
+            startY: natural.y,
+            origin: { ...current },
+          };
+          el.setPointerCapture(event.pointerId);
+          render();
+        });
+
+        el.addEventListener("pointermove", (event) => {
+          if (drag === null || drag.id !== region.id) return;
+          const natural = toNatural(event.clientX, event.clientY);
+          const dx = natural.x - drag.startX;
+          const dy = natural.y - drag.startY;
+          const next = { ...drag.origin };
+          if (drag.resizing) {
+            next.width = drag.origin.width + dx;
+            next.height = drag.origin.height + dy;
+          } else {
+            next.x = drag.origin.x + dx;
+            next.y = drag.origin.y + dy;
+          }
+          regions = regions.map((entry) =>
+            entry.id === region.id ? clampRegion(next) : entry,
+          );
+          render();
+        });
+
+        el.addEventListener("pointerup", () => {
+          drag = null;
+          publishExport();
+        });
+      }
+
+      const s = scale();
+      el.style.left = `${region.x * s}px`;
+      el.style.top = `${region.y * s}px`;
+      el.style.width = `${region.width * s}px`;
+      el.style.height = `${region.height * s}px`;
+      el.classList.toggle("selected", selectedId === region.id);
+      const label = el.querySelector(".label");
+      if (label) label.textContent = region.id;
+    }
+
+    function render() {
+      const keep = new Set(regions.map((entry) => entry.id));
+      for (const child of [...regionsEl.children]) {
+        const id = child.getAttribute("data-id");
+        if (id === null || !keep.has(id)) child.remove();
+      }
+      for (const region of regions) syncRegionDom(region);
+      renderList();
+      publishExport();
+    }
+
+    function addMissing() {
+      const naturalW = board.naturalWidth || 1600;
+      const naturalH = board.naturalHeight || 1242;
+      const width = Math.round(naturalW * 0.12);
+      const height = Math.round(naturalH * 0.18);
+      let index = 0;
+      for (const id of NEEDED_IDS) {
+        if (regions.some((entry) => entry.id === id)) continue;
+        regions.push(
+          clampRegion({
+            id,
+            x: 60 + index * (width + 16),
+            y: 40,
+            width,
+            height,
+          }),
+        );
+        index += 1;
+      }
+      if (selectedId === null) selectedId = NEEDED_IDS[0];
+      render();
+    }
+
+    document.getElementById("add-missing").addEventListener("click", addMissing);
+    document.getElementById("clear").addEventListener("click", () => {
+      regions = [];
+      selectedId = null;
+      render();
+    });
+    document.getElementById("export").addEventListener("click", () => {
+      publishExport();
+    });
+    document.getElementById("copy").addEventListener("click", async () => {
+      publishExport();
+      try {
+        await navigator.clipboard.writeText(exportJson.value);
+      } catch {
+        exportJson.select();
+      }
+    });
+
+    window.addEventListener("resize", () => render());
+
+    board.onload = () => {
+      addMissing();
+    };
+    if (board.complete && board.naturalWidth > 0) {
+      addMissing();
+    }
+  </script>
+</body>
+</html>

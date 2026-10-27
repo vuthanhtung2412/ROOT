@@ -1,0 +1,38 @@
+# deps
+node_modules/
+
+# build
+dist/
+*.tsbuildinfo
+
+# env
+.env
+.env.*
+
+# logs / coverage
+logs/
+*.log
+coverage/
+.nyc_output/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/launch.json
+!.vscode/*.code-snippets
+
+# saved game slot (web server persistence)
+backend/web/.data/
+
+# misc
+*.local
+/tmp
+
+# 3D assets (Blender sources, exports, renders)
+*.blend
+*.blend1
+*.gltf
+*.fbx
+*.obj
+*.stl

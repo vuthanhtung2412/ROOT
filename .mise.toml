@@ -1,0 +1,7 @@
+[tools]
+node = "24"
+pnpm = "10"
+
+[env]
+# Auto-load repo-root `.env` (gitignored). See `env.template`.
+_.file = ".env"
