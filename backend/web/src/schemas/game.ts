@@ -50,8 +50,21 @@ export const BotSettingsSchema = z
         'relentless',
         'swoop',
         'warTax',
+        'steadfast',
+        'wildfire',
+        'informants',
+        'popularity',
+        'veterans',
+        'adventurer',
+        'berserker',
+        'marksman',
+        'helper',
+        'questing',
       ]),
     ),
+    character: z.enum(['thief', 'tinker', 'ranger']).optional().openapi({
+      description: 'Vagabot only — its character card (Rootbotics 7.7); absent = thief.',
+    }),
   })
   .openapi('BotSettings')
 
@@ -59,13 +72,15 @@ export const BotSettingsByFactionSchema = z
   .object({
     mechanicalMarquise: BotSettingsSchema.optional(),
     electricEyrie: BotSettingsSchema.optional(),
+    automatedAlliance: BotSettingsSchema.optional(),
+    vagabot: BotSettingsSchema.optional(),
   })
   .openapi('BotSettingsByFaction', {
     description: 'Difficulty and traits per bot faction; a bot left out plays default with no trait.',
   })
 
 export const BotFactionIdSchema = z
-  .enum(['mechanicalMarquise', 'electricEyrie'])
+  .enum(['mechanicalMarquise', 'electricEyrie', 'automatedAlliance', 'vagabot'])
   .openapi('BotFactionId')
 
 export const PlayModeSchema = z.enum(PLAY_MODES).openapi('PlayMode', {

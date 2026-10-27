@@ -13,6 +13,9 @@ Layout: one subdirectory per faction id (`marquise-de-cat/`, `eyrie-dynasties/`,
 | Decimator85 Root Assets (Drive) | https://drive.google.com/drive/folders/1MFx-NK40quaThNRBovrjISwbuQdUddkJ | Riverfolk Company + Lizard Cult boards (higher resolution, PNG → webp) |
 | Own scan | printed Clockwork board | Mechanical Marquise 2.0 bot board: raw scan `mechanical-marquise/mechanical-marquise-front.png` (2090 px, SoT); `.webp` = same scan colour-matched to the Root Database print (therootdatabase.com/clockwork/mechanical-marquise-20/) |
 | Electric Eyrie errata sheet | `resources/rules/Electric_Eyrie_Errata.pdf` (Leder Games) | Electric Eyrie bot board (front, rendered at 300 dpi, rotated, 2000 px) |
+| Root Database Clockwork pages | https://www.therootdatabase.com/clockwork/{automated-alliance,vagabot}/ | Automated Alliance and Vagabot bot boards (front, 950 px) |
+| Own photos | printed Automated Alliance and Vagabot boards (French print), straightened to 2400 × 1832 px, lighting evened, background glare lifted, colour matched to the official print's saturation | `automated-alliance/automated-alliance-front-scan.webp`, `vagabot/vagabot-front-scan.webp` |
+| Own photos | printed Vagabot character cards (French print), cropped to 1000 × 1426 px | Vagabot characters `vagabot/vagabot-{ranger,thief,tinker}-front.webp` |
 | Leder Games | https://ledergames.com | publisher / © |
 
 ## Coverage
@@ -20,6 +23,8 @@ Layout: one subdirectory per faction id (`marquise-de-cat/`, `eyrie-dynasties/`,
 **Faction boards** (front + back): Marquise, Eyrie, Woodland Alliance, Vagabond, Riverfolk Company, Lizard Cult, Underground Duchy, Corvid Conspiracy, Lord of the Hundreds, Keepers in Iron, Lilypad Diaspora, Twilight Council, Knaves of the Deepwood.
 
 **Vagabond characters** (card front): Thief, Tinker, Ranger (base); Arbiter, Scoundrel, Vagrant (Riverfolk); Adventurer, Harrier, Ronin (Vagabond Pack); Cheat, Gladiator, Jailor (Homeland).
+
+**Vagabot characters** (card front, French print): Ranger (Rôdeur), Thief (Voleur), Tinker (Bricoleur). Missing: Vagrant, Scoundrel, Arbiter.
 
 **Faction cards** (from `/post/{faction}/en/decks/`):
 - Eyrie leaders (Builder, Charismatic, Commander, Despot) + Loyal Viziers ×2

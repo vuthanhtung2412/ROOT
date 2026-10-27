@@ -10,6 +10,8 @@ const PORTRAIT_FACTION_IDS: readonly string[] = [
   'riverfolk',
   'mechanicalMarquise',
   'electricEyrie',
+  'automatedAlliance',
+  'vagabot',
 ]
 const UNKNOWN_FACTION_ID = 'unknown-faction'
 

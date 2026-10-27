@@ -1,3 +1,4 @@
+import { artFactionOf } from '@root/lib/bot-factions'
 import type { ActionSpec, GameState } from '#api/client.ts'
 import { readChoiceParams } from '#game/resolution/ActionComposer.ts'
 import {
@@ -411,8 +412,9 @@ function isSameBattle(left: BattleSides, right: BattleSides): boolean {
   )
 }
 
+/** The Vagabond, or the Vagabot (Rootbotics 7.2.5): hits damage items. */
 function isVagabondSeat(state: GameState, seat: number): boolean {
-  return factionLabel(state, seat) === VAGABOND_FACTION
+  return artFactionOf(factionLabel(state, seat)) === VAGABOND_FACTION
 }
 
 function factionLabel(state: GameState, seat: number): string {

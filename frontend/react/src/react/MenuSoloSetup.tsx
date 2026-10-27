@@ -1,11 +1,17 @@
 import { useRef, useState, type JSX } from 'react'
 import type { BotFactionId } from '@root/lib/bot-factions'
-import type { BotDifficulty, BotSettingsByFaction, BotTrait } from '@root/lib/bot-settings'
+import type {
+  BotDifficulty,
+  BotSettingsByFaction,
+  BotTrait,
+  VagabotCharacter,
+} from '@root/lib/bot-settings'
 import {
   defaultBotSettingsChoices,
   partyBotSettings,
   withBotDifficulty,
   withBotTraitToggled,
+  withVagabotCharacter,
   type BotSettingsChoices,
 } from '#game/botSettingsMenu.ts'
 import { IS_BIRTHDAY_EDITION } from '#game/birthdayEdition.ts'
@@ -30,7 +36,7 @@ import {
   GUEST_COUNT_CLASS_NAME,
 } from '#react/BirthdayDecorations.tsx'
 import { MenuBotSettingsModal } from '#react/MenuBotSettingsModal.tsx'
-import { LobbyFactionDock } from '#react/MenuLobbyFactionDock.tsx'
+import { LobbyFactionDock, SIX_FACTION_COLUMNS_CLASS_NAME } from '#react/MenuLobbyFactionDock.tsx'
 import {
   CANCEL_BUTTON_CLASS_NAME,
   LOBBY_FOOTER_CLASS_NAME,
@@ -50,8 +56,8 @@ const SIDE_HEADING_CLASS_NAME =
   'root-paper root-paper-fine m-0 px-5 py-0.5 font-display text-2xl tracking-display text-ink [--root-paper-color:var(--color-parchment)] md:text-3xl'
 /** Bots in a 2x2 grid, like the co-op table. */
 const BOT_LIST_CLASS_NAME = 'm-0 grid list-none grid-cols-2 items-start justify-items-center gap-5 p-0'
-/** Six factions, then the two bots: one row from `md`. */
-const TRACK_COLUMNS_CLASS_NAME = 'grid-cols-4 md:grid-cols-8'
+/** The four bots in one row; the player track keeps the dock's six columns. */
+const BOT_TRACK_COLUMNS_CLASS_NAME = 'grid-cols-4'
 const TRACK_SEAT_INDEX = 0
 /** Birthday edition: start is the cake, frosting pink with a lit candle. */
 const START_BUTTON_CLASS_NAME = `menu-start-solo ${PRIMARY_BUTTON_CLASS_NAME} ${
@@ -106,6 +112,9 @@ export function MenuSoloSetup(props: {
         }}
         onTraitToggle={(trait: BotTrait): void => {
           setBotSettings(withBotTraitToggled(botSettings, { faction, trait }))
+        }}
+        onCharacterChange={(character: VagabotCharacter): void => {
+          setBotSettings(withVagabotCharacter(botSettings, character))
         }}
         onClose={(): void => {
           setSettingsOpenBot(null)
@@ -195,7 +204,11 @@ export function MenuSoloSetup(props: {
           disabled={props.disabled}
           modelPicker={null}
           tabLabel={trackTabLabel(table)}
-          columnsClassName={TRACK_COLUMNS_CLASS_NAME}
+          columnsClassName={
+            table.selectedSlot.kind === 'player'
+              ? SIX_FACTION_COLUMNS_CLASS_NAME
+              : BOT_TRACK_COLUMNS_CLASS_NAME
+          }
           onPick={(faction: string): void => {
             setTable(withSoloFactionPicked(table, faction))
           }}

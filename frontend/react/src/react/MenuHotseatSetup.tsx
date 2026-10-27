@@ -13,12 +13,18 @@ import {
 } from '#game/menuPartySetup.ts'
 import { factionColorCss } from '#game/theme.ts'
 import { isBotFaction } from '@root/lib/bot-factions'
-import type { BotDifficulty, BotSettingsByFaction, BotTrait } from '@root/lib/bot-settings'
+import type {
+  BotDifficulty,
+  BotSettingsByFaction,
+  BotTrait,
+  VagabotCharacter,
+} from '@root/lib/bot-settings'
 import {
   defaultBotSettingsChoices,
   partyBotSettings,
   withBotDifficulty,
   withBotTraitToggled,
+  withVagabotCharacter,
   type BotSettingsChoices,
 } from '#game/botSettingsMenu.ts'
 import { MenuBotSettings } from '#react/MenuBotSettings.tsx'
@@ -146,6 +152,9 @@ export function MenuHotseatSetup(props: {
                         setBotSettings(
                           withBotTraitToggled(botSettings, { faction: factionId, trait }),
                         )
+                      }}
+                      onCharacterChange={(character: VagabotCharacter): void => {
+                        setBotSettings(withVagabotCharacter(botSettings, character))
                       }}
                     />
                   </div>

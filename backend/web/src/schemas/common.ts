@@ -15,10 +15,12 @@ export const FactionIdSchema = z
     'riverfolk',
     'mechanicalMarquise',
     'electricEyrie',
+    'automatedAlliance',
+    'vagabot',
   ])
   .openapi('FactionId', {
     description:
-      'mechanicalMarquise and electricEyrie are Rootbotics bots: seated and played by the engine.',
+      'mechanicalMarquise, electricEyrie, automatedAlliance and vagabot are Rootbotics bots: seated and played by the engine.',
   })
 
 export const ErrorBodySchema = z

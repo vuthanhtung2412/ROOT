@@ -30,11 +30,33 @@ export type ElectricEyrieTrait =
   | 'swoop'
   | 'warTax'
 
-export type BotTrait = MechanicalMarquiseTrait | ElectricEyrieTrait
+export type AutomatedAllianceTrait =
+  | 'steadfast'
+  | 'wildfire'
+  | 'informants'
+  | 'popularity'
+  | 'veterans'
+
+export type VagabotTrait = 'adventurer' | 'berserker' | 'marksman' | 'helper' | 'questing'
+
+export type BotTrait =
+  | MechanicalMarquiseTrait
+  | ElectricEyrieTrait
+  | AutomatedAllianceTrait
+  | VagabotTrait
+
+/** Rule: Rootbotics 7.3.1 / 7.7 — Vagabot character cards played here. */
+export type VagabotCharacter = 'thief' | 'tinker' | 'ranger'
+
+export const VAGABOT_CHARACTERS: readonly VagabotCharacter[] = ['thief', 'tinker', 'ranger']
+
+export const DEFAULT_VAGABOT_CHARACTER: VagabotCharacter = 'thief'
 
 export type BotSettings = {
   difficulty: BotDifficulty
   traits: BotTrait[]
+  /** Vagabot only — its character card; absent = Thief. */
+  character?: VagabotCharacter
 }
 
 /** Settings per bot faction; a bot left out plays at default with no trait. */
@@ -48,6 +70,8 @@ export type BotCardText = {
 export const BOT_TRAITS: Readonly<Record<BotFactionId, readonly BotTrait[]>> = {
   mechanicalMarquise: ['blitz', 'fortified', 'hospitals', 'ironWill', 'overwhelming'],
   electricEyrie: ['focused', 'nobility', 'relentless', 'swoop', 'warTax'],
+  automatedAlliance: ['steadfast', 'wildfire', 'informants', 'popularity', 'veterans'],
+  vagabot: ['adventurer', 'berserker', 'marksman', 'helper', 'questing'],
 }
 
 export const BOT_TRAIT_CARDS: Readonly<Record<BotTrait, BotCardText>> = {
@@ -91,6 +115,66 @@ export const BOT_TRAIT_CARDS: Readonly<Record<BotTrait, BotCardText>> = {
     name: 'War Tax',
     text: 'Whenever you destroy a token or building, the owner loses 1 VP.',
   },
+  steadfast: {
+    name: 'Steadfast',
+    text: 'Skip Public Pity if Surprise Revolt will happen this turn. (Take only one of these actions each turn.) Ignore Martial Law.',
+  },
+  wildfire: {
+    name: 'Wildfire',
+    text: 'At the end of evening, Spread Sympathy. Do not score points for placing this sympathy token.',
+  },
+  informants: {
+    name: 'Informants',
+    text: 'Defenseless sympathy tokens benefit from Automated Ambush when attacked.',
+  },
+  popularity: {
+    name: 'Popularity',
+    text: 'Destroying sympathy tokens grants no victory points for your opponents.',
+  },
+  veterans: {
+    name: 'Veterans',
+    text: 'In battle as defender, you use the higher roll and the attacker uses the lower roll.',
+  },
+  adventurer: {
+    name: 'Adventurer',
+    text: 'Battle only once per turn. At the end of Daylight, spend any remaining items on repeated Quest actions.',
+  },
+  berserker: {
+    name: 'Berserker',
+    text: 'During the Battle action target the clearing with the most pieces and target the player with the most pieces in that clearing. At the end of your turn, repair one addition item.',
+  },
+  marksman: {
+    name: 'Marksman',
+    text: 'When attacking, deal one immediate hit to your opponent (scoring a point if a warrior is removed) before the dice are rolled.',
+  },
+  helper: {
+    name: 'Helper',
+    text: 'When taking the Aid action, score an additional victory point. The aided player then takes two cards instead of one.',
+  },
+  questing: {
+    name: 'Questing',
+    text: 'Count damaged items toward the 6/9/12 items needed to place items on your Battle Track. Items cannot be removed from the Battle Track. Quests score an extra victory point. Whenever you Aid, move to the nearest clearing that has a player with any items in their Crafted Items box, but only aid them once. Updated Daylight actions — Fox: Explore, Special, Battle; Rabbit: Special, Aid, Battle; Mouse: Quest, Aid, Battle; Bird: Explore, Quest, Battle.',
+  },
+}
+
+/** Rule: Rootbotics 7.7 — the Vagabot character cards played here. */
+export const VAGABOT_CHARACTER_CARDS: Readonly<Record<VagabotCharacter, BotCardText>> = {
+  thief: {
+    name: 'Thief',
+    text: 'Steal — Take a random card from an enemy player in your clearing. Target is highest score, then most pieces.',
+  },
+  tinker: {
+    name: 'Tinker',
+    text: 'Day Labor — Search the discard pile for the topmost card with an available item, and craft it, scoring 1. Start the game with one less item.',
+  },
+  ranger: {
+    name: 'Ranger',
+    text: 'Hideout — If you have three or more damaged items, slip into a random adjacent forest.',
+  },
+}
+
+export function isVagabotCharacter(value: string): value is VagabotCharacter {
+  return VAGABOT_CHARACTERS.some((character: VagabotCharacter): boolean => character === value)
 }
 
 export const BOT_DIFFICULTY_CARDS: Readonly<
@@ -121,6 +205,27 @@ export const BOT_DIFFICULTY_CARDS: Readonly<
     nightmare: {
       name: 'Nightmare',
       text: 'During setup, take out one bird ambush from the deck and place it in the bird column. At the end of evening, score 1 VP.',
+    },
+  },
+  automatedAlliance: {
+    easy: { name: 'Easy', text: 'Organize if there are 4 or more warriors in the clearing.' },
+    default: { name: 'Default', text: 'The rules on the faction board.' },
+    challenging: {
+      name: 'Challenging',
+      text: 'Organize if there are 2 or more warriors in the clearing.',
+    },
+    nightmare: {
+      name: 'Nightmare',
+      text: 'Organize if there are 2 or more warriors in the clearing. At the end of evening, score 1 VP.',
+    },
+  },
+  vagabot: {
+    easy: { name: 'Easy', text: 'Refresh one less item during Evening.' },
+    default: { name: 'Default', text: 'The rules on the faction board.' },
+    challenging: { name: 'Challenging', text: 'Refresh one more item during Evening.' },
+    nightmare: {
+      name: 'Nightmare',
+      text: 'Refresh one more item during Evening. At the end of evening, score 1 VP.',
     },
   },
 }

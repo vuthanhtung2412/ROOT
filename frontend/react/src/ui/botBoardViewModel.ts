@@ -3,10 +3,15 @@ import {
   BOT_DIFFICULTY_CARDS,
   BOT_TRAIT_CARDS,
   DEFAULT_BOT_DIFFICULTY,
+  DEFAULT_VAGABOT_CHARACTER,
+  VAGABOT_CHARACTER_CARDS,
+  isVagabotCharacter,
   type BotCardText,
   type BotSettingsByFaction,
   type BotTrait,
+  type VagabotCharacter,
 } from '@root/lib/bot-settings'
+import { QUEST_DEFS } from '@root/lib/quests'
 import {
   cardImagePublicPath,
   GAME_ASSET_KEYS,
@@ -23,6 +28,12 @@ const VIZIER_DEFINITION_ID = 'VIZIER'
 const VIZIER_CARD_NAME = 'Loyal Vizier'
 const BIRD_SUIT = 'bird'
 const UNKNOWN_SUIT = '?'
+/** Rootbotics 7.3.1 — the printed Vagabot character card of each character. */
+const VAGABOT_CHARACTER_CARD_ASSET_KEYS: Readonly<Record<VagabotCharacter, string>> = {
+  thief: GAME_ASSET_KEYS.characterCardVagabotThief,
+  tinker: GAME_ASSET_KEYS.characterCardVagabotTinker,
+  ranger: GAME_ASSET_KEYS.characterCardVagabotRanger,
+}
 /** Rule: Rootbotics 5.4.3 / errata board — Decree columns left to right. */
 const DECREE_COLUMN_SUITS: readonly string[] = ['fox', 'mouse', 'rabbit', 'bird']
 const BUILDING_TRACKS: readonly string[] = ['sawmill', 'workshop', 'recruiter']
@@ -84,9 +95,35 @@ export type ElectricEyrieBoardViewModel = BotBoardBase & {
   activeDecreeColumn: ActiveDecreeColumn | null
 }
 
+export type AutomatedAllianceBoardViewModel = BotBoardBase & {
+  kind: 'automatedAlliance'
+  /** Sympathy tokens still on the track (they fill it from the right). */
+  sympathyOnTrack: number
+  /** Suits whose base is still in the Bases box. */
+  basesOnBoard: string[]
+}
+
+/** Rootbotics 7.2.3 — one Vagabot item: face up or exhausted. */
+export type VagabotItemView = {
+  type: string
+  exhausted: boolean
+}
+
+export type VagabotBoardViewModel = BotBoardBase & {
+  kind: 'vagabot'
+  character: BotCardText & { cardAssetKey: string }
+  satchel: VagabotItemView[]
+  battleTrack: VagabotItemView[]
+  damaged: VagabotItemView[]
+  /** Name and suit of the Vagabot's quest; null when the deck ran out. */
+  quest: { name: string; suit: string } | null
+}
+
 export type BotBoardViewModel =
   | MechanicalMarquiseBoardViewModel
   | ElectricEyrieBoardViewModel
+  | AutomatedAllianceBoardViewModel
+  | VagabotBoardViewModel
 
 type BotPlayer = {
   seat: number
@@ -200,7 +237,87 @@ export function buildBotBoardViewModel(
       activeDecreeColumn: null,
     }
   }
+  if (kind === 'automatedAlliance') {
+    const sympathyTrack = Reflect.get(board, 'sympathyTrack')
+    return {
+      ...base,
+      kind,
+      settings: botSettingsView(kind, settingsByFaction),
+      factionName: 'Automated Alliance',
+      boardTextureKey: GAME_ASSET_KEYS.characterBoardAutomatedAlliance,
+      sympathyOnTrack: isRecord(sympathyTrack) ? numberField(sympathyTrack, 'placed') : 0,
+      basesOnBoard: stringList(Reflect.get(board, 'bases')),
+    }
+  }
+  if (kind === 'vagabot') {
+    return buildVagabotBoardViewModel({ base, board, settingsByFaction })
+  }
   return null
+}
+
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((entry: unknown): entry is string => typeof entry === 'string')
+}
+
+type VagabotItemRecord = VagabotItemView & { damaged: boolean; onBattleTrack: boolean }
+
+function vagabotItems(value: unknown): VagabotItemRecord[] {
+  if (!Array.isArray(value)) return []
+  return value.filter(isRecord).map(
+    (item: Record<string, unknown>): VagabotItemRecord => ({
+      type: typeof item.type === 'string' ? item.type : UNKNOWN_SUIT,
+      exhausted: item.exhausted === true,
+      damaged: item.damaged === true,
+      onBattleTrack: item.onBattleTrack === true,
+    }),
+  )
+}
+
+function itemView(item: VagabotItemRecord): VagabotItemView {
+  return { type: item.type, exhausted: item.exhausted }
+}
+
+function questView(value: unknown): { name: string; suit: string } | null {
+  if (!isRecord(value)) return null
+  const defId = Reflect.get(value, 'defId')
+  if (typeof defId !== 'string') return null
+  const definition = QUEST_DEFS.find((entry): boolean => entry.defId === defId)
+  return definition === undefined ? null : { name: definition.name, suit: definition.suit }
+}
+
+/** Rootbotics 7 — Satchel, Battle Track, Damaged box, character and quest. */
+function buildVagabotBoardViewModel(input: {
+  base: Omit<BotBoardBase, 'factionName' | 'boardTextureKey' | 'settings'>
+  board: Record<string, unknown>
+  settingsByFaction: BotSettingsByFaction | undefined
+}): VagabotBoardViewModel {
+  const { base, board } = input
+  const items = vagabotItems(Reflect.get(board, 'items'))
+  const characterField = Reflect.get(board, 'character')
+  const character: VagabotCharacter =
+    typeof characterField === 'string' && isVagabotCharacter(characterField)
+      ? characterField
+      : DEFAULT_VAGABOT_CHARACTER
+  return {
+    ...base,
+    kind: 'vagabot',
+    settings: botSettingsView('vagabot', input.settingsByFaction),
+    factionName: 'Vagabot',
+    boardTextureKey: GAME_ASSET_KEYS.characterBoardVagabot,
+    character: {
+      ...VAGABOT_CHARACTER_CARDS[character],
+      cardAssetKey: VAGABOT_CHARACTER_CARD_ASSET_KEYS[character],
+    },
+    satchel: items
+      .filter((item: VagabotItemRecord): boolean => !item.damaged && !item.onBattleTrack)
+      .map(itemView),
+    battleTrack: items.filter((item: VagabotItemRecord): boolean => item.onBattleTrack).map(itemView),
+    damaged: items
+      .filter((item: VagabotItemRecord): boolean => item.damaged && !item.onBattleTrack)
+      .map(itemView),
+    quest: questView(Reflect.get(board, 'quest')),
+  }
 }
 
 /** Decree tasks of the Electric Eyrie plan, by the action shown on the board. */
@@ -225,6 +342,13 @@ export function readActiveBotDecreeColumn(turnScratch: unknown): ActiveDecreeCol
   return { suit: column, action }
 }
 
+const BOT_BOARD_KINDS: readonly string[] = [
+  'mechanicalMarquise',
+  'electricEyrie',
+  'automatedAlliance',
+  'vagabot',
+]
+
 export function isBotBoardViewModel(view: { kind: string }): view is BotBoardViewModel {
-  return view.kind === 'mechanicalMarquise' || view.kind === 'electricEyrie'
+  return BOT_BOARD_KINDS.includes(view.kind)
 }

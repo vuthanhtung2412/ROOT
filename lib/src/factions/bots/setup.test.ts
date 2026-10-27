@@ -1,6 +1,18 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { defOf } from '#cards/Deck.js'
-import { electricEyrieBoardOf, mechanicalMarquiseBoardOf } from '#factions/bots/botBoards.js'
+import {
+  automatedAllianceBoardOf,
+  electricEyrieBoardOf,
+  mechanicalMarquiseBoardOf,
+  vagabotBoardOf,
+} from '#factions/bots/botBoards.js'
+import {
+  forestsAdjacentToMostClearings,
+  placeVagabotSetup,
+} from '#factions/bots/vagabot/setup.js'
+import type { VagabotCharacter } from '#public/botSettings.js'
+import { QUEST_DECK } from '#cards/quests.js'
+import { setUpFactionsAfterMarquise } from '#game/factionSetup.js'
 import { placeElectricEyrieSetup } from '#factions/bots/electricEyrie/setup.js'
 import { placeMechanicalMarquiseSetup } from '#factions/bots/mechanicalMarquise/setup.js'
 import { isVizier } from '#factions/eyrie/viziers.js'
@@ -13,7 +25,7 @@ import { warriors } from '#queries/pieces.js'
 import { resetPlaceIds } from '#rules/place.js'
 import type { Rng } from '#rules/Rng.js'
 import type { GameState } from '#state/types.js'
-import { createTestRng, minimalState, player, finishSetup } from '#test/fixtures.js'
+import { createTestRng, minimalState, player, finishSetup, testContext } from '#test/fixtures.js'
 
 const NORTH_EAST_CORNER: ClearingId = 1
 const SOUTH_WEST_CORNER: ClearingId = 3
@@ -91,6 +103,59 @@ describe('Electric Eyrie setup (Rootbotics 5.3)', () => {
     expect(board.decree.bird.filter(isVizier)).toHaveLength(2)
     expect(board.decree.fox).toEqual([])
     expect(board.roostTrack.placed).toBe(6)
+  })
+})
+
+describe('Automated Alliance setup (Rootbotics 6.3)', () => {
+  it('6.3.1–6.3.3 ten warriors, three bases and ten sympathy on the board; nothing on the map', () => {
+    const state = minimalState({
+      status: 'setup',
+      factions: ['eyrie', 'automatedAlliance'],
+      players: [player(0, 'eyrie'), player(1, 'automatedAlliance')],
+    })
+    setUpFactionsAfterMarquise(state, testContext({ state }))
+
+    const board = automatedAllianceBoardOf(state, 1)
+    expect(board.supply.warriors).toBe(10)
+    expect(board.bases).toEqual(['fox', 'rabbit', 'mouse'])
+    expect(board.sympathyTrack.placed).toBe(10)
+    const allianceOnMap = state.clearings.some((clearing): boolean =>
+      clearing.pieces.some((piece: Piece): boolean => piece.owner === 1),
+    )
+    expect(allianceOnMap).toBe(false)
+  })
+})
+
+describe('Vagabot setup (Rootbotics 7.3)', () => {
+  function vagabotState(character: VagabotCharacter): GameState {
+    return minimalState({
+      status: 'setup',
+      factions: ['marquise', 'vagabot'],
+      players: [player(0, 'marquise'), player(1, 'vagabot')],
+      botSettings: { vagabot: { difficulty: 'default', traits: [], character } },
+      questDeck: [...QUEST_DECK],
+    })
+  }
+
+  it('7.3.2 pawn in a forest bordering the most clearings; 7.3.3 one quest; 7.3.5 four face-up items', () => {
+    const state = vagabotState('thief')
+    placeVagabotSetup(state, 1, createTestRng([0]))
+
+    const board = vagabotBoardOf(state, 1)
+    expect(forestsAdjacentToMostClearings()).toContain(board.forest)
+    const mostClearings = Math.max(...FALL.forests.map((border) => border.length))
+    expect(FALL.forests[board.forest!]).toHaveLength(mostClearings)
+    expect(board.quest).not.toBeNull()
+    expect(board.character).toBe('thief')
+    expect(board.items).toHaveLength(4)
+    expect(board.items.every((item) => !item.exhausted && !item.damaged)).toBe(true)
+  })
+
+  it('7.7.2 the Tinker starts with three items', () => {
+    const state = vagabotState('tinker')
+    placeVagabotSetup(state, 1, createTestRng([0]))
+
+    expect(vagabotBoardOf(state, 1).items).toHaveLength(3)
   })
 })
 

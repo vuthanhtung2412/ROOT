@@ -73,6 +73,8 @@ function usesByFaction(faction: FactionId, definition: CardDef): string[] {
       return ['hand card service: another player may buy this card from you']
     case 'mechanicalMarquise':
     case 'electricEyrie':
+    case 'automatedAlliance':
+    case 'vagabot':
       // Rule: Rootbotics 2.8.1 Poor Manual Dexterity — bots hold no cards.
       return []
   }

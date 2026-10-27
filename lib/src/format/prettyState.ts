@@ -11,8 +11,11 @@ import type { Seat } from '#pieces/types.js'
 import { DECREE_COLUMNS } from '#state/boards.js'
 import {
   ELECTRIC_EYRIE_DECREE_COLUMNS,
+  type AutomatedAllianceBoard,
   type ElectricEyrieBoard,
   type MechanicalMarquiseBoard,
+  type VagabotBoard,
+  type VagabotItem,
 } from '#state/botBoards.js'
 import type { GameState, PlayerState } from '#state/types.js'
 
@@ -183,7 +186,36 @@ function boardLines(
   if (board.kind === 'mechanicalMarquise' || board.kind === 'electricEyrie') {
     return botBoardLines(board)
   }
+  if (board.kind === 'automatedAlliance') {
+    return automatedAllianceLines(board)
+  }
+  if (board.kind === 'vagabot') {
+    return vagabotLines(board)
+  }
   return [`    board: ${JSON.stringify(board)}`]
+}
+
+function orderCardText(board: AutomatedAllianceBoard | VagabotBoard): string {
+  return board.orderCard === null ? '(none)' : formatDecreeColumn([board.orderCard])
+}
+
+/** Rule: Rootbotics 6 — order card, Bases box, Sympathy track. */
+function automatedAllianceLines(board: AutomatedAllianceBoard): string[] {
+  return [
+    `    bot: warriors=${board.supply.warriors} order=${orderCardText(board)}`,
+    `    bases on board: ${board.bases.join(',') || '(none)'} sympathyTrack=${board.sympathyTrack.placed}`,
+  ]
+}
+
+/** Rule: Rootbotics 7 — order card, character, pawn, items, quest. */
+function vagabotLines(board: VagabotBoard): string[] {
+  const count = (matches: (item: VagabotItem) => boolean): number =>
+    board.items.filter(matches).length
+  const forest = board.forest === null ? 'clearing' : `F${fallForestDisplayId(board.forest)}`
+  return [
+    `    bot: ${board.character} order=${orderCardText(board)} pawn=${forest} quest=${board.quest?.defId ?? '(none)'}`,
+    `    items: faceUp=${count((item: VagabotItem): boolean => !item.damaged && !item.exhausted)} exhausted=${count((item: VagabotItem): boolean => !item.damaged && item.exhausted)} damaged=${count((item: VagabotItem): boolean => item.damaged)}`,
+  ]
 }
 
 /** Rule: Rootbotics 4–5 — order card, then tracks or Decree by suit. */
@@ -269,6 +301,30 @@ export function describeAction(action: Action, state: GameState): string {
       return `BOT BATTLE s${action.defender} C${action.clearing}`
     case 'botTurmoil':
       return 'BOT TURMOIL'
+    case 'botRevolt':
+      return `BOT REVOLT C${action.clearing}`
+    case 'botSpreadSympathy':
+      return `BOT SPREAD SYMPATHY C${action.clearing}`
+    case 'botOrganize':
+      return `BOT ORGANIZE C${action.clearing}`
+    case 'botPawnMove':
+      return `BOT PAWN →C${action.to}`
+    case 'botSlip':
+      return `BOT SLIP F${fallForestDisplayId(action.forest)}`
+    case 'botExplore':
+      return `BOT EXPLORE C${action.clearing} ${action.item}`
+    case 'botQuest':
+      return `BOT QUEST C${action.clearing}`
+    case 'botAid':
+      return `BOT AID ${playerRefBySeat(state, action.target)} ×${action.count}`
+    case 'botRepair':
+      return 'BOT REPAIR'
+    case 'botSteal':
+      return `BOT STEAL from ${playerRefBySeat(state, action.target)}`
+    case 'botDayLabor':
+      return `BOT DAY LABOR ${findCard(action.cardId)}`
+    case 'botRefresh':
+      return `BOT REFRESH ${action.count}`
     case 'eveningDraw':
       return 'EVENING draw cards'
     case 'march':
@@ -471,7 +527,7 @@ function forestsSection(state: GameState): string[] {
   const lines: string[] = ['forests:']
   let any = false
   for (const player of state.players) {
-    if (player.board.kind !== 'vagabond') continue
+    if (player.board.kind !== 'vagabond' && player.board.kind !== 'vagabot') continue
     if (player.board.forest === null) continue
     any = true
     lines.push(

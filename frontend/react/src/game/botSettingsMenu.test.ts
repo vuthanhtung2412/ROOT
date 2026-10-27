@@ -4,6 +4,7 @@ import {
   partyBotSettings,
   withBotDifficulty,
   withBotTraitToggled,
+  withVagabotCharacter,
 } from '#game/botSettingsMenu.ts'
 
 describe('bot settings menu (Rootbotics 3.3)', () => {
@@ -11,7 +12,15 @@ describe('bot settings menu (Rootbotics 3.3)', () => {
     expect(defaultBotSettingsChoices()).toEqual({
       mechanicalMarquise: { difficulty: 'default', traits: [] },
       electricEyrie: { difficulty: 'default', traits: [] },
+      automatedAlliance: { difficulty: 'default', traits: [] },
+      vagabot: { difficulty: 'default', traits: [], character: 'thief' },
     })
+  })
+
+  it('picks the Vagabot character (Rootbotics 7.3.1)', () => {
+    const ranger = withVagabotCharacter(defaultBotSettingsChoices(), 'ranger')
+    expect(ranger.vagabot.character).toBe('ranger')
+    expect(ranger.automatedAlliance).toEqual({ difficulty: 'default', traits: [] })
   })
 
   it('sets one bot difficulty and turns its traits on and off', () => {

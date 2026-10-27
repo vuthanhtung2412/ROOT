@@ -56,6 +56,13 @@ const FACTION_OWNED_IMAGE_ASSET_KEYS: Readonly<
   // A bot also uses the tokens of the faction it replaces (see below).
   mechanicalMarquise: [GAME_ASSET_KEYS.characterBoardMechanicalMarquise],
   electricEyrie: [GAME_ASSET_KEYS.characterBoardElectricEyrie, GAME_ASSET_KEYS.cardLoyalVizier],
+  automatedAlliance: [GAME_ASSET_KEYS.characterBoardAutomatedAlliance],
+  vagabot: [
+    GAME_ASSET_KEYS.characterBoardVagabot,
+    GAME_ASSET_KEYS.characterCardVagabotThief,
+    GAME_ASSET_KEYS.characterCardVagabotTinker,
+    GAME_ASSET_KEYS.characterCardVagabotRanger,
+  ],
   riverfolk: [
     RIVERFOLK_EXPANSION_ASSET_KEYS.characterBoardRiverfolk,
     RIVERFOLK_EXPANSION_ASSET_KEYS.tokenRiverfolkWarrior,

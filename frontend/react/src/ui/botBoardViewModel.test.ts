@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import {
   buildBotBoardViewModel,
   isBotBoardViewModel,
@@ -8,6 +9,65 @@ import {
 const BOT_SEAT = 1
 const FOX_ANVIL = { id: 'ROOT-204#1', defId: 'ROOT-204' }
 const VIZIER = { id: 'vizier-0', defId: 'VIZIER' }
+
+describe('buildBotBoardViewModel — Automated Alliance and Vagabot', () => {
+  it('shows the sympathy left on the track and the bases left in the box (Rootbotics 6.3)', () => {
+    const view = buildBotBoardViewModel({
+      seat: BOT_SEAT,
+      faction: 'automatedAlliance',
+      vp: 4,
+      board: {
+        kind: 'automatedAlliance',
+        supply: { warriors: 8 },
+        bases: ['rabbit', 'mouse'],
+        sympathyTrack: { placed: 7 },
+        orderCard: FOX_ANVIL,
+      },
+    })
+
+    expect(view).toMatchObject({
+      kind: 'automatedAlliance',
+      factionName: 'Automated Alliance',
+      warriors: 8,
+      sympathyOnTrack: 7,
+      basesOnBoard: ['rabbit', 'mouse'],
+    })
+    expect(view !== null && isBotBoardViewModel(view)).toBe(true)
+  })
+
+  it('splits the Vagabot items into Satchel, Battle Track and Damaged; names character and quest (Rootbotics 7)', () => {
+    const view = buildBotBoardViewModel(
+      {
+        seat: BOT_SEAT,
+        faction: 'vagabot',
+        vp: 2,
+        board: {
+          kind: 'vagabot',
+          character: 'tinker',
+          items: [
+            { type: 'boot', exhausted: false, damaged: false, onBattleTrack: false },
+            { type: 'torch', exhausted: true, damaged: false, onBattleTrack: true },
+            { type: 'bag', exhausted: true, damaged: true, onBattleTrack: false },
+          ],
+          quest: { id: 'QUEST-F-FUNDS#1', defId: 'QUEST-F-FUNDS' },
+          forest: null,
+          orderCard: null,
+        },
+      },
+      { vagabot: { difficulty: 'easy', traits: ['helper'], character: 'tinker' } },
+    )
+
+    expect(view).toMatchObject({
+      kind: 'vagabot',
+      character: { name: 'Tinker', cardAssetKey: GAME_ASSET_KEYS.characterCardVagabotTinker },
+      satchel: [{ type: 'boot', exhausted: false }],
+      battleTrack: [{ type: 'torch', exhausted: true }],
+      damaged: [{ type: 'bag', exhausted: true }],
+      quest: { name: 'Fundraising', suit: 'fox' },
+    })
+    expect(view?.settings.traits.map((trait) => trait.name)).toEqual(['Helper'])
+  })
+})
 
 describe('buildBotBoardViewModel', () => {
   it('shows the Mechanical Marquise order card, tracks and crafted items', () => {

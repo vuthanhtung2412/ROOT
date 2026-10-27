@@ -1,4 +1,8 @@
+import type { QuestCard } from '#cards/quests.js'
 import type { Card, CardSuit } from '#cards/types.js'
+import type { Suit } from '#map/types.js'
+import type { ItemType } from '#pieces/types.js'
+import { DEFAULT_VAGABOT_CHARACTER, type VagabotCharacter } from '#public/botSettings.js'
 import type { BuildingTrack } from '#state/boards.js'
 
 /** Rule: Rootbotics 4.3.1 — supply of 25 warriors. */
@@ -74,6 +78,78 @@ export function createElectricEyrieBoard(): ElectricEyrieBoard {
     supply: { warriors: ELECTRIC_EYRIE_WARRIOR_COUNT },
     decree: emptyElectricEyrieDecree(),
     roostTrack: { placed: 0 },
+    orderCard: null,
+  }
+}
+
+/** Rule: Rootbotics 6.3.1 — supply of 10 warriors. */
+export const AUTOMATED_ALLIANCE_WARRIOR_COUNT = 10
+/** Rule: Rootbotics 6.2.1 / 6.3.3 — ten sympathy tokens on the Sympathy track. */
+export const AUTOMATED_ALLIANCE_SYMPATHY_TOKENS = 10
+/** Rule: Rootbotics 6.5.1 / Automated Alliance board — VP of each Sympathy track space, left to right. */
+export const AUTOMATED_ALLIANCE_SYMPATHY_VICTORY_POINTS = [0, 1, 1, 1, 1, 2, 2, 3, 3, 4] as const
+/** Rule: Rootbotics 6.3.2 / Bases box — one base per suit, left to right. */
+export const AUTOMATED_ALLIANCE_BASE_SUITS: readonly Suit[] = ['fox', 'rabbit', 'mouse']
+
+export type AutomatedAllianceBoard = {
+  kind: 'automatedAlliance'
+  supply: { warriors: number }
+  /** Bases still in the Bases box (not yet revolted onto the map). */
+  bases: Suit[]
+  /** Sympathy tokens still on the track. */
+  sympathyTrack: { placed: number }
+  /** Rule: Rootbotics 2.7 — the revealed order card of this turn. */
+  orderCard: Card | null
+}
+
+/** Rule: Rootbotics 7.2.3 — all items are alike; face up / face down, maybe damaged. */
+export type VagabotItem = {
+  type: ItemType
+  exhausted: boolean
+  damaged: boolean
+  /** Rule: Rootbotics 7.2.4 — on the Battle Track: never exhausted. */
+  onBattleTrack: boolean
+}
+
+export type VagabotBoard = {
+  kind: 'vagabot'
+  character: VagabotCharacter
+  /** Satchel, Battle Track and Damaged box together. */
+  items: VagabotItem[]
+  /**
+   * Trait Questing — damaged items count toward the Battle Track and its
+   * items never leave it (slots never empty again once filled).
+   */
+  questingBattleTrack: boolean
+  /** Trait Questing — most Battle Track slots filled so far. */
+  battleTrackRecord: number
+  /** Rule: Rootbotics 7.3.3 — the quest only the Vagabot can complete. */
+  quest: QuestCard | null
+  /** Non-null when the pawn is in a forest (not on a clearing). */
+  forest: number | null
+  /** Rule: Rootbotics 2.7 — the revealed order card of this turn. */
+  orderCard: Card | null
+}
+
+export function createAutomatedAllianceBoard(): AutomatedAllianceBoard {
+  return {
+    kind: 'automatedAlliance',
+    supply: { warriors: AUTOMATED_ALLIANCE_WARRIOR_COUNT },
+    bases: [...AUTOMATED_ALLIANCE_BASE_SUITS],
+    sympathyTrack: { placed: AUTOMATED_ALLIANCE_SYMPATHY_TOKENS },
+    orderCard: null,
+  }
+}
+
+export function createVagabotBoard(): VagabotBoard {
+  return {
+    kind: 'vagabot',
+    character: DEFAULT_VAGABOT_CHARACTER,
+    items: [],
+    questingBattleTrack: false,
+    battleTrackRecord: 0,
+    quest: null,
+    forest: null,
     orderCard: null,
   }
 }

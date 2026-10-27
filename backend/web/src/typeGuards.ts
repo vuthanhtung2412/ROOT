@@ -3,6 +3,7 @@ import {
   isBotTraitOf,
   type Action,
   type BotFactionId,
+  type BotSettings,
   type BotSettingsByFaction,
   type BotTrait,
   type FactionId,
@@ -23,6 +24,8 @@ const FACTION_IDS: ReadonlySet<string> = new Set([
   'riverfolk',
   'mechanicalMarquise',
   'electricEyrie',
+  'automatedAlliance',
+  'vagabot',
 ])
 
 export function isFactionId(value: unknown): value is FactionId {
@@ -39,15 +42,22 @@ export function isFactionIdArray(value: unknown): value is FactionId[] {
   return Array.isArray(value) && value.every(isFactionId)
 }
 
-/** Rootbotics 3.3.2 — each bot gets only its own trait cards. */
+/** Rootbotics 3.3.2 — each bot gets only its own trait cards (and only the Vagabot a character). */
 export function hasOnlyOwnTraits(settings: BotSettingsByFaction): boolean {
-  return BOT_FACTION_IDS.every((faction: BotFactionId): boolean =>
-    hasOnlyTraitsOf(faction, settings[faction]?.traits ?? []),
-  )
+  return BOT_FACTION_IDS.every((faction: BotFactionId): boolean => {
+    const factionSettings = settings[faction]
+    return factionSettings === undefined || areBotSettingsOf(faction, factionSettings)
+  })
 }
 
 export function hasOnlyTraitsOf(faction: BotFactionId, traits: readonly BotTrait[]): boolean {
   return traits.every((trait: BotTrait): boolean => isBotTraitOf(faction, trait))
+}
+
+/** Rootbotics 3.3.2 / 7.3.1 — own traits; a character card for the Vagabot only. */
+export function areBotSettingsOf(faction: BotFactionId, settings: BotSettings): boolean {
+  if (settings.character !== undefined && faction !== 'vagabot') return false
+  return hasOnlyTraitsOf(faction, settings.traits)
 }
 
 /** Zod ActionSchema is loose; narrow to engine Action after request validation. */

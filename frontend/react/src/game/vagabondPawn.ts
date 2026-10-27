@@ -1,4 +1,5 @@
 import {
+  isPawnBoardKind,
   isVagabondBoardWithForest,
   type ForestPawnMarker,
 } from '#game/forestLayout.ts'
@@ -8,10 +9,10 @@ const PAWN_PIECE_KIND = 'pawn'
 
 type PlayerWithBoard = { seat: number; faction: string; board?: unknown }
 
-/** Character id on a Vagabond board; null when not chosen / not a Vagabond. */
+/** Character id on a Vagabond / Vagabot board; null when not chosen / no pawn. */
 function vagabondCharacterOf(board: unknown): string | null {
   if (typeof board !== 'object' || board === null) return null
-  if (Reflect.get(board, 'kind') !== 'vagabond') return null
+  if (!isPawnBoardKind(Reflect.get(board, 'kind'))) return null
   const character: unknown = Reflect.get(board, 'character')
   return typeof character === 'string' ? character : null
 }

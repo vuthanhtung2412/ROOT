@@ -1113,19 +1113,26 @@ export interface components {
       botSettings?: components["schemas"]["BotSettingsByFaction"];
     };
     /**
-     * @description mechanicalMarquise and electricEyrie are Rootbotics bots: seated and played by the engine.
+     * @description mechanicalMarquise, electricEyrie, automatedAlliance and vagabot are Rootbotics bots: seated and played by the engine.
      * @enum {string}
      */
-    FactionId: "marquise" | "eyrie" | "alliance" | "vagabond" | "lizard" | "riverfolk" | "mechanicalMarquise" | "electricEyrie";
+    FactionId: "marquise" | "eyrie" | "alliance" | "vagabond" | "lizard" | "riverfolk" | "mechanicalMarquise" | "electricEyrie" | "automatedAlliance" | "vagabot";
     /** @description Difficulty and traits per bot faction; a bot left out plays default with no trait. */
     BotSettingsByFaction: {
       mechanicalMarquise?: components["schemas"]["BotSettings"];
       electricEyrie?: components["schemas"]["BotSettings"];
+      automatedAlliance?: components["schemas"]["BotSettings"];
+      vagabot?: components["schemas"]["BotSettings"];
     };
     BotSettings: {
       /** @enum {string} */
       difficulty: "easy" | "default" | "challenging" | "nightmare";
-      traits: ("blitz" | "fortified" | "hospitals" | "ironWill" | "overwhelming" | "focused" | "nobility" | "relentless" | "swoop" | "warTax")[];
+      traits: ("blitz" | "fortified" | "hospitals" | "ironWill" | "overwhelming" | "focused" | "nobility" | "relentless" | "swoop" | "warTax" | "steadfast" | "wildfire" | "informants" | "popularity" | "veterans" | "adventurer" | "berserker" | "marksman" | "helper" | "questing")[];
+      /**
+       * @description Vagabot only — its character card (Rootbotics 7.7); absent = thief.
+       * @enum {string}
+       */
+      character?: "thief" | "tinker" | "ranger";
     };
     ActionResult: {
       state: components["schemas"]["GameState"];
@@ -1256,7 +1263,7 @@ export interface components {
       settings?: components["schemas"]["BotSettings"];
     };
     /** @enum {string} */
-    BotFactionId: "mechanicalMarquise" | "electricEyrie";
+    BotFactionId: "mechanicalMarquise" | "electricEyrie" | "automatedAlliance" | "vagabot";
     SetBotSettingsBody: {
       settings: components["schemas"]["BotSettings"];
     };

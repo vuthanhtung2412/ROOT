@@ -11,6 +11,16 @@ import { battleWarriorCount } from '#queries/mercenaries.js'
 import { warriors } from '#queries/pieces.js'
 import { keepClearingFor } from '#queries/place.js'
 import { placeBotWarriors } from '#factions/bots/botQueries.js'
+import {
+  automatedAmbushHits,
+  defenderUsesHigherRoll,
+} from '#factions/bots/automatedAlliance/battle.js'
+import {
+  isVagabotDefenseless,
+  isVagabotSeat,
+  vagabotAttackerExtraHits,
+  vagabotHitCap,
+} from '#factions/bots/vagabot/battle.js'
 import { playerOf } from '#queries/seat.js'
 import { RuleError } from '#rules/RuleError.js'
 import type { GameState } from '#state/types.js'
@@ -35,7 +45,7 @@ function seatIsVagabond(state: GameState, seat: Seat): boolean {
 }
 
 function attackerPresent(state: GameState, event: BattleEvent): boolean {
-  if (seatIsVagabond(state, event.attacker)) {
+  if (seatIsVagabond(state, event.attacker) || isVagabotSeat(state, event.attacker)) {
     return state.clearings[event.clearing]!.pieces.some(
       (piece) => piece.kind === 'pawn' && piece.owner === event.attacker,
     )
@@ -51,6 +61,7 @@ function attackerPresent(state: GameState, event: BattleEvent): boolean {
 
 /** Rule: Battle — max rolled hits = warriors, or undamaged swords for Vagabond. */
 function hitCap(state: GameState, clearing: ClearingId, seat: Seat, event?: BattleEvent): number {
+  if (isVagabotSeat(state, seat)) return vagabotHitCap(state, seat)
   if (seatIsVagabond(state, seat)) {
     const swords = undamagedSwords(vagabondBoardOf(state, seat))
     if (
@@ -141,9 +152,8 @@ function rollStage(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   const rolls: [number, number] = rollBattleDice(ctx)
   event.rolls = rolls
   const [high, low] = rolls
-  // Rule: Alliance Guerrilla War — as defender, deal higher die; attacker deals lower.
-  const defenderIsAlliance =
-    playerOf(state, event.defender).faction === 'alliance'
+  // Rule: Alliance Guerrilla War (and trait Veterans) — as defender, deal higher die; attacker deals lower.
+  const defenderIsAlliance = defenderUsesHigherRoll(state, event.defender)
   const attackerDie = defenderIsAlliance ? low : high
   const defenderDie = defenderIsAlliance ? high : low
   event.hits.attacker += capHits(
@@ -190,6 +200,10 @@ export function nextEffectSeat(event: BattleEvent): Seat | null {
 
 /** Rule: Battle 3 — defenseless defender gives attacker +1 hit. */
 export function applyDefenseless(state: GameState, event: BattleEvent): void {
+  if (isVagabotSeat(state, event.defender)) {
+    if (isVagabotDefenseless(state, event.defender)) event.hits.attacker += 1
+    return
+  }
   if (seatIsVagabond(state, event.defender)) {
     if (undamagedSwords(vagabondBoardOf(state, event.defender)) === 0) {
       event.hits.attacker += 1
@@ -212,6 +226,8 @@ function applyCommanderBonus(state: GameState, event: BattleEvent): void {
 function finalizeHitsAndRemoval(state: GameState, event: BattleEvent, ctx: Ctx): LogEntry[] {
   applyDefenseless(state, event)
   applyCommanderBonus(state, event)
+  event.hits.defender += automatedAmbushHits(state, event)
+  event.hits.attacker += vagabotAttackerExtraHits(state, event)
   event.hits.attacker += event.attackerExtraHits ?? 0
   ctx.emit({ s: 'battle.hits', ev: event, side: 'attacker' })
   ctx.emit({ s: 'battle.hits', ev: event, side: 'defender' })

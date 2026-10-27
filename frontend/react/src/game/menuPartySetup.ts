@@ -14,7 +14,12 @@ export const MENU_FACTION_IDS = [
 ] as const
 
 /** Rootbotics bots: a hotseat seat the engine plays by itself. */
-export const MENU_BOT_FACTION_IDS = ['mechanicalMarquise', 'electricEyrie'] as const
+export const MENU_BOT_FACTION_IDS = [
+  'mechanicalMarquise',
+  'electricEyrie',
+  'automatedAlliance',
+  'vagabot',
+] as const
 
 /** Hotseat choices: every faction, then the bots. */
 export const HOTSEAT_FACTION_IDS = [
@@ -124,5 +129,9 @@ export function factionDisplayName(factionId: MenuFactionId): string {
       return 'Mechanical Marquise'
     case 'electricEyrie':
       return 'Electric Eyrie'
+    case 'automatedAlliance':
+      return 'Automated Alliance'
+    case 'vagabot':
+      return 'Vagabot'
   }
 }

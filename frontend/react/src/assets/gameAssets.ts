@@ -1,6 +1,11 @@
 import { artFactionOf } from '@root/lib/bot-factions'
 import cardCatalog from '#assets/cardCatalog.json'
 import {
+  BOT_FACTION_ASSET_KEYS,
+  BOT_FACTION_IMAGE_ASSETS,
+  botFactionTextureKey,
+} from '#assets/botFactionAssets.ts'
+import {
   expansionFactionTextureKey,
   expansionWarriorTextureKey,
   RIVERFOLK_EXPANSION_ASSET_KEYS,
@@ -28,9 +33,14 @@ export const GAME_ASSET_KEYS = {
   characterBoardVagabond: 'character-board-vagabond',
   characterBoardMechanicalMarquise: 'character-board-mechanical-marquise',
   characterBoardElectricEyrie: 'character-board-electric-eyrie',
+  characterBoardAutomatedAlliance: 'character-board-automated-alliance',
+  characterBoardVagabot: 'character-board-vagabot',
   characterCardVagabondThief: 'character-card-vagabond-thief',
   characterCardVagabondTinker: 'character-card-vagabond-tinker',
   characterCardVagabondRanger: 'character-card-vagabond-ranger',
+  characterCardVagabotThief: 'character-card-vagabot-thief',
+  characterCardVagabotTinker: 'character-card-vagabot-tinker',
+  characterCardVagabotRanger: 'character-card-vagabot-ranger',
   cardLoyalVizier: 'card-loyal-vizier',
   suitFox: 'suit-fox',
   suitMouse: 'suit-mouse',
@@ -167,7 +177,11 @@ export function pieceTokenTextureKey(
 
 /** Faction icon texture key for rail / warrior stacks. */
 export function factionTextureKey(seatFactionId: string): string {
-  // A bot uses the art of the faction it replaces.
+  const botKey = botFactionTextureKey(seatFactionId)
+  if (botKey !== null) {
+    return botKey
+  }
+  // Other bot art comes from the faction it replaces.
   const factionId: string = artFactionOf(seatFactionId)
   const expansionKey = expansionFactionTextureKey(factionId)
   if (expansionKey !== null) {
@@ -252,6 +266,7 @@ export const MENU_BOOT_IMAGE_ASSET_KEYS: ReadonlySet<string> = new Set([
   GAME_ASSET_KEYS.factionVagabond,
   RIVERFOLK_EXPANSION_ASSET_KEYS.factionLizard,
   RIVERFOLK_EXPANSION_ASSET_KEYS.factionRiverfolk,
+  ...Object.values(BOT_FACTION_ASSET_KEYS),
 ])
 
 /** All in-game images except card faces. */
@@ -305,6 +320,14 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
     path: 'assets/character-boards/electric-eyrie-front.webp',
   },
   {
+    key: GAME_ASSET_KEYS.characterBoardAutomatedAlliance,
+    path: 'assets/character-boards/automated-alliance-front-scan.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterBoardVagabot,
+    path: 'assets/character-boards/vagabot-front-scan.webp',
+  },
+  {
     key: GAME_ASSET_KEYS.characterCardVagabondThief,
     path: 'assets/character-boards/vagabond-thief-front.webp',
   },
@@ -315,6 +338,18 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
   {
     key: GAME_ASSET_KEYS.characterCardVagabondRanger,
     path: 'assets/character-boards/vagabond-ranger-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterCardVagabotThief,
+    path: 'assets/character-boards/vagabot-thief-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterCardVagabotTinker,
+    path: 'assets/character-boards/vagabot-tinker-front.webp',
+  },
+  {
+    key: GAME_ASSET_KEYS.characterCardVagabotRanger,
+    path: 'assets/character-boards/vagabot-ranger-front.webp',
   },
   {
     key: GAME_ASSET_KEYS.cardLoyalVizier,
@@ -437,6 +472,7 @@ export const CORE_IMAGE_ASSETS: readonly GameImageAsset[] = [
     path: 'assets/items/torch.webp',
   },
   ...RIVERFOLK_EXPANSION_IMAGE_ASSETS,
+  ...BOT_FACTION_IMAGE_ASSETS,
 ]
 
 /** Images the boot screen waits on before the menu. */

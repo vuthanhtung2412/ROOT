@@ -329,3 +329,75 @@
   - `frontend/react/src/game/GameSession.ts` + test, `game/hudStore.ts`, `game/menuLobby.ts`, `api/gameSocket.ts`, `App.tsx`, `react/MenuLobbyPanel.tsx`, `react/LobbyRoomCode.tsx` (new)
 - [x] `feat(react): resume when already in a game`
   - `frontend/react/src/game/GameSession.ts` + test, `App.tsx`, `game/hudStore.ts`, `react/MenuOverlay.tsx` (drop single-slot busy check / menu poll)
+
+
+## Bots: Automated Alliance and Vagabot
+
+### Goal
+- Play against the Rootbotics Automated Alliance (ch. 6) and Vagabot (ch. 7) like the Mechanical Marquise / Electric Eyrie: seated by the engine, whole turn on their own, answer their own prompts.
+- Difficulty, traits (and Vagabot character) chosen in the menus, shown on the bot board.
+- Board / card SoT: `resources/rules/Law_of_Rootbotics.md` ch. 6–7 + `resources/rules/Rootbotics_difficulty_and_traits.md` (new sections) + scans `resources/rules/rootbotics-cards/` (faction boards, difficulty, traits, characters; source The Root Database).
+
+### Learned from `electric-marquise-eyris` (reused as is)
+- `BotFaction`: a step = list of `BotTask`s, one `botStep` per task, follow-ups for repeats (battle → next battle waits for the human's answers).
+- `orderCard.ts` reveal / craft / discard, `priority.ts` tiebreakers (`inTargetOrder` handles 2.3 "try the next one"), `botQueries.ts` (enemy = co-op aware), `botAnswers.ts`, `manualDexterity.ts`, `botSettings` (difficulty / traits per faction), `baseFactionOf` for art.
+- Faction-keyed rules go through one helper (`isEyrieSeat`); same here: `isAllianceSeat` / `allianceSeat`, `isVagabondSeat` cover the bot twin.
+
+### Approach
+1. Ids `automatedAlliance` (art `alliance`), `vagabot` (art `vagabond`). Boards:
+   - `AutomatedAllianceBoard`: warriors supply 10, `bases: Suit[]` (Bases box), `sympathyTrack.placed`, `orderCard`. Sympathy VP `[0,1,1,1,1,2,2,3,3,4]` (board art).
+   - `VagabotBoard`: `character`, `items: { type, exhausted, damaged }[]`, `battleTrackRecord` (Questing), `quest: QuestCard | null`, `forest`, `orderCard`. Battle track is derived: 6 / 9 / 12 undamaged items → 1 / 2 / 3 slots, filled with exhausted items first; slot items cannot be exhausted.
+2. Automated Alliance rules (6.2): sympathy tokens / outrage / move hooks find either Alliance. Automated Outrage: a human offender discards a matching card, else the bot scores 1 (bot offender: nothing). Automated Ambush: defender with ≥ 1 warrior deals +1 hit (no Guerrilla War). Crackdown: base removed → back to the Bases box and every sympathy token in clearings of that suit removed. Martial Law: −1 VP (min 0) on a clearing with ≥ 3 warriors of one enemy.
+3. Automated Alliance turn: Birdsong reveal, craft, Revolt (non-bird), Public Pity; Daylight Spread Sympathy, Surprise Revolt (bird); Evening Organize, Recruit, Discard, Nightmare point.
+4. Vagabot rules (7.2): pawn not a warrior, never removed; full removal damages 3 items; nimble moves; max rolled hits 1 (+1 at 6, +1 at 9 items), 12 items: +1 hit as attacker; hits damage exhausted items first. Human hooks keyed on `'vagabond'` (relationships, infamy, item choice) stay human only.
+5. Vagabot turn: Birdsong reveal, craft (item to Satchel), Slip (≤ 2 undamaged → random adjacent forest, skip Daylight). Daylight by suit (board): fox Explore·Battle·Special, rabbit Battle·Repair·Special, mouse Quest·Aid·Battle·Repair, bird Explore·Quest·Aid·Battle. Nearest = fewest moves (BFS from the pawn, forest start steps into a bordering clearing), one item per move. Evening Refresh (4 if any damaged, else 6), Repair (forest: all, else one), Discard, Nightmare point.
+6. Characters Thief (Steal), Tinker (Day Labor, 3 starting items), Ranger (Hideout). Default Thief.
+7. Difficulty / traits:
+   - Alliance: Easy organize at 4 warriors, Challenging / Nightmare at 2 (+1 VP end of Evening). Traits Steadfast, Wildfire, Informants, Popularity, Veterans.
+   - Vagabot: Easy refresh −1, Challenging / Nightmare +1 (+1 VP). Traits Adventurer, Berserker, Marksman, Helper, Questing.
+8. API: faction enum, bot settings `character`, AI tables; regen client (`pnpm gen:api-client`).
+9. React: both bots in hotseat / solo / co-op pickers (twin rule: bot and its human faction never together), art via `baseFactionOf`, Vagabot pawn in forests, bot board panels (order card, sympathy track + bases / satchel + battle track + damaged + quest), character pick in bot settings.
+
+### Risks (readings)
+- Vagabot path needs one unexhausted item per move; without enough for the whole path the action is skipped (no partial move).
+- Vagabot defenseless (Battle 3) when it has no undamaged item.
+- Thief steals from a human: the card is discarded (bots keep no hand, 2.8.1); from a bot: nothing to steal, skipped.
+- Helper: the aided player draws two cards per item instead of one.
+- Marksman: the immediate hit removes one defender warrior before the roll (a point if removed); with no warrior it is an extra hit after the roll.
+- Wildfire spreads after Evening (after Recruit), no points, Martial Law irrelevant.
+- Characters Vagrant, Scoundrel, Arbiter not in scope (need battles between two other players / slot covers / enlisting in others' battles).
+- Automated Alliance starts with nothing on the map: first spread is "No Such Clearings" (fewest enemy pieces, priority).
+- Revolt needs the base placeable after removal (keep clearing / no slot → try the next clearing, 2.3).
+
+### Test plan
+- lib unit tests (fixture factory) per rule: setup of both; outrage (human discards / bot scores), crackdown, automated ambush, martial law; revolt / public pity / spread / organize / recruit; Vagabot items + battle track + hits, slip, each Daylight action, evening refresh / repair, each character; each difficulty and trait.
+- lib seeded games with every bot (and traits on) play out with no error.
+- backend: create game with the new bots, settings with character accepted.
+- React: menu party / solo table with the new bots, bot board view models.
+- Manual: solo run vs Automated Alliance + Vagabot in the browser through chrome-devtools.
+
+### Commit plan
+- [x] `docs(plan): Automated Alliance and Vagabot bots`
+  - `PLAN.md`, `resources/rules/Rootbotics_difficulty_and_traits.md`, `resources/rules/rootbotics-cards/*` (new scans)
+- [x] `feat(lib): Automated Alliance and Vagabot ids, boards and setup`
+  - `lib/src/public/botFactionIds.ts`, `lib/src/pieces/types.ts`, `lib/src/state/botBoards.ts`, `lib/src/state/boards.ts`, `lib/src/factions/bots/automatedAlliance/setup.ts`, `lib/src/factions/bots/vagabot/setup.ts` (new) + tests, `lib/src/game/factionSetup.ts`, exhaustive switches
+- [x] `feat(lib): Automated Alliance outrage, ambush, crackdown`
+  - `lib/src/factions/alliance/rules.ts`, `lib/src/events/outrage.ts`, `lib/src/rules/remove.ts`, `lib/src/events/battle/stages.ts` + tests
+- [x] `feat(lib): Automated Alliance turn`
+  - `lib/src/factions/bots/AutomatedAlliance.ts`, `lib/src/factions/bots/automatedAlliance/*.ts` (new) + tests, `lib/src/factions/index.ts`, `lib/src/state/botTurn.ts`
+- [x] `feat(lib): Vagabot items, battle and removal`
+  - `lib/src/factions/bots/vagabot/items.ts` (new) + test, `lib/src/events/battle/stages.ts`, `lib/src/events/battle/removal.ts`, `lib/src/rules/remove.ts`
+- [x] `feat(lib): Vagabot turn`
+  - `lib/src/factions/bots/Vagabot.ts`, `lib/src/factions/bots/vagabot/*.ts` (new) + tests, `lib/src/factions/index.ts`, `lib/src/state/botTurn.ts`
+- [x] `feat(lib): Automated Alliance difficulty and traits`
+  - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/automatedAlliance/*` + tests
+- [x] `feat(lib): Vagabot characters, difficulty and traits`
+  - `lib/src/public/botSettings.ts`, `lib/src/factions/bots/vagabot/*` + tests
+- [x] `test(lib): seeded games with the new bots play out`
+  - `lib/src/factions/bots/botGames.test.ts`
+- [x] `feat(api): Automated Alliance and Vagabot`
+  - `backend/web/src/schemas/*`, `backend/web/src/typeGuards.ts`, `backend/web/src/aiPlayer/*`, `backend/web/openapi.json`, `backend/web_client/src/*` (generated)
+- [x] `feat(react): pick Automated Alliance and Vagabot`
+  - `frontend/react/src/game/menuPartySetup.ts`, `soloTableSetup.ts`, `botSettingsMenu.ts`, `react/MenuBotSettings.tsx`, art / pawn helpers + tests
+- [x] `feat(react): Automated Alliance and Vagabot boards`
+  - `frontend/react/src/ui/botBoardViewModel.ts` + test, `react/BotFactionBoard.tsx`

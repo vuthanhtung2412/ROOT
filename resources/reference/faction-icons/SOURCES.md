@@ -23,3 +23,14 @@ Official faction icons from *Law of Root* section headings (RootFactionFont glyp
 Also stored: `RootFactionFontRegular.cff` (subset embedded in the PDF).
 
 © Leder Games. Reference only — not for redistribution beyond fair personal/dev use.
+
+## Clockwork (Rootbotics) icons
+
+Cropped from a Leder Games promo strip of the four bot heads; white background removed, 256px max side.
+
+| File | Faction |
+|------|---------|
+| `mechanical-marquise.webp` | Mechanical Marquise 2.0 |
+| `electric-eyrie.webp` | Electric Eyrie |
+| `automated-alliance.webp` | Automated Alliance |
+| `vagabot.webp` | Vagabot |

@@ -26,8 +26,11 @@ export function boardOf(state: GameState, seat: Seat): AllianceBoard {
   return board
 }
 
+/** The Woodland Alliance or the Automated Alliance (Rootbotics 6): who owns sympathy. */
 export function allianceSeat(state: GameState): Seat | null {
-  const player = state.players.find((entry) => entry.faction === 'alliance')
+  const player = state.players.find(
+    (entry) => entry.faction === 'alliance' || entry.faction === 'automatedAlliance',
+  )
   return player?.seat ?? null
 }
 

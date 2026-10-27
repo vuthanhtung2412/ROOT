@@ -25,6 +25,7 @@ import {
 import type { RemovalSelection, RemovalStage } from '#events/battle/types.js'
 import { isBotSeat } from '#factions/bots/botFactions.js'
 import { botHasTrait } from '#factions/bots/botSettings.js'
+import { isVagabotSeat, vagabotTakesHits } from '#factions/bots/vagabot/battle.js'
 
 function victimPieces(state: GameState, clearing: ClearingId, victim: Seat): Piece[] {
   // Rule: Vagabond pawn cannot be removed — hits damage items instead.
@@ -145,6 +146,11 @@ export function legalRemovalSpecs(
   maxHits: number,
 ): ActionSpec[] {
   if (maxHits <= 0) return []
+
+  // Rule: Rootbotics 7.2.5 — the Vagabot's hits damage items, nothing to choose.
+  if (isVagabotSeat(state, victim)) {
+    return [{ type: 'resolveEvent', actor: victim, params: { decline: [true] } }]
+  }
 
   // Rule: Vagabond — hits damage items; with Allied (9.2.9.IId) may remove ally warriors.
   if (victimIsVagabond(state, victim)) {
@@ -310,6 +316,9 @@ export function applyRemovalStage(
 ): LogEntry[] {
   const { event, action, victim, maxHits, scorer } = stage
 
+  if (isVagabotSeat(state, victim)) {
+    return vagabotTakesHits(state, { victim, hits: maxHits })
+  }
   if (victimIsVagabond(state, victim)) {
     return applyVagabondHitDamage(state, stage, ctx)
   }

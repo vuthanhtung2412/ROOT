@@ -26,7 +26,7 @@ import {
   PLAYER_ID_HEADER,
   seatForPlayerId,
 } from '#view/actionSeatGuard.js'
-import { hasOnlyTraitsOf, isSeat } from '#typeGuards.js'
+import { areBotSettingsOf, isSeat } from '#typeGuards.js'
 
 const LOBBY_STATUS = 'waiting'
 
@@ -176,7 +176,7 @@ lobbyPlayerRoutes.openapi(addBotRoute, (context) => {
     throw new HttpError(400, 'NOT_COOPERATIVE', 'bots join co-op games only')
   }
   const { faction, settings } = context.req.valid('json')
-  if (settings !== undefined && !hasOnlyTraitsOf(faction, settings.traits)) {
+  if (settings !== undefined && !areBotSettingsOf(faction, settings)) {
     throw new HttpError(400, 'BAD_BOT_SETTINGS', settings)
   }
   if (game.state.players.some((player: PlayerState): boolean => player.faction === faction)) {
@@ -218,7 +218,7 @@ lobbyPlayerRoutes.openapi(setBotSettingsRoute, (context) => {
   requireHostInOnlineGame(game, caller, 'tune a bot')
   const faction = context.req.valid('param').faction
   const settings = context.req.valid('json').settings
-  if (!hasOnlyTraitsOf(faction, settings.traits)) {
+  if (!areBotSettingsOf(faction, settings)) {
     throw new HttpError(400, 'BAD_BOT_SETTINGS', settings)
   }
   game.setBotSettings(faction, settings)
