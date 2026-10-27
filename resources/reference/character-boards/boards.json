@@ -295,7 +295,8 @@
           "side": "front",
           "image": "automated-alliance/automated-alliance-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/1a2e450f03e04bf9b8af089fe47abaab.webp"
-        }
+        },
+        { "side": "front", "image": "automated-alliance/automated-alliance-front-scan.webp", "note": "own photo, French print" }
       ]
     },
     {
@@ -308,7 +309,13 @@
           "side": "front",
           "image": "vagabot/vagabot-front.webp",
           "sourceUrl": "https://www.therootdatabase.com/media/boards/eef96f3980f944a78ad826354533f29d.webp"
-        }
+        },
+        { "side": "front", "image": "vagabot/vagabot-front-scan.webp", "note": "own photo, French print" }
+      ],
+      "cards": [
+        { "character": "ranger", "side": "front", "image": "vagabot/vagabot-ranger-front.webp" },
+        { "character": "thief", "side": "front", "image": "vagabot/vagabot-thief-front.webp" },
+        { "character": "tinker", "side": "front", "image": "vagabot/vagabot-tinker-front.webp" }
       ]
     }
   ],
