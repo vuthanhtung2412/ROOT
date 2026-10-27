@@ -9,6 +9,7 @@ import {
   type BotCardText,
   type BotSettingsByFaction,
   type BotTrait,
+  type VagabotCharacter,
 } from '@root/lib/bot-settings'
 import { QUEST_DEFS } from '@root/lib/quests'
 import {
@@ -27,6 +28,12 @@ const VIZIER_DEFINITION_ID = 'VIZIER'
 const VIZIER_CARD_NAME = 'Loyal Vizier'
 const BIRD_SUIT = 'bird'
 const UNKNOWN_SUIT = '?'
+/** Rootbotics 7.3.1 — the printed Vagabot character card of each character. */
+const VAGABOT_CHARACTER_CARD_ASSET_KEYS: Readonly<Record<VagabotCharacter, string>> = {
+  thief: GAME_ASSET_KEYS.characterCardVagabotThief,
+  tinker: GAME_ASSET_KEYS.characterCardVagabotTinker,
+  ranger: GAME_ASSET_KEYS.characterCardVagabotRanger,
+}
 /** Rule: Rootbotics 5.4.3 / errata board — Decree columns left to right. */
 const DECREE_COLUMN_SUITS: readonly string[] = ['fox', 'mouse', 'rabbit', 'bird']
 const BUILDING_TRACKS: readonly string[] = ['sawmill', 'workshop', 'recruiter']
@@ -104,7 +111,7 @@ export type VagabotItemView = {
 
 export type VagabotBoardViewModel = BotBoardBase & {
   kind: 'vagabot'
-  character: BotCardText
+  character: BotCardText & { cardAssetKey: string }
   satchel: VagabotItemView[]
   battleTrack: VagabotItemView[]
   damaged: VagabotItemView[]
@@ -287,19 +294,21 @@ function buildVagabotBoardViewModel(input: {
 }): VagabotBoardViewModel {
   const { base, board } = input
   const items = vagabotItems(Reflect.get(board, 'items'))
-  const character = Reflect.get(board, 'character')
+  const characterField = Reflect.get(board, 'character')
+  const character: VagabotCharacter =
+    typeof characterField === 'string' && isVagabotCharacter(characterField)
+      ? characterField
+      : DEFAULT_VAGABOT_CHARACTER
   return {
     ...base,
     kind: 'vagabot',
     settings: botSettingsView('vagabot', input.settingsByFaction),
     factionName: 'Vagabot',
     boardTextureKey: GAME_ASSET_KEYS.characterBoardVagabot,
-    character:
-      VAGABOT_CHARACTER_CARDS[
-        typeof character === 'string' && isVagabotCharacter(character)
-          ? character
-          : DEFAULT_VAGABOT_CHARACTER
-      ],
+    character: {
+      ...VAGABOT_CHARACTER_CARDS[character],
+      cardAssetKey: VAGABOT_CHARACTER_CARD_ASSET_KEYS[character],
+    },
     satchel: items
       .filter((item: VagabotItemRecord): boolean => !item.damaged && !item.onBattleTrack)
       .map(itemView),

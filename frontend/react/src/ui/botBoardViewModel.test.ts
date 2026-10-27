@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { GAME_ASSET_KEYS } from '#assets/gameAssets.ts'
 import {
   buildBotBoardViewModel,
   isBotBoardViewModel,
@@ -58,7 +59,7 @@ describe('buildBotBoardViewModel — Automated Alliance and Vagabot', () => {
 
     expect(view).toMatchObject({
       kind: 'vagabot',
-      character: { name: 'Tinker' },
+      character: { name: 'Tinker', cardAssetKey: GAME_ASSET_KEYS.characterCardVagabotTinker },
       satchel: [{ type: 'boot', exhausted: false }],
       battleTrack: [{ type: 'torch', exhausted: true }],
       damaged: [{ type: 'bag', exhausted: true }],
