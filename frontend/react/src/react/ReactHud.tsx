@@ -27,6 +27,7 @@ import { PlayerRail } from '#react/PlayerRail.tsx'
 import { StatusMessage } from '#react/StatusMessage.tsx'
 import { BotTurnBanner } from '#react/BotTurnBanner.tsx'
 import { TurnBanner } from '#react/TurnBanner.tsx'
+import { WoodlandMomentLayer } from '#react/WoodlandMomentLayer.tsx'
 
 /** React HUD layer above the game screen. */
 export function ReactHud(): JSX.Element {
@@ -56,6 +57,7 @@ export function ReactHud(): JSX.Element {
       <GameDrawer />
       <WinnerOverlay />
       <LeaderPickOverlay />
+      <WoodlandMomentLayer />
     </>
   )
 }

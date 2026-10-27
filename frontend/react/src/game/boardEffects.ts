@@ -3,6 +3,7 @@
  * what the last action did: moves, placements, removals and battles.
  * Only committed states are compared — never a local preview.
  */
+import type { MapMomentEffect } from '#game/mapMoments.ts'
 
 export type BoardEffectPiece = {
   id: string
@@ -95,11 +96,17 @@ export type BoardEffect =
   | BoardPlaceEffect
   | BoardRemoveEffect
   | BoardBattleEffect
+  | MapMomentEffect
 
 /** One server update worth of effects; `sequence` grows with every batch. */
 export type BoardEffectBatch = {
   sequence: number
   effects: readonly BoardEffect[]
+  /**
+   * The map moments play first: every other effect waits this long (a
+   * revolt's pieces go once its brawl thins out). Absent = 0.
+   */
+  leadInMs?: number
 }
 
 export const EMPTY_BOARD_EFFECT_BATCH: BoardEffectBatch = {

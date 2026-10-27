@@ -27,6 +27,10 @@ import {
   type CardFlightBatch,
 } from '#game/cardFlights.ts'
 import type { SetupCardPickKind } from '#ui/setupCardPick.ts'
+import {
+  EMPTY_WOODLAND_MOMENT_BATCH,
+  type WoodlandMomentBatch,
+} from '#game/woodlandMoments.ts'
 
 export type HudListener = () => void
 
@@ -244,6 +248,8 @@ export type HudState = {
   battleMark: BattleMark | null
   /** Crafted / revealed cards flying out of the rail (last server update). */
   cardFlights: CardFlightBatch
+  /** Big turns shown over the whole screen (last server update). */
+  woodlandMoments: WoodlandMomentBatch
   cardHand: CardHandHudState
   decreePanel: DecreePanelHudState
   decreeDrag: DecreeDragHudState
@@ -275,6 +281,7 @@ const INITIAL_HUD_STATE: HudState = {
   battleOverlay: null,
   battleMark: null,
   cardFlights: EMPTY_CARD_FLIGHT_BATCH,
+  woodlandMoments: EMPTY_WOODLAND_MOMENT_BATCH,
   cardHand: null,
   decreePanel: null,
   decreeDrag: null,

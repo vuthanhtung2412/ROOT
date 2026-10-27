@@ -39,6 +39,7 @@ import {
 import {
   averageGround,
   mapPiecesForBoard,
+  ruinPieceKey,
   stackPieceKey,
 } from '#react/map3d/mapPieces.ts'
 import {
@@ -261,7 +262,19 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
       return
     }
     playedBuildSequence.current = effects.sequence
-    scene?.playBuild(builtPieceKeys(effects))
+    const pieceKeys: string[] = builtPieceKeys(effects)
+    const leadInMs: number = effects.leadInMs ?? 0
+    if (leadInMs === 0) {
+      scene?.playBuild(pieceKeys)
+      return undefined
+    }
+    // The buildings go up once the update's map moments are done (a brawl).
+    const timer: number = window.setTimeout(() => {
+      scene?.playBuild(pieceKeys)
+    }, leadInMs)
+    return () => {
+      window.clearTimeout(timer)
+    }
   }, [scene, effects])
   const flashedClearing: ClearingFlash | null = props.flashedClearing ?? null
   useEffect(() => {
@@ -396,6 +409,19 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
     },
     [mapPieces],
   )
+  // The ground of an explored ruin is remembered after it leaves the map.
+  const ruinPositionOf = useCallback(
+    (clearing: number): BoardEffectPosition | undefined => {
+      const ground: MapGroundPoint | undefined = pieceGrounds.get(
+        ruinPieceKey(clearing),
+      )
+      return scene === null || ground === undefined
+        ? undefined
+        : piecePosition(scene, ground)
+    },
+    // viewVersion: the camera moved, so every projection is stale.
+    [scene, pieceGrounds, viewVersion],
+  )
 
   const onClearingSelected = props.onClearingSelected
   const onForestSelected = props.onForestSelected
@@ -435,6 +461,7 @@ export function BoardMap3D(props: BoardMap3DProps): JSX.Element {
           forestCenters={forestCenters}
           stackPositionOf={stackPositionOf}
           stackCountOf={stackCountOf}
+          ruinPositionOf={ruinPositionOf}
         />
       ) : null}
       {projectedClearings.map((clearing: ProjectedClearing) => {

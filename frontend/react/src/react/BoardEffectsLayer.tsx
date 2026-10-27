@@ -21,7 +21,10 @@ import {
   type MarchTiming,
   placeStartDelay,
 } from '#react/boardEffectTiming.ts'
+import { isMapMomentEffect } from '#game/mapMoments.ts'
 import { factionColorForSeat } from '#game/theme.ts'
+import { ExploreMomentView } from '#react/MapMomentEffects.tsx'
+import { RevoltMomentView } from '#react/RevoltBrawl.tsx'
 import { MoveMarch } from '#react/MoveMarch.tsx'
 import { PieceStack, type ClearingHitCenter } from '#react/PieceStack.tsx'
 import { RecruitJoin } from '#react/RecruitJoin.tsx'
@@ -77,6 +80,13 @@ type EffectContext = {
     | undefined
   /** How many pieces that map draws in a stack now; 0 when it draws none. */
   stackCountOf?: ((stack: BoardEffectStack) => number) | undefined
+  /**
+   * Where the map draws the ruin of a clearing, in its building slot (also
+   * just after it is gone); undefined for a map that does not know.
+   */
+  ruinPositionOf?:
+    | ((clearing: number) => BoardEffectPosition | undefined)
+    | undefined
 }
 
 type PieceEffect = BoardMoveEffect | BoardPlaceEffect | BoardRemoveEffect
@@ -407,7 +417,24 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
     seenSequenceRef.current = batch.sequence
     const started = activate(batch)
     const startedKeys = new Set(started.map((entry: ActiveEffect) => entry.key))
-    setActive((current: ActiveEffect[]) => [...current, ...started])
+    const isLeading = (entry: ActiveEffect): boolean =>
+      isMapMomentEffect(entry.effect)
+    const leading: ActiveEffect[] = started.filter(isLeading)
+    const following: ActiveEffect[] = started.filter(
+      (entry: ActiveEffect): boolean => !isLeading(entry),
+    )
+    const leadInMs: number = batch.leadInMs ?? 0
+    if (leadInMs === 0) {
+      setActive((current: ActiveEffect[]) => [...current, ...started])
+    } else {
+      // The map moments play first; the pieces go once they are done.
+      setActive((current: ActiveEffect[]) => [...current, ...leading])
+      const leadInTimer = window.setTimeout(() => {
+        timersRef.current.delete(leadInTimer)
+        setActive((current: ActiveEffect[]) => [...current, ...following])
+      }, leadInMs)
+      timersRef.current.add(leadInTimer)
+    }
     // Each batch ends on its own timer: a newer batch must not cut it short.
     const timer = window.setTimeout(() => {
       timersRef.current.delete(timer)
@@ -437,6 +464,7 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
           forestCenters: props.forestCenters,
           stackPositionOf: props.stackPositionOf,
           stackCountOf: props.stackCountOf,
+          ruinPositionOf: props.ruinPositionOf,
         }
         if (entry.effect.kind === 'move') {
           return (
@@ -453,6 +481,25 @@ export function BoardEffectsLayer(props: BoardEffectsLayerProps): JSX.Element {
         if (entry.effect.kind === 'remove') {
           return (
             <RemoveEffectView key={entry.key} {...context} effect={entry.effect} />
+          )
+        }
+        if (entry.effect.kind === 'explore' || entry.effect.kind === 'revolt') {
+          const center: ClearingHitCenter | undefined = props.hitCenters.get(
+            entry.effect.clearing,
+          )
+          if (center === undefined) {
+            return null
+          }
+          if (entry.effect.kind === 'revolt') {
+            return (
+              <RevoltMomentView key={entry.key} effect={entry.effect} center={center} />
+            )
+          }
+          const ruin: BoardEffectPosition = props.ruinPositionOf?.(
+            entry.effect.clearing,
+          ) ?? { left: center.centerX, top: center.centerY }
+          return (
+            <ExploreMomentView key={entry.key} effect={entry.effect} ruin={ruin} />
           )
         }
         // A battle is told by the badge on its clearing (BattleClearingBadge).

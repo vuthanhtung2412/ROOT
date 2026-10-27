@@ -27,7 +27,7 @@ export function builtPieceKeys(batch: BoardEffectBatch): string[] {
 /** The batch without its new buildings: what the effects layer still plays. */
 export function withoutBuildEffects(batch: BoardEffectBatch): BoardEffectBatch {
   return {
-    sequence: batch.sequence,
+    ...batch,
     effects: batch.effects.filter(
       (effect: BoardEffect): boolean => !isBuildEffect(effect),
     ),

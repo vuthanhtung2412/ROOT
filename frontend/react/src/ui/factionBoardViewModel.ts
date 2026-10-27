@@ -401,7 +401,7 @@ function craftedLookup(player: PlayerForBoard): CraftedLookup {
   return { items: groupCraftedItems(player.craftedItems ?? []) }
 }
 
-function suitForDecreeCard(defId: string): string {
+export function suitForDecreeCard(defId: string): string {
   if (defId === 'VIZIER') {
     return 'bird'
   }
