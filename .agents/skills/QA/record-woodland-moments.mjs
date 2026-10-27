@@ -7,13 +7,13 @@
  *   ROOT_REACT_URL=http://localhost:5173 ROOT_DEV_API=http://localhost:3000 \
  *     node .agents/skills/QA/record-woodland-moments.mjs [explore|revolt|turmoil]
  */
-import { chromium } from './node_modules/playwright/index.mjs'
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { installAutonomousClickHighlight } from './click-highlight.mjs'
 import { pickUnusedVideoName } from './pick-unused-video-name.mjs'
+import { convertWebmToMp4, launchGpuBrowser } from './smooth-video.mjs'
 
 const skillDirectory = path.dirname(fileURLToPath(import.meta.url))
 const rootDirectory = path.resolve(skillDirectory, '../../..')
@@ -22,12 +22,6 @@ const snapshotsDirectory = path.join(rootDirectory, 'tmp/qa/snapshots')
 const reactUiUrl = process.env.ROOT_REACT_URL ?? 'http://localhost:5173'
 const apiUrl = process.env.ROOT_DEV_API ?? 'http://localhost:3000'
 const VIDEO_NAME = 'woodland-moments-demo'
-/**
- * Headless Chromium draws WebGL in software (SwiftShader, ~2 fps on the 3D
- * map): use the real GPU through Metal so the video is smooth.
- */
-const GPU_ARGUMENTS = ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
-const VIDEO_FRAMES_PER_SECOND = 24
 
 /** Explore: the Vagabond stands on a ruin with a torch, in Daylight. */
 const EXPLORE_SNAPSHOT = 'vagabond-daylight-explore.json'
@@ -166,7 +160,7 @@ async function main() {
   const staging = path.join(artifactsDirectory, `video-raw-${VIDEO_NAME}`)
   await rm(staging, { recursive: true, force: true })
   await mkdir(staging, { recursive: true })
-  const browser = await chromium.launch({ headless: true, args: GPU_ARGUMENTS })
+  const browser = await launchGpuBrowser({ headless: true })
   const context = await browser.newContext({
     viewport: { width: 1280, height: 720 },
     recordVideo: { dir: staging, size: { width: 1280, height: 720 } },
@@ -194,7 +188,7 @@ async function main() {
   const webmPath = path.join(artifactsDirectory, `${videoName}.webm`)
   const mp4Path = path.join(artifactsDirectory, `${videoName}.mp4`)
   await copyFile(path.join(staging, recorded[0]), webmPath)
-  spawnSync('ffmpeg', ['-i', webmPath, '-vf', `fps=${String(VIDEO_FRAMES_PER_SECOND)}`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', mp4Path])
+  convertWebmToMp4(webmPath, mp4Path)
   console.log(JSON.stringify({ video: mp4Path, pageErrors: errors.slice(0, 6) }, null, 2))
 }
 
