@@ -39,6 +39,31 @@ describe('mapMomentEffectsBetween', () => {
     ).toEqual([{ kind: 'revolt', clearing: REVOLT_CLEARING }])
   })
 
+  it('tells the clearing and item a bot explore names', () => {
+    expect(
+      mapMomentEffectsBetween(stateWithRuin(['boot', 'sword']), stateWithRuin(['sword']), [
+        {
+          t: 'action',
+          actor: 2,
+          action: { type: 'botExplore', clearing: RUIN_CLEARING, item: 'boot' },
+        },
+      ]),
+    ).toEqual([{ kind: 'explore', clearing: RUIN_CLEARING, itemType: 'boot' }])
+  })
+
+  it('tells the clearing of a bot revolt', () => {
+    const state: MapMomentState = stateWithRuin(null)
+    expect(
+      mapMomentEffectsBetween(state, state, [
+        {
+          t: 'action',
+          actor: 1,
+          action: { type: 'botRevolt', clearing: REVOLT_CLEARING },
+        },
+      ]),
+    ).toEqual([{ kind: 'revolt', clearing: REVOLT_CLEARING }])
+  })
+
   it('tells nothing for another game', () => {
     expect(
       mapMomentEffectsBetween(

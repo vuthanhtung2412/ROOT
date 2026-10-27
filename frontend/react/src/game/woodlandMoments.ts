@@ -95,7 +95,9 @@ export const EMPTY_WOODLAND_MOMENT_BATCH: WoodlandMomentBatch = {
 }
 
 const EXPLORE_ACTION_TYPE = 'explore'
+const BOT_EXPLORE_ACTION_TYPE = 'botExplore'
 const REVOLT_ACTION_TYPE = 'revolt'
+const BOT_REVOLT_ACTION_TYPE = 'botRevolt'
 const TURMOIL_ACTION_TYPE = 'turmoil'
 const BOT_TURMOIL_ACTION_TYPE = 'botTurmoil'
 const CHOOSE_LEADER_EVENT_TYPE = 'chooseLeader'
@@ -324,10 +326,16 @@ function actionMoment(
   logged: LoggedAction,
 ): WoodlandMoment | null {
   const seat: number = logged.actor
-  if (logged.actionType === EXPLORE_ACTION_TYPE) {
+  if (
+    logged.actionType === EXPLORE_ACTION_TYPE ||
+    logged.actionType === BOT_EXPLORE_ACTION_TYPE
+  ) {
     return { kind: 'explore', seat, faction: factionAt(states.previous, seat) }
   }
-  if (logged.actionType === REVOLT_ACTION_TYPE) {
+  if (
+    logged.actionType === REVOLT_ACTION_TYPE ||
+    logged.actionType === BOT_REVOLT_ACTION_TYPE
+  ) {
     const clearing: number | null = numberField(logged.action, 'clearing')
     return {
       kind: 'revolt',

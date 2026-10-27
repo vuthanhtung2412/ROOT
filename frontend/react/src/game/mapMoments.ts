@@ -32,7 +32,18 @@ export type MapMomentState = {
 }
 
 const EXPLORE_ACTION_TYPE = 'explore'
+const BOT_EXPLORE_ACTION_TYPE = 'botExplore'
 const REVOLT_ACTION_TYPE = 'revolt'
+const BOT_REVOLT_ACTION_TYPE = 'botRevolt'
+
+/** A bot explore names its clearing and item: it takes a random one. */
+function botExploredRuin(action: object): BoardExploreEffect | null {
+  const clearing: number | null = numberField(action, 'clearing')
+  const itemType: unknown = Reflect.get(action, 'item')
+  return clearing === null || typeof itemType !== 'string'
+    ? null
+    : { kind: 'explore', clearing, itemType }
+}
 
 /** The clearing whose ruin lost an item, with that item (the last one). */
 function exploredRuin(
@@ -61,7 +72,13 @@ function entryEffect(
   if (logged.actionType === EXPLORE_ACTION_TYPE) {
     return exploredRuin(previous, next)
   }
-  if (logged.actionType === REVOLT_ACTION_TYPE) {
+  if (logged.actionType === BOT_EXPLORE_ACTION_TYPE) {
+    return botExploredRuin(logged.action)
+  }
+  if (
+    logged.actionType === REVOLT_ACTION_TYPE ||
+    logged.actionType === BOT_REVOLT_ACTION_TYPE
+  ) {
     const clearing: number | null = numberField(logged.action, 'clearing')
     return clearing === null ? null : { kind: 'revolt', clearing }
   }

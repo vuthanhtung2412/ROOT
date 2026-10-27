@@ -58,6 +58,27 @@ describe('woodlandMomentsBetween', () => {
     ])
   })
 
+  it('tells a bot explore and a bot revolt like their human ones', () => {
+    const state: GameState = makeGameState()
+    expect(
+      woodlandMomentsBetween(state, state, [
+        {
+          t: 'action',
+          actor: 0,
+          action: { type: 'botExplore', clearing: FOX_CLEARING, item: 'boot' },
+        },
+        {
+          t: 'action',
+          actor: 1,
+          action: { type: 'botRevolt', clearing: FOX_CLEARING },
+        },
+      ]),
+    ).toEqual([
+      { kind: 'explore', seat: 0, faction: 'marquise' },
+      { kind: 'revolt', seat: 1, faction: 'eyrie', suit: 'fox' },
+    ])
+  })
+
   it('tells a turmoil with the failed card, the loss and the deposed leader', () => {
     const previous: GameState = stateWithEyrieBoard(
       {
